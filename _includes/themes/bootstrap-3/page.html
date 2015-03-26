@@ -1,0 +1,19 @@
+<div class="page-header">
+    <div class="breadcrumb">
+    {% if page.breadCrumb %}{{ page.breadCrumb |  markdownify }}{% endif %}
+    </div>
+    {% if page.next or  page.previous %}
+    <nav>
+        <ul class="pager">
+            {% if page.previous %}<li><a href="{{ page.previous }}"><span aria-hidden="true">&larr;</span> Previous</a></li>{% endif %}
+            {% if page.next %}<li><a href="{{ page.next }}">Next <span aria-hidden="true">&rarr;</span></a></li>{% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    <h1>{{ page.title }} {% if page.tagline %} <small>{{ page.tagline }}</small>{% endif %}</h1>
+</div>
+<div class="row">
+  <div class="col-xs-12">
+    {{ content }}
+  </div>
+</div>

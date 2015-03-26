@@ -1,0 +1,20 @@
+body
+{
+	width:100%;
+	font-family:Georgia, Arial, sans-serif;
+}
+
+body, html, table, tr, td, tbody {
+    padding:0;
+    margin:0;
+    vertical-align: top;
+}
+
+.center {
+	text-align: center;
+}
+
+#logo 
+{
+	padding-top: 20px;
+}
