@@ -1,0 +1,323 @@
+/*
+/*
+Copyright (C) 2015 Electronic Arts Inc.  All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1.  Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+2.  Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+3.  Neither the name of Electronic Arts, Inc. ("EA") nor the names of
+    its contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY ELECTRONIC ARTS AND ITS CONTRIBUTORS "AS IS" AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL ELECTRONIC ARTS OR ITS CONTRIBUTORS BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+package com.ea.orbit.actors.runtime;
+
+import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.IAddressable;
+import com.ea.orbit.actors.annotation.StatelessWorker;
+import com.ea.orbit.actors.cluster.IClusterPeer;
+import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.annotation.Config;
+import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.container.Startable;
+import com.ea.orbit.exception.UncheckedException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
+
+public class Hosting implements IHosting, Startable
+{
+    private static final Logger logger = LoggerFactory.getLogger(Hosting.class);
+    private NodeTypeEnum nodeType;
+    private IClusterPeer clusterPeer;
+
+    private volatile Map<INodeAddress, NodeInfo> activeNodes = new HashMap<>(0);
+    private volatile List<NodeInfo> serverNodes = new ArrayList<>(0);
+    private Object serverNodesUpdateMutex = new Object();
+    private Execution execution;
+    private ConcurrentMap<IAddressable, INodeAddress> localAddressCache = new ConcurrentHashMap<>();
+    private volatile ConcurrentMap<IAddressable, INodeAddress> distributedDirectory;
+    @Config("orbit.actors.timeToWaitForServersMillis")
+    private long timeToWaitForServersMillis = 30000;
+    private Random random = new Random();
+
+    public Hosting()
+    {
+        //
+    }
+
+    public long getTimeToWaitForServersMillis()
+    {
+        return timeToWaitForServersMillis;
+    }
+
+    public void setTimeToWaitForServersMillis(final long timeToWaitForServersMillis)
+    {
+        this.timeToWaitForServersMillis = timeToWaitForServersMillis;
+    }
+
+    public void setExecution(final Execution execution)
+    {
+        this.execution = execution;
+    }
+
+    public void setNodeType(final NodeTypeEnum nodeType)
+    {
+        this.nodeType = nodeType;
+    }
+
+    private static class NodeInfo
+    {
+        boolean server;
+        boolean active;
+        INodeAddress address;
+        IHosting hosting;
+        StageInfo stageInfo;
+
+        public NodeInfo(final INodeAddress address)
+        {
+            this.address = address;
+        }
+    }
+
+    @Override
+    public Task<StageInfo> getNodeType()
+    {
+        return Task.fromValue(new StageInfo(nodeType,
+                nodeType == NodeTypeEnum.CLIENT ? new HashSet<>() : new HashSet<>(execution.getAvailableActors())));
+    }
+
+    public void setClusterPeer(final IClusterPeer clusterPeer)
+    {
+        this.clusterPeer = clusterPeer;
+    }
+
+    public Task<Void> start()
+    {
+        clusterPeer.registerViewListener(v -> onClusterViewChanged(v));
+        return Task.done();
+    }
+
+    private void onClusterViewChanged(final Collection<INodeAddress> nodes)
+    {
+        HashMap<INodeAddress, NodeInfo> oldNodes = new HashMap<>(activeNodes);
+        HashMap<INodeAddress, NodeInfo> newNodes = new HashMap<>(nodes.size());
+        List<NodeInfo> justAddedNodes = new ArrayList<>(Math.max(1, nodes.size() - oldNodes.size()));
+        for (final INodeAddress a : nodes)
+        {
+            NodeInfo nodeInfo = oldNodes.remove(a);
+            if (nodeInfo == null)
+            {
+                nodeInfo = new NodeInfo(a);
+                nodeInfo.hosting = execution.createReference(a, IHosting.class, "");
+                nodeInfo.active = true;
+                activeNodes.put(a, nodeInfo);
+                justAddedNodes.add(nodeInfo);
+            }
+            newNodes.put(a, nodeInfo);
+        }
+        // nodes that were removed
+        for (NodeInfo oldNodeInfo : oldNodes.values())
+        {
+            oldNodeInfo.active = false;
+        }
+        activeNodes = newNodes;
+        updateServerNodes();
+        for (final NodeInfo newNodeInfo : justAddedNodes)
+        {
+            // each time a new node is added, it's necessary to detect its role
+            execution.getExecutor().execute(() -> {
+                (newNodeInfo.hosting.getNodeType()).whenCompleteAsync((newNodeType, e) ->
+                {
+                    if (e == null)
+                    {
+                        newNodeInfo.stageInfo = newNodeType;
+                        if (newNodeType.getType() == NodeTypeEnum.SERVER)
+                        {
+                            newNodeInfo.server = true;
+                            if (newNodeInfo.active)
+                            {
+                                updateServerNodes();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        logger.error("Error updating the cluster view. ", e);
+                    }
+                }, execution.getExecutor());
+            });
+        }
+
+        for (NodeInfo oldNodeInfo : oldNodes.values())
+        {
+            // TODO notify someone?
+        }
+
+    }
+
+    private void updateServerNodes()
+    {
+        synchronized (serverNodesUpdateMutex)
+        {
+            this.serverNodes = activeNodes.values().stream().filter(
+                    nodeInfo -> nodeInfo.active && nodeInfo.server).collect(Collectors.toList());
+            if (serverNodes.size() > 0)
+            {
+                serverNodesUpdateMutex.notifyAll();
+            }
+        }
+    }
+
+    public Task<INodeAddress> locateActor(final IAddressable addressable)
+    {
+        INodeAddress address = localAddressCache.get(addressable);
+        if (address != null && activeNodes.containsKey(address))
+        {
+            return Task.fromValue(address);
+        }
+        final Class interfaceClass = ((ActorReference) addressable)._interfaceClass();
+        final String interfaceClassName = interfaceClass.getName();
+        if (interfaceClass.isAnnotationPresent(StatelessWorker.class))
+        {
+            if (nodeType == NodeTypeEnum.SERVER && execution.getAvailableActors().contains(interfaceClassName))
+            {
+                // TODO: consider always using local instance if this node is a server
+                // ~90% chance of making a local call
+                if (random.nextInt(100) < 90)
+                {
+                    return Task.fromValue(clusterPeer.localAddress());
+                }
+                // randomly chooses one server node to process this actor
+                final INodeAddress nodeAddress = selectNode(interfaceClassName, false);
+                if (nodeAddress != null)
+                {
+                    return Task.fromValue(nodeAddress);
+                }
+            }
+        }
+
+        final CompletableFuture<INodeAddress> async = CompletableFuture.supplyAsync(() -> {
+            INodeAddress nodeAddress = null;
+
+            if (interfaceClass.isAnnotationPresent(StatelessWorker.class))
+            {
+                // randomly chooses one server node to process this actor
+                return selectNode(interfaceClassName, true);
+            }
+            if (distributedDirectory == null)
+            {
+                synchronized (this)
+                {
+                    if (distributedDirectory == null)
+                    {
+                        distributedDirectory = clusterPeer.getCache("distributedDirectory");
+                    }
+                }
+            }
+            nodeAddress = distributedDirectory.get(addressable);
+
+            if (nodeAddress != null && activeNodes.containsKey(nodeAddress))
+            {
+                localAddressCache.put(addressable, nodeAddress);
+                return nodeAddress;
+            }
+            if (nodeAddress != null)
+            {
+                distributedDirectory.remove(addressable, nodeAddress);
+            }
+            nodeAddress = selectNode(interfaceClassName, true);
+            INodeAddress otherNodeAddress = distributedDirectory.putIfAbsent(addressable, nodeAddress);
+            // someone got there first.
+            if (otherNodeAddress != null)
+            {
+                localAddressCache.put(addressable, otherNodeAddress);
+                return otherNodeAddress;
+            }
+            // TODO: signal the node to create the actor.
+            localAddressCache.put(addressable, nodeAddress);
+            return nodeAddress;
+        }, execution.getExecutor());
+        return Task.from(async);
+    }
+
+    private INodeAddress selectNode(final String interfaceClassName, boolean allowToBlock)
+    {
+        final INodeAddress nodeAddress;
+        List<NodeInfo> potentialNodes;
+        List<NodeInfo> currentServerNodes = serverNodes;
+        long start = System.currentTimeMillis();
+        do
+        {
+            potentialNodes = currentServerNodes.stream()
+                    .filter(n -> n.server && n.stageInfo != null && n.stageInfo.getAvailableActors().contains(interfaceClassName))
+                    .collect(Collectors.toList());
+            if (potentialNodes.size() == 0)
+            {
+                if (!allowToBlock)
+                {
+                    return null;
+                }
+                if (System.currentTimeMillis() - start > timeToWaitForServersMillis)
+                {
+                    String err = "Timeout waiting for a server capable of handling: " + interfaceClassName;
+                    logger.error(err);
+                    throw new UncheckedException(err);
+                }
+                synchronized (serverNodesUpdateMutex)
+                {
+                    if (serverNodes.size() == 0)
+                    {
+                        try
+                        {
+                            serverNodesUpdateMutex.wait(5);
+                        }
+                        catch (InterruptedException e)
+                        {
+                            throw new UncheckedException(e);
+                        }
+                    }
+                    currentServerNodes = serverNodes;
+                }
+            }
+        } while (potentialNodes.size() == 0);
+        nodeAddress = potentialNodes.get(random.nextInt(potentialNodes.size())).address;
+        return nodeAddress;
+    }
+
+    @Deprecated
+    public Task<INodeAddress> locateActor(final IActor actor)
+    {
+        return locateActor(((IAddressable) actor));
+    }
+
+}
