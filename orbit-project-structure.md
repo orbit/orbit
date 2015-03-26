@@ -7,11 +7,18 @@ previous: "orbit-building-orbit.html"
 ---
 {% include JB/setup %}
 
-Components {#ProjectStructure-Components}
+
+
+-  [Source Structure](#ProjectStructure-SourceStructure)
+-  [Maven Structure](#ProjectStructure-MavenStructure)
+
+
+
+Source Structure {#ProjectStructure-SourceStructure}
 ----------
 
 
-Orbit is organized into a set of components that can be used by developers to create online services.
+Orbit is organized into a set of folders which contain the high level systems
 
 
 <table>
@@ -23,7 +30,35 @@ Orbit Container is a minimal inversion of control container designed to make wri
 
  </td></tr>
 <tr><td> Web </td><td> /web </td><td> Orbit Web is a basic implementation of a web service container for Orbit Applications, it uses Jetty and Jersey and offers HTTP and WebSocket endpoints. </td></tr>
-<tr><td> Commons </td><td> /commons </td><td> Orbit Commons is a common helper and utility classes which are used across multiple Orbit modules. </td></tr>
+<tr><td> Commons </td><td> /commons </td><td> Orbit Commons contains common helper and utility classes which are used across multiple Orbit modules. </td></tr>
 <tr><td> Samples </td><td> /samples </td><td> Samples contains the high level samples which leverage the entire Orbit stack. </td></tr>
 </table>
+
+
+ 
+
+
+Maven Structure {#ProjectStructure-MavenStructure}
+----------
+
+
+Orbit is hosted on the maven central repository.
+
+
+<table>
+<tr><th> Group </th><th> Artifact </th><th> Purpose </th></tr>
+<tr><td> com.ea.orbit </td><td> orbit-actors-all </td><td> Contains the full actor framework </td></tr>
+<tr><td> com.ea.orbit </td><td> orbit-container </td><td> Contains the orbit container system </td></tr>
+<tr><td> com.ea.orbit </td><td> orbit-web </td><td> Contains the orbit web system </td></tr>
+<tr><td> com.ea.orbit </td><td> orbit-commons </td><td> Contains the common utils </td></tr>
+<tr><td> com.ea.orbit </td><td> orbit-actors-mongodb </td><td> Contains the orbit actors MongoDB storage system </td></tr>
+<tr><td> com.ea.orbit </td><td> orbit-actors-* </td><td> Contains the various individual actor systems </td></tr>
+<tr><td> com.ea.orbit.samples </td><td> orbit-* </td><td> Contains the orbit samples </td></tr>
+</table>
+
+
+ 
+
+
+ 
 
