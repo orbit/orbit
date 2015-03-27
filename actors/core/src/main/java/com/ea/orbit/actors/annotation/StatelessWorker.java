@@ -51,11 +51,10 @@ import java.lang.annotation.Target;
  * </p>
  * <p>
  * Usage:
- * <pre>{@code
- *  &#64;StatelessWorker
+ * <pre>
+ *  {@literal@}StatelessWorker
  *  public interface ISomeActor extends IActor {
- *     Task<Integer> add(int a, int b);
- *  }
+ *     Task&lt;Integer&gt; add(int a, int b);
  *  }</pre>
  * </p>
  */

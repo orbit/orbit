@@ -29,10 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors;
 
 /**
- * Common interface for actor and observer references.
- * <p>
- * Used internally by the framework.
- * </p>
+ * Common interface for actor and observer references used internally by the framework.
  */
 public interface IAddressable
 {

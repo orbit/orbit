@@ -32,11 +32,32 @@ package com.ea.orbit.actors.providers;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.concurrent.Task;
 
+/**
+ * Storage providers are used by the orbit actors framework to load and store actor states.
+ */
 public interface IStorageProvider extends IOrbitProvider
 {
+    /**
+     * Asynchronously clears an actors state.
+     * @param reference an reference to the actor (contains the interface name and actor key)
+     * @param state the state object, not modified.
+     * @return a completion promise
+     */
     Task<Void> clearState(ActorReference reference, Object state);
 
+    /**
+     * Asynchronously reads an actors state.
+     * @param reference an reference to the actor (contains the interface name and actor key)
+     * @param state the state object, modified by the call
+     * @return a completion promise
+     */
     Task<Boolean> readState(ActorReference reference, Object state);
 
+    /**
+     * Asynchronously writes an actors state.
+     * @param reference an reference to the actor (contains the interface name and actor key)
+     * @param state the state object, not modified by the call
+     * @return a completion promise
+     */
     Task<Void> writeState(ActorReference reference, Object state);
 }

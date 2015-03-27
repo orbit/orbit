@@ -57,23 +57,24 @@ import com.ea.orbit.concurrent.Task;
  * </p>
  * <p>
  * <b>Example</b>
- * <pre>{@code
+ * <pre>
  *  public interface IChatMember extends IActorObserver
  *  {
- *      @OneWay
- *      Task<Void> receiveChatMessage(String message);
+ *      {@literal@}OneWay
+ *      Task&lt;Void&gt; receiveChatMessage(String message);
  *  }
+ *
  *  public void Chat extends OrbitActor implements IChat
  *  {
  *     private ObserverManager observers;
  *
- *     public Task<Void> addListener(IChatMember member)
+ *     public Task&lt;Void&gt; addListener(IChatMember member)
  *     {
  *          observers.addMember(observer);
  *          return Task.done();
  *     }
  *
- *     public Task<Void> say(String message)
+ *     public Task&lt;Void&gt; say(String message)
  *     {
  *          observers.notifyAll( o -> o.receiveChatMessage(message) );
  *          return Task.done();
@@ -81,7 +82,7 @@ import com.ea.orbit.concurrent.Task;
  * }}
  *
  * IChatMember member1 = new IChatMember() {
- *     public Task<Void> receiveChatMessage(String message) {
+ *     public Task&lt;Void&gt; receiveChatMessage(String message) {
  *          System.out.println(message);
  *     }
  * };
@@ -89,7 +90,6 @@ import com.ea.orbit.concurrent.Task;
  * IChat chat = ChatFactory.createReference("dragon-age");
  * chat.addMember(member1).join();
  * chat.say("Hello!").join();
- *
  * </pre>
  * </p>
  */

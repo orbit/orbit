@@ -32,18 +32,32 @@ import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.concurrent.ConcurrentHashSet;
 import com.ea.orbit.concurrent.Task;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public class ObserverManager<T extends IActorObserver>
+/**
+ * ObserverManager is an optional thread safe collection that can be used by actors which need to call observers.
+ * ObserverManager can be persisted and send to other actors.
+ * <p>Its principal utility method is the {@code cleanup()} which asynchronously removes dead observers.
+ *
+ * @param <T> observable type.
+ */
+public class ObserverManager<T extends IActorObserver> implements Serializable
 {
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ObserverManager.class);
 
     private ConcurrentHashSet<T> observers = new ConcurrentHashSet<>();
 
-    public void addObserver(T observer)
+    /**
+     * Ensures that this collection contains the specified observer.
+     *
+     * @param observer observer whose presence in this collection is to be ensured
+     * @return <tt>true</tt> if this collection changed as a result of the call.
+     */
+    public boolean addObserver(T observer)
     {
         if (observer == null)
         {
@@ -55,10 +69,7 @@ public class ObserverManager<T extends IActorObserver>
             throw new IllegalArgumentException("Was expecting a reference");
         }
 
-        if (!observers.contains(observer))
-        {
-            observers.add(observer);
-        }
+        return observers.add(observer);
     }
 
     /**
@@ -89,6 +100,17 @@ public class ObserverManager<T extends IActorObserver>
         return Task.allOf(stream);
     }
 
+    /**
+     * Used to notify the orbservers (call some method of their remote interface)
+     * <p>
+     * <pre>
+     * String message = "...";
+     * observers.notifyObservers(o -&gt; o.receiveMessage(message));
+     * </pre>
+     * </p>
+     *
+     * @param callable operation to be called on all observers
+     */
     public void notifyObservers(Consumer<T> callable)
     {
         List<T> fail = new ArrayList<>(0);
@@ -112,16 +134,29 @@ public class ObserverManager<T extends IActorObserver>
         }
     }
 
+    /**
+     * Remove all observers
+     */
     public void clear()
     {
         observers.clear();
     }
 
+    /**
+     * Remove one observer
+     *
+     * @param observer observer to be removed
+     */
     public void removeObserver(T observer)
     {
         observers.remove(observer);
     }
 
+    /**
+     * Returns a sequential {@code Stream} with this collection as its source.
+     *
+     * @return a sequential {@code Stream} over the elements in this collection.
+     */
     public Stream<T> stream()
     {
         return observers.stream();

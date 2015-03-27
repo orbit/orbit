@@ -36,6 +36,38 @@ import com.ea.orbit.concurrent.Task;
  * <p>
  * Reminders are a low frequency persisted timers that will be called even if the actor is not currently activated.
  * </p>
+ * <p><b>Differences between timers and reminders:</b>
+ * <table summary="Differences between timers and reminders">
+ * <thead>
+ * <tr>
+ * <th>Timer</th>
+ * <th>Reminder</th>
+ * </tr>
+ * </thead>
+ * <tbody>
+ * <tr>
+ * <td>Exists only during the activation</td>
+ * <td>Exist until explicitly cancelled by the application</td>
+ * </tr>
+ * <tr>
+ * <td>Can be high frequency, seconds and minutes</td>
+ * <td>Should be low frequency, minutes, hours or days</td>
+ * </tr>
+ * <tr>
+ * <td>Actor deactivation cancels the timer</td>
+ * <td>Reminder remains after deactivation.</td>
+ * </tr>
+ * <tr>
+ * <td>Receive a callback</td>
+ * <td>Call a fixed method</td>
+ * </tr>
+ * <tr>
+ * <td>Any actor can use timers</td>
+ * <td>Only actors whose interface implements IRemindable can use reminders</td>
+ * </tr>
+ * </tbody>
+ * </table></p>
+ *
  */
 public interface IRemindable extends IActor
 {

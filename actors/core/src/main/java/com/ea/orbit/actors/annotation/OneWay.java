@@ -34,16 +34,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Actor methods annotated with &#64;OneWay will not message back the invocation result.
- * Therefore their return type must be Task&lt;Void&gt; or simply Task.
- * <p><pre>{@code
- * public interface IHello implements IActor {
- *     &#64;OneWay
+ * Actor methods annotated with {@literal@}OneWay will not message back the invocation result.
+ * Therefore their return type must be {@code Task<Void>} or simply {@code Task}.
+ * <p><pre>
+ * public interface IHello implements IActor
+ * {
+ *     {@literal@}OneWay
  *     Task someMethod();
  *
- *     &#64;OneWay
+ *     {@literal@}OneWay
  *     Task&lt;Void&gt; someOtherMethod();
- *  }
  * }</pre>
  *</p>
  * <p>

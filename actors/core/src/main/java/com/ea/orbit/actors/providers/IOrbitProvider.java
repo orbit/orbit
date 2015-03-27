@@ -30,6 +30,9 @@ package com.ea.orbit.actors.providers;
 
 import com.ea.orbit.container.Startable;
 
+/**
+ * Base interface for orbit providers.
+ */
 public interface IOrbitProvider extends Startable
 {
 }

@@ -32,23 +32,50 @@ package com.ea.orbit.actors.providers;
 import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.Task;
 
+/**
+ * Listener the actor activation/deactivation process.
+ */
 public interface ILifetimeProvider extends IOrbitProvider
 {
+    /**
+     * Called immediately before invoking the actors activation.
+     *
+     * @param actor the actor object being activated
+     * @return a completion promise, the framework will wait if necessary.
+     */
     default Task preActivation(OrbitActor actor)
     {
         return Task.done();
     }
 
+    /**
+     * Called immediately after invoking the actors activation.
+     *
+     * @param actor the actor object being activated
+     * @return a completion promise, the framework will wait if necessary.
+     */
     default Task postActivation(OrbitActor actor)
     {
         return Task.done();
     }
 
+    /**
+     * Called immediately before invoking the actors deactivation code.
+     *
+     * @param actor the actor object being deactivated
+     * @return a completion promise, the framework will wait if necessary.
+     */
     default Task preDeactivation(OrbitActor actor)
     {
         return Task.done();
     }
 
+    /**
+     * Called immediately after invoking the actors deactivation code.
+     *
+     * @param actor the actor object being deactivated
+     * @return a completion promise, the framework will wait if necessary.
+     */
     default Task postDeactivation(OrbitActor actor)
     {
         return Task.done();

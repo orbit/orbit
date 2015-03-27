@@ -30,6 +30,9 @@ package com.ea.orbit.actors.cluster;
 
 import java.io.Serializable;
 
+/**
+ * The actual implementation of INodeAddress. Should not be used directly by the application.
+ */
 public class NodeAddress implements INodeAddress, Serializable
 {
     private java.util.UUID address;

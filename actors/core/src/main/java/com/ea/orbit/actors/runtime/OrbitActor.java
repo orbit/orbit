@@ -73,33 +73,63 @@ public class OrbitActor<T>
         }
     }
 
+    /**
+     * The recommended way to log from an actor.
+     *
+     * @return this actor's slf4j logger
+     */
     protected Logger getLogger()
     {
         // TODO wrap the logger to add some context about the actor and the current call
         return logger != null ? logger : (logger = LoggerFactory.getLogger(getClass()));
     }
 
+    /**
+     * The recommended way to log from an actor.
+     *
+     * @return this actor's slf4j logger
+     */
     protected Logger getLogger(String name)
     {
         // TODO wrap the logger to add some context about the actor and the current call
         return LoggerFactory.getLogger(name);
     }
 
+    /**
+     * The current actor's persistable state.
+     *
+     * @return the state
+     */
     protected T state()
     {
         return state;
     }
 
+    /**
+     * Asynchronously writes the actor's state.
+     *
+     * @return a completion promise
+     */
     protected Task<Void> writeState()
     {
         return stateProvider.writeState(reference, state);
     }
 
+    /**
+     * Asynchronously reads the actor's state.
+     *
+     * @return a completion promise
+     */
     protected Task<Boolean> readState()
     {
         return stateProvider.readState(reference, state);
     }
 
+    /**
+     * Asynchronously clears the actor's state. This means removing the database entry for this actor.
+     *
+     * @return a completion promise
+     */
     protected Task<Void> clearState()
     {
         return stateProvider.clearState(reference, state);
@@ -120,31 +150,60 @@ public class OrbitActor<T>
         return reference.runtime.registerTimer(this, futureCallable, dueTime, period, timeUnit);
     }
 
-    protected Task registerReminder(String name, long dueTime, long period, TimeUnit timeUnit)
+    /**
+     * Registers or updated a persisted reminder.
+     * Reminders are low frequency persisted timers.
+     * They survive the actor's deactivation and even a cluster restart.
+     *
+     * @param reminderName the remainder's name
+     * @return completion promise for this operation
+     */
+    protected Task registerReminder(String reminderName, long dueTime, long period, TimeUnit timeUnit)
     {
         if (!(this instanceof IRemindable))
         {
             throw new IllegalArgumentException("This must implement IRemindable: " + this.getClass().getName());
         }
-        return reference.runtime.registerReminder((IRemindable) reference, name, dueTime, period, timeUnit);
+        return reference.runtime.registerReminder((IRemindable) reference, reminderName, dueTime, period, timeUnit);
     }
 
-    protected Task unregisterReminder(String name)
+    /**
+     * Removes a previously registered reminder.
+     *
+     * @param reminderName the remainder's name
+     * @return completion promise for this operation
+     */
+    protected Task<Void> unregisterReminder(String reminderName)
     {
-        return reference.runtime.unregisterReminder((IRemindable)reference, name);
+        return reference.runtime.unregisterReminder((IRemindable) reference, reminderName);
     }
 
+    /**
+     * Gets a string that represents uniquely the node that currently holds this actor.
+     *
+     * @return a completion promise
+     */
     protected String runtimeIdentity()
     {
         // TODO: return the node address
         return reference.runtime.toString();
     }
 
+    /**
+     * Called by the framework when activating the actor.
+     *
+     * @return a completion promise
+     */
     public Task<?> activateAsync()
     {
         return Task.done();
     }
 
+    /**
+     * Called by the framework when deactivating the actor.
+     *
+     * @return a completion promise
+     */
     public Task deactivateAsync()
     {
         return Task.done();

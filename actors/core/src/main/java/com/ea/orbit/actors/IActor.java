@@ -37,8 +37,8 @@ package com.ea.orbit.actors;
  * {
  *      Task<String> sayHello();
  * }
- *
- * public interface Hello extends OrbitActor implements IHello
+ * <p/>
+ * public class Hello extends OrbitActor implements IHello
  * {
  *     public Task<String> sayHello() {
  *         return Task.fromValue("hello!");
@@ -57,7 +57,6 @@ package com.ea.orbit.actors;
  * }</pre>
  * Where HelloFactory was automatically created by the framework.
  * </p>
- *
  */
 public interface IActor
 {

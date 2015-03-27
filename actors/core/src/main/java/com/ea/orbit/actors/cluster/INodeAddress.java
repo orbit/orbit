@@ -30,6 +30,9 @@ package com.ea.orbit.actors.cluster;
 
 import java.util.UUID;
 
+/**
+ * Generic representation of a node address.
+ */
 public interface INodeAddress
 {
     UUID asUUID();
