@@ -35,9 +35,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <version>0.1.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Orbit Parent</name>
-	<description> 
-		Orbit is a Java framework that makes it easier to build and maintain distributed, secure and scalable online services. It was developed by BioWare, a division of Electronic Arts.
-	</description>
+	<description> Orbit is a modern Java framework that makes it easier to build distributed, secure and scalable online services.</description>
 	<url>http://orbit.bioware.com/</url>
 
     <modules>
