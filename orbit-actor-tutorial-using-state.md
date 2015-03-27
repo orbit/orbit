@@ -47,7 +47,7 @@ In order to use the MongoDB provider, you'll need to add the following to your M
 <dependency>
     <groupId>com.ea.orbit</groupId>
     <artifactId>orbit-actors-mongodb</artifactId>
-    <version[ORBIT-VERSION]</version>
+    <version>[ORBIT-VERSION]</version>
 </dependency>
 {% endhighlight %}
 

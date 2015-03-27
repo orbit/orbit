@@ -9,5 +9,5 @@ previous: "orbit-about-orbit.html"
 
 | Version | Release | Notes |
 |---------|---------|-------|
-| 0.1.0 | TBC | [Release Notes](orbit-release-notes-0-1.html) |
+| 0.1.0 | March 26th 2015 | [Release Notes](orbit-release-notes-0-1.html) |
 

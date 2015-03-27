@@ -18,7 +18,7 @@ Source Structure {#ProjectStructure-SourceStructure}
 ----------
 
 
-Orbit is organized into a set of folders which contain the high level systems
+Orbit is organized into a set of folders which contain the high level systems.
 
 
 <table>
@@ -42,7 +42,7 @@ Maven Structure {#ProjectStructure-MavenStructure}
 ----------
 
 
-Orbit is hosted on the maven central repository.
+Orbit is also hosted on the maven central repository.
 
 
 <table>
