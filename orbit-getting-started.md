@@ -3,7 +3,7 @@ layout : page
 title : "Orbit : Getting Started"
 breadCrumb : "[Orbit](index.html) / [Public Documentation](orbit-public-documentation.html)"
 next : "orbit-prerequisites.html"
-previous: "orbit-release-notes-0-1.html"
+previous: "orbit-release-notes.html"
 ---
 {% include JB/setup %}
 

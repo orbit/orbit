@@ -8,7 +8,6 @@ breadCrumb : ""
 -  [Public Documentation](orbit-public-documentation.html)
     -  [About Orbit](orbit-about-orbit.html)
     -  [Release Notes](orbit-release-notes.html)
-        -  [Release Notes - 0.1](orbit-release-notes-0-1.html)
     -  [Getting Started](orbit-getting-started.html)
         -  [Prerequisites](orbit-prerequisites.html)
         -  [Building Orbit](orbit-building-orbit.html)
