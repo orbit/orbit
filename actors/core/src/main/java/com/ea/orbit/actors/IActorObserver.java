@@ -56,7 +56,7 @@ import com.ea.orbit.concurrent.Task;
  * References to observers should be managed using ObserverManager.
  * </p>
  * <p>
- * <b>Example</b>
+ * <b>Example:</b>
  * <pre>
  *  public interface IChatMember extends IActorObserver
  *  {
@@ -79,7 +79,7 @@ import com.ea.orbit.concurrent.Task;
  *          observers.notifyAll( o -> o.receiveChatMessage(message) );
  *          return Task.done();
  *     }
- * }}
+ * }
  *
  * IChatMember member1 = new IChatMember() {
  *     public Task&lt;Void&gt; receiveChatMessage(String message) {
@@ -97,6 +97,7 @@ public interface IActorObserver
 {
     /**
      * Allows the application to verify if the observer is still alive.
+     * Used by {@code ObserverManager.cleanup()}
      */
     default Task<?> ping()
     {
