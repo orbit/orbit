@@ -107,6 +107,7 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public interface <span class="typeNameLabel">IStorageProvider</span>
 extends <a href="../../../../../com/ea/orbit/actors/providers/IOrbitProvider.html" title="interface in com.ea.orbit.actors.providers">IOrbitProvider</a></pre>
+<div class="block">Storage providers are used by the orbit actors framework to load and store actor states.</div>
 </li>
 </ul>
 </div>
@@ -128,17 +129,23 @@ extends <a href="../../../../../com/ea/orbit/actors/providers/IOrbitProvider.htm
 <tr id="i0" class="altColor">
 <td class="colFirst"><code><a href="../../../../../com/ea/orbit/concurrent/Task.html" title="class in com.ea.orbit.concurrent">Task</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/ea/orbit/actors/providers/IStorageProvider.html#clearState-com.ea.orbit.actors.runtime.ActorReference-java.lang.Object-">clearState</a></span>(<a href="../../../../../com/ea/orbit/actors/runtime/ActorReference.html" title="class in com.ea.orbit.actors.runtime">ActorReference</a>&nbsp;reference,
-          <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;state)</code>&nbsp;</td>
+          <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;state)</code>
+<div class="block">Asynchronously clears an actors state.</div>
+</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../com/ea/orbit/concurrent/Task.html" title="class in com.ea.orbit.concurrent">Task</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang">Boolean</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/ea/orbit/actors/providers/IStorageProvider.html#readState-com.ea.orbit.actors.runtime.ActorReference-java.lang.Object-">readState</a></span>(<a href="../../../../../com/ea/orbit/actors/runtime/ActorReference.html" title="class in com.ea.orbit.actors.runtime">ActorReference</a>&nbsp;reference,
-         <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;state)</code>&nbsp;</td>
+         <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;state)</code>
+<div class="block">Asynchronously reads an actors state.</div>
+</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="../../../../../com/ea/orbit/concurrent/Task.html" title="class in com.ea.orbit.concurrent">Task</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/ea/orbit/actors/providers/IStorageProvider.html#writeState-com.ea.orbit.actors.runtime.ActorReference-java.lang.Object-">writeState</a></span>(<a href="../../../../../com/ea/orbit/actors/runtime/ActorReference.html" title="class in com.ea.orbit.actors.runtime">ActorReference</a>&nbsp;reference,
-          <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;state)</code>&nbsp;</td>
+          <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;state)</code>
+<div class="block">Asynchronously writes an actors state.</div>
+</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -170,6 +177,14 @@ extends <a href="../../../../../com/ea/orbit/actors/providers/IOrbitProvider.htm
 <h4>clearState</h4>
 <pre><a href="../../../../../com/ea/orbit/concurrent/Task.html" title="class in com.ea.orbit.concurrent">Task</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;clearState(<a href="../../../../../com/ea/orbit/actors/runtime/ActorReference.html" title="class in com.ea.orbit.actors.runtime">ActorReference</a>&nbsp;reference,
                       <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;state)</pre>
+<div class="block">Asynchronously clears an actors state.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>reference</code> - an reference to the actor (contains the interface name and actor key)</dd>
+<dd><code>state</code> - the state object, not modified.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a completion promise</dd>
+</dl>
 </li>
 </ul>
 <a name="readState-com.ea.orbit.actors.runtime.ActorReference-java.lang.Object-">
@@ -180,6 +195,14 @@ extends <a href="../../../../../com/ea/orbit/actors/providers/IOrbitProvider.htm
 <h4>readState</h4>
 <pre><a href="../../../../../com/ea/orbit/concurrent/Task.html" title="class in com.ea.orbit.concurrent">Task</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Boolean.html?is-external=true" title="class or interface in java.lang">Boolean</a>&gt;&nbsp;readState(<a href="../../../../../com/ea/orbit/actors/runtime/ActorReference.html" title="class in com.ea.orbit.actors.runtime">ActorReference</a>&nbsp;reference,
                         <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;state)</pre>
+<div class="block">Asynchronously reads an actors state.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>reference</code> - an reference to the actor (contains the interface name and actor key)</dd>
+<dd><code>state</code> - the state object, modified by the call</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a completion promise</dd>
+</dl>
 </li>
 </ul>
 <a name="writeState-com.ea.orbit.actors.runtime.ActorReference-java.lang.Object-">
@@ -190,6 +213,14 @@ extends <a href="../../../../../com/ea/orbit/actors/providers/IOrbitProvider.htm
 <h4>writeState</h4>
 <pre><a href="../../../../../com/ea/orbit/concurrent/Task.html" title="class in com.ea.orbit.concurrent">Task</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;writeState(<a href="../../../../../com/ea/orbit/actors/runtime/ActorReference.html" title="class in com.ea.orbit.actors.runtime">ActorReference</a>&nbsp;reference,
                       <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;state)</pre>
+<div class="block">Asynchronously writes an actors state.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>reference</code> - an reference to the actor (contains the interface name and actor key)</dd>
+<dd><code>state</code> - the state object, not modified by the call</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a completion promise</dd>
+</dl>
 </li>
 </ul>
 </li>

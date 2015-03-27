@@ -112,8 +112,8 @@
  {
       Task&lt;String&gt; sayHello();
  }
-
- public interface Hello extends OrbitActor implements IHello
+ &lt;p/&gt;
+ public class Hello extends OrbitActor implements IHello
  {
      public Task&lt;String&gt; sayHello() {
          return Task.fromValue("hello!");

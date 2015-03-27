@@ -96,17 +96,17 @@
 <pre><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/annotation/Retention.html?is-external=true" title="class or interface in java.lang.annotation">@Retention</a>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/annotation/Retention.html?is-external=true#value--" title="class or interface in java.lang.annotation">value</a>=<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/annotation/RetentionPolicy.html?is-external=true#RUNTIME" title="class or interface in java.lang.annotation">RUNTIME</a>)
  <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/annotation/Target.html?is-external=true" title="class or interface in java.lang.annotation">@Target</a>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/annotation/Target.html?is-external=true#value--" title="class or interface in java.lang.annotation">value</a>=<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/annotation/ElementType.html?is-external=true#METHOD" title="class or interface in java.lang.annotation">METHOD</a>)
 public @interface <span class="memberNameLabel">OneWay</span></pre>
-<div class="block">Actor methods annotated with &#64;OneWay will not message back the invocation result.
- Therefore their return type must be Task&lt;Void&gt; or simply Task.
- <p><pre><code>
- public interface IHello implements IActor {
-     &amp;#64;OneWay
+<div class="block">Actor methods annotated with OneWay will not message back the invocation result.
+ Therefore their return type must be <code>Task&lt;Void&gt;</code> or simply <code>Task</code>.
+ <p><pre>
+ public interface IHello implements IActor
+ {
+     OneWay
      Task someMethod();
 
-     &amp;#64;OneWay
-     Task&amp;lt;Void&amp;gt; someOtherMethod();
-  }
- </code></pre>
+     OneWay
+     Task&lt;Void&gt; someOtherMethod();
+ }</pre>
 </p>
  <p>
  The callers will still receive a valid Task as response. This Task

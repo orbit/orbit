@@ -107,6 +107,7 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public interface <span class="typeNameLabel">ILifetimeProvider</span>
 extends <a href="../../../../../com/ea/orbit/actors/providers/IOrbitProvider.html" title="interface in com.ea.orbit.actors.providers">IOrbitProvider</a></pre>
+<div class="block">Listener the actor activation/deactivation process.</div>
 </li>
 </ul>
 </div>
@@ -127,19 +128,27 @@ extends <a href="../../../../../com/ea/orbit/actors/providers/IOrbitProvider.htm
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>default <a href="../../../../../com/ea/orbit/concurrent/Task.html" title="class in com.ea.orbit.concurrent">Task</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/ea/orbit/actors/providers/ILifetimeProvider.html#postActivation-com.ea.orbit.actors.runtime.OrbitActor-">postActivation</a></span>(<a href="../../../../../com/ea/orbit/actors/runtime/OrbitActor.html" title="class in com.ea.orbit.actors.runtime">OrbitActor</a>&nbsp;actor)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/ea/orbit/actors/providers/ILifetimeProvider.html#postActivation-com.ea.orbit.actors.runtime.OrbitActor-">postActivation</a></span>(<a href="../../../../../com/ea/orbit/actors/runtime/OrbitActor.html" title="class in com.ea.orbit.actors.runtime">OrbitActor</a>&nbsp;actor)</code>
+<div class="block">Called immediately after invoking the actors activation.</div>
+</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>default <a href="../../../../../com/ea/orbit/concurrent/Task.html" title="class in com.ea.orbit.concurrent">Task</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/ea/orbit/actors/providers/ILifetimeProvider.html#postDeactivation-com.ea.orbit.actors.runtime.OrbitActor-">postDeactivation</a></span>(<a href="../../../../../com/ea/orbit/actors/runtime/OrbitActor.html" title="class in com.ea.orbit.actors.runtime">OrbitActor</a>&nbsp;actor)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/ea/orbit/actors/providers/ILifetimeProvider.html#postDeactivation-com.ea.orbit.actors.runtime.OrbitActor-">postDeactivation</a></span>(<a href="../../../../../com/ea/orbit/actors/runtime/OrbitActor.html" title="class in com.ea.orbit.actors.runtime">OrbitActor</a>&nbsp;actor)</code>
+<div class="block">Called immediately after invoking the actors deactivation code.</div>
+</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>default <a href="../../../../../com/ea/orbit/concurrent/Task.html" title="class in com.ea.orbit.concurrent">Task</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/ea/orbit/actors/providers/ILifetimeProvider.html#preActivation-com.ea.orbit.actors.runtime.OrbitActor-">preActivation</a></span>(<a href="../../../../../com/ea/orbit/actors/runtime/OrbitActor.html" title="class in com.ea.orbit.actors.runtime">OrbitActor</a>&nbsp;actor)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/ea/orbit/actors/providers/ILifetimeProvider.html#preActivation-com.ea.orbit.actors.runtime.OrbitActor-">preActivation</a></span>(<a href="../../../../../com/ea/orbit/actors/runtime/OrbitActor.html" title="class in com.ea.orbit.actors.runtime">OrbitActor</a>&nbsp;actor)</code>
+<div class="block">Called immediately before invoking the actors activation.</div>
+</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>default <a href="../../../../../com/ea/orbit/concurrent/Task.html" title="class in com.ea.orbit.concurrent">Task</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/ea/orbit/actors/providers/ILifetimeProvider.html#preDeactivation-com.ea.orbit.actors.runtime.OrbitActor-">preDeactivation</a></span>(<a href="../../../../../com/ea/orbit/actors/runtime/OrbitActor.html" title="class in com.ea.orbit.actors.runtime">OrbitActor</a>&nbsp;actor)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/ea/orbit/actors/providers/ILifetimeProvider.html#preDeactivation-com.ea.orbit.actors.runtime.OrbitActor-">preDeactivation</a></span>(<a href="../../../../../com/ea/orbit/actors/runtime/OrbitActor.html" title="class in com.ea.orbit.actors.runtime">OrbitActor</a>&nbsp;actor)</code>
+<div class="block">Called immediately before invoking the actors deactivation code.</div>
+</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -170,6 +179,13 @@ extends <a href="../../../../../com/ea/orbit/actors/providers/IOrbitProvider.htm
 <li class="blockList">
 <h4>preActivation</h4>
 <pre>default&nbsp;<a href="../../../../../com/ea/orbit/concurrent/Task.html" title="class in com.ea.orbit.concurrent">Task</a>&nbsp;preActivation(<a href="../../../../../com/ea/orbit/actors/runtime/OrbitActor.html" title="class in com.ea.orbit.actors.runtime">OrbitActor</a>&nbsp;actor)</pre>
+<div class="block">Called immediately before invoking the actors activation.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>actor</code> - the actor object being activated</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a completion promise, the framework will wait if necessary.</dd>
+</dl>
 </li>
 </ul>
 <a name="postActivation-com.ea.orbit.actors.runtime.OrbitActor-">
@@ -179,6 +195,13 @@ extends <a href="../../../../../com/ea/orbit/actors/providers/IOrbitProvider.htm
 <li class="blockList">
 <h4>postActivation</h4>
 <pre>default&nbsp;<a href="../../../../../com/ea/orbit/concurrent/Task.html" title="class in com.ea.orbit.concurrent">Task</a>&nbsp;postActivation(<a href="../../../../../com/ea/orbit/actors/runtime/OrbitActor.html" title="class in com.ea.orbit.actors.runtime">OrbitActor</a>&nbsp;actor)</pre>
+<div class="block">Called immediately after invoking the actors activation.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>actor</code> - the actor object being activated</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a completion promise, the framework will wait if necessary.</dd>
+</dl>
 </li>
 </ul>
 <a name="preDeactivation-com.ea.orbit.actors.runtime.OrbitActor-">
@@ -188,6 +211,13 @@ extends <a href="../../../../../com/ea/orbit/actors/providers/IOrbitProvider.htm
 <li class="blockList">
 <h4>preDeactivation</h4>
 <pre>default&nbsp;<a href="../../../../../com/ea/orbit/concurrent/Task.html" title="class in com.ea.orbit.concurrent">Task</a>&nbsp;preDeactivation(<a href="../../../../../com/ea/orbit/actors/runtime/OrbitActor.html" title="class in com.ea.orbit.actors.runtime">OrbitActor</a>&nbsp;actor)</pre>
+<div class="block">Called immediately before invoking the actors deactivation code.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>actor</code> - the actor object being deactivated</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a completion promise, the framework will wait if necessary.</dd>
+</dl>
 </li>
 </ul>
 <a name="postDeactivation-com.ea.orbit.actors.runtime.OrbitActor-">
@@ -197,6 +227,13 @@ extends <a href="../../../../../com/ea/orbit/actors/providers/IOrbitProvider.htm
 <li class="blockList">
 <h4>postDeactivation</h4>
 <pre>default&nbsp;<a href="../../../../../com/ea/orbit/concurrent/Task.html" title="class in com.ea.orbit.concurrent">Task</a>&nbsp;postDeactivation(<a href="../../../../../com/ea/orbit/actors/runtime/OrbitActor.html" title="class in com.ea.orbit.actors.runtime">OrbitActor</a>&nbsp;actor)</pre>
+<div class="block">Called immediately after invoking the actors deactivation code.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>actor</code> - the actor object being deactivated</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a completion promise, the framework will wait if necessary.</dd>
+</dl>
 </li>
 </ul>
 </li>

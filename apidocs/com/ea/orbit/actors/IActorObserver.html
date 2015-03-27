@@ -135,9 +135,41 @@ var activeTableTab = "activeTableTab";
  </p>
  <p>
  <b>Example</b>
- <pre>{@code
+ <pre>
   public interface IChatMember extends IActorObserver
-  {</div>
+  {
+      OneWay
+      Task&lt;Void&gt; receiveChatMessage(String message);
+  }
+
+  public void Chat extends OrbitActor implements IChat
+  {
+     private ObserverManager observers;
+
+     public Task&lt;Void&gt; addListener(IChatMember member)
+     {
+          observers.addMember(observer);
+          return Task.done();
+     }
+
+     public Task&lt;Void&gt; say(String message)
+     {
+          observers.notifyAll( o -> o.receiveChatMessage(message) );
+          return Task.done();
+     }
+ }}
+
+ IChatMember member1 = new IChatMember() {
+     public Task&lt;Void&gt; receiveChatMessage(String message) {
+          System.out.println(message);
+     }
+ };
+
+ IChat chat = ChatFactory.createReference("dragon-age");
+ chat.addMember(member1).join();
+ chat.say("Hello!").join();
+ </pre>
+ </p></div>
 </li>
 </ul>
 </div>
