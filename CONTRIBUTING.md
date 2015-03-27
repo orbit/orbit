@@ -1,1 +1,1 @@
-Thank you for your interest in the Orbit project. Before you Contribute EA must have a Contributor License Agreement (“CLA”) on file that has been signed by each Contributor. You can sign <a href="https://www.clahub.com/agreements/electronicarts/orbit">here</a>.
+Thank you for your interest in the Orbit project. Before you can Contribute EA must have a Contributor License Agreement on file that has been signed by each Contributor. You can sign <a href="https://www.clahub.com/agreements/electronicarts/orbit">here</a>.
