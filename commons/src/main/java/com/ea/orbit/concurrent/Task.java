@@ -342,7 +342,7 @@ public class Task<T> extends CompletableFuture<T>
      */
     public static <F extends CompletableFuture<?>> Task<Object> anyOf(Stream<F> cfs)
     {
-        return from(CompletableFuture.anyOf(cfs.toArray(size -> new CompletableFuture[size])));
+        return from(CompletableFuture.anyOf((CompletableFuture[])cfs.toArray(size -> new CompletableFuture[size])));
     }
 
 }
