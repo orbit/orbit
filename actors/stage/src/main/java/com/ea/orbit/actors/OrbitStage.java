@@ -54,15 +54,18 @@ import java.util.concurrent.ExecutorService;
 @Singleton
 public class OrbitStage implements Startable
 {
-    private IClusterPeer clusterPeer;
     @Config("orbit.actors.clusterName")
     private String clusterName;
-    private Task startFuture;
 
+    @Config("orbit.actors.stageMode")
+    private StageMode mode = StageMode.HOST;
+
+
+    private IClusterPeer clusterPeer;
+    private Task startFuture;
     private Messaging messaging;
     private Execution execution;
     private Hosting hosting;
-    private StageMode mode = StageMode.HOST;
     private boolean startCalled;
     private Clock clock;
     private ExecutorService executionPool;
