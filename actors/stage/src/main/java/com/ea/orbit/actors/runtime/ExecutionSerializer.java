@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -54,7 +53,7 @@ public class ExecutionSerializer<T>
 
     public ExecutionSerializer()
     {
-        executorService = ExecutorUtils.newScalingThreadPool(2, 1000, 60, TimeUnit.SECONDS, 10000);
+        executorService = ExecutorUtils.newScalingThreadPool(1000);
     }
 
     public ExecutionSerializer(final ExecutorService executor)

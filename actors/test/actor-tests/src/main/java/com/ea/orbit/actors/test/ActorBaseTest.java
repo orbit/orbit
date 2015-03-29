@@ -47,7 +47,7 @@ public class ActorBaseTest
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
     protected ConcurrentHashMap fakeDatabase = new ConcurrentHashMap();
-    protected static final ExecutorService commonPool = ExecutorUtils.newScalingThreadPool(10, 200, 60, TimeUnit.SECONDS, 1000);
+    protected static final ExecutorService commonPool = ExecutorUtils.newScalingThreadPool(200);
 
     public OrbitStage createClient() throws ExecutionException, InterruptedException
     {

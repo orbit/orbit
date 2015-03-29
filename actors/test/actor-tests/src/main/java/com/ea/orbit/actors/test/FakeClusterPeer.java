@@ -32,14 +32,11 @@ import com.ea.orbit.actors.cluster.IClusterPeer;
 import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.actors.cluster.MessageListener;
 import com.ea.orbit.actors.cluster.ViewListener;
-import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -59,7 +56,6 @@ public class FakeClusterPeer implements IClusterPeer
     private AtomicLong messagesSentOk = new AtomicLong();
     private AtomicLong messagesReceived = new AtomicLong();
     private AtomicLong messagesReceivedOk = new AtomicLong();
-    private static Executor pool = ExecutorUtils.newScalingThreadPool(5, 10, 5, TimeUnit.SECONDS, 1000);
     private Task startFuture = new Task();
 
     public FakeClusterPeer()
@@ -72,7 +68,7 @@ public class FakeClusterPeer implements IClusterPeer
         return Task.fromFuture(CompletableFuture.runAsync(() -> {
             address = group.join(this);
             startFuture.complete(null);
-        }, pool));
+        }, group.pool()));
     }
 
     @Override

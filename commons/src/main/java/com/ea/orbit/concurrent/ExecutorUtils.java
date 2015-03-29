@@ -28,14 +28,35 @@
 
 package com.ea.orbit.concurrent;
 
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ExecutorUtils
 {
+    private static final Logger logger = Logger.getLogger(ExecutorUtils.class.getName());
+
+    public static ExecutorService newScalingThreadPool(
+            final int maxThreads)
+    {
+        return new ForkJoinPool(maxThreads, ForkJoinPool.defaultForkJoinWorkerThreadFactory,
+                new UncaughtExceptionHandler()
+                {
+                    @Override
+                    public void uncaughtException(Thread t, Throwable e)
+                    {
+                        logger.log(Level.SEVERE, "Uncaught Exception", e);
+                    }
+                }, false);
+    }
+
+    @Deprecated
     public static ExecutorService newScalingThreadPool(
             final int minThreads, final int maxThreads,
             final long keepAlive, final TimeUnit keepAliveUnit, final int maxQueueSize)

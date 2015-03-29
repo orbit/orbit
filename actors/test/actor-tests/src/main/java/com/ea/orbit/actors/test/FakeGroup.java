@@ -52,7 +52,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class FakeGroup
@@ -84,7 +83,7 @@ public class FakeGroup
             });
     private int count = 0;
     private String clusterName;
-    private static Executor pool = ExecutorUtils.newScalingThreadPool(5, 10, 60, TimeUnit.SECONDS, 1000);
+    private static Executor pool = ExecutorUtils.newScalingThreadPool(20);
 
     public FakeGroup(final String clusterName)
     {
@@ -169,4 +168,8 @@ public class FakeGroup
         }
     }
 
+    Executor pool()
+    {
+        return pool;
+    }
 }

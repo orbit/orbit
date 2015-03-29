@@ -133,7 +133,7 @@ public class Task<T> extends CompletableFuture<T>
         return t;
     }
 
-    private static Executor commonPool = ExecutorUtils.newScalingThreadPool(2, 100, 60, TimeUnit.SECONDS, 1000);
+    private static Executor commonPool = ExecutorUtils.newScalingThreadPool(100);
 
     @SuppressWarnings("unsafe")
     static class TaskFutureAdapter<T> implements Runnable

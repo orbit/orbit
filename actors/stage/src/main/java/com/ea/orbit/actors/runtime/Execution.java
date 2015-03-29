@@ -586,7 +586,7 @@ public class Execution implements IRuntime
 
         if (executor == null)
         {
-            executor = ExecutorUtils.newScalingThreadPool(10, 1000, 60, TimeUnit.SECONDS, 10000);
+            executor = ExecutorUtils.newScalingThreadPool(1000);
         }
         executionSerializer = new ExecutionSerializer(executor);
         providers.forEach(v -> v.start());
