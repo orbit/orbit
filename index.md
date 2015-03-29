@@ -12,15 +12,16 @@ Orbit is a modern Java framework that makes it easier to build and maintain dist
 secure and scalable online services.
 
 Orbit contains two primary components: 
-* Orbit Actors, a framework to write distributed systems using virtual actors.
-* Orbit Container, a minimal inversion of control container for building online services.
+
+-  Orbit Actors, a framework to write distributed systems using virtual actors.
+-  Orbit Container, a minimal inversion of control container for building online services.
 
 It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com), and is available under the [BSD 3-Clause License](https://github.com/electronicarts/orbit/blob/master/LICENSE).
 
 You can grab the code on [GitHub](https://github.com/electronicarts/orbit) or [get started](http://orbit.bioware.com/orbit-getting-started.html) now.
 
  <br/>
- 
+
 {% highlight java %}
 public interface IHello extends IActor
 {
