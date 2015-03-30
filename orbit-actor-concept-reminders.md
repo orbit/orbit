@@ -38,38 +38,37 @@ Using Reminders {#ActorConcept-Reminders-UsingReminders}
 {% highlight java %}
 public static interface IMatch extends IActor, IRemindable
 {
-	// ...
+    // ...
 }
-
 public class Match extends OrbitActor implements IMatch {
-	private long lastEvent;
- 
-	@Override
-	public Task startMatch()
-	{
-		lastEvent = System.currentTimeMillis();
-	    timer = registerReminder("matchTimeout", 10, 10, TimeUnit.MINUTES);
-	    return Task.done();
-	}
+    private long lastEvent;
  
-	@Override
-	public Task processEvent(Match event)
-	{
-	    lastEvent = new Date();
-		// ...
-	    return Task.done();
-	}
- 
-	@Override
-	public Task<?> receiveReminder(String reminderName, TickStatus status)
-	{
-		if(System.currentTimeMillis() - lastEvent > TimeUnit.MINUTES.toMillis(15)) 
-		{
-			unregisterReminder("matchTimeout");
-			return processMathTimeout();
-		}
-    	return Task.done();
-	}
+    @Override
+    public Task startMatch()
+    {
+        lastEvent = System.currentTimeMillis();
+        timer = registerReminder("matchTimeout", 10, 10, TimeUnit.MINUTES);
+        return Task.done();
+    }
+ 
+    @Override
+    public Task processEvent(Match event)
+    {
+        lastEvent = new Date();
+        // ...
+        return Task.done();
+    }
+ 
+    @Override
+    public Task<?> receiveReminder(String reminderName, TickStatus status)
+    {
+        if(System.currentTimeMillis() - lastEvent > TimeUnit.MINUTES.toMillis(15)) 
+        {
+            unregisterReminder("matchTimeout");
+            return processMathTimeout();
+        }
+        return Task.done();
+    }
 }
 {% endhighlight %}
 

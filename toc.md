@@ -36,6 +36,7 @@ breadCrumb : ""
             -  [Actor Tutorial - Cross Actor Communication](orbit-actor-tutorial-cross-actor-communication.html)
     -  [Container](orbit-container.html)
         -  [Container Overview](orbit-container-overview.html)
+        -  [Container Guide](orbit-container-guide.html)
     -  [Samples](orbit-samples.html)
         -  [Sample - Chat](orbit-sample-chat.html)
     -  [Acknowledgements](orbit-acknowledgements.html)

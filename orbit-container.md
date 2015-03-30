@@ -10,3 +10,7 @@ previous: "orbit-actor-tutorial-cross-actor-communication.html"
 [Container Overview](orbit-container-overview.html) {#Container-ContainerOverview}
 ----------
 
+
+[Container Guide](orbit-container-guide.html) {#Container-ContainerGuide}
+----------
+

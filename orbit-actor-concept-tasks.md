@@ -17,8 +17,11 @@ Overview {#ActorConcept-Tasks-Overview}
 ----------
 
 
-In Orbit, a Task represents the result of an asynchronous unit of work. It is based on a Java CompletableFuture and offers methods for checking if a unit of work is complete, waiting for a unit of work to complete or getting the result of a unit of work.
+Tasks are the basic unit of work in Orbit and understanding their purpose and power is important to fully leverage the framework. Tasks are used extensively and are the standard return type for any asynchronous messages or actions.
 
 
-Orbit Tasks also offer static helper methods to perform common actions such as waiting for a List of tasks to complete or creating a completed Task from a value.
+A Task represents a promise to provide the result of an asynchronous unit of work. Tasks may simply represent a complete state, return an explicit result, be cancelled or communicate failures via exceptional completion.
+
+
+In reality a Task is a thin wrapper over CompletableFuture which is native to Java and offers a few additional features and a common interface.
 
