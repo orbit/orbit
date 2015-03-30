@@ -77,6 +77,7 @@ public class EmbeddedHttpServer implements Startable
     @Inject
     private OrbitContainer container;
 
+    @SuppressWarnings("unchecked")
     public Task start()
     {
 
