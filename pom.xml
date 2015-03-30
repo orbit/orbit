@@ -61,12 +61,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <url>http://www.ea.com</url>
         </developer>
     </developers>
-	
-	<scm>
-		<url>https://github.com/electronicarts/orbit</url>
-		<connection>scm:git:git://github.com/electronicarts/orbit.git</connection>
-		<developerConnection>scm:git:ssh://git@github.com/electronicarts/orbit.git</developerConnection>
-	</scm>
+
+    <scm>
+        <url>https://github.com/electronicarts/orbit</url>
+        <connection>scm:git:git://github.com/electronicarts/orbit.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/electronicarts/orbit.git</developerConnection>
+    </scm>
 
     <properties>
         <project.target.jdk>1.8</project.target.jdk>
@@ -124,19 +124,83 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </plugin>
         </plugins>
     </reporting>
-	
-	<distributionManagement>
-		<snapshotRepository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-		</snapshotRepository>
-		<repository>
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-		</repository>
-	</distributionManagement>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 
     <profiles>
+        <profile>
+            <id>eclipseGeneration</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-eclipse-plugin</artifactId>
+                        <version>2.9</version>
+                        <configuration>
+                            <additionalConfig>
+                                <file>
+                                    <name>.factorypath</name>
+                                    <content>
+                                        <![CDATA[<factorypath>
+    <factorypathentry kind="VARJAR" id="M2_REPO/com/ea/orbit/orbit-actors-processor/${project.version}/orbit-actors-processor-${project.version}.jar" enabled="true"  runInBatchMode="false" />
+
+	<factorypathentry kind="VARJAR" id="M2_REPO/com/ea/orbit/orbit-container-processor/${project.version}/orbit-container-processor-${project.version}.jar" enabled="true"  runInBatchMode="false" />
+
+</factorypath>
+]]>
+                                    </content>
+                                </file>
+                                <file>
+                                    <name>.settings/org.eclipse.jdt.apt.core.prefs</name>
+                                    <content>
+                                        <![CDATA[
+eclipse.preferences.version=1
+org.eclipse.jdt.apt.aptEnabled=true
+org.eclipse.jdt.apt.genSrcDir=.apt_generated
+org.eclipse.jdt.apt.reconcileEnabled=true
+]]>
+                                    </content>
+                                </file>
+                                <file>
+                                    <name>.settings/org.eclipse.jdt.core.prefs</name>
+                                    <content>
+                                        <![CDATA[
+eclipse.preferences.version=1
+org.eclipse.jdt.core.compiler.codegen.inlineJsrBytecode=enabled
+org.eclipse.jdt.core.compiler.codegen.methodParameters=do not generate
+org.eclipse.jdt.core.compiler.codegen.targetPlatform=1.8
+org.eclipse.jdt.core.compiler.codegen.unusedLocal=preserve
+org.eclipse.jdt.core.compiler.compliance=1.8
+org.eclipse.jdt.core.compiler.debug.lineNumber=generate
+org.eclipse.jdt.core.compiler.debug.localVariable=generate
+org.eclipse.jdt.core.compiler.debug.sourceFile=generate
+org.eclipse.jdt.core.compiler.problem.assertIdentifier=error
+org.eclipse.jdt.core.compiler.problem.enumIdentifier=error
+org.eclipse.jdt.core.compiler.problem.forbiddenReference=warning
+org.eclipse.jdt.core.compiler.processAnnotations=enabled
+org.eclipse.jdt.core.compiler.source=1.8
+
+]]>
+                                    </content>
+                                </file>
+                            </additionalConfig>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>stageRelease</id>
             <build>
@@ -168,20 +232,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             </execution>
                         </executions>
                     </plugin>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.5</version>
-						<executions>
-						<execution>
-							<id>sign-artifacts</id>
-							<phase>verify</phase>
-							<goals>
-								<goal>sign</goal>
-							</goals>
-						</execution>
-					  </executions>
-					</plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
