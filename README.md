@@ -7,8 +7,7 @@ Orbit contains two primary components:
 -  Orbit Actors, a framework to write distributed systems using virtual actors.
 -  Orbit Container, a minimal inversion of control container for building online services.
 
-It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com).
-
+It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com). Check out the [announcement](http://blog.bioware.com/2015/03/30/launching-into-orbit/) at the BioWare blog.
 
 Documentation
 =======
