@@ -181,12 +181,22 @@ public class OrbitActor<T>
     /**
      * Gets a string that represents uniquely the node that currently holds this actor.
      *
-     * @return a completion promise
+     * @return unique identity string
      */
     protected String runtimeIdentity()
     {
         // TODO: return the node address
         return reference.runtime.toString();
+    }
+
+    /**
+     * Gets a string that represents uniquely this actor
+     *
+     * @return unique identity string
+     */
+    protected String actorIdentity()
+    {
+        return reference.id.toString();
     }
 
     /**

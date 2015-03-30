@@ -58,6 +58,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -211,6 +212,7 @@ public class OrbitContainer
         this.properties.putAll(properties);
     }
 
+    @SuppressWarnings("unchecked")
     protected void injectConfig(Object o, java.lang.reflect.Field f) throws IllegalAccessException
     {
         final Config config = f.getAnnotation(Config.class);
@@ -220,7 +222,9 @@ public class OrbitContainer
             {
                 throw new RuntimeException("Configurable fields should never be final: " + f);
             }
+
             f.setAccessible(true);
+
             if (f.getType() == Integer.TYPE || f.getType() == Integer.class)
             {
                 f.set(o, properties.getAsInt(config.value(), (Integer) f.get(o)));
@@ -237,6 +241,14 @@ public class OrbitContainer
             {
                 final Secret secret = get(SecretManager.class).decrypt((String) f.get(o));
                 f.set(o, secret);
+            }
+            else if(f.getType().isEnum())
+            {
+                final String enumValue = properties.getAsString(config.value(), null);
+                if(enumValue != null)
+                {
+                    f.set(o, Enum.valueOf((Class<Enum>) f.getType(), enumValue));
+                }
             }
             else if (properties.getAll().get(config.value()) != null)
             {
