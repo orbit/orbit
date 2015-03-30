@@ -16,7 +16,7 @@ Orbit contains two primary components:
 -  Orbit Actors, a framework to write distributed systems using virtual actors.
 -  Orbit Container, a minimal inversion of control container for building online services.
 
-It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com), and is available under the [BSD 3-Clause License](https://github.com/electronicarts/orbit/blob/master/LICENSE).
+It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com), and is available under the [BSD 3-Clause License](https://github.com/electronicarts/orbit/blob/master/LICENSE). Check out the [announcement](http://blog.bioware.com/2015/03/30/launching-into-orbit/) at the BioWare blog.
 
 You can grab the code on [GitHub](https://github.com/electronicarts/orbit) or [get started](http://orbit.bioware.com/orbit-getting-started.html) now.
 
