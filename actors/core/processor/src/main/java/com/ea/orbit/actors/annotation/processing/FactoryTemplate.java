@@ -48,7 +48,19 @@ public class FactoryTemplate extends ActorProcessor.Factory
 		builder.append( factoryName );
 		builder.append(".");
 		builder.append( referenceName );
-		builder.append("(id);\r\n    }\r\n\r\n    public static ");
+		builder.append("(id);\r\n    }\r\n\r\n");
+		if(clazz.isNoIdentity) {
+		builder.append("    public static ");
+		builder.append( interfaceFullName );
+		builder.append(" getReference()\r\n    {\r\n        return new ");
+		builder.append( clazz.packageName );
+		builder.append(".");
+		builder.append( factoryName );
+		builder.append(".");
+		builder.append( referenceName );
+		builder.append("(null);\r\n    }\r\n\r\n");
+		}
+		builder.append("    public static ");
 		builder.append( interfaceFullName );
 		builder.append(" getReference(String id)\r\n    {\r\n        return new ");
 		builder.append( clazz.packageName );
@@ -74,7 +86,11 @@ public class FactoryTemplate extends ActorProcessor.Factory
 		builder.append( interfaceFullName );
 		builder.append("\r\n    {\r\n        public ");
 		builder.append( referenceName );
-		builder.append("(String id)\r\n        {\r\n            super(id);\r\n        }\r\n\r\n        @Override\r\n        protected int _interfaceId()\r\n        {\r\n            return ");
+		builder.append("(String id)\r\n        {\r\n            super(id);\r\n");
+		if(clazz.isNoIdentity) {
+		builder.append("            if (id != null)\r\n            {\r\n                throw new IllegalArgumentException(\"Id must be null since this interface has @NoIdentity\");\r\n            }\r\n");
+		}
+		builder.append("        }\r\n\r\n        @Override\r\n        protected int _interfaceId()\r\n        {\r\n            return ");
 		builder.append( interfaceId );
 		builder.append(";\r\n        }\r\n\r\n        @Override\r\n        public Class<");
 		builder.append( interfaceFullName );

@@ -14,6 +14,13 @@ public class <%=factoryName%> extends com.ea.orbit.actors.runtime.ActorFactory<<
         return new <%= clazz.packageName %>.<%= factoryName %>.<%= referenceName %>(id);
     }
 
+<%if (clazz.isNoIdentity) {%>
+    public static <%= interfaceFullName %> getReference()
+    {
+        return new <%= clazz.packageName %>.<%= factoryName %>.<%= referenceName %>(null);
+    }
+
+<%}%>
     public static <%= interfaceFullName %> getReference(String id)
     {
         return new <%= clazz.packageName %>.<%= factoryName %>.<%= referenceName %>(id);
@@ -45,6 +52,12 @@ public class <%=factoryName%> extends com.ea.orbit.actors.runtime.ActorFactory<<
         public <%= referenceName %>(String id)
         {
             super(id);
+<%if (clazz.isNoIdentity) {%>
+            if (id != null)
+            {
+                throw new IllegalArgumentException("Id must be null since this interface has @NoIdentity");
+            }
+<%}%>
         }
 
         @Override

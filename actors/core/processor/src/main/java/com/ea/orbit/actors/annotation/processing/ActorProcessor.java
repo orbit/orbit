@@ -76,6 +76,7 @@ public class ActorProcessor extends AbstractProcessor
     private static final String GENERATED_ANNOTATION = "com.ea.orbit.annotation.Generated";
     private static final String ORBIT_GENERATED_ANNOTATION = "com.ea.orbit.actors.annotation.OrbitGenerated";
     private static final String STATELESS_WORKER_ANNOTATION = "com.ea.orbit.actors.annotation.StatelessWorker";
+    private static final String NO_IDENTITY_ANNOTATION = "com.ea.orbit.actors.annotation.NoIdentity";
 
 
     private Elements elementUtils;
@@ -90,6 +91,7 @@ public class ActorProcessor extends AbstractProcessor
         List<String> annotations = new ArrayList<>();
         List<MethodDefinition> methods = new ArrayList<>();
         String javaDoc;
+        boolean isNoIdentity;
 
         public CharSequence getPackageName()
         {
@@ -263,7 +265,18 @@ public class ActorProcessor extends AbstractProcessor
             if (!isAnnotatedWith(e, ORBIT_GENERATED_ANNOTATION)
                     && (e.getKind() != ElementKind.INTERFACE || !implementsIActor((TypeElement) e)))
             {
-                processingEnv.getMessager().printMessage(Kind.ERROR, "The @StatelessWorker annotation must be used only with the actor interfaces", e);
+                processingEnv.getMessager().printMessage(Kind.ERROR, "The @" + STATELESS_WORKER_ANNOTATION + " annotation must be used only with the actor interfaces", e);
+            }
+        }
+
+
+        final TypeElement noIdentity = processingEnv.getElementUtils().getTypeElement(NO_IDENTITY_ANNOTATION);
+        for (Element e : roundEnv.getElementsAnnotatedWith(noIdentity))
+        {
+            if (!isAnnotatedWith(e, ORBIT_GENERATED_ANNOTATION)
+                    && (e.getKind() != ElementKind.INTERFACE || !implementsIActor((TypeElement) e)))
+            {
+                processingEnv.getMessager().printMessage(Kind.ERROR, "The @" + NO_IDENTITY_ANNOTATION + " annotation must be used only with the actor interfaces", e);
             }
         }
 
@@ -286,6 +299,7 @@ public class ActorProcessor extends AbstractProcessor
         String baseName = clazz.getSimpleName().toString().replaceAll("^I", "");
         classFile.simpleName = clazz.getSimpleName();
         classFile.addDoc(" @see " + clazz.getQualifiedName());
+        classFile.isNoIdentity = isAnnotatedWith(clazz, NO_IDENTITY_ANNOTATION);
         classFile.methods.forEach(m -> {
             m.parameters = m.parameters.stream()
                     .collect(Collectors.toList());

@@ -717,7 +717,7 @@ public class Execution implements IRuntime
             {
                 entry.statelessActivations = new ConcurrentLinkedDeque<>();
             }
-            entry.reference = (ActorReference) descriptor.factory.createReference(String.valueOf(key));
+            entry.reference = (ActorReference) descriptor.factory.createReference(key != null ? String.valueOf(key) : null);
             entry.reference.runtime = this;
             entry.removable = true;
 
@@ -855,7 +855,7 @@ public class Execution implements IRuntime
     public <T extends IActor> T getReference(final Class<T> iClass, final Object id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
-        ActorReference reference = (ActorReference) descriptor.factory.createReference(String.valueOf(id));
+        ActorReference reference = (ActorReference) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
         reference.runtime = this;
         return (T) reference;
     }
