@@ -44,9 +44,6 @@ Enabling a new module is equal to adding a dependency and some configuration.
 Disabling a module should require only editing the configuration.
 
 
- 
-
-
 ###Creating a Module {#ContainerGuide-CreatingaModule}
 
 
@@ -73,9 +70,6 @@ Singletons are the basic way to add functionality to a Container.
 
 
 Their lifetime will be managed by the framework.
-
-
- 
 
 
 ###Creating a Singleton {#ContainerGuide-CreatingaSingleton}
@@ -107,8 +101,18 @@ Container Lifecycle {#ContainerGuide-ContainerLifecycle}
 ###Creating a Container {#ContainerGuide-CreatingaContainer}
 
 
-{% highlight xml %}
+You can start a container manually
+
+
+{% highlight java %}
 OrbitContainer container = new OrbitContainer();
+{% endhighlight %}
+
+It is also possible to create and start a container using the default container bootstrap
+
+
+{% highlight xml %}
+com.ea.orbit.container.Bootstrap
 {% endhighlight %}
 
 -  automatically locate modules from the classpath META-INF/orbit/modules
@@ -120,7 +124,7 @@ OrbitContainer container = new OrbitContainer();
 It is possible to manually include or substitute application components and modules
 
 
-{% highlight xml %}
+{% highlight java %}
 container.addComponent(HelloWorld.class);
 container.addModule(JettyRestModule.class);
 container.addComponent(IClusterPeer.class, JGroupsPeer.class);
@@ -131,7 +135,7 @@ container.addComponent(IClusterPeer.class, JGroupsPeer.class);
 ###Starting a Container {#ContainerGuide-StartingaContainer}
 
 
-{% highlight xml %}
+{% highlight java %}
 container.start();
 {% endhighlight %}
 
@@ -144,7 +148,7 @@ container.start();
 ###Stopping a Container {#ContainerGuide-StoppingaContainer}
 
 
-{% highlight xml %}
+{% highlight java %}
 container.stop();
 {% endhighlight %}
 
@@ -172,9 +176,6 @@ Basic injection of components is achieved using the standard Inject annotation.
 OrbitContainer container;
 {% endhighlight %}
 
- 
-
-
 ###Configuration Injection {#ContainerGuide-ConfigurationInjection}
 
 
@@ -192,9 +193,6 @@ These can be overridden in the Orbit config file
 {% highlight xml %}
 orbit.configs.example: SomeString
 {% endhighlight %}
-
- 
-
 
 ###Wiring an External Instance {#ContainerGuide-WiringanExternalInstance}
 
