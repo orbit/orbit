@@ -1,0 +1,98 @@
+ <%@ jet package="com.ea.orbit.actors.annotation.processing"
+    class="FactoryTemplate"
+    skeleton="Factory.skeleton"
+  %>
+
+package <%= clazz.packageName%>;
+
+@com.ea.orbit.actors.annotation.OrbitGenerated
+public class <%=factoryName%> extends com.ea.orbit.actors.runtime.ActorFactory<<%=interfaceFullName%>>
+{
+    @Override
+    public <%= interfaceFullName %> createReference(String id)
+    {
+        return new <%= clazz.packageName %>.<%= factoryName %>.<%= referenceName %>(id);
+    }
+
+    public static <%= interfaceFullName %> getReference(String id)
+    {
+        return new <%= clazz.packageName %>.<%= factoryName %>.<%= referenceName %>(id);
+    }
+
+    @Override
+    public int getInterfaceId()
+    {
+        return <%= interfaceId %>;
+    }
+
+    @Override
+    public Class<?> getInterface()
+    {
+        return <%= interfaceFullName %>.class;
+    }
+
+    @Override
+    public com.ea.orbit.actors.runtime.ActorInvoker getInvoker()
+    {
+        return new <%= clazz.packageName %>.<%= factoryName %>.<%= invokerName %>();
+    }
+
+    @com.ea.orbit.actors.annotation.OrbitGenerated
+    public static class <%= referenceName %>
+            extends com.ea.orbit.actors.runtime.ActorReference<<%= interfaceFullName %>>
+            implements <%= interfaceFullName %>
+    {
+        public <%= referenceName %>(String id)
+        {
+            super(id);
+        }
+
+        @Override
+        protected int _interfaceId()
+        {
+            return <%= interfaceId %>;
+        }
+
+        @Override
+        public Class<<%= interfaceFullName %>> _interfaceClass()
+        {
+            return <%= interfaceFullName %>.class;
+        }
+<%for(MethodDefinition method : methods) { %>
+
+        public <%= method.returnType %> <%= method.name %>(<%= method.paramsList() %>)
+        {
+<%if(method.oneway) { %>
+            return super.invoke(true, <%= method.methodId %>, new Object[]{<%= method.wrapParams()%>});
+<%} else {%>
+            return super.invoke(false, <%= method.methodId %>, new Object[]{<%= method.wrapParams()%>});
+<%}%>
+        }
+<%}%>
+    }
+
+    @com.ea.orbit.actors.annotation.OrbitGenerated
+    public static class <%= invokerName %>
+            extends com.ea.orbit.actors.runtime.ActorInvoker<<%= interfaceFullName %>>
+    {
+        @Override
+        protected int _interfaceId()
+        {
+            return <%= interfaceId %>;
+        }
+
+        @Override
+        public com.ea.orbit.concurrent.Task<?> invoke(<%= interfaceFullName %> target, int methodId, Object[] params)
+        {
+            switch (methodId)
+            {
+<%for(MethodDefinition method :methods) { %>
+                case <%= method.methodId %>:
+                    return target.<%= method.name %>(<%= method.unwrapParams("params")%>);
+<%}%>
+                default:
+                    throw new com.ea.orbit.exception.MethodNotFoundException("MethodId :" +methodId);
+           }
+        }
+    }
+}

@@ -28,12 +28,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.annotation.processing;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
-
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.RoundEnvironment;
@@ -54,7 +48,6 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -87,8 +80,6 @@ public class ActorProcessor extends AbstractProcessor
 
     private Elements elementUtils;
     private Filer filer;
-    private VelocityEngine velocityEngine;
-    private Template actorFactoryTemplate;
 
 
     public class ClassFile
@@ -96,20 +87,13 @@ public class ActorProcessor extends AbstractProcessor
         TypeElement original;
         CharSequence packageName;
         CharSequence simpleName;
-        List<CharSequence> _extends = new ArrayList<CharSequence>();
-        List<CharSequence> _implements = new ArrayList<CharSequence>();
-        List<String> annotations = new ArrayList<String>();
+        List<String> annotations = new ArrayList<>();
         List<MethodDefinition> methods = new ArrayList<>();
         String javaDoc;
 
         public CharSequence getPackageName()
         {
             return packageName;
-        }
-
-        public List<MethodDefinition> getMethods()
-        {
-            return methods;
         }
 
         public ClassFile(final TypeElement clazz, final List<ExecutableElement> methods)
@@ -145,10 +129,6 @@ public class ActorProcessor extends AbstractProcessor
             javaDoc = (javaDoc == null) ? s : javaDoc + "\r\n" + s;
         }
 
-        public String fullName()
-        {
-            return packageName + "." + simpleName;
-        }
     }
 
     public static class MethodDefinition
@@ -156,7 +136,7 @@ public class ActorProcessor extends AbstractProcessor
         ExecutableElement original;
         CharSequence name;
         String returnType;
-        List<ParameterDefinition> parameters = new ArrayList<ParameterDefinition>();
+        List<ParameterDefinition> parameters = new ArrayList<>();
         String javaDoc;
         List<String> annotations = new ArrayList<>();
         boolean oneway;
@@ -166,11 +146,6 @@ public class ActorProcessor extends AbstractProcessor
         public void addDoc(final String s)
         {
             javaDoc = (javaDoc == null) ? s : javaDoc + "\r\n" + s;
-        }
-
-        public CharSequence getReturnType()
-        {
-            return returnType;
         }
 
         public CharSequence getName()
@@ -185,24 +160,41 @@ public class ActorProcessor extends AbstractProcessor
 
         public String wrapParams()
         {
-            return StringUtils.join(parameters.stream().map(p -> p.name).collect(Collectors.toList()), ", ");
+            return parameters.stream()
+                    .map(p -> p.name)
+                    .collect(Collectors.joining(", "));
         }
 
         public String unwrapParams(String varName)
         {
-            return StringUtils.join(parameters.stream().map(
-                    p -> "(" + p.type + ") (" + varName + "[" + p.index + "])").collect(Collectors.toList()), ", ");
+            return parameters.stream()
+                    .map(p -> "(" + p.type + ") (" + varName + "[" + p.index + "])")
+                    .collect(Collectors.joining(", "));
         }
 
         public String paramsList()
         {
-            return StringUtils.join(parameters.stream().map(p -> p.type + " " + p.name).collect(Collectors.toList()), ", ");
+            return parameters.stream()
+                    .map(p -> p.type + " " + p.name)
+                    .collect(Collectors.joining(", "));
         }
 
         public boolean isOneway()
         {
             return oneway;
         }
+    }
+
+    static class Factory
+    {
+        List<MethodDefinition> methods;
+        public ClassFile clazz;
+        public int interfaceId;
+        public String referenceName;
+        public String invokerName;
+        public String factoryName;
+        public String interfaceFullName;
+        public boolean isActor;
     }
 
     private static class ParameterDefinition
@@ -280,9 +272,8 @@ public class ActorProcessor extends AbstractProcessor
     private boolean isAnnotatedWith(final Element e, final String annotation)
     {
         return e.getAnnotationMirrors().stream()
-                .filter(r -> {
-                    return annotation.equals(String.valueOf(((TypeElement) r.getAnnotationType().asElement()).getQualifiedName()));
-                }).findAny().isPresent();
+                .filter(r -> annotation.equals(String.valueOf(((TypeElement) r.getAnnotationType().asElement()).getQualifiedName())))
+                .findAny().isPresent();
     }
 
     private void processActorInterface(final TypeElement clazz, final boolean isActor)
@@ -299,9 +290,10 @@ public class ActorProcessor extends AbstractProcessor
             m.parameters = m.parameters.stream()
                     .collect(Collectors.toList());
 
-            String remoteMethodSignature = m.original.getSimpleName() + "(" + StringUtils.join(
-                    m.parameters.stream().map(p -> p.original.asType().toString()).collect(Collectors.toList()),
-                    ",") + ")";
+            String remoteMethodSignature = m.original.getSimpleName() + "(" +
+                    m.parameters.stream()
+                            .map(p -> p.original.asType().toString())
+                            .collect(Collectors.joining(",")) + ")";
             m.methodId = "" + remoteMethodSignature.hashCode();
 
             m.addDoc(" @see " + m.original.getEnclosingElement() + "#" + m.name);
@@ -309,7 +301,7 @@ public class ActorProcessor extends AbstractProcessor
                     .filter(a -> !a.contains(AT_JAVA_LANG_OVERRIDE))
                     .collect(Collectors.toList());
 
-            if ("void".equals(m.returnType.toString()))
+            if ("void".equals(m.returnType))
             {
                 processingEnv.getMessager().printMessage(Kind.ERROR, "void methods are not allowed, use Task<Void> instead", m.original);
             }
@@ -338,23 +330,22 @@ public class ActorProcessor extends AbstractProcessor
                 JavaFileObject res = filer.createSourceFile(classFile.packageName + "." + factoryName, classFile.original);
 
 
-                VelocityContext context = new VelocityContext();
                 String interfaceFullName = classFile.original.getQualifiedName().toString();
-                context.put("clazz", classFile);
-                context.put("interfaceId", interfaceFullName.hashCode());
-                context.put("methods", classFile.methods);
-                context.put("referenceName", baseName + "Reference");
-                context.put("invokerName", baseName + "Invoker");
-                context.put("factoryName", factoryName);
-                context.put("interfaceFullName", interfaceFullName);
-                context.put("isActor", isActor);
-                StringWriter writer = new StringWriter();
 
-                getActorFactoryTemplate().merge(context, writer);
+
+                FactoryTemplate factory = new FactoryTemplate();
+                factory.clazz = classFile;
+                factory.interfaceId = interfaceFullName.hashCode();
+                factory.methods = classFile.methods;
+                factory.referenceName = baseName + "Reference";
+                factory.invokerName = baseName + "Invoker";
+                factory.factoryName = factoryName;
+                factory.interfaceFullName = interfaceFullName;
+                factory.isActor = isActor;
 
                 try (Writer w = res.openWriter())
                 {
-                    w.append(writer.toString());
+                    w.append(factory.generate());
                 }
             }
             // write actor list
@@ -367,7 +358,7 @@ public class ActorProcessor extends AbstractProcessor
                         clazz);
                 try (Writer w = res.openWriter())
                 {
-                    w.append(classFile.getPackageName() + "." + factoryName);
+                    w.append(classFile.getPackageName()).append(".").append(factoryName);
                 }
             }
         }
@@ -377,38 +368,15 @@ public class ActorProcessor extends AbstractProcessor
         }
     }
 
-    private synchronized Template getActorFactoryTemplate()
+    private void processActorClass(final TypeElement clazz)
     {
-        if (actorFactoryTemplate == null)
-        {
-            actorFactoryTemplate = getVelocityEngine().getTemplate("/" + getClass().getPackage().getName().replace('.', '/') + "/ActorFactoryTemplate.vm");
-        }
-        return actorFactoryTemplate;
-    }
-
-
-    private synchronized VelocityEngine getVelocityEngine()
-    {
-        if (velocityEngine == null)
-        {
-            velocityEngine = new VelocityEngine();
-            velocityEngine.setProperty("file.resource.loader.class", ClasspathResourceLoader.class.getName());
-            velocityEngine.init();
-        }
-        return velocityEngine;
-    }
-
-    private void processActorClass(final TypeElement e)
-    {
-        final TypeElement clazz = (TypeElement) e;
         try
         {
             final String binaryName = elementUtils.getBinaryName(clazz).toString();
-            String output = binaryName;
             FileObject res = filer.createResource(
                     StandardLocation.CLASS_OUTPUT,
                     "",
-                    "META-INF/orbit/actors/classes/" + output,
+                    "META-INF/orbit/actors/classes/" + binaryName,
                     clazz);
             try (Writer w = res.openWriter())
             {
@@ -468,7 +436,7 @@ public class ActorProcessor extends AbstractProcessor
     private List<String> copyAnnotations(final Element e)
     {
         return e.getAnnotationMirrors().stream()
-                .map(a -> a.toString()).collect(Collectors.toCollection(ArrayList::new));
+                .map(Object::toString).collect(Collectors.toCollection(ArrayList::new));
     }
 
 }

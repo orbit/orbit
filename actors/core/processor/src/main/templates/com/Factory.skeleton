@@ -1,0 +1,11 @@
+package PACKAGE;
+
+import com.ea.orbit.actors.annotation.processing.ActorProcessor.MethodDefinition;
+
+public class CLASS extends ActorProcessor.Factory
+{
+    public String generate()
+    {
+        return "";
+    }
+}

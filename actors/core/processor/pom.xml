@@ -11,7 +11,6 @@
     <modelVersion>4.0.0</modelVersion>
     <name>Orbit Actors Annotation Processor</name>
 
-    <groupId>com.ea.orbit</groupId>
     <artifactId>orbit-actors-processor</artifactId>
     <packaging>jar</packaging>
 
@@ -25,14 +24,25 @@
                     <compilerArgument>-proc:none</compilerArgument>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>com.tikal</groupId>
+                <artifactId>tikal-maven-jet-plugin</artifactId>
+                <version>0.4.0</version>
+                <configuration>
+                    <templateDirectory>src/main/templates</templateDirectory>
+                    <generateDirectory>src/main/java</generateDirectory>
+                    <includeTemplates>
+                        <include>**/*.template</include>
+                    </includeTemplates>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.velocity</groupId>
-            <artifactId>velocity</artifactId>
-            <version>1.7</version>
-        </dependency>
-    </dependencies>
 </project>
