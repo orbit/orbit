@@ -2,7 +2,7 @@
 layout : page
 title : "Orbit : Actor Concept - Observers"
 breadCrumb : "[Orbit](index.html) / [Public Documentation](orbit-public-documentation.html) / [Actors](orbit-actors.html) / [Actor Concepts](orbit-actor-concepts.html)"
-next : "orbit-actor-concept-actors-and-container.html"
+next : "orbit-actor-concept-useful-annotations.html"
 previous: "orbit-actor-concept-reminders.html"
 ---
 {% include JB/setup %}
@@ -17,6 +17,7 @@ previous: "orbit-actor-concept-reminders.html"
     -  [In The Actor](#ActorConcept-Observers-InTheActor)
         -  [Registering Observers](#ActorConcept-Observers-RegisteringObservers)
         -  [Notifying Observers](#ActorConcept-Observers-NotifyingObservers)
+        -  [Persisting Observers](#ActorConcept-Observers-PersistingObservers)
     -  [Removing Dead Observers](#ActorConcept-Observers-RemovingDeadObservers)
 
 
@@ -59,8 +60,8 @@ public interface ISomeObserver extends IActorObserver
 {% endhighlight %}
 
 -  Observers must extend Orbit's IActorObserver interface.
--  Observer events must be OneWay and must not return any type other than void.
 -  Like Actor Interfaces, all methods must return an Orbit Task.
+-  It is often desirable for observer messages to be [OneWay](orbit-actor-concept-useful-annotations.html).
 
 ###Implementing An Observer {#ActorConcept-Observers-ImplementingAnObserver}
 
@@ -131,6 +132,28 @@ Finally, you are easily able to notify all observers of an event from your Actor
 {% highlight java %}
 observers.notifyObservers(o -> o.someEvent("Hello There"));
 {% endhighlight %}
+
+ 
+
+
+####Persisting Observers {#ActorConcept-Observers-PersistingObservers}
+
+
+There are no special requirements for persisting observers. 
+
+**Persistent Observers** 
+{% highlight java %}
+public class RandomActor extends OrbitActor<RandomActor.State> implements IRandom
+{
+    public static class State
+    {
+        public ObserverManager<ISomeObserver> observers = new ObserverManager<>();
+    }
+}
+{% endhighlight %}
+
+Developers should be careful when persisting observers and see the Removing Dead Observers section below to understand the restrictions.
+
 
  
 

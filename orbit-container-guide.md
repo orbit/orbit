@@ -20,6 +20,7 @@ previous: "orbit-container-overview.html"
     -  [Optional Configuration](#ContainerGuide-OptionalConfiguration)
     -  [Starting a Container](#ContainerGuide-StartingaContainer)
     -  [Stopping a Container](#ContainerGuide-StoppingaContainer)
+-  [Configuration](#ContainerGuide-Configuration)
 -  [Injection](#ContainerGuide-Injection)
     -  [Basic Injection](#ContainerGuide-BasicInjection)
     -  [Configuration Injection](#ContainerGuide-ConfigurationInjection)
@@ -158,6 +159,32 @@ container.stop();
  
 
 
+Configuration {#ContainerGuide-Configuration}
+----------
+
+
+Container is configured by YAML, the configuration will be loaded from the classpath by default.
+
+
+{% highlight xml %}
+classpath:/conf/orbit.yaml
+{% endhighlight %}
+
+In Maven builds, you can place your file at src/main/resources/conf/orbit.yaml
+
+**Example Configuration** 
+{% highlight xml %}
+orbit.actors.clusterName: someCluster
+orbit.actors.providers:
+  - !!com.ea.orbit.actors.providers.mongodb.MongoDBStorageProvider
+    host: localhost
+    port: 27017
+    database: someDb
+{% endhighlight %}
+
+ 
+
+
 Injection {#ContainerGuide-Injection}
 ----------
 
@@ -197,7 +224,7 @@ orbit.configs.example: SomeString
 ###Wiring an External Instance {#ContainerGuide-WiringanExternalInstance}
 
 
-If you have an object that's lifetime is managed outside of container, you can still have the field and config injection performed on that class.
+If you have an object where its lifetime is managed outside of container, you can still have the field and config injection performed on that class.
 
 
 {% highlight java %}

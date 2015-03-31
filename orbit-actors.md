@@ -18,3 +18,24 @@ previous: "orbit-project-structure.html"
 [Actor Tutorials](orbit-actor-tutorials.html) {#Actors-ActorTutorials}
 ----------
 
+
+ 
+
+**Simple Actor Example** 
+{% highlight java %}
+public interface IHello extends IActor
+{
+    Task<String> sayHello(String greeting);
+}
+
+public class HelloActor extends OrbitActor implements IHello
+{
+    public Task<String> sayHello(String greeting)
+    {
+        getLogger().info("Here: " + greeting);
+        return Task.fromValue("Hello There");
+    }
+}
+
+HelloFactory.getReference("0").sayHello("Meep Meep");
+{% endhighlight %}
