@@ -845,7 +845,7 @@ public class Execution implements IRuntime
     <T extends IActorObserver> T createReference(final INodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
-        ActorReference reference = (ActorReference) descriptor.factory.createReference(null);
+        ActorReference reference = (ActorReference) descriptor.factory.createReference("");
         reference.address = a;
         reference.runtime = this;
         reference.id = id;

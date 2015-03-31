@@ -77,6 +77,10 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
     public ActorReference(Object id)
     {
         this.id = id;
+        if (id == null)
+        {
+            throw new IllegalArgumentException("Ids must not be null");
+        }
     }
 
     /**

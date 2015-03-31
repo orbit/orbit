@@ -17,7 +17,7 @@ public class <%=factoryName%> extends com.ea.orbit.actors.runtime.ActorFactory<<
 <%if (clazz.isNoIdentity) {%>
     public static <%= interfaceFullName %> getReference()
     {
-        return new <%= clazz.packageName %>.<%= factoryName %>.<%= referenceName %>(null);
+        return new <%= clazz.packageName %>.<%= factoryName %>.<%= referenceName %>(com.ea.orbit.actors.annotation.NoIdentity.NO_IDENTITY);
     }
 
 <%}%>
@@ -53,9 +53,10 @@ public class <%=factoryName%> extends com.ea.orbit.actors.runtime.ActorFactory<<
         {
             super(id);
 <%if (clazz.isNoIdentity) {%>
-            if (id != null)
+            if (!com.ea.orbit.actors.annotation.NoIdentity.NO_IDENTITY.equals(id))
             {
-                throw new IllegalArgumentException("Id must be null since this interface has @NoIdentity");
+                throw new IllegalArgumentException("Id must be '" + com.ea.orbit.actors.annotation.NoIdentity.NO_IDENTITY
+                        + "' since this interface has @NoIdentity");
             }
 <%}%>
         }

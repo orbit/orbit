@@ -51,4 +51,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface NoIdentity
 {
+    String NO_IDENTITY = "no_identity";
 }

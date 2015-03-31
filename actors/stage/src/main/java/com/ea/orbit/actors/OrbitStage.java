@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors;
 
 
+import com.ea.orbit.actors.annotation.NoIdentity;
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.IClusterPeer;
 import com.ea.orbit.actors.providers.ILifetimeProvider;
@@ -185,7 +186,7 @@ public class OrbitStage implements Startable
     private void wireOrbitContainer()
     {
         // orbitContainer will be null if the application is not using it
-        if(orbitContainer != null)
+        if (orbitContainer != null)
         {
             ILifetimeProvider containerLifetime = new ILifetimeProvider()
             {
@@ -210,7 +211,11 @@ public class OrbitStage implements Startable
     @SuppressWarnings({"unsafe", "unchecked"})
     public <T extends IActor> T getReference(final Class<T> iClass)
     {
-        return execution.getReference(iClass, null);
+        if (!iClass.isAnnotationPresent(NoIdentity.class))
+        {
+            throw new IllegalArgumentException("Can only be called for classes annotated with @NoIdentity");
+        }
+        return execution.getReference(iClass, NoIdentity.NO_IDENTITY);
     }
 
     public void setClusterPeer(final IClusterPeer clusterPeer)

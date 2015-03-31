@@ -58,7 +58,7 @@ public class FactoryTemplate extends ActorProcessor.Factory
 		builder.append( factoryName );
 		builder.append(".");
 		builder.append( referenceName );
-		builder.append("(null);\r\n    }\r\n\r\n");
+		builder.append("(com.ea.orbit.actors.annotation.NoIdentity.NO_IDENTITY);\r\n    }\r\n\r\n");
 		}
 		builder.append("    public static ");
 		builder.append( interfaceFullName );
@@ -88,7 +88,7 @@ public class FactoryTemplate extends ActorProcessor.Factory
 		builder.append( referenceName );
 		builder.append("(String id)\r\n        {\r\n            super(id);\r\n");
 		if (clazz.isNoIdentity) {
-		builder.append("            if (id != null)\r\n            {\r\n                throw new IllegalArgumentException(\"Id must be null since this interface has @NoIdentity\");\r\n            }\r\n");
+		builder.append("            if (!com.ea.orbit.actors.annotation.NoIdentity.NO_IDENTITY.equals(id))\r\n            {\r\n                throw new IllegalArgumentException(\"Id must be '\" + com.ea.orbit.actors.annotation.NoIdentity.NO_IDENTITY\r\n                        + \"' since this interface has @NoIdentity\");\r\n            }\r\n");
 		}
 		builder.append("        }\r\n\r\n        @Override\r\n        protected int _interfaceId()\r\n        {\r\n            return ");
 		builder.append( interfaceId );
