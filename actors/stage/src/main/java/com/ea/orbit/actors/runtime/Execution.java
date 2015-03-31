@@ -63,6 +63,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutionException;
@@ -880,7 +881,7 @@ public class Execution implements IRuntime
     {
 
         long cutOut = clock.millis() - TimeUnit.MINUTES.toMillis(10);
-        final List<Task<?>> futures = block ? new ArrayList<>() : null;
+        final List<CompletableFuture<?>> futures = block ? new ArrayList<>() : null;
         for (Iterator<Map.Entry<EntryKey, ReferenceEntry>> iterator = localActors.entrySet().iterator(); iterator.hasNext(); )
         {
             Map.Entry<EntryKey, ReferenceEntry> mEntry = iterator.next();
@@ -896,7 +897,7 @@ public class Execution implements IRuntime
             }
             if (act.lastAccess < cutOut)
             {
-                Task task1 = new Task();
+                CompletableFuture future = new CompletableFuture();
                 final Supplier<Task<?>> task = () -> {
                     try
                     {
@@ -906,34 +907,34 @@ public class Execution implements IRuntime
                             res.whenComplete((r, e) -> {
                                 if (e != null)
                                 {
-                                    task1.completeExceptionally(e);
+                                    future.completeExceptionally(e);
                                 }
                                 else
                                 {
-                                    task1.complete(r);
+                                    future.complete(r);
                                 }
                             });
                         }
                         else
                         {
-                            task1.complete(null);
+                            future.complete(null);
                         }
                         return res;
                     }
                     catch (Error | RuntimeException ex)
                     {
-                        task1.completeExceptionally(ex);
+                        future.completeExceptionally(ex);
                         throw ex;
                     }
                     catch (Throwable ex)
                     {
-                        task1.completeExceptionally(ex);
+                        future.completeExceptionally(ex);
                         throw new UncheckedException(ex);
                     }
                 };
                 if (executionSerializer.offerJob(mEntry.getKey(), task, maxQueueSize) && block)
                 {
-                    futures.add(task1);
+                    futures.add(future);
                 }
             }
         }

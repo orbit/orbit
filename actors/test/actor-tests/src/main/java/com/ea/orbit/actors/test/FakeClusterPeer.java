@@ -56,7 +56,7 @@ public class FakeClusterPeer implements IClusterPeer
     private AtomicLong messagesSentOk = new AtomicLong();
     private AtomicLong messagesReceived = new AtomicLong();
     private AtomicLong messagesReceivedOk = new AtomicLong();
-    private Task startFuture = new Task();
+    private CompletableFuture startFuture = new CompletableFuture();
 
     public FakeClusterPeer()
     {

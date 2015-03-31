@@ -28,6 +28,8 @@
 
 package com.ea.orbit.concurrent;
 
+import com.ea.orbit.exception.UncheckedException;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -45,9 +47,36 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Task are CompletableFutures were with a few changes.
+ * <p>
+ * <ul>
+ * <li>complete and completeExceptionally are not publicly accessible.</li>
+ * <li>few utility methods (thenRun, thenReturn)</li>
+ * <li>TODO: all callbacks are async by default using the current executor</li>
+ * </ul>
+ * </p>
+ *
+ * @param <T> the type of the returned object.
+ * @see java.util.concurrent.CompletableFuture
+ */
 public class Task<T> extends CompletableFuture<T>
 {
     private static Void NIL = null;
+
+    // TODO: make all callbacks async by default and using the current executor
+    // what "current executor' means will have to be defined.
+    // the idea is to use a framework supplied executor to serve
+    // single point to capture all activity  derived from the execution
+    // of one application request.
+    // Including logs, stats, exception and timing information.
+
+    // TODO: add here or elsewhere a method to wrap a task with timeout
+    // example: Task result = aTask.timeout(60, TimeUnit.SECONDS);
+
+    // TODO: consider implementing CompletionStage instead of deriving from CompletableFuture.
+
+    // TODO: consider creating a public class CTask = "Completable Task"
 
     /**
      * Creates an already completed task from the given value.
@@ -57,8 +86,47 @@ public class Task<T> extends CompletableFuture<T>
     public static <T> Task<T> fromValue(T value)
     {
         final Task<T> t = new Task<T>();
-        t.complete(value);
+        t.internalComplete(value);
         return t;
+    }
+
+    public static <T> Task<T> fromException(Throwable ex)
+    {
+        final Task<T> t = new Task<T>();
+        t.internalCompleteExceptionally(ex);
+        return t;
+    }
+
+
+    protected boolean internalComplete(T value)
+    {
+        return super.complete(value);
+    }
+
+    protected boolean internalCompleteExceptionally(Throwable ex)
+    {
+        return super.completeExceptionally(ex);
+    }
+
+    /**
+     * This completableFuture derived method is not available for Tasks.
+     */
+    @Override
+    @Deprecated
+    public boolean complete(T value)
+    {
+        // TODO: use another runtime exception
+        throw new UncheckedException("Protected");
+    }
+
+    /**
+     * This completableFuture derived method is not available for Tasks.
+     */
+    @Override
+    @Deprecated
+    public boolean completeExceptionally(Throwable ex)
+    {
+        throw new UncheckedException("Protected");
     }
 
     /**
@@ -78,11 +146,11 @@ public class Task<T> extends CompletableFuture<T>
         stage.handle((T v, Throwable ex) -> {
             if (ex != null)
             {
-                t.completeExceptionally(ex);
+                t.internalCompleteExceptionally(ex);
             }
             else
             {
-                t.complete(v);
+                t.internalComplete(v);
             }
             return null;
         });
@@ -119,11 +187,11 @@ public class Task<T> extends CompletableFuture<T>
         {
             try
             {
-                t.complete(future.get());
+                t.internalComplete(future.get());
             }
             catch (Throwable ex)
             {
-                t.completeExceptionally(ex);
+                t.internalCompleteExceptionally(ex);
             }
             return t;
         }
@@ -165,7 +233,7 @@ public class Task<T> extends CompletableFuture<T>
                 {
                     try
                     {
-                        task.complete(future.get(waitTimeout, waitTimeoutUnit));
+                        task.internalComplete(future.get(waitTimeout, waitTimeoutUnit));
                         return;
                     }
                     catch (TimeoutException ex)
@@ -175,12 +243,12 @@ public class Task<T> extends CompletableFuture<T>
                             // in this case something completed the future with a timeout exception.
                             try
                             {
-                                task.complete(future.get(waitTimeout, waitTimeoutUnit));
+                                task.internalComplete(future.get(waitTimeout, waitTimeoutUnit));
                                 return;
                             }
                             catch (Throwable tex0)
                             {
-                                task.completeExceptionally(tex0);
+                                task.internalCompleteExceptionally(tex0);
                             }
                             return;
                         }
@@ -199,29 +267,28 @@ public class Task<T> extends CompletableFuture<T>
                         }
                         catch (Throwable tex)
                         {
-                            task.completeExceptionally(tex);
+                            task.internalCompleteExceptionally(tex);
                             return;
                         }
                     }
                     catch (Throwable ex)
                     {
-                        task.completeExceptionally(ex);
+                        task.internalCompleteExceptionally(ex);
                         return;
                     }
                 }
             }
             catch (Throwable ex)
             {
-                task.completeExceptionally(ex);
+                task.internalCompleteExceptionally(ex);
             }
         }
     }
 
-
     public static Task<Void> done()
     {
         final Task<Void> task = new Task<Void>();
-        task.complete(NIL);
+        task.internalComplete(NIL);
         return task;
     }
 
@@ -246,7 +313,7 @@ public class Task<T> extends CompletableFuture<T>
     /**
      * Returns a new Task that is executed when this task completes normally.
      * The result of the new Task will be the result of the Supplier passed as parameter.
-     *
+     * <p/>
      * See the {@link CompletionStage} documentation for rules
      * covering exceptional completion.
      *
@@ -342,7 +409,7 @@ public class Task<T> extends CompletableFuture<T>
      */
     public static <F extends CompletableFuture<?>> Task<Object> anyOf(Stream<F> cfs)
     {
-        return from(CompletableFuture.anyOf((CompletableFuture[])cfs.toArray(size -> new CompletableFuture[size])));
+        return from(CompletableFuture.anyOf((CompletableFuture[]) cfs.toArray(size -> new CompletableFuture[size])));
     }
 
 }

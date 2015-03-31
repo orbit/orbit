@@ -38,16 +38,33 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinTask;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class TaskTest
 {
+    private static class CTask<T> extends Task<T>
+    {
+        @Override
+        public boolean complete(T value)
+        {
+            return super.internalComplete(value);
+        }
+
+        @Override
+        public boolean completeExceptionally(Throwable ex)
+        {
+            return super.internalCompleteExceptionally(ex);
+        }
+    }
+
     @Test
     public void testAllOf()
     {
-        Task t1 = new Task();
-        Task t2 = new Task();
-        Task t3 = new Task();
+        CTask t1 = new CTask();
+        CTask t2 = new CTask();
+        CTask t3 = new CTask();
         Task all = Task.allOf(t1, t2, t3);
 
         assertFalse(all.isDone());
@@ -62,9 +79,9 @@ public class TaskTest
     @Test
     public void testAllOfWithError()
     {
-        Task t1 = new Task();
-        Task t2 = new Task();
-        Task t3 = new Task();
+        CTask t1 = new CTask();
+        CTask t2 = new CTask();
+        CTask t3 = new CTask();
         Task all = Task.allOf(t1, t2, t3);
 
         assertFalse(all.isDone());
@@ -82,18 +99,18 @@ public class TaskTest
     @Test
     public void testAllOfVariations()
     {
-        Task<Integer> t1 = new Task();
-        Task t2 = new Task();
-        Task t3 = new Task();
+        CTask<Integer> t1 = new CTask();
+        CTask t2 = new CTask();
+        CTask t3 = new CTask();
         CompletableFuture c4 = new CompletableFuture();
-        Task all_regular = Task.allOf(t1, t2, t3);
-        Task all_array = Task.allOf(new CompletableFuture[]{t1, t2, t3});
-        Task all_array2 = Task.allOf(new Task[]{t1, t2, t3});
-        Task all_collection = Task.allOf(Arrays.asList(t1, t2, t3));
-        Task all_stream = Task.allOf(Arrays.asList(t1, t2, t3).stream());
-        Stream<Task> stream = Arrays.asList(t1, t2, t3).stream();
-        Task all_stream2 = Task.allOf(stream);
-        Task all_stream3 = Task.allOf(Arrays.asList(c4).stream());
+        Task all_regular = CTask.allOf(t1, t2, t3);
+        Task all_array = CTask.allOf(new CompletableFuture[]{t1, t2, t3});
+        Task all_array2 = CTask.allOf(new CTask[]{t1, t2, t3});
+        Task all_collection = CTask.allOf(Arrays.asList(t1, t2, t3));
+        Task all_stream = CTask.allOf(Arrays.asList(t1, t2, t3).stream());
+        Stream<CTask> stream = Arrays.asList(t1, t2, t3).stream();
+        Task all_stream2 = CTask.allOf(stream);
+        Task all_stream3 = CTask.allOf(Arrays.asList(c4).stream());
         Stream<CompletableFuture> stream4 = Arrays.asList(t1, t2, t3, c4).stream();
         Task all_stream4 = Task.allOf(stream4);
         Task all_stream5 = Task.allOf(Arrays.asList(t1, t2, t3, c4).stream());
@@ -116,21 +133,21 @@ public class TaskTest
     @Test
     public void testAnyOfVariations()
     {
-        Task<Integer> t1 = new Task();
-        Task t2 = new Task();
-        Task t3 = new Task();
+        CTask<Integer> t1 = new CTask();
+        CTask t2 = new CTask();
+        CTask t3 = new CTask();
         CompletableFuture c4 = new CompletableFuture();
-        Task group_regular = Task.anyOf(t1, t2, t3);
-        Task group_array = Task.anyOf(new CompletableFuture[]{t1, t2, t3});
-        Task group_array2 = Task.anyOf(new Task[]{t1, t2, t3});
-        Task group_collection = Task.anyOf(Arrays.asList(t1, t2, t3));
-        Task group_stream = Task.anyOf(Arrays.asList(t1, t2, t3).stream());
-        Stream<Task> stream = Arrays.asList(t1, t2, t3).stream();
-        Task group_stream2 = Task.anyOf(stream);
-        Task group_stream3 = Task.anyOf(Arrays.asList(c4).stream());
+        Task group_regular = CTask.anyOf(t1, t2, t3);
+        Task group_array = CTask.anyOf(new CompletableFuture[]{t1, t2, t3});
+        Task group_array2 = CTask.anyOf(new CTask[]{t1, t2, t3});
+        Task group_collection = CTask.anyOf(Arrays.asList(t1, t2, t3));
+        Task group_stream = CTask.anyOf(Arrays.asList(t1, t2, t3).stream());
+        Stream<CTask> stream = Arrays.asList(t1, t2, t3).stream();
+        Task group_stream2 = CTask.anyOf(stream);
+        Task group_stream3 = CTask.anyOf(Arrays.asList(c4).stream());
         Stream<CompletableFuture> stream4 = Arrays.asList(t1, t2, t3, c4).stream();
-        Task group_stream4 = Task.anyOf(stream4);
-        Task group_stream5 = Task.anyOf(Arrays.asList(t1, t2, t3, c4).stream());
+        Task group_stream4 = CTask.anyOf(stream4);
+        Task group_stream5 = CTask.anyOf(Arrays.asList(t1, t2, t3, c4).stream());
 
         t1.complete(1);
         c4.complete(4);
@@ -148,7 +165,7 @@ public class TaskTest
     @Test
     public void testThenApply()
     {
-        Task<Integer> t1 = new Task();
+        CTask<Integer> t1 = new CTask();
         Task<String> t2 = t1.thenApply(x -> "a");
         assertFalse(t1.isDone());
         t1.complete(1);
@@ -159,7 +176,7 @@ public class TaskTest
     @Test
     public void testThenApplyWithVoid()
     {
-        Task<Void> t1 = new Task();
+        CTask<Void> t1 = new CTask();
         Task<String> t2 = t1.thenApply(x -> "a");
         assertFalse(t1.isDone());
         t1.complete(null);
@@ -170,7 +187,7 @@ public class TaskTest
     @Test
     public void testThenReturn()
     {
-        Task<Integer> t1 = new Task();
+        CTask<Integer> t1 = new CTask();
         Task<String> t2 = t1.thenReturn(() -> "a");
         assertFalse(t1.isDone());
         t1.complete(1);
@@ -182,8 +199,8 @@ public class TaskTest
     @Test
     public void testThenCompose()
     {
-        Task<Integer> t1 = new Task();
-        Task<String> t2 = t1.thenCompose(x -> Task.fromValue(x + "a"));
+        CTask<Integer> t1 = new CTask();
+        Task<String> t2 = t1.thenCompose(x -> CTask.fromValue(x + "a"));
         Task<String> t3 = t1.thenCompose(x -> CompletableFuture.completedFuture(x + "a"));
         assertFalse(t1.isDone());
         t1.complete(1);
@@ -195,7 +212,7 @@ public class TaskTest
     @Test
     public void testThenComposeNoParams()
     {
-        Task<Integer> t1 = new Task();
+        CTask<Integer> t1 = new CTask();
         Task<String> t2 = t1.thenCompose(() -> Task.fromValue("b"));
         Task<String> t3 = t1.thenCompose(() -> CompletableFuture.completedFuture("c"));
         assertFalse(t1.isDone());
@@ -209,7 +226,7 @@ public class TaskTest
     @Test
     public void testThenReturnWithException()
     {
-        Task<Integer> t1 = new Task();
+        CTask<Integer> t1 = new CTask();
         Task<String> t2 = t1.thenReturn(() -> "a");
         assertFalse(t1.isDone());
         t1.completeExceptionally(new RuntimeException());

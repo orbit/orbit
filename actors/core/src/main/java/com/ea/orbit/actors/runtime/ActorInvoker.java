@@ -54,8 +54,7 @@ public abstract class ActorInvoker<T>
         }
         catch (Throwable ex)
         {
-            final Task<Object> exceptionTask = new Task<>();
-            exceptionTask.completeExceptionally(ex);
+            final Task<Object> exceptionTask = Task.fromException(ex);
             return exceptionTask;
         }
     }

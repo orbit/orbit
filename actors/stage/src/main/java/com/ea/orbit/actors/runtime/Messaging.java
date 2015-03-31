@@ -114,6 +114,17 @@ public class Messaging implements Startable
             return (this == o);
         }
 
+        @Override
+        protected boolean internalComplete(Object value)
+        {
+            return super.internalComplete(value);
+        }
+
+        @Override
+        protected boolean internalCompleteExceptionally(Throwable ex)
+        {
+            return super.internalCompleteExceptionally(ex);
+        }
     }
 
     public void setClock(final Clock clock)
@@ -188,19 +199,19 @@ public class Messaging implements Startable
                         catch (Exception ex)
                         {
                             logger.error("Error deserializing response", ex);
-                            pendingResponse.completeExceptionally(new UncheckedException("Error deserializing response", ex));
+                            pendingResponse.internalCompleteExceptionally(new UncheckedException("Error deserializing response", ex));
                             return;
                         }
                         switch (messageType)
                         {
                             case 1:
-                                pendingResponse.complete(res);
+                                pendingResponse.internalComplete(res);
                                 return;
                             case 2:
-                                pendingResponse.completeExceptionally((Throwable) res);
+                                pendingResponse.internalCompleteExceptionally((Throwable) res);
                                 return;
                             case 3:
-                                pendingResponse.completeExceptionally(new UncheckedException("Error invoking but no exception provided. Res: " + res));
+                                pendingResponse.internalCompleteExceptionally(new UncheckedException("Error invoking but no exception provided. Res: " + res));
                                 return;
                             default:
                                 // should be impossible
@@ -313,14 +324,14 @@ public class Messaging implements Startable
             clusterPeer.sendMessage(to, byteArrayOutputStream.toByteArray());
             if (oneWay)
             {
-                pendingResponse.complete(NIL);
+                pendingResponse.internalComplete(NIL);
             }
         }
         catch (Exception ex)
         {
             pendingResponseMap.remove(messageId);
             pendingResponsesQueue.remove(pendingResponse);
-            pendingResponse.completeExceptionally(ex);
+            pendingResponse.internalCompleteExceptionally(ex);
         }
         return pendingResponse;
     }
@@ -340,7 +351,7 @@ public class Messaging implements Startable
                 }
                 if (!top.isDone())
                 {
-                    top.completeExceptionally(new TimeoutException("Response timeout"));
+                    top.internalCompleteExceptionally(new TimeoutException("Response timeout"));
                 }
                 pendingResponseMap.remove(top.messageId);
             }
