@@ -115,8 +115,8 @@ public class Task<T> extends CompletableFuture<T>
     @Deprecated
     public boolean complete(T value)
     {
-        // TODO: use another runtime exception
-        throw new UncheckedException("Protected");
+        // TODO: throw an exception
+        return super.complete(value);
     }
 
     /**
@@ -126,7 +126,8 @@ public class Task<T> extends CompletableFuture<T>
     @Deprecated
     public boolean completeExceptionally(Throwable ex)
     {
-        throw new UncheckedException("Protected");
+        // TODO: throw an exception
+        return super.completeExceptionally(ex);
     }
 
     /**
