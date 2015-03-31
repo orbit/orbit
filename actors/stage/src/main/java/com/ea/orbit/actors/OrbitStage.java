@@ -207,6 +207,12 @@ public class OrbitStage implements Startable
         return execution.getReference(iClass, id);
     }
 
+    @SuppressWarnings({"unsafe", "unchecked"})
+    public <T extends IActor> T getReference(final Class<T> iClass)
+    {
+        return execution.getReference(iClass, null);
+    }
+
     public void setClusterPeer(final IClusterPeer clusterPeer)
     {
         this.clusterPeer = clusterPeer;
