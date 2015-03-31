@@ -66,12 +66,6 @@ public class NoIdentityTest extends ActorBaseTest
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void usingNullId() throws ExecutionException, InterruptedException
-    {
-        SingularThingFactory.getReference(null);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
     public void usingNullId2() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
@@ -87,14 +81,7 @@ public class NoIdentityTest extends ActorBaseTest
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void breakIt()
-    {
-        // must fail
-        SingularThingFactory.getReference("aaa");
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void breakItAgain() throws ExecutionException, InterruptedException
+    public void breakIt() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
         stage1.getReference(ISingularThing.class, "aaa");

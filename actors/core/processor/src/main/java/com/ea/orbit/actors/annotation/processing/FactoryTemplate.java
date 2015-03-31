@@ -58,8 +58,8 @@ public class FactoryTemplate extends ActorProcessor.Factory
 		builder.append( factoryName );
 		builder.append(".");
 		builder.append( referenceName );
-		builder.append("(com.ea.orbit.actors.annotation.NoIdentity.NO_IDENTITY);\r\n    }\r\n\r\n");
-		}
+		builder.append("(com.ea.orbit.actors.annotation.NoIdentity.NO_IDENTITY);\r\n    }\r\n");
+		} else {
 		builder.append("    public static ");
 		builder.append( interfaceFullName );
 		builder.append(" getReference(String id)\r\n    {\r\n        return new ");
@@ -68,7 +68,9 @@ public class FactoryTemplate extends ActorProcessor.Factory
 		builder.append( factoryName );
 		builder.append(".");
 		builder.append( referenceName );
-		builder.append("(id);\r\n    }\r\n\r\n    @Override\r\n    public int getInterfaceId()\r\n    {\r\n        return ");
+		builder.append("(id);\r\n    }\r\n");
+		}
+		builder.append("\r\n    @Override\r\n    public int getInterfaceId()\r\n    {\r\n        return ");
 		builder.append( interfaceId );
 		builder.append(";\r\n    }\r\n\r\n    @Override\r\n    public Class<?> getInterface()\r\n    {\r\n        return ");
 		builder.append( interfaceFullName );

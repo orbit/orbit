@@ -19,12 +19,12 @@ public class <%=factoryName%> extends com.ea.orbit.actors.runtime.ActorFactory<<
     {
         return new <%= clazz.packageName %>.<%= factoryName %>.<%= referenceName %>(com.ea.orbit.actors.annotation.NoIdentity.NO_IDENTITY);
     }
-
-<%}%>
+<%} else {%>
     public static <%= interfaceFullName %> getReference(String id)
     {
         return new <%= clazz.packageName %>.<%= factoryName %>.<%= referenceName %>(id);
     }
+<%}%>
 
     @Override
     public int getInterfaceId()
