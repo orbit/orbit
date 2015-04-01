@@ -34,7 +34,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Actor interfaces marked with {@literal@}NoIdentity wont accept a non null key.
+ * Actor interfaces marked with {@literal@}NoIdentity do not have an identity.
  * <p>
  * This annotation should be used with singletons or stateless singletons.
  * </p>
