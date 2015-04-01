@@ -39,6 +39,19 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <name>Orbit Actors Storage Provider PostgreSQL</name>
 
     <artifactId>orbit-actors-postgresql</artifactId>
+	
+	<properties>
+		<maven.test.skip>true</maven.test.skip>
+	</properties>
+	
+	<profiles>
+		<profile>
+			<id>withPostgresTests</id>
+			<properties>
+				<maven.test.skip>false</maven.test.skip>
+			</properties>
+		</profile>
+	</profiles>
 
     <dependencies>
         <dependency>
