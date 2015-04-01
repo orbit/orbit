@@ -57,28 +57,28 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
 
     private ObjectMapper mapper;
 
-    public void setHost(String host) {
+    public void setHost(final String host) {
         this.host = host;
     }
 
-    public void setPort(int port) {
+    public void setPort(final int port) {
         this.port = port;
     }
 
-    public void setDatabase(String database) {
+    public void setDatabase(final String database) {
         this.database = database;
     }
 
-    public void setUsername(String username) {
+    public void setUsername(final String username) {
         this.username = username;
     }
 
-    public void setPassword(String password) {
+    public void setPassword(final String password) {
         this.password = password;
     }
 
     @Override
-    public synchronized Task<Void> clearState(ActorReference reference, Object state) {
+    public synchronized Task<Void> clearState(final ActorReference reference, final Object state) {
         try {
             clearState.setString(1, getName(reference));
             clearState.setString(2, getIdentity(reference));
@@ -90,7 +90,7 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
     }
 
     @Override
-    public synchronized Task<Boolean> readState(ActorReference reference, Object state) {
+    public synchronized Task<Boolean> readState(final ActorReference reference, final Object state) {
         String actor = getName(reference), identity = getIdentity(reference);
         try {
             readState.setString(1, actor);
@@ -109,7 +109,7 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
     }
 
     @Override
-    public synchronized Task<Void> writeState(ActorReference reference, Object state) {
+    public synchronized Task<Void> writeState(final ActorReference reference, final Object state) {
         String actor = getName(reference), identity = getIdentity(reference);
         try {
             String serializedState = mapper.writeValueAsString(state);
@@ -214,11 +214,11 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
         return String.format("jdbc:postgresql://%s:%d/%s", host, port, database);
     }
 
-    private String getName(ActorReference reference) {
+    private String getName(final ActorReference reference) {
         return ActorReference.getInterfaceClass(reference).getSimpleName();
     }
 
-    private String getIdentity(ActorReference reference) {
+    private String getIdentity(final ActorReference reference) {
         return String.valueOf(ActorReference.getId(reference));
     }
 }
