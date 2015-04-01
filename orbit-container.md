@@ -58,7 +58,7 @@ public class Party implements Startable {
          return Task.done();
     } 
  
-    public Task start() {
+    public Task stop() {
          System.out.println("See you soon!");
          return Task.done();
     }  
