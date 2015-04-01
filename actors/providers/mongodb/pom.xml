@@ -40,6 +40,19 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     <groupId>com.ea.orbit</groupId>
     <artifactId>orbit-actors-mongodb</artifactId>
+	
+	<properties>
+		<maven.test.skip>true</maven.test.skip>
+	</properties>
+	
+	<profiles>
+		<profile>
+			<id>withMongoTests</id>
+			<properties>
+				<maven.test.skip>false</maven.test.skip>
+			</properties>
+		</profile>
+	</profiles>
 
     <dependencies>
         <dependency>
