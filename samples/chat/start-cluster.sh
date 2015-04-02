@@ -11,4 +11,3 @@ sleep 10
 exo-open http://localhost:8080/ &
 
 echo 'You will find logs in the log directory'
-echo 'There is no "stop" script yet. Feel free to kill every java process in this terminal'
