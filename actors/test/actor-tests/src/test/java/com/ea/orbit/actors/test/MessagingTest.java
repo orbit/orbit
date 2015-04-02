@@ -40,7 +40,9 @@ import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class MessagingTest extends ActorBaseTest
 {
@@ -53,7 +55,8 @@ public class MessagingTest extends ActorBaseTest
 
         Task<String> justRespond();
     }
-    static Semaphore semaphores[] = new Semaphore[] { new Semaphore(0), new Semaphore(0) };
+
+    static Semaphore semaphores[] = new Semaphore[]{new Semaphore(0), new Semaphore(0)};
 
     public static class BlockingResponder extends OrbitActor implements IBlockingResponder
     {
@@ -61,7 +64,7 @@ public class MessagingTest extends ActorBaseTest
         {
             // blocking the message receiver thread.
             // If the system was correctly implemented this will not block other actors from receiving messages.
-            return BlockingResponderFactory.getReference("0").justRespond().thenRun(() ->
+            return IActor.ref(IBlockingResponder.class, "0").justRespond().thenRun(() ->
                     {
                         try
                         {
@@ -83,7 +86,7 @@ public class MessagingTest extends ActorBaseTest
         public Task<String> receiveAndRespond()
         {
             // Calls another actor and returns that actor's response
-            return BlockingResponderFactory.getReference("0").justRespond().thenApply(
+            return IActor.ref(IBlockingResponder.class, "0").justRespond().thenApply(
                     x ->
                     {
                         getLogger().debug("message received: " + x);

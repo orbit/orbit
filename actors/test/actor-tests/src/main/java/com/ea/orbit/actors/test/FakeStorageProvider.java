@@ -28,10 +28,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.providers.IStorageProvider;
 import com.ea.orbit.actors.providers.json.ActorReferenceModule;
-import com.ea.orbit.actors.providers.json.ReflectionReferenceFactory;
+import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -50,7 +50,7 @@ public class FakeStorageProvider implements IStorageProvider
     public FakeStorageProvider(final ConcurrentMap database)
     {
         this.database = database;
-        mapper.registerModule(new ActorReferenceModule(new ReflectionReferenceFactory()));
+        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
 
 
         mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()

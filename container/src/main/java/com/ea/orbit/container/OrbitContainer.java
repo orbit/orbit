@@ -58,7 +58,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +82,9 @@ public class OrbitContainer
      */
     @Config("orbit.locateServices")
     private boolean locateServices = true;
+
+    @Config("orbit.services")
+    private List<Object> services = new ArrayList<>();
 
     private final DependencyRegistry registry = new DependencyRegistry()
     {
@@ -242,10 +244,10 @@ public class OrbitContainer
                 final Secret secret = get(SecretManager.class).decrypt((String) f.get(o));
                 f.set(o, secret);
             }
-            else if(f.getType().isEnum())
+            else if (f.getType().isEnum())
             {
                 final String enumValue = properties.getAsString(config.value(), null);
-                if(enumValue != null)
+                if (enumValue != null)
                 {
                     f.set(o, Enum.valueOf((Class<Enum>) f.getType(), enumValue));
                 }
@@ -254,6 +256,14 @@ public class OrbitContainer
             {
                 final Object val = properties.getAll().get(config.value());
                 f.set(o, val);
+            }
+            else if (List.class.isAssignableFrom(f.getType()))
+            {
+                if ((properties.getAll().get(config.value()) != null))
+                {
+                    final Object val = properties.getAll().get(config.value());
+                    f.set(o, val);
+                }
             }
             else
             {
@@ -394,6 +404,7 @@ public class OrbitContainer
                 {
                     if (r.getResourceName().startsWith(ORBIT_SERVICE_PREFIX))
                     {
+                        // TODO: use logger
                         System.out.println(r.getResourceName());
                         final String providesName = r.getResourceName().replaceAll(".*/", "");
                         ComponentState state = components.get(providesName);
@@ -404,6 +415,15 @@ public class OrbitContainer
                         }
                         state.implClassName = com.ea.orbit.util.IOUtils.toString(r.url().openStream());
                     }
+                }
+            }
+            if (services != null)
+            {
+                for (final Object service : services)
+                {
+                    // TODO: use logger
+                    System.out.println(service);
+                    add((service instanceof Class) ? (Class<?>) service : Class.forName(String.valueOf(service)));
                 }
             }
 

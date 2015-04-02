@@ -28,9 +28,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.actors.providers.json.ActorReferenceModule;
-import com.ea.orbit.actors.providers.json.ReflectionReferenceFactory;
+import com.ea.orbit.actors.runtime.IReferenceFactory;
+import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.actors.test.actors.ISomeActor;
 
 import org.junit.Test;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertEquals;
 
 public class JsonReferenceSerializationTest
 {
-    private ReferenceFactory factory = new ReflectionReferenceFactory();
+    private IReferenceFactory factory = new ReferenceFactory();
 
     @Test
     public void testSerialize() throws Exception

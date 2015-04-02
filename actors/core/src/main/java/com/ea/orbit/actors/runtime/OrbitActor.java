@@ -28,8 +28,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.IRemindable;
-import com.ea.orbit.actors.providers.*;
+import com.ea.orbit.actors.providers.IStorageProvider;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -51,13 +52,13 @@ public class OrbitActor<T>
 {
     T state;
     IStorageProvider stateProvider;
-    ActorReference reference;
+    ActorReference<?> reference;
     Logger logger;
 
     @SuppressWarnings({"PMD.LooseCoupling", "unchecked"})
     protected OrbitActor()
     {
-        Class c = (Class) GenericTypeReflector.getTypeParameter(getClass(),
+        Class<?> c = (Class<?>) GenericTypeReflector.getTypeParameter(getClass(),
                 OrbitActor.class.getTypeParameters()[0]);
         if (c == null)
         {
@@ -217,5 +218,22 @@ public class OrbitActor<T>
     public Task deactivateAsync()
     {
         return Task.done();
+    }
+
+
+    /**
+     * @see com.ea.orbit.actors.IActor#ref
+     */
+    public <R extends IActor> R ref(Class<R> iActor, String id)
+    {
+        return IActor.ref(iActor, id);
+    }
+
+    /**
+     * @see com.ea.orbit.actors.IActor#ref
+     */
+    public <R extends IActor> R ref(Class<R> iActor)
+    {
+        return IActor.ref(iActor);
     }
 }

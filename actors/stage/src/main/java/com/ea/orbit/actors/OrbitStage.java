@@ -71,6 +71,8 @@ public class OrbitStage implements Startable
     private Clock clock;
     private ExecutorService executionPool;
     private ExecutorService messagingPool;
+    @Config("orbit.actors.includedActors")
+    private List<String> includedActors;
 
     @Inject
     OrbitContainer orbitContainer;  // Only injected if running on Orbit container
@@ -98,6 +100,11 @@ public class OrbitStage implements Startable
     public ExecutorService getMessagingPool()
     {
         return messagingPool;
+    }
+
+    public void setIncludedActors(List<String> includedActors)
+    {
+        this.includedActors = new ArrayList<>(includedActors);
     }
 
     public enum StageMode
@@ -164,6 +171,7 @@ public class OrbitStage implements Startable
         execution.setHosting(hosting);
         execution.setMessaging(messaging);
         execution.setExecutor(executionPool);
+        execution.setIncludeActors(includedActors);
 
         messaging.setExecution(execution);
         messaging.setClock(clock);

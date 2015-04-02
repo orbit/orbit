@@ -30,6 +30,7 @@ package com.ea.orbit.web.test;
 
 import com.ea.orbit.container.OrbitContainer;
 import com.ea.orbit.util.NetUtils;
+import com.ea.orbit.web.OrbitWebModule;
 
 import org.junit.Test;
 
@@ -44,7 +45,9 @@ import javax.websocket.WebSocketContainer;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -77,7 +80,10 @@ public class WebSocketTest
     {
         final OrbitContainer container = new OrbitContainer();
         final int port = NetUtils.findFreePort();
-        container.setProperties(Collections.singletonMap("orbit.http.port", String.valueOf(port)));
+        Map<String,Object> props = new HashMap<>();
+        props.put("orbit.http.port", port);
+        props.put("orbit.services", Arrays.asList(OrbitWebModule.class, Module1.class));
+        container.setProperties(props);
         container.start();
 
         final AClientEndpoint client = new AClientEndpoint();

@@ -35,3 +35,9 @@ orbit.actors.providers:
     database: chat
 
 orbit.chat.maxMessages: 500
+
+orbit.services:
+  - com.ea.orbit.actors.server.ServerModule
+
+orbit.actors.includedActors:
+  - com.ea.orbit.*

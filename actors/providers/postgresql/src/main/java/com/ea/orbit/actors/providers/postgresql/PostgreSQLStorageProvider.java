@@ -30,8 +30,8 @@ package com.ea.orbit.actors.providers.postgresql;
 
 import com.ea.orbit.actors.providers.IStorageProvider;
 import com.ea.orbit.actors.providers.json.ActorReferenceModule;
-import com.ea.orbit.actors.providers.json.ReflectionReferenceFactory;
 import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -138,7 +138,7 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
 
         // initialize JSON mapper
         mapper = new ObjectMapper();
-        mapper.registerModule(new ActorReferenceModule(new ReflectionReferenceFactory()));
+        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
         mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)

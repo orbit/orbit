@@ -29,14 +29,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.container;
 
 import com.ea.orbit.exception.UncheckedException;
-
+import com.ea.orbit.util.ClassPath;
 import javax.inject.Singleton;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -74,6 +73,25 @@ public class Module
                 throw new UncheckedException(e);
             }
         }
-        return new ArrayList<>(0);
+        else
+        {
+            String packageName = getClass().getPackage().getName().replace('.', '/');
+            return ClassPath.get().getAllResources().stream()
+                    .filter(r -> r.getResourceName().startsWith(packageName))
+                    .filter(r -> r.getResourceName().endsWith(".class"))
+                    .map(r -> r.getResourceName())
+                    .map(n -> n.substring(0, n.length() - 6).replace('/', '.'))
+                    .filter(n -> !n.equals(getClass().getName()))
+                    .map(n -> {
+                        try
+                        {
+                            return Class.forName(n);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new UncheckedException(ex);
+                        }
+                    }).collect(Collectors.toList());
+        }
     }
 }

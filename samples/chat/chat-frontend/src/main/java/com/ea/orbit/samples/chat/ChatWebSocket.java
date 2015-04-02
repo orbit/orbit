@@ -29,8 +29,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.samples.chat;
 
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.concurrent.Task;
-
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
@@ -55,7 +55,7 @@ public class ChatWebSocket
     @OnOpen
     public void onWebSocketConnect(Session session)
     {
-        chat = ChatFactory.getReference(session.getPathParameters().get("chatName"));
+        chat = IActor.ref(IChat.class, session.getPathParameters().get("chatName"));
         observer = new IChatObserver()
         {
             @Override

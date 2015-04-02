@@ -26,64 +26,52 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors;
+package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.runtime.ReferenceFactory;
 
-/**
- * Interface marker for orbit actors.
- * <p>
- * <b>Example:</b>
- * <pre>{@code
- * public interface IHello extends IActor
- * {
- *      Task<String> sayHello();
- * }
- * <p/>
- * public class Hello extends OrbitActor implements IHello
- * {
- *     public Task<String> sayHello() {
- *         return Task.fromValue("hello!");
- *     }
- * }
- * }</pre>
- * </p>
- * <p>
- * The presence of the IActor interface instructs the java compiler to
- * generate a reference factory class for that interface.
- * </p><p>
- * Application code will never touch actor instances directly. It should rather
- * obtain references:
- * <pre>{@code
- *  IHello helloActor = HelloFactory.createReference("001");
- * }</pre>
- * Where HelloFactory was automatically created by the framework.
- * </p>
- */
-public interface IActor
+import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.annotation.OrbitGenerated;
+import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.concurrent.Task;
+
+import org.junit.Test;
+
+import java.util.concurrent.ExecutionException;
+
+import static org.junit.Assert.assertEquals;
+
+// tests references not created by annotation processing.
+// useful to eclipse users and to users of other jvm languages.
+public class DynamicReferencesTest extends ActorBaseTest
 {
-    /**
-     * Gets a reference to an actor.
-     *
-     * @param iActor the actor interface
-     * @param id     the actor id
-     * @param <T>    the interface type
-     * @return an actor reference
-     */
-    public static <T extends IActor> T ref(Class<T> iActor, String id)
+
+    // orbit generated here is a hack to prevent apt generation
+    @OrbitGenerated
+    public static interface IAptUnfriendly extends IActor
     {
-        return ReferenceFactory.ref(iActor, id);
+        Task<String> hello();
     }
 
-    /**
-     * Gets a reference to an actor that has the {@literal@}NoIdentity annotation.
-     *
-     * @param iActor the actor interface
-     * @param <T>    the interface type
-     * @return an actor reference
-     */
-    static <T extends IActor> T ref(Class<T> iActor)
+    // orbit generated here is a hack to prevent apt generation
+    @OrbitGenerated
+    public static class AptUnfriendly extends OrbitActor implements IAptUnfriendly
     {
-        return ReferenceFactory.ref(iActor);
+        @Override
+        public Task<String> hello()
+        {
+            return Task.fromValue("hello");
+        }
     }
+
+
+    @Test
+    public void test() throws ExecutionException, InterruptedException
+    {
+        OrbitStage stage = createStage();
+        // this won't the your run of the mill apt generated class
+        IAptUnfriendly ref = stage.getReference(IAptUnfriendly.class, "0");
+        assertEquals("hello", ref.hello().join());
+    }
+
 }

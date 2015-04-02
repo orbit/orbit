@@ -32,9 +32,8 @@ import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.IActorObserver;
 import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.ReferenceFactory;
+import com.ea.orbit.actors.runtime.IReferenceFactory;
 import com.ea.orbit.exception.UncheckedException;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.Version;
@@ -68,9 +67,9 @@ public class ActorReferenceModule extends Module
     /**
      * Class that will create concrete references to actor interfaces
      */
-    private final ReferenceFactory referenceFactory;
+    private final IReferenceFactory referenceFactory;
 
-    public ActorReferenceModule(final ReferenceFactory referenceFactory)
+    public ActorReferenceModule(final IReferenceFactory referenceFactory)
     {
         super();
         this.referenceFactory = referenceFactory;
@@ -159,9 +158,9 @@ public class ActorReferenceModule extends Module
     private static class RefDeserializer extends JsonDeserializer
     {
         private final Class iClass;
-        private final ReferenceFactory factory;
+        private final IReferenceFactory factory;
 
-        public RefDeserializer(final Class iClass, final ReferenceFactory factory)
+        public RefDeserializer(final Class iClass, final IReferenceFactory factory)
         {
             super();
             this.iClass = iClass;
@@ -198,9 +197,9 @@ public class ActorReferenceModule extends Module
     private static class ObserverRefDeserializer extends JsonDeserializer
     {
         private final Class iClass;
-        private final ReferenceFactory factory;
+        private final IReferenceFactory factory;
 
-        public ObserverRefDeserializer(final Class iClass, final ReferenceFactory factory)
+        public ObserverRefDeserializer(final Class iClass, final IReferenceFactory factory)
         {
             super();
             this.iClass = iClass;

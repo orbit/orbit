@@ -26,11 +26,32 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.client;
+package com.ea.orbit.actors.server;
 
-import com.ea.orbit.container.Module;
 
-public class ServerModule extends Module
+import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.providers.IStorageProvider;
+import com.ea.orbit.annotation.Config;
+import com.ea.orbit.concurrent.Task;
+import javax.inject.Singleton;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Singleton
+public class OrbitStageServer extends OrbitStage
 {
+    public OrbitStageServer()
+    {
+        setMode(StageMode.HOST);
+    }
 
+    @Config("orbit.actors.providers")
+    private List<IStorageProvider> providers = new ArrayList<>();
+
+    public Task start()
+    {
+        providers.forEach(e -> addProvider(e));
+        return super.start();
+    }
 }

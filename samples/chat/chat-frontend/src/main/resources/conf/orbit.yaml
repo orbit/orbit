@@ -29,3 +29,8 @@
 orbit.http.port: 8080
 
 orbit.actors.clusterName: chat
+
+orbit.services:
+  - com.ea.orbit.samples.chat.ChatWebModule
+  - com.ea.orbit.web.OrbitWebModule
+  - com.ea.orbit.actors.client.ClientModule

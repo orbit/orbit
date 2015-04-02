@@ -43,11 +43,10 @@ import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.util.ClassPath;
 import com.ea.orbit.util.IOUtils;
+import com.google.common.collect.MapMaker;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.MapMaker;
 
 import java.lang.ref.WeakReference;
 import java.time.Clock;
@@ -59,6 +58,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -96,12 +96,14 @@ public class Execution implements IRuntime
     private AtomicLong messagesHandled = new AtomicLong();
     private AtomicLong refusedExecutions = new AtomicLong();
     private ExecutorService executor;
+    private ActorFactoryGenerator dynamicReferenceFactory = new ActorFactoryGenerator();
 
     @Config("orbit.actors.autoDiscovery")
     private boolean autoDiscovery = true;
     private List<Class<?>> actorClasses = new ArrayList<>();
     private List<String> availableActors;
     private final WeakReference<IRuntime> cachedRef = new WeakReference<>(this);
+    private List<String> includeActors;
 
     public Execution()
     {
@@ -122,6 +124,11 @@ public class Execution implements IRuntime
     public ExecutorService getExecutor()
     {
         return executor;
+    }
+
+    public void setIncludeActors(List<String> includeActors)
+    {
+        this.includeActors = includeActors;
     }
 
     private static class InterfaceDescriptor
@@ -446,7 +453,7 @@ public class Execution implements IRuntime
         }
         else
         {
-            factory = descriptorMapByInterface.get(iClass).factory;
+            factory = getDescriptor(iClass).factory;
         }
         if (factory == null)
         {
@@ -526,9 +533,25 @@ public class Execution implements IRuntime
 
     public void start()
     {
-        List<ClassPath.ResourceInfo> actorClassesRes = ClassPath.get().getAllResources().stream().filter(r -> r.getResourceName().startsWith("META-INF/orbit/actors/classes")).collect(Collectors.toList());
+        final List<ClassPath.ResourceInfo> actorClassesRes = ClassPath.get().getAllResources().stream().filter(r -> r.getResourceName().startsWith("META-INF/orbit/actors/classes")).collect(Collectors.toList());
+        final List<Class<?>> actorInterfaces = new ArrayList<>();
+
+        if (includeActors != null && includeActors.size() > 0)
+        {
+            Set<Class<?>> iActors = ClassPath.get().getAllResources()
+                    .stream()
+                    .filter(r -> r.getResourceName().endsWith(".class"))
+                    .filter(r -> includeActors.stream().anyMatch(i -> r.getResourceName().matches(i)))
+                    .map(r -> r.getResourceName().substring(0, r.getResourceName().length() - 6).replace("/", "."))
+                    .map(cn -> classForName(cn, true))
+                    .filter(c -> c != null && (IActor.class.isAssignableFrom(c) || (c.isInterface() && IActorObserver.class.isAssignableFrom(c))))
+                    .collect(Collectors.toSet());
+            actorClasses.addAll(iActors.stream().filter(c -> OrbitActor.class.isAssignableFrom(c)).collect(Collectors.toList()));
+            actorInterfaces.addAll(iActors.stream().filter(c -> c.isInterface()).collect(Collectors.toList()));
+        }
 
         List<ClassPath.ResourceInfo> actorInterfacesRes = ClassPath.get().getAllResources().stream().filter(r -> r.getResourceName().startsWith("META-INF/orbit/actors/interfaces")).collect(Collectors.toList());
+
         try
         {
             for (ClassPath.ResourceInfo irs : actorInterfacesRes)
@@ -542,6 +565,10 @@ public class Execution implements IRuntime
                 descriptorMapByInterface.put(descriptor.factory.getInterface(), descriptor);
                 descriptorMapByInterfaceId.put(descriptor.factory.getInterfaceId(), descriptor);
             }
+
+            // install other interface not listed by resources
+            actorInterfaces.forEach(c -> getDescriptor(c));
+
             List<String> availableActors = new ArrayList<>();
             if (autoDiscovery)
             {
@@ -561,18 +588,21 @@ public class Execution implements IRuntime
                     }
                 }
             }
-            if (actorClasses != null && !actorClassesRes.isEmpty())
+            if (actorClasses != null && !actorClasses.isEmpty())
             {
                 for (Class<?> actorClass : actorClasses)
                 {
                     for (Class<?> interfaceClass : actorClass.getInterfaces())
                     {
-                        final InterfaceDescriptor interfaceDescriptor = descriptorMapByInterface.get(interfaceClass);
-                        if (interfaceDescriptor != null)
+                        if (IActor.class.isAssignableFrom(interfaceClass))
                         {
-                            availableActors.add(interfaceDescriptor.factory.getInterface().getName());
-                            interfaceDescriptor.concreteClassName = actorClass.getName();
-                            break;
+                            final InterfaceDescriptor interfaceDescriptor = getDescriptor(interfaceClass);
+                            if (interfaceDescriptor != null)
+                            {
+                                availableActors.add(interfaceDescriptor.factory.getInterface().getName());
+                                interfaceDescriptor.concreteClassName = actorClass.getName();
+                                break;
+                            }
                         }
                     }
                 }
@@ -583,6 +613,7 @@ public class Execution implements IRuntime
         {
             throw new UncheckedException(e);
         }
+        getDescriptor(IHosting.class);
         createObjectReference(IHosting.class, hosting, "");
 
         if (executor == null)
@@ -615,14 +646,23 @@ public class Execution implements IRuntime
 
     private Class<?> classForName(final String className)
     {
+        return classForName(className, false);
+    }
+
+    private Class<?> classForName(final String className, boolean ignoreException)
+    {
         try
         {
             return Class.forName(className);
         }
         catch (Error | Exception ex)
         {
-            throw new Error("Error loading class: " + className, ex);
+            if (!ignoreException)
+            {
+                throw new Error("Error loading class: " + className, ex);
+            }
         }
+        return null;
     }
 
     private ActorFactory findFactoryFor(final Class<?> baseInterface, final Object instance)
@@ -643,7 +683,17 @@ public class Execution implements IRuntime
 
     private InterfaceDescriptor getDescriptor(final Class aInterface)
     {
-        return descriptorMapByInterface.get(aInterface);
+        InterfaceDescriptor interfaceDescriptor = descriptorMapByInterface.get(aInterface);
+        if (interfaceDescriptor == null)
+        {
+            interfaceDescriptor = new InterfaceDescriptor();
+            interfaceDescriptor.isObserver = IActorObserver.class.isAssignableFrom(aInterface);
+            interfaceDescriptor.factory = dynamicReferenceFactory.getFactoryFor(aInterface);
+            interfaceDescriptor.invoker = interfaceDescriptor.factory.getInvoker();
+            descriptorMapByInterface.put(aInterface, interfaceDescriptor);
+            descriptorMapByInterfaceId.put(interfaceDescriptor.factory.getInterfaceId(), interfaceDescriptor);
+        }
+        return interfaceDescriptor;
     }
 
     private InterfaceDescriptor getDescriptor(final int interfaceId)

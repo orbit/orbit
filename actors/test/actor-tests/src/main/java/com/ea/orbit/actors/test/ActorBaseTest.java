@@ -33,6 +33,7 @@ import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.runtime.IReminderController;
 import com.ea.orbit.concurrent.ExecutorUtils;
 
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -70,6 +71,7 @@ public class ActorBaseTest
         stage.setMessagingPool(commonPool);
         stage.addProvider(new FakeStorageProvider(fakeDatabase));
         stage.setClock(clock);
+        stage.setIncludedActors(Arrays.asList("com.ea.orbit.*"));
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().get();

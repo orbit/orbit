@@ -34,6 +34,8 @@ import com.ea.orbit.actors.samples.hello.IHello;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+
 public class HelloTcpTest
 {
     @Test
@@ -55,6 +57,7 @@ public class HelloTcpTest
     {
         OrbitStage stage = new OrbitStage();
         stage.setClusterName(clusterId);
+        stage.setIncludedActors(Arrays.asList("com.ea.orbit.*"));
         ((ClusterPeer)stage.getClusterPeer()).setJgroupsConfig("classpath:/tcp.xml");
         stage.start().join();
         return stage;

@@ -40,6 +40,38 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <groupId>com.ea.orbit</groupId>
     <artifactId>orbit-actors-core</artifactId>
 
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.*</pattern>
+                                    <shadedPattern>com.ea.orbit.core.shaded.org.</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.googlecode.*</pattern>
+                                    <shadedPattern>com.ea.orbit.core.shaded.com.googlecode.</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>javassist.*</pattern>
+                                    <shadedPattern>com.ea.orbit.core.shaded.com.javassist.</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
     <dependencies>
         <dependency>
             <groupId>com.ea.orbit</groupId>
@@ -62,16 +94,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <version>1.7.10</version>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.16.2</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.4</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.18.2-GA</version>
         </dependency>
     </dependencies>
 </project>

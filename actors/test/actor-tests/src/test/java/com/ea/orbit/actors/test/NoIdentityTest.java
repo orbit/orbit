@@ -61,7 +61,7 @@ public class NoIdentityTest extends ActorBaseTest
     public void callIt() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
-        final ISingularThing ref = SingularThingFactory.getReference();
+        final ISingularThing ref = IActor.ref(ISingularThing.class);
         assertEquals("resp", ref.justRespond().join());
     }
 

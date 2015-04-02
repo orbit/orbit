@@ -28,17 +28,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.providers.mongodb;
 
-import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.providers.IStorageProvider;
 import com.ea.orbit.actors.providers.json.ActorReferenceModule;
-import com.ea.orbit.actors.providers.json.ReflectionReferenceFactory;
+import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
-
-import org.mongojack.JacksonDBCollection;
-import org.mongojack.internal.MongoJackModule;
-import org.mongojack.internal.object.BsonObjectTraversingParser;
-
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.BasicDBObject;
@@ -48,6 +43,10 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
+
+import org.mongojack.JacksonDBCollection;
+import org.mongojack.internal.MongoJackModule;
+import org.mongojack.internal.object.BsonObjectTraversingParser;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -93,7 +92,7 @@ public class MongoDBStorageProvider implements IStorageProvider
     public Task<Void> start()
     {
         mapper = new ObjectMapper();
-        mapper.registerModule(new ActorReferenceModule(new ReflectionReferenceFactory()));
+        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
         mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
