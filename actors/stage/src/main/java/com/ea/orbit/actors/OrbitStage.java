@@ -318,15 +318,15 @@ public class OrbitStage implements Startable
 
     /**
      * Binds this stage to the current thread.
-     * This tells ungrounded references will use this stage to call remote methods.
+     * This tells ungrounded references to use this stage to call remote methods.
      * <p/>
-     * An ungrounded reference is a reference created with {@code IActor.ref} and used outside of an actor method.
+     * An ungrounded reference is a reference created with {@code IActor.getReference} and used outside of an actor method.
      * <p/>
-     * This is only necessary when there are <i>two or more</i> OrbitStages active in the same machine and
+     * This is only necessary when there are <i>two or more</i> OrbitStages active in the same virtual machine and
      * remote calls need to be issued from outside an actor.
-     * This method was created was created to help with test cases.
+     * This method was created to help with test cases.
      * <p/>
-     * A normal application will have a single stage an should have no reason to call this method.
+     * A normal application will have a single stage and should have no reason to call this method.
      * <p/>
      * This method writes a weak reference to the runtime in a thread local.
      * No cleanup is necessary, so none is available.
