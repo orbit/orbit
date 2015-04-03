@@ -66,6 +66,9 @@ public class OrbitStage implements Startable
     @Config("orbit.actors.providers")
     private List<Object> providers = new ArrayList<>();
 
+    @Config("orbit.actors.autoDiscovery")
+    private boolean autoDiscovery;
+
     @Wired
     OrbitContainer orbitContainer;
 
@@ -78,7 +81,6 @@ public class OrbitStage implements Startable
     private Clock clock;
     private ExecutorService executionPool;
     private ExecutorService messagingPool;
-    private boolean autoDiscovery;
 
     public void setClock(final Clock clock)
     {
