@@ -76,23 +76,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>withoutCodeGeneration</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.2</version>
-                        <configuration>
-                            <compilerArgument>-proc:none</compilerArgument>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
     <dependencies>
         <dependency>
             <groupId>com.ea.orbit</groupId>

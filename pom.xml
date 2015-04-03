@@ -36,7 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <packaging>pom</packaging>
     <name>Orbit Parent</name>
 	<description> Orbit is a modern Java framework that makes it easier to build distributed, secure and scalable online services.</description>
-	<url>http://orbit.bioware.com/</url>
+    <url>http://orbit.bioware.com/</url>
 
     <modules>
         <module>actors</module>
@@ -245,6 +245,20 @@ org.eclipse.jdt.core.compiler.source=1.8
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>withoutCodeGeneration</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.2</version>
+                        <configuration>
+                            <compilerArgument>-proc:none</compilerArgument>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
