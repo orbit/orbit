@@ -36,7 +36,7 @@ public abstract class ActorInvoker<T>
 
     public Task<?> invoke(T target, int methodId, Object[] params)
     {
-        throw new com.ea.orbit.exception.MethodNotFoundException("MethodId :" + methodId);
+        throw new com.ea.orbit.exception.MethodNotFoundException(target + " MethodId :" + methodId);
     }
 
     /**
@@ -57,8 +57,7 @@ public abstract class ActorInvoker<T>
         }
         catch (Throwable ex)
         {
-            final Task<Object> exceptionTask = Task.fromException(ex);
-            return exceptionTask;
+            return Task.fromException(ex);
         }
     }
 }

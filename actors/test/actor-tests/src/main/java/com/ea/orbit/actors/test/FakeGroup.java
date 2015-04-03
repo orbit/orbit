@@ -71,7 +71,7 @@ public class FakeGroup
 
     private Map<INodeAddress, FakeClusterPeer> currentChannels = new HashMap<>();
 
-    private Object topologyMutex = new Object();
+    private final Object topologyMutex = new Object();
     @SuppressWarnings("rawtypes")
 	private LoadingCache<String, ConcurrentMap> maps = CacheBuilder.newBuilder()
             .build(new CacheLoader<String, ConcurrentMap>()
@@ -147,8 +147,7 @@ public class FakeGroup
     {
         try
         {
-            final FakeGroup fakeGroup = groups.get(clusterName);
-            return fakeGroup;
+            return groups.get(clusterName);
         }
         catch (ExecutionException e)
         {

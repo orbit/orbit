@@ -46,14 +46,7 @@ public class ExecutorUtils
             final int maxThreads)
     {
         return new ForkJoinPool(maxThreads, ForkJoinPool.defaultForkJoinWorkerThreadFactory,
-                new UncaughtExceptionHandler()
-                {
-                    @Override
-                    public void uncaughtException(Thread t, Throwable e)
-                    {
-                        logger.log(Level.SEVERE, "Uncaught Exception", e);
-                    }
-                }, false);
+                (t, e) -> logger.log(Level.SEVERE, "Uncaught Exception", e), false);
     }
 
     @Deprecated
@@ -87,7 +80,6 @@ public class ExecutorUtils
             catch (InterruptedException e)
             {
                 Thread.currentThread().interrupt();
-                return;
             }
         });
     }
