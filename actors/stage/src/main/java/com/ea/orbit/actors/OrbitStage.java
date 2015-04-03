@@ -40,6 +40,7 @@ import com.ea.orbit.actors.runtime.IHosting;
 import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.annotation.Config;
+import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.OrbitContainer;
 import com.ea.orbit.container.Startable;
@@ -66,6 +67,8 @@ public class OrbitStage implements Startable
     @Config("orbit.actors.providers")
     private List<Object> providers = new ArrayList<>();
 
+    @Wired
+    OrbitContainer orbitContainer;
 
     private IClusterPeer clusterPeer;
     private Task startFuture;
@@ -76,9 +79,6 @@ public class OrbitStage implements Startable
     private Clock clock;
     private ExecutorService executionPool;
     private ExecutorService messagingPool;
-
-    @Inject
-    OrbitContainer orbitContainer;  // Only injected if running on Orbit container
     private boolean autoDiscovery;
 
     public void setClock(final Clock clock)
@@ -166,7 +166,7 @@ public class OrbitStage implements Startable
             clock = Clock.systemUTC();
         }
 
-        this.wireOrbitContainer();
+        this.configureOrbitContainer();
 
         hosting.setNodeType(mode == StageMode.HOST ? IHosting.NodeTypeEnum.SERVER : IHosting.NodeTypeEnum.CLIENT);
         execution.setClock(clock);
@@ -210,11 +210,12 @@ public class OrbitStage implements Startable
         return startFuture;
     }
 
-    private void wireOrbitContainer()
+    private void configureOrbitContainer()
     {
         // orbitContainer will be null if the application is not using it
         if (orbitContainer != null)
         {
+            // Create a lifetime provider for actor DI
             ILifetimeProvider containerLifetime = new ILifetimeProvider()
             {
                 @Override
