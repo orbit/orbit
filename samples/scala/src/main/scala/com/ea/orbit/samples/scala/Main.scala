@@ -28,16 +28,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.scala
 
-/**
- * This is just a proof of concent that Orbit can work with Scala.
- *
- * The biggest obsticle is its use of javax.annotation.processing.AbstractProcessor, which is not (and should not ever be) supported by Scala.
- *
- * It should be fun to write a Scala macros to do the same ;)
- */
-
-import com.ea.orbit.actors.{IActor, OrbitStage}
 import com.ea.orbit.actors.runtime.OrbitActor
+import com.ea.orbit.actors.{IActor, OrbitStage}
 import com.ea.orbit.concurrent.Task
 
 object Main {
@@ -51,19 +43,19 @@ object Main {
     val helloFrom1 = IActor.getReference(classOf[IHello], "0")
     val helloFrom2 = IActor.getReference(classOf[IHello], "0")
 
-    stage1.bind();
+    stage1.bind()
     println(helloFrom1.sayHello("Hi from 01").join())
-    stage2.bind();
+    stage2.bind()
     println(helloFrom2.sayHello("Hi from 02").join())
-    stage1.stop().join();
-    stage2.stop().join();
+    stage1.stop().join()
+    stage2.stop().join()
   }
 
   def initStage(clusterId: String, stageId: String) = {
     val stage = new OrbitStage()
-    stage.setClusterName(clusterId);
-    stage.addProvider("com.ea.orbit.samples.scala.*");
-    stage.start().join();
+    stage.setClusterName(clusterId)
+    stage.addProvider("com.ea.orbit.samples.scala.*")
+    stage.start().join()
     stage
   }
 
@@ -76,8 +68,8 @@ trait IHello extends IActor {
 class HelloActor extends OrbitActor[AnyRef] with IHello {
 
   def sayHello(greeting: String): Task[String] = {
-    getLogger().info("Here: " + greeting)
-    Task.fromValue("You said: '" + greeting + "', I say: Hello from " + System.identityHashCode(this) + " !");
+    getLogger.info("Here: " + greeting)
+    Task.fromValue("You said: '" + greeting + "', I say: Hello from " + System.identityHashCode(this) + " !")
   }
 
 }
