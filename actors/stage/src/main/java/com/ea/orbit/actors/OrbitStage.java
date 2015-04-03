@@ -45,7 +45,6 @@ import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.OrbitContainer;
 import com.ea.orbit.container.Startable;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.time.Clock;
@@ -58,7 +57,7 @@ import java.util.stream.Collectors;
 @Singleton
 public class OrbitStage implements Startable
 {
-    @Config("orbit.actors.clusterName")
+	@Config("orbit.actors.clusterName")
     private String clusterName;
 
     @Config("orbit.actors.stageMode")
@@ -71,7 +70,7 @@ public class OrbitStage implements Startable
     OrbitContainer orbitContainer;
 
     private IClusterPeer clusterPeer;
-    private Task startFuture;
+    private Task<?> startFuture;
     private Messaging messaging;
     private Execution execution;
     private Hosting hosting;
@@ -141,7 +140,7 @@ public class OrbitStage implements Startable
         this.mode = mode;
     }
 
-    public Task start()
+    public Task<?> start()
     {
         startCalled = true;
 
@@ -219,7 +218,7 @@ public class OrbitStage implements Startable
             ILifetimeProvider containerLifetime = new ILifetimeProvider()
             {
                 @Override
-                public Task preActivation(OrbitActor actor)
+                public Task<?> preActivation(OrbitActor<?> actor)
                 {
                     orbitContainer.inject(actor);
                     return Task.done();
@@ -230,7 +229,6 @@ public class OrbitStage implements Startable
         }
     }
 
-    @SuppressWarnings({"unsafe", "unchecked"})
     @Deprecated
     public <T extends IActor> T getReference(final Class<T> iClass, final String id)
     {
@@ -242,7 +240,6 @@ public class OrbitStage implements Startable
     }
 
     @Deprecated
-    @SuppressWarnings({"unsafe", "unchecked"})
     public <T extends IActor> T getReference(final Class<T> iClass)
     {
         if (!iClass.isAnnotationPresent(NoIdentity.class))
@@ -283,7 +280,7 @@ public class OrbitStage implements Startable
         this.providers.add(provider);
     }
 
-    public Task stop()
+    public Task<?> stop()
     {
         return execution.stop()
                 .thenRun(clusterPeer::leave);

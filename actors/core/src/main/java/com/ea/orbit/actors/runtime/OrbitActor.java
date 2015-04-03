@@ -28,7 +28,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.IRemindable;
 import com.ea.orbit.actors.providers.IStorageProvider;
 import com.ea.orbit.concurrent.Task;
@@ -159,7 +158,7 @@ public class OrbitActor<T>
      * @param reminderName the remainder's name
      * @return completion promise for this operation
      */
-    protected Task registerReminder(String reminderName, long dueTime, long period, TimeUnit timeUnit)
+    protected Task<?> registerReminder(String reminderName, long dueTime, long period, TimeUnit timeUnit)
     {
         if (!(this instanceof IRemindable))
         {
@@ -174,7 +173,7 @@ public class OrbitActor<T>
      * @param reminderName the remainder's name
      * @return completion promise for this operation
      */
-    protected Task<Void> unregisterReminder(String reminderName)
+    protected Task<?> unregisterReminder(String reminderName)
     {
         return reference.runtime.unregisterReminder((IRemindable) reference, reminderName);
     }
@@ -215,7 +214,7 @@ public class OrbitActor<T>
      *
      * @return a completion promise
      */
-    public Task deactivateAsync()
+    public Task<?> deactivateAsync()
     {
         return Task.done();
     }

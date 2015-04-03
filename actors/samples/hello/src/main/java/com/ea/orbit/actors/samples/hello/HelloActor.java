@@ -32,6 +32,7 @@ package com.ea.orbit.actors.samples.hello;
 import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.Task;
 
+@SuppressWarnings("rawtypes")
 public class HelloActor extends OrbitActor implements IHello
 {
     public Task<String> sayHello(String greeting)

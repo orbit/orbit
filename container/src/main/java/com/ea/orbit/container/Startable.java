@@ -45,7 +45,7 @@ public interface Startable
      *
      * @return a Task that will be completed once the startup is done.
      */
-    default Task start() //throws Throwable
+    default Task<?> start() //throws Throwable
     {
         return Task.done();
     }
@@ -57,7 +57,7 @@ public interface Startable
      *
      * @return a Task that will be completed once the startup is done.
      */
-    default Task stop() //throws Throwable
+    default Task<?> stop() //throws Throwable
     {
         return Task.done();
     }

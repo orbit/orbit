@@ -5,6 +5,7 @@ import com.ea.orbit.concurrent.Task;
 
 import java.util.UUID;
 
+@SuppressWarnings("rawtypes")
 public class StatelessThing extends OrbitActor implements IStatelessThing
 {
     private UUID uuid = UUID.randomUUID();

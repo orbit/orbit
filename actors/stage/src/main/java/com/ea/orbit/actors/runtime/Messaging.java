@@ -91,7 +91,7 @@ public class Messaging implements Startable
         return clusterPeer.localAddress();
     }
 
-    private static class PendingResponse extends Task implements Comparable<PendingResponse>
+	private static class PendingResponse extends Task<Object> implements Comparable<PendingResponse>
     {
         long timeoutAt;
         public int messageId;
@@ -132,7 +132,7 @@ public class Messaging implements Startable
         this.clock = clock;
     }
 
-    public Task start()
+    public Task<?> start()
     {
         if (executor == null)
         {
@@ -144,7 +144,7 @@ public class Messaging implements Startable
     }
 
     @Override
-    public Task stop()
+    public Task<?> stop()
     {
         executor.shutdown();
         try
@@ -269,7 +269,8 @@ public class Messaging implements Startable
                 enableReplaceObject(true);
             }
 
-            @Override
+            @SuppressWarnings("rawtypes")
+			@Override
             protected Object replaceObject(final Object obj) throws IOException
             {
                 if (!(obj instanceof ActorReference))

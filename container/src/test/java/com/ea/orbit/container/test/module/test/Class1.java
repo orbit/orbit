@@ -30,5 +30,4 @@ package com.ea.orbit.container.test.module.test;
 
 public class Class1
 {
-    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Class1.class);
 }

@@ -41,6 +41,7 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("unused")
 public class PersistenceTest extends ActorBaseTest
 {
 

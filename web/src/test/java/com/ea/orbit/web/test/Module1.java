@@ -32,5 +32,4 @@ import com.ea.orbit.container.Module;
 
 public class Module1 extends Module
 {
-    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Module1.class);
 }

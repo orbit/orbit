@@ -35,8 +35,6 @@ import com.ea.orbit.actors.samples.hello.IHello;
 
 import org.junit.Test;
 
-import java.util.Arrays;
-
 public class HelloTcpTest
 {
     @Test

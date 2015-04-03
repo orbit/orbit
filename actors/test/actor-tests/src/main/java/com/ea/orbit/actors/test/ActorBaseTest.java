@@ -34,7 +34,6 @@ import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.runtime.IReminderController;
 import com.ea.orbit.concurrent.ExecutorUtils;
 
-import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -48,7 +47,7 @@ public class ActorBaseTest
 {
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
-    protected ConcurrentHashMap fakeDatabase = new ConcurrentHashMap();
+    protected ConcurrentHashMap<Object,Object> fakeDatabase = new ConcurrentHashMap<>();
     protected static final ExecutorService commonPool = ExecutorUtils.newScalingThreadPool(200);
 
     public OrbitStage createClient() throws ExecutionException, InterruptedException
@@ -97,7 +96,7 @@ public class ActorBaseTest
             Object r = callable.call();
             if (r instanceof Future)
             {
-                ((Future) r).get(60, TimeUnit.SECONDS);
+                ((Future<?>) r).get(60, TimeUnit.SECONDS);
             }
         }
         catch (Throwable ex)

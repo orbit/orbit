@@ -37,9 +37,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <relativePath>..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.ea.orbit.samples</groupId>
-    <artifactId>orbit-samples-chat-api</artifactId>
+
     <name>Orbit Samples: Chat - API</name>
+    <artifactId>orbit-samples-chat-api</artifactId>
 
     <dependencies>
         <dependency>

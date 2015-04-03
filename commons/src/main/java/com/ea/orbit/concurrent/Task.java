@@ -28,8 +28,6 @@
 
 package com.ea.orbit.concurrent;
 
-import com.ea.orbit.exception.UncheckedException;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -171,7 +169,8 @@ public class Task<T> extends CompletableFuture<T>
      * @param future the future to be wrapped or casted to Task
      * @return future cast as Task of a new Task that is dependent on the completion of that future.
      */
-    public static <T> Task<T> fromFuture(Future<T> future)
+    @SuppressWarnings("unchecked")
+	public static <T> Task<T> fromFuture(Future<T> future)
     {
         if (future instanceof Task)
         {
@@ -198,13 +197,12 @@ public class Task<T> extends CompletableFuture<T>
         }
 
         // potentially very expensive
-        commonPool.execute(new TaskFutureAdapter(t, future, commonPool, 5, TimeUnit.MILLISECONDS));
+        commonPool.execute(new TaskFutureAdapter<T>(t, future, commonPool, 5, TimeUnit.MILLISECONDS));
         return t;
     }
 
     private static Executor commonPool = ExecutorUtils.newScalingThreadPool(100);
 
-    @SuppressWarnings("unsafe")
     static class TaskFutureAdapter<T> implements Runnable
     {
         Task<T> task;
@@ -369,7 +367,7 @@ public class Task<T> extends CompletableFuture<T>
      * @throws NullPointerException if the collection or any of its elements are
      *                              {@code null}
      */
-    public static <F extends CompletableFuture, C extends Collection<F>> Task<C> allOf(C cfs)
+    public static <F extends CompletableFuture<?>, C extends Collection<F>> Task<C> allOf(C cfs)
     {
         return from(CompletableFuture.allOf(cfs.toArray(new CompletableFuture[cfs.size()]))
                 .thenApply(x -> cfs));
@@ -379,9 +377,10 @@ public class Task<T> extends CompletableFuture<T>
      * @throws NullPointerException if the stream or any of its elements are
      *                              {@code null}
      */
-    public static <F extends CompletableFuture<?>> Task<List<F>> allOf(Stream<F> cfs)
+	public static <F extends CompletableFuture<?>> Task<List<F>> allOf(Stream<F> cfs)
     {
         final List<F> futureList = cfs.collect(Collectors.toList());
+        @SuppressWarnings("rawtypes")
         final CompletableFuture[] futureArray = futureList.toArray(new CompletableFuture[futureList.size()]);
         return from(CompletableFuture.allOf(futureArray).thenApply(x -> futureList));
     }
@@ -399,7 +398,7 @@ public class Task<T> extends CompletableFuture<T>
      * @throws NullPointerException if the collection or any of its elements are
      *                              {@code null}
      */
-    public static <F extends CompletableFuture> Task<Object> anyOf(Collection<F> cfs)
+    public static <F extends CompletableFuture<?>> Task<Object> anyOf(Collection<F> cfs)
     {
         return from(CompletableFuture.anyOf(cfs.toArray(new CompletableFuture[cfs.size()])));
     }

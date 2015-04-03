@@ -44,6 +44,7 @@ import static org.junit.Assert.assertTrue;
 
 public class TaskTest
 {
+    @SuppressWarnings("deprecation")
     private static class CTask<T> extends Task<T>
     {
         @Override
@@ -62,10 +63,10 @@ public class TaskTest
     @Test
     public void testAllOf()
     {
-        CTask t1 = new CTask();
-        CTask t2 = new CTask();
-        CTask t3 = new CTask();
-        Task all = Task.allOf(t1, t2, t3);
+        CTask<Integer> t1 = new CTask<>();
+        CTask<Integer> t2 = new CTask<>();
+        CTask<Integer> t3 = new CTask<>();
+        Task<?> all = Task.allOf(t1, t2, t3);
 
         assertFalse(all.isDone());
         t1.complete(1);
@@ -79,10 +80,10 @@ public class TaskTest
     @Test
     public void testAllOfWithError()
     {
-        CTask t1 = new CTask();
-        CTask t2 = new CTask();
-        CTask t3 = new CTask();
-        Task all = Task.allOf(t1, t2, t3);
+        CTask<Integer> t1 = new CTask<>();
+        CTask<Integer> t2 = new CTask<>();
+        CTask<Integer> t3 = new CTask<>();
+        Task<?> all = Task.allOf(t1, t2, t3);
 
         assertFalse(all.isDone());
         t1.complete(1);
@@ -97,6 +98,7 @@ public class TaskTest
     }
 
     @Test
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void testAllOfVariations()
     {
         CTask<Integer> t1 = new CTask();
@@ -131,11 +133,12 @@ public class TaskTest
     }
 
     @Test
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void testAnyOfVariations()
     {
-        CTask<Integer> t1 = new CTask();
-        CTask t2 = new CTask();
-        CTask t3 = new CTask();
+        CTask<Integer> t1 = new CTask<>();
+        CTask t2 = new CTask<>();
+        CTask<?> t3 = new CTask<>();
         CompletableFuture c4 = new CompletableFuture();
         Task group_regular = CTask.anyOf(t1, t2, t3);
         Task group_array = CTask.anyOf(new CompletableFuture[]{t1, t2, t3});
@@ -165,7 +168,7 @@ public class TaskTest
     @Test
     public void testThenApply()
     {
-        CTask<Integer> t1 = new CTask();
+        CTask<Integer> t1 = new CTask<>();
         Task<String> t2 = t1.thenApply(x -> "a");
         assertFalse(t1.isDone());
         t1.complete(1);
@@ -176,7 +179,7 @@ public class TaskTest
     @Test
     public void testThenApplyWithVoid()
     {
-        CTask<Void> t1 = new CTask();
+        CTask<Void> t1 = new CTask<>();
         Task<String> t2 = t1.thenApply(x -> "a");
         assertFalse(t1.isDone());
         t1.complete(null);
@@ -187,7 +190,7 @@ public class TaskTest
     @Test
     public void testThenReturn()
     {
-        CTask<Integer> t1 = new CTask();
+        CTask<Integer> t1 = new CTask<>();
         Task<String> t2 = t1.thenReturn(() -> "a");
         assertFalse(t1.isDone());
         t1.complete(1);
@@ -199,7 +202,7 @@ public class TaskTest
     @Test
     public void testThenCompose()
     {
-        CTask<Integer> t1 = new CTask();
+        CTask<Integer> t1 = new CTask<>();
         Task<String> t2 = t1.thenCompose(x -> CTask.fromValue(x + "a"));
         Task<String> t3 = t1.thenCompose(x -> CompletableFuture.completedFuture(x + "a"));
         assertFalse(t1.isDone());
@@ -212,7 +215,7 @@ public class TaskTest
     @Test
     public void testThenComposeNoParams()
     {
-        CTask<Integer> t1 = new CTask();
+        CTask<Integer> t1 = new CTask<>();
         Task<String> t2 = t1.thenCompose(() -> Task.fromValue("b"));
         Task<String> t3 = t1.thenCompose(() -> CompletableFuture.completedFuture("c"));
         assertFalse(t1.isDone());
@@ -226,7 +229,7 @@ public class TaskTest
     @Test
     public void testThenReturnWithException()
     {
-        CTask<Integer> t1 = new CTask();
+        CTask<Integer> t1 = new CTask<>();
         Task<String> t2 = t1.thenReturn(() -> "a");
         assertFalse(t1.isDone());
         t1.completeExceptionally(new RuntimeException());

@@ -38,7 +38,8 @@ public class ClassCache
     private ReadWriteLock lock = new ReentrantReadWriteLock();
     public static final ClassCache shared = new ClassCache();
 
-    public <T> ClassDescriptor<T> getClass(Class<T> clazz)
+    @SuppressWarnings("unchecked")
+	public <T> ClassDescriptor<T> getClass(Class<T> clazz)
     {
         ClassDescriptor<?> desc;
         lock.readLock().lock();

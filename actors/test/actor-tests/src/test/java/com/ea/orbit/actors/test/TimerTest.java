@@ -47,6 +47,7 @@ import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("unused")
 public class TimerTest extends ActorBaseTest
 {
     // At the moment the clock injected to the stage is not used by the timer subsystem.

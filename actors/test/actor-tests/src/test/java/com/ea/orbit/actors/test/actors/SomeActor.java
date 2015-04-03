@@ -5,6 +5,7 @@ import com.ea.orbit.concurrent.Task;
 
 import java.util.UUID;
 
+@SuppressWarnings("rawtypes")
 public class SomeActor extends OrbitActor implements ISomeActor
 {
     private UUID uniqueActivationId = UUID.randomUUID();
@@ -51,7 +52,7 @@ public class SomeActor extends OrbitActor implements ISomeActor
         return Task.fromValue(activationWasCalled);
     }
 
-    public Task activateAsync()
+    public Task<?> activateAsync()
     {
         activationWasCalled = true;
         return super.activateAsync();

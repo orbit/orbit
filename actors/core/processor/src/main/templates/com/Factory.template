@@ -6,6 +6,7 @@
 package <%= clazz.packageName%>;
 
 @com.ea.orbit.actors.annotation.OrbitGenerated
+@SuppressWarnings("unchecked")
 public class <%=factoryName%> extends com.ea.orbit.actors.runtime.ActorFactory<<%=interfaceFullName%>>
 {
     @Override
@@ -35,7 +36,7 @@ public class <%=factoryName%> extends com.ea.orbit.actors.runtime.ActorFactory<<
     }
 
     @Override
-    public Class<?> getInterface()
+    public Class<<%= interfaceFullName %>> getInterface()
     {
         return <%= interfaceFullName %>.class;
     }

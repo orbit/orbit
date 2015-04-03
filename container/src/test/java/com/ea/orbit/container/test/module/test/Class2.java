@@ -36,11 +36,10 @@ import javax.inject.Singleton;
 @Singleton
 public class Class2 implements Startable
 {
-    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Class2.class);
     public boolean started;
 
     @Override
-    public Task start()
+    public Task<?> start()
     {
         started = true;
         return Task.done();

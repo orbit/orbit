@@ -30,11 +30,11 @@ package com.ea.orbit.actors.runtime;
 
 public abstract class ActorFactory<T>
 {
-    public abstract Class<?> getInterface();
+    public abstract Class<T> getInterface();
 
     public abstract int getInterfaceId();
 
-    public abstract ActorInvoker getInvoker();
+    public abstract ActorInvoker<T> getInvoker();
 
     public abstract T createReference(final String id);
 }

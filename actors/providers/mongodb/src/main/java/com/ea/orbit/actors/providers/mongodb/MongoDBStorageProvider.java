@@ -117,7 +117,7 @@ public class MongoDBStorageProvider implements IStorageProvider
     }
 
     @Override
-    public Task<Void> clearState(final ActorReference reference, final Object state)
+    public Task<Void> clearState(final ActorReference<?> reference, final Object state)
     {
         DB db = mongoClient.getDB(database);
         final DBCollection col = db.getCollection(ActorReference.getInterfaceClass(reference).getSimpleName());
@@ -134,7 +134,7 @@ public class MongoDBStorageProvider implements IStorageProvider
 
     @Override
     @SuppressWarnings("unchecked")
-    public Task<Boolean> readState(final ActorReference reference, final Object state)
+    public Task<Boolean> readState(final ActorReference<?> reference, final Object state)
     {
         DB db = mongoClient.getDB(database);
         final DBCollection col = db.getCollection(ActorReference.getInterfaceClass(reference).getSimpleName());
@@ -160,7 +160,7 @@ public class MongoDBStorageProvider implements IStorageProvider
 
     @Override
     @SuppressWarnings("unchecked")
-    public Task<Void> writeState(final ActorReference reference, final Object state)
+    public Task<Void> writeState(final ActorReference<?> reference, final Object state)
     {
         DB db = mongoClient.getDB(database);
         final DBCollection col = db.getCollection(ActorReference.getInterfaceClass(reference).getSimpleName());

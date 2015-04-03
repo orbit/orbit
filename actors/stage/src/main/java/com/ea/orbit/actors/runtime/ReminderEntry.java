@@ -35,7 +35,9 @@ import java.util.Date;
 
 public class ReminderEntry implements Serializable
 {
-    private IRemindable reference;
+	private static final long serialVersionUID = 1L;
+
+	private IRemindable reference;
     private String reminderName;
 
     private Date startAt;

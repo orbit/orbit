@@ -43,6 +43,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("unused")
 public class MinimalTest extends ActorBaseTest
 {
     String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
@@ -95,7 +96,6 @@ public class MinimalTest extends ActorBaseTest
         }
 
         Random r = new Random();
-        List<ISomeActor> actors = new ArrayList<>();
         for (int i = 0; i < 100; i++)
         {
             stages.get(r.nextInt(stages.size())).bind();

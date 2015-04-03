@@ -36,7 +36,7 @@ public class FactoryTemplate extends ActorProcessor.Factory
 		StringBuffer builder = new StringBuffer();
 		builder.append("\r\npackage ");
 		builder.append( clazz.packageName);
-		builder.append(";\r\n\r\n@com.ea.orbit.actors.annotation.OrbitGenerated\r\npublic class ");
+		builder.append(";\r\n\r\n@com.ea.orbit.actors.annotation.OrbitGenerated\r\n@SuppressWarnings(\"unchecked\")\r\npublic class ");
 		builder.append(factoryName);
 		builder.append(" extends com.ea.orbit.actors.runtime.ActorFactory<");
 		builder.append(interfaceFullName);
@@ -72,7 +72,9 @@ public class FactoryTemplate extends ActorProcessor.Factory
 		}
 		builder.append("\r\n    @Override\r\n    public int getInterfaceId()\r\n    {\r\n        return ");
 		builder.append( interfaceId );
-		builder.append(";\r\n    }\r\n\r\n    @Override\r\n    public Class<?> getInterface()\r\n    {\r\n        return ");
+		builder.append(";\r\n    }\r\n\r\n    @Override\r\n    public Class<");
+		builder.append( interfaceFullName );
+		builder.append("> getInterface()\r\n    {\r\n        return ");
 		builder.append( interfaceFullName );
 		builder.append(".class;\r\n    }\r\n\r\n    @Override\r\n    public com.ea.orbit.actors.runtime.ActorInvoker getInvoker()\r\n    {\r\n        return new ");
 		builder.append( clazz.packageName );

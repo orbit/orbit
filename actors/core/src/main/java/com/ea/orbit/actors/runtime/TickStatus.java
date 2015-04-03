@@ -39,7 +39,9 @@ import java.io.Serializable;
  */
 public class TickStatus implements Serializable
 {
-    private long currentTickTime;
+	private static final long serialVersionUID = 1L;
+
+	private long currentTickTime;
     private long firstTickTime;
     private long period;
 

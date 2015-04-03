@@ -37,8 +37,6 @@ import java.util.Map;
 
 public class HelloMain
 {
-    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(HelloMain.class);
-
     public static void main(final String args[]) throws Exception
     {
         OrbitContainer container = new OrbitContainer();

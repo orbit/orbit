@@ -39,7 +39,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <modelVersion>4.0.0</modelVersion>
     <name>Orbit Commons</name>
 
-    <groupId>com.ea.orbit</groupId>
     <artifactId>orbit-commons</artifactId>
 
 

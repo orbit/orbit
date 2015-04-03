@@ -29,14 +29,10 @@
 package com.ea.orbit.actors.server;
 
 
-import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.providers.IStorageProvider;
-import com.ea.orbit.annotation.Config;
-import com.ea.orbit.concurrent.Task;
 import javax.inject.Singleton;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.concurrent.Task;
 
 @Singleton
 public class OrbitStageServer extends OrbitStage
@@ -46,7 +42,7 @@ public class OrbitStageServer extends OrbitStage
         setMode(StageMode.HOST);
     }
 
-    public Task start()
+    public Task<?> start()
     {
         return super.start();
     }

@@ -42,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
+@SuppressWarnings("unused")
 public class MessageTimeoutTest extends ActorBaseTest
 {
 

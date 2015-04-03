@@ -56,13 +56,13 @@ public class FakeClusterPeer implements IClusterPeer
     private AtomicLong messagesSentOk = new AtomicLong();
     private AtomicLong messagesReceived = new AtomicLong();
     private AtomicLong messagesReceivedOk = new AtomicLong();
-    private CompletableFuture startFuture = new CompletableFuture();
+    private CompletableFuture<?> startFuture = new CompletableFuture<>();
 
     public FakeClusterPeer()
     {
     }
 
-    public Task join(String clusterName)
+    public Task<Void> join(String clusterName)
     {
         group = FakeGroup.get(clusterName);
         return Task.fromFuture(CompletableFuture.runAsync(() -> {

@@ -35,9 +35,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <version>0.1.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <name>Orbit Actors Core</name>
 
-    <groupId>com.ea.orbit</groupId>
+    <name>Orbit Actors Core</name>
     <artifactId>orbit-actors-core</artifactId>
 
     <build>

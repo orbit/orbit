@@ -82,7 +82,7 @@ public interface IClusterPeer
      * @param clusterName the name/identifier of the cluster
      * @return future representing the completion of the joining process.
      */
-    Task<Void> join(String clusterName);
+    Task<?> join(String clusterName);
 
     /**
      * Leaves the cluster.

@@ -43,7 +43,9 @@ public interface IHosting extends IActorObserver
 
     class StageInfo implements Serializable
     {
-        private NodeTypeEnum type;
+    	private static final long serialVersionUID = 1L;
+
+    	private NodeTypeEnum type;
         private Set<String> availableActors;
 
         @java.beans.ConstructorProperties({"type", "availableActors"})

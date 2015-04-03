@@ -46,6 +46,7 @@ import java.util.concurrent.TimeUnit;
 import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("unused")
 public class ReminderTest extends ActorBaseTest
 {
     // At the moment the clock injected to the stage is not used by the timer subsystem.
@@ -58,6 +59,7 @@ public class ReminderTest extends ActorBaseTest
 
     private static BlockingQueue<String> remindersReceived = new LinkedBlockingQueue<>();
 
+    @SuppressWarnings("rawtypes")
     public static class ReminderTestActor extends OrbitActor implements IReminderTestActor
     {
 
@@ -87,7 +89,7 @@ public class ReminderTest extends ActorBaseTest
         assertEquals("bla", remindersReceived.poll(5, TimeUnit.SECONDS));
     }
 
-    @Test
+	@Test
     public void persistedTimerTest() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();

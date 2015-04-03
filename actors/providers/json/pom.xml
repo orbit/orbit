@@ -36,9 +36,8 @@
         <relativePath>../..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <name>Orbit Actors Utilities for Json Storage</name>
 
-    <groupId>com.ea.orbit</groupId>
+    <name>Orbit Actors Utilities for Json Storage</name>
     <artifactId>orbit-actors-json</artifactId>
 
     <dependencies>

@@ -37,9 +37,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <relativePath>..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <name>Orbit Public Javadoc Documentation</name>
 
-    <groupId>com.ea.orbit</groupId>
+    <name>Orbit Public Javadoc Documentation</name>
     <artifactId>orbit-all-docs</artifactId>
 
     <build>

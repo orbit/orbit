@@ -55,6 +55,7 @@ import static org.junit.Assert.*;
 /**
  * Test nodes that do not contain the same collection of actors.
  */
+@SuppressWarnings("unused")
 public class AsymmetricalStagesTest extends ActorBaseTest
 {
 

@@ -44,10 +44,10 @@ import java.util.concurrent.ConcurrentMap;
 
 public class FakeStorageProvider implements IStorageProvider
 {
-    private ConcurrentMap database;
+    private ConcurrentMap<Object,Object> database;
     private ObjectMapper mapper = new ObjectMapper();
 
-    public FakeStorageProvider(final ConcurrentMap database)
+    public FakeStorageProvider(final ConcurrentMap<Object,Object> database)
     {
         this.database = database;
         mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
@@ -61,7 +61,7 @@ public class FakeStorageProvider implements IStorageProvider
     }
 
     @Override
-    public Task<Void> clearState(final ActorReference reference, final Object state)
+    public Task<Void> clearState(final ActorReference<?> reference, final Object state)
     {
         database.remove(reference);
         return Task.done();
@@ -74,7 +74,7 @@ public class FakeStorageProvider implements IStorageProvider
     }
 
     @Override
-    public Task<Boolean> readState(final ActorReference reference, final Object state)
+    public Task<Boolean> readState(final ActorReference<?> reference, final Object state)
     {
         String databaseObject = (String) database.get(reference);
         if (databaseObject != null)
@@ -95,7 +95,7 @@ public class FakeStorageProvider implements IStorageProvider
     }
 
     @Override
-    public Task<Void> writeState(final ActorReference reference, final Object state)
+    public Task<Void> writeState(final ActorReference<?> reference, final Object state)
     {
         try
         {

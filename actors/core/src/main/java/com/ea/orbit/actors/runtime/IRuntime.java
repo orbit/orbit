@@ -63,7 +63,7 @@ public interface IRuntime
      * @param timeUnit     the time unit for period and dueTime
      * @return a registration that allows to cancel the timer.
      */
-    Registration registerTimer(OrbitActor actor, Callable<Task<?>> taskCallable, long dueTime, long period, TimeUnit timeUnit);
+    Registration registerTimer(OrbitActor<?> actor, Callable<Task<?>> taskCallable, long dueTime, long period, TimeUnit timeUnit);
 
     /**
      * Gets the local clock. It's usually the system clock, but it can be changed for testing.
@@ -82,7 +82,7 @@ public interface IRuntime
      * @param timeUnit     the time unit for dueTime and period
      * @return completion promise for this operation
      */
-    Task registerReminder(IRemindable actor, String reminderName, long dueTime, long period, TimeUnit timeUnit);
+    Task<?> registerReminder(IRemindable actor, String reminderName, long dueTime, long period, TimeUnit timeUnit);
 
     /**
      * Removes a previously registered reminder.
@@ -91,5 +91,5 @@ public interface IRuntime
      * @param reminderName the remainder's name
      * @return completion promise for this operation
      */
-    Task unregisterReminder(IRemindable actor, String reminderName);
+    Task<?> unregisterReminder(IRemindable actor, String reminderName);
 }

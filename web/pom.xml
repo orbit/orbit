@@ -38,7 +38,6 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.ea.orbit</groupId>
     <name>Orbit Web Container</name>
     <artifactId>orbit-web</artifactId>
     <properties>

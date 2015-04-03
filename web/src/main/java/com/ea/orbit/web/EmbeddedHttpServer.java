@@ -77,8 +77,8 @@ public class EmbeddedHttpServer implements Startable
     @Inject
     private OrbitContainer container;
 
-    @SuppressWarnings("unchecked")
-    public Task start()
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public Task<Void> start()
     {
 
         // Ensuring that jersey will use singletons from the orbit container.
@@ -86,7 +86,7 @@ public class EmbeddedHttpServer implements Startable
         DynamicConfigurationService dcs = locator.getService(DynamicConfigurationService.class);
         DynamicConfiguration dc = dcs.createDynamicConfiguration();
 
-        for (final Class c : container.getClasses())
+        for (final Class<?> c : container.getClasses())
         {
             if (c.isAnnotationPresent(Singleton.class))
             {
@@ -193,7 +193,7 @@ public class EmbeddedHttpServer implements Startable
         return Task.done();
     }
 
-    public Task stop()
+    public Task<Void> stop()
     {
         try
         {
