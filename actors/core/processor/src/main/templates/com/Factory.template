@@ -108,7 +108,7 @@ public class <%=factoryName%> extends com.ea.orbit.actors.runtime.ActorFactory<<
                     return target.<%= method.name %>(<%= method.unwrapParams("params")%>);
 <%}%>
                 default:
-                    throw new com.ea.orbit.exception.MethodNotFoundException("MethodId :" +methodId);
+                    return super.invoke(target, methodId, params);
            }
         }
     }
