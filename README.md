@@ -21,6 +21,7 @@ Orbit is licensed under the [BSD 3-Clause License](LICENSE).
 Simple Examples
 =======
 #### Actors
+##### java
 ```java
 public interface IHello extends IActor
 {
@@ -36,5 +37,20 @@ public class HelloActor extends OrbitActor implements IHello
     }
 }
  
-HelloFactory.getReference("0").sayHello("Meep Meep");
+IActor.getReference(IHello.class, "0").sayHello("Meep Meep");
+```
+##### scala
+```scala
+trait IHello extends IActor {
+  def sayHello(greeting: String): Task[String]
+}
+
+class HelloActor extends OrbitActor[AnyRef] with IHello {
+  def sayHello(greeting: String): Task[String] = {
+    getLogger.info("Here: " + greeting)
+    Task.fromValue("Hello There")
+  }
+}
+
+IActor.getReference(classOf[IHello], "0").sayHello("Hi from 01").join()
 ```
