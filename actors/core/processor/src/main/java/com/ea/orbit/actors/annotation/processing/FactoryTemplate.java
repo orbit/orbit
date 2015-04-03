@@ -142,7 +142,7 @@ public class FactoryTemplate extends ActorProcessor.Factory
 		builder.append( method.unwrapParams("params"));
 		builder.append(");\r\n");
 		}
-		builder.append("                default:\r\n                    throw new com.ea.orbit.exception.MethodNotFoundException(\"MethodId :\" +methodId);\r\n           }\r\n        }\r\n    }\r\n}");
+		builder.append("                default:\r\n                    return super.invoke(target, methodId, params);\r\n           }\r\n        }\r\n    }\r\n}");
 		return builder.toString();
 	}
 }
