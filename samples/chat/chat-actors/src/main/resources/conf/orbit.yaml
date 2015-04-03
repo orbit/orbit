@@ -29,6 +29,7 @@
 orbit.actors.clusterName: chat
 
 orbit.actors.providers:
+  - com.ea.orbit.*
   - !!com.ea.orbit.actors.providers.mongodb.MongoDBStorageProvider
     host: localhost
     port: 27017
@@ -36,8 +37,5 @@ orbit.actors.providers:
 
 orbit.chat.maxMessages: 500
 
-orbit.services:
+orbit.providers:
   - com.ea.orbit.actors.server.ServerModule
-
-orbit.actors.includedActors:
-  - com.ea.orbit.*

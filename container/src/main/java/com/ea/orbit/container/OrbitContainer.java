@@ -83,8 +83,8 @@ public class OrbitContainer
     @Config("orbit.locateServices")
     private boolean locateServices = true;
 
-    @Config("orbit.services")
-    private List<Object> services = new ArrayList<>();
+    @Config("orbit.providers")
+    private List<Object> providers = new ArrayList<>();
 
     private final DependencyRegistry registry = new DependencyRegistry()
     {
@@ -417,9 +417,9 @@ public class OrbitContainer
                     }
                 }
             }
-            if (services != null)
+            if (providers != null)
             {
-                for (final Object service : services)
+                for (final Object service : providers)
                 {
                     // TODO: use logger
                     System.out.println(service);

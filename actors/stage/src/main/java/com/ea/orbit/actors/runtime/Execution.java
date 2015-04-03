@@ -72,6 +72,7 @@ import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Execution implements IRuntime
@@ -88,7 +89,6 @@ public class Execution implements IRuntime
     private Messaging messaging;
     private ExecutionSerializer executionSerializer;
     private int maxQueueSize = 10000;
-    private List<IOrbitProvider> providers = new ArrayList<>();
     private Timer timer = new Timer("Orbit stage timer");
     private Clock clock = Clock.systemUTC();
     private long cleanupIntervalMillis = TimeUnit.MINUTES.toMillis(5);
@@ -100,10 +100,15 @@ public class Execution implements IRuntime
 
     @Config("orbit.actors.autoDiscovery")
     private boolean autoDiscovery = true;
+    private List<IOrbitProvider> orbitProviders = new ArrayList<>();
+    private List<Pattern> actorClassPatterns = new ArrayList<>();
     private List<Class<?>> actorClasses = new ArrayList<>();
+
+    // list of the actor classes available in this node, computed during startup
     private List<String> availableActors;
+
     private final WeakReference<IRuntime> cachedRef = new WeakReference<>(this);
-    private List<String> includeActors;
+    private List<IOrbitProvider> actorPatterns;
 
     public Execution()
     {
@@ -126,9 +131,14 @@ public class Execution implements IRuntime
         return executor;
     }
 
-    public void setIncludeActors(List<String> includeActors)
+    public void setActorClassPatterns(List<Pattern> actorClassPatterns)
     {
-        this.includeActors = includeActors;
+        this.actorClassPatterns = actorClassPatterns;
+    }
+
+    public void setActorClasses(List<Class<?>> actorClasses)
+    {
+        this.actorClasses = actorClasses;
     }
 
     private static class InterfaceDescriptor
@@ -221,7 +231,7 @@ public class Execution implements IRuntime
                             try
                             {
 
-                                Runtime.setRuntime(Execution.this.cachedRef);
+                                bind();
                                 OrbitActor orbitActor = (OrbitActor) singleActivation.instance;
                                 Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preDeactivation(orbitActor)))
                                         .thenCompose(() -> orbitActor.deactivateAsync())
@@ -268,7 +278,7 @@ public class Execution implements IRuntime
                         {
                             try
                             {
-                                Runtime.setRuntime(Execution.this.cachedRef);
+                                bind();
                                 OrbitActor orbitActor = (OrbitActor) activation.instance;
                                 Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preDeactivation(orbitActor)))
                                         .thenCompose(() -> orbitActor.deactivateAsync())
@@ -397,24 +407,24 @@ public class Execution implements IRuntime
     private Map<IAddressable, ReferenceEntry> actors;
 
 
-    public void setProviders(List<IOrbitProvider> providers)
+    public void setOrbitProviders(List<IOrbitProvider> orbitProviders)
     {
-        this.providers = providers;
+        this.orbitProviders = orbitProviders;
     }
 
     @SuppressWarnings("unchecked")
     public <T extends IOrbitProvider> T getFirstProvider(Class<T> itemType)
     {
-        return (providers == null) ? null :
-                (T) providers.stream().filter(p -> itemType.isInstance(p)).findFirst().orElse(null);
+        return (orbitProviders == null) ? null :
+                (T) orbitProviders.stream().filter(p -> itemType.isInstance(p)).findFirst().orElse(null);
 
     }
 
     @SuppressWarnings("unchecked")
     public <T extends IOrbitProvider> List<T> getAllProviders(Class<T> itemType)
     {
-        return providers == null ? Collections.emptyList()
-                : (List<T>) providers.stream().filter(p -> itemType.isInstance(p)).collect(Collectors.toList());
+        return orbitProviders == null ? Collections.emptyList()
+                : (List<T>) orbitProviders.stream().filter(p -> itemType.isInstance(p)).collect(Collectors.toList());
     }
 
     public void setHosting(final Hosting hosting)
@@ -430,7 +440,7 @@ public class Execution implements IRuntime
     public Task stop()
     {
         timer.cancel();
-        return Task.allOf(providers.stream().map(v -> v.stop()));
+        return Task.allOf(orbitProviders.stream().map(v -> v.stop()));
     }
 
     public <T extends IActorObserver> T getObjectReference(final Class<T> iClass, final T observer)
@@ -495,7 +505,7 @@ public class Execution implements IRuntime
                 // TODO decide if it's necessary to change the key here for the actor activation?
                 executionSerializer.offerJob(actor,
                         () -> {
-                            Runtime.setRuntime(Execution.this.cachedRef);
+                            bind();
                             try
                             {
                                 return taskCallable.call();
@@ -510,6 +520,20 @@ public class Execution implements IRuntime
         };
         timer.schedule(timerTask, timeUnit.toMillis(dueTime), timeUnit.toMillis(period));
         return () -> timerTask.cancel();
+    }
+
+    public void bind()
+    {
+        Runtime.setRuntime(this.cachedRef);
+    }
+
+    public void bind(Object object)
+    {
+        if(!(object instanceof ActorReference))
+        {
+            throw new IllegalArgumentException("Must be a reference");
+        }
+        ((ActorReference) object).runtime = this;
     }
 
     @Override
@@ -535,14 +559,15 @@ public class Execution implements IRuntime
     {
         final List<ClassPath.ResourceInfo> actorClassesRes = ClassPath.get().getAllResources().stream().filter(r -> r.getResourceName().startsWith("META-INF/orbit/actors/classes")).collect(Collectors.toList());
         final List<Class<?>> actorInterfaces = new ArrayList<>();
+        final List<Class<?>> _actorClasses = new ArrayList<>();
 
-        if (includeActors != null && includeActors.size() > 0)
+        if (actorClassPatterns  != null && actorClassPatterns .size() > 0)
         {
-            Set<Class<?>> iActors = ClassPath.get().getAllResources()
-                    .stream()
+            // finding classes in the classpath
+            Set<Class<?>> iActors = ClassPath.get().getAllResources().stream()
                     .filter(r -> r.getResourceName().endsWith(".class"))
-                    .filter(r -> includeActors.stream().anyMatch(i -> r.getResourceName().matches(i)))
                     .map(r -> r.getResourceName().substring(0, r.getResourceName().length() - 6).replace("/", "."))
+                    .filter(cn -> actorClassPatterns.stream().anyMatch(i -> i.matcher(cn).matches()))
                     .map(cn -> classForName(cn, true))
                     .filter(c -> c != null && (IActor.class.isAssignableFrom(c) || (c.isInterface() && IActorObserver.class.isAssignableFrom(c))))
                     .collect(Collectors.toSet());
@@ -551,7 +576,6 @@ public class Execution implements IRuntime
         }
 
         List<ClassPath.ResourceInfo> actorInterfacesRes = ClassPath.get().getAllResources().stream().filter(r -> r.getResourceName().startsWith("META-INF/orbit/actors/interfaces")).collect(Collectors.toList());
-
         try
         {
             for (ClassPath.ResourceInfo irs : actorInterfacesRes)
@@ -621,7 +645,7 @@ public class Execution implements IRuntime
             executor = ExecutorUtils.newScalingThreadPool(1000);
         }
         executionSerializer = new ExecutionSerializer(executor);
-        providers.forEach(v -> v.start());
+        orbitProviders.forEach(v -> v.start());
         // schedules the cleanup
         timer.schedule(new TimerTask()
         {
@@ -823,7 +847,7 @@ public class Execution implements IRuntime
             Task<?> future;
             try
             {
-                Runtime.setRuntime(this.cachedRef);
+                bind();
                 future = descriptor.invoker.safeInvoke(activation.getOrCreateInstance(), methodId, params);
                 return future.whenComplete((r, e) -> {
                     sendResponseAndLogError(oneway, from, messageId, r, e);

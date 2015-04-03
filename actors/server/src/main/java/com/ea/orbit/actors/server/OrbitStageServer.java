@@ -46,12 +46,8 @@ public class OrbitStageServer extends OrbitStage
         setMode(StageMode.HOST);
     }
 
-    @Config("orbit.actors.providers")
-    private List<IStorageProvider> providers = new ArrayList<>();
-
     public Task start()
     {
-        providers.forEach(e -> addProvider(e));
         return super.start();
     }
 }

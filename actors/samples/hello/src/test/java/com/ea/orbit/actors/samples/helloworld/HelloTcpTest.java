@@ -57,7 +57,7 @@ public class HelloTcpTest
     {
         OrbitStage stage = new OrbitStage();
         stage.setClusterName(clusterId);
-        stage.setIncludedActors(Arrays.asList("com.ea.orbit.*"));
+        stage.addProvider("com.ea.orbit.*");
         ((ClusterPeer)stage.getClusterPeer()).setJgroupsConfig("classpath:/tcp.xml");
         stage.start().join();
         return stage;

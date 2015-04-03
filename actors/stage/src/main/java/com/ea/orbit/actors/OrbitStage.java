@@ -51,6 +51,8 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Singleton
 public class OrbitStage implements Startable
@@ -60,6 +62,9 @@ public class OrbitStage implements Startable
 
     @Config("orbit.actors.stageMode")
     private StageMode mode = StageMode.HOST;
+
+    @Config("orbit.actors.providers")
+    private List<Object> providers = new ArrayList<>();
 
 
     private IClusterPeer clusterPeer;
@@ -71,11 +76,10 @@ public class OrbitStage implements Startable
     private Clock clock;
     private ExecutorService executionPool;
     private ExecutorService messagingPool;
-    @Config("orbit.actors.includedActors")
-    private List<String> includedActors;
 
     @Inject
     OrbitContainer orbitContainer;  // Only injected if running on Orbit container
+    private boolean autoDiscovery;
 
     public void setClock(final Clock clock)
     {
@@ -102,9 +106,9 @@ public class OrbitStage implements Startable
         return messagingPool;
     }
 
-    public void setIncludedActors(List<String> includedActors)
+    public void setAutoDiscovery(boolean autoDiscovery)
     {
-        this.includedActors = new ArrayList<>(includedActors);
+        this.autoDiscovery = autoDiscovery;
     }
 
     public enum StageMode
@@ -112,8 +116,6 @@ public class OrbitStage implements Startable
         FRONT_END, // no activations
         HOST // allows activations
     }
-
-    private List<IOrbitProvider> providers = new ArrayList<>();
 
     public String getClusterName()
     {
@@ -171,7 +173,6 @@ public class OrbitStage implements Startable
         execution.setHosting(hosting);
         execution.setMessaging(messaging);
         execution.setExecutor(executionPool);
-        execution.setIncludeActors(includedActors);
 
         messaging.setExecution(execution);
         messaging.setClock(clock);
@@ -180,7 +181,24 @@ public class OrbitStage implements Startable
         hosting.setExecution(execution);
         hosting.setClusterPeer(clusterPeer);
         messaging.setClusterPeer(clusterPeer);
-        execution.setProviders(providers);
+
+        execution.setAutoDiscovery(autoDiscovery);
+
+        execution.setOrbitProviders(providers.stream()
+                .filter(p -> p instanceof IOrbitProvider)
+                .map(p -> (IOrbitProvider) p)
+                .collect(Collectors.toList()));
+        execution.setActorClassPatterns(providers.stream()
+                .filter(p -> p instanceof String)
+                .map(p -> (String) p)
+                .map(s -> Pattern.compile(s))
+                .collect(Collectors.toList()));
+        execution.setActorClasses(providers.stream()
+                .filter(p -> p instanceof Class)
+                .map(p -> (Class<?>) p)
+                .filter(c -> IActor.class.isAssignableFrom(c)
+                        || IActorObserver.class.isAssignableFrom(c))
+                .collect(Collectors.toList()));
 
         messaging.start();
         hosting.start();
@@ -235,7 +253,28 @@ public class OrbitStage implements Startable
         this.clusterPeer = clusterPeer;
     }
 
-    public void addProvider(final IOrbitProvider provider)
+    /**
+     * Installs extensions to the stage: Actors or Providers
+     * <p/>
+     * Valid arguments:
+     * <table style="border: 1px; border-collapse: collapse;">
+     * <tr><td>String</td><td>Actor class name pattern</td>
+     * <tr><td>Class</td><td>OrbitActor or IActor</td>
+     * <tr><td>Object</td><td>Instance of a provider</td>
+     * </table>
+     * Invalid arguments are ignored.
+     * <p/>
+     * Examples:
+     * <pre>{@code
+     * stage.addProvider(HelloActor.class);
+     * stage.addProvider("com.ea.orbit.actors.*");
+     * stage.addProvider("com.ea.orbit.samples.chat.Chat");
+     * stage.addProvider(new MongoDbProvider(...));
+     * }</pre>
+     *
+     * @param provider Actor classNamePattern, Actor class, or provider instance.
+     */
+    public void addProvider(final Object provider)
     {
         this.providers.add(provider);
     }
@@ -271,4 +310,53 @@ public class OrbitStage implements Startable
         execution.activationCleanup(block);
         messaging.timeoutCleanup();
     }
+
+    /**
+     * Binds this stage to the current thread.
+     * This tells ungrounded references will use this stage to call remote methods.
+     * <p/>
+     * An ungrounded reference is a reference created with {@code IActor.ref} and used outside of an actor method.
+     * <p/>
+     * This is only necessary when there are <i>two or more</i> OrbitStages active in the same machine and
+     * remote calls need to be issued from outside an actor.
+     * This method was created was created to help with test cases.
+     * <p/>
+     * A normal application will have a single stage an should have no reason to call this method.
+     * <p/>
+     * This method writes a weak reference to the runtime in a thread local.
+     * No cleanup is necessary, so none is available.
+     */
+    public void bind()
+    {
+        execution.bind();
+    }
+
+    /**
+     * Binds this reference to the current stage.
+     * This changes this reference so that it will always use this stage to issue remote calls.
+     * <p/>
+     * This is only necessary when there are <i>two or more</i> OrbitStages active in the same machine and
+     * references are created and used from outside an actor.     *
+     * This method was created was help with test cases.
+     * <p/>
+     * A normal application will have a single stage an should have no reason to call this method.
+     * <p/>
+     * This method writes to an internal variable of the reference binding to itself.
+     *
+     * @param actorReference the reference to be bound to this stage
+     */
+    public void bind(IActor actorReference)
+    {
+        execution.bind(actorReference);
+    }
+
+    /**
+     * @param actorObserverReference the reference to be bound to this stage
+     * @See bind(IActor actor)
+     */
+    public void bind(IActorObserver actorObserverReference)
+    {
+        execution.bind(actorObserverReference);
+    }
+
 }

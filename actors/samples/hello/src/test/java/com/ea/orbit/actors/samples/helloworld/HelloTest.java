@@ -55,7 +55,7 @@ public class HelloTest
     public static OrbitStage initStage(String clusterId, String stageId)
     {
         OrbitStage stage = new OrbitStage();
-        stage.setIncludedActors(Arrays.asList("com.ea.orbit.*"));
+        stage.addProvider("com.ea.orbit.*");
         stage.setClusterName(clusterId);
         stage.start().join();
         return stage;

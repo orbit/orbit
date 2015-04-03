@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
@@ -107,10 +108,8 @@ public class AsymmetricalStagesTest extends ActorBaseTest
     public OrbitStage createStage(Class<?>... classes) throws ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException
     {
         OrbitStage stage = new OrbitStage();
-        final Execution execution = new Execution();
-        setField(stage, "execution", execution);
-        execution.setAutoDiscovery(false);
-        execution.addActorClasses(Arrays.asList(classes));
+        stage.setAutoDiscovery(false);
+        Stream.of(classes).forEach(c -> stage.addProvider(c));
         stage.setMode(OrbitStage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
