@@ -206,6 +206,7 @@ public class OrbitStage implements Startable
         startFuture = clusterPeer.join(clusterName);
         // todo remove this
         startFuture.join();
+        bind();
         return startFuture;
     }
 
@@ -229,6 +230,7 @@ public class OrbitStage implements Startable
     }
 
     @SuppressWarnings({"unsafe", "unchecked"})
+    @Deprecated
     public <T extends IActor> T getReference(final Class<T> iClass, final String id)
     {
         if (iClass.isAnnotationPresent(NoIdentity.class))
@@ -238,6 +240,7 @@ public class OrbitStage implements Startable
         return execution.getReference(iClass, id);
     }
 
+    @Deprecated
     @SuppressWarnings({"unsafe", "unchecked"})
     public <T extends IActor> T getReference(final Class<T> iClass)
     {
@@ -290,6 +293,7 @@ public class OrbitStage implements Startable
         return execution.getObjectReference(iClass, observer);
     }
 
+
     public <T extends IActorObserver> T getObserverReference(final T observer)
     {
         return execution.getObjectReference(null, observer);
@@ -329,34 +333,6 @@ public class OrbitStage implements Startable
     public void bind()
     {
         execution.bind();
-    }
-
-    /**
-     * Binds this reference to the current stage.
-     * This changes this reference so that it will always use this stage to issue remote calls.
-     * <p/>
-     * This is only necessary when there are <i>two or more</i> OrbitStages active in the same machine and
-     * references are created and used from outside an actor.     *
-     * This method was created was help with test cases.
-     * <p/>
-     * A normal application will have a single stage an should have no reason to call this method.
-     * <p/>
-     * This method writes to an internal variable of the reference binding to itself.
-     *
-     * @param actorReference the reference to be bound to this stage
-     */
-    public void bind(IActor actorReference)
-    {
-        execution.bind(actorReference);
-    }
-
-    /**
-     * @param actorObserverReference the reference to be bound to this stage
-     * @See bind(IActor actor)
-     */
-    public void bind(IActorObserver actorObserverReference)
-    {
-        execution.bind(actorObserverReference);
     }
 
 }

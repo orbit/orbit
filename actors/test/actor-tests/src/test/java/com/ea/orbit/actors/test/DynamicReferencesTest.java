@@ -70,7 +70,7 @@ public class DynamicReferencesTest extends ActorBaseTest
     {
         OrbitStage stage = createStage();
         // this won't the your run of the mill apt generated class
-        IAptUnfriendly ref = stage.getReference(IAptUnfriendly.class, "0");
+        IAptUnfriendly ref = IActor.getReference(IAptUnfriendly.class, "0");
         assertEquals("hello", ref.hello().join());
     }
 

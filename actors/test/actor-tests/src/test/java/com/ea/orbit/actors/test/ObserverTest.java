@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.test.actors.ISomeChatObserver;
 import com.ea.orbit.actors.test.actors.ISomeChatRoom;
@@ -77,7 +78,7 @@ public class ObserverTest extends ActorBaseTest
     public void basicObserverTest() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
-        ISomeChatRoom chatRoom = stage1.getReference(ISomeChatRoom.class, "1");
+        ISomeChatRoom chatRoom = IActor.getReference(ISomeChatRoom.class, "1");
         SomeChatObserver observer = new SomeChatObserver();
         final ISomeChatObserver observerReference = stage1.getObserverReference(ISomeChatObserver.class, observer);
         assertNotNull(observerReference);
@@ -92,7 +93,7 @@ public class ObserverTest extends ActorBaseTest
     public void observerSerializationTest() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
-        ISomeChatRoom chatRoom = stage1.getReference(ISomeChatRoom.class, "1");
+        ISomeChatRoom chatRoom = IActor.getReference(ISomeChatRoom.class, "1");
         SomeChatObserver observer = new SomeChatObserver();
         chatRoom.join(observer).get();
         chatRoom.sendMessage(observer, "bla").get();
@@ -114,11 +115,12 @@ public class ObserverTest extends ActorBaseTest
         final ISomeChatObserver observerReference2 = stage2.getObserverReference(ISomeChatObserver.class, observer2);
 
 
-        ISomeChatRoom chatRoom = stage1.getReference(ISomeChatRoom.class, "1");
+        ISomeChatRoom chatRoom = IActor.getReference(ISomeChatRoom.class, "1");
 
-        chatRoom.join(observerReference1).get();
-        chatRoom.join(observerReference2).get();
-        chatRoom.sendMessage(observerReference1, "bla").get();
+        stage1.bind();
+        chatRoom.join(observerReference1).join();
+        chatRoom.join(observerReference2).join();
+        chatRoom.sendMessage(observerReference1, "bla").join();
 
         Pair<ISomeChatObserver, String> m = observer1.messagesReceived.poll(5, TimeUnit.SECONDS);
         assertNotNull(m);
@@ -139,12 +141,15 @@ public class ObserverTest extends ActorBaseTest
         SomeChatObserver observer1 = new SomeChatObserver();
         SomeChatObserver observer2 = new SomeChatObserver();
 
-        ISomeChatRoom chatRoom = stage1.getReference(ISomeChatRoom.class, "1");
+        ISomeChatRoom chatRoom_s1 = IActor.getReference(ISomeChatRoom.class, "1");
+        ISomeChatRoom chatRoom_s2 = IActor.getReference(ISomeChatRoom.class, "1");
 
-        ISomeChatRoom chatRoom_r2 = stage2.getReference(ISomeChatRoom.class, "1");
-        chatRoom.join(observer1).get();
-        chatRoom_r2.join(observer2).get();
-        chatRoom.sendMessage(observer1, "bla").get();
+        stage1.bind();
+        chatRoom_s1.join(observer1).join();
+        stage2.bind();
+        chatRoom_s2.join(observer2).join();
+        stage1.bind();
+        chatRoom_s1.sendMessage(observer1, "bla").join();
 
         Pair<ISomeChatObserver, String> m = observer1.messagesReceived.poll(5, TimeUnit.SECONDS);
         assertNotNull(m);

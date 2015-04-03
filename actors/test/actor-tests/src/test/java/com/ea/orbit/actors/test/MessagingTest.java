@@ -64,7 +64,7 @@ public class MessagingTest extends ActorBaseTest
         {
             // blocking the message receiver thread.
             // If the system was correctly implemented this will not block other actors from receiving messages.
-            return IActor.ref(IBlockingResponder.class, "0").justRespond().thenRun(() ->
+            return IActor.getReference(IBlockingResponder.class, "0").justRespond().thenRun(() ->
                     {
                         try
                         {
@@ -86,7 +86,7 @@ public class MessagingTest extends ActorBaseTest
         public Task<String> receiveAndRespond()
         {
             // Calls another actor and returns that actor's response
-            return IActor.ref(IBlockingResponder.class, "0").justRespond().thenApply(
+            return IActor.getReference(IBlockingResponder.class, "0").justRespond().thenApply(
                     x ->
                     {
                         getLogger().debug("message received: " + x);
@@ -120,8 +120,8 @@ public class MessagingTest extends ActorBaseTest
         OrbitStage stage1 = createStage();
         OrbitStage client = createClient();
 
-        IBlockingResponder blockingResponder = client.getReference(IBlockingResponder.class, "1");
-        IBlockingResponder responder = client.getReference(IBlockingResponder.class, "free");
+        IBlockingResponder blockingResponder = IActor.getReference(IBlockingResponder.class, "1");
+        IBlockingResponder responder = IActor.getReference(IBlockingResponder.class, "free");
         final Task blockedRes = blockingResponder.blockOnReceiving(0);
         final Task res = responder.receiveAndRespond();
         assertEquals("hello", res.join());
@@ -142,11 +142,11 @@ public class MessagingTest extends ActorBaseTest
         OrbitStage stage1 = createStage();
         OrbitStage client = createClient();
 
-        IBlockingResponder blockingResponder2 = client.getReference(IBlockingResponder.class, "free");
+        IBlockingResponder blockingResponder2 = IActor.getReference(IBlockingResponder.class, "free");
         ArrayList<Task> blocked = new ArrayList<>();
         for (int i = 0; i < 20; i++)
         {
-            IBlockingResponder blockingResponder1 = client.getReference(IBlockingResponder.class, "100" + i);
+            IBlockingResponder blockingResponder1 = IActor.getReference(IBlockingResponder.class, "100" + i);
             blocked.add(blockingResponder1.blockOnReceiving(1));
         }
         // bad practice, but just to ensure that the other messages have get there before this last one.

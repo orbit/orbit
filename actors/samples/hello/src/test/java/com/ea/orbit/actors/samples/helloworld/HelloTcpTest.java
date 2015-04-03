@@ -28,6 +28,7 @@
 
 package com.ea.orbit.actors.samples.helloworld;
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.samples.hello.IHello;
@@ -46,10 +47,12 @@ public class HelloTcpTest
         OrbitStage stage2 = initStage(clusterName, "stage2");
         System.out.println("Stages initialized");
 
-        IHello helloFrom1 = stage1.getReference(IHello.class, "0");
-        IHello helloFrom2 = stage2.getReference(IHello.class, "0");
+        IHello helloFrom1 = IActor.getReference(IHello.class, "0");
+        IHello helloFrom2 = IActor.getReference(IHello.class, "0");
 
+        stage1.bind();
         System.out.println(helloFrom1.sayHello("Hi from 01").join());
+        stage2.bind();
         System.out.println(helloFrom2.sayHello("Hi from 02").join());
     }
 

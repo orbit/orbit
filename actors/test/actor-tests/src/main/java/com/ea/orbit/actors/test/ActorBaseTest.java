@@ -29,6 +29,7 @@
 package com.ea.orbit.actors.test;
 
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.runtime.IReminderController;
 import com.ea.orbit.concurrent.ExecutorUtils;
@@ -59,7 +60,8 @@ public class ActorBaseTest
         client.setClock(clock);
         client.setClusterName(clusterName);
         client.setClusterPeer(new FakeClusterPeer());
-        client.start().get();
+        client.start().join();
+        client.bind();
         return client;
     }
 
@@ -74,8 +76,9 @@ public class ActorBaseTest
         stage.addProvider("com.ea.orbit.*");
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
-        stage.start().get();
-        stage.getReference(IReminderController.class, "0").ensureStart();
+        stage.start().join();
+        stage.bind();
+        IActor.getReference(IReminderController.class, "0").ensureStart();
         return stage;
     }
 

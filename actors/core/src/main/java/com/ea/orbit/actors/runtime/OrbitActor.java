@@ -220,20 +220,4 @@ public class OrbitActor<T>
         return Task.done();
     }
 
-
-    /**
-     * @see com.ea.orbit.actors.IActor#ref
-     */
-    public <R extends IActor> R ref(Class<R> iActor, String id)
-    {
-        return IActor.ref(iActor, id);
-    }
-
-    /**
-     * @see com.ea.orbit.actors.IActor#ref
-     */
-    public <R extends IActor> R ref(Class<R> iActor)
-    {
-        return IActor.ref(iActor);
-    }
 }

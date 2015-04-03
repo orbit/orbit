@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.test.actors.ISomeActor;
 import com.ea.orbit.actors.test.actors.ISomeMatch;
@@ -49,7 +50,7 @@ public class LifeCycleTest extends ActorBaseTest
         OrbitStage stage = createStage();
         OrbitStage client = createClient();
 
-        ISomeActor actor1 = client.getReference(ISomeActor.class, "1000");
+        ISomeActor actor1 = IActor.getReference(ISomeActor.class, "1000");
 
         assertTrue(actor1.getActivationWasCalled().get());
     }
@@ -60,8 +61,8 @@ public class LifeCycleTest extends ActorBaseTest
         OrbitStage stage = createStage();
         OrbitStage client = createClient();
 
-        ISomeMatch match = client.getReference(ISomeMatch.class, "1000");
-        ISomePlayer player = client.getReference(ISomePlayer.class, "101");
+        ISomeMatch match = IActor.getReference(ISomeMatch.class, "1000");
+        ISomePlayer player = IActor.getReference(ISomePlayer.class, "101");
         match.addPlayer(player).get();
         int machEventCount = player.getMatchEventCount().get();
 

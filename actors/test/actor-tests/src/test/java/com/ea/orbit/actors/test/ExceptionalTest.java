@@ -62,7 +62,7 @@ public class ExceptionalTest extends ActorBaseTest
 
         public Task<String> justThrowAnException()
         {
-            throw new RuntimeException("exception!");
+            throw new RuntimeException("as requested, one exception!");
         }
     }
 
@@ -70,7 +70,7 @@ public class ExceptionalTest extends ActorBaseTest
     public void noException() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
-        final IExceptionalThing ref = stage1.getReference(IExceptionalThing.class, "0");
+        final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
         assertEquals("resp", ref.justRespond().join());
     }
 
@@ -78,7 +78,7 @@ public class ExceptionalTest extends ActorBaseTest
     public void withException() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
-        final IExceptionalThing ref = stage1.getReference(IExceptionalThing.class, "0");
+        final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
         ref.justThrowAnException().join();
     }
 
@@ -86,7 +86,7 @@ public class ExceptionalTest extends ActorBaseTest
     public void catchingTheException() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
-        final IExceptionalThing ref = stage1.getReference(IExceptionalThing.class, "0");
+        final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
         try
         {
             ref.justThrowAnException().join();
@@ -95,7 +95,7 @@ public class ExceptionalTest extends ActorBaseTest
         catch (CompletionException ex)
         {
             assertTrue(ex.getCause() instanceof RuntimeException);
-            assertEquals("exception!", ex.getCause().getMessage());
+            assertEquals("as requested, one exception!", ex.getCause().getMessage());
         }
     }
 
@@ -103,12 +103,12 @@ public class ExceptionalTest extends ActorBaseTest
     public void checkingTheException() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
-        final IExceptionalThing ref = stage1.getReference(IExceptionalThing.class, "0");
+        final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
         final Task<String> fut = ref.justThrowAnException();
         // TODO: check this.
         final Throwable ex = fut.handle((r, e) -> e.getCause()).join();
         assertTrue(fut.isCompletedExceptionally());
         assertTrue(ex instanceof RuntimeException);
-        assertEquals("exception!", ex.getMessage());
+        assertEquals("as requested, one exception!", ex.getMessage());
     }
 }

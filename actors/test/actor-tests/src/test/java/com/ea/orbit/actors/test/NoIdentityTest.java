@@ -61,7 +61,7 @@ public class NoIdentityTest extends ActorBaseTest
     public void callIt() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
-        final ISingularThing ref = IActor.ref(ISingularThing.class);
+        final ISingularThing ref = IActor.getReference(ISingularThing.class);
         assertEquals("resp", ref.justRespond().join());
     }
 
@@ -69,14 +69,14 @@ public class NoIdentityTest extends ActorBaseTest
     public void usingNullId2() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
-        stage1.getReference(ISingularThing.class, null);
+        IActor.getReference(ISingularThing.class, null);
     }
 
     @Test
     public void callIt2() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
-        final ISingularThing ref = stage1.getReference(ISingularThing.class);
+        final ISingularThing ref = IActor.getReference(ISingularThing.class);
         assertEquals("resp", ref.justRespond().join());
     }
 
@@ -84,6 +84,6 @@ public class NoIdentityTest extends ActorBaseTest
     public void breakIt() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
-        stage1.getReference(ISingularThing.class, "aaa");
+        IActor.getReference(ISingularThing.class, "aaa");
     }
 }

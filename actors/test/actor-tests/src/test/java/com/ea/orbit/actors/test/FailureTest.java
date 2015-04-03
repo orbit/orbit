@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.test.actors.ISomeActor;
 
@@ -50,24 +51,29 @@ public class FailureTest extends ActorBaseTest
         OrbitStage stage1 = createStage();
         OrbitStage stage2 = createStage();
 
-        ISomeActor someActor = stage1.getReference(ISomeActor.class, "1");
-        UUID uuid = someActor.getUniqueActivationId().get();
-        assertEquals("bla", someActor.sayHello("bla").get());
+        ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
+        stage1.bind();
+        UUID uuid = someActor.getUniqueActivationId().join();
+        assertEquals("bla", someActor.sayHello("bla").join());
 
         OrbitStage stage3 = createStage();
         OrbitStage stage4 = createStage();
 
-        ISomeActor someActor_r3 = stage3.getReference(ISomeActor.class, "1");
-        assertEquals(uuid, someActor_r3.getUniqueActivationId().get());
+
+        ISomeActor someActor_r3 = IActor.getReference(ISomeActor.class, "1");
+        stage3.bind();
+        assertEquals(uuid, someActor_r3.getUniqueActivationId().join());
 
         stage1.stop();
         stage2.stop();
 
         // a new Activation must have been created since the initial nodes where stopped.
-        final UUID secondUUID = someActor_r3.getUniqueActivationId().get();
+        stage3.bind();
+        final UUID secondUUID = someActor_r3.getUniqueActivationId().join();
         assertNotEquals(uuid, secondUUID);
-        ISomeActor someActor_r4 = stage4.getReference(ISomeActor.class, "1");
-        assertEquals(secondUUID, someActor_r4.getUniqueActivationId().get());
+        ISomeActor someActor_r4 = IActor.getReference(ISomeActor.class, "1");
+        stage3.bind();
+        assertEquals(secondUUID, someActor_r4.getUniqueActivationId().join());
         // BTW, timing issues will sometimes make this fail by timeout with the real network.
         stage3.stop();
         stage4.stop();

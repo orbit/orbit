@@ -28,7 +28,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.test;
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.test.actors.IStatelessThing;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -58,21 +60,26 @@ public class StatelessActorTest extends ActorBaseTest
         OrbitStage stage4 = createStage();
         OrbitStage client = createClient();
 
-        IStatelessThing actor1 = stage1.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor2 = stage2.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor3 = stage3.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor4 = stage4.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor5 = client.getReference(IStatelessThing.class, "1000");
+        IStatelessThing actor1 = IActor.getReference(IStatelessThing.class, "1000");
+        IStatelessThing actor2 = IActor.getReference(IStatelessThing.class, "1000");
+        IStatelessThing actor3 = IActor.getReference(IStatelessThing.class, "1000");
+        IStatelessThing actor4 = IActor.getReference(IStatelessThing.class, "1000");
+        IStatelessThing actor5 = IActor.getReference(IStatelessThing.class, "1000");
 
         final Set<UUID> set = new HashSet<>();
         for (int i = 0; i < 25; i++)
         {
             // there will be no concurrent executions here
             // each node will have at most one activation of the stateless worker
+            stage1.bind();
             set.add(actor1.getUniqueActivationId().join());
+            stage2.bind();
             set.add(actor2.getUniqueActivationId().join());
+            stage3.bind();
             set.add(actor3.getUniqueActivationId().join());
+            stage4.bind();
             set.add(actor4.getUniqueActivationId().join());
+            client.bind();
             set.add(actor5.getUniqueActivationId().join());
         }
         // statistics might let us down from time to time here...
@@ -83,10 +90,15 @@ public class StatelessActorTest extends ActorBaseTest
         for (int i = 0; i < 50; i++)
         {
             // this will force the creation of concurrent activations in each node
+            stage1.bind();
             futures.add(actor1.getUniqueActivationId(5000));
+            stage2.bind();
             futures.add(actor2.getUniqueActivationId(5000));
+            stage3.bind();
             futures.add(actor3.getUniqueActivationId(5000));
+            stage4.bind();
             futures.add(actor4.getUniqueActivationId(5000));
+            client.bind();
             futures.add(actor5.getUniqueActivationId(5000));
         }
         futures.forEach(f -> {
@@ -117,8 +129,8 @@ public class StatelessActorTest extends ActorBaseTest
         OrbitStage stage1 = createStage();
         OrbitStage stage2 = createStage();
 
-        IStatelessThing actor1 = stage1.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor2 = stage2.getReference(IStatelessThing.class, "1000");
+        IStatelessThing actor1 = IActor.getReference(IStatelessThing.class, "1000");
+        IStatelessThing actor2 = IActor.getReference(IStatelessThing.class, "1000");
 
         final Set<UUID> set = new HashSet<>();
 
@@ -127,7 +139,9 @@ public class StatelessActorTest extends ActorBaseTest
         for (int i = 0; i < 50; i++)
         {
             // this will force the creation of concurrent activations in each node
+            stage1.bind();
             futures.add(actor1.getUniqueActivationId());
+            stage2.bind();
             futures.add(actor2.getUniqueActivationId());
         }
         futures.forEach(f -> {

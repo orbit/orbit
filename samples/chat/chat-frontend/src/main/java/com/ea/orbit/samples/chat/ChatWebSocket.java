@@ -55,7 +55,7 @@ public class ChatWebSocket
     @OnOpen
     public void onWebSocketConnect(Session session)
     {
-        chat = IActor.ref(IChat.class, session.getPathParameters().get("chatName"));
+        chat = IActor.getReference(IChat.class, session.getPathParameters().get("chatName"));
         observer = new IChatObserver()
         {
             @Override

@@ -453,6 +453,17 @@ public class Execution implements IRuntime
         return createObjectReference(iClass, observer, null);
     }
 
+
+    public <T extends IActorObserver> T getObserverReference(Class<T> iClass, final T observer, String id)
+    {
+        final IActorObserver ref = observerReferences.get(observer);
+        if (ref != null)
+        {
+            return (T) ref;
+        }
+        return createObjectReference(iClass, observer, id);
+    }
+
     private <T extends IActorObserver> T createObjectReference(final Class<T> iClass, final T observer, String objectId)
     {
 

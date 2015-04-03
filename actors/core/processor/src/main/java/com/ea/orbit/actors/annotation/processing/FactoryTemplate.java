@@ -50,7 +50,7 @@ public class FactoryTemplate extends ActorProcessor.Factory
 		builder.append( referenceName );
 		builder.append("(id);\r\n    }\r\n\r\n");
 		if (clazz.isNoIdentity) {
-		builder.append("    public static ");
+		builder.append("    @Deprecated\r\n    public static ");
 		builder.append( interfaceFullName );
 		builder.append(" getReference()\r\n    {\r\n        return new ");
 		builder.append( clazz.packageName );
@@ -60,7 +60,7 @@ public class FactoryTemplate extends ActorProcessor.Factory
 		builder.append( referenceName );
 		builder.append("(com.ea.orbit.actors.annotation.NoIdentity.NO_IDENTITY);\r\n    }\r\n");
 		} else {
-		builder.append("    public static ");
+		builder.append("    @Deprecated\r\n    public static ");
 		builder.append( interfaceFullName );
 		builder.append(" getReference(String id)\r\n    {\r\n        return new ");
 		builder.append( clazz.packageName );

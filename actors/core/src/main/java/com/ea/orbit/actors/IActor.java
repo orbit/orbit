@@ -70,7 +70,7 @@ public interface IActor
      * @param <T>    the interface type
      * @return an actor reference
      */
-    public static <T extends IActor> T ref(Class<T> iActor, String id)
+    public static <T extends IActor> T getReference(Class<T> iActor, String id)
     {
         return ReferenceFactory.ref(iActor, id);
     }
@@ -82,7 +82,7 @@ public interface IActor
      * @param <T>    the interface type
      * @return an actor reference
      */
-    static <T extends IActor> T ref(Class<T> iActor)
+    static <T extends IActor> T getReference(Class<T> iActor)
     {
         return ReferenceFactory.ref(iActor);
     }

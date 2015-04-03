@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.test.actors.ISomeActor;
 
@@ -50,7 +51,7 @@ public class MinimalTest extends ActorBaseTest
     public void singleActorSingleStageTest() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
-        ISomeActor someActor = stage1.getReference(ISomeActor.class, "1");
+        ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
         assertEquals("bla", someActor.sayHello("bla").get());
     }
 
@@ -61,7 +62,7 @@ public class MinimalTest extends ActorBaseTest
         for (int i = 0; i < 2; i++)
         {
             OrbitStage stage = createStage();
-            ISomeActor someActor = stage.getReference(ISomeActor.class, "1");
+            ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
             assertEquals("bla", someActor.sayHello("bla").get());
         }
     }
@@ -79,7 +80,7 @@ public class MinimalTest extends ActorBaseTest
         for (int i = 0; i < 10; i++)
         {
             OrbitStage stage = createStage();
-            ISomeActor someActor = stage.getReference(ISomeActor.class, "1");
+            ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
             assertEquals("bla", someActor.sayHello("bla").get());
         }
     }
@@ -97,26 +98,21 @@ public class MinimalTest extends ActorBaseTest
         List<ISomeActor> actors = new ArrayList<>();
         for (int i = 0; i < 100; i++)
         {
-            ISomeActor actor = stages.get(r.nextInt(stages.size())).getReference(ISomeActor.class, String.valueOf(i));
-            actors.add(actor);
+            stages.get(r.nextInt(stages.size())).bind();
+            ISomeActor actor = IActor.getReference(ISomeActor.class, String.valueOf(i));
+            assertEquals("bla", actor.sayHello("bla").join());
         }
-
-        for (ISomeActor actor : actors)
-        {
-            assertEquals("bla", actor.sayHello("bla").get());
-        }
-
     }
 
     @Test
     public void ensureUniqueActivation() throws ExecutionException, InterruptedException
     {
         OrbitStage stage0 = createStage();
-        UUID uuid = stage0.getReference(ISomeActor.class, "1").getUniqueActivationId().get();
+        UUID uuid = IActor.getReference(ISomeActor.class, "1").getUniqueActivationId().get();
         for (int i = 0; i < 10; i++)
         {
             OrbitStage stage = createStage();
-            ISomeActor someActor = stage.getReference(ISomeActor.class, "1");
+            ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
             assertEquals("bla", someActor.sayHello("bla").get());
             assertEquals(uuid, someActor.getUniqueActivationId().get());
         }

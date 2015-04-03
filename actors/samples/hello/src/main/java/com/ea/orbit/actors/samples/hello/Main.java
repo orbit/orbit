@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.samples.hello;
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 
 public class Main
@@ -39,10 +40,12 @@ public class Main
         OrbitStage stage1 = initStage(clusterName, "stage1");
         OrbitStage stage2 = initStage(clusterName, "stage2");
 
-        IHello helloFrom1 = stage1.getReference(IHello.class, "0");
-        IHello helloFrom2 = stage2.getReference(IHello.class, "0");
+        IHello helloFrom1 = IActor.getReference(IHello.class, "0");
+        IHello helloFrom2 = IActor.getReference(IHello.class, "0");
 
+        stage1.bind();
         System.out.println(helloFrom1.sayHello("Hi from 01").join());
+        stage2.bind();
         System.out.println(helloFrom2.sayHello("Hi from 02").join());
     }
 

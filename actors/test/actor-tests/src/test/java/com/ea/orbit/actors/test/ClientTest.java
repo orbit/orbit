@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.actors.test.actors.ISomeActor;
@@ -71,7 +72,8 @@ public class ClientTest extends ActorBaseTest
     {
         OrbitStage stage = createStage();
         OrbitStage client = createClient();
-        ISomeActor player = client.getReference(ISomeActor.class, "232");
+        ISomeActor player = IActor.getReference(ISomeActor.class, "232");
+        client.bind();
         assertEquals("bla", player.sayHello("meh").get());
     }
 
@@ -86,11 +88,13 @@ public class ClientTest extends ActorBaseTest
         SomeChatObserver observer1 = new SomeChatObserver();
         SomeChatObserver observer2 = new SomeChatObserver();
         {
-            ISomeChatRoom chatRoom = client1.getReference(ISomeChatRoom.class, "chat");
+            ISomeChatRoom chatRoom = IActor.getReference(ISomeChatRoom.class, "chat");
+            client1.bind();
             chatRoom.join(observer1).get();
         }
         {
-            ISomeChatRoom chatRoom = client2.getReference(ISomeChatRoom.class, "chat");
+            client2.bind();
+            ISomeChatRoom chatRoom = IActor.getReference(ISomeChatRoom.class, "chat");
             final ISomeChatObserver reference = client2.getObserverReference(observer2);
             chatRoom.join(reference).get();
             chatRoom.sendMessage(reference, "bla");
@@ -103,7 +107,7 @@ public class ClientTest extends ActorBaseTest
     public void lonelyClientTest() throws ExecutionException, InterruptedException
     {
         OrbitStage client = createClient();
-        ISomeActor player = client.getReference(ISomeActor.class, "232");
+        ISomeActor player = IActor.getReference(ISomeActor.class, "232");
         client.getHosting().setTimeToWaitForServersMillis(100);
         expectException(() -> player.sayHello("meh"));
     }
@@ -129,8 +133,9 @@ public class ClientTest extends ActorBaseTest
         for (int i = 0; i < 50; i++)
         {
             final OrbitStage client = clients.get((int) (Math.random() * clients.size()));
-            ISomeActor player = client.getReference(ISomeActor.class, String.valueOf(i));
-            assertEquals("bla", player.sayHello("meh").get());
+            ISomeActor player = IActor.getReference(ISomeActor.class, String.valueOf(i));
+            client.bind();
+            assertEquals("bla", player.sayHello("meh").join());
             assertTrue(serverAddresses.contains(client.getHosting().locateActor(player).join()));
         }
 

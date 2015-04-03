@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.test.actors.ISomeActor;
 import com.ea.orbit.actors.test.actors.IStatelessThing;
@@ -57,23 +58,26 @@ public class DeactivationTest extends ClientTest
         OrbitStage stage = createStage();
         OrbitStage client = createClient();
 
-        ISomeActor actor1 = client.getReference(ISomeActor.class, "1000");
+        ISomeActor actor1 = IActor.getReference(ISomeActor.class, "1000");
 
         final Set<UUID> set = new HashSet<>();
+        client.bind();
         for (int i = 0; i < 25; i++)
         {
-            set.add(actor1.getUniqueActivationId().get());
+            set.add(actor1.getUniqueActivationId().join());
         }
         assertEquals(1, set.size());
 
         // shouldn't collect anything, since clock is moving slowly
         stage.cleanup(true);
-        set.add(actor1.getUniqueActivationId().get());
+        client.bind();
+        set.add(actor1.getUniqueActivationId().join());
         assertEquals(1, set.size());
 
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(20));
         stage.cleanup(true);
-        set.add(actor1.getUniqueActivationId().get());
+        client.bind();
+        set.add(actor1.getUniqueActivationId().join());
         assertEquals(2, set.size());
     }
 
@@ -83,7 +87,7 @@ public class DeactivationTest extends ClientTest
         OrbitStage stage1 = createStage();
         OrbitStage client = createClient();
 
-        IStatelessThing actor5 = client.getReference(IStatelessThing.class, "1000");
+        IStatelessThing actor5 = IActor.getReference(IStatelessThing.class, "1000");
 
         final Set<UUID> set1 = new HashSet<>();
         {

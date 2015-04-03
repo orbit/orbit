@@ -81,7 +81,7 @@ public class ReminderTest extends ActorBaseTest
         OrbitStage stage1 = createStage();
         OrbitStage frontend = createClient();
 
-        IReminderTestActor actor = frontend.getReference(IReminderTestActor.class, "1");
+        IReminderTestActor actor = IActor.getReference(IReminderTestActor.class, "1");
         actor.addReminder("bla", 0, 50, TimeUnit.MILLISECONDS).join();
         assertEquals("bla", remindersReceived.poll(5, TimeUnit.SECONDS));
         assertEquals("bla", remindersReceived.poll(5, TimeUnit.SECONDS));
@@ -93,7 +93,8 @@ public class ReminderTest extends ActorBaseTest
         OrbitStage stage1 = createStage();
         OrbitStage frontend = createClient();
 
-        IReminderTestActor actor = frontend.getReference(IReminderTestActor.class, "1");
+        IReminderTestActor actor = IActor.getReference(IReminderTestActor.class, "1");
+        frontend.bind();
         actor.addReminder("bla", 0, 20, TimeUnit.MILLISECONDS).join();
         assertEquals("bla", remindersReceived.poll(5, TimeUnit.SECONDS));
 

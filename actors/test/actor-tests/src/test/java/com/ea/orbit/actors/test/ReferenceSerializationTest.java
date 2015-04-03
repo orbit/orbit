@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.test.actors.ISomeMatch;
 import com.ea.orbit.actors.test.actors.ISomePlayer;
@@ -43,9 +44,9 @@ public class ReferenceSerializationTest extends ActorBaseTest
     public void referencePassingTest() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
-        ISomeMatch someMatch = stage1.getReference(ISomeMatch.class, "300");
-        ISomePlayer somePlayer = stage1.getReference(ISomePlayer.class, "101");
-        someMatch.addPlayer(somePlayer).get();
+        ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
+        ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
+        someMatch.addPlayer(somePlayer).join();
     }
 
 
@@ -53,9 +54,9 @@ public class ReferenceSerializationTest extends ActorBaseTest
     public void passingActorInsteadOfReferenceTest() throws ExecutionException, InterruptedException
     {
         OrbitStage stage1 = createStage();
-        ISomeMatch someMatch = stage1.getReference(ISomeMatch.class, "300");
-        ISomePlayer somePlayer = stage1.getReference(ISomePlayer.class, "101");
-        somePlayer.joinMatch(someMatch).get();
+        ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
+        ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
+        somePlayer.joinMatch(someMatch).join();
     }
 
 }

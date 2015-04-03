@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.test.actors.ISomeChatObserver;
 import com.ea.orbit.actors.test.actors.ISomeChatRoom;
@@ -68,7 +69,7 @@ public class TimerTest extends ActorBaseTest
         OrbitStage stage1 = createStage();
         OrbitStage frontend = createClient();
 
-        ISomeChatRoom chatRoom = frontend.getReference(ISomeChatRoom.class, "1");
+        ISomeChatRoom chatRoom = IActor.getReference(ISomeChatRoom.class, "1");
         SomeChatObserver observer = new SomeChatObserver();
         chatRoom.join(observer).get();
         chatRoom.startCountdown(5, "counting").get();

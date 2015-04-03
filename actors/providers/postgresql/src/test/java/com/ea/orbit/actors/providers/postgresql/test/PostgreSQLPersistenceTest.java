@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.providers.postgresql.test;
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.providers.postgresql.PostgreSQLStorageProvider;
 import com.ea.orbit.actors.test.FakeClusterPeer;
@@ -53,7 +54,7 @@ public class PostgreSQLPersistenceTest {
     public void checkWritesTest() throws Exception {
         OrbitStage stage = createStage();
         assertEquals(0, count(IHelloActor.class));
-        IHelloActor helloActor = stage.getReference(IHelloActor.class, "300");
+        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(1, count(IHelloActor.class));
     }
@@ -61,7 +62,7 @@ public class PostgreSQLPersistenceTest {
     @Test
     public void checkReadTest() throws Exception {
         OrbitStage stage = createStage();
-        IHelloActor helloActor = stage.getReference(IHelloActor.class, "300");
+        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(readHelloState("300").lastName, "Meep Meep");
     }
@@ -70,7 +71,7 @@ public class PostgreSQLPersistenceTest {
     public void checkClearTest() throws Exception {
         OrbitStage stage = createStage();
         assertEquals(0, count(IHelloActor.class));
-        IHelloActor helloActor = stage.getReference(IHelloActor.class, "300");
+        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(1, count(IHelloActor.class));
         helloActor.clear().join();
@@ -81,7 +82,7 @@ public class PostgreSQLPersistenceTest {
     public void checkUpdateTest() throws Exception {
         OrbitStage stage = createStage();
         assertEquals(0, count(IHelloActor.class));
-        IHelloActor helloActor = stage.getReference(IHelloActor.class, "300");
+        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(1, count(IHelloActor.class));
         helloActor.sayHello("Peem Peem").join();
@@ -99,7 +100,7 @@ public class PostgreSQLPersistenceTest {
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().get();
-
+        stage.bind();
         return stage;
     }
 

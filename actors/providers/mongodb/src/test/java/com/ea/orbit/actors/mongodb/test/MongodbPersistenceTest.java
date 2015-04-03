@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.mongodb.test;
 
 
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.providers.mongodb.MongoDBStorageProvider;
 import com.ea.orbit.actors.test.FakeClusterPeer;
@@ -52,8 +53,8 @@ public class MongodbPersistenceTest
     {
         OrbitStage stage1 = createStage();
         assertEquals(0, database.getCollection("ISomeMatch").count());
-        ISomeMatch someMatch = stage1.getReference(ISomeMatch.class, "300");
-        ISomePlayer somePlayer = stage1.getReference(ISomePlayer.class, "101");
+        ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
+        ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
         someMatch.addPlayer(somePlayer).get();
         assertEquals(1, database.getCollection("ISomeMatch").count());
     }
@@ -65,16 +66,18 @@ public class MongodbPersistenceTest
         {
             // adding some state and then tearing down the cluster.
             OrbitStage stage1 = createStage();
-            ISomeMatch someMatch = stage1.getReference(ISomeMatch.class, "300");
-            ISomePlayer somePlayer = stage1.getReference(ISomePlayer.class, "101");
+            stage1.bind();
+            ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
+            ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
             someMatch.addPlayer(somePlayer).get();
             stage1.stop();
         }
         assertEquals(1, database.getCollection("ISomeMatch").count());
         {
             OrbitStage stage2 = createStage();
-            ISomeMatch someMatch_r2 = stage2.getReference(ISomeMatch.class, "300");
-            ISomePlayer somePlayer_r2 = stage2.getReference(ISomePlayer.class, "101");
+            stage2.bind();
+            ISomeMatch someMatch_r2 = IActor.getReference(ISomeMatch.class, "300");
+            ISomePlayer somePlayer_r2 = IActor.getReference(ISomePlayer.class, "101");
             assertEquals(1, someMatch_r2.getPlayers().get().size());
             assertEquals(somePlayer_r2, someMatch_r2.getPlayers().get().get(0));
         }
@@ -86,8 +89,8 @@ public class MongodbPersistenceTest
         assertEquals(0, database.getCollection("ISomeMatch").count());
         // adding some state and then tearing down the cluster.
         OrbitStage stage1 = createStage();
-        ISomeMatch someMatch = stage1.getReference(ISomeMatch.class, "300");
-        ISomePlayer somePlayer = stage1.getReference(ISomePlayer.class, "101");
+        ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
+        ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
         someMatch.addPlayer(somePlayer).get();
         assertEquals(1, database.getCollection("ISomeMatch").count());
 
@@ -106,7 +109,7 @@ public class MongodbPersistenceTest
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().get();
-
+        stage.bind();
 
         return stage;
     }

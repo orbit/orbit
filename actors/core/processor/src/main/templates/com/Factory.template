@@ -15,11 +15,13 @@ public class <%=factoryName%> extends com.ea.orbit.actors.runtime.ActorFactory<<
     }
 
 <%if (clazz.isNoIdentity) {%>
+    @Deprecated
     public static <%= interfaceFullName %> getReference()
     {
         return new <%= clazz.packageName %>.<%= factoryName %>.<%= referenceName %>(com.ea.orbit.actors.annotation.NoIdentity.NO_IDENTITY);
     }
 <%} else {%>
+    @Deprecated
     public static <%= interfaceFullName %> getReference(String id)
     {
         return new <%= clazz.packageName %>.<%= factoryName %>.<%= referenceName %>(id);
