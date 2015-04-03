@@ -721,6 +721,11 @@ public class Execution implements IRuntime
         InterfaceDescriptor interfaceDescriptor = descriptorMapByInterface.get(aInterface);
         if (interfaceDescriptor == null)
         {
+            if (aInterface == IActor.class || aInterface == IActorObserver.class || !aInterface.isInterface())
+            {
+                return null;
+            }
+
             interfaceDescriptor = new InterfaceDescriptor();
             interfaceDescriptor.isObserver = IActorObserver.class.isAssignableFrom(aInterface);
             interfaceDescriptor.factory = dynamicReferenceFactory.getFactoryFor(aInterface);
