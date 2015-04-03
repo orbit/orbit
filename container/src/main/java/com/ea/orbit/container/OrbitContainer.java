@@ -30,6 +30,7 @@ package com.ea.orbit.container;
 
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Nullable;
+import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.configuration.OrbitProperties;
 import com.ea.orbit.configuration.OrbitPropertiesImpl;
@@ -282,7 +283,7 @@ public class OrbitContainer
 
     protected void injectField(ComponentState state, Field f) throws IllegalArgumentException, IllegalAccessException
     {
-        if (f.isAnnotationPresent(Inject.class))
+        if (f.isAnnotationPresent(Inject.class) || f.isAnnotationPresent(Wired.class))
         {
             f.setAccessible(true);
             ComponentState locatedComponent = getState(f.getType());

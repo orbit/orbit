@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.injection;
 
+import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.exception.UncheckedException;
 
 import javax.annotation.PostConstruct;
@@ -193,7 +194,7 @@ public class DependencyRegistry
 
     protected void injectField(final Object o, final Field f) throws IllegalAccessException
     {
-        if (f.isAnnotationPresent(Inject.class))
+        if (f.isAnnotationPresent(Inject.class) || f.isAnnotationPresent(Wired.class))
         {
             f.setAccessible(true);
             final Object located = locate(f.getType());
