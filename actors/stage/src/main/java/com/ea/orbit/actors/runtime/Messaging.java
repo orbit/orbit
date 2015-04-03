@@ -169,9 +169,9 @@ public class Messaging implements Startable
             int messageId = in.readInt();
             switch (messageType)
             {
-                case 0:
-                case 8:
-                    boolean oneway = (messageType == 8);
+                case MessageDefinitions.NORMAL_MESSAGE:
+                case MessageDefinitions.ONEWAY_MESSAGE:
+                    boolean oneway = (messageType == MessageDefinitions.ONEWAY_MESSAGE);
                     objectMessagesReceived.incrementAndGet();
                     int interfaceId = in.readInt();
                     int methodId = in.readInt();
@@ -179,14 +179,11 @@ public class Messaging implements Startable
                     Object[] params = (Object[]) in.readObject();
                     execution.onMessageReceived(from, oneway, messageId, interfaceId, methodId, key, params);
                     break;
-                case 1:
-                case 2:
-                case 3:
+                case MessageDefinitions.NORMAL_RESPONSE:
+                case MessageDefinitions.EXCEPTION_RESPONSE:
+                case MessageDefinitions.ERROR_RESPONSE:
                 {
                     responsesReceived.incrementAndGet();
-                    // 1 - normal response
-                    // 2 - exception response
-                    // 3 - error but exception provided
                     PendingResponse pendingResponse = pendingResponseMap.remove(messageId);
                     if (pendingResponse != null)
                     {
@@ -204,13 +201,13 @@ public class Messaging implements Startable
                         }
                         switch (messageType)
                         {
-                            case 1:
+                            case MessageDefinitions.NORMAL_RESPONSE:
                                 pendingResponse.internalComplete(res);
                                 return;
-                            case 2:
+                            case MessageDefinitions.EXCEPTION_RESPONSE:
                                 pendingResponse.internalCompleteExceptionally((Throwable) res);
                                 return;
-                            case 3:
+                            case MessageDefinitions.ERROR_RESPONSE:
                                 pendingResponse.internalCompleteExceptionally(new UncheckedException("Error invoking but no exception provided. Res: " + res));
                                 return;
                             default:
@@ -299,7 +296,7 @@ public class Messaging implements Startable
         try
         {
             ObjectOutput objectOutput = createObjectOutput(byteArrayOutputStream);
-            objectOutput.writeByte(oneWay ? 8 : 0);
+            objectOutput.writeByte(oneWay ? MessageDefinitions.ONEWAY_MESSAGE : MessageDefinitions.NORMAL_MESSAGE);
             objectOutput.writeInt(messageId);
             objectOutput.writeInt(interfaceId);
             objectOutput.writeInt(methodId);

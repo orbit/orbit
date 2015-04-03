@@ -107,6 +107,7 @@ public class MongodbPersistenceTest
         final MongoDBStorageProvider storageProvider = new MongoDBStorageProvider();
         storageProvider.setDatabase(database.getName());
         stage.addProvider(storageProvider);
+        stage.addProvider("com.ea.orbit.actors.*");
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().get();

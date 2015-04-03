@@ -756,7 +756,7 @@ public class Execution implements IRuntime
             }
             if (!oneway)
             {
-                messaging.sendResponse(from, 3, messageId, "Execution refused");
+                messaging.sendResponse(from, MessageDefinitions.ERROR_RESPONSE, messageId, "Execution refused");
             }
         }
     }
@@ -776,7 +776,7 @@ public class Execution implements IRuntime
             {
                 if (!oneway)
                 {
-                    messaging.sendResponse(from, 3, messageId, "Observer no longer present");
+                    messaging.sendResponse(from, MessageDefinitions.ERROR_RESPONSE, messageId, "Observer no longer present");
                 }
                 return Task.done();
             }
@@ -834,7 +834,7 @@ public class Execution implements IRuntime
                 }
                 if (!oneway)
                 {
-                    messaging.sendResponse(from, 3, messageId, "Execution refused");
+                    messaging.sendResponse(from, MessageDefinitions.ERROR_RESPONSE, messageId, "Execution refused");
                 }
             }
             return Task.done();
@@ -890,11 +890,11 @@ public class Execution implements IRuntime
             {
                 if (exception == null)
                 {
-                    messaging.sendResponse(from, 1, messageId, result);
+                    messaging.sendResponse(from, MessageDefinitions.NORMAL_RESPONSE, messageId, result);
                 }
                 else
                 {
-                    messaging.sendResponse(from, 2, messageId, exception);
+                    messaging.sendResponse(from, MessageDefinitions.EXCEPTION_RESPONSE, messageId, exception);
                 }
             }
             catch (Exception ex2)
@@ -905,7 +905,7 @@ public class Execution implements IRuntime
                 }
                 try
                 {
-                    messaging.sendResponse(from, 2, messageId, ex2);
+                    messaging.sendResponse(from, MessageDefinitions.EXCEPTION_RESPONSE, messageId, ex2);
                 }
                 catch (Exception ex3)
                 {
@@ -915,7 +915,7 @@ public class Execution implements IRuntime
                     }
                     try
                     {
-                        messaging.sendResponse(from, 3, messageId, "failed twice sending result");
+                        messaging.sendResponse(from, MessageDefinitions.ERROR_RESPONSE, messageId, "failed twice sending result");
                     }
                     catch (Exception ex4)
                     {
