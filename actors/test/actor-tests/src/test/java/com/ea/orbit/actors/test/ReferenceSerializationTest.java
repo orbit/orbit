@@ -38,6 +38,7 @@ import org.junit.Test;
 
 import java.util.concurrent.ExecutionException;
 
+@SuppressWarnings("unused")
 public class ReferenceSerializationTest extends ActorBaseTest
 {
     @Test

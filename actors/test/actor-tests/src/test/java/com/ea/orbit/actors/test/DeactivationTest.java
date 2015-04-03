@@ -81,7 +81,8 @@ public class DeactivationTest extends ClientTest
         assertEquals(2, set.size());
     }
 
-    @Test
+    @SuppressWarnings("unused")
+	@Test
     public void statelessWorkerDeactivationTest() throws ExecutionException, InterruptedException, TimeoutException
     {
         OrbitStage stage1 = createStage();

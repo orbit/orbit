@@ -52,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("unused")
 public class ClientTest extends ActorBaseTest
 {
     public static class SomeChatObserver implements ISomeChatObserver
@@ -112,7 +113,8 @@ public class ClientTest extends ActorBaseTest
         expectException(() -> player.sayHello("meh"));
     }
 
-    @Test
+    @SuppressWarnings("deprecation")
+	@Test
     public void ensureNoObjectsAreCreatedClientTest() throws ExecutionException, InterruptedException
     {
         List<OrbitStage> clients = new ArrayList<>();

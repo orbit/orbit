@@ -78,7 +78,7 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
     }
 
     @Override
-    public synchronized Task<Void> clearState(final ActorReference reference, final Object state) {
+    public synchronized Task<Void> clearState(final ActorReference<?> reference, final Object state) {
         try {
             clearState.setString(1, getName(reference));
             clearState.setString(2, getIdentity(reference));
@@ -90,7 +90,7 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
     }
 
     @Override
-    public synchronized Task<Boolean> readState(final ActorReference reference, final Object state) {
+    public synchronized Task<Boolean> readState(final ActorReference<?> reference, final Object state) {
         String actor = getName(reference), identity = getIdentity(reference);
         try {
             readState.setString(1, actor);
@@ -109,7 +109,7 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
     }
 
     @Override
-    public synchronized Task<Void> writeState(final ActorReference reference, final Object state) {
+    public synchronized Task<Void> writeState(final ActorReference<?> reference, final Object state) {
         String actor = getName(reference), identity = getIdentity(reference);
         try {
             String serializedState = mapper.writeValueAsString(state);
@@ -129,7 +129,7 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
     }
 
     @Override
-    public Task start() {
+    public Task<Void> start() {
         // initialize DB connection
         loadDriver();
         openConn();
@@ -149,7 +149,7 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
     }
 
     @Override
-    public Task stop() {
+    public Task<Void> stop() {
         try {
             this.conn.close();
             return Task.done();
@@ -214,11 +214,11 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
         return String.format("jdbc:postgresql://%s:%d/%s", host, port, database);
     }
 
-    private String getName(final ActorReference reference) {
+    private String getName(final ActorReference<?> reference) {
         return ActorReference.getInterfaceClass(reference).getSimpleName();
     }
 
-    private String getIdentity(final ActorReference reference) {
+    private String getIdentity(final ActorReference<?> reference) {
         return String.valueOf(ActorReference.getId(reference));
     }
 }

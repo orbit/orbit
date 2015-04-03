@@ -93,7 +93,7 @@ public class Chat extends OrbitActor<Chat.State> implements IChat
     }
 
     @Override
-    public Task activateAsync()
+    public Task<Void> activateAsync()
     {
         return super.activateAsync().thenRun(() ->
         {
@@ -118,7 +118,7 @@ public class Chat extends OrbitActor<Chat.State> implements IChat
     }
 
     @Override
-    public Task deactivateAsync()
+    public Task<?> deactivateAsync()
     {
         return writeState().thenCompose(() -> super.deactivateAsync());
     }

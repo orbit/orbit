@@ -9,6 +9,6 @@ public interface ISomeChatRoom extends IActor
 
     Task<Void> sendMessage(ISomeChatObserver chatObserver, String message);
 
-    Task startCountdown(int count, String message);
+    Task<?> startCountdown(int count, String message);
 
 }

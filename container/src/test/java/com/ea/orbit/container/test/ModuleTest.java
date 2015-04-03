@@ -37,10 +37,9 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+@SuppressWarnings("unused")
 public class ModuleTest
 {
-    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ModuleTest.class);
-
     @Test
     public void testModule()
     {

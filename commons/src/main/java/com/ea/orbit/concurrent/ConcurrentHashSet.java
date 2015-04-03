@@ -127,7 +127,7 @@ public class ConcurrentHashSet<T>
         return s.toArray();
     }
 
-    public <T> T[] toArray(T[] a)
+    public <R> R[] toArray(R[] a)
     {
         return s.toArray(a);
     }

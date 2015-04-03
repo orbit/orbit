@@ -178,11 +178,7 @@ public class Hosting implements IHosting, Startable
             });
         }
 
-        for (NodeInfo oldNodeInfo : oldNodes.values())
-        {
-            // TODO notify someone?
-        }
-
+        // TODO notify someone? (NodeInfo oldNodeInfo : oldNodes.values()) { ... } 
     }
 
     private void updateServerNodes()
@@ -205,7 +201,7 @@ public class Hosting implements IHosting, Startable
         {
             return Task.fromValue(address);
         }
-        final Class interfaceClass = ((ActorReference) addressable)._interfaceClass();
+        final Class<?> interfaceClass = ((ActorReference<?>) addressable)._interfaceClass();
         final String interfaceClassName = interfaceClass.getName();
         if (interfaceClass.isAnnotationPresent(StatelessWorker.class))
         {

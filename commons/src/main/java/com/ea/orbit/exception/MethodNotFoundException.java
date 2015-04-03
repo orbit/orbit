@@ -30,7 +30,9 @@ package com.ea.orbit.exception;
 
 public class MethodNotFoundException extends RuntimeException
 {
-    public MethodNotFoundException()
+	private static final long serialVersionUID = 1L;
+
+	public MethodNotFoundException()
     {
     }
 

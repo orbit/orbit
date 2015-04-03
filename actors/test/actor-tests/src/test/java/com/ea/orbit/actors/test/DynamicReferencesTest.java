@@ -55,6 +55,7 @@ public class DynamicReferencesTest extends ActorBaseTest
 
     // orbit generated here is a hack to prevent apt generation
     @OrbitGenerated
+    @SuppressWarnings("rawtypes")
     public static class AptUnfriendly extends OrbitActor implements IAptUnfriendly
     {
         @Override
@@ -65,7 +66,8 @@ public class DynamicReferencesTest extends ActorBaseTest
     }
 
 
-    @Test
+	@Test
+    @SuppressWarnings("unused")
     public void test() throws ExecutionException, InterruptedException
     {
         OrbitStage stage = createStage();

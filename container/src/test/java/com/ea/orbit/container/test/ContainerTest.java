@@ -56,14 +56,14 @@ public class ContainerTest
         }
 
         @Override
-        public Task start()
+        public Task<Void> start()
         {
             startCalled = true;
             return Task.done();
         }
 
         @Override
-        public Task stop()
+        public Task<Void> stop()
         {
             stopCalled = true;
             return Task.done();
@@ -72,9 +72,6 @@ public class ContainerTest
 
     public static class HelloWorldNonSingleton
     {
-        private boolean startCalled;
-        private boolean stopCalled;
-
         public String sayHello()
         {
             return "hello";

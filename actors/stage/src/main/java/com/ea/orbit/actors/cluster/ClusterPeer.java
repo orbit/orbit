@@ -116,7 +116,7 @@ public class ClusterPeer implements IClusterPeer
         }
     }
 
-    public Task join(final String clusterName)
+    public Task<?> join(final String clusterName)
     {
         final ForkJoinTask<Address> f = ForkJoinTask.adapt(new Callable<Address>()
         {

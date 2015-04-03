@@ -32,10 +32,12 @@ import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.providers.postgresql.PostgreSQLStorageProvider;
 import com.ea.orbit.actors.test.FakeClusterPeer;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -44,14 +46,17 @@ import java.sql.Statement;
 
 import static org.junit.Assert.assertEquals;
 
-public class PostgreSQLPersistenceTest {
+@SuppressWarnings("unused")
+public class PostgreSQLPersistenceTest
+{
 
     private String clusterName = "cluster." + Math.random();
     private Connection conn;
     private ObjectMapper objectMapper;
 
     @Test
-    public void checkWritesTest() throws Exception {
+    public void checkWritesTest() throws Exception
+    {
         OrbitStage stage = createStage();
         assertEquals(0, count(IHelloActor.class));
         IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
@@ -60,7 +65,8 @@ public class PostgreSQLPersistenceTest {
     }
 
     @Test
-    public void checkReadTest() throws Exception {
+    public void checkReadTest() throws Exception
+    {
         OrbitStage stage = createStage();
         IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
         helloActor.sayHello("Meep Meep").join();
@@ -68,7 +74,8 @@ public class PostgreSQLPersistenceTest {
     }
 
     @Test
-    public void checkClearTest() throws Exception {
+    public void checkClearTest() throws Exception
+    {
         OrbitStage stage = createStage();
         assertEquals(0, count(IHelloActor.class));
         IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
@@ -79,7 +86,8 @@ public class PostgreSQLPersistenceTest {
     }
 
     @Test
-    public void checkUpdateTest() throws Exception {
+    public void checkUpdateTest() throws Exception
+    {
         OrbitStage stage = createStage();
         assertEquals(0, count(IHelloActor.class));
         IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
@@ -89,7 +97,8 @@ public class PostgreSQLPersistenceTest {
         assertEquals(readHelloState("300").lastName, "Peem Peem");
     }
 
-    public OrbitStage createStage() throws Exception {
+    public OrbitStage createStage() throws Exception
+    {
         OrbitStage stage = new OrbitStage();
         final PostgreSQLStorageProvider storageProvider = new PostgreSQLStorageProvider();
         storageProvider.setPort(5433);
@@ -105,21 +114,24 @@ public class PostgreSQLPersistenceTest {
     }
 
     @Before
-    public void setup() throws Exception {
+    public void setup() throws Exception
+    {
         Class.forName("org.postgresql.Driver");
         this.conn = DriverManager.getConnection("jdbc:postgresql://localhost:5433/orbit", "orbit", "secret");
-        this.objectMapper =  new ObjectMapper();
+        this.objectMapper = new ObjectMapper();
     }
 
     @After
-    public void cleanup() throws Exception {
+    public void cleanup() throws Exception
+    {
         Statement dropStmt = this.conn.createStatement();
         dropStmt.execute("DROP TABLE actor_states");
         dropStmt.close();
         this.conn.close();
     }
 
-    private int count(Class<?> actorInterface) throws Exception {
+    private int count(Class<?> actorInterface) throws Exception
+    {
         Statement stmt = this.conn.createStatement();
         String name = actorInterface.getSimpleName();
         ResultSet results = stmt.executeQuery("SELECT COUNT(*) AS \"cnt\" FROM actor_states WHERE actor = '" + name + "'");
@@ -129,7 +141,8 @@ public class PostgreSQLPersistenceTest {
         return count;
     }
 
-    private HelloActor.State readHelloState(String identity) throws Exception {
+    private HelloActor.State readHelloState(String identity) throws Exception
+    {
         Statement stmt = this.conn.createStatement();
         ResultSet results = stmt.executeQuery(
                 "SELECT state AS \"state\" FROM actor_states WHERE actor = '" + IHelloActor.class.getSimpleName()

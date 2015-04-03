@@ -48,7 +48,9 @@ import java.io.Serializable;
  */
 public abstract class ActorReference<T> implements Serializable, IAddressable
 {
-    INodeAddress address;
+	private static final long serialVersionUID = 1L;
+
+	INodeAddress address;
     Object id;
     transient IRuntime runtime;
 
@@ -74,7 +76,7 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
      *
      * @param id the actor or actor observer id
      */
-    public ActorReference(Object id)
+    public ActorReference(final Object id)
     {
         this.id = id;
         if (id == null)
@@ -93,16 +95,17 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
      * @return a task that will contain the returned value, or if one-way a task indicating if the message could be send.
      */
     @SuppressWarnings("unchecked")
-    protected <R> Task<R> invoke(boolean oneWay, int methodId, Object[] params)
+    protected <R> Task<R> invoke(final boolean oneWay, final int methodId, final Object[] params)
     {
         return (Task<R>) (runtime != null ? runtime : Runtime.getRuntime()).sendMessage(this, oneWay, methodId, params);
     }
 
-    public boolean equals(final Object o)
+    @Override
+	public boolean equals(final Object o)
     {
-        ActorReference that;
+        ActorReference<?> that;
         return (this == o) || ((o instanceof ActorReference)
-                && ((_interfaceId() == (that = (ActorReference) o)._interfaceId())
+                && ((_interfaceId() == (that = (ActorReference<?>) o)._interfaceId())
                 && ((!(address != null ? !address.equals(that.address) : that.address != null))
                 && ((!(id != null ? !id.equals(that.id) : that.id != null))))));
     }
@@ -125,7 +128,7 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
      * @param reference the reference being inspected
      * @return the implemented interface id
      */
-    public static int getInterfaceId(final ActorReference reference)
+    public static int getInterfaceId(final ActorReference<?> reference)
     {
         return reference._interfaceId();
     }
@@ -137,7 +140,7 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
      * @param reference the reference being inspected
      * @return the actor id
      */
-    public static Object getId(final ActorReference reference)
+    public static Object getId(final ActorReference<?> reference)
     {
         return reference.id;
     }
@@ -165,7 +168,7 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
      * @param reference the reference being inspected
      * @return the node address where the actor observer resides
      */
-    public static INodeAddress getAddress(final ActorReference reference)
+    public static INodeAddress getAddress(final ActorReference<?> reference)
     {
         return reference.address;
     }
@@ -179,7 +182,7 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
      * @param reference   the reference being inspected
      * @param nodeAddress the node address where the actor observer resides
      */
-    public static void setAddress(final ActorReference reference, final INodeAddress nodeAddress)
+    public static void setAddress(final ActorReference<?> reference, final INodeAddress nodeAddress)
     {
         reference.address = nodeAddress;
     }

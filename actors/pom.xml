@@ -36,7 +36,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <version>0.1.2-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
-    <groupId>com.ea.orbit</groupId>
     <artifactId>orbit-actors-parent</artifactId>
     <packaging>pom</packaging>
     <name>Orbit Actors</name>

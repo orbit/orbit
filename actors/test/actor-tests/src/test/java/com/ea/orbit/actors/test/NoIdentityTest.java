@@ -41,6 +41,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("unused")
 public class NoIdentityTest extends ActorBaseTest
 {
     @NoIdentity
@@ -49,7 +50,8 @@ public class NoIdentityTest extends ActorBaseTest
         Task<String> justRespond();
     }
 
-    public static class SingularThing extends OrbitActor implements ISingularThing
+	@SuppressWarnings("rawtypes")
+	public static class SingularThing extends OrbitActor implements ISingularThing
     {
         public Task<String> justRespond()
         {

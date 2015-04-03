@@ -33,7 +33,8 @@ import java.util.Date;
 
 public class ChatMessageDto implements Serializable
 {
-    private Date when;
+	private static final long serialVersionUID = 1L;
+	private Date when;
     private String sender;
     private String message;
 

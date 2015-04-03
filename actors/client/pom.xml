@@ -37,8 +37,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <relativePath>..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
+
     <name>Orbit Actors Client</name>
-    <groupId>com.ea.orbit</groupId>
     <artifactId>orbit-actors-client</artifactId>
 
     <dependencies>

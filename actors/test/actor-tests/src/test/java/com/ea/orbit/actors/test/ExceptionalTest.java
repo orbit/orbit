@@ -44,6 +44,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@SuppressWarnings("unused")
 public class ExceptionalTest extends ActorBaseTest
 {
     public interface IExceptionalThing extends IActor
@@ -53,6 +54,7 @@ public class ExceptionalTest extends ActorBaseTest
         Task<String> justThrowAnException();
     }
 
+    @SuppressWarnings("rawtypes")
     public static class ExceptionalThing extends OrbitActor implements IExceptionalThing
     {
         public Task<String> justRespond()

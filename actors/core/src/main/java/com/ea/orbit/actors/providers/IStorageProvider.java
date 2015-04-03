@@ -43,7 +43,7 @@ public interface IStorageProvider extends IOrbitProvider
      * @param state the state object, not modified.
      * @return a completion promise
      */
-    Task<Void> clearState(ActorReference reference, Object state);
+    Task<Void> clearState(ActorReference<?> reference, Object state);
 
     /**
      * Asynchronously reads an actors state.
@@ -51,7 +51,7 @@ public interface IStorageProvider extends IOrbitProvider
      * @param state the state object, modified by the call
      * @return a completion promise
      */
-    Task<Boolean> readState(ActorReference reference, Object state);
+    Task<Boolean> readState(ActorReference<?> reference, Object state);
 
     /**
      * Asynchronously writes an actors state.
@@ -59,5 +59,5 @@ public interface IStorageProvider extends IOrbitProvider
      * @param state the state object, not modified by the call
      * @return a completion promise
      */
-    Task<Void> writeState(ActorReference reference, Object state);
+    Task<Void> writeState(ActorReference<?> reference, Object state);
 }

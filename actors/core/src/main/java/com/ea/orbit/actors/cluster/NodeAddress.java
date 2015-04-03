@@ -35,7 +35,9 @@ import java.io.Serializable;
  */
 public class NodeAddress implements INodeAddress, Serializable
 {
-    private java.util.UUID address;
+	private static final long serialVersionUID = 1L;
+
+	private java.util.UUID address;
 
     public NodeAddress(final java.util.UUID address)
     {

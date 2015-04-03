@@ -72,7 +72,8 @@ public class FakeGroup
     private Map<INodeAddress, FakeClusterPeer> currentChannels = new HashMap<>();
 
     private Object topologyMutex = new Object();
-    private LoadingCache<String, ConcurrentMap> maps = CacheBuilder.newBuilder()
+    @SuppressWarnings("rawtypes")
+	private LoadingCache<String, ConcurrentMap> maps = CacheBuilder.newBuilder()
             .build(new CacheLoader<String, ConcurrentMap>()
             {
                 @Override
@@ -113,7 +114,6 @@ public class FakeGroup
     public void leave(final FakeClusterPeer fakeClusterPeer)
     {
         List<CompletableFuture<?>> tasks;
-        NodeAddress nodeAddress;
         synchronized (topologyMutex)
         {
             currentChannels.remove(fakeClusterPeer.localAddress());
@@ -156,7 +156,8 @@ public class FakeGroup
         }
     }
 
-    public <K, V> ConcurrentMap<K, V> getCache(final String name)
+    @SuppressWarnings("unchecked")
+	public <K, V> ConcurrentMap<K, V> getCache(final String name)
     {
         try
         {

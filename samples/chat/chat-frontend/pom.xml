@@ -38,9 +38,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.ea.orbit.samples</groupId>
-    <artifactId>orbit-samples-chat-frontend</artifactId>
     <name>Orbit Samples: Chat - Frontend</name>
+    <artifactId>orbit-samples-chat-frontend</artifactId>
 
     <build>
         <plugins>

@@ -43,6 +43,7 @@ import com.mongodb.MongoClient;
 
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("unused")
 public class MongodbPersistenceTest
 {
     private String clusterName = "cluster." + Math.random();

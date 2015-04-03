@@ -44,7 +44,7 @@ public class SomeMatch extends OrbitActor<SomeMatch.SomeMatchDto> implements ISo
     }
 
     @Override
-    public Task deactivateAsync()
+    public Task<?> deactivateAsync()
     {
         for (ISomePlayer p : state().players)
         {

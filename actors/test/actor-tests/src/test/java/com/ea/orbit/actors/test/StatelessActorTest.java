@@ -30,7 +30,6 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.test.actors.IStatelessThing;
 import com.ea.orbit.exception.UncheckedException;
 

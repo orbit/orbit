@@ -47,9 +47,11 @@ import java.util.stream.Stream;
  */
 public class ObserverManager<T extends IActorObserver> implements Serializable
 {
-    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ObserverManager.class);
+	private static final long serialVersionUID = 1L;
 
-    private ConcurrentHashSet<T> observers = new ConcurrentHashSet<>();
+	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ObserverManager.class);
+
+    private final ConcurrentHashSet<T> observers = new ConcurrentHashSet<>();
 
     /**
      * Ensures that this collection contains the specified observer.
@@ -57,7 +59,7 @@ public class ObserverManager<T extends IActorObserver> implements Serializable
      * @param observer observer whose presence in this collection is to be ensured
      * @return <tt>true</tt> if this collection changed as a result of the call.
      */
-    public boolean addObserver(T observer)
+    public boolean addObserver(final T observer)
     {
         if (observer == null)
         {
@@ -88,7 +90,7 @@ public class ObserverManager<T extends IActorObserver> implements Serializable
     {
         final Stream<Task<?>> stream = observers.stream()
                 .map(o ->
-                        ((Task<?>) o.ping()).whenComplete((Object pr, Throwable pe) ->
+                        ((Task<?>) o.ping()).whenComplete((final Object pr, final Throwable pe) ->
                         {
                             if (pe != null)
                             {
@@ -111,15 +113,15 @@ public class ObserverManager<T extends IActorObserver> implements Serializable
      *
      * @param callable operation to be called on all observers
      */
-    public void notifyObservers(Consumer<T> callable)
+    public void notifyObservers(final Consumer<T> callable)
     {
-        List<T> fail = new ArrayList<>(0);
+        final List<T> fail = new ArrayList<>(0);
         observers.forEach(o -> {
             try
             {
                 callable.accept(o);
             }
-            catch (Exception ex)
+            catch (final Exception ex)
             {
                 fail.add(o);
                 if (logger.isDebugEnabled())
@@ -147,7 +149,7 @@ public class ObserverManager<T extends IActorObserver> implements Serializable
      *
      * @param observer observer to be removed
      */
-    public void removeObserver(T observer)
+    public void removeObserver(final T observer)
     {
         observers.remove(observer);
     }

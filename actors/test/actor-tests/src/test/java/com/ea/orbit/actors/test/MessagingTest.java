@@ -44,12 +44,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("unused")
 public class MessagingTest extends ActorBaseTest
 {
 
     public static interface IBlockingResponder extends IActor
     {
-        Task blockOnReceiving(final int semaphoreIndex);
+        Task<?> blockOnReceiving(final int semaphoreIndex);
 
         Task<String> receiveAndRespond();
 
@@ -58,9 +59,10 @@ public class MessagingTest extends ActorBaseTest
 
     static Semaphore semaphores[] = new Semaphore[]{new Semaphore(0), new Semaphore(0)};
 
+    @SuppressWarnings("rawtypes")
     public static class BlockingResponder extends OrbitActor implements IBlockingResponder
     {
-        public Task blockOnReceiving(final int semaphoreIndex)
+        public Task<?> blockOnReceiving(final int semaphoreIndex)
         {
             // blocking the message receiver thread.
             // If the system was correctly implemented this will not block other actors from receiving messages.
@@ -122,8 +124,8 @@ public class MessagingTest extends ActorBaseTest
 
         IBlockingResponder blockingResponder = IActor.getReference(IBlockingResponder.class, "1");
         IBlockingResponder responder = IActor.getReference(IBlockingResponder.class, "free");
-        final Task blockedRes = blockingResponder.blockOnReceiving(0);
-        final Task res = responder.receiveAndRespond();
+        final Task<?> blockedRes = blockingResponder.blockOnReceiving(0);
+        final Task<?> res = responder.receiveAndRespond();
         assertEquals("hello", res.join());
         assertFalse(blockedRes.isDone());
         semaphores[0].release(1);
@@ -143,7 +145,7 @@ public class MessagingTest extends ActorBaseTest
         OrbitStage client = createClient();
 
         IBlockingResponder blockingResponder2 = IActor.getReference(IBlockingResponder.class, "free");
-        ArrayList<Task> blocked = new ArrayList<>();
+        ArrayList<Task<?>> blocked = new ArrayList<>();
         for (int i = 0; i < 20; i++)
         {
             IBlockingResponder blockingResponder1 = IActor.getReference(IBlockingResponder.class, "100" + i);
@@ -151,7 +153,7 @@ public class MessagingTest extends ActorBaseTest
         }
         // bad practice, but just to ensure that the other messages have get there before this last one.
         Thread.sleep(5);
-        final Task res2 = blockingResponder2.receiveAndRespond();
+        final Task<?> res2 = blockingResponder2.receiveAndRespond();
         long start = System.currentTimeMillis();
         assertEquals("hello", res2.join());
         assertTrue(System.currentTimeMillis() - start < 30000);

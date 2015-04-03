@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@SuppressWarnings("rawtypes")
 public class SomeChatRoom extends OrbitActor implements ISomeChatRoom
 {
 
@@ -30,7 +31,8 @@ public class SomeChatRoom extends OrbitActor implements ISomeChatRoom
         return Task.done();
     }
 
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public Task<Void> startCountdown(final int count, final String message)
     {
         countDown.set(count);
@@ -38,7 +40,7 @@ public class SomeChatRoom extends OrbitActor implements ISomeChatRoom
         return Task.done();
     }
 
-    private Task sendCountDown(String message)
+    private Task<Void> sendCountDown(String message)
     {
         final int count = countDown.decrementAndGet();
         if (count < 0)

@@ -76,7 +76,7 @@ public class OrbitContainer
     private OrbitProperties properties;
     private Map<String, ComponentState> components = new ConcurrentHashMap<>();
 
-    private CompletableFuture stopFuture = new CompletableFuture();
+    private CompletableFuture<?> stopFuture = new CompletableFuture<>();
 
     /**
      * Defines if orbit should discover services by looking as META-INF/services/orbit/ to find service components
@@ -90,7 +90,7 @@ public class OrbitContainer
     private final DependencyRegistry registry = new DependencyRegistry()
     {
 
-        protected WeakHashMap<Class, Boolean> notHere = new WeakHashMap();
+        protected WeakHashMap<Class<?>, Boolean> notHere = new WeakHashMap<>();
 
         @Override
         protected void injectField(final Object o, final java.lang.reflect.Field f) throws IllegalArgumentException, IllegalAccessException
@@ -99,7 +99,8 @@ public class OrbitContainer
             injectConfig(o, f);
         }
 
-        @Override
+        @SuppressWarnings("unchecked")
+		@Override
         public <T> T getSingleton(final Class<T> clazz)
         {
             if (!notHere.containsKey(clazz))
@@ -215,7 +216,7 @@ public class OrbitContainer
         this.properties.putAll(properties);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     protected void injectConfig(Object o, java.lang.reflect.Field f) throws IllegalAccessException
     {
         final Config config = f.getAnnotation(Config.class);
@@ -299,7 +300,7 @@ public class OrbitContainer
                 Type compType = ((ParameterizedType) f.getGenericType()).getActualTypeArguments()[0];
                 if (compType instanceof Class)
                 {
-                    List locatedList = components((Class) compType);
+                    List<?> locatedList = components((Class<?>) compType);
                     if (locatedList != null)
                     {
                         f.set(state.instance, locatedList);
@@ -371,7 +372,8 @@ public class OrbitContainer
      * <li>Calls start on all components that implement Startable</li>
      * </ol>
      */
-    public void start()
+    @SuppressWarnings("unchecked")
+	public void start()
     {
         if (state != ContainerState.CREATED)
         {
@@ -388,7 +390,7 @@ public class OrbitContainer
 
                     Yaml yaml = new Yaml();
                     final Iterable<Object> iter = yaml.loadAll(res.openStream());
-                    setProperties((Map) iter.iterator().next());
+                    setProperties((Map<String,Object>) iter.iterator().next());
                 }
                 else
                 {
@@ -463,7 +465,7 @@ public class OrbitContainer
             }
 
 
-            Set<Class<?>> newComps = new LinkedHashSet();
+            Set<Class<?>> newComps = new LinkedHashSet<>();
             // Instantiating modules
             for (ComponentState state : components.values())
             {
@@ -512,13 +514,13 @@ public class OrbitContainer
                 comps.addAll(components.values());
             }
 
-            List futures = new ArrayList<>();
+            List<Task<?>> futures = new ArrayList<>();
             // Call start methods
             for (ComponentState state : comps)
             {
                 if (state.enabled && state.instance != null && state.instance instanceof Startable)
                 {
-                    final Task future = ((Startable) state.instance).start();
+                    final Task<?> future = ((Startable) state.instance).start();
                     if (future != null && !future.isDone())
                     {
                         futures.add(future);
@@ -554,7 +556,7 @@ public class OrbitContainer
                 }
             }
         }
-        stopFuture.complete(true);
+        stopFuture.complete(null);
         state = ContainerState.STOPPED;
     }
 
@@ -601,7 +603,8 @@ public class OrbitContainer
         return Collections.unmodifiableList(list);
     }
 
-    public <T> List<T> components(final Class<T> actorClass)
+    @SuppressWarnings("unchecked")
+	public <T> List<T> components(final Class<T> actorClass)
     {
         List<T> list = new ArrayList<T>();
         for (ComponentState s : components.values())

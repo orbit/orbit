@@ -30,7 +30,9 @@ package com.ea.orbit.exception;
 
 public class NotAvailableHere extends UncheckedException
 {
-    public NotAvailableHere()
+	private static final long serialVersionUID = 1L;
+
+	public NotAvailableHere()
     {
     }
 
