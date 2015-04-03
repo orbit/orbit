@@ -46,4 +46,13 @@
         <module>chat</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>withScala</id>
+            <!--<activation><activeByDefault>true</activeByDefault></activation>-->
+            <modules>
+                <module>scala</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
