@@ -31,9 +31,6 @@ package com.ea.orbit.actors.runtime;
 import com.ea.orbit.actors.IActorObserver;
 import com.ea.orbit.concurrent.Task;
 
-import java.io.Serializable;
-import java.util.Set;
-
 public interface IHosting extends IActorObserver
 {
     public enum NodeTypeEnum
@@ -41,35 +38,14 @@ public interface IHosting extends IActorObserver
         SERVER, CLIENT
     }
 
-    class StageInfo implements Serializable
-    {
-    	private static final long serialVersionUID = 1L;
+    int actorSupported_yes = 1;
+    int actorSupported_no = 0;
+    int actorSupported_noneSupported = 2;
 
-    	private NodeTypeEnum type;
-        private Set<String> availableActors;
-
-        @java.beans.ConstructorProperties({"type", "availableActors"})
-        public StageInfo(final NodeTypeEnum type, final Set<String> availableActors)
-        {
-            this.type = type;
-            this.availableActors = availableActors;
-        }
-
-        public NodeTypeEnum getType()
-        {
-            return this.type;
-        }
-
-        public Set<String> getAvailableActors()
-        {
-            return this.availableActors;
-        }
-
-        public String toString()
-        {
-            return "com.ea.orbit.actors.runtime.IHosting.StageInfo(type=" + this.type + ", availableActors=" + this.availableActors + ")";
-        }
-    }
-
-    Task<StageInfo> getNodeType();
+    /**
+     * Asked a single time or infrequently to find out if this node knows and is able to serve this kind of actor.
+     *
+     * @return #actorSupported_yes, #actorSupported_no, or #actorSupported_noneSupported
+     */
+    Task<Integer> canActivate(String interfaceName, int interfaceId);
 }

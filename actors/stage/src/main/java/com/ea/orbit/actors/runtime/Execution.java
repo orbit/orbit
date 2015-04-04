@@ -140,6 +140,19 @@ public class Execution implements IRuntime
         this.actorClasses = actorClasses;
     }
 
+    public boolean canActivateActor(String interfaceName, int interfaceId)
+    {
+        try
+        {
+            final InterfaceDescriptor descriptor = getDescriptor(Class.forName(interfaceName));
+            return descriptor != null && descriptor.concreteClassName != null;
+        }
+        catch (ClassNotFoundException e)
+        {
+            throw new UncheckedException(e);
+        }
+    }
+
     private static class InterfaceDescriptor
     {
         ActorFactory<?> factory;
@@ -441,7 +454,7 @@ public class Execution implements IRuntime
     }
 
     @SuppressWarnings("unchecked")
-	public <T extends IActorObserver> T getObjectReference(final Class<T> iClass, final T observer)
+    public <T extends IActorObserver> T getObjectReference(final Class<T> iClass, final T observer)
     {
         final IActorObserver ref = observerReferences.get(observer);
         if (ref != null)
@@ -452,7 +465,7 @@ public class Execution implements IRuntime
     }
 
     @SuppressWarnings("unchecked")
-	public <T extends IActorObserver> T getObserverReference(Class<T> iClass, final T observer, String id)
+    public <T extends IActorObserver> T getObserverReference(Class<T> iClass, final T observer, String id)
     {
         final IActorObserver ref = observerReferences.get(observer);
         if (ref != null)
@@ -463,7 +476,7 @@ public class Execution implements IRuntime
     }
 
     @SuppressWarnings("unchecked")
-	private <T extends IActorObserver> T createObjectReference(final Class<T> iClass, final T observer, String objectId)
+    private <T extends IActorObserver> T createObjectReference(final Class<T> iClass, final T observer, String objectId)
     {
 
         ActorFactory<?> factory;
@@ -539,7 +552,7 @@ public class Execution implements IRuntime
 
     public void bind(Object object)
     {
-        if(!(object instanceof ActorReference))
+        if (!(object instanceof ActorReference))
         {
             throw new IllegalArgumentException("Must be a reference");
         }
@@ -566,12 +579,12 @@ public class Execution implements IRuntime
 
 
     @SuppressWarnings("unchecked")
-	public void start()
+    public void start()
     {
         final List<ClassPath.ResourceInfo> actorClassesRes = ClassPath.get().getAllResources().stream().filter(r -> r.getResourceName().startsWith("META-INF/orbit/actors/classes")).collect(Collectors.toList());
         final List<Class<?>> actorInterfaces = new ArrayList<>();
 
-        if (actorClassPatterns  != null && actorClassPatterns .size() > 0)
+        if (actorClassPatterns != null && actorClassPatterns.size() > 0)
         {
             // finding classes in the classpath
             Set<Class<?>> iActors = ClassPath.get().getAllResources().stream()
@@ -716,7 +729,7 @@ public class Execution implements IRuntime
     }
 
     @SuppressWarnings("unchecked")
-	private InterfaceDescriptor getDescriptor(final Class<?> aInterface)
+    private InterfaceDescriptor getDescriptor(final Class<?> aInterface)
     {
         InterfaceDescriptor interfaceDescriptor = descriptorMapByInterface.get(aInterface);
         if (interfaceDescriptor == null)
@@ -942,12 +955,12 @@ public class Execution implements IRuntime
         return (T) reference;
     }
 
-    
+
     @SuppressWarnings("unchecked")
-	public <T extends IActor> T getReference(final Class<T> iClass, final Object id)
+    public <T extends IActor> T getReference(final Class<T> iClass, final Object id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
-		ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
+        ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
         reference.runtime = this;
         return (T) reference;
     }
@@ -1035,7 +1048,7 @@ public class Execution implements IRuntime
         }
     }
 
-    public boolean isAutoDiscovery()
+    public boolean getAutoDiscovery()
     {
         return autoDiscovery;
     }
@@ -1045,13 +1058,4 @@ public class Execution implements IRuntime
         this.autoDiscovery = autoDiscovery;
     }
 
-    public void addActorClasses(Collection<Class<?>> classes)
-    {
-        actorClasses.addAll(classes);
-    }
-
-    public List<String> getAvailableActors()
-    {
-        return availableActors;
-    }
 }

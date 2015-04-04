@@ -45,7 +45,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -62,7 +61,7 @@ public class Hosting implements IHosting, Startable
 
     private volatile Map<INodeAddress, NodeInfo> activeNodes = new HashMap<>(0);
     private volatile List<NodeInfo> serverNodes = new ArrayList<>(0);
-    private Object serverNodesUpdateMutex = new Object();
+    private final Object serverNodesUpdateMutex = new Object();
     private Execution execution;
     private ConcurrentMap<IAddressable, INodeAddress> localAddressCache = new ConcurrentHashMap<>();
     private volatile ConcurrentMap<IAddressable, INodeAddress> distributedDirectory;
@@ -97,11 +96,11 @@ public class Hosting implements IHosting, Startable
 
     private static class NodeInfo
     {
-        boolean server;
         boolean active;
         INodeAddress address;
         IHosting hosting;
-        StageInfo stageInfo;
+        boolean cannotHostActors;
+        final ConcurrentHashMap<String, Integer> canActivate = new ConcurrentHashMap<>();
 
         public NodeInfo(final INodeAddress address)
         {
@@ -110,10 +109,11 @@ public class Hosting implements IHosting, Startable
     }
 
     @Override
-    public Task<StageInfo> getNodeType()
+    public Task<Integer> canActivate(String interfaceName, int interfaceId)
     {
-        return Task.fromValue(new StageInfo(nodeType,
-                nodeType == NodeTypeEnum.CLIENT ? new HashSet<>() : new HashSet<>(execution.getAvailableActors())));
+        return Task.fromValue(nodeType == NodeTypeEnum.CLIENT ? actorSupported_noneSupported
+                : execution.canActivateActor(interfaceName, interfaceId) ? actorSupported_yes
+                : actorSupported_no);
     }
 
     public void setClusterPeer(final IClusterPeer clusterPeer)
@@ -152,33 +152,7 @@ public class Hosting implements IHosting, Startable
         }
         activeNodes = newNodes;
         updateServerNodes();
-        for (final NodeInfo newNodeInfo : justAddedNodes)
-        {
-            // each time a new node is added, it's necessary to detect its role
-            execution.getExecutor().execute(() -> {
-                (newNodeInfo.hosting.getNodeType()).whenCompleteAsync((newNodeType, e) ->
-                {
-                    if (e == null)
-                    {
-                        newNodeInfo.stageInfo = newNodeType;
-                        if (newNodeType.getType() == NodeTypeEnum.SERVER)
-                        {
-                            newNodeInfo.server = true;
-                            if (newNodeInfo.active)
-                            {
-                                updateServerNodes();
-                            }
-                        }
-                    }
-                    else
-                    {
-                        logger.error("Error updating the cluster view. ", e);
-                    }
-                }, execution.getExecutor());
-            });
-        }
-
-        // TODO notify someone? (NodeInfo oldNodeInfo : oldNodes.values()) { ... } 
+        // TODO notify someone? (NodeInfo oldNodeInfo : oldNodes.values()) { ... }
     }
 
     private void updateServerNodes()
@@ -186,7 +160,7 @@ public class Hosting implements IHosting, Startable
         synchronized (serverNodesUpdateMutex)
         {
             this.serverNodes = activeNodes.values().stream().filter(
-                    nodeInfo -> nodeInfo.active && nodeInfo.server).collect(Collectors.toList());
+                    nodeInfo -> nodeInfo.active && !nodeInfo.cannotHostActors).collect(Collectors.toList());
             if (serverNodes.size() > 0)
             {
                 serverNodesUpdateMutex.notifyAll();
@@ -205,7 +179,7 @@ public class Hosting implements IHosting, Startable
         final String interfaceClassName = interfaceClass.getName();
         if (interfaceClass.isAnnotationPresent(StatelessWorker.class))
         {
-            if (nodeType == NodeTypeEnum.SERVER && execution.getAvailableActors().contains(interfaceClassName))
+            if (nodeType == NodeTypeEnum.SERVER && execution.canActivateActor(interfaceClassName, -1))
             {
                 // TODO: consider always using local instance if this node is a server
                 // ~90% chance of making a local call
@@ -268,27 +242,32 @@ public class Hosting implements IHosting, Startable
 
     private INodeAddress selectNode(final String interfaceClassName, boolean allowToBlock)
     {
-        final INodeAddress nodeAddress;
         List<NodeInfo> potentialNodes;
-        List<NodeInfo> currentServerNodes = serverNodes;
         long start = System.currentTimeMillis();
-        do
+
+        while (true)
         {
+            if (System.currentTimeMillis() - start > timeToWaitForServersMillis)
+            {
+                String err = "Timeout waiting for a server capable of handling: " + interfaceClassName;
+                logger.error(err);
+                throw new UncheckedException(err);
+            }
+
+            List<NodeInfo> currentServerNodes = serverNodes;
+
             potentialNodes = currentServerNodes.stream()
-                    .filter(n -> n.server && n.stageInfo != null && n.stageInfo.getAvailableActors().contains(interfaceClassName))
+                    .filter(n -> !n.cannotHostActors
+                            && IHosting.actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, IHosting.actorSupported_yes))
                     .collect(Collectors.toList());
+
             if (potentialNodes.size() == 0)
             {
                 if (!allowToBlock)
                 {
                     return null;
                 }
-                if (System.currentTimeMillis() - start > timeToWaitForServersMillis)
-                {
-                    String err = "Timeout waiting for a server capable of handling: " + interfaceClassName;
-                    logger.error(err);
-                    throw new UncheckedException(err);
-                }
+                // waits for servers
                 synchronized (serverNodesUpdateMutex)
                 {
                     if (serverNodes.size() == 0)
@@ -302,12 +281,42 @@ public class Hosting implements IHosting, Startable
                             throw new UncheckedException(e);
                         }
                     }
-                    currentServerNodes = serverNodes;
                 }
             }
-        } while (potentialNodes.size() == 0);
-        nodeAddress = potentialNodes.get(random.nextInt(potentialNodes.size())).address;
-        return nodeAddress;
+            else
+            {
+                NodeInfo nodeInfo = potentialNodes.get(random.nextInt(potentialNodes.size()));
+
+                Integer canActivate = nodeInfo.canActivate.get(interfaceClassName);
+                if (canActivate == null)
+                {
+                    // ask if the node can activate this type of actor.
+                    try
+                    {
+                        canActivate = nodeInfo.hosting.canActivate(interfaceClassName, -1).join();
+                        if (canActivate == actorSupported_noneSupported)
+                        {
+                            nodeInfo.cannotHostActors = true;
+                            // jic
+                            nodeInfo.canActivate.put(interfaceClassName, actorSupported_no);
+                        }
+                        else
+                        {
+                            nodeInfo.canActivate.put(interfaceClassName, canActivate);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.error("Error locating server for " + interfaceClassName, ex);
+                        continue;
+                    }
+                }
+                if (canActivate == actorSupported_yes)
+                {
+                    return nodeInfo.address;
+                }
+            }
+        }
     }
 
     @Deprecated
