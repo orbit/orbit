@@ -38,5 +38,5 @@ public class HelloActor extends OrbitActor implements IHello
     }
 }
  
-HelloFactory.getReference("0").sayHello("Meep Meep");
+IActor.getReference(IHello.class, "0").sayHello("Meep Meep");
 ```
