@@ -1,7 +1,7 @@
 Orbit Framework
 =======
 
-Orbit is a modern Java framework that makes it easier to build and maintain distributed, secure and scalable online services.
+Orbit is a modern framework for JVM languages that makes it easier to build and maintain distributed, secure and scalable online services.
 
 Orbit contains two primary components:
 -  Orbit Actors, a framework to write distributed systems using virtual actors.
@@ -22,7 +22,7 @@ Orbit is licensed under the [BSD 3-Clause License](LICENSE).
 
 Simple Examples
 =======
-#### Actors
+#### Actors - Java
 ```java
 public interface IHello extends IActor
 {
