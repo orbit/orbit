@@ -3,6 +3,9 @@ package com.ea.orbit.actors.runtime;
 import com.ea.orbit.concurrent.ConcurrentHashSet;
 import com.ea.orbit.util.ClassPath;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -11,6 +14,7 @@ import java.util.stream.Stream;
  */
 public class ClassPathSearch
 {
+    private static final Logger logger = LoggerFactory.getLogger(ClassPathSearch.class);
     private final ConcurrentHashSet<String> unprocessed = new ConcurrentHashSet<>();
 
     private final ConcurrentHashMap<Class<?>, Class<?>> concreteImplementations = new ConcurrentHashMap<>();
@@ -43,47 +47,59 @@ public class ClassPathSearch
         final String expectedName = theInterface.getName();
         // cloning the list of unprocessed since it might be modified by the operations on the stream.
 
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("Searching implementation class for: " + theInterface);
+        }
         // searching
         implementationClass = Stream.of(unprocessed.toArray())
                 .map(o -> (String) o)
                 .sorted((a, b) -> {
-                    // order by closest name to the interface, closest beginning then closest ending.
-                    int sa = commonStart(expectedName, a);
-                    int sb = commonStart(expectedName, b);
-                    return (sa != sb) ? (sb - sa) : (commonEnd(expectedName, b) - commonEnd(expectedName, a));
+                    // order by closest name to the interface.
+                    int sa = commonStart(expectedName, a) + commonEnd(expectedName, a);
+                    int sb = commonStart(expectedName, b) + commonEnd(expectedName, b);
+                    return (sa != sb) ? (sb - sa) : a.length() - b.length();
                 })
+                // use this for development: .peek(System.out::println)
                 .map(cn -> {
+                    if (logger.isDebugEnabled())
+                    {
+                        logger.debug("Checking: " + cn);
+                    }
                     // this returns non null if there is a match
                     // it also culls the list
                     try
                     {
                         Class clazz = Class.forName(cn);
-                        if (!clazz.isInterface() && theInterface.isAssignableFrom(clazz))
+                        if (!clazz.isInterface())
                         {
-                            // when searching for IHello1, must avoid:
-                            // IHello1 <- IHello2
-                            // IHello1 <- HelloImpl1
-                            // IHello2 <- HelloImpl2  (wrong return, lest strict.
-
-                            // However the application **should not** do this kind of class tree.
-
-                            // Important: this makes ClassPathSearch non generic.
-                            for (Class<?> i : clazz.getInterfaces())
+                            if (theInterface.isAssignableFrom(clazz))
                             {
-                                if (i != theInterface && theInterface.isAssignableFrom(i))
+                                // when searching for IHello1, must avoid:
+                                // IHello1 <- IHello2
+                                // IHello1 <- HelloImpl1
+                                // IHello2 <-s HelloImpl2  (wrong return, lest strict.
+
+                                // However the application **should not** do this kind of class tree.
+
+                                // Important: this makes ClassPathSearch non generic.
+                                for (Class<?> i : clazz.getInterfaces())
                                 {
+                                    if (i != theInterface && theInterface.isAssignableFrom(i))
+                                    {
+                                        return null;
+                                    }
+                                }
+                                // found the best match!
+                                return clazz;
+                            }
+                            for (Class<?> base : classesOfInterest)
+                            {
+                                if (base.isAssignableFrom(clazz))
+                                {
+                                    // keep the classes that are part of the classes of interest list
                                     return null;
                                 }
-                            }
-                            // found the best match!
-                            return clazz;
-                        }
-                        for (Class<?> base : classesOfInterest)
-                        {
-                            if (base.isAssignableFrom(clazz))
-                            {
-                                // keep the classes that are part of the classes of interest list
-                                return null;
                             }
                         }
                         // culling the list for the next search

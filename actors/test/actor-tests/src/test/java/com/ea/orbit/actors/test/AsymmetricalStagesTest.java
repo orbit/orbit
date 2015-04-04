@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.runtime.Execution;
+import com.ea.orbit.actors.runtime.ActorClassFinder;
 import com.ea.orbit.actors.test.actors.ISomeActor;
 import com.ea.orbit.actors.test.actors.ISomeMatch;
 import com.ea.orbit.actors.test.actors.ISomePlayer;
@@ -50,7 +50,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Test nodes that do not contain the same collection of actors.
@@ -64,8 +66,8 @@ public class AsymmetricalStagesTest extends ActorBaseTest
     public void asymmetricalNodeTest() throws ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException
     {
         // Asymmetrical nodes, one has Match other has Player, both have SomeActor
-        OrbitStage stage1 = createStage(SomeActor.class, SomePlayer.class);
-        OrbitStage stage2 = createStage(SomeActor.class, SomeMatch.class);
+        OrbitStage stage1 = createStage(SomeMatch.class);
+        OrbitStage stage2 = createStage(SomePlayer.class);
 
         final List<Task<String>> tasksA = new ArrayList<>();
         final List<Task<String>> tasksP = new ArrayList<>();
@@ -111,11 +113,21 @@ public class AsymmetricalStagesTest extends ActorBaseTest
         f.set(target, value);
     }
 
-    public OrbitStage createStage(Class<?>... classes) throws ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException
+    public OrbitStage createStage(Class<?>... excludedActorClasses) throws ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException
     {
         OrbitStage stage = new OrbitStage();
+        List<Class<?>> excludedClasses = Arrays.asList(excludedActorClasses);
         stage.setAutoDiscovery(false);
-        Stream.of(classes).forEach(c -> stage.addProvider(c));
+        stage.addProvider(new ActorClassFinder()
+        {
+            @Override
+            public <T extends IActor> Class<? extends T> findActorImplementation(Class<T> iActorInterface)
+            {
+                Class<? extends T> c = super.findActorImplementation(iActorInterface);
+                return excludedClasses.contains(c) ? null : c;
+            }
+        });
+        Stream.of(excludedActorClasses).forEach(c -> stage.addProvider(c));
         stage.setMode(OrbitStage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
