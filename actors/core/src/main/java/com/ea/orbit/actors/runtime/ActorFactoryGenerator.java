@@ -3,7 +3,9 @@ package com.ea.orbit.actors.runtime;
 import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
+
 import javassist.CannotCompileException;
+import javassist.ClassClassPath;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
@@ -28,6 +30,8 @@ import java.util.stream.Stream;
  */
 public class ActorFactoryGenerator
 {
+    private static ClassPool classPool;
+
     private static class GenericActorFactory<T> extends ActorFactory<T>
     {
         private int interfaceId;
@@ -68,7 +72,7 @@ public class ActorFactoryGenerator
     }
 
     @SuppressWarnings("unchecked")
-	public <T> ActorFactory<T> getFactoryFor(final Class<T> aInterface)
+    public <T> ActorFactory<T> getFactoryFor(final Class<T> aInterface)
     {
         final String interfaceFullName = aInterface.getName().replace('$', '.');
         final String packageName = aInterface.getPackage().getName();
@@ -99,17 +103,17 @@ public class ActorFactoryGenerator
     }
 
     @SuppressWarnings("unchecked")
-	private <T> Class<T> makeReferenceClass(final Class<T> aInterface, final String interfaceFullName, final int interfaceId, final String referenceFullName) throws NotFoundException, CannotCompileException
+    private <T> Class<T> makeReferenceClass(final Class<T> aInterface, final String interfaceFullName, final int interfaceId, final String referenceFullName) throws NotFoundException, CannotCompileException
     {
         try
         {
-            return (Class<T>)Class.forName(referenceFullName);
+            return (Class<T>) Class.forName(referenceFullName);
         }
         catch (final Exception ex)
         {
             // ignore;
         }
-        final ClassPool pool = ClassPool.getDefault();
+        final ClassPool pool = getClassPool();
         try
         {
             return (Class<T>) pool.getClassLoader().loadClass(referenceFullName);
@@ -167,7 +171,7 @@ public class ActorFactoryGenerator
         {
             // ignore;
         }
-        final ClassPool pool = ClassPool.getDefault();
+        final ClassPool pool = getClassPool();
         try
         {
             return pool.getClassLoader().loadClass(invokerFullName);
@@ -224,6 +228,18 @@ public class ActorFactoryGenerator
             cc.addMethod(CtNewMethod.make(sb.toString(), cc));
             return cc.toClass();
         }
+    }
+
+    private static synchronized ClassPool getClassPool()
+    {
+        if (classPool == null)
+        {
+            classPool = new ClassPool(null);
+            classPool.appendSystemPath();
+            classPool.appendClassPath(new ClassClassPath(ActorFactoryGenerator.class));
+        }
+
+        return classPool;
     }
 
 }

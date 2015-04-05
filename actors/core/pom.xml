@@ -51,18 +51,23 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>org.slf4j:*</exclude>
+                                </excludes>
+                            </artifactSet>
                             <relocations>
                                 <relocation>
-                                    <pattern>org.*</pattern>
-                                    <shadedPattern>com.ea.orbit.core.shaded.org.</shadedPattern>
+                                    <pattern>org.apache</pattern>
+                                    <shadedPattern>com.ea.orbit.actors.core.shaded.org.apache</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.googlecode.*</pattern>
-                                    <shadedPattern>com.ea.orbit.core.shaded.com.googlecode.</shadedPattern>
+                                    <pattern>com.googlecode.</pattern>
+                                    <shadedPattern>com.ea.orbit.actors.core.shaded.com.googlecode.</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>javassist.*</pattern>
-                                    <shadedPattern>com.ea.orbit.core.shaded.com.javassist.</shadedPattern>
+                                    <pattern>javassist.</pattern>
+                                    <shadedPattern>com.ea.orbit.actors.core.shaded.javassist.</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
