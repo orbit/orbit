@@ -64,9 +64,6 @@ public class OrbitStage implements Startable
     @Config("orbit.actors.providers")
     private List<IOrbitProvider> providers = new ArrayList<>();
 
-    @Config("orbit.actors.autoDiscovery")
-    private boolean autoDiscovery;
-
     @Wired
     OrbitContainer orbitContainer;
 
@@ -109,11 +106,6 @@ public class OrbitStage implements Startable
     public ExecutorService getMessagingPool()
     {
         return messagingPool;
-    }
-
-    public void setAutoDiscovery(boolean autoDiscovery)
-    {
-        this.autoDiscovery = autoDiscovery;
     }
 
     public String runtimeIdentity()
@@ -189,8 +181,6 @@ public class OrbitStage implements Startable
         hosting.setExecution(execution);
         hosting.setClusterPeer(clusterPeer);
         messaging.setClusterPeer(clusterPeer);
-
-        execution.setAutoDiscovery(autoDiscovery);
 
         execution.setOrbitProviders(providers);
 

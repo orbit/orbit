@@ -99,8 +99,6 @@ public class Execution implements IRuntime
     private ExecutorService executor;
     private ActorFactoryGenerator dynamicReferenceFactory = new ActorFactoryGenerator();
 
-    @Config("orbit.actors.autoDiscovery")
-    private boolean autoDiscovery = true;
     private List<IOrbitProvider> orbitProviders = new ArrayList<>();
     private List<Class<?>> actorClasses = new ArrayList<>();
 
@@ -1058,15 +1056,4 @@ public class Execution implements IRuntime
             Task.allOf(futures).join();
         }
     }
-
-    public boolean getAutoDiscovery()
-    {
-        return autoDiscovery;
-    }
-
-    public void setAutoDiscovery(final boolean autoDiscovery)
-    {
-        this.autoDiscovery = autoDiscovery;
-    }
-
 }

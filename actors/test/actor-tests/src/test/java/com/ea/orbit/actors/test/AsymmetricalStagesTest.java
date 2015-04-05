@@ -116,7 +116,6 @@ public class AsymmetricalStagesTest extends ActorBaseTest
     {
         OrbitStage stage = new OrbitStage();
         List<Class<?>> excludedClasses = Arrays.asList(excludedActorClasses);
-        stage.setAutoDiscovery(false);
         stage.addProvider(new ActorClassFinder()
         {
             @Override
