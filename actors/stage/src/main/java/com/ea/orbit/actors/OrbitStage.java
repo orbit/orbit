@@ -51,12 +51,11 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
 
 @Singleton
 public class OrbitStage implements Startable
 {
-	@Config("orbit.actors.clusterName")
+    @Config("orbit.actors.clusterName")
     private String clusterName;
 
     @Config("orbit.actors.stageMode")
@@ -70,6 +69,12 @@ public class OrbitStage implements Startable
 
     @Wired
     OrbitContainer orbitContainer;
+
+    public enum StageMode
+    {
+        FRONT_END, // no activations
+        HOST // allows activations
+    }
 
     private IClusterPeer clusterPeer;
     private Task<?> startFuture;
@@ -111,10 +116,13 @@ public class OrbitStage implements Startable
         this.autoDiscovery = autoDiscovery;
     }
 
-    public enum StageMode
+    public String runtimeIdentity()
     {
-        FRONT_END, // no activations
-        HOST // allows activations
+        if (execution == null)
+        {
+            throw new IllegalStateException("Can only be called after the startup");
+        }
+        return execution.runtimeIdentity();
     }
 
     public String getClusterName()
