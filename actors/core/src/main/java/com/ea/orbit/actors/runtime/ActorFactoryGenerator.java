@@ -20,13 +20,10 @@ import java.util.stream.Stream;
 
 /**
  * Class to create actor factories, actor references and actor invokers.
- * <p/>
- * This class allows the orbit actors to work without compile time code generation.
  * <ul>
- * <li>This potentially enables other jvm languages to use orbit.</li>
- * <li>It also makes it easier to use orbit with Eclipse (without configuring the annotation processors)</li>
+ * <li>This potentially enables other JVM languages to use orbit.</li>
+ * <li>It also makes it easier to use Orbit with Eclipse (without configuring the annotation processors)</li>
  * </ul>
- * However, it's advisable to enable the annotation processor when possible make debugging easier.
  */
 public class ActorFactoryGenerator
 {

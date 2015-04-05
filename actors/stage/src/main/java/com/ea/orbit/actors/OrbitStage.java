@@ -227,7 +227,7 @@ public class OrbitStage implements Startable
      * stage.addProvider(new MongoDbProvider(...));
      * </pre>
      *
-     * @param provider Actor classNamePattern, Actor class, or provider instance.
+     * @param provider Actor Provider instance.
      */
     public void addProvider(final IOrbitProvider provider)
     {
