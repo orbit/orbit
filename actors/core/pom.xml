@@ -83,12 +83,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-actors-processor</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>com.googlecode.gentyref</groupId>
             <artifactId>gentyref</artifactId>
             <version>1.2.0</version>

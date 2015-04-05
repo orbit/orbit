@@ -632,7 +632,7 @@ public class Execution implements IRuntime
         finder = getFirstProvider(IActorClassFinder.class);
         if (finder == null)
         {
-            finder = new ActorClassFinder(this);
+            finder = new ActorClassFinder();
             finder.start().join();
         }
 
