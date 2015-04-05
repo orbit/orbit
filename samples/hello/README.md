@@ -1,5 +1,5 @@
 
-Hello world example
+Hello World Sample
 ===================
 
 ```java
@@ -44,7 +44,7 @@ mvn exec:java
 
 Stop the nodes with `ctrl+z`
 
-### Sample output
+### Sample Output
 
 ```
 -------------------------------------------------------------------
