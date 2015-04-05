@@ -136,19 +136,18 @@ public class Execution implements IRuntime
 
     public boolean canActivateActor(String interfaceName, int interfaceId)
     {
-        Class<IActor> aInterface = (Class<IActor>) classForName(interfaceName);
+        Class<IActor> aInterface = classForName(interfaceName);
         final InterfaceDescriptor descriptor = getDescriptor(aInterface);
         if (descriptor == null || descriptor.cannotActivate)
         {
             return false;
         }
-        if (descriptor.concreteClassName != null)
+        if (descriptor.concreteClassName == null)
         {
-            return !descriptor.cannotActivate;
+            final Class<?> concreteClass = finder.findActorImplementation(aInterface);
+            descriptor.cannotActivate = concreteClass == null;
+            descriptor.concreteClassName = concreteClass != null ? concreteClass.getName() : null;
         }
-        final Class<?> concreteClass = finder.findActorImplementation(aInterface);
-        descriptor.cannotActivate = concreteClass == null;
-        descriptor.concreteClassName = concreteClass != null ? concreteClass.getName() : null;
         return !descriptor.cannotActivate;
     }
 
@@ -463,23 +462,44 @@ public class Execution implements IRuntime
         return Task.allOf(orbitProviders.stream().map(v -> v.stop()));
     }
 
-    @SuppressWarnings("unchecked")
+    /**
+     * Installs this observer into this node.
+     * Can called several times the object is registered only once.
+     *
+     * @param iClass   hint to the framework about which IActorObserver interface this object represents.
+     *                 Can be null if there are no ambiguities.
+     * @param observer the object to install
+     * @param <T>      The type of reference class returned.
+     * @return a remote reference that can be sent to actors.
+     */
     public <T extends IActorObserver> T getObjectReference(final Class<T> iClass, final T observer)
     {
-        final IActorObserver ref = observerReferences.get(observer);
-        if (ref != null)
-        {
-            return (T) ref;
-        }
-        return createObjectReference(iClass, observer, null);
+        return getObserverReference(iClass, observer, null);
     }
 
+    /**
+     * Installs this observer into this node with the given id.
+     * If called twice for the same observer, the ids must match.
+     * Usually it's recommended to let the framework choose the id;
+     *
+     * @param iClass   hint to the framework about which IActorObserver interface this object represents.
+     *                 Can be null if there are no ambiguities.
+     * @param observer the object to install
+     * @param id       can be null, in this case the framework will choose an id.
+     * @param <T>      The type of reference class returned.
+     * @return a remote reference that can be sent to actors.
+     * @throws java.lang.IllegalArgumentException if called twice with the same observer and different ids
+     */
     @SuppressWarnings("unchecked")
     public <T extends IActorObserver> T getObserverReference(Class<T> iClass, final T observer, String id)
     {
         final IActorObserver ref = observerReferences.get(observer);
         if (ref != null)
         {
+            if (id != null && !id.equals(((ActorReference<?>) ref).id))
+            {
+                throw new IllegalArgumentException("Called twice with different ids: " + id + " != " + ((ActorReference<?>) ref).id);
+            }
             return (T) ref;
         }
         return createObjectReference(iClass, observer, id);
@@ -588,7 +608,6 @@ public class Execution implements IRuntime
     }
 
 
-    @SuppressWarnings("unchecked")
     public void start()
     {
         finder = getFirstProvider(IActorClassFinder.class);
@@ -629,16 +648,17 @@ public class Execution implements IRuntime
         }, 5000, 5000);
     }
 
-    private Class<?> classForName(final String className)
+    private <T> Class<T> classForName(final String className)
     {
         return classForName(className, false);
     }
 
-    private Class<?> classForName(final String className, boolean ignoreException)
+    @SuppressWarnings("unchecked")
+	private <T> Class<T> classForName(final String className, boolean ignoreException)
     {
         try
         {
-            return Class.forName(className);
+            return (Class<T>) Class.forName(className);
         }
         catch (Error | Exception ex)
         {
@@ -882,8 +902,9 @@ public class Execution implements IRuntime
         }
     }
 
+
     @SuppressWarnings({"unchecked"})
-    <T extends IActorObserver> T createReference(final INodeAddress a, final Class<T> iClass, String id)
+    <T> T createReference(final INodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
         ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference("");
@@ -900,6 +921,39 @@ public class Execution implements IRuntime
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
         ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
         reference.runtime = this;
+        return (T) reference;
+    }
+
+
+    /**
+     * Returns an observer reference to an observer in another node.
+     * <p/>
+     * Should only be used if the application knows for sure that an observer with the given id
+     * indeed exists on that other node.
+     * <p/>
+     * This is a low level use of orbit-actors, recommended only for IOrbitProviders.
+     *
+     * @param address the other node address.
+     * @param iClass  the IObserverClass
+     * @param id      the id, must not be null
+     * @param <T>     the IActorObserver sub interface
+     * @return a remote reference to the observer
+     */
+    @SuppressWarnings("unchecked")
+    public <T extends IActorObserver> T getRemoteObserverReference(INodeAddress address, final Class<T> iClass, final Object id)
+    {
+        if (id == null)
+        {
+            throw new IllegalArgumentException("Null id for " + iClass);
+        }
+        if (iClass == null)
+        {
+            throw new IllegalArgumentException("Null class");
+        }
+        final InterfaceDescriptor descriptor = getDescriptor(iClass);
+        ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
+        reference.runtime = this;
+        reference.address = address;
         return (T) reference;
     }
 

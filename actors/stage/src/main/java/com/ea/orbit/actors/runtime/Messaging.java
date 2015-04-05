@@ -39,13 +39,17 @@ import com.ea.orbit.exception.UncheckedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sun.istack.internal.NotNull;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.time.Clock;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -91,13 +95,13 @@ public class Messaging implements Startable
         return clusterPeer.localAddress();
     }
 
-	private static class PendingResponse extends Task<Object> implements Comparable<PendingResponse>
+    private static class PendingResponse extends Task<Object> implements Comparable<PendingResponse>
     {
         long timeoutAt;
         public int messageId;
 
         @Override
-        public int compareTo(final PendingResponse o)
+        public int compareTo(@NotNull final PendingResponse o)
         {
             int cmp = Long.compare(timeoutAt, o.timeoutAt);
             if (cmp == 0)
@@ -164,7 +168,7 @@ public class Messaging implements Startable
         try
         {
             networkMessagesReceived.incrementAndGet();
-            ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(buff));
+            ObjectInput in = createObjectInput(buff);
             byte messageType = in.readByte();
             int messageId = in.readInt();
             switch (messageType)
@@ -258,8 +262,19 @@ public class Messaging implements Startable
         clusterPeer.sendMessage(to, byteArrayOutputStream.toByteArray());
     }
 
+    private static class ReferenceReplacement implements Serializable
+    {
+        private static final long serialVersionUID = 1L;
+        
+		Class<?> interfaceClass;
+        Object id;
+        INodeAddress address;
+    }
+
     private ObjectOutput createObjectOutput(final OutputStream outputStream) throws IOException
     {
+        // TODO: move message serialization to a provider (IMessageSerializationProvider)
+        // Message(messageId, type, reference, params) and Message(messageId, type, object)
         return new ObjectOutputStream(outputStream)
         {
             {
@@ -267,24 +282,66 @@ public class Messaging implements Startable
             }
 
             @SuppressWarnings("rawtypes")
-			@Override
+            @Override
             protected Object replaceObject(final Object obj) throws IOException
             {
+                final ActorReference reference;
                 if (!(obj instanceof ActorReference))
                 {
                     if (obj instanceof OrbitActor)
                     {
-                        return ((OrbitActor) obj).reference;
+                        reference = ((OrbitActor) obj).reference;
                     }
-                    if (obj instanceof IActorObserver)
+                    else if (obj instanceof IActorObserver)
                     {
-                        return execution.getObjectReference(null, (IActorObserver) obj);
+                        IActorObserver objectReference = execution.getObjectReference(null, (IActorObserver) obj);
+                        reference = (ActorReference) objectReference;
+                    }
+                    else
+                    {
+                        return super.replaceObject(obj);
                     }
                 }
-                return super.replaceObject(obj);
+                else
+                {
+                    reference = (ActorReference) obj;
+                }
+                ReferenceReplacement replacement = new ReferenceReplacement();
+                replacement.address = reference.address;
+                replacement.interfaceClass = reference._interfaceClass();
+                replacement.id = reference.id;
+                return replacement;
             }
         };
     }
+
+    private ObjectInputStream createObjectInput(byte[] buff) throws IOException
+    {
+        return new ObjectInputStream(new ByteArrayInputStream(buff))
+        {
+            {
+                enableResolveObject(true);
+            }
+
+            @SuppressWarnings({ "unchecked", "rawtypes" })
+			@Override
+            protected Object resolveObject(Object obj) throws IOException
+            {
+                if (obj instanceof ReferenceReplacement)
+                {
+                    ReferenceReplacement replacement = (ReferenceReplacement) obj;
+                    if (replacement.address != null)
+                    {
+                        return execution.getRemoteObserverReference(replacement.address, (Class)replacement.interfaceClass, replacement.id);
+                    }
+                    return execution.getReference((Class)replacement.interfaceClass, replacement.id);
+
+                }
+                return super.resolveObject(obj);
+            }
+        };
+    }
+
 
     public Task<?> sendMessage(INodeAddress to, boolean oneWay, int interfaceId, int methodId, Object key, Object[] params)
     {
