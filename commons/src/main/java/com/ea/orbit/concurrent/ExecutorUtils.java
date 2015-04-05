@@ -28,7 +28,6 @@
 
 package com.ea.orbit.concurrent;
 
-import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -61,14 +60,7 @@ public class ExecutorUtils
             @Override
             public boolean offer(Runnable e)
             {
-                if (size() <= 1)
-                {
-                    return super.offer(e);
-                }
-                else
-                {
-                    return false;
-                }
+                return size() <= 1 && super.offer(e);
             }
         };
         return new ThreadPoolExecutor(minThreads, maxThreads,

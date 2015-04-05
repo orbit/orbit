@@ -25,14 +25,15 @@ public class ClassPathSearch
         this.classesOfInterest = classesOfInterest;
         // get all class names from class path
         ClassPath.get().getAllResources().stream()
-                .map(r -> r.getResourceName())
+                .map(ClassPath.ResourceInfo::getResourceName)
                 .filter(rn -> rn.endsWith(".class"))
                 .map(rn -> rn.substring(0, rn.length() - 6).replace('/', '.'))
-                .forEach(cn -> unprocessed.add(cn));
+                .forEach(unprocessed::add);
 
     }
 
-    public <T, R extends T> Class<R> findImplementation(Class<T> theInterface)
+    @SuppressWarnings("unchecked")
+	public <T, R extends T> Class<R> findImplementation(Class<T> theInterface)
     {
         Class<?> implementationClass = concreteImplementations.get(theInterface);
         if (implementationClass != null)
@@ -70,7 +71,7 @@ public class ClassPathSearch
                     // it also culls the list
                     try
                     {
-                        Class clazz = Class.forName(cn);
+                        Class<?> clazz = Class.forName(cn);
                         if (!clazz.isInterface())
                         {
                             if (theInterface.isAssignableFrom(clazz))
@@ -130,21 +131,24 @@ public class ClassPathSearch
     /**
      * Returns the size of the common start the two strings
      * <p/>
-     * Example: {@code commonStart("ssssBBB", "ssCCC") == 2 }
+     * Example:
+     * <pre>commonStart("ssssBBB", "ssCCC") == 2</pre>
      */
     static int commonStart(String a, String b)
     {
-        int i = 0, l = Math.min(a.length(), b.length());
-        for (; i < l && a.charAt(i) == b.charAt(i); i++)
+        int c = 0, len = Math.min(a.length(), b.length());
+        for (; c < len && a.charAt(c) == b.charAt(c); )
         {
+            c++;
         }
-        return i;
+        return c;
     }
 
     /**
      * Returns the size of the common end the two strings
      * <p/>
-     * Example: {@code commonEnd("AAAAeeee", "BBBee") == 2 }
+     * Example:
+     * <pre>commonEnd("AAAAeeee", "BBBee") == 2</pre>
      */
     static int commonEnd(String a, String b)
     {

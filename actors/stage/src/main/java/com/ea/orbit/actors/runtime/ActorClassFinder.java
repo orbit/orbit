@@ -28,7 +28,8 @@ public class ActorClassFinder implements IActorClassFinder
 
     }
 
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public <T extends IActor> Class<? extends T> findActorImplementation(Class<T> iActorInterface)
     {
         Class<?> r = cache.get(iActorInterface);
