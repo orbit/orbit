@@ -13,7 +13,8 @@ It was developed by [BioWare](http://www.bioware.com), a division of [Electronic
 Documentation
 =======
 
-Documentation is located [here](http://orbit.bioware.com/).
+Documentation is located [here](http://orbit.bioware.com/). <br />
+See the [Hello World](samples/hello) sample.
 
 License
 =======
