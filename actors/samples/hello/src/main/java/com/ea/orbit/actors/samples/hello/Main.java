@@ -30,10 +30,11 @@ package com.ea.orbit.actors.samples.hello;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.runtime.Runtime;
 import com.ea.orbit.concurrent.Task;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class Main
 {
@@ -43,16 +44,23 @@ public class Main
         stage.setClusterName("helloWorldCluster");
         stage.start().join();
 
-        IHello helloFrom1 = IActor.getReference(IHello.class, "0");
+        IHello helloActor = IActor.getReference(IHello.class, "0");
 
-        Task<String> response = helloFrom1.sayHello("Hi from " + stage.runtimeIdentity());
+        Task<String> response = helloActor.sayHello("Hi from " + stage.runtimeIdentity());
         System.out.println(response.join());
 
         System.out.println();
-        System.out.println("Press enter to exit, or run other instances and see what happens.");
-        System.in.read();
+        System.out.println("Type a message an press enter, or run other instances and see what happens.");
+        System.out.print("-->");
+
+        new BufferedReader(new InputStreamReader(System.in)).lines()
+                .forEach(line -> {
+                    System.out.println(helloActor.sayHello(line).join());
+                    System.out.print("-->");
+                });
 
         stage.stop().join();
+
         System.exit(0);
     }
 
