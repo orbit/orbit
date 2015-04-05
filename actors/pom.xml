@@ -48,7 +48,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>providers/json</module>
         <module>providers/mongodb</module>
         <module>providers/postgresql</module>
-        <module>samples</module>
         <module>test/actor-tests</module>
         <module>actors-all</module>
     </modules>
