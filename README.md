@@ -1,13 +1,15 @@
 Orbit Framework
 =======
 
-Orbit is a modern Java framework that makes it easier to build and maintain distributed, secure and scalable online services.
+Orbit is a modern framework for JVM languages that makes it easier to build and maintain distributed and scalable online services.
 
 Orbit contains two primary components:
 -  Orbit Actors, a framework to write distributed systems using virtual actors.
 -  Orbit Container, a minimal inversion of control container for building online services.
 
-It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com). 
+It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com). For the latest news, follow us on [Twitter](https://twitter.com/OrbitFramework). 
+<br /> If you're looking for virtual actors on the .NET CLR, see [Orleans](https://github.com/dotnet/Orleans).
+
 Documentation
 =======
 
@@ -19,8 +21,7 @@ Orbit is licensed under the [BSD 3-Clause License](LICENSE).
 
 Simple Examples
 =======
-#### Actors
-##### java
+#### Actors - Java
 ```java
 public interface IHello extends IActor
 {
@@ -38,8 +39,9 @@ public class HelloActor extends OrbitActor implements IHello
  
 IActor.getReference(IHello.class, "0").sayHello("Meep Meep");
 ```
-##### scala
-```scala
+
+#### Actors - Scala
+```java
 trait IHello extends IActor {
   def sayHello(greeting: String): Task[String]
 }
@@ -51,5 +53,5 @@ class HelloActor extends OrbitActor[AnyRef] with IHello {
   }
 }
 
-IActor.getReference(classOf[IHello], "0").sayHello("Hi from 01").join()
+IActor.getReference(classOf[IHello], "0").sayHello("Meep Meep")
 ```
