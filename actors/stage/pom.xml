@@ -55,6 +55,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
         <dependency>
             <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-processor</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-container</artifactId>
             <version>${project.version}</version>
         </dependency>
