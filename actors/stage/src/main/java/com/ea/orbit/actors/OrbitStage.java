@@ -224,26 +224,6 @@ public class OrbitStage implements Startable
         }
     }
 
-    @Deprecated
-    public <T extends IActor> T getReference(final Class<T> iClass, final String id)
-    {
-        if (iClass.isAnnotationPresent(NoIdentity.class))
-        {
-            throw new IllegalArgumentException("Cannot be called for classes annotated with @NoIdentity");
-        }
-        return execution.getReference(iClass, id);
-    }
-
-    @Deprecated
-    public <T extends IActor> T getReference(final Class<T> iClass)
-    {
-        if (!iClass.isAnnotationPresent(NoIdentity.class))
-        {
-            throw new IllegalArgumentException("Can only be called for classes annotated with @NoIdentity");
-        }
-        return execution.getReference(iClass, NoIdentity.NO_IDENTITY);
-    }
-
     public void setClusterPeer(final IClusterPeer clusterPeer)
     {
         this.clusterPeer = clusterPeer;

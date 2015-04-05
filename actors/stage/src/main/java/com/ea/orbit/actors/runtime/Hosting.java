@@ -319,10 +319,4 @@ public class Hosting implements IHosting, Startable
         }
     }
 
-    @Deprecated
-    public Task<INodeAddress> locateActor(final IActor actor)
-    {
-        return locateActor(((IAddressable) actor));
-    }
-
 }

@@ -47,32 +47,4 @@ public class ExecutorUtils
         return new ForkJoinPool(maxThreads, ForkJoinPool.defaultForkJoinWorkerThreadFactory,
                 (t, e) -> logger.log(Level.SEVERE, "Uncaught Exception", e), false);
     }
-
-    @Deprecated
-    public static ExecutorService newScalingThreadPool(
-            final int minThreads, final int maxThreads,
-            final long keepAlive, final TimeUnit keepAliveUnit, final int maxQueueSize)
-    {
-        final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<Runnable>(maxQueueSize)
-        {
-            private static final long serialVersionUID = -6903933921423432194L;
-
-            @Override
-            public boolean offer(Runnable e)
-            {
-                return size() <= 1 && super.offer(e);
-            }
-        };
-        return new ThreadPoolExecutor(minThreads, maxThreads,
-                keepAlive, keepAliveUnit, queue, (r, executor) -> {
-            try
-            {
-                executor.getQueue().put(r);
-            }
-            catch (InterruptedException e)
-            {
-                Thread.currentThread().interrupt();
-            }
-        });
-    }
 }

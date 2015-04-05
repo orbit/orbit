@@ -30,8 +30,10 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.test.actors.ISomeActor;
 import com.ea.orbit.actors.test.actors.ISomeChatObserver;
 import com.ea.orbit.actors.test.actors.ISomeChatRoom;
@@ -138,7 +140,7 @@ public class ClientTest extends ActorBaseTest
             ISomeActor player = IActor.getReference(ISomeActor.class, String.valueOf(i));
             client.bind();
             assertEquals("bla", player.sayHello("meh").join());
-            assertTrue(serverAddresses.contains(client.getHosting().locateActor(player).join()));
+            assertTrue(serverAddresses.contains(client.getHosting().locateActor((ActorReference<?>) player).join()));
         }
 
     }
