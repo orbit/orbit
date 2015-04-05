@@ -41,34 +41,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <name>Orbit Container</name>
     <artifactId>orbit-container</artifactId>
 
-    <profiles>
-        <profile>
-            <id>withoutCodeGeneration</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>2.18.1</version>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <withoutCodeGeneration>true</withoutCodeGeneration>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
     <dependencies>
         <dependency>
             <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-commons</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-container-processor</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

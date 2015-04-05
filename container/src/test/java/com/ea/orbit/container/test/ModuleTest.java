@@ -72,24 +72,4 @@ public class ModuleTest
         assertNotSame(container.get(Class1.class), container.get(Class1.class));
     }
 
-    @Test
-    public void testModuleDiscovery()
-    {
-        if ("true".equals(System.getProperty("withoutCodeGeneration")))
-        {
-            if (logger.isWarnEnabled())
-            {
-                logger.warn("Ignoring module test discovery since the withoutCodeGeneration profile is active");
-            }
-            return;
-        }
-        final Module1 module = new Module1();
-
-        final OrbitContainer container = new OrbitContainer();
-        container.start();
-        final Class2 c2 = container.get(Class2.class);
-        assertTrue(c2.started);
-        assertSame(c2, container.get(Class2.class));
-        assertNotSame(container.get(Class1.class), container.get(Class1.class));
-    }
 }

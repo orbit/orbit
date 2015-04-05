@@ -70,12 +70,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                 <configuration>
                                     <notimestamp>true</notimestamp>
                                     <includeDependencySources>true</includeDependencySources>
-                                    <dependencySourceExcludes>
-                                        <dependencySourceExclude>com.ea.orbit:container-processor
-                                        </dependencySourceExclude>
-                                        <dependencySourceExclude>com.ea.orbit.actors:actor-processor
-                                        </dependencySourceExclude>
-                                    </dependencySourceExcludes>
                                     <dependencySourceIncludes>
                                         <dependencySourceInclude>com.ea.*:*</dependencySourceInclude>
                                     </dependencySourceIncludes>
