@@ -31,7 +31,6 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.annotation.OrbitGenerated;
 import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.Task;
 
@@ -41,20 +40,14 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 
-// tests references not created by annotation processing.
-// useful to eclipse users and to users of other jvm languages.
 public class DynamicReferencesTest extends ActorBaseTest
 {
 
-    // orbit generated here is a hack to prevent apt generation
-    @OrbitGenerated
     public static interface IAptUnfriendly extends IActor
     {
         Task<String> hello();
     }
 
-    // orbit generated here is a hack to prevent apt generation
-    @OrbitGenerated
     @SuppressWarnings("rawtypes")
     public static class AptUnfriendly extends OrbitActor implements IAptUnfriendly
     {
