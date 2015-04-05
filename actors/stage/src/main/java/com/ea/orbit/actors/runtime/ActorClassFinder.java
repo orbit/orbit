@@ -43,22 +43,10 @@ public class ActorClassFinder implements IActorClassFinder
 {
     private static final ClassPathSearch search = new ClassPathSearch(IActor.class);
 
-    private ConcurrentHashMap<Class<?>, Class<?>> cache = new ConcurrentHashMap<>();
-
     @SuppressWarnings("unchecked")
 	@Override
     public <T extends IActor> Class<? extends T> findActorImplementation(Class<T> iActorInterface)
     {
-        Class<?> r = cache.get(iActorInterface);
-
-        if(r == null)
-        {
-            r = search.findImplementation(iActorInterface);
-            if(r != null)
-            {
-                cache.put(iActorInterface, r);
-            }
-        }
-        return (Class<? extends T>) r;
+        return search.findImplementation(iActorInterface);
     }
 }
