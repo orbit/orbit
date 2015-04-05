@@ -37,9 +37,10 @@ public class HelloActor extends OrbitActor implements IHello
 {
     public Task<String> sayHello(String greeting)
     {
-        getLogger().info("Here: " + greeting);
+        getLogger().info("Received: " + greeting);
+
         return Task.fromValue("You said: '" + greeting
-                + "', I say: Hello from " + System.identityHashCode(this) + " !");
+                + "', I say: Hello from " + runtimeIdentity() + " !");
     }
 }
 
