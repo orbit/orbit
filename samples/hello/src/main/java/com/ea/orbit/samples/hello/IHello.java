@@ -26,7 +26,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.samples.hello;
+package com.ea.orbit.samples.hello;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.concurrent.Task;

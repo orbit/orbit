@@ -26,11 +26,11 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.samples.helloworld;
+package com.ea.orbit.samples.helloworld;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.samples.hello.IHello;
+import com.ea.orbit.samples.hello.IHello;
 
 import org.junit.Test;
 
