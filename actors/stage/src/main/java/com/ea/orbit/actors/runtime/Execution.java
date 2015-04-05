@@ -49,8 +49,10 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.MapMaker;
 
 import java.lang.ref.WeakReference;
+import java.nio.ByteBuffer;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -75,6 +77,7 @@ import java.util.stream.Collectors;
 public class Execution implements IRuntime
 {
     private static final Logger logger = LoggerFactory.getLogger(Execution.class);
+    private final String runtimeIdentity;
     private IActorClassFinder finder;
     private Map<Class<?>, InterfaceDescriptor> descriptorMapByInterface = new HashMap<>();
     private Map<Integer, InterfaceDescriptor> descriptorMapByInterfaceId = new HashMap<>();
@@ -107,6 +110,11 @@ public class Execution implements IRuntime
     {
         // the last runtime created will be the default.
         Runtime.runtimeCreated(cachedRef);
+
+        final UUID uuid = UUID.randomUUID();
+        final String encoded = Base64.getEncoder().encodeToString(
+                ByteBuffer.allocate(16).putLong(uuid.getMostSignificantBits()).putLong(uuid.getLeastSignificantBits()).array());
+        runtimeIdentity = "Orbit[" + encoded.substring(0, encoded.length() - 2) + "]";
     }
 
     public void setClock(final Clock clock)
@@ -613,6 +621,11 @@ public class Execution implements IRuntime
         return getReference(IReminderController.class, "0").unregisterReminder(actor, reminderName);
     }
 
+    @Override
+    public String runtimeIdentity()
+    {
+        return runtimeIdentity;
+    }
 
     public void start()
     {
@@ -660,7 +673,7 @@ public class Execution implements IRuntime
     }
 
     @SuppressWarnings("unchecked")
-	private <T> Class<T> classForName(final String className, boolean ignoreException)
+    private <T> Class<T> classForName(final String className, boolean ignoreException)
     {
         try
         {

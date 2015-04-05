@@ -92,4 +92,11 @@ public interface IRuntime
      * @return completion promise for this operation
      */
     Task<?> unregisterReminder(IRemindable actor, String reminderName);
+
+    /**
+     * Gets a string that represents uniquely the node that currently holds this actor.
+     *
+     * @return unique identity string
+     */
+    String runtimeIdentity();
 }

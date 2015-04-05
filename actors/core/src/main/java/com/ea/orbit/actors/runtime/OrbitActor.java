@@ -186,7 +186,7 @@ public class OrbitActor<T>
     protected String runtimeIdentity()
     {
         // TODO: return the node address
-        return reference.runtime.toString();
+        return reference.runtime.runtimeIdentity();
     }
 
     /**
