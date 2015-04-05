@@ -72,7 +72,6 @@ public class ActorBaseTest
         stage.setMessagingPool(commonPool);
         stage.addProvider(new FakeStorageProvider(fakeDatabase));
         stage.setClock(clock);
-        stage.addProvider("com.ea.orbit.*");
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().join();

@@ -54,7 +54,6 @@ object Main {
   def initStage(clusterId: String, stageId: String) = {
     val stage = new OrbitStage()
     stage.setClusterName(clusterId)
-    stage.addProvider("com.ea.orbit.samples.scala.*")
     stage.start().join()
     stage
   }

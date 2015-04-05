@@ -39,8 +39,6 @@ import com.ea.orbit.exception.UncheckedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sun.istack.internal.NotNull;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -101,7 +99,7 @@ public class Messaging implements Startable
         public int messageId;
 
         @Override
-        public int compareTo(@NotNull final PendingResponse o)
+        public int compareTo(final PendingResponse o)
         {
             int cmp = Long.compare(timeoutAt, o.timeoutAt);
             if (cmp == 0)

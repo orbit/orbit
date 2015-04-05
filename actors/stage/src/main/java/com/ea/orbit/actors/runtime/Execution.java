@@ -70,7 +70,6 @@ import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Execution implements IRuntime
@@ -125,10 +124,17 @@ public class Execution implements IRuntime
         return executor;
     }
 
-    public void setActorClassPatterns(List<Pattern> actorClassPatterns)
-    {
-    }
-
+    /**
+     * Add hints to the actor discovery process.
+     * <p/>
+     * Actor classes are normally discovered by searching the classpath.
+     * This allows for a slight increase in performance to that process.
+     * <p/>
+     * The framework will still try to locate classes that are not listed here.
+     * This list is processed by the default {@link com.ea.orbit.actors.providers.IActorClassFinder}
+     *
+     * @param actorClasses actor classes to install ahead of time.
+     */
     public void setActorClasses(List<Class<?>> actorClasses)
     {
         this.actorClasses = actorClasses;
@@ -951,7 +957,7 @@ public class Execution implements IRuntime
             throw new IllegalArgumentException("Null class");
         }
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
-        ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
+        ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(String.valueOf(id));
         reference.runtime = this;
         reference.address = address;
         return (T) reference;
@@ -973,7 +979,7 @@ public class Execution implements IRuntime
         return messaging.sendMessage(toNode, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params);
     }
 
-    public void activationCleanup(boolean block)
+    public void activationCleanup(final boolean block)
     {
 
         long cutOut = clock.millis() - TimeUnit.MINUTES.toMillis(10);

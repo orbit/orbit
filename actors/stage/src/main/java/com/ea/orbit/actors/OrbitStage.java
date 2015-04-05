@@ -51,7 +51,6 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -64,7 +63,7 @@ public class OrbitStage implements Startable
     private StageMode mode = StageMode.HOST;
 
     @Config("orbit.actors.providers")
-    private List<Object> providers = new ArrayList<>();
+    private List<IOrbitProvider> providers = new ArrayList<>();
 
     @Config("orbit.actors.autoDiscovery")
     private boolean autoDiscovery;
@@ -185,21 +184,7 @@ public class OrbitStage implements Startable
 
         execution.setAutoDiscovery(autoDiscovery);
 
-        execution.setOrbitProviders(providers.stream()
-                .filter(p -> p instanceof IOrbitProvider)
-                .map(p -> (IOrbitProvider) p)
-                .collect(Collectors.toList()));
-        execution.setActorClassPatterns(providers.stream()
-                .filter(p -> p instanceof String)
-                .map(p -> (String) p)
-                .map(s -> Pattern.compile(s))
-                .collect(Collectors.toList()));
-        execution.setActorClasses(providers.stream()
-                .filter(p -> p instanceof Class)
-                .map(p -> (Class<?>) p)
-                .filter(c -> IActor.class.isAssignableFrom(c)
-                        || IActorObserver.class.isAssignableFrom(c))
-                .collect(Collectors.toList()));
+        execution.setOrbitProviders(providers);
 
         messaging.start();
         hosting.start();
@@ -257,27 +242,16 @@ public class OrbitStage implements Startable
     }
 
     /**
-     * Installs extensions to the stage: Actors or Providers
+     * Installs extensions to the stage.
      * <p/>
-     * Valid arguments:
-     * <table style="border: 1px; border-collapse: collapse;">
-     * <tr><td>String</td><td>Actor class name pattern</td>
-     * <tr><td>Class</td><td>OrbitActor or IActor</td>
-     * <tr><td>Object</td><td>Instance of a provider</td>
-     * </table>
-     * Invalid arguments are ignored.
-     * <p/>
-     * Examples:
-     * <pre>{@code
-     * stage.addProvider(HelloActor.class);
-     * stage.addProvider("com.ea.orbit.actors.*");
-     * stage.addProvider("com.ea.orbit.samples.chat.Chat");
+     * Example:
+     * <pre>
      * stage.addProvider(new MongoDbProvider(...));
-     * }</pre>
+     * </pre>
      *
      * @param provider Actor classNamePattern, Actor class, or provider instance.
      */
-    public void addProvider(final Object provider)
+    public void addProvider(final IOrbitProvider provider)
     {
         this.providers.add(provider);
     }

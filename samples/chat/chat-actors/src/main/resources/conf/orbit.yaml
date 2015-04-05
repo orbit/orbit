@@ -29,7 +29,6 @@
 orbit.actors.clusterName: chat
 
 orbit.actors.providers:
-  - com.ea.orbit.*
   - !!com.ea.orbit.actors.providers.mongodb.MongoDBStorageProvider
     host: localhost
     port: 27017

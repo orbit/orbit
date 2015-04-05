@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -127,7 +126,6 @@ public class AsymmetricalStagesTest extends ActorBaseTest
                 return excludedClasses.contains(c) ? null : c;
             }
         });
-        Stream.of(excludedActorClasses).forEach(c -> stage.addProvider(c));
         stage.setMode(OrbitStage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
