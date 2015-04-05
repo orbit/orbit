@@ -30,40 +30,31 @@ package com.ea.orbit.actors.samples.hello;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.runtime.Runtime;
+import com.ea.orbit.concurrent.Task;
 
 import java.io.IOException;
 
 public class Main
 {
-    @SuppressWarnings("PMD.SystemPrintln")
     public static void main(String[] args) throws IOException
     {
-        final String clusterName = "helloWorldCluster";
-        // creating two stages, just for the example
-        OrbitStage stage1 = initStage(clusterName);
-        OrbitStage stage2 = initStage(clusterName);
+        OrbitStage stage = new OrbitStage();
+        stage.setClusterName("helloWorldCluster");
+        stage.start().join();
 
         IHello helloFrom1 = IActor.getReference(IHello.class, "0");
-        IHello helloFrom2 = IActor.getReference(IHello.class, "0");
 
-        stage1.bind();
-        System.out.println(helloFrom1.sayHello("Saying hi from 01").join());
-        stage2.bind();
-        System.out.println(helloFrom2.sayHello("Saying hi from 02").join());
+        Task<String> response = helloFrom1.sayHello("Hi from " + stage.runtimeIdentity());
+        System.out.println(response.join());
 
-        System.out.println("Press enter to exit, or run another instance and see what happens.");
+        System.out.println();
+        System.out.println("Press enter to exit, or run other instances and see what happens.");
         System.in.read();
-        stage1.stop().join();
-        stage2.stop().join();
+
+        stage.stop().join();
         System.exit(0);
     }
 
-    public static OrbitStage initStage(String clusterId)
-    {
-        OrbitStage stage = new OrbitStage();
-        stage.setClusterName(clusterId);
-        stage.start().join();
-        return stage;
-    }
 }
 
