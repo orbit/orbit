@@ -173,7 +173,8 @@ public class OrbitContainer
         STARTING,
         STARTED,
         STOPPING,
-        STOPPED
+        STOPPED,
+        FAILED
     }
 
     private ContainerState state = ContainerState.CREATED;
@@ -535,27 +536,34 @@ public class OrbitContainer
         }
         catch (Throwable ex)
         {
+            state = ContainerState.FAILED;
             throw new UncheckedException(ex);
         }
     }
 
     public void stop()
     {
-        state = ContainerState.STOPPING;
-        for (ComponentState state : components.values())
+        if (state != ContainerState.STARTED)
         {
-            if (state.enabled && state.instance != null && state.instance instanceof Startable)
+            throw new IllegalStateException(state.toString());
+        }
+
+        state = ContainerState.STOPPING;
+        for (ComponentState componentState : components.values())
+        {
+            if (componentState.enabled && componentState.instance != null && componentState.instance instanceof Startable)
             {
                 try
                 {
-                    ((Startable) state.instance).stop();
+                    ((Startable) componentState.instance).stop();
                 }
                 catch (Exception e)
                 {
-                    throw new UncheckedException("Error stopping " + state.implClass.getName(), e);
+                    state = ContainerState.FAILED;
+                    throw new UncheckedException("Error stopping " + componentState.implClass.getName(), e);
                 }
             }
-        }
+    }
         stopFuture.complete(null);
         state = ContainerState.STOPPED;
     }
