@@ -35,7 +35,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <version>0.2.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Orbit Parent</name>
-	<description> Orbit is a modern Java framework that makes it easier to build distributed, secure and scalable online services.</description>
+	<description>Orbit is a JVM framework that makes it easier to build distributed and scalable online services.</description>
     <url>http://orbit.bioware.com/</url>
 
     <modules>
