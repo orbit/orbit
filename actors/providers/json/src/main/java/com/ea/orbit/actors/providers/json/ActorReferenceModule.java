@@ -100,7 +100,7 @@ public class ActorReferenceModule extends Module
             final Class<?> interfaceClass = ActorReference.getInterfaceClass(reference);
             if (rawClass == null || interfaceClass == rawClass)
             {
-                // TODO: escape starting !
+                // escape starting '!'
                 if (!text.startsWith("!!"))
                 {
                     jgen.writeString(text);
