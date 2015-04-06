@@ -38,7 +38,6 @@ import com.ea.orbit.actors.providers.IActorClassFinder;
 import com.ea.orbit.actors.providers.ILifetimeProvider;
 import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.providers.IStorageProvider;
-import com.ea.orbit.annotation.Config;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -100,7 +99,6 @@ public class Execution implements IRuntime
     private ActorFactoryGenerator dynamicReferenceFactory = new ActorFactoryGenerator();
 
     private List<IOrbitProvider> orbitProviders = new ArrayList<>();
-    private List<Class<?>> actorClasses = new ArrayList<>();
 
     private final WeakReference<IRuntime> cachedRef = new WeakReference<>(this);
 
@@ -130,22 +128,6 @@ public class Execution implements IRuntime
         return executor;
     }
 
-    /**
-     * Add hints to the actor discovery process.
-     * <p/>
-     * Actor classes are normally discovered by searching the classpath.
-     * This allows for a slight increase in performance to that process.
-     * <p/>
-     * The framework will still try to locate classes that are not listed here.
-     * This list is processed by the default {@link com.ea.orbit.actors.providers.IActorClassFinder}
-     *
-     * @param actorClasses actor classes to install ahead of time.
-     */
-    public void setActorClasses(List<Class<?>> actorClasses)
-    {
-        this.actorClasses = actorClasses;
-    }
-
     public boolean canActivateActor(String interfaceName, int interfaceId)
     {
         Class<IActor> aInterface = classForName(interfaceName);
@@ -161,11 +143,6 @@ public class Execution implements IRuntime
             descriptor.concreteClassName = concreteClass != null ? concreteClass.getName() : null;
         }
         return !descriptor.cannotActivate;
-    }
-
-    public List<Class<?>> getActorClasses()
-    {
-        return actorClasses;
     }
 
     public void registerFactory(ActorFactory<?> factory)
