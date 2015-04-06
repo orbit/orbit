@@ -8,6 +8,15 @@ public interface IHello extends IActor
     Task<String> sayHello(String greeting);
 }
 
+public class HelloActor extends OrbitActor implements IHello
+{
+    public Task<String> sayHello(String greeting)
+    {
+        getLogger().info("Received: " + greeting);
+        return Task.fromValue("You said: '" + greeting + "', I say: Hello from " + runtimeIdentity() + " !");
+    }
+}
+
 IHello helloActor = IActor.getReference(IHello.class, "0");
 helloActor.sayHello("Hello!").join();
 ```
