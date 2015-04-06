@@ -8,6 +8,15 @@ public interface IHello extends IActor
     Task<String> sayHello(String greeting);
 }
 
+public class HelloActor extends OrbitActor implements IHello
+{
+    public Task<String> sayHello(String greeting)
+    {
+        getLogger().info("Received: " + greeting);
+        return Task.fromValue("You said: '" + greeting + "', I say: Hello from " + runtimeIdentity() + " !");
+    }
+}
+
 IHello helloActor = IActor.getReference(IHello.class, "0");
 helloActor.sayHello("Hello!").join();
 ```
@@ -52,7 +61,7 @@ GMS: address=helloWorldCluster, cluster=ISPN, physical address=192.168.0.10:5215
 -------------------------------------------------------------------
 You said: 'Hi from Orbit[1jue6LU5Q/uwXebNT8YQ7A]', I say: Hello from Orbit[lUrbzZw0Squmn5Ox3kTK3w] !
 
-Type a message an press enter, or run other instances and see what happens.
+Type a message and press enter, or run other instances and see what happens.
 -->hello orbit!
 You said: 'hello orbit!', I say: Hello from Orbit[lUrbzZw0Squmn5Ox3kTK3w] !
 -->_

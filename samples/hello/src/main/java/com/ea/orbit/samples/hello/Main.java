@@ -50,7 +50,7 @@ public class Main
         System.out.println(response.join());
 
         System.out.println();
-        System.out.println("Type a message an press enter, or run other instances and see what happens.");
+        System.out.println("Type a message and press enter, or run other instances and see what happens.");
         System.out.print("-->");
 
         new BufferedReader(new InputStreamReader(System.in)).lines()
