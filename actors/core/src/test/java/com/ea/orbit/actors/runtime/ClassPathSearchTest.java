@@ -72,4 +72,23 @@ public class ClassPathSearchTest
         assertSame(Pla1.class, classPathSearch.findImplementation(IPla1.class));
         assertSame(Pla2.class, classPathSearch.findImplementation(IPla2.class));
     }
+
+    public interface IMul
+    {
+    }
+
+    public abstract class Mul implements IMul
+    {
+    }
+
+    public class MulImpl extends Mul
+    {
+    }
+
+    @Test
+    public void testFindWithAbstractClass()
+    {
+        ClassPathSearch classPathSearch = new ClassPathSearch();
+        assertSame(MulImpl.class, classPathSearch.findImplementation(IMul.class));
+    }
 }

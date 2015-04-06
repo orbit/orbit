@@ -6,6 +6,7 @@ import com.ea.orbit.util.ClassPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -33,7 +34,7 @@ public class ClassPathSearch
     }
 
     @SuppressWarnings("unchecked")
-	public <T, R extends T> Class<R> findImplementation(Class<T> theInterface)
+    public <T, R extends T> Class<R> findImplementation(Class<T> theInterface)
     {
         Class<?> implementationClass = concreteImplementations.get(theInterface);
         if (implementationClass != null)
@@ -72,7 +73,7 @@ public class ClassPathSearch
                     try
                     {
                         Class<?> clazz = Class.forName(cn);
-                        if (!clazz.isInterface())
+                        if (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers()))
                         {
                             if (theInterface.isAssignableFrom(clazz))
                             {
