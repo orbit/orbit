@@ -5,6 +5,7 @@ import org.junit.Test;
 import static com.ea.orbit.actors.runtime.ClassPathSearch.commonEnd;
 import static com.ea.orbit.actors.runtime.ClassPathSearch.commonStart;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 public class ClassPathSearchTest
 {
@@ -45,6 +46,30 @@ public class ClassPathSearchTest
     @Test
     public void testFind()
     {
-        assertEquals(Hi.class, new ClassPathSearch().findImplementation(IHi.class));
+        assertSame(Hi.class, new ClassPathSearch().findImplementation(IHi.class));
+    }
+
+    public interface IPla1
+    {
+    }
+
+    public interface IPla2 extends IPla1
+    {
+    }
+
+    public class Pla1 implements IPla1
+    {
+    }
+
+    public class Pla2 implements IPla2
+    {
+    }
+
+    @Test
+    public void testFindWithSubInterfaces()
+    {
+        ClassPathSearch classPathSearch = new ClassPathSearch();
+        assertSame(Pla1.class, classPathSearch.findImplementation(IPla1.class));
+        assertSame(Pla2.class, classPathSearch.findImplementation(IPla2.class));
     }
 }
