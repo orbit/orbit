@@ -57,7 +57,6 @@ public class MessageTimeoutTest extends ActorBaseTest
         UUID uuid = someActor.getUniqueActivationId(0).get();
         assertEquals(uuid, someActor.getUniqueActivationId().get());
         Future<UUID> call = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
-        awaitFor(() -> isIdle(stage1));
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
         client.cleanup(false);
         assertTrue(call.isDone());
