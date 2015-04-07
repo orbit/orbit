@@ -30,7 +30,6 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.actors.runtime.ActorReference;
@@ -115,12 +114,11 @@ public class ClientTest extends ActorBaseTest
         expectException(() -> player.sayHello("meh"));
     }
 
-    @SuppressWarnings("deprecation")
 	@Test
     public void ensureNoObjectsAreCreatedClientTest() throws ExecutionException, InterruptedException
     {
         List<OrbitStage> clients = new ArrayList<>();
-        List<OrbitStage> servers = new ArrayList<OrbitStage>();
+        List<OrbitStage> servers = new ArrayList<>();
         Set<INodeAddress> serverAddresses = new HashSet<>();
 
         for (int i = 0; i < 20; i++)

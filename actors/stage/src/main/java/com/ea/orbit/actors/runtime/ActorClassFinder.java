@@ -30,20 +30,11 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.providers.IActorClassFinder;
-import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.exception.UncheckedException;
-import com.ea.orbit.util.ClassPath;
-import com.ea.orbit.util.IOUtils;
-
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class ActorClassFinder implements IActorClassFinder
 {
     private static final ClassPathSearch search = new ClassPathSearch(IActor.class);
 
-    @SuppressWarnings("unchecked")
 	@Override
     public <T extends IActor> Class<? extends T> findActorImplementation(Class<T> iActorInterface)
     {
