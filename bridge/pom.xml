@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
+<!--~
   Copyright (C) 2015 Electronic Arts Inc.  All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -26,6 +26,7 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -36,25 +37,62 @@
         <relativePath>..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <name>Orbit Samples</name>
-    <packaging>pom</packaging>
-    <groupId>com.ea.orbit.samples</groupId>
-    <artifactId>orbit-samples-parent</artifactId>
 
+    <name>Orbit Bridge Container</name>
+    <artifactId>orbit-bridge</artifactId>
 
-    <modules>
-        <module>chat</module>
-		<module>bridge</module>
-        <module>hello</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-container</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-stage</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.7</version>
+        </dependency>
 
-    <profiles>
-        <profile>
-            <id>withScala</id>
-            <!--<activation><activeByDefault>true</activeByDefault></activation>-->
-            <modules>
-                <module>scala</module>
-            </modules>
-        </profile>
-    </profiles>
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <version>1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.1.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.restlet.jse</groupId>
+            <artifactId>org.restlet</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.restlet.jse</groupId>
+            <artifactId>org.restlet.ext.json</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.restlet.jse</groupId>
+            <artifactId>org.restlet.ext.simple</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+    </dependencies>
+<repositories>
+    <repository>
+        <id>maven-restlet</id>
+        <name>Public online Restlet repository</name>
+        <url>http://maven.restlet.com</url>
+    </repository>
+</repositories>
+
 </project>

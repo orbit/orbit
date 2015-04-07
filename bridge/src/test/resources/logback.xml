@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
   Copyright (C) 2015 Electronic Arts Inc.  All rights reserved.
 
@@ -26,35 +25,16 @@
   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <groupId>com.ea.orbit</groupId>
-        <artifactId>orbit-parent</artifactId>
-        <version>0.2.1-SNAPSHOT</version>
-        <relativePath>..</relativePath>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
-    <name>Orbit Samples</name>
-    <packaging>pom</packaging>
-    <groupId>com.ea.orbit.samples</groupId>
-    <artifactId>orbit-samples-parent</artifactId>
 
+<configuration>
 
-    <modules>
-        <module>chat</module>
-		<module>bridge</module>
-        <module>hello</module>
-    </modules>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
 
-    <profiles>
-        <profile>
-            <id>withScala</id>
-            <!--<activation><activeByDefault>true</activeByDefault></activation>-->
-            <modules>
-                <module>scala</module>
-            </modules>
-        </profile>
-    </profiles>
-</project>
+    <root level="info">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
