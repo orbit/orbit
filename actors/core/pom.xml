@@ -58,8 +58,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             </artifactSet>
                             <relocations>
                                 <relocation>
-                                    <pattern>org.apache</pattern>
-                                    <shadedPattern>com.ea.orbit.actors.core.shaded.org.apache</shadedPattern>
+                                    <pattern>org.apache.</pattern>
+                                    <shadedPattern>com.ea.orbit.actors.core.shaded.org.apache.</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.googlecode.</pattern>
@@ -68,6 +68,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                 <relocation>
                                     <pattern>javassist.</pattern>
                                     <shadedPattern>com.ea.orbit.actors.core.shaded.javassist.</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.objectweb.</pattern>
+                                    <shadedPattern>com.ea.orbit.actors.core.shaded.org.objectweb.</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.yaml.</pattern>
+                                    <shadedPattern>com.ea.orbit.actors.core.shaded.org.yaml.</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
@@ -102,6 +110,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
             <version>3.18.2-GA</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>5.0.3</version>
         </dependency>
     </dependencies>
 </project>

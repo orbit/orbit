@@ -5,6 +5,7 @@ import org.junit.Test;
 import static com.ea.orbit.actors.runtime.ClassPathSearch.commonEnd;
 import static com.ea.orbit.actors.runtime.ClassPathSearch.commonStart;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
 public class ClassPathSearchTest
@@ -90,5 +91,17 @@ public class ClassPathSearchTest
     {
         ClassPathSearch classPathSearch = new ClassPathSearch();
         assertSame(MulImpl.class, classPathSearch.findImplementation(IMul.class));
+    }
+
+    public interface IFail
+    {
+    }
+
+    @Test
+    public void testFailedSearch()
+    {
+        ClassPathSearch classPathSearch = new ClassPathSearch();
+        // without limit this would do a full classpath search...
+        assertNull(classPathSearch.findImplementation(IFail.class, 200));
     }
 }
