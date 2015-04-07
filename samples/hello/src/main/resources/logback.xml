@@ -10,6 +10,6 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
-    <logger name="com.ea.orbit.actors.samples.hello" level="INFO"/>
+    <logger name="com.ea.orbit.samples.hello" level="INFO"/>
 
 </configuration>
