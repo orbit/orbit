@@ -44,7 +44,6 @@
 
     <modules>
         <module>chat</module>
-		<module>bridge</module>
         <module>hello</module>
     </modules>
 
