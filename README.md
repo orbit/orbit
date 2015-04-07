@@ -1,5 +1,6 @@
 Orbit Framework
 =======
+[![Build Status](https://travis-ci.org/electronicarts/orbit.svg?branch=master)](https://travis-ci.org/electronicarts/orbit)
 
 Orbit is a modern framework for JVM languages that makes it easier to build and maintain distributed and scalable online services.
 
