@@ -57,6 +57,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         UUID uuid = someActor.getUniqueActivationId(0).get();
         assertEquals(uuid, someActor.getUniqueActivationId().get());
         Future<UUID> call = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
+        awaitFor(() -> isIdle(stage1));
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
         client.cleanup(false);
         assertTrue(call.isDone());
@@ -77,6 +78,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         // first
         Future<UUID> first = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
         // speeding up the time.
+        awaitFor(() -> isIdle(stage1));
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
         // later call
         Future<UUID> second = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
@@ -96,6 +98,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         assertFalse(second.isDone());
         // second call is still good
         // however if the time speeds up
+        awaitFor(() -> isIdle(stage1));
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
         assertFalse(second.isDone());
         // and cleanup runs
