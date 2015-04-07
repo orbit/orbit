@@ -52,15 +52,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         </goals>
                         <configuration>
                             <artifactSet>
-                                <excludes>
-                                    <exclude>org.slf4j:*</exclude>
-                                </excludes>
+                                <includes>
+                                    <include>com.googlecode.gentyref:gentyref</include>
+                                    <include>org.ow2.asm:asm</include>
+                                    <include>org.javassist:javassist</include>
+                                </includes>
                             </artifactSet>
                             <relocations>
-                                <relocation>
-                                    <pattern>org.apache.</pattern>
-                                    <shadedPattern>com.ea.orbit.actors.core.shaded.org.apache.</shadedPattern>
-                                </relocation>
                                 <relocation>
                                     <pattern>com.googlecode.</pattern>
                                     <shadedPattern>com.ea.orbit.actors.core.shaded.com.googlecode.</shadedPattern>
@@ -72,10 +70,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                 <relocation>
                                     <pattern>org.objectweb.</pattern>
                                     <shadedPattern>com.ea.orbit.actors.core.shaded.org.objectweb.</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.yaml.</pattern>
-                                    <shadedPattern>com.ea.orbit.actors.core.shaded.org.yaml.</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
@@ -99,12 +93,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.10</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.4</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.javassist</groupId>
