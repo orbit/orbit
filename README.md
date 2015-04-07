@@ -8,7 +8,7 @@ Orbit contains two primary components:
 -  [Orbit Container](container/), a minimal inversion of control container for building online services.
 
 It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com). For the latest news, follow us on [Twitter](https://twitter.com/OrbitFramework). 
-<br /> If you're looking for virtual actors on the .NET CLR, see [Orleans](https://github.com/dotnet/Orleans).
+<br />If you're looking for virtual actors on the .NET CLR, see [Orleans](https://github.com/dotnet/Orleans).
 
 Documentation
 =======
