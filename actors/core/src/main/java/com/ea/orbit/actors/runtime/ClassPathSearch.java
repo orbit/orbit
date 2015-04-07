@@ -194,15 +194,19 @@ public class ClassPathSearch
                 .collect(Collectors.toList()).stream()
                         // use this for development: .peek(System.out::println)
                 .map(cn -> {
-                    if (logger.isDebugEnabled()) {
+                    if (logger.isDebugEnabled())
+                    {
                         logger.debug("Checking: " + cn);
                     }
                     // this returns non null if there is a match
                     // it also culls the list
-                    try {
+                    try
+                    {
                         ClassInfo clazz = getClassInfo(cn);
-                        if (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers())) {
-                            if (theInterfaceInfo.isAssignableFrom(clazz)) {
+                        if (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers()))
+                        {
+                            if (theInterfaceInfo.isAssignableFrom(clazz))
+                            {
                                 // when searching for IHello1, must avoid:
                                 // IHello1 <- IHello2
                                 // IHello1 <- HelloImpl1
@@ -211,16 +215,20 @@ public class ClassPathSearch
                                 // However the application **should not** do this kind of class tree.
 
                                 // Important: this makes ClassPathSearch non generic.
-                                for (ClassInfo i : clazz.getInterfaces()) {
-                                    if (i != theInterfaceInfo && theInterfaceInfo.isAssignableFrom(i)) {
+                                for (ClassInfo i : clazz.getInterfaces())
+                                {
+                                    if (i != theInterfaceInfo && theInterfaceInfo.isAssignableFrom(i))
+                                    {
                                         return null;
                                     }
                                 }
                                 // found the best match!
                                 return Class.forName(cn.replace('/', '.'));
                             }
-                            for (ClassInfo base : classesOfInterestInfos) {
-                                if (base.isAssignableFrom(clazz)) {
+                            for (ClassInfo base : classesOfInterestInfos)
+                            {
+                                if (base.isAssignableFrom(clazz))
+                                {
                                     // keep the classes that are part of the classes of interest list
                                     return null;
                                 }
@@ -229,7 +237,9 @@ public class ClassPathSearch
                         // culling the list for the next search
                         unprocessed.remove(cn);
                         return null;
-                    } catch (Throwable e) {
+                    }
+                    catch (Throwable e)
+                    {
                         // there is some problem with this class
                         // culling the list for the next search
                         unprocessed.remove(cn);
