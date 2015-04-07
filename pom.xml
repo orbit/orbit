@@ -43,6 +43,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>commons</module>
         <module>container</module>
         <module>web</module>
+		<module>bridge</module>
         <module>samples</module>
         <module>orbit-all-docs</module>
     </modules>
