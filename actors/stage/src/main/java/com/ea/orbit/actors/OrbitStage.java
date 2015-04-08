@@ -157,6 +157,12 @@ public class OrbitStage implements Startable
     {
         startCalled = true;
 
+        // Default the node name to cluster name if not set
+        if(nodeName == null || nodeName.isEmpty())
+        {
+            nodeName = clusterName;
+        }
+
         if (hosting == null)
         {
             hosting = new Hosting();
@@ -199,6 +205,9 @@ public class OrbitStage implements Startable
         messaging.start();
         hosting.start();
         execution.start();
+
+
+
         startFuture = clusterPeer.join(clusterName, nodeName);
         // todo remove this
         startFuture.join();
