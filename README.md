@@ -2,6 +2,9 @@ Orbit Framework
 =======
 [![Build Status](https://travis-ci.org/electronicarts/orbit.svg?branch=master)](https://travis-ci.org/electronicarts/orbit)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.ea.orbit/orbit-parent/badge.svg)](https://repo1.maven.org/maven2/com/ea/orbit/)
+[![Issue Stats](http://www.issuestats.com/github/electronicarts/orbit/badge/issue?style=flat)](http://www.issuestats.com/github/electronicarts/orbit)
+[![Issue Stats](http://www.issuestats.com/github/electronicarts/orbit/badge/pr?style=flat)](http://www.issuestats.com/github/electronicarts/orbit)
+
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/electronicarts/orbit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Orbit is a modern framework for JVM languages that makes it easier to build and maintain distributed and scalable online services.
