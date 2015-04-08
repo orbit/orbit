@@ -38,6 +38,7 @@ import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
 
+import com.sun.org.apache.bcel.internal.generic.IADD;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -232,7 +233,7 @@ public class Hosting implements IHosting, Startable
                 localAddressCache.put(addressable, otherNodeAddress);
                 return otherNodeAddress;
             }
-            // TODO: signal the node to create the actor.
+            addressable.ping().join();
             localAddressCache.put(addressable, nodeAddress);
             return nodeAddress;
         }, execution.getExecutor());

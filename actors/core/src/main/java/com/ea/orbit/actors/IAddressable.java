@@ -28,9 +28,18 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors;
 
+import com.ea.orbit.concurrent.Task;
+
 /**
  * Common interface for actor and observer references used internally by the framework.
  */
 public interface IAddressable
 {
+    /**
+     * Allows the application to verify if an observer is still alive or to wake up an actor.
+     */
+    default Task ping()
+    {
+        return Task.done();
+    }
 }
