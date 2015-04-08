@@ -116,7 +116,7 @@ public class ClusterPeer implements IClusterPeer
         }
     }
 
-    public Task<?> join(final String clusterName)
+    public Task<?> join(final String clusterName, final String nodeName)
     {
         final ForkJoinTask<Address> f = ForkJoinTask.adapt(new Callable<Address>()
         {
@@ -169,7 +169,7 @@ public class ClusterPeer implements IClusterPeer
 
                     final GlobalConfigurationBuilder globalConfigurationBuilder = GlobalConfigurationBuilder.defaultClusteredBuilder();
                     globalConfigurationBuilder.globalJmxStatistics().allowDuplicateDomains(true);
-                    globalConfigurationBuilder.transport().nodeName(clusterName).transport(new JGroupsTransport(baseChannel));
+                    globalConfigurationBuilder.transport().nodeName(nodeName).transport(new JGroupsTransport(baseChannel));
 
                     ConfigurationBuilder builder = new ConfigurationBuilder();
                     builder.clustering().cacheMode(CacheMode.DIST_ASYNC);

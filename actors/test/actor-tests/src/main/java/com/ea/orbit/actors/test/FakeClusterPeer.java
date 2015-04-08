@@ -62,7 +62,7 @@ public class FakeClusterPeer implements IClusterPeer
     {
     }
 
-    public Task<Void> join(String clusterName)
+    public Task<Void> join(final String clusterName, final String nodeName)
     {
         group = FakeGroup.get(clusterName);
         return Task.fromFuture(CompletableFuture.runAsync(() -> {
