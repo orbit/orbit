@@ -134,7 +134,7 @@ public class ClusterPeer implements IClusterPeer
                     // It must be asserted that the production network support (enables) this.
                     // Otherwise it's also possible to change the discovery mechanism.
                     JChannel baseChannel = new JChannel(configToURL(getJgroupsConfig()));
-                    baseChannel.setName(clusterName);
+                    baseChannel.setName(nodeName);
 
                     if (isNameBasedUpdPort() && baseChannel.getProtocolStack().getBottomProtocol() instanceof UDP)
                     {
@@ -150,18 +150,15 @@ public class ClusterPeer implements IClusterPeer
                             FRAG2.class);
                     channel.connect(clusterName + "." + UUID.randomUUID());
 
-                    channel.setReceiver(new ReceiverAdapter()
-                    {
+                    channel.setReceiver(new ReceiverAdapter() {
 
                         @Override
-                        public void viewAccepted(final View view)
-                        {
+                        public void viewAccepted(final View view) {
                             doViewAccepted(view);
                         }
 
                         @Override
-                        public void receive(final Message msg)
-                        {
+                        public void receive(final Message msg) {
                             doReceive(msg);
                         }
 
