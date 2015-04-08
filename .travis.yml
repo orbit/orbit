@@ -1,2 +1,14 @@
 language: java		
 jdk: oraclejdk8
+
+services:
+  - mongodb
+  - redis-server
+
+addons:
+  postgresql: "9.3"
+
+before_script:
+  - psql -c 'create database orbit;' -U postgres
+
+script: "mvn test -P withMongoTests,withPostgresTests,withRedisTests"
