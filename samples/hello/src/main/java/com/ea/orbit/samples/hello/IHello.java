@@ -33,8 +33,6 @@ import com.ea.orbit.concurrent.Task;
 
 public interface IHello extends IActor
 {
-    Task<Void> register(IHelloObserver observer);
-
     Task<String> sayHello(String greeting);
 }
 

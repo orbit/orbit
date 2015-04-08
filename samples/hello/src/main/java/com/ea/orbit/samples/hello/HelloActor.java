@@ -29,26 +29,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.samples.hello;
 
 
-import com.ea.orbit.actors.ObserverManager;
 import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.Task;
 
 @SuppressWarnings("rawtypes")
 public class HelloActor extends OrbitActor implements IHello
 {
-    private ObserverManager<IHelloObserver> observerManager = new ObserverManager<>();
-
-    @Override
-    public Task<Void> register(IHelloObserver observer) {
-        observerManager.addObserver(observer);
-        return Task.done();
-    }
-
     public Task<String> sayHello(String greeting)
     {
         getLogger().info("Received: " + greeting);
-
-        observerManager.notifyObservers(o -> o.receiveHello(greeting));
 
         return Task.fromValue("You said: '" + greeting
                 + "', I say: Hello from " + runtimeIdentity() + " !");
