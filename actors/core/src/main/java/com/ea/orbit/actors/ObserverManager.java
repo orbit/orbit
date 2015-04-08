@@ -90,7 +90,7 @@ public class ObserverManager<T extends IActorObserver> implements Serializable
     {
         final Stream<Task<?>> stream = observers.stream()
                 .map(o ->
-                        ((Task<?>) o.ping()).whenComplete((final Object pr, final Throwable pe) ->
+                        ((Task<?>) ((IAddressable)o).ping()).whenComplete((final Object pr, final Throwable pe) ->
                         {
                             if (pe != null)
                             {
