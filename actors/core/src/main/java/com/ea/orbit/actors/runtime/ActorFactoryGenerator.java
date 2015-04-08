@@ -26,7 +26,14 @@ import java.util.stream.Stream;
  */
 public class ActorFactoryGenerator
 {
-    private static ClassPool classPool;
+    private final static ClassPool classPool;
+
+    static
+    {
+        classPool = new ClassPool(null);
+        classPool.appendSystemPath();
+        classPool.appendClassPath(new ClassClassPath(ActorFactoryGenerator.class));
+    }
 
     private static class GenericActorFactory<T> extends ActorFactory<T>
     {
@@ -101,31 +108,23 @@ public class ActorFactoryGenerator
     @SuppressWarnings("unchecked")
     private <T> Class<T> makeReferenceClass(final Class<T> aInterface, final String interfaceFullName, final int interfaceId, final String referenceFullName) throws NotFoundException, CannotCompileException
     {
-        try
+        Class clazz = lookup(referenceFullName);
+        if (clazz != null)
         {
-            return (Class<T>) Class.forName(referenceFullName);
-        }
-        catch (final Exception ex)
-        {
-            // ignore;
-        }
-        final ClassPool pool = getClassPool();
-        try
-        {
-            return (Class<T>) pool.getClassLoader().loadClass(referenceFullName);
-        }
-        catch (final Exception ex2)
-        {
-            // ignore;
-        }
-
-        if ("ISomeChatObserver".equals(aInterface.getSimpleName()))
-        {
-            System.out.println();
+            return clazz;
         }
 
         synchronized (aInterface)
         {
+            // trying again from within the synchronized block.
+            clazz = lookup(referenceFullName);
+            if (clazz != null)
+            {
+                return clazz;
+            }
+
+            final ClassPool pool = classPool;
+
             final CtClass cc = pool.makeClass(referenceFullName);
             final CtClass ccInterface = pool.get(aInterface.getName());
             final CtClass ccActorReference = pool.get(ActorReference.class.getName());
@@ -159,26 +158,22 @@ public class ActorFactoryGenerator
 
     private <T> Class<?> makeInvokerClass(final Class<T> aInterface, final String invokerFullName) throws NotFoundException, CannotCompileException
     {
-        try
+        Class clazz = lookup(invokerFullName);
+        if (clazz != null)
         {
-            return Class.forName(invokerFullName);
-        }
-        catch (final Exception ex)
-        {
-            // ignore;
-        }
-        final ClassPool pool = getClassPool();
-        try
-        {
-            return pool.getClassLoader().loadClass(invokerFullName);
-        }
-        catch (final Exception ex2)
-        {
-            // ignore;
+            return clazz;
         }
 
         synchronized (aInterface)
         {
+            // trying again from within the synchronized block.
+            clazz = lookup(invokerFullName);
+            if (clazz != null)
+            {
+                return clazz;
+            }
+            ClassPool pool = classPool;
+
             final CtClass cc = pool.makeClass(invokerFullName);
             final CtClass ccInterface = pool.get(aInterface.getName());
             final CtClass ccActorInvoker = pool.get(ActorInvoker.class.getName());
@@ -226,16 +221,25 @@ public class ActorFactoryGenerator
         }
     }
 
-    private static synchronized ClassPool getClassPool()
+    private Class lookup(String className)
     {
-        if (classPool == null)
+        try
         {
-            classPool = new ClassPool(null);
-            classPool.appendSystemPath();
-            classPool.appendClassPath(new ClassClassPath(ActorFactoryGenerator.class));
+            return Class.forName(className);
         }
-
-        return classPool;
+        catch (final Exception ex)
+        {
+            // ignore;
+        }
+        try
+        {
+            return classPool.getClassLoader().loadClass(className);
+        }
+        catch (final Exception ex2)
+        {
+            // ignore;
+        }
+        return null;
     }
 
 }
