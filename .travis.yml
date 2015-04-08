@@ -11,4 +11,4 @@ addons:
 before_script:
   - psql -c 'create database orbit;' -U postgres
 
-script: "mvn test -P withMongoTests,withPostgresTests,withRedisTests"
+script: "mvn test -P withMongoTests,withPostgresTests,withRedisTests,withScala"
