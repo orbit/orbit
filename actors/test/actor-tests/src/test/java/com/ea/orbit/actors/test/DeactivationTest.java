@@ -74,6 +74,7 @@ public class DeactivationTest extends ClientTest
         set.add(actor1.getUniqueActivationId().join());
         assertEquals(1, set.size());
 
+        awaitFor(() -> isIdle(stage));
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(20));
         stage.cleanup(true);
         client.bind();
@@ -82,7 +83,7 @@ public class DeactivationTest extends ClientTest
     }
 
     @SuppressWarnings("unused")
-	@Test
+    @Test
     public void statelessWorkerDeactivationTest() throws ExecutionException, InterruptedException, TimeoutException
     {
         OrbitStage stage1 = createStage();
@@ -108,15 +109,21 @@ public class DeactivationTest extends ClientTest
         assertTrue(set1.size() <= 100);
 
         // increment the clock
+        awaitFor(() -> isIdle(stage1));
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(8));
+
         // touch a single activation (that will probably not be collected)
         UUID theSurviving = actor5.getUniqueActivationId().get();
+
+        awaitFor(() -> isIdle(stage1));
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(8));
 
 
         // THE CLEANUP
         // this will collect all but one activation
+        awaitFor(() -> isIdle(stage1));
         stage1.cleanup(true);
+
 
         // do the shenanigans again
         final Set<UUID> set2 = new HashSet<>();
@@ -144,4 +151,5 @@ public class DeactivationTest extends ClientTest
         set2.retainAll(set1);
         assertEquals(1, set2.size());
     }
+
 }

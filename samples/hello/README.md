@@ -39,6 +39,7 @@ has the actor.
 
 
 ### Windows
+Start multiple nodes with:
 ```
 start-multiple.bat
 ```
@@ -46,7 +47,7 @@ start-multiple.bat
 Stop the nodes with `ctrl+d`
 
 ### Linux
-Start a each node with:
+Start each node with:
 ```
 mvn exec:java
 ```
