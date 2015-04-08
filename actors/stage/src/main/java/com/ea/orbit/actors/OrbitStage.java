@@ -157,10 +157,14 @@ public class OrbitStage implements Startable
     {
         startCalled = true;
 
-        // Default the node name to cluster name if not set
+        if(clusterName == null || clusterName.isEmpty())
+        {
+            setClusterName("orbit-cluster");
+        }
+
         if(nodeName == null || nodeName.isEmpty())
         {
-            nodeName = clusterName;
+            setNodeName(getClusterName());
         }
 
         if (hosting == null)
