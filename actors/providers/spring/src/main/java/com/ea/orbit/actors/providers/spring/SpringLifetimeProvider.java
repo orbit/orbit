@@ -43,7 +43,8 @@ import org.springframework.stereotype.Component;
  * @author Johno Crawford (johno@sulake.com)
  */
 @Component
-public class SpringLifetimeProvider implements ILifetimeProvider {
+public class SpringLifetimeProvider implements ILifetimeProvider
+{
 
     @Autowired
     private AutowireCapableBeanFactory autowireCapableBeanFactory;
@@ -52,7 +53,8 @@ public class SpringLifetimeProvider implements ILifetimeProvider {
     private int autowireMode;
 
     @Override
-    public Task preActivation(OrbitActor orbitActor) {
+    public Task preActivation(OrbitActor orbitActor)
+    {
         autowireCapableBeanFactory.autowireBeanProperties(orbitActor, autowireMode, false);
         return Task.done();
     }

@@ -54,7 +54,8 @@ import java.util.stream.Collectors;
  * @author Johno Crawford (johno@sulake.com)
  */
 @Component
-public class SpringActorClassFinder implements IActorClassFinder {
+public class SpringActorClassFinder implements IActorClassFinder
+{
 
     @Autowired
     private ActorInterfaceProvider actorInterfaceProvider;
@@ -68,8 +69,10 @@ public class SpringActorClassFinder implements IActorClassFinder {
     private Map<Class<?>, Class<?>> concreteImplementations = new HashMap<>();
 
     @PostConstruct
-    public void initialize() {
-        if (!StringUtils.hasText(basePackage)) {
+    public void initialize()
+    {
+        if (!StringUtils.hasText(basePackage))
+        {
             throw new NullPointerException("orbit.actors.basePackage must be set!");
         }
         this.concreteImplementations = actorImplementationProvider.getActorImplementations(actorInterfaceProvider.getActorInterfaces());
@@ -77,27 +80,35 @@ public class SpringActorClassFinder implements IActorClassFinder {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends IActor> Class<? extends T> findActorImplementation(Class<T> clazz) {
+    public <T extends IActor> Class<? extends T> findActorImplementation(Class<T> clazz)
+    {
         return (Class<T>) concreteImplementations.get(clazz);
     }
 
     @Component
-    private class ActorImplementationProvider extends ClassPathScanningCandidateComponentProvider {
+    private class ActorImplementationProvider extends ClassPathScanningCandidateComponentProvider
+    {
 
         @Autowired
-        public ActorImplementationProvider() {
+        public ActorImplementationProvider()
+        {
             super(false);
             addIncludeFilter(new AssignableTypeFilter(IActor.class));
         }
 
-        public Map<Class<?>, Class<?>> getActorImplementations(List<Class<?>> clazzInterfaces) {
+        public Map<Class<?>, Class<?>> getActorImplementations(List<Class<?>> clazzInterfaces)
+        {
             Map<Class<?>, Class<?>> actorImplementations = new HashMap<>();
-            for (BeanDefinition candidate : findCandidateComponents(basePackage)) {
+            for (BeanDefinition candidate : findCandidateComponents(basePackage))
+            {
                 Class<?> implementation = ClassUtils.resolveClassName(candidate.getBeanClassName(), ClassUtils.getDefaultClassLoader());
-                for (Class<?> clazzInterface : clazzInterfaces) {
-                    if (clazzInterface.isAssignableFrom(implementation)) {
+                for (Class<?> clazzInterface : clazzInterfaces)
+                {
+                    if (clazzInterface.isAssignableFrom(implementation))
+                    {
                         Class<?> old = actorImplementations.put(clazzInterface, implementation);
-                        if (old != null) {
+                        if (old != null)
+                        {
                             throw new IllegalStateException("Multiple actor implementations found for " + clazzInterface);
                         }
                         break;
@@ -108,27 +119,32 @@ public class SpringActorClassFinder implements IActorClassFinder {
         }
 
         @Override
-        protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
+        protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition)
+        {
             return beanDefinition.getMetadata().isConcrete();
         }
     }
 
     @Component
-    private class ActorInterfaceProvider extends ClassPathScanningCandidateComponentProvider {
+    private class ActorInterfaceProvider extends ClassPathScanningCandidateComponentProvider
+    {
 
         @Autowired
-        public ActorInterfaceProvider() {
+        public ActorInterfaceProvider()
+        {
             super(false);
             addIncludeFilter(new AssignableTypeFilter(IActor.class));
         }
 
-        public List<Class<?>> getActorInterfaces() {
+        public List<Class<?>> getActorInterfaces()
+        {
             return findCandidateComponents(basePackage).stream().map(candidate -> (ClassUtils.resolveClassName(candidate.getBeanClassName(), ClassUtils.getDefaultClassLoader())))
                     .collect(Collectors.toList());
         }
 
         @Override
-        protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
+        protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition)
+        {
             return beanDefinition.getMetadata().isInterface();
         }
     }

@@ -12,3 +12,11 @@ before_script:
   - psql -c 'create database orbit;' -U postgres
 
 script: "mvn test -P withMongoTests,withPostgresTests,withRedisTests,withScala"
+
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/066a8197f92d460e8530
+    on_success: change
+    on_failure: always  
+    on_start: false  

@@ -29,6 +29,7 @@
 orbit.http.port: 8080
 
 orbit.actors.clusterName: chat
+orbit.actors.nodeName: chat-frontend
 
 orbit.providers:
   - com.ea.orbit.samples.chat.ChatWebModule

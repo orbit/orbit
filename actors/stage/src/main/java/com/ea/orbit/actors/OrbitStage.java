@@ -57,6 +57,9 @@ public class OrbitStage implements Startable
     @Config("orbit.actors.clusterName")
     private String clusterName;
 
+    @Config("orbit.actors.nodeName")
+    private String nodeName;
+
     @Config("orbit.actors.stageMode")
     private StageMode mode = StageMode.HOST;
 
@@ -126,6 +129,16 @@ public class OrbitStage implements Startable
         this.clusterName = clusterName;
     }
 
+    public String getNodeName()
+    {
+        return nodeName;
+    }
+
+    public void setNodeName(final String nodeName)
+    {
+        this.nodeName = nodeName;
+    }
+
     public StageMode getMode()
     {
         return mode;
@@ -143,6 +156,16 @@ public class OrbitStage implements Startable
     public Task<?> start()
     {
         startCalled = true;
+
+        if(clusterName == null || clusterName.isEmpty())
+        {
+            setClusterName("orbit-cluster");
+        }
+
+        if(nodeName == null || nodeName.isEmpty())
+        {
+            setNodeName(getClusterName());
+        }
 
         if (hosting == null)
         {
@@ -186,7 +209,10 @@ public class OrbitStage implements Startable
         messaging.start();
         hosting.start();
         execution.start();
-        startFuture = clusterPeer.join(clusterName);
+
+
+
+        startFuture = clusterPeer.join(clusterName, nodeName);
         // todo remove this
         startFuture.join();
         bind();

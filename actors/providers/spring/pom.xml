@@ -50,7 +50,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
             <version>4.1.6.RELEASE</version>
-            <optional>true</optional>
         </dependency>
     </dependencies>
 

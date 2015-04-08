@@ -80,9 +80,10 @@ public interface IClusterPeer
      * Joins a cluster
      *
      * @param clusterName the name/identifier of the cluster
+     * @param nodeName the name of this node
      * @return future representing the completion of the joining process.
      */
-    Task<?> join(String clusterName);
+    Task<?> join(String clusterName, String nodeName);
 
     /**
      * Leaves the cluster.
