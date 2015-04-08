@@ -150,15 +150,18 @@ public class ClusterPeer implements IClusterPeer
                             FRAG2.class);
                     channel.connect(clusterName + "." + UUID.randomUUID());
 
-                    channel.setReceiver(new ReceiverAdapter() {
+                    channel.setReceiver(new ReceiverAdapter()
+                    {
 
                         @Override
-                        public void viewAccepted(final View view) {
+                        public void viewAccepted(final View view)
+                        {
                             doViewAccepted(view);
                         }
 
                         @Override
-                        public void receive(final Message msg) {
+                        public void receive(final Message msg)
+                        {
                             doReceive(msg);
                         }
 
