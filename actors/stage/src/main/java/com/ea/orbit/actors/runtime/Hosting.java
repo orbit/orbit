@@ -232,7 +232,6 @@ public class Hosting implements IHosting, Startable
                 localAddressCache.put(addressable, otherNodeAddress);
                 return otherNodeAddress;
             }
-            addressable.ping().join();
             localAddressCache.put(addressable, nodeAddress);
             return nodeAddress;
         }, execution.getExecutor());
