@@ -189,7 +189,7 @@ public class ActorFactoryGenerator
             final CtClass ccActorInvoker = pool.get(ActorInvoker.class.getName());
             cc.setSuperclass(ccActorInvoker);
 
-            final StringBuilder sb = new StringBuilder();
+            final StringBuilder sb = new StringBuilder(2000);
             sb.append("public " + Task.class.getName() + " invoke(Object target, int methodId, Object[] params) {");
             final CtMethod[] declaredMethods = ccInterface.getMethods();
             sb.append(" switch(methodId) { ");
