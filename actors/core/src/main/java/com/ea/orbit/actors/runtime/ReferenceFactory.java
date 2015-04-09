@@ -67,7 +67,12 @@ public class ReferenceFactory implements IReferenceFactory
         {
             try
             {
-                factory = (ActorFactory<T>) Class.forName(iClass.getPackage().getName() + "." + iClass.getSimpleName().replaceAll("^I", "") + "Factory").newInstance();
+                String factoryClazz = iClass.getSimpleName() + "Factory";
+                if (factoryClazz.charAt(0) == 'I')
+                {
+                    factoryClazz = factoryClazz.substring(1); // remove leading 'I'
+                }
+                factory = (ActorFactory<T>) Class.forName(iClass.getPackage().getName() + "." + factoryClazz).newInstance();
             }
             catch (Exception e)
             {

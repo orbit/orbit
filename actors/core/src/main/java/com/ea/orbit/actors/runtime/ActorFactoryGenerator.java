@@ -72,7 +72,12 @@ public class ActorFactoryGenerator
     {
         final String interfaceFullName = aInterface.getName().replace('$', '.');
         final String packageName = aInterface.getPackage().getName();
-        final String baseName = aInterface.getSimpleName().replaceAll("^I", "");
+        String baseName = aInterface.getSimpleName();
+        if (baseName.charAt(0) == 'I')
+        {
+            baseName = baseName.substring(1); // remove leading 'I'
+        }
+
         final int interfaceId = interfaceFullName.hashCode();
         final String referenceName = baseName + "Reference";
         final String invokerName = baseName + "Invoker";
