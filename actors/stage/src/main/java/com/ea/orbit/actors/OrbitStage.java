@@ -33,11 +33,7 @@ import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.IClusterPeer;
 import com.ea.orbit.actors.providers.ILifetimeProvider;
 import com.ea.orbit.actors.providers.IOrbitProvider;
-import com.ea.orbit.actors.runtime.Execution;
-import com.ea.orbit.actors.runtime.Hosting;
-import com.ea.orbit.actors.runtime.IHosting;
-import com.ea.orbit.actors.runtime.Messaging;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.*;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
@@ -310,6 +306,10 @@ public class OrbitStage implements Startable
     public void bind()
     {
         execution.bind();
+    }
+
+    public void setInvokeInterceptor(InvokeInterceptor interceptor){
+        ReferenceFactory.setInvokeInterceptor(interceptor);
     }
 
 }

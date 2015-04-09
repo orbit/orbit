@@ -57,6 +57,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <artifactId>logback-classic</artifactId>
             <version>1.1.2</version>
         </dependency>
+
+        <dependency>
+            <groupId>net.jodah</groupId>
+            <artifactId>expiringmap</artifactId>
+            <version>0.4.1</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -4,17 +4,10 @@ import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
-import javassist.CannotCompileException;
-import javassist.ClassClassPath;
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtMethod;
-import javassist.CtNewConstructor;
-import javassist.CtNewMethod;
-import javassist.CtPrimitiveType;
-import javassist.NotFoundException;
+import javassist.*;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -140,13 +133,21 @@ public class ActorFactoryGenerator
                 }
 
                 final boolean oneWay = m.hasAnnotation(OneWay.class);
-                final String methodSignature = m.getName() + "(" +
-                        Stream.of(m.getParameterTypes()).map(p -> p.getName()).collect(Collectors.joining(","))
-                        + ")";
+
+                final String methodSignature = m.getName() + "(" + Stream.of(m.getParameterTypes()).map(p -> p.getName()).collect(Collectors.joining(",")) + ")";
                 final int methodId = methodSignature.hashCode();
+
+                final String methodReferenceField = m.getName() + "_" + Stream.of(m.getParameterTypes()).map(p -> p.getSimpleName()).collect(Collectors.joining("_"));
+                cc.addField(CtField.make("private java.lang.reflect.Method "+methodReferenceField+" = null;",cc));
+
+                final String typeParametersString = (m.getParameterTypes().length==0)?"emptyArray":"new Class[]{"+Stream.of(m.getParameterTypes()).map(p -> p.getName() + ".class").collect(Collectors.joining(","))+"}";
+                final String lazyMethodReferenceInit = "if ("+methodReferenceField+"==null){ "+((m.getParameterTypes().length==0)?"Class[] emptyArray = new Class[0];":"")+" "+methodReferenceField+"="+aInterface.getName()+".class.getMethod(\""+m.getName()+"\","+typeParametersString+");}  ";
+
                 final CtMethod newMethod = CtNewMethod.make(m.getReturnType(), m.getName(),
                         m.getParameterTypes(), m.getExceptionTypes(),
-                        "{ return super.invoke(" + oneWay + ", " + methodId + ", $args);  }",
+                        "{ " + lazyMethodReferenceInit +
+                            "return super.invoke("+methodReferenceField+", " + oneWay + ", " + methodId + ", $args);  " +
+                        "}",
                         cc);
                 cc.addMethod(newMethod);
             }

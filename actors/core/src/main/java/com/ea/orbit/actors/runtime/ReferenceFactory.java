@@ -30,9 +30,12 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.IActorObserver;
+import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.annotation.NoIdentity;
 import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.concurrent.Task;
 
+import java.lang.reflect.Method;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -42,6 +45,7 @@ public class ReferenceFactory implements IReferenceFactory
     private static ReferenceFactory instance = new ReferenceFactory();
     private ConcurrentMap<Class<?>, ActorFactory<?>> factories = new ConcurrentHashMap<>();
     private volatile ActorFactoryGenerator dynamicReferenceFactory;
+    private InvokeInterceptor invokeInterceptor = new DefaultInvokeInterceptor();
 
     @Override
     public <T extends IActor> T getReference(final Class<T> iClass, final Object id)
@@ -99,5 +103,20 @@ public class ReferenceFactory implements IReferenceFactory
             throw new IllegalArgumentException("Not annotated with " + NoIdentity.class);
         }
         return instance.getReference(iActor, NoIdentity.NO_IDENTITY);
+    }
+
+    public static void setInvokeInterceptor(InvokeInterceptor interceptor){
+        instance.invokeInterceptor = interceptor;
+    }
+
+    public static InvokeInterceptor getInvokeInterceptor(){
+        return instance.invokeInterceptor;
+    }
+
+    public class DefaultInvokeInterceptor implements InvokeInterceptor{
+        @Override
+        public Task invoke(IRuntime runtime, IAddressable reference, Method method, boolean oneWay, int methodId, Object[] params) {
+            return runtime.sendMessage(reference, oneWay, methodId, params);
+        }
     }
 }
