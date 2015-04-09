@@ -62,8 +62,8 @@ public class Hosting implements IHosting, Startable
     private volatile List<NodeInfo> serverNodes = new ArrayList<>(0);
     private final Object serverNodesUpdateMutex = new Object();
     private Execution execution;
-    private ConcurrentMap<IAddressable, INodeAddress> localAddressCache = new ConcurrentHashMap<>();
-    private volatile ConcurrentMap<IAddressable, INodeAddress> distributedDirectory;
+    private ConcurrentMap<ActorKey, INodeAddress> localAddressCache = new ConcurrentHashMap<>();
+    private volatile ConcurrentMap<ActorKey, INodeAddress> distributedDirectory;
     @Config("orbit.actors.timeToWaitForServersMillis")
     private long timeToWaitForServersMillis = 30000;
     private Random random = new Random();
@@ -167,14 +167,17 @@ public class Hosting implements IHosting, Startable
         }
     }
 
-    public Task<INodeAddress> locateActor(final IAddressable addressable)
+    public Task<INodeAddress> locateActor(final IAddressable actorReference)
     {
+        ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
+                String.valueOf(((ActorReference) actorReference).id));
+
         INodeAddress address = localAddressCache.get(addressable);
         if (address != null && activeNodes.containsKey(address))
         {
             return Task.fromValue(address);
         }
-        final Class<?> interfaceClass = ((ActorReference<?>) addressable)._interfaceClass();
+        final Class<?> interfaceClass = ((ActorReference<?>) actorReference)._interfaceClass();
         final String interfaceClassName = interfaceClass.getName();
         if (interfaceClass.isAnnotationPresent(StatelessWorker.class))
         {
