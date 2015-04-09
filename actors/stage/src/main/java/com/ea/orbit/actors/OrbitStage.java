@@ -31,6 +31,7 @@ package com.ea.orbit.actors;
 
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.IClusterPeer;
+import com.ea.orbit.actors.providers.IInvokeHookProvider;
 import com.ea.orbit.actors.providers.ILifetimeProvider;
 import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.runtime.*;
@@ -308,8 +309,5 @@ public class OrbitStage implements Startable
         execution.bind();
     }
 
-    public void setInvokeInterceptor(InvokeInterceptor interceptor){
-        ReferenceFactory.setInvokeInterceptor(interceptor);
-    }
 
 }

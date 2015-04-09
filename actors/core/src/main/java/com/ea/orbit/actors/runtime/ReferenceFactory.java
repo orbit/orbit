@@ -45,7 +45,6 @@ public class ReferenceFactory implements IReferenceFactory
     private static ReferenceFactory instance = new ReferenceFactory();
     private ConcurrentMap<Class<?>, ActorFactory<?>> factories = new ConcurrentHashMap<>();
     private volatile ActorFactoryGenerator dynamicReferenceFactory;
-    private InvokeInterceptor invokeInterceptor = new DefaultInvokeInterceptor();
 
     @Override
     public <T extends IActor> T getReference(final Class<T> iClass, final Object id)
@@ -105,18 +104,4 @@ public class ReferenceFactory implements IReferenceFactory
         return instance.getReference(iActor, NoIdentity.NO_IDENTITY);
     }
 
-    public static void setInvokeInterceptor(InvokeInterceptor interceptor){
-        instance.invokeInterceptor = interceptor;
-    }
-
-    public static InvokeInterceptor getInvokeInterceptor(){
-        return instance.invokeInterceptor;
-    }
-
-    public class DefaultInvokeInterceptor implements InvokeInterceptor{
-        @Override
-        public Task invoke(IRuntime runtime, IAddressable reference, Method method, boolean oneWay, int methodId, Object[] params) {
-            return runtime.sendMessage(reference, oneWay, methodId, params);
-        }
-    }
 }

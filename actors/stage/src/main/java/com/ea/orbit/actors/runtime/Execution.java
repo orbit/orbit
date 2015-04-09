@@ -34,10 +34,7 @@ import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.IRemindable;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.cluster.INodeAddress;
-import com.ea.orbit.actors.providers.IActorClassFinder;
-import com.ea.orbit.actors.providers.ILifetimeProvider;
-import com.ea.orbit.actors.providers.IOrbitProvider;
-import com.ea.orbit.actors.providers.IStorageProvider;
+import com.ea.orbit.actors.providers.*;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -48,6 +45,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.MapMaker;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -101,6 +99,7 @@ public class Execution implements IRuntime
     private List<IOrbitProvider> orbitProviders = new ArrayList<>();
 
     private final WeakReference<IRuntime> cachedRef = new WeakReference<>(this);
+    private IInvokeHookProvider invokeHookProvider;
 
     public Execution()
     {
@@ -619,6 +618,11 @@ public class Execution implements IRuntime
             executor = ExecutorUtils.newScalingThreadPool(1000);
         }
         executionSerializer = new ExecutionSerializer<>(executor);
+
+        invokeHookProvider = getFirstProvider(IInvokeHookProvider.class);
+        if (invokeHookProvider == null)
+            invokeHookProvider = new IInvokeHookProvider() {};
+
         orbitProviders.forEach(v -> v.start());
         // schedules the cleanup
         timer.schedule(new TimerTask()
@@ -965,6 +969,11 @@ public class Execution implements IRuntime
                     .thenCompose(x -> messaging.sendMessage(x, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params));
         }
         return messaging.sendMessage(toNode, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params);
+    }
+
+    public Task<?> invokeHook(IAddressable toReference,Method m,  boolean oneWay, final int methodId, final Object[] params)
+    {
+        return invokeHookProvider.invoke(this, toReference, m, oneWay, methodId, params);
     }
 
     public void activationCleanup(final boolean block)

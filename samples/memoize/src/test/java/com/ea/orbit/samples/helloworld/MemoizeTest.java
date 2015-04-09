@@ -32,7 +32,7 @@ import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.samples.memoize.ExampleActor;
 import com.ea.orbit.samples.memoize.IExample;
-import com.ea.orbit.samples.memoize.MemoizeInterceptor;
+import com.ea.orbit.samples.memoize.MemoizeHookProvider;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
@@ -84,7 +84,7 @@ public class MemoizeTest
     public static OrbitStage initStage(String clusterId, String stageId)
     {
         OrbitStage stage = new OrbitStage();
-        stage.setInvokeInterceptor(new MemoizeInterceptor());
+        stage.addProvider(new MemoizeHookProvider());
         stage.setClusterName(clusterId);
         stage.start().join();
         return stage;
