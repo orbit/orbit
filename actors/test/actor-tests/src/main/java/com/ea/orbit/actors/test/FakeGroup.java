@@ -73,7 +73,7 @@ public class FakeGroup
 
     private final Object topologyMutex = new Object();
     @SuppressWarnings("rawtypes")
-	private LoadingCache<String, ConcurrentMap> maps = CacheBuilder.newBuilder()
+    private LoadingCache<String, ConcurrentMap> maps = CacheBuilder.newBuilder()
             .build(new CacheLoader<String, ConcurrentMap>()
             {
                 @Override
@@ -156,7 +156,7 @@ public class FakeGroup
     }
 
     @SuppressWarnings("unchecked")
-	public <K, V> ConcurrentMap<K, V> getCache(final String name)
+    public <K, V> ConcurrentMap<K, V> getCache(final String name)
     {
         try
         {
@@ -166,6 +166,11 @@ public class FakeGroup
         {
             throw new UncheckedException(e);
         }
+    }
+
+    public Map<String, ConcurrentMap> getCaches()
+    {
+        return maps.asMap();
     }
 
     Executor pool()
