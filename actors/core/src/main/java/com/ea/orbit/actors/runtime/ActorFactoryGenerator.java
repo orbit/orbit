@@ -79,7 +79,12 @@ public class ActorFactoryGenerator
     {
         final String interfaceFullName = aInterface.getName().replace('$', '.');
         final String packageName = aInterface.getPackage().getName();
-        final String baseName = aInterface.getSimpleName().replaceAll("^I", "");
+        String baseName = aInterface.getSimpleName();
+        if (baseName.charAt(0) == 'I')
+        {
+            baseName = baseName.substring(1); // remove leading 'I'
+        }
+
         final int interfaceId = interfaceFullName.hashCode();
         final String referenceName = baseName + "Reference";
         final String invokerName = baseName + "Invoker";
@@ -179,7 +184,7 @@ public class ActorFactoryGenerator
             final CtClass ccActorInvoker = pool.get(ActorInvoker.class.getName());
             cc.setSuperclass(ccActorInvoker);
 
-            final StringBuilder sb = new StringBuilder();
+            final StringBuilder sb = new StringBuilder(2000);
             sb.append("public " + Task.class.getName() + " invoke(Object target, int methodId, Object[] params) {");
             final CtMethod[] declaredMethods = ccInterface.getMethods();
             sb.append(" switch(methodId) { ");
