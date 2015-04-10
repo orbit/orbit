@@ -29,65 +29,60 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.ea.orbit</groupId>
-        <artifactId>orbit-parent</artifactId>
+        <artifactId>orbit-actors-parent</artifactId>
         <version>0.2.1-SNAPSHOT</version>
-        <relativePath>..</relativePath>
+        <relativePath>../..</relativePath>
     </parent>
-    <artifactId>orbit-actors-parent</artifactId>
-    <packaging>pom</packaging>
-    <name>Orbit Actors</name>
+    <modelVersion>4.0.0</modelVersion>
+    <name>Orbit Actors Storage Provider PostgreSQL</name>
 
-    <modules>
-        <module>core</module>
-        <module>stage</module>
-        <module>client</module>
-        <module>server</module>
-		<module>providers/jpa</module>
-        <module>providers/json</module>
-        <module>providers/mongodb</module>
-		<module>providers/redis</module>
-        <module>providers/postgresql</module>
-        <module>providers/spring</module>
-        <module>test/actor-tests</module>
-        <module>actors-all</module>
-    </modules>
-
+    <artifactId>orbit-actors-jpa</artifactId>
 
     <properties>
-        <project.target.jdk>1.8</project.target.jdk>
-        <project.source.jdk>1.8</project.source.jdk>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.test.skip>true</maven.test.skip>
     </properties>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <target>${project.target.jdk}</target>
-                    <source>${project.source.jdk}</source>
-                </configuration>
-                <version>3.1</version>
-            </plugin>
-        </plugins>
-    </build>
+    <profiles>
+        <profile>
+            <id>withJpaTests</id>
+            <properties>
+                <maven.test.skip>false</maven.test.skip>
+            </properties>
+        </profile>
+    </profiles>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.eclipse.persistence</groupId>
+            <artifactId>eclipselink</artifactId>
+            <version>2.6.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>5.1.35</version>
+        </dependency>
+
+
         <dependency>
             <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-commons</artifactId>
+            <artifactId>orbit-actors-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-container</artifactId>
+            <artifactId>orbit-actors-json</artifactId>
             <version>${project.version}</version>
-            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-tests</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
