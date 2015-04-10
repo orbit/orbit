@@ -33,7 +33,8 @@ import com.ea.orbit.concurrent.Task;
 
 import java.util.concurrent.TimeUnit;
 
-public interface IExample extends IActor {
+public interface IExample extends IActor
+{
 
     @Memoize(time = 5, unit = TimeUnit.SECONDS)
     Task<Long> getNow(String greeting);

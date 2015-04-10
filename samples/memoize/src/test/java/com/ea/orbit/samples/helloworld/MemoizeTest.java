@@ -30,21 +30,24 @@ package com.ea.orbit.samples.helloworld;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.runtime.IReminderController;
+import com.ea.orbit.actors.test.ActorBaseTest;
+import com.ea.orbit.actors.test.FakeClusterPeer;
+import com.ea.orbit.actors.test.FakeStorageProvider;
 import com.ea.orbit.samples.memoize.ExampleActor;
 import com.ea.orbit.samples.memoize.IExample;
 import com.ea.orbit.samples.memoize.MemoizeHookProvider;
+
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
-public class MemoizeTest
+public class MemoizeTest extends ActorBaseTest
 {
     @Test
     public void test()
     {
-        final String clusterName = "memoizeTestCluster." + System.currentTimeMillis();
-        OrbitStage stage1 = initStage(clusterName, "stage1");
-        System.out.println("Stages initialized");
+        OrbitStage stage1 = initStage();
 
         IExample memoize = IActor.getReference(IExample.class, "0");
 
@@ -54,39 +57,51 @@ public class MemoizeTest
         sleep(1000);
         long firstB = memoize.getNow("B").join();
         long secondA = memoize.getNow("A").join();
-        assertTrue(ExampleActor.accessCount==2);
-        assertTrue(firstA!=firstB);
-        assertTrue(firstA==secondA);
+        assertTrue(ExampleActor.accessCount == 2);
+        assertTrue(firstA != firstB);
+        assertTrue(firstA == secondA);
         sleep(1000);
         long thirdA = memoize.getNow("A").join();
         long secondB = memoize.getNow("B").join();
-        assertTrue(ExampleActor.accessCount==2);
-        assertTrue(thirdA!=secondB);
-        assertTrue(secondA==thirdA);
-        assertTrue(firstB==secondB);
+        assertTrue(ExampleActor.accessCount == 2);
+        assertTrue(thirdA != secondB);
+        assertTrue(secondA == thirdA);
+        assertTrue(firstB == secondB);
         sleep(4500);
         long fourthA = memoize.getNow("A").join();
         long thirdB = memoize.getNow("B").join();
-        assertTrue(ExampleActor.accessCount==4);
-        assertTrue(thirdA!=fourthA);
-        assertTrue(secondB!=thirdB);
+        assertTrue(ExampleActor.accessCount == 4);
+        assertTrue(thirdA != fourthA);
+        assertTrue(secondB != thirdB);
 
     }
 
-    public static void sleep(long millis){
-        try {
+    public static void sleep(long millis)
+    {
+        try
+        {
             Thread.sleep(millis);
-        }catch(Exception e) {
+        }
+        catch (Exception e)
+        {
             e.printStackTrace();
         }
     }
 
-    public static OrbitStage initStage(String clusterId, String stageId)
+    public OrbitStage initStage()
     {
         OrbitStage stage = new OrbitStage();
+        stage.setMode(OrbitStage.StageMode.HOST);
+        stage.setExecutionPool(commonPool);
+        stage.setMessagingPool(commonPool);
         stage.addProvider(new MemoizeHookProvider());
-        stage.setClusterName(clusterId);
+        stage.addProvider(new FakeStorageProvider(fakeDatabase));
+
+        stage.setClock(clock);
+        stage.setClusterName(clusterName);
+        stage.setClusterPeer(new FakeClusterPeer());
         stage.start().join();
+        stage.bind();
         return stage;
     }
 }

@@ -55,6 +55,18 @@ public interface IRuntime
     Task<?> sendMessage(IAddressable toReference, boolean oneWay, int methodId, Object[] params);
 
     /**
+     * Handles calls to actor reference methods.
+     *
+     * @param toReference destination actor reference or observer reference
+     * @param oneWay      should expect an answer,
+     *                    if false the task is completed with null.
+     * @param methodId    the generated id for the method
+     * @param params      the method parameters, must all be serializable.
+     * @return a future with the return value, or a future with null (if one-way)
+     */
+    Task<?> invoke(IAddressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params);
+
+    /**
      * Registers a timer to for the orbit actor
      *
      * @param actor        the actor requesting the timer.
@@ -101,5 +113,4 @@ public interface IRuntime
      */
     String runtimeIdentity();
 
-    Task<?> invokeHook(IAddressable toReference,Method m,  boolean oneWay, final int methodId, final Object[] params);
 }

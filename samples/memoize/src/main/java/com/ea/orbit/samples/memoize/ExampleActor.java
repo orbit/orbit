@@ -33,7 +33,8 @@ import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.Task;
 
 @SuppressWarnings("rawtypes")
-public class ExampleActor extends OrbitActor implements IExample {
+public class ExampleActor extends OrbitActor implements IExample
+{
     public static int accessCount = 0;
 
     public Task<Long> getNow(String greeting)

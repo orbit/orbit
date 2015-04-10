@@ -8,9 +8,11 @@ import java.util.concurrent.TimeUnit;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Memoize {
+public @interface Memoize
+{
 
     int time();
+
     TimeUnit unit();
 
 }

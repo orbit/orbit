@@ -128,8 +128,9 @@ public class ActorFactoryGenerator
             final CtClass ccActorReference = pool.get(ActorReference.class.getName());
             cc.setSuperclass(ccActorReference);
             cc.addInterface(ccInterface);
-            cc.addConstructor(CtNewConstructor.make(new CtClass[]{pool.get(String.class.getName())}, null, "{ super($1); }", cc));
+            cc.addConstructor(CtNewConstructor.make(new CtClass[]{ pool.get(String.class.getName()) }, null, "{ super($1); }", cc));
 
+            int count = 0;
             for (final CtMethod m : ccInterface.getMethods())
             {
                 if (!m.getDeclaringClass().isInterface() || !m.getReturnType().getName().equals(Task.class.getName()))
@@ -137,22 +138,23 @@ public class ActorFactoryGenerator
                     continue;
                 }
 
+                count++;
                 final boolean oneWay = m.hasAnnotation(OneWay.class);
 
                 final String methodSignature = m.getName() + "(" + Stream.of(m.getParameterTypes()).map(p -> p.getName()).collect(Collectors.joining(",")) + ")";
                 final int methodId = methodSignature.hashCode();
 
-                final String methodReferenceField = m.getName() + "_" + Stream.of(m.getParameterTypes()).map(p -> p.getSimpleName()).collect(Collectors.joining("_"));
-                cc.addField(CtField.make("private java.lang.reflect.Method "+methodReferenceField+" = null;",cc));
+                final String methodReferenceField = m.getName() + "_" + count;
+                cc.addField(CtField.make("private static java.lang.reflect.Method " + methodReferenceField + " = null;", cc));
 
-                final String typeParametersString = (m.getParameterTypes().length==0)?"emptyArray":"new Class[]{"+Stream.of(m.getParameterTypes()).map(p -> p.getName() + ".class").collect(Collectors.joining(","))+"}";
-                final String lazyMethodReferenceInit = "if ("+methodReferenceField+"==null){ "+((m.getParameterTypes().length==0)?"Class[] emptyArray = new Class[0];":"")+" "+methodReferenceField+"="+aInterface.getName()+".class.getMethod(\""+m.getName()+"\","+typeParametersString+");}  ";
+                // TODO: move this to a static initializer
+                final String lazyMethodReferenceInit = "(" + methodReferenceField + "!=null) ? " + methodReferenceField + " : ( "
+                        + methodReferenceField + "=" + aInterface.getName() + ".class.getMethod(\"" + m.getName() + "\",$sig) )";
 
+                // TODO: remove the method parameter from the invoke, this could be an utility method of ActorReference
                 final CtMethod newMethod = CtNewMethod.make(m.getReturnType(), m.getName(),
                         m.getParameterTypes(), m.getExceptionTypes(),
-                        "{ " + lazyMethodReferenceInit +
-                            "return super.invoke("+methodReferenceField+", " + oneWay + ", " + methodId + ", $args);  " +
-                        "}",
+                        "{ return super.invoke(" + lazyMethodReferenceInit + ", " + oneWay + ", " + methodId + ", $args);  }",
                         cc);
                 cc.addMethod(newMethod);
             }

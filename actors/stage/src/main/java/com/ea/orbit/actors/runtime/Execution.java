@@ -99,7 +99,7 @@ public class Execution implements IRuntime
     private List<IOrbitProvider> orbitProviders = new ArrayList<>();
 
     private final WeakReference<IRuntime> cachedRef = new WeakReference<>(this);
-    private IInvokeHookProvider invokeHookProvider;
+    private IInvokeHookProvider invokeHook;
 
     public Execution()
     {
@@ -619,9 +619,7 @@ public class Execution implements IRuntime
         }
         executionSerializer = new ExecutionSerializer<>(executor);
 
-        invokeHookProvider = getFirstProvider(IInvokeHookProvider.class);
-        if (invokeHookProvider == null)
-            invokeHookProvider = new IInvokeHookProvider() {};
+        invokeHook = getFirstProvider(IInvokeHookProvider.class);
 
         orbitProviders.forEach(v -> v.start());
         // schedules the cleanup
@@ -901,7 +899,7 @@ public class Execution implements IRuntime
     }
 
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "unchecked" })
     <T> T createReference(final INodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
@@ -971,9 +969,16 @@ public class Execution implements IRuntime
         return messaging.sendMessage(toNode, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params);
     }
 
-    public Task<?> invokeHook(IAddressable toReference,Method m,  boolean oneWay, final int methodId, final Object[] params)
+    public Task<?> invoke(IAddressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
     {
-        return invokeHookProvider.invoke(this, toReference, m, oneWay, methodId, params);
+        if (invokeHook == null)
+        {
+            return sendMessage(toReference, oneWay, methodId, params);
+        }
+        else
+        {
+            return invokeHook.invoke(this, toReference, m, oneWay, methodId, params);
+        }
     }
 
     public void activationCleanup(final boolean block)

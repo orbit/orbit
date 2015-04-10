@@ -53,7 +53,9 @@ public interface IInvokeHookProvider extends IOrbitProvider
      * @param params      parameters for the method, must all be serializable.
      * @return a completion promise, the framework will wait if necessary.
      */
-    default Task<?> invoke(IRuntime runtime, IAddressable toReference, Method method, boolean oneWay, int methodId, Object[] params) {
-        return runtime.sendMessage(toReference, oneWay, methodId, params); }
+    default Task<?> invoke(IRuntime runtime, IAddressable toReference, Method method, boolean oneWay, int methodId, Object[] params)
+    {
+        return runtime.sendMessage(toReference, oneWay, methodId, params);
+    }
 
 }
