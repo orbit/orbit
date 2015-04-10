@@ -32,6 +32,7 @@ import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.IRemindable;
 import com.ea.orbit.concurrent.Task;
 
+import java.lang.reflect.Method;
 import java.time.Clock;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -99,4 +100,6 @@ public interface IRuntime
      * @return unique identity string
      */
     String runtimeIdentity();
+
+    Task<?> invokeHook(IAddressable toReference,Method m,  boolean oneWay, final int methodId, final Object[] params);
 }
