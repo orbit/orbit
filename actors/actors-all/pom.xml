@@ -33,7 +33,7 @@
     <parent>
         <artifactId>orbit-actors-parent</artifactId>
         <groupId>com.ea.orbit</groupId>
-        <version>0.2.1-SNAPSHOT</version>
+        <version>0.2.1</version>
         <relativePath>..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
