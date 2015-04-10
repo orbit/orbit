@@ -538,8 +538,11 @@ public class Execution implements IRuntime
                                       final long dueTime, final long period,
                                       final TimeUnit timeUnit)
     {
+        // TODO: handle deactivation.
         final TimerTask timerTask = new TimerTask()
         {
+            boolean canceled;
+
             @Override
             public void run()
             {
@@ -549,7 +552,10 @@ public class Execution implements IRuntime
                             bind();
                             try
                             {
-                                return taskCallable.call();
+                                if (!canceled)
+                                {
+                                    return taskCallable.call();
+                                }
                             }
                             catch (Exception ex)
                             {
@@ -557,6 +563,13 @@ public class Execution implements IRuntime
                             }
                             return Task.done();
                         }, 1000);
+            }
+
+            @Override
+            public boolean cancel()
+            {
+                canceled = true;
+                return super.cancel();
             }
         };
         timer.schedule(timerTask, timeUnit.toMillis(dueTime), timeUnit.toMillis(period));
