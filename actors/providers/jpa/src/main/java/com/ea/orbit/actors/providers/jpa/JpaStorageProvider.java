@@ -61,8 +61,10 @@ public class JpaStorageProvider implements IStorageProvider
     {
         try
         {
+            String stateId = getIdentity(reference);
             EntityManager em = emf.createEntityManager();
-            Query query = em.createQuery("delete from " + state.getClass().getSimpleName());
+            Query query = em.createQuery("delete from " + state.getClass().getSimpleName() + " s where s.stateId=:stateId");
+            query.setParameter("stateId", stateId);
             em.getTransaction().begin();
             query.executeUpdate();
             em.getTransaction().commit();

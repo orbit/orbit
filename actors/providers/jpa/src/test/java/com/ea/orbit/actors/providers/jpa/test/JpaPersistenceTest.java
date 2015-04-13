@@ -78,10 +78,14 @@ public class JpaPersistenceTest
     {
         OrbitStage stage = createStage();
         assertEquals(0, count(IHelloActor.class));
-        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
-        helloActor.sayHello("Meep Meep").join();
+        IHelloActor helloActor1 = IActor.getReference(IHelloActor.class, "300");
+        helloActor1.sayHello("Meep Meep").join();
+        IHelloActor helloActor2 = IActor.getReference(IHelloActor.class, "301");
+        helloActor2.sayHello("Meep Meep").join();
+        assertEquals(2, count(IHelloActor.class));
+        helloActor1.clear().join();
         assertEquals(1, count(IHelloActor.class));
-        helloActor.clear().join();
+        helloActor2.clear().join();
         assertEquals(0, count(IHelloActor.class));
     }
 
