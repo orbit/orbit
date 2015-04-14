@@ -31,6 +31,7 @@ package com.ea.orbit.actors.cluster;
 
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
+import com.ea.orbit.util.IOUtils;
 
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
@@ -52,6 +53,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
@@ -184,12 +186,12 @@ public class ClusterPeer implements IClusterPeer
                     cacheManager.getCache("clusterTopologyCache");
                     local = new NodeInfo(channel.getAddress());
                     logger.info("Registering the local address");
-                    logger.info("Done with jgroups initialization");
+                    logger.info("Done with JGroups initialization");
                     return local.address;
                 }
                 catch (final Exception e)
                 {
-                    logger.error("Error during jgroups initialization", e);
+                    logger.error("Error during JGroups initialization", e);
                     throw new UncheckedException(e);
                 }
             }
@@ -200,18 +202,11 @@ public class ClusterPeer implements IClusterPeer
         return startFuture;
     }
 
-    private URL configToURL(final String jgroupsConfig) throws MalformedURLException
+    private URL configToURL(final String jgroupsConfig) throws IOException
     {
         if (jgroupsConfig.startsWith("classpath:"))
         {
-            // classpath resource
-            final String resourcePath = jgroupsConfig.substring("classpath:".length());
-            final URL resource = getClass().getResource(resourcePath);
-            if (resource == null)
-            {
-                throw new IllegalArgumentException("Can't find classpath resource: " + resourcePath);
-            }
-            return resource;
+            return IOUtils.getResourceUrlFromClasspath(jgroupsConfig.substring("classpath:".length()));
         }
         if (!jgroupsConfig.contains(":"))
         {
