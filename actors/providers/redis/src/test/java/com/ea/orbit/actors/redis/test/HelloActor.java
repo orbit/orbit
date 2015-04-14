@@ -28,17 +28,24 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.redis.test;
 
-
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.Task;
 
-import java.util.List;
-
-public interface ISomeMatch extends IActor
+public class HelloActor extends OrbitActor<HelloState> implements IHelloActor
 {
-    Task<Void> addPlayer(ISomePlayer player);
 
-    Task<List<ISomePlayer>> getPlayers();
+    @Override
+    public Task<String> sayHello(String name)
+    {
+        state().lastName = name;
+        writeState().join();
+        return Task.fromValue("Hello " + name);
+    }
 
-    Task<Void> delete();
+    @Override
+    public Task<Void> clear()
+    {
+        clearState().join();
+        return Task.done();
+    }
 }

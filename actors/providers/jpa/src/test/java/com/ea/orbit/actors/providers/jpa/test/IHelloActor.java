@@ -29,11 +29,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.providers.jpa.test;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.actors.test.IStorageTestActor;
 
-public interface IHelloActor extends IActor
+public interface IHelloActor extends IActor, IStorageTestActor
 {
-    Task<String> sayHello(String name);
-
-    Task<Void> clear();
+    //basic tasks from IStorageTestActor interface
 }
