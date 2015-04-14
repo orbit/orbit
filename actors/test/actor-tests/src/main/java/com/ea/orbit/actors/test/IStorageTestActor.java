@@ -24,26 +24,16 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+*/
 
-package com.ea.orbit.actors.redis.test;
+package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.concurrent.Task;
 
-public class SomePlayer extends OrbitActor<SomePlayer.SomePlayerStateDto> implements ISomePlayer {
-	public static class SomePlayerStateDto {
+public interface IStorageTestActor extends IActor
+{
+    Task<String> sayHello(String name);
 
-	}
-
-	@Override
-	public Task<String> getName() {
-		return Task.fromValue(null);
-	}
-
-	@Override
-	public Task<Void> joinMatch(final ISomeMatch someMatch) {
-		return someMatch.addPlayer(this);
-	}
-
+    Task<Void> clear();
 }

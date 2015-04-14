@@ -29,11 +29,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.redis.test;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.actors.test.IStorageTestActor;
 
-public interface ISomePlayer extends IActor
+public interface IHelloActor extends IActor, IStorageTestActor
 {
-    Task<String> getName();
-
-    Task<Void> joinMatch(ISomeMatch someMatch);
+    //basic tasks from IStorageTestActor interface
 }

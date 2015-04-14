@@ -60,13 +60,14 @@ public class RedisStorageProvider implements IStorageProvider {
 				.withFieldVisibility(JsonAutoDetect.Visibility.ANY)
 				.withGetterVisibility(JsonAutoDetect.Visibility.NONE)
 				.withSetterVisibility(JsonAutoDetect.Visibility.NONE)
+				.withSetterVisibility(JsonAutoDetect.Visibility.NONE)
 				.withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
 		redis = new Jedis(host, port);
 		return Task.done();
 	}
 
 	private String asKey(final ActorReference reference) {
-		String classname = ActorReference.getInterfaceClass(reference).getSimpleName();
+		String classname = ActorReference.getInterfaceClass(reference).getName();
 		String id = String.valueOf(ActorReference.getId(reference));
 		return databaseName + "_" + classname + "_" + id;
 	}
