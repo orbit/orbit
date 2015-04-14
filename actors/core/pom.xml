@@ -80,6 +80,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     </build>
     <dependencies>
         <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-commons</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.googlecode.gentyref</groupId>
             <artifactId>gentyref</artifactId>
             <version>1.2.0</version>
