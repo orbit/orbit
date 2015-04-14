@@ -24,34 +24,13 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+*/
 
-package com.ea.orbit.actors.redis.test;
+package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.runtime.OrbitActor;
-import com.ea.orbit.concurrent.Task;
+public interface IStorageTestState
+{
 
-import java.util.ArrayList;
-import java.util.List;
+    String lastName();
 
-public class SomeMatch extends OrbitActor<SomeMatch.SomeMatchDto> implements ISomeMatch {
-	public static class SomeMatchDto {
-		private List<ISomePlayer> players = new ArrayList<>();
-	}
-
-	@Override
-	public Task<Void> addPlayer(final ISomePlayer player) {
-		state().players.add(player);
-		return writeState();
-	}
-
-	@Override
-	public Task<List<ISomePlayer>> getPlayers() {
-		return Task.fromValue(state().players);
-	}
-
-	@Override
-	public Task<Void> delete() {
-		return clearState();
-	}
 }

@@ -28,92 +28,96 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.redis.test;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.providers.IOrbitProvider;
+import com.ea.orbit.actors.providers.json.ActorReferenceModule;
 import com.ea.orbit.actors.providers.redis.RedisStorageProvider;
-import com.ea.orbit.actors.test.FakeClusterPeer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import com.ea.orbit.actors.runtime.ReferenceFactory;
+import com.ea.orbit.actors.test.IStorageTestState;
+import com.ea.orbit.actors.test.StorageBaseTest;
+import com.ea.orbit.exception.UncheckedException;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import redis.clients.jedis.Jedis;
 
-import static org.junit.Assert.assertEquals;
+public class RedisPersistenceTest extends StorageBaseTest
+{
 
-public class RedisPersistenceTest {
-	private String clusterName = "cluster." + Math.random();
-	private Jedis database;
-	private String databaseName;
+    private Jedis database;
+    private String databaseName;
+    private ObjectMapper mapper;
 
-	@Test
-	public void checkWritesTest() throws Exception {
-		OrbitStage stage1 = createStage();
-		assertEquals(0, countKeys("ISomeMatch"));
-		ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
-		ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
-		someMatch.addPlayer(somePlayer).get();
-		assertEquals(1, countKeys("ISomeMatch"));
-	}
 
-	@Test
-	public void checkReads() throws Exception {
-		assertEquals(0, countKeys("ISomeMatch"));
-		{
-			// adding some state and then tearing down the cluster.
-			OrbitStage stage1 = createStage();
-			ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
-			ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
-			someMatch.addPlayer(somePlayer).get();
-			stage1.stop();
-		}
-		assertEquals(1, countKeys("ISomeMatch"));
-		{
-			OrbitStage stage2 = createStage();
-			ISomeMatch someMatch_r2 = IActor.getReference(ISomeMatch.class, "300");
-			ISomePlayer somePlayer_r2 = IActor.getReference(ISomePlayer.class, "101");
-			assertEquals(1, someMatch_r2.getPlayers().get().size());
-			assertEquals(somePlayer_r2, someMatch_r2.getPlayers().get().get(0));
-		}
-	}
+    @Override
+    public Class getActorInterfaceClass()
+    {
+        return IHelloActor.class;
+    }
 
-	@Test
-	public void checkClearState() throws Exception {
-		assertEquals(0, countKeys("ISomeMatch"));
-		// adding some state and then tearing down the cluster.
-		OrbitStage stage1 = createStage();
-		ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
-		ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
-		someMatch.addPlayer(somePlayer).get();
-		assertEquals(1, countKeys("ISomeMatch"));
+    @Override
+    public IOrbitProvider getStorageProvider()
+    {
+        final RedisStorageProvider storageProvider = new RedisStorageProvider();
+        storageProvider.setDatabaseName(databaseName);
+        return storageProvider;
+    }
 
-		someMatch.delete().get();
-		assertEquals(0, countKeys("ISomeMatch"));
-	}
+    @Override
+    public void initStorage()
+    {
+        mapper = new ObjectMapper();
+        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
+        mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
+                .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
+                .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
+                .withSetterVisibility(JsonAutoDetect.Visibility.NONE)
+                .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
+        databaseName = "" + (int) (Math.random() * Integer.MAX_VALUE);
+        database = new Jedis("localhost", 6379);
+    }
 
-	public OrbitStage createStage() throws Exception {
+    @Override
+    public void closeStorage()
+    {
+        database.flushDB();
+    }
 
-		OrbitStage stage = new OrbitStage();
-		final RedisStorageProvider storageProvider = new RedisStorageProvider();
-		storageProvider.setDatabaseName(databaseName);
-		stage.addProvider(storageProvider);
-		stage.setClusterName(clusterName);
-		stage.setClusterPeer(new FakeClusterPeer());
-		stage.start().get();
+    public long count(Class<?> actorInterface)
+    {
+        String classname = actorInterface.getName();
+        return database.keys(databaseName + "_" + classname + "*").size();
+    }
 
-		return stage;
-	}
+    @Override
+    public IStorageTestState readState(final String identity)
+    {
+        String data = database.get(databaseName + "_" + IHelloActor.class.getName() + "_" + identity);
+        if (data != null)
+        {
+            try
+            {
+                return mapper.readValue(data, HelloState.class);
+            }
+            catch (Exception e)
+            {
+                throw new UncheckedException(e);
+            }
+        }
+        return null;
+    }
 
-	private int countKeys(String value) {
-		return database.keys(databaseName + "_" + value + "*").size();
-	}
 
-	@Before
-	public void setup() throws Exception {
-		databaseName = "" + (int) (Math.random() * Integer.MAX_VALUE);
-		database = new Jedis("localhost", 6379);
-	}
+    public long count()
+    {
+        return database.keys(databaseName + "_" + IHelloActor.class.getName() + "*").size();
+    }
 
-	@After
-	public void tearDown() throws Exception {
-		database.flushDB();
-	}
+    @Override
+    public int loadTestSize()
+    {
+        return 10000;
+    }
+
+
 }
