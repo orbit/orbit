@@ -32,6 +32,7 @@ import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.providers.json.ActorReferenceModule;
 import com.ea.orbit.actors.providers.redis.RedisStorageProvider;
 import com.ea.orbit.actors.runtime.ReferenceFactory;
+import com.ea.orbit.actors.test.IStorageTestActor;
 import com.ea.orbit.actors.test.IStorageTestState;
 import com.ea.orbit.actors.test.StorageBaseTest;
 import com.ea.orbit.exception.UncheckedException;
@@ -50,7 +51,7 @@ public class RedisPersistenceTest extends StorageBaseTest
 
 
     @Override
-    public Class getActorInterfaceClass()
+    public Class<? extends IStorageTestActor> getActorInterfaceClass()
     {
         return IHelloActor.class;
     }
@@ -85,14 +86,14 @@ public class RedisPersistenceTest extends StorageBaseTest
 
     public long count(Class<?> actorInterface)
     {
-        String classname = actorInterface.getName();
+        String classname = actorInterface.getSimpleName();
         return database.keys(databaseName + "_" + classname + "*").size();
     }
 
     @Override
     public IStorageTestState readState(final String identity)
     {
-        String data = database.get(databaseName + "_" + IHelloActor.class.getName() + "_" + identity);
+        String data = database.get(databaseName + "_" + IHelloActor.class.getSimpleName() + "_" + identity);
         if (data != null)
         {
             try
@@ -110,7 +111,7 @@ public class RedisPersistenceTest extends StorageBaseTest
 
     public long count()
     {
-        return database.keys(databaseName + "_" + IHelloActor.class.getName() + "*").size();
+        return database.keys(databaseName + "_" + IHelloActor.class.getSimpleName() + "*").size();
     }
 
     @Override
