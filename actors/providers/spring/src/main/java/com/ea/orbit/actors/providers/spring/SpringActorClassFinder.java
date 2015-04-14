@@ -78,9 +78,9 @@ public class SpringActorClassFinder implements IActorClassFinder
         {
             throw new NullPointerException("orbit.actors.basePackage must be set!");
         }
-        Map<Class<?>, Class<?>> tmp = actorImplementationProvider.getActorImplementations(actorInterfaceProvider.getActorInterfaces());
-        tmp.put(IReminderController.class, ReminderController.class); // built in orbit actors
-        this.concreteImplementations = tmp;
+        Map<Class<?>, Class<?>> implementations = actorImplementationProvider.getActorImplementations(actorInterfaceProvider.getActorInterfaces());
+        implementations.put(IReminderController.class, ReminderController.class); // built in Orbit actor
+        this.concreteImplementations = implementations;
     }
 
     @Override
