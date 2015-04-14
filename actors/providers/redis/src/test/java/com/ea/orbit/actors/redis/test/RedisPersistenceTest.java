@@ -49,7 +49,6 @@ public class RedisPersistenceTest extends StorageBaseTest
     private String databaseName;
     private ObjectMapper mapper;
 
-
     @Override
     public Class<? extends IStorageTestActor> getActorInterfaceClass()
     {
@@ -86,14 +85,13 @@ public class RedisPersistenceTest extends StorageBaseTest
 
     public long count(Class<?> actorInterface)
     {
-        String classname = actorInterface.getSimpleName();
-        return database.keys(databaseName + "_" + classname + "*").size();
+        return database.keys(databaseName + "_" + actorInterface.getName() + "*").size();
     }
 
     @Override
     public IStorageTestState readState(final String identity)
     {
-        String data = database.get(databaseName + "_" + IHelloActor.class.getSimpleName() + "_" + identity);
+        String data = database.get(databaseName + "_" + IHelloActor.class.getName() + "_" + identity);
         if (data != null)
         {
             try
@@ -111,7 +109,7 @@ public class RedisPersistenceTest extends StorageBaseTest
 
     public long count()
     {
-        return database.keys(databaseName + "_" + IHelloActor.class.getSimpleName() + "*").size();
+        return count(IHelloActor.class);
     }
 
     @Override

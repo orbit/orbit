@@ -62,9 +62,9 @@ public class RedisStorageProvider implements IStorageProvider {
 	}
 
 	private String asKey(final ActorReference reference) {
-		String classname = ActorReference.getInterfaceClass(reference).getSimpleName();
+		String clazzName = ActorReference.getInterfaceClass(reference).getName();
 		String id = String.valueOf(ActorReference.getId(reference));
-		return databaseName + "_" + classname + "_" + id;
+		return databaseName + "_" + clazzName + "_" + id;
 	}
 
 	@Override
