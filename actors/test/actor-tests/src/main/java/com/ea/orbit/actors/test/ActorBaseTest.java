@@ -29,9 +29,7 @@
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.runtime.IReminderController;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -80,7 +78,6 @@ public class ActorBaseTest
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().join();
         stage.bind();
-        IActor.getReference(IReminderController.class, "0").ensureStart();
         return stage;
     }
 

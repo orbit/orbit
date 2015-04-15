@@ -30,7 +30,6 @@ package com.ea.orbit.samples.helloworld;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.runtime.IReminderController;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.actors.test.FakeClusterPeer;
 import com.ea.orbit.actors.test.FakeStorageProvider;
