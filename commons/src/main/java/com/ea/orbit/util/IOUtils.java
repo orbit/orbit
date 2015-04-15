@@ -30,7 +30,6 @@ package com.ea.orbit.util;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +37,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 
@@ -125,25 +123,5 @@ public class IOUtils
                 // ignore
             }
         }
-    }
-
-
-    /**
-     * Finds the resource with the given name.
-     *
-     * @param resourcePath {@code String} the resource name.
-     */
-    public static URL getResourceUrlFromClasspath(String resourcePath) throws FileNotFoundException
-    {
-        URL url = Thread.currentThread().getContextClassLoader().getResource(resourcePath);
-        if (url == null)
-        {
-            url = IOUtils.class.getResource(resourcePath);
-            if (url == null)
-            {
-                throw new FileNotFoundException("Can't find classpath resource: " + resourcePath);
-            }
-        }
-        return url;
     }
 }
