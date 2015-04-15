@@ -30,6 +30,9 @@ package com.ea.orbit.actors.providers.spring;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.providers.IActorClassFinder;
+import com.ea.orbit.actors.runtime.IReminderController;
+import com.ea.orbit.actors.runtime.ReminderController;
+
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -75,7 +78,9 @@ public class SpringActorClassFinder implements IActorClassFinder
         {
             throw new NullPointerException("orbit.actors.basePackage must be set!");
         }
-        this.concreteImplementations = actorImplementationProvider.getActorImplementations(actorInterfaceProvider.getActorInterfaces());
+        Map<Class<?>, Class<?>> implementations = actorImplementationProvider.getActorImplementations(actorInterfaceProvider.getActorInterfaces());
+        implementations.put(IReminderController.class, ReminderController.class); // built in Orbit actor
+        this.concreteImplementations = implementations;
     }
 
     @Override
