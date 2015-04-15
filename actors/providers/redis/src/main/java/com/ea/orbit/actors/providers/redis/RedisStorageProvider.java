@@ -48,10 +48,6 @@ public class RedisStorageProvider implements IStorageProvider {
 	private int port = 6379;
 	private String databaseName;
 
-	public RedisStorageProvider() {
-
-	}
-
 	@Override
 	public Task<Void> start() {
 		mapper = new ObjectMapper();
@@ -60,16 +56,15 @@ public class RedisStorageProvider implements IStorageProvider {
 				.withFieldVisibility(JsonAutoDetect.Visibility.ANY)
 				.withGetterVisibility(JsonAutoDetect.Visibility.NONE)
 				.withSetterVisibility(JsonAutoDetect.Visibility.NONE)
-				.withSetterVisibility(JsonAutoDetect.Visibility.NONE)
 				.withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
 		redis = new Jedis(host, port);
 		return Task.done();
 	}
 
 	private String asKey(final ActorReference reference) {
-		String classname = ActorReference.getInterfaceClass(reference).getName();
+		String clazzName = ActorReference.getInterfaceClass(reference).getName();
 		String id = String.valueOf(ActorReference.getId(reference));
-		return databaseName + "_" + classname + "_" + id;
+		return databaseName + "_" + clazzName + "_" + id;
 	}
 
 	@Override

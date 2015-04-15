@@ -48,10 +48,10 @@ public class MemoizeHookProvider implements IInvokeHookProvider
     @Override
     public Task invoke(IRuntime runtime, IAddressable toReference, Method m, boolean oneWay, int methodId, Object[] params)
     {
-        if (m.isAnnotationPresent(Memoize.class))
+        Memoize memoizeAnnotation = m.getAnnotation(Memoize.class);
+        if (memoizeAnnotation != null)
         {
-            Memoize ann = m.getAnnotation(Memoize.class);
-            long memoizeMaxMillis = ann.unit().toMillis(ann.time());
+            long memoizeMaxMillis = memoizeAnnotation.unit().toMillis(memoizeAnnotation.time());
             String key = Integer.toString(methodId) + "_" + Stream.of(params).map(p -> Integer.toString(p.hashCode())).collect(Collectors.joining("_"));
             Task cached = memoizeMap.get(key);
             if (cached == null)

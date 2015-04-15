@@ -184,12 +184,12 @@ public class ClusterPeer implements IClusterPeer
                     cacheManager.getCache("clusterTopologyCache");
                     local = new NodeInfo(channel.getAddress());
                     logger.info("Registering the local address");
-                    logger.info("Done with jgroups initialization");
+                    logger.info("Done with JGroups initialization");
                     return local.address;
                 }
                 catch (final Exception e)
                 {
-                    logger.error("Error during jgroups initialization", e);
+                    logger.error("Error during JGroups initialization", e);
                     throw new UncheckedException(e);
                 }
             }
