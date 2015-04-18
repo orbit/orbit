@@ -1,7 +1,7 @@
 Orbit Async
 ============
 
-Orbit Async implements async-await methods in java. It allows programmers to write asyncronous code in a sequential fashion.
+Orbit Async implements async-await methods in java. It allows programmers to write asynchronous code in a sequential fashion.
 
 If you're looking for async await on the .NET CLR, see [Asynchronous Programming with Async and Await](https://msdn.microsoft.com/en-us/library/hh191443.aspx).
 
