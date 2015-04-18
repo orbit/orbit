@@ -43,7 +43,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>actors</module>
         <module>commons</module>
         <module>container</module>
-        <module>orbit-async</module>
+        <module>async</module>
         <module>web</module>
         <module>samples</module>
         <module>orbit-all-docs</module>
