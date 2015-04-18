@@ -77,7 +77,7 @@ public class HowItShouldWorkTest
                     if (blocker instanceof CompletableFuture && !blocker.isDone())
                     {
                         final AsyncAwaitState newState =
-                                new AsyncAwaitState(2, 1, 1).push(blocker);
+                                new AsyncAwaitState(1, 1, 1).push(blocker);
 
                         return blocker
                                 .exceptionally(Function.identity())

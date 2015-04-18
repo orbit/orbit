@@ -77,8 +77,7 @@ public class TaskTest
             }
             catch (RuntimeException ex)
             {
-                //return Task.fromValue(":" + ex.getCause().getMessage());
-                return null;
+                return Task.fromValue(":" + ex.getCause().getMessage());
             }
         }
     }
@@ -121,10 +120,9 @@ public class TaskTest
     public void testBlockingAndException() throws IllegalAccessException, InstantiationException
     {
         final TaskSomethingAsyncWithException a = new TaskSomethingAsyncWithException();
-
-//        Task<String> blocker = new Task<>();
-//        final Task<Object> res = a.doSomething(blocker);
-//        blocker.completeExceptionally(new RuntimeException("Exception"));
-//        assertEquals(":Exception", res.join());
+        Task<String> blocker = new Task<>();
+        final Task<Object> res = a.doSomething(blocker);
+        blocker.completeExceptionally(new RuntimeException("Exception"));
+        assertEquals(":Exception", res.join());
     }
 }

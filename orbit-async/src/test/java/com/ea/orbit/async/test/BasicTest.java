@@ -56,6 +56,18 @@ public class BasicTest
         }
     }
 
+    public static class SomethingWithDataMutation
+    {
+        @Async
+        public CompletableFuture<Object> doSomething(CompletableFuture<String> blocker)
+        {
+            String op = "1";
+            String res = "[" + await(blocker) + "]";
+            op = op + "2";
+            return CompletableFuture.completedFuture(":" + op +res);
+        }
+    }
+
     public static class SomethingWithLocalsAndStack
     {
         @Async
@@ -127,5 +139,16 @@ public class BasicTest
         final CompletableFuture<Object> res = a.doSomething(blocker);
         blocker.completeExceptionally(new RuntimeException("Exception"));
         assertEquals(":Exception", res.join());
+    }
+
+    @Test
+    public void testDataFlow()
+    {
+        final SomethingWithDataMutation a = new SomethingWithDataMutation();
+
+        CompletableFuture<String> blocker = new CompletableFuture<>();
+        final CompletableFuture<Object> res = a.doSomething(blocker);
+        blocker.complete("x");
+        assertEquals(":12[x]", res.join());
     }
 }
