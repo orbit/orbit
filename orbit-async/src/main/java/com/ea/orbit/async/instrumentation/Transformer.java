@@ -30,7 +30,6 @@ package com.ea.orbit.async.instrumentation;
 
 import com.ea.orbit.async.Async;
 import com.ea.orbit.async.AsyncState;
-import com.ea.orbit.async.Await;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -75,11 +74,19 @@ import static org.objectweb.asm.Opcodes.*;
  */
 class Transformer implements ClassFileTransformer
 {
-    public static final Type COMPLETABLE_FUTURE_TYPE = Type.getType(CompletableFuture.class);
-    static CompletableFuture running = new CompletableFuture();
+    public static final String ASYNC_DESCRIPTOR = "Lcom/ea/orbit/async/Async;";
+    public static final String AWAIT_NAME = "com/ea/orbit/async/Await";
 
     public static final Type ASYNC_STATE_TYPE = Type.getType(AsyncState.class);
-    public static final Type ASYNC_TYPE = Type.getType(Async.class);
+    public static final String ASYNC_STATE_NAME = ASYNC_STATE_TYPE.getInternalName();
+
+    public static final Type COMPLETABLE_FUTURE_TYPE = Type.getType(CompletableFuture.class);
+    public static final String COMPLETABLE_FUTURE_NAME = "java/util/concurrent/CompletableFuture";
+
+    public static final Type OBJECT_TYPE = Type.getType(Object.class);
+    public static final String _THIS = "_this";
+
+    static CompletableFuture running = new CompletableFuture();
 
     static class AsyncClassLoader extends ClassLoader
     {
@@ -194,14 +201,14 @@ class Transformer implements ClassFileTransformer
         for (MethodNode mn : new ArrayList<>(cn.methods))
         {
             if (mn.visibleAnnotations == null
-                    || !mn.visibleAnnotations.stream().anyMatch(a -> a.desc.equals(ASYNC_TYPE.getDescriptor())))
+                    || !mn.visibleAnnotations.stream().anyMatch(a -> a.desc.equals(ASYNC_DESCRIPTOR)))
             {
                 continue;
             }
             // removing aync annotation to prevent reinstrumentation
             for (int i = mn.visibleAnnotations.size(); --i >= 0; )
             {
-                if (mn.visibleAnnotations.get(i).desc.equals(ASYNC_TYPE.getDescriptor()))
+                if (mn.visibleAnnotations.get(i).desc.equals(ASYNC_DESCRIPTOR))
                 {
                     mn.visibleAnnotations.remove(i);
                 }
@@ -211,8 +218,9 @@ class Transformer implements ClassFileTransformer
             final MethodNode mv = new MethodNode(Opcodes.ACC_PRIVATE | ACC_STATIC,
                     mn.name, mn.desc, mn.signature, mn.exceptions.toArray(new String[0]));
             mn.accept(mv);
-            mv.name = mn.name + "$";
-            mv.desc = Type.getMethodDescriptor(Type.getType(CompletableFuture.class), ASYNC_STATE_TYPE, Type.getType(Object.class));
+            // TODO generate better names, reuse names if possible
+            mv.name = mn.name + "$" + countInstrumented;
+            mv.desc = Type.getMethodDescriptor(COMPLETABLE_FUTURE_TYPE, ASYNC_STATE_TYPE, OBJECT_TYPE);
             mv.signature = null;
 
             final InsnList instructions = mn.instructions;
@@ -227,7 +235,7 @@ class Transformer implements ClassFileTransformer
 
             // get pos
             mv.visitVarInsn(ALOAD, !Modifier.isStatic(mv.access) ? 1 : 0);
-            mv.visitMethodInsn(INVOKEVIRTUAL, ASYNC_STATE_TYPE.getInternalName(), "getPos", Type.getMethodDescriptor(Type.INT_TYPE), false);
+            mv.visitMethodInsn(INVOKEVIRTUAL, ASYNC_STATE_NAME, "getPos", Type.getMethodDescriptor(Type.INT_TYPE), false);
 
             final Label defaultLabel = new Label();
             mv.visitTableSwitchInsn(0, 0, defaultLabel, new Label[0]);
@@ -239,18 +247,19 @@ class Transformer implements ClassFileTransformer
             mv.visitLabel(entryPointLabel);
             switchIns.labels.add((LabelNode) mv.instructions.getLast());
             restoreStackAndLocals(frames[0], mv);
-
+            Label lastRestorePoint = null;
             for (int i = 0; i < isns.length; i++)
             {
                 final AbstractInsnNode ins = isns[i];
                 final Frame frame = frames[i];
+
                 if (ins instanceof MethodInsnNode)
                 {
                     // TODO: check cast at instrumentation time
                     MethodInsnNode methodIns = (MethodInsnNode) ins;
                     if (ins.getOpcode() == Opcodes.INVOKESTATIC
                             && "await".equals(methodIns.name)
-                            && methodIns.owner.equals(Type.getInternalName(Await.class))
+                            && methodIns.owner.equals(AWAIT_NAME)
                             && methodIns.desc.equals("(Ljava/util/concurrent/CompletableFuture;)Ljava/lang/Object;"))
                     {
                         // TODO: other comparisons.
@@ -264,7 +273,7 @@ class Transformer implements ClassFileTransformer
                         // code: if(!future.isDone()) {
                         // code:    saveLocals to new state
                         // code:    saveStack to new state
-                        // code:    return future.thenCompose(x -> _func(x, state));
+                        // code:    return future.exceptionally(nop).thenCompose(x -> _func(x, state));
                         // code: }
                         // code: jump futureIsDoneLabel:
                         // code: resumeLabel:
@@ -274,7 +283,7 @@ class Transformer implements ClassFileTransformer
 
                         Label futureIsDoneLabel = new Label();
 
-                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/concurrent/CompletableFuture", "isDone", "()Z", false);
+                        mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "isDone", "()Z", false);
                         // code: jump futureIsDoneLabel:
                         mv.visitJumpInsn(Opcodes.IFNE, futureIsDoneLabel);
 
@@ -289,13 +298,13 @@ class Transformer implements ClassFileTransformer
                         mv.visitInsn(DUP);
                         // stack: { state state }
                         mv.visitIntInsn(SIPUSH, offset);
-                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_TYPE.getInternalName(), "getObj", Type.getMethodDescriptor(Type.getType(Object.class), Type.INT_TYPE), false);
-                        mv.visitTypeInsn(CHECKCAST, "java/util/concurrent/CompletableFuture");
+                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "getObj", Type.getMethodDescriptor(OBJECT_TYPE, Type.INT_TYPE), false);
+                        mv.visitTypeInsn(CHECKCAST, COMPLETABLE_FUTURE_NAME);
 
                         // stack: { state future }
                         mv.visitMethodInsn(INVOKESTATIC, Type.getType(Function.class).getInternalName(), "identity", "()Ljava/util/function/Function;", false);
                         // stack: { state future function }
-                        mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/CompletableFuture", "exceptionally", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
+                        mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "exceptionally", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
                         // stack: { state newfuture }
 
                         // code:    return future.exceptionally(x -> x).thenCompose(x -> _func(state));
@@ -319,7 +328,7 @@ class Transformer implements ClassFileTransformer
 
 
                         // stack: { newfuture function }
-                        mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/CompletableFuture", "thenCompose", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
+                        mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "thenCompose", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
                         // stack: { newfuture2 }
                         mv.visitInsn(ARETURN);
 
@@ -331,10 +340,19 @@ class Transformer implements ClassFileTransformer
                         // code:    restoreStack;
                         // code:    restoreLocals;
                         restoreStackAndLocals(frame, mv);
+                        if (!Modifier.isStatic(mn.access))
+                        {
+                            if (lastRestorePoint != null)
+                            {
+                                mv.visitLocalVariable(_THIS, "L" + cn.name + ";", null, lastRestorePoint, resumeLabel, 0);
+                            }
+                            lastRestorePoint = new Label();
+                            mv.visitLabel(lastRestorePoint);
+                        }
 
                         // code: futureIsDone:
                         mv.visitLabel(futureIsDoneLabel);
-                        mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/concurrent/CompletableFuture", "join", "()Ljava/lang/Object;", false);
+                        mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "join", "()Ljava/lang/Object;", false);
                         continue;
                     }
                 }
@@ -347,6 +365,15 @@ class Transformer implements ClassFileTransformer
             mv.visitInsn(DUP);
             mv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "()V", false);
             mv.visitInsn(ATHROW);
+            if (!Modifier.isStatic(mn.access))
+            {
+                if (lastRestorePoint != null)
+                {
+                    Label endLabel = new Label();
+                    mv.visitLabel(endLabel);
+                    mv.visitLocalVariable(_THIS, "L" + cn.name + ";", null, lastRestorePoint, endLabel, 0);
+                }
+            }
             mv.accept(cn);
 
             mv.access &= ~ACC_PUBLIC;
@@ -359,12 +386,9 @@ class Transformer implements ClassFileTransformer
             }
 
             mn.instructions.clear();
-            //mn.access |= ACC_SYNTHETIC;
+            //can't be done: mn.access |= ACC_SYNTHETIC;
             mn.tryCatchBlocks.clear();
-//            if (!Modifier.isStatic(mn.access))
-//            {
-//                mn.visitVarInsn(ALOAD, 0);
-//            }
+
             saveLocals(0, frames[0], mn);
             mn.visitInsn(ACONST_NULL);
             mn.visitMethodInsn(INVOKESTATIC, cn.name, mv.name, mv.desc, false);
@@ -392,7 +416,8 @@ class Transformer implements ClassFileTransformer
             return null;
         }
 
-        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES) {
+        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
+        {
             @Override
             protected String getCommonSuperClass(final String type1, final String type2)
             {
@@ -463,13 +488,12 @@ class Transformer implements ClassFileTransformer
 
     private int saveLocals(int pos, Frame<BasicValue> frame, MethodNode mv) throws NoSuchMethodException
     {
-        mv.visitTypeInsn(Opcodes.NEW, Type.getInternalName(AsyncState.class));
+        mv.visitTypeInsn(Opcodes.NEW, ASYNC_STATE_NAME);
         mv.visitInsn(Opcodes.DUP);
         mv.visitIntInsn(SIPUSH, pos);
         mv.visitIntInsn(SIPUSH, frame.getLocals());
         mv.visitIntInsn(SIPUSH, frame.getStackSize());
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(AsyncState.class), "<init>",
-                Type.getConstructorDescriptor(AsyncState.class.getConstructor(int.class, int.class, int.class)), false);
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, ASYNC_STATE_NAME, "<init>", "(III)V", false);
         int count = 0;
         for (int i = 0; i < frame.getLocals(); i++)
         {
@@ -479,8 +503,8 @@ class Transformer implements ClassFileTransformer
                 count++;
                 varInsn(mv, value.getType(), false, i);
 
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(AsyncState.class), "push",
-                        Type.getMethodDescriptor(ASYNC_STATE_TYPE, value.isReference() ? Type.getType(Object.class) : value.getType()), false);
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "push",
+                        Type.getMethodDescriptor(ASYNC_STATE_TYPE, value.isReference() ? OBJECT_TYPE : value.getType()), false);
             }
         }
         return count;
@@ -494,8 +518,8 @@ class Transformer implements ClassFileTransformer
             final BasicValue value = frame.getStack(i);
             if (value.getType() != null)
             {
-                mv.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getInternalName(AsyncState.class), "push",
-                        Type.getMethodDescriptor(ASYNC_STATE_TYPE, value.isReference() ? Type.getType(Object.class) : value.getType(), ASYNC_STATE_TYPE), false);
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, ASYNC_STATE_NAME, "push",
+                        Type.getMethodDescriptor(ASYNC_STATE_TYPE, value.isReference() ? OBJECT_TYPE : value.getType(), ASYNC_STATE_TYPE), false);
             }
         }
         // stack: { state }
@@ -537,12 +561,12 @@ class Transformer implements ClassFileTransformer
 
                 if (local.isReference())
                 {
-                    mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_TYPE.getInternalName(), "getObj", Type.getMethodDescriptor(Type.getType(Object.class), Type.INT_TYPE), false);
+                    mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "getObj", Type.getMethodDescriptor(OBJECT_TYPE, Type.INT_TYPE), false);
                     mv.visitTypeInsn(CHECKCAST, local.getType().getInternalName());
                 }
                 else
                 {
-                    mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_TYPE.getInternalName(), "get" + local.getType(), Type.getMethodDescriptor(local.getType(), Type.INT_TYPE), false);
+                    mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "get" + local.getType(), Type.getMethodDescriptor(local.getType(), Type.INT_TYPE), false);
                 }
             }
         }
@@ -561,12 +585,12 @@ class Transformer implements ClassFileTransformer
                     mv.visitIntInsn(Opcodes.BIPUSH, idx);
                     if (local.isReference())
                     {
-                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_TYPE.getInternalName(), "getObj", Type.getMethodDescriptor(Type.getType(Object.class), Type.INT_TYPE), false);
+                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "getObj", Type.getMethodDescriptor(OBJECT_TYPE, Type.INT_TYPE), false);
                         mv.visitTypeInsn(CHECKCAST, local.getType().getInternalName());
                     }
                     else
                     {
-                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_TYPE.getInternalName(), "get" + local.getType(), Type.getMethodDescriptor(local.getType(), Type.INT_TYPE), false);
+                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "get" + local.getType(), Type.getMethodDescriptor(local.getType(), Type.INT_TYPE), false);
                     }
                     varInsn(mv, local.getType(), true, i);
                 }

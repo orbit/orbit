@@ -29,7 +29,7 @@
 package com.ea.orbit.async.test;
 
 import com.ea.orbit.async.Async;
-import com.ea.orbit.async.instrumentation.InitializeAsync;
+import com.ea.orbit.async.Await;
 
 import org.junit.Test;
 
@@ -42,7 +42,7 @@ public class BasicTest
 {
     static
     {
-        new InitializeAsync();
+        Await.init();
     }
 
 
