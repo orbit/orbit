@@ -18,8 +18,7 @@ public Task<Integer> getPageLength(URL url)
 {
     Task<String> pageTask = getPage(url);
 
-    // this will never block,
-    // if pageTask is not completed getPageLength will return immediatelly.
+    // this will never block, it will return an promise
     String page = await(pageTask);
 
     return Task.fromValue(page.length());
@@ -31,12 +30,12 @@ System.out.println(lenTask.join());
 ```
 #### With CompletableFuture
 ```java
- import com.ea.orbit.async.Async;
- import com.ea.orbit.async.Await;
- import static com.ea.orbit.async.Await.await;
- 
- public class Page
- {
+import com.ea.orbit.async.Async;
+import com.ea.orbit.async.Await;
+import static com.ea.orbit.async.Await.await;
+
+public class Page
+{
     // has to be done at least once, usally in the main class.
     static { Await.init(); }
 
@@ -44,18 +43,12 @@ System.out.println(lenTask.join());
     public CompletableFuture<Integer> getPageLength(URL url)
     {
         CompletableFuture<String> pageTask = getPage(url);
-
-        // this will never block,
-        // if pageTask is not completed getPageLength will return immediatelly.
         String page = await(pageTask);
- 
         return CompletableFuture.completedFuture(page.length());
     }
-    
  }
 
 CompletableFuture<Ingeger> lenTask = getPageLength(new URL("http://example.com"));
-
 System.out.println(lenTask.join());
 
 ```
