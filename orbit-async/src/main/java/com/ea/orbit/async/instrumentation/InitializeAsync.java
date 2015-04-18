@@ -30,6 +30,7 @@ package com.ea.orbit.async.instrumentation;
 
 import com.sun.tools.attach.VirtualMachine;
 
+import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
 
@@ -54,17 +55,17 @@ public class InitializeAsync
 
         final int idx = urlString.toLowerCase().indexOf(".jar!");
         final String jarName;
-        if (idx > 0)
-        {
-            jarName = urlString.substring(0, idx + 4);
-        }
-        else
-        {
-            // test mode
-            jarName = "src/test/orbit-async-test.jar";
-        }
         try
         {
+            if (idx > 0)
+            {
+                jarName = urlString.substring(0, idx + 4);
+            }
+            else
+            {
+                // test mode (or expanded jars mode)
+                jarName = new File(InitializeAsync.class.getResource("orbit-async-meta.jar").toURI()).getPath();
+            }
             VirtualMachine vm = VirtualMachine.attach(pid);
             vm.loadAgent(jarName, "");
             vm.detach();
@@ -72,7 +73,7 @@ public class InitializeAsync
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error activating orbit-async agent", e);
         }
 
     }
