@@ -48,10 +48,6 @@ public class RedisStorageProvider implements IStorageProvider {
 	private int port = 6379;
 	private String databaseName;
 
-	public RedisStorageProvider() {
-
-	}
-
 	@Override
 	public Task<Void> start() {
 		mapper = new ObjectMapper();
@@ -66,9 +62,9 @@ public class RedisStorageProvider implements IStorageProvider {
 	}
 
 	private String asKey(final ActorReference reference) {
-		String classname = ActorReference.getInterfaceClass(reference).getSimpleName();
+		String clazzName = ActorReference.getInterfaceClass(reference).getName();
 		String id = String.valueOf(ActorReference.getId(reference));
-		return databaseName + "_" + classname + "_" + id;
+		return databaseName + "_" + clazzName + "_" + id;
 	}
 
 	@Override
