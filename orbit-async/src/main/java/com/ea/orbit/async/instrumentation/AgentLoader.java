@@ -28,27 +28,66 @@
 
 package com.ea.orbit.async.instrumentation;
 
+import com.sun.tools.attach.VirtualMachine;
+
+import java.io.File;
+import java.lang.management.ManagementFactory;
+import java.net.URL;
+
 /**
  * Internal class to (when necessary) attach a java agent to
  * the jvm to instrument async-await methods.
+ * <p/>
+ * This class used internal "com.sun.tools" classes to talk to
+ * talk to the jvm. This might not work with all jvms.
+ * <p/>
+ * When runtime agent attach is not possible use the "-javaagent:orbit-async-${project.version}.jar" option.
+ *
+ * @author Daniel Sperry
  */
-public class InitializeAsync
+public class AgentLoader
 {
     static
     {
         if (!Transformer.initialized.isDone())
         {
-            // the indirection is necessary to prevent
-            // touching "com.sun.tools" when the agent was loaded via
-            // the jvm parameter "-javaagent"
-            try
-            {
-                Class.forName("com.ea.orbit.async.instrumentation.AgentLoader").newInstance();
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException("Error attaching orbit-asyn java agent", e);
-            }
+            loadAgent();
         }
     }
+
+    public static void loadAgent()
+    {
+        String nameOfRunningVM = ManagementFactory.getRuntimeMXBean().getName();
+        int p = nameOfRunningVM.indexOf('@');
+        String pid = nameOfRunningVM.substring(0, p);
+
+        final URL url = AgentLoader.class.getResource(AgentLoader.class.getSimpleName() + ".class");
+        final String urlString = url.toString();
+
+        final int idx = urlString.toLowerCase().indexOf(".jar!");
+        final String jarName;
+        try
+        {
+            if (idx > 0)
+            {
+                jarName = urlString.substring(0, idx + 4);
+            }
+            else
+            {
+                // test mode (or expanded jars mode)
+                jarName = new File(AgentLoader.class.getResource("orbit-async-meta.jar").toURI()).getPath();
+            }
+            VirtualMachine vm = VirtualMachine.attach(pid);
+            vm.loadAgent(jarName, "");
+            vm.detach();
+            Transformer.initialized.join();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Error activating orbit-async agent", e);
+        }
+
+    }
+
+
 }

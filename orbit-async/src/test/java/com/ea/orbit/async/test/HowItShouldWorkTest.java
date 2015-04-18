@@ -28,7 +28,7 @@
 
 package com.ea.orbit.async.test;
 
-import com.ea.orbit.async.AsyncState;
+import com.ea.orbit.async.instrumentation.AsyncState;
 
 import org.junit.Test;
 

@@ -26,8 +26,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.async;
+package com.ea.orbit.async.instrumentation;
 
+/**
+ * Internal class to hold the locals and stack of an async-await method
+ * while the method is awaiting for a future.
+ */
 public class AsyncState
 {
     private final Object[] locals;

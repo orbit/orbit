@@ -34,7 +34,38 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * @author Daniel Sperry
+ * Annotation to mark methods that will work with asynchronously with async-await.
+ * <p/>
+ * Example:
+ * <pre><code>
+ * import com.ea.orbit.async.Async;
+ * import static com.ea.orbit.async.Await.await;
+ * ...
+ *
+ * {@literal@}Async
+ * CompletableFuture<Integer> getPageLengthAsync()
+ * {
+ *     CompletableFuture<String> pageFuture = getPageAsync("http://example.com");
+ *     String page = await(pageFuture);
+ *     return CompletableFuture.completedFuture(page.length);
+ * }</code></pre>
+ *
+ * Or using orbit Task:
+ * <pre><code>
+ * {@literal@}Async
+ * Task CompletableFuture<Integer> getPageLengthAsync()
+ * {
+ *     Task<String> pageFuture = getPageAsync("http://example.com");
+ *     String page = await(pageFuture);
+ *     return Task.fromValue(page.length);
+ * }</code></pre>
+ *
+ * <b>Caveat</b>: The following code must be called before the program execution:
+ * {@code static { Await.init() }}
+ * Otherwise, the first method to call {@code await()} might be blocking,
+ * and a warning message will be printed to the console.
+ * Subsequent async methods will work as expected.
+ *
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

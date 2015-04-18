@@ -29,7 +29,6 @@
 package com.ea.orbit.async.instrumentation;
 
 import com.ea.orbit.async.Async;
-import com.ea.orbit.async.AsyncState;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -39,6 +38,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
@@ -63,6 +63,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
@@ -70,6 +71,9 @@ import java.util.function.Function;
 import static org.objectweb.asm.Opcodes.*;
 
 /**
+ * Internal class to modify the bytecodes of async-await methods to
+ * make them behave in the expected fashion.
+ *
  * @author Daniel Sperry
  */
 class Transformer implements ClassFileTransformer
@@ -77,7 +81,7 @@ class Transformer implements ClassFileTransformer
     public static final String ASYNC_DESCRIPTOR = "Lcom/ea/orbit/async/Async;";
     public static final String AWAIT_NAME = "com/ea/orbit/async/Await";
 
-    public static final Type ASYNC_STATE_TYPE = Type.getType(AsyncState.class);
+    public static final Type ASYNC_STATE_TYPE = Type.getType(com.ea.orbit.async.instrumentation.AsyncState.class);
     public static final String ASYNC_STATE_NAME = ASYNC_STATE_TYPE.getInternalName();
 
     public static final Type COMPLETABLE_FUTURE_TYPE = Type.getType(CompletableFuture.class);
@@ -85,8 +89,9 @@ class Transformer implements ClassFileTransformer
 
     public static final Type OBJECT_TYPE = Type.getType(Object.class);
     public static final String _THIS = "_this";
+    private static final String DYN_FUNCTION = "(" + ASYNC_STATE_TYPE.getDescriptor() + ")Ljava/util/function/Function;";
 
-    static CompletableFuture running = new CompletableFuture();
+    static CompletableFuture initialized = new CompletableFuture();
 
     static class AsyncClassLoader extends ClassLoader
     {
@@ -198,17 +203,18 @@ class Transformer implements ClassFileTransformer
 
         int countInstrumented = 0;
 
-        for (MethodNode mn : new ArrayList<>(cn.methods))
+        for (MethodNode mn : (List<MethodNode>) new ArrayList(cn.methods))
         {
             if (mn.visibleAnnotations == null
-                    || !mn.visibleAnnotations.stream().anyMatch(a -> a.desc.equals(ASYNC_DESCRIPTOR)))
+                    || !mn.visibleAnnotations.stream().anyMatch(a -> ((AnnotationNode) a).desc.equals(ASYNC_DESCRIPTOR)))
             {
                 continue;
             }
             // removing aync annotation to prevent reinstrumentation
-            for (int i = mn.visibleAnnotations.size(); --i >= 0; )
+            List<AnnotationNode> visibleAnnotations = (List<AnnotationNode>) mn.visibleAnnotations;
+            for (int i = visibleAnnotations.size(); --i >= 0; )
             {
-                if (mn.visibleAnnotations.get(i).desc.equals(ASYNC_DESCRIPTOR))
+                if ((visibleAnnotations.get(i)).desc.equals(ASYNC_DESCRIPTOR))
                 {
                     mn.visibleAnnotations.remove(i);
                 }
@@ -216,7 +222,7 @@ class Transformer implements ClassFileTransformer
             countInstrumented++;
             //printMethod(cn, mn);
             final MethodNode mv = new MethodNode(Opcodes.ACC_PRIVATE | ACC_STATIC,
-                    mn.name, mn.desc, mn.signature, mn.exceptions.toArray(new String[0]));
+                    mn.name, mn.desc, mn.signature, (String[])mn.exceptions.toArray(new String[mn.exceptions.size()]));
             mn.accept(mv);
             // TODO generate better names, reuse names if possible
             mv.name = mn.name + "$" + countInstrumented;
@@ -226,8 +232,8 @@ class Transformer implements ClassFileTransformer
             final InsnList instructions = mn.instructions;
 
 
-            Analyzer<BasicValue> analyzer = new Analyzer<>(new TypeInterpreter());
-            Frame<BasicValue>[] frames = analyzer.analyze(cn.name, mn);
+            Analyzer analyzer = new Analyzer(new TypeInterpreter());
+            Frame[] frames = analyzer.analyze(cn.name, mn);
             final AbstractInsnNode[] isns = instructions.toArray();
 
 
@@ -312,7 +318,7 @@ class Transformer implements ClassFileTransformer
                         mv.visitInsn(SWAP);
                         // stack: { newfuture state}
 
-                        mv.visitInvokeDynamicInsn("apply", "(Lcom/ea/orbit/async/AsyncState;)Ljava/util/function/Function;",
+                        mv.visitInvokeDynamicInsn("apply", DYN_FUNCTION,
                                 new Handle(Opcodes.H_INVOKESTATIC,
                                         "java/lang/invoke/LambdaMetafactory",
                                         "metafactory",
@@ -436,8 +442,8 @@ class Transformer implements ClassFileTransformer
     {
         try
         {
-            Analyzer<BasicValue> analyzer2 = new Analyzer<>(new TypeInterpreter());
-            Frame<BasicValue>[] frames2;
+            Analyzer analyzer2 = new Analyzer(new TypeInterpreter());
+            Frame[] frames2;
             try
             {
                 frames2 = analyzer2.analyze(cn.superName, mv);
@@ -455,20 +461,20 @@ class Transformer implements ClassFileTransformer
 
             for (int i = 0; i < isns2.length; i++)
             {
-                Frame<BasicValue> frame;
+                Frame frame;
                 if (frames2 != null && (frame = frames2[i]) != null)
                 {
                     p.getText().add("Locals: [ ");
                     for (int x = 0; x < frame.getLocals(); x++)
                     {
-                        p.getText().add(String.valueOf(frame.getLocal(x).getType()));
+                        p.getText().add(String.valueOf(((BasicValue)frame.getLocal(x)).getType()));
                         p.getText().add(" ");
                     }
                     p.getText().add("]\r\n");
                     p.getText().add("Stack: [ ");
                     for (int x = 0; x < frame.getStackSize(); x++)
                     {
-                        p.getText().add(String.valueOf(frame.getStack(x).getType()));
+                        p.getText().add(String.valueOf(((BasicValue)frame.getStack(x)).getType()));
                         p.getText().add(" ");
                     }
                     p.getText().add("]\r\n");
@@ -486,7 +492,7 @@ class Transformer implements ClassFileTransformer
         }
     }
 
-    private int saveLocals(int pos, Frame<BasicValue> frame, MethodNode mv) throws NoSuchMethodException
+    private int saveLocals(int pos, Frame frame, MethodNode mv) throws NoSuchMethodException
     {
         mv.visitTypeInsn(Opcodes.NEW, ASYNC_STATE_NAME);
         mv.visitInsn(Opcodes.DUP);
@@ -497,7 +503,7 @@ class Transformer implements ClassFileTransformer
         int count = 0;
         for (int i = 0; i < frame.getLocals(); i++)
         {
-            final BasicValue value = frame.getLocal(i);
+            final BasicValue value = (BasicValue) frame.getLocal(i);
             if (value.getType() != null)
             {
                 count++;
@@ -510,12 +516,12 @@ class Transformer implements ClassFileTransformer
         return count;
     }
 
-    private void saveStack(Frame<BasicValue> frame, MethodNode mv) throws NoSuchMethodException
+    private void saveStack(Frame frame, MethodNode mv) throws NoSuchMethodException
     {
         // stack: { ... state }
         for (int i = frame.getStackSize(); --i >= 0; )
         {
-            final BasicValue value = frame.getStack(i);
+            final BasicValue value = (BasicValue) frame.getStack(i);
             if (value.getType() != null)
             {
                 mv.visitMethodInsn(Opcodes.INVOKESTATIC, ASYNC_STATE_NAME, "push",
@@ -525,7 +531,7 @@ class Transformer implements ClassFileTransformer
         // stack: { state }
     }
 
-    private void restoreStackAndLocals(final Frame<BasicValue> frame, final MethodNode mv)
+    private void restoreStackAndLocals(final Frame frame, final MethodNode mv)
     {
         // local_1 = async state
 
@@ -534,7 +540,7 @@ class Transformer implements ClassFileTransformer
         int startIndex = 0;
         for (int i = startIndex; i < frame.getLocals(); i++)
         {
-            BasicValue local = frame.getLocal(i);
+            BasicValue local = (BasicValue) frame.getLocal(i);
             if (local != null && local != BasicValue.UNINITIALIZED_VALUE && local.getType() != null)
             {
                 localsPlusStack++;
@@ -542,7 +548,7 @@ class Transformer implements ClassFileTransformer
         }
         for (int i = 0; i < frame.getStackSize(); i++)
         {
-            BasicValue local = frame.getStack(i);
+            BasicValue local = (BasicValue) frame.getStack(i);
             if (local != null && local.getType() != null)
             {
                 localsPlusStack++;
@@ -552,7 +558,7 @@ class Transformer implements ClassFileTransformer
         // async state
         for (int i = 0; i < frame.getStackSize(); i++)
         {
-            BasicValue local = frame.getStack(i);
+            BasicValue local = (BasicValue)frame.getStack(i);
             if (local != null && local.getType() != null)
             {
                 final int idx = --localsPlusStack;
@@ -574,7 +580,7 @@ class Transformer implements ClassFileTransformer
         // async state
         for (int i = frame.getLocals(); --i >= startIndex; )
         {
-            BasicValue local = frame.getLocal(i);
+            BasicValue local = (BasicValue)frame.getLocal(i);
             if (local != null && local != BasicValue.UNINITIALIZED_VALUE)
             {
                 if (local.getType() != null)
@@ -604,14 +610,10 @@ class Transformer implements ClassFileTransformer
     }
 
 
-    private boolean needsInstrumentation(final Class<?> c)
+    boolean needsInstrumentation(final Class<?> c)
     {
         for (Class<?> s = c; s != null; s = s.getSuperclass())
         {
-            if (c.isAnnotationPresent(AsyncInstrumented.class))
-            {
-                return false;
-            }
             for (Method m : s.getDeclaredMethods())
             {
                 if (m.isAnnotationPresent(Async.class))

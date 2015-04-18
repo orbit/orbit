@@ -30,22 +30,25 @@ package com.ea.orbit.async.instrumentation;
 
 import java.lang.instrument.Instrumentation;
 
-/*
- * From https://docs.oracle.com/javase/8/docs/api/index.html?java/lang/instrument/Instrumentation.html
- *
- * Premain-Class
- *
- * When an agent is specified at JVM launch time this attribute specifies
- * the agent class. That is, the class containing the premain method.
- * When an agent is specified at JVM launch time this attribute is required.
- * If the attribute is not present the JVM will abort. Note: this is a class
- * name, not a file name or path.
+/**
+ * Class called when the jvm option -javaagent is used with the orbit-async jar.
  */
 public class Premain
 {
+    /*
+     * From https://docs.oracle.com/javase/8/docs/api/index.html?java/lang/instrument/Instrumentation.html
+     *
+     * Premain-Class
+     *
+     * When an agent is specified at JVM launch time this attribute specifies
+     * the agent class. That is, the class containing the premain method.
+     * When an agent is specified at JVM launch time this attribute is required.
+     * If the attribute is not present the JVM will abort. Note: this is a class
+     * name, not a file name or path.
+     */
     public static void premain(String agentArgs, Instrumentation inst)
     {
-        Transformer.running.complete(null);
+        Transformer.initialized.complete(null);
         inst.addTransformer(new Transformer(), true);
     }
 }

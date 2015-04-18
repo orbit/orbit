@@ -32,6 +32,44 @@ import com.ea.orbit.async.instrumentation.InitializeAsync;
 
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * In methods annotated with {@literal @}Async calls to <code>await(future)</code>
+ * will cause the method to return a CompletableFuture (or Task) instead of blocking.
+ * <p/>
+ * This is equivalent to use CompletableFuture composition methods (ex: thenApply, handle).
+ * The advantage of using <code>await</code> is that the code will resemble sequential blocking code.
+ * <p/>
+ * Example:
+ * <pre><code>
+ * import com.ea.orbit.async.Async;
+ * import static com.ea.orbit.async.Await.await;
+ * ...
+ *
+ * {@literal@}Async
+ * CompletableFuture<Integer> getPageLengthAsync()
+ * {
+ *     CompletableFuture<String> pageFuture = getPageAsync("http://example.com");
+ *     String page = await(pageFuture);
+ *     return CompletableFuture.completedFuture(page.length);
+ * }</code></pre>
+ *
+ * Or using orbit Task:
+ * <pre><code>
+ * {@literal@}Async
+ * Task CompletableFuture<Integer> getPageLengthAsync()
+ * {
+ *     Task<String> pageFuture = getPageAsync("http://example.com");
+ *     String page = await(pageFuture);
+ *     return Task.fromValue(page.length);
+ * }</code></pre>
+ *
+ * <b>Caveat</b>: The following code must be called before the program execution:
+ * {@code static { Await.init() }}
+ * Otherwise, the first method to call {@code await()} might be blocking,
+ * and a warning message will be printed to the console.
+ * Subsequent async methods will work as expected.
+ *
+ */
 public interface Await
 {
     static Object async = new InitializeAsync();
@@ -42,7 +80,7 @@ public interface Await
 
     public static <T> T await(CompletableFuture<T> future)
     {
-        System.out.printf("Warning: Illegal call to await, add static { Await.init(); } somewhere ");
+        System.out.printf("Warning: Illegal call to await, add static { Await.init(); } to the main program class ");
         return future.join();
     }
 

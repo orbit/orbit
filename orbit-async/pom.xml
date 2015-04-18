@@ -24,9 +24,6 @@
                 <configuration>
                     <archive>
                         <index>true</index>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                        </manifest>
                         <manifestEntries>
                             <Premain-Class>com.orbit.async.instrumentation.Premain</Premain-Class>
                             <Agent-Class>com.orbit.async.instrumentation.Agent</Agent-Class>
@@ -35,6 +32,31 @@
                         </manifestEntries>
                     </archive>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>org.ow2.asm:asm-debug-all</include>
+                                </includes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>org.objectweb.</pattern>
+                                    <shadedPattern>com.ea.orbit.async.shaded.org.objectweb.</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
