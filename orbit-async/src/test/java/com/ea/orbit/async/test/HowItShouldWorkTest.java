@@ -28,7 +28,7 @@
 
 package com.ea.orbit.async.test;
 
-import com.ea.orbit.async.instrumentation.AsyncState;
+import com.ea.orbit.async.runtime.AsyncAwaitState;
 
 import org.junit.Test;
 
@@ -63,10 +63,10 @@ public class HowItShouldWorkTest
     {
         public CompletableFuture<Object> doSomething(CompletableFuture<Object> blocker)
         {
-            return doSomething$(new AsyncState(0, 1, 0).push(blocker), null);
+            return doSomething$(new AsyncAwaitState(0, 1, 0).push(blocker), null);
         }
 
-        public CompletableFuture<Object> doSomething$(AsyncState state, Object lastRes)
+        public CompletableFuture<Object> doSomething$(AsyncAwaitState state, Object lastRes)
         {
             CompletableFuture<Object> blocker = null;
             int pos = state.getPos();
@@ -76,8 +76,8 @@ public class HowItShouldWorkTest
                     blocker = (CompletableFuture<Object>) state.getObj(0);
                     if (blocker instanceof CompletableFuture && !blocker.isDone())
                     {
-                        final AsyncState newState =
-                                new AsyncState(2, 1, 1).push(blocker);
+                        final AsyncAwaitState newState =
+                                new AsyncAwaitState(2, 1, 1).push(blocker);
 
                         return blocker
                                 .exceptionally(Function.identity())

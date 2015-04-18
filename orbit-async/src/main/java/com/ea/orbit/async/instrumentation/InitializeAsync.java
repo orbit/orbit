@@ -47,7 +47,7 @@ public class InitializeAsync
             }
             catch (Exception e)
             {
-                throw new RuntimeException("Error attaching orbit-asyn java agent", e);
+                throw new RuntimeException("Error attaching orbit-async java agent", e);
             }
         }
     }

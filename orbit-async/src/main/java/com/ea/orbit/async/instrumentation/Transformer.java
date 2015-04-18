@@ -29,6 +29,7 @@
 package com.ea.orbit.async.instrumentation;
 
 import com.ea.orbit.async.Async;
+import com.ea.orbit.async.runtime.AsyncAwaitState;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -81,7 +82,7 @@ class Transformer implements ClassFileTransformer
     public static final String ASYNC_DESCRIPTOR = "Lcom/ea/orbit/async/Async;";
     public static final String AWAIT_NAME = "com/ea/orbit/async/Await";
 
-    public static final Type ASYNC_STATE_TYPE = Type.getType(com.ea.orbit.async.instrumentation.AsyncState.class);
+    public static final Type ASYNC_STATE_TYPE = Type.getType(AsyncAwaitState.class);
     public static final String ASYNC_STATE_NAME = ASYNC_STATE_TYPE.getInternalName();
 
     public static final Type COMPLETABLE_FUTURE_TYPE = Type.getType(CompletableFuture.class);

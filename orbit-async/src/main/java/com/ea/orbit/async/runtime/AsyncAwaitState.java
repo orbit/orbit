@@ -26,78 +26,78 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.async.instrumentation;
+package com.ea.orbit.async.runtime;
 
 /**
  * Internal class to hold the locals and stack of an async-await method
  * while the method is awaiting for a future.
  */
-public class AsyncState
+public class AsyncAwaitState
 {
     private final Object[] locals;
     private int pos;
     private int top;
 
-    public AsyncState(int pos, int localsSize, int stackSize)
+    public AsyncAwaitState(int pos, int localsSize, int stackSize)
     {
         locals = new Object[localsSize + stackSize];
     }
 
-    public static AsyncState push(final int val, AsyncState state)
+    public static AsyncAwaitState push(final int val, AsyncAwaitState state)
     {
         state.locals[state.top++] = val;
         return state;
     }
 
-    public static AsyncState push(final long val, AsyncState state)
+    public static AsyncAwaitState push(final long val, AsyncAwaitState state)
     {
         state.locals[state.top++] = val;
         return state;
     }
 
-    public static AsyncState push(final float val, AsyncState state)
+    public static AsyncAwaitState push(final float val, AsyncAwaitState state)
     {
         state.locals[state.top++] = val;
         return state;
     }
 
-    public static AsyncState push(final double val, AsyncState state)
+    public static AsyncAwaitState push(final double val, AsyncAwaitState state)
     {
         state.locals[state.top++] = val;
         return state;
     }
 
-    public static AsyncState push(final Object val, AsyncState state)
+    public static AsyncAwaitState push(final Object val, AsyncAwaitState state)
     {
         state.locals[state.top++] = val;
         return state;
     }
 
-    public AsyncState push(final int val)
+    public AsyncAwaitState push(final int val)
     {
         this.locals[this.top++] = val;
         return this;
     }
 
-    public AsyncState push(final long val)
+    public AsyncAwaitState push(final long val)
     {
         this.locals[this.top++] = val;
         return this;
     }
 
-    public AsyncState push(final float val)
+    public AsyncAwaitState push(final float val)
     {
         this.locals[this.top++] = val;
         return this;
     }
 
-    public AsyncState push(final double val)
+    public AsyncAwaitState push(final double val)
     {
         this.locals[this.top++] = val;
         return this;
     }
 
-    public AsyncState push(final Object val)
+    public AsyncAwaitState push(final Object val)
     {
         this.locals[this.top++] = val;
         return this;
