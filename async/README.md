@@ -13,21 +13,19 @@ Simple Examples
 =======
 #### With orbit Tasks
 ```java
+@Async
+public Task<Integer> getPageLength(URL url)
+{
+    Task<String> pageTask = getPage(url);
 
-    @Async
-    public Task<Integer> getPageLength(URL url)
-    {
-        Task<String> pageTask = getPage(url);
+    // this will never block,
+    // if pageTask is not completed getPageLength will return immediatelly.
+    String page = await(pageTask);
 
-        // this will never block,
-        // if pageTask is not completed getPageLength will return immediatelly.
-        String page = await(pageTask);
-
-        return Task.fromValue(page.length());
-    }
+    return Task.fromValue(page.length());
+}
 
 Task<Ingeger> lenTask = getPageLength(new URL("http://example.com"));
-
 System.out.println(lenTask.join());
     
 ```
