@@ -45,6 +45,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>web</module>
         <module>samples</module>
         <module>orbit-all-docs</module>
+        <module>orbit-async</module>
     </modules>
 
     <licenses>
