@@ -28,28 +28,63 @@
 
 package com.ea.orbit.async.instrumentation;
 
-import java.lang.instrument.Instrumentation;
+import java.io.InputStream;
 
-/**
- * Class called when the jvm option -javaagent is used with the orbit-async jar.
- */
-public class Premain
+// fast byte input just for asm
+class FastByteInput extends InputStream
 {
-    /*
-     * From https://docs.oracle.com/javase/8/docs/api/index.html?java/lang/instrument/Instrumentation.html
-     *
-     * Premain-Class
-     *
-     * When an agent is specified at JVM launch time this attribute specifies
-     * the agent class. That is, the class containing the premain method.
-     * When an agent is specified at JVM launch time this attribute is required.
-     * If the attribute is not present the JVM will abort. Note: this is a class
-     * name, not a file name or path.
-     */
-    public static void premain(String agentArgs, Instrumentation inst)
+    protected final byte[] buf;
+
+    protected final int length;
+
+    protected int pos = 0;
+
+    public FastByteInput(byte[] buf)
     {
-        inst.addTransformer(new Transformer(), true);
-        Transformer.initialized.complete(null);
-        System.setProperty("orbit-async.running", "true");
+        this.buf = buf;
+        this.length = buf.length;
     }
+
+    public final int read()
+    {
+        return (pos < length) ? (buf[pos++] & 0xff) : -1;
+    }
+
+    public final int read(final byte[] b, final int off, final int len)
+    {
+        // not checking if length lesser than zero
+        if ((pos + len) > length)
+        {
+            int len2 = (length - pos);
+            System.arraycopy(buf, pos, b, off, len2);
+            pos = length;
+            return len2;
+        }
+        System.arraycopy(buf, pos, b, off, len);
+        pos += len;
+        return len;
+    }
+
+    public final long skip(long n)
+    {
+        // not checking if length lesser than zero
+        if ((pos + n) > length)
+        {
+            int n2 = length - pos;
+            pos = length;
+            return n2;
+        }
+        if (n < 0)
+        {
+            return 0;
+        }
+        pos += n;
+        return n;
+    }
+
+    public final int available()
+    {
+        return length - pos;
+    }
+
 }

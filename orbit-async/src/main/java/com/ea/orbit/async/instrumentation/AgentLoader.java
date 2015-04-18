@@ -32,6 +32,7 @@ import com.sun.tools.attach.VirtualMachine;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
+import java.net.URI;
 import java.net.URL;
 
 /**
@@ -70,7 +71,8 @@ public class AgentLoader
         {
             if (idx > 0)
             {
-                jarName = urlString.substring(0, idx + 4);
+                final int idx2 = urlString.lastIndexOf("file:/");
+                jarName = new File(new URI(urlString.substring(idx2 >= 0 ? idx2 : 0, idx + 4))).getPath();
             }
             else
             {
@@ -80,7 +82,11 @@ public class AgentLoader
             VirtualMachine vm = VirtualMachine.attach(pid);
             vm.loadAgent(jarName, "");
             vm.detach();
-            Transformer.initialized.join();
+            while (!"true".equals(System.getProperty("orbit-async.running", "false")))
+            {
+                Thread.sleep(1);
+            }
+            //Transformer.initialized.join();
         }
         catch (Exception e)
         {

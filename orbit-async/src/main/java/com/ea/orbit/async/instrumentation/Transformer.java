@@ -28,10 +28,9 @@
 
 package com.ea.orbit.async.instrumentation;
 
-import com.ea.orbit.async.Async;
-import com.ea.orbit.async.runtime.AsyncAwaitState;
-
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
@@ -54,16 +53,15 @@ import org.objectweb.asm.tree.analysis.Frame;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceMethodVisitor;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -82,11 +80,12 @@ class Transformer implements ClassFileTransformer
     public static final String ASYNC_DESCRIPTOR = "Lcom/ea/orbit/async/Async;";
     public static final String AWAIT_NAME = "com/ea/orbit/async/Await";
 
-    public static final Type ASYNC_STATE_TYPE = Type.getType(AsyncAwaitState.class);
+    public static final Type ASYNC_STATE_TYPE = Type.getType("Lcom/ea/orbit/async/runtime/AsyncAwaitState;");
     public static final String ASYNC_STATE_NAME = ASYNC_STATE_TYPE.getInternalName();
 
     public static final Type COMPLETABLE_FUTURE_TYPE = Type.getType(CompletableFuture.class);
     public static final String COMPLETABLE_FUTURE_NAME = "java/util/concurrent/CompletableFuture";
+    public static final Type COMPLETION_STAGE_TYPE = Type.getType(CompletionStage.class);
 
     public static final Type OBJECT_TYPE = Type.getType(Object.class);
     public static final String _THIS = "_this";
@@ -117,13 +116,18 @@ class Transformer implements ClassFileTransformer
             {
                 return null;
             }
-            return transform(new ByteArrayInputStream(classfileBuffer));
+            if (needsInstrumentation(new FastByteInput(classfileBuffer)))
+            {
+                return transform(new FastByteInput(classfileBuffer));
+            }
+            return null;
         }
         catch (Exception e)
         {
             throw new RuntimeException(e);
         }
     }
+
 
     public <T> Class<T> instrument(Class<T> c)
     {
@@ -134,20 +138,7 @@ class Transformer implements ClassFileTransformer
         }
         try
         {
-            String fileName;
-            String binName;
-            if (c.getPackage() != null)
-            {
-                String packageName = c.getPackage().getName();
-                String simpleBinName = c.getCanonicalName().substring(packageName.length() + 1).replace('.', '$');
-                binName = packageName + "." + simpleBinName;
-                fileName = simpleBinName + ".class";
-            }
-            else
-            {
-                binName = c.getCanonicalName().replace('.', '$');
-                fileName = binName + ".class";
-            }
+            final String binName = c.getName();
             byte[] bytes = transform(c);
             if (bytes != null)
             {
@@ -166,28 +157,8 @@ class Transformer implements ClassFileTransformer
     {
         try
         {
-            String fileName;
-            String binName;
-            if (clazz.getPackage() != null)
-            {
-                String packageName = clazz.getPackage().getName();
-                String simpleBinName = clazz.getCanonicalName().substring(packageName.length() + 1).replace('.', '$');
-                binName = packageName + "." + simpleBinName;
-                fileName = simpleBinName + ".class";
-            }
-            else
-            {
-                binName = clazz.getCanonicalName().replace('.', '$');
-                fileName = binName + ".class";
-            }
-            for (Method m : clazz.getDeclaredMethods())
-            {
-                if (m.isAnnotationPresent(Async.class))
-                {
-                    return transform(clazz.getResourceAsStream(fileName));
-                }
-            }
-            return null;
+            String internalName = Type.getInternalName(clazz);
+            return transform(clazz.getClassLoader().getResourceAsStream(internalName + ".class"));
         }
         catch (Exception ex)
         {
@@ -196,9 +167,24 @@ class Transformer implements ClassFileTransformer
         }
     }
 
-    public byte[] transform(final InputStream resourceAsStream) throws IOException, AnalyzerException, NoSuchMethodException
+    static byte[] toByteArray(InputStream input) throws IOException
     {
-        final ClassReader cr = new ClassReader(resourceAsStream);
+        byte[] buffer = new byte[Math.max(1024, input.available())];
+        int offset = 0;
+        for (int bytesRead; -1 != (bytesRead = input.read(buffer, offset, buffer.length - offset)); )
+        {
+            offset += bytesRead;
+            if (offset == buffer.length)
+            {
+                buffer = Arrays.copyOf(buffer, buffer.length + Math.max(input.available(), buffer.length >> 1));
+            }
+        }
+        return (offset == buffer.length) ? buffer : Arrays.copyOf(buffer, offset);
+    }
+
+    public byte[] transform(InputStream in) throws IOException, AnalyzerException, NoSuchMethodException
+    {
+        final ClassReader cr = new ClassReader(in);
         ClassNode cn = new ClassNode();
         cr.accept(cn, 0);
 
@@ -211,7 +197,7 @@ class Transformer implements ClassFileTransformer
             {
                 continue;
             }
-            // removing aync annotation to prevent reinstrumentation
+            // removing async annotation to prevent reinstrumentation
             List<AnnotationNode> visibleAnnotations = (List<AnnotationNode>) mn.visibleAnnotations;
             for (int i = visibleAnnotations.size(); --i >= 0; )
             {
@@ -223,7 +209,7 @@ class Transformer implements ClassFileTransformer
             countInstrumented++;
             //printMethod(cn, mn);
             final MethodNode mv = new MethodNode(Opcodes.ACC_PRIVATE | ACC_STATIC,
-                    mn.name, mn.desc, mn.signature, (String[])mn.exceptions.toArray(new String[mn.exceptions.size()]));
+                    mn.name, mn.desc, mn.signature, (String[]) mn.exceptions.toArray(new String[mn.exceptions.size()]));
             mn.accept(mv);
             // TODO generate better names, reuse names if possible
             mv.name = mn.name + "$" + countInstrumented;
@@ -407,7 +393,7 @@ class Transformer implements ClassFileTransformer
                 mn.visitMethodInsn(INVOKESTATIC,
                         futureType.getInternalName(),
                         "from",
-                        Type.getMethodDescriptor(futureType, Type.getType(CompletionStage.class)),
+                        Type.getMethodDescriptor(futureType, COMPLETION_STAGE_TYPE),
                         false);
             }
             mn.visitInsn(ARETURN);
@@ -468,14 +454,14 @@ class Transformer implements ClassFileTransformer
                     p.getText().add("Locals: [ ");
                     for (int x = 0; x < frame.getLocals(); x++)
                     {
-                        p.getText().add(String.valueOf(((BasicValue)frame.getLocal(x)).getType()));
+                        p.getText().add(String.valueOf(((BasicValue) frame.getLocal(x)).getType()));
                         p.getText().add(" ");
                     }
                     p.getText().add("]\r\n");
                     p.getText().add("Stack: [ ");
                     for (int x = 0; x < frame.getStackSize(); x++)
                     {
-                        p.getText().add(String.valueOf(((BasicValue)frame.getStack(x)).getType()));
+                        p.getText().add(String.valueOf(((BasicValue) frame.getStack(x)).getType()));
                         p.getText().add(" ");
                     }
                     p.getText().add("]\r\n");
@@ -559,7 +545,7 @@ class Transformer implements ClassFileTransformer
         // async state
         for (int i = 0; i < frame.getStackSize(); i++)
         {
-            BasicValue local = (BasicValue)frame.getStack(i);
+            BasicValue local = (BasicValue) frame.getStack(i);
             if (local != null && local.getType() != null)
             {
                 final int idx = --localsPlusStack;
@@ -581,7 +567,7 @@ class Transformer implements ClassFileTransformer
         // async state
         for (int i = frame.getLocals(); --i >= startIndex; )
         {
-            BasicValue local = (BasicValue)frame.getLocal(i);
+            BasicValue local = (BasicValue) frame.getLocal(i);
             if (local != null && local != BasicValue.UNINITIALIZED_VALUE)
             {
                 if (local.getType() != null)
@@ -610,18 +596,36 @@ class Transformer implements ClassFileTransformer
         }
     }
 
+    boolean needsInstrumentation(InputStream in)
+    {
+        if (in == null)
+        {
+            // assuming that classes without a file are generated and don't need instrumentation.
+            return false;
+        }
+        try
+        {
+            ClassReader cr = new ClassReader(in);
+            HasAsyncMethodsChecker classVisitor = new HasAsyncMethodsChecker();
+            cr.accept(classVisitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES | ClassReader.SKIP_CODE);
+            return classVisitor.needsInstrumentation;
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     boolean needsInstrumentation(final Class<?> c)
     {
-        for (Class<?> s = c; s != null; s = s.getSuperclass())
+        try
         {
-            for (Method m : s.getDeclaredMethods())
-            {
-                if (m.isAnnotationPresent(Async.class))
-                {
-                    return true;
-                }
-            }
+            return needsInstrumentation(c.getClassLoader().getResourceAsStream(Type.getInternalName(c) + ".class"));
+        }
+        catch (Throwable ex)
+        {
+            // ignoring
         }
         return false;
     }
@@ -677,6 +681,42 @@ class Transformer implements ClassFileTransformer
                 break;
             default:
                 mv.visitVarInsn(store ? ASTORE : ALOAD, local);
+        }
+    }
+
+    private static class HasAsyncMethodsChecker extends ClassVisitor
+    {
+        boolean needsInstrumentation;
+        MethodVisitor methodVisitor;
+
+        public HasAsyncMethodsChecker()
+        {
+            super(Opcodes.ASM5);
+        }
+
+        @Override
+        public MethodVisitor visitMethod(final int access, final String name, final String desc, final String signature, final String[] exceptions)
+        {
+            if (needsInstrumentation)
+            {
+                return null;
+            }
+            if (methodVisitor == null)
+            {
+                methodVisitor = new MethodVisitor(ASM5)
+                {
+                    @Override
+                    public AnnotationVisitor visitAnnotation(final String desc, final boolean visible)
+                    {
+                        if (desc.equals(ASYNC_DESCRIPTOR))
+                        {
+                            needsInstrumentation = true;
+                        }
+                        return null;
+                    }
+                };
+            }
+            return methodVisitor;
         }
     }
 }

@@ -72,5 +72,6 @@ public class Agent
             }
         }
         Transformer.initialized.complete(null);
+        System.setProperty("orbit-async.running", "true");
     }
 }
