@@ -45,6 +45,7 @@
     <modules>
         <module>chat</module>
         <module>hello</module>
+        <module>async</module>
 		<module>memoize</module>
     </modules>
 

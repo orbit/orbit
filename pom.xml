@@ -35,17 +35,18 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <version>0.2.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Orbit Parent</name>
-	<description>Orbit is a JVM framework that makes it easier to build distributed and scalable online services.</description>
+    <description>Orbit is a JVM framework that makes it easier to build distributed and scalable online services.
+    </description>
     <url>http://orbit.bioware.com/</url>
 
     <modules>
         <module>actors</module>
         <module>commons</module>
         <module>container</module>
+        <module>orbit-async</module>
         <module>web</module>
         <module>samples</module>
         <module>orbit-all-docs</module>
-        <module>orbit-async</module>
     </modules>
 
     <licenses>
@@ -185,6 +186,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>withoutTests</id>
+            <properties>
+                <maven.test.skip>true</maven.test.skip>
+            </properties>
         </profile>
     </profiles>
 </project>
