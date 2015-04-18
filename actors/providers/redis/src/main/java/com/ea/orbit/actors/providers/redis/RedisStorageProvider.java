@@ -47,8 +47,10 @@ public class RedisStorageProvider implements IStorageProvider {
 	private String host = "localhost";
 	private int port = 6379;
 	private String databaseName;
+    private int connectionTimeout = 10000;
+    private int soTimeout = 10000;
 
-	@Override
+    @Override
 	public Task<Void> start() {
 		mapper = new ObjectMapper();
 		mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
@@ -57,7 +59,7 @@ public class RedisStorageProvider implements IStorageProvider {
 				.withGetterVisibility(JsonAutoDetect.Visibility.NONE)
 				.withSetterVisibility(JsonAutoDetect.Visibility.NONE)
 				.withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
-		redis = new Jedis(host, port);
+		redis = new Jedis(host, port, connectionTimeout, soTimeout);
 		return Task.done();
 	}
 
@@ -130,4 +132,23 @@ public class RedisStorageProvider implements IStorageProvider {
 		this.databaseName = databaseName;
 	}
 
+    public int getConnectionTimeout()
+    {
+        return connectionTimeout;
+    }
+
+    public void setConnectionTimeout(final int connectionTimeout)
+    {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    public int getSoTimeout()
+    {
+        return soTimeout;
+    }
+
+    public void setSoTimeout(final int soTimeout)
+    {
+        this.soTimeout = soTimeout;
+    }
 }
