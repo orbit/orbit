@@ -62,6 +62,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <artifactId>xchart</artifactId>
             <version>2.5.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.5.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.5.2</version>
+        </dependency>
+
 
         <dependency>
             <groupId>com.ea.orbit</groupId>
@@ -80,17 +91,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <version>1.1.2</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-actors-tests</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-actors-tests</artifactId>
-            <version>0.1.2-SNAPSHOT</version>
-        </dependency>
     </dependencies>
 
     <build>
