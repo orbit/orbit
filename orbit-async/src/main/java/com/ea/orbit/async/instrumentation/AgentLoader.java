@@ -28,12 +28,19 @@
 
 package com.ea.orbit.async.instrumentation;
 
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.analysis.Analyzer;
+
 import com.sun.tools.attach.VirtualMachine;
 
 import java.io.File;
 import java.lang.management.ManagementFactory;
-import java.net.URI;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLClassLoader;
 
 /**
  * Internal class to (when necessary) attach a java agent to
@@ -56,28 +63,79 @@ public class AgentLoader
         }
     }
 
+    static URL getClassPathFor(Class<?> clazz) throws URISyntaxException, MalformedURLException
+    {
+        URLClassLoader cc;
+
+        final URL url = clazz.getResource(clazz.getSimpleName().replace('.', '$') + ".class");
+        String urlString = url.toString();
+        final int idx = urlString.toLowerCase().indexOf(".jar!");
+        if (idx > 0)
+        {
+            final int idx2 = urlString.lastIndexOf("file:/");
+            return new URL(urlString.substring(idx2 >= 0 ? idx2 : 0, idx + 4));
+        }
+        else
+        {
+            File dir = new File(url.toURI()).getParentFile();
+            if (clazz.getPackage() != null)
+            {
+                String pn = clazz.getPackage().getName();
+                for (int i = pn.indexOf('.'); i >= 0; i = pn.indexOf('.', i+1))
+                {
+                    dir = dir.getParentFile();
+                }
+                dir = dir.getParentFile();
+            }
+            return dir.toURI().toURL();
+        }
+    }
+
     public static void loadAgent()
     {
-        String nameOfRunningVM = ManagementFactory.getRuntimeMXBean().getName();
-        int p = nameOfRunningVM.indexOf('@');
-        String pid = nameOfRunningVM.substring(0, p);
-
-        final URL url = AgentLoader.class.getResource(AgentLoader.class.getSimpleName() + ".class");
-        final String urlString = url.toString();
-
-        final int idx = urlString.toLowerCase().indexOf(".jar!");
-        final String jarName;
+        String jarName = null;
         try
         {
-            if (idx > 0)
+            String nameOfRunningVM = ManagementFactory.getRuntimeMXBean().getName();
+            int p = nameOfRunningVM.indexOf('@');
+            String pid = nameOfRunningVM.substring(0, p);
+
+            final URL url = getClassPathFor(AgentLoader.class);
+            final File classPathFile = new File(url.toURI());
+            if (classPathFile.isFile())
             {
-                final int idx2 = urlString.lastIndexOf("file:/");
-                jarName = new File(new URI(urlString.substring(idx2 >= 0 ? idx2 : 0, idx + 4))).getPath();
+                jarName = classPathFile.getPath();
             }
             else
             {
                 // test mode (or expanded jars mode)
-                jarName = new File(AgentLoader.class.getResource("orbit-async-meta.jar").toURI()).getPath();
+                // this happens during "mvn test" in the project dir
+                // or if someone expanded the jars
+                File jarFile = new File(AgentLoader.class.getResource("orbit-async-meta.jar").toURI());
+                jarName = jarFile.getPath();
+
+                ClassLoader mainAppLoader = ClassLoader.getSystemClassLoader();
+                if (mainAppLoader != AgentLoader.class.getClassLoader())
+                {
+                    // this happens during "mvn test" from the parent project
+                    final URL agentClassPath = getClassPathFor(AgentLoader.class);
+                    final URL asmClassPath = getClassPathFor(ClassVisitor.class);
+                    final URL asmClassPath2 = getClassPathFor(ClassNode.class);
+                    final URL asmClassPath3 = getClassPathFor(Analyzer.class);
+                    try
+                    {
+                        final Method method = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{ URL.class });
+                        method.setAccessible(true);
+                        method.invoke(mainAppLoader, agentClassPath);
+                        method.invoke(mainAppLoader, asmClassPath);
+                        method.invoke(mainAppLoader, asmClassPath2);
+                        method.invoke(mainAppLoader, asmClassPath3);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new IllegalArgumentException("Add URL failed: " + agentClassPath, ex);
+                    }
+                }
             }
             VirtualMachine vm = VirtualMachine.attach(pid);
             vm.loadAgent(jarName, "");
@@ -88,12 +146,16 @@ public class AgentLoader
             }
             //Transformer.initialized.join();
         }
-        catch (Exception e)
+        catch (Throwable e)
         {
-            throw new RuntimeException("Error activating orbit-async agent", e);
+            if (jarName != null)
+            {
+                throw new RuntimeException("Error activating orbit-async agent from " + jarName, e);
+            }
+            else
+            {
+                throw new RuntimeException("Error activating orbit-async agent", e);
+            }
         }
-
     }
-
-
 }
