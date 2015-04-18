@@ -40,6 +40,7 @@ public class AsyncAwaitState
 
     public AsyncAwaitState(int pos, int localsSize, int stackSize)
     {
+        this.pos = pos;
         locals = new Object[localsSize + stackSize];
     }
 
