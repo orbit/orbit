@@ -30,6 +30,8 @@ import com.ea.orbit.async.Async;
 
 import java.util.concurrent.CompletableFuture;
 
+import static com.ea.orbit.async.Await.await;
+
 public class NoPackageAsync
 {
 
@@ -41,7 +43,7 @@ public class NoPackageAsync
     @Async
     public CompletableFuture<Object> noPackageMethod(CompletableFuture<String> blocker, int var)
     {
-        return CompletableFuture.completedFuture(concat(var, 10_000_000_000L, 1.5f, 3.5d, blocker.join(), true));
+        return CompletableFuture.completedFuture(concat(var, 10_000_000_000L, 1.5f, 3.5d, await(blocker), true));
     }
 
 }

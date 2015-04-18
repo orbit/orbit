@@ -26,7 +26,7 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.async.test.manual;
+package com.ea.orbit.async.test;
 
 import com.ea.orbit.async.AsyncState;
 
@@ -35,6 +35,7 @@ import org.junit.Test;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -45,7 +46,7 @@ public class HowItShouldWorkTest
         // @Async
         public CompletableFuture<Object> doSomething(CompletableFuture<Object> blocker)
         {
-            String res = (String) blocker.join();
+            String res = (String) await(blocker);
             return CompletableFuture.completedFuture(":" + res);
         }
     }
@@ -87,8 +88,8 @@ public class HowItShouldWorkTest
                     blocker = (CompletableFuture<Object>) state.getObj(0);
 
                     // SKIP:
+                    //String res = (String) await(blocker);
                     String res = (String) blocker.join();
-                    blocker.join();
                     return CompletableFuture.completedFuture(":" + res);
                 default:
                     throw new IllegalArgumentException();

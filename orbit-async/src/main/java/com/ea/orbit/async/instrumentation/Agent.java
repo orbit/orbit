@@ -29,7 +29,6 @@
 package com.ea.orbit.async.instrumentation;
 
 import java.lang.instrument.Instrumentation;
-import java.util.concurrent.CompletableFuture;
 
 /*
  * From https://docs.oracle.com/javase/8/docs/api/index.html?java/lang/instrument/Instrumentation.html
@@ -44,7 +43,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class Agent
 {
-    static CompletableFuture done = new CompletableFuture();
+
 
     public static void agentmain(String agentArgs, Instrumentation inst)
     {
@@ -72,8 +71,6 @@ public class Agent
 //                }
 //            }
 //        }
-        System.out.println("Loaded:" + done);
-
-        done.complete(null);
+        Transformer.running.complete(null);
     }
 }

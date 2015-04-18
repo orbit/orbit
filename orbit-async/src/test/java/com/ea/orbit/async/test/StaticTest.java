@@ -26,56 +26,46 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.async.test.manual;
+package com.ea.orbit.async.test;
 
 import com.ea.orbit.async.Async;
-import com.ea.orbit.async.instrumentation.InstrumentAsync;
+import com.ea.orbit.async.Await;
 
 import org.junit.Test;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CompletableFuture;
 
+import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.assertEquals;
 
-public class JoinTest
+public class StaticTest
 {
-    public interface ISomethingAsync
+    static
     {
-        CompletableFuture<Object> doSomething(CompletableFuture<String> blocker);
+        Await.init();
     }
 
-    public static class OtherJoinCallsTest implements ISomethingAsync
+    public static class StaticUse
     {
+        static String concat(int i, long j, float f, double d, Object obj, boolean b)
+        {
+            return i + ":" + j + ":" + f + ":" + d + ":" + obj + ":" + b;
+        }
+
         @Async
-        public CompletableFuture<Object> doSomething(CompletableFuture<String> blocker)
+        public static CompletableFuture<Object> staticMethod(CompletableFuture<String> blocker, int var)
         {
-            int local = 7;
-            String res = ":" + Math.max(local, blocker.join().length()) + ":" + join() + ":" + join(2, 3);
-            return CompletableFuture.completedFuture(res);
-        }
-
-        public Object join()
-        {
-            return 9;
-        }
-
-        public Object join(int a, int b)
-        {
-            return a + b;
+            return CompletableFuture.completedFuture(concat(var, 10_000_000_000L, 1.5f, 3.5d, await(blocker), true));
         }
     }
 
     @Test
-    public void testOtherJoinMethods() throws IllegalAccessException, InstantiationException
+    public void testStaticMethodWithPrimitives() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
     {
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<?> newClass = ins.instrument(OtherJoinCallsTest.class);
-        final ISomethingAsync a = (ISomethingAsync) newClass.newInstance();
-
         CompletableFuture<String> blocker = new CompletableFuture<>();
-        final CompletableFuture<Object> res = a.doSomething(blocker);
-        blocker.complete("0123456789");
-        assertEquals(":10:9:5", res.join());
+        CompletableFuture<Object> res = StaticUse.staticMethod(blocker, 5);
+        blocker.complete("zzz");
+        assertEquals("5:10000000000:1.5:3.5:zzz:true", res.join());
     }
-
 }

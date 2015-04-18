@@ -29,19 +29,26 @@
 package com.ea.orbit.async.test;
 
 import com.ea.orbit.async.Async;
+import com.ea.orbit.async.Await;
 
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CompletableFuture;
 
+import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.assertEquals;
 
 public class BasicInstrTest
 {
+    static
+    {
+        Await.init();
+    }
 
     private static class Basic
     {
+
         static String concat(int i, long j, float f, double d, Object obj, boolean b)
         {
             return i + ":" + j + ":" + f + ":" + d + ":" + obj + ":" + b;
@@ -50,11 +57,10 @@ public class BasicInstrTest
         @Async
         public CompletableFuture<String> doSomething(CompletableFuture<String> blocker, int var)
         {
-            return CompletableFuture.completedFuture(concat(var, 10_000_000_000L, 1.5f, 3.5d, blocker.join(), true));
+            return CompletableFuture.completedFuture(concat(var, 10_000_000_000L, 1.5f, 3.5d, await(blocker), true));
         }
     }
 
-    @org.junit.Ignore
     @Test
     public void testInstrumentation() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
     {

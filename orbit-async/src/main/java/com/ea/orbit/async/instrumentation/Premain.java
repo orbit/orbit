@@ -45,6 +45,7 @@ public class Premain
 {
     public static void premain(String agentArgs, Instrumentation inst)
     {
+        Transformer.running.complete(null);
         inst.addTransformer(new Transformer(), true);
     }
 }

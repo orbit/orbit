@@ -26,9 +26,9 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.async.test.manual;
+package com.ea.orbit.async.test;
 
-import com.ea.orbit.async.instrumentation.InstrumentAsync;
+import com.ea.orbit.async.Await;
 
 import org.junit.Test;
 
@@ -40,11 +40,16 @@ import static org.junit.Assert.assertEquals;
 
 public class NoPackageTest
 {
+    static
+    {
+        Await.init();
+    }
+
     @Test
     public void testPackageLessClass() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException
     {
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<?> newClass = ins.instrument(Class.forName("NoPackageAsync"));
+
+        Class<?> newClass = Class.forName("NoPackageAsync");
         final Method method = newClass.getMethod("noPackageMethod", CompletableFuture.class, int.class);
 
         CompletableFuture<String> blocker = new CompletableFuture<>();

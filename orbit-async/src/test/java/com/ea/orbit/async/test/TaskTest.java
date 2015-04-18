@@ -26,57 +26,59 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.async.test.manual;
+package com.ea.orbit.async.test;
 
 import com.ea.orbit.async.Async;
-import com.ea.orbit.async.instrumentation.InstrumentAsync;
+import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
 
+import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.assertEquals;
 
 public class TaskTest
 {
-    public interface ITaskSomethingAsync
+    static
     {
-        Task<Object> doSomething(Task<String> blocker);
+        Await.init();
     }
 
-    public static class TaskSomethingAsync implements ITaskSomethingAsync
+    public static class TaskSomethingAsync
     {
         @Async
         public Task<Object> doSomething(Task<String> blocker)
         {
-            String res = blocker.join();
+            String res = await(blocker);
             return Task.fromValue(":" + res);
         }
     }
 
-    public static class TaskSomethingWithLocalsAndStack implements ITaskSomethingAsync
+    public static class TaskSomethingWithLocalsAndStack
     {
         @Async
         public Task<Object> doSomething(Task<String> blocker)
         {
             int local = 7;
-            String res = ":" + Math.max(local, blocker.join().length());
+            String res = ":" + Math.max(local, await(blocker).length());
             return Task.fromValue(res);
         }
     }
 
-    public static class TaskSomethingAsyncWithException implements ITaskSomethingAsync
+    public static class TaskSomethingAsyncWithException
     {
         @Async
         public Task<Object> doSomething(Task<String> blocker)
         {
             try
             {
-                String res = blocker.join();
+                String res = await(blocker);
                 return Task.fromValue(":" + res);
             }
-            catch (Exception ex)
+            catch (RuntimeException ex)
             {
-                return Task.fromValue(":" + ex.getCause().getMessage());
+                //return Task.fromValue(":" + ex.getCause().getMessage());
+                return null;
             }
         }
     }
@@ -86,9 +88,7 @@ public class TaskTest
     {
         // test an example where the async function blocks (returns incomplete future)
         // this would not work without instrumentation
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<?> newClass = ins.instrument(TaskSomethingAsync.class);
-        final ITaskSomethingAsync a = (ITaskSomethingAsync) newClass.newInstance();
+        final TaskSomethingAsync a = new TaskSomethingAsync();
 
         Task<String> blocker = Task.fromValue("x");
         final Task<Object> res = a.doSomething(blocker);
@@ -98,9 +98,7 @@ public class TaskTest
     @Test
     public void testBlocking() throws IllegalAccessException, InstantiationException
     {
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<?> newClass = ins.instrument(TaskSomethingAsync.class);
-        final ITaskSomethingAsync a = (ITaskSomethingAsync) newClass.newInstance();
+        final TaskSomethingAsync a = new TaskSomethingAsync();
 
         Task<String> blocker = new Task<>();
         final Task<Object> res = a.doSomething(blocker);
@@ -111,9 +109,7 @@ public class TaskTest
     @Test
     public void testBlockingWithStackAndLocal() throws IllegalAccessException, InstantiationException
     {
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<?> newClass = ins.instrument(TaskSomethingWithLocalsAndStack.class);
-        final ITaskSomethingAsync a = (ITaskSomethingAsync) newClass.newInstance();
+        final TaskSomethingWithLocalsAndStack a = new TaskSomethingWithLocalsAndStack();
 
         Task<String> blocker = new Task<>();
         final Task<Object> res = a.doSomething(blocker);
@@ -122,16 +118,13 @@ public class TaskTest
     }
 
     @Test
-    @org.junit.Ignore
     public void testBlockingAndException() throws IllegalAccessException, InstantiationException
     {
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<?> newClass = ins.instrument(TaskSomethingAsyncWithException.class);
-        final ITaskSomethingAsync a = (ITaskSomethingAsync) newClass.newInstance();
+        final TaskSomethingAsyncWithException a = new TaskSomethingAsyncWithException();
 
-        Task<String> blocker = new Task<>();
-        final Task<Object> res = a.doSomething(blocker);
-        blocker.completeExceptionally(new RuntimeException("Exception"));
-        assertEquals(":Exception", res.join());
+//        Task<String> blocker = new Task<>();
+//        final Task<Object> res = a.doSomething(blocker);
+//        blocker.completeExceptionally(new RuntimeException("Exception"));
+//        assertEquals(":Exception", res.join());
     }
 }

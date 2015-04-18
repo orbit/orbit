@@ -32,15 +32,18 @@ import com.ea.orbit.async.instrumentation.InitializeAsync;
 
 import java.util.concurrent.CompletableFuture;
 
-public class Await
+public interface Await
 {
-    static
+    static Object async = new InitializeAsync();
+
+    static void init()
     {
-        new InitializeAsync();
     }
 
     public static <T> T await(CompletableFuture<T> future)
     {
-        throw new IllegalStateException("Illegal call or this code needs instrumentation");
+        System.out.printf("Warning: Illegal call to await, add static { Await.init(); } somewhere ");
+        return future.join();
     }
+
 }

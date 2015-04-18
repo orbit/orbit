@@ -37,9 +37,10 @@ public class InitializeAsync
 {
     static
     {
-        System.out.println("Load:" + Agent.done);
-
-        loadAgent();
+        if (!Transformer.running.isDone())
+        {
+            loadAgent();
+        }
     }
 
     public static void loadAgent()
@@ -67,7 +68,7 @@ public class InitializeAsync
             VirtualMachine vm = VirtualMachine.attach(pid);
             vm.loadAgent(jarName, "");
             vm.detach();
-            Agent.done.join();
+            Transformer.running.join();
         }
         catch (Exception e)
         {

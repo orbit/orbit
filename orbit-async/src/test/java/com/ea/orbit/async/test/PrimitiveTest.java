@@ -26,21 +26,27 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.async.test.manual;
+package com.ea.orbit.async.test;
 
 import com.ea.orbit.async.Async;
-import com.ea.orbit.async.instrumentation.InstrumentAsync;
+import com.ea.orbit.async.Await;
 
 import org.junit.Test;
 
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
+import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 public class PrimitiveTest
 {
+    static
+    {
+        Await.init();
+    }
+
     public static abstract class Base
     {
         int i1;
@@ -114,7 +120,7 @@ public class PrimitiveTest
         @Async
         public CompletableFuture<Object> intTest(CompletableFuture<String> blocker, int var)
         {
-            String res = blocker.join();
+            String res = await(blocker);
             return CompletableFuture.completedFuture(":" + var + ":" + res);
         }
     }
@@ -124,7 +130,7 @@ public class PrimitiveTest
         @Async
         public CompletableFuture<Object> longTest(CompletableFuture<String> blocker, long var)
         {
-            String res = blocker.join();
+            String res = await(blocker);
             return CompletableFuture.completedFuture(":" + var + ":" + res);
         }
     }
@@ -144,7 +150,7 @@ public class PrimitiveTest
                 float pf1,
                 CompletableFuture<String> blocker, long var)
         {
-            blocker.join();
+            await(blocker);
             setFields(pi1, ps1, pb1, pd1, pc1, pz1, lg1, po1, pf1, 0);
             return CompletableFuture.completedFuture(":");
         }
@@ -166,7 +172,7 @@ public class PrimitiveTest
                 CompletableFuture<String> blocker, long var)
         {
             // blocks with a lot of primitives in the stack
-            this.setFields(pi1, ps1, pb1, pd1, pc1, pz1, lg1, po1, pf1, blocker.join() != null ? 0 : 1);
+            this.setFields(pi1, ps1, pb1, pd1, pc1, pz1, lg1, po1, pf1, await(blocker) != null ? 0 : 1);
             return CompletableFuture.completedFuture(":");
         }
     }
@@ -174,9 +180,7 @@ public class PrimitiveTest
     @Test
     public void testIntParam() throws IllegalAccessException, InstantiationException
     {
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<?> newClass = ins.instrument(PrimitiveUser1.class);
-        final Base a = (Base) newClass.newInstance();
+        PrimitiveUser1 a = new PrimitiveUser1();
 
         CompletableFuture<String> blocker = new CompletableFuture<>();
         final CompletableFuture<Object> res = a.intTest(blocker, 11);
@@ -187,9 +191,7 @@ public class PrimitiveTest
     @Test
     public void testLongParam() throws IllegalAccessException, InstantiationException
     {
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<?> newClass = ins.instrument(PrimitiveUser2.class);
-        final Base a = (Base) newClass.newInstance();
+        PrimitiveUser2 a = new PrimitiveUser2();
 
         CompletableFuture<String> blocker = new CompletableFuture<>();
         final CompletableFuture<Object> res = a.longTest(blocker, 10000000000L);
@@ -200,9 +202,7 @@ public class PrimitiveTest
     @Test
     public void testAllPrimitivesAsLocalVars() throws IllegalAccessException, InstantiationException
     {
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<?> newClass = ins.instrument(PrimitiveUser3.class);
-        final Base a = (Base) newClass.newInstance();
+        PrimitiveUser3 a = new PrimitiveUser3();
 
         CompletableFuture<String> blocker = new CompletableFuture<>();
 
@@ -227,9 +227,7 @@ public class PrimitiveTest
     @Test
     public void testAllPrimitivesAndStack() throws IllegalAccessException, InstantiationException
     {
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<?> newClass = ins.instrument(PrimitiveUser4.class);
-        final Base a = (Base) newClass.newInstance();
+        PrimitiveUser4 a = new PrimitiveUser4();
 
         CompletableFuture<String> blocker = new CompletableFuture<>();
 

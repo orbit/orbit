@@ -26,53 +26,55 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.async.test.manual;
+package com.ea.orbit.async.test;
 
 import com.ea.orbit.async.Async;
-import com.ea.orbit.async.instrumentation.InstrumentAsync;
+import com.ea.orbit.async.instrumentation.InitializeAsync;
 
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
 
-import static org.junit.Assert.*;
+import static com.ea.orbit.async.Await.await;
+import static org.junit.Assert.assertEquals;
 
 public class BasicTest
 {
-    public interface ISomethingAsync
+    static
     {
-        CompletableFuture<Object> doSomething(CompletableFuture<String> blocker);
+        new InitializeAsync();
     }
 
-    public static class SomethingAsync implements ISomethingAsync
+
+    public static class SomethingAsync
     {
         @Async
         public CompletableFuture<Object> doSomething(CompletableFuture<String> blocker)
         {
-            String res = blocker.join();
+            String res = await(blocker);
             return CompletableFuture.completedFuture(":" + res);
         }
     }
 
-    public static class SomethingWithLocalsAndStack implements ISomethingAsync
+    public static class SomethingWithLocalsAndStack
     {
         @Async
         public CompletableFuture<Object> doSomething(CompletableFuture<String> blocker)
         {
             int local = 7;
-            String res = ":" + Math.max(local, blocker.join().length());
+            String res = ":" + Math.max(local, await(blocker).length());
             return CompletableFuture.completedFuture(res);
         }
     }
 
-    public static class SomethingAsyncWithException implements ISomethingAsync
+    public static class SomethingAsyncWithEx
     {
         @Async
         public CompletableFuture<Object> doSomething(CompletableFuture<String> blocker)
         {
             try
             {
-                String res = blocker.join();
+                String res = await(blocker);
                 return CompletableFuture.completedFuture(":" + res);
             }
             catch (Exception ex)
@@ -82,33 +84,12 @@ public class BasicTest
         }
     }
 
-    private static class SomethingNotAsync
-    {
-        public void blah()
-        {
-        }
-    }
-
-    @Test
-    public void testRunningInstrumentation()
-    {
-        // runs a instrumentation ach check if a new class is created when appropriated
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<SomethingAsync> newClass = ins.instrument(SomethingAsync.class);
-        assertNotNull(newClass);
-        //assertNotSame(SomethingAsync.class, newClass);
-        assertSame(SomethingNotAsync.class, ins.instrument(SomethingNotAsync.class));
-        assertTrue(ISomethingAsync.class.isAssignableFrom(newClass));
-    }
-
     @Test
     public void testDirectPathNonBlocking() throws IllegalAccessException, InstantiationException
     {
         // test an example where the async function blocks (returns incomplete future)
         // this would not work without instrumentation
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<?> newClass = ins.instrument(SomethingAsync.class);
-        final ISomethingAsync a = (ISomethingAsync) newClass.newInstance();
+        final SomethingAsync a = new SomethingAsync();
 
         CompletableFuture<String> blocker = CompletableFuture.completedFuture("x");
         final CompletableFuture<Object> res = a.doSomething(blocker);
@@ -118,10 +99,7 @@ public class BasicTest
     @Test
     public void testBlocking() throws IllegalAccessException, InstantiationException
     {
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<?> newClass = ins.instrument(SomethingAsync.class);
-        final ISomethingAsync a = (ISomethingAsync) newClass.newInstance();
-
+        final SomethingAsync a = new SomethingAsync();
         CompletableFuture<String> blocker = new CompletableFuture<>();
         final CompletableFuture<Object> res = a.doSomething(blocker);
         blocker.complete("x");
@@ -132,9 +110,7 @@ public class BasicTest
     @Test
     public void testBlockingWithStackAndLocal() throws IllegalAccessException, InstantiationException
     {
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<?> newClass = ins.instrument(SomethingWithLocalsAndStack.class);
-        final ISomethingAsync a = (ISomethingAsync) newClass.newInstance();
+        final SomethingWithLocalsAndStack a = new SomethingWithLocalsAndStack();
 
         CompletableFuture<String> blocker = new CompletableFuture<>();
         final CompletableFuture<Object> res = a.doSomething(blocker);
@@ -143,12 +119,9 @@ public class BasicTest
     }
 
     @Test
-    @org.junit.Ignore
     public void testBlockingAndException() throws IllegalAccessException, InstantiationException
     {
-        InstrumentAsync ins = new InstrumentAsync();
-        Class<?> newClass = ins.instrument(SomethingAsyncWithException.class);
-        final ISomethingAsync a = (ISomethingAsync) newClass.newInstance();
+        final SomethingAsyncWithEx a = new SomethingAsyncWithEx();
 
         CompletableFuture<String> blocker = new CompletableFuture<>();
         final CompletableFuture<Object> res = a.doSomething(blocker);
