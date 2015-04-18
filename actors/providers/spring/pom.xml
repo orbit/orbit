@@ -47,6 +47,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-stage</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
             <version>4.1.6.RELEASE</version>

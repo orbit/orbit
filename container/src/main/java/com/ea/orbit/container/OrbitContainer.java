@@ -29,8 +29,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.container;
 
 import com.ea.orbit.annotation.Config;
-import com.ea.orbit.annotation.Nullable;
-import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.configuration.OrbitProperties;
 import com.ea.orbit.configuration.OrbitPropertiesImpl;
@@ -40,30 +38,22 @@ import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.injection.DependencyRegistry;
 import com.ea.orbit.reflect.ClassCache;
 import com.ea.orbit.reflect.FieldDescriptor;
-import com.ea.orbit.util.ClassPath;
-import com.ea.orbit.util.ClassPath.ResourceInfo;
 
 import org.yaml.snakeyaml.Yaml;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -71,55 +61,17 @@ import java.util.stream.Collectors;
 
 public class OrbitContainer
 {
-    private static final String ORBIT_PROVIDERS_ = "orbit.providers.";
-    private static final String ORBIT_SERVICE_PREFIX = "META-INF/services/orbit/";
     private OrbitProperties properties;
     private Map<String, ComponentState> components = new ConcurrentHashMap<>();
 
     private CompletableFuture<?> stopFuture = new CompletableFuture<>();
 
-    /**
-     * Defines if orbit should discover services by looking as META-INF/services/orbit/ to find service components
-     */
-    @Config("orbit.locateServices")
-    private boolean locateServices = true;
-
     @Config("orbit.providers")
     private List<Object> providers = new ArrayList<>();
 
+
     private final DependencyRegistry registry = new DependencyRegistry()
     {
-
-        protected WeakHashMap<Class<?>, Boolean> notHere = new WeakHashMap<>();
-
-        @Override
-        protected void injectField(final Object o, final java.lang.reflect.Field f) throws IllegalArgumentException, IllegalAccessException
-        {
-            super.injectField(o, f);
-            injectConfig(o, f);
-        }
-
-        @SuppressWarnings("unchecked")
-		@Override
-        public <T> T getSingleton(final Class<T> clazz)
-        {
-            if (!notHere.containsKey(clazz))
-            {
-                ComponentState state = getState(clazz);
-                if (state != null && state.enabled)
-                {
-                    if (state.instance == null && state.isSingleton)
-                    {
-                        state.instance = createNew(state.implClass);
-                        //throw new NotAvailableHere("This service was not instantiated at this node: " + clazz.getName());
-                    }
-                    return (T) state.instance;
-                }
-                notHere.put(clazz, Boolean.TRUE);
-            }
-            return super.getSingleton(clazz);
-        }
-
         @Override
         protected void postInject(final Object o)
         {
@@ -147,24 +99,13 @@ public class OrbitContainer
 
     protected static class ComponentState
     {
-        boolean enabled = true;
         boolean initialized;
-        String implClassName;
         Class<?> implClass;
         List<ComponentState> dependsOn = new ArrayList<>();
 
         Object instance;
         boolean isSingleton;
-    }
-
-    public void setLocateServices(final boolean locateServices)
-    {
-        this.locateServices = locateServices;
-    }
-
-    public boolean isLocateServices()
-    {
-        return locateServices;
+        boolean isStartable;
     }
 
     protected enum ContainerState
@@ -187,12 +128,18 @@ public class OrbitContainer
             state = new ComponentState();
             components.put(componentClass.getName(), state);
             state.isSingleton = componentClass.isAnnotationPresent(Singleton.class);
+            if (state.isSingleton)
+            {
+                registry.addSingleton(componentClass);
+            }
+            state.isStartable = Startable.class.isAssignableFrom(componentClass);
         }
         state.implClass = componentClass;
     }
 
     public <T> void addInstance(T instance)
     {
+        registry.addSingleton(instance.getClass(), instance);
         ComponentState state = components.get(instance.getClass().getName());
         if (state == null)
         {
@@ -283,58 +230,9 @@ public class OrbitContainer
         }
     }
 
-    protected void injectField(ComponentState state, Field f) throws IllegalArgumentException, IllegalAccessException
-    {
-        if (f.isAnnotationPresent(Inject.class) || f.isAnnotationPresent(Wired.class))
-        {
-            f.setAccessible(true);
-            ComponentState locatedComponent = getState(f.getType());
-            if (locatedComponent != null)
-            {
-                state.dependsOn.add(locatedComponent);
-                f.set(state.instance, locatedComponent.instance);
-                return;
-            }
-            if ((f.getType() == List.class || f.getType() == Collection.class)
-                    && f.getGenericType() instanceof ParameterizedType)
-            {
-                Type compType = ((ParameterizedType) f.getGenericType()).getActualTypeArguments()[0];
-                if (compType instanceof Class)
-                {
-                    List<?> locatedList = components((Class<?>) compType);
-                    if (locatedList != null)
-                    {
-                        f.set(state.instance, locatedList);
-                        return;
-                    }
-                }
-            }
-            if (!f.isAnnotationPresent(Nullable.class))
-            {
-                throw new UncheckedException("Can't find value to inject on " + f);
-            }
-        }
-    }
-
     public void inject(Object object)
     {
         registry.inject(object);
-    }
-
-    protected void injectState(ComponentState state)
-    {
-        for (FieldDescriptor fd : ClassCache.shared.getClass(state.implClass).getAllInstanceFields())
-        {
-            try
-            {
-                injectConfig(state.instance, fd.getField());
-                injectField(state, fd.getField());
-            }
-            catch (IllegalAccessException e)
-            {
-                throw new UncheckedException(e);
-            }
-        }
     }
 
     public void postConstruct(final Object o)
@@ -374,7 +272,7 @@ public class OrbitContainer
      * </ol>
      */
     @SuppressWarnings("unchecked")
-	public void start()
+    public void start()
     {
         if (state != ContainerState.CREATED)
         {
@@ -391,7 +289,7 @@ public class OrbitContainer
 
                     Yaml yaml = new Yaml();
                     final Iterable<Object> iter = yaml.loadAll(res.openStream());
-                    setProperties((Map<String,Object>) iter.iterator().next());
+                    setProperties((Map<String, Object>) iter.iterator().next());
                 }
                 else
                 {
@@ -401,26 +299,8 @@ public class OrbitContainer
             addInstance(this);
             injectConfig(this);
             addInstance(registry);
+            registry.addSingleton(OrbitProperties.class, properties);
 
-            if (locateServices)
-            {
-                for (ResourceInfo r : ClassPath.get().getAllResources())
-                {
-                    if (r.getResourceName().startsWith(ORBIT_SERVICE_PREFIX))
-                    {
-                        // TODO: use logger
-                        System.out.println(r.getResourceName());
-                        final String providesName = r.getResourceName().replaceAll(".*/", "");
-                        ComponentState state = components.get(providesName);
-                        if (state == null)
-                        {
-                            state = new ComponentState();
-                            components.put(providesName, state);
-                        }
-                        state.implClassName = com.ea.orbit.util.IOUtils.toString(r.url().openStream());
-                    }
-                }
-            }
             if (providers != null)
             {
                 for (final Object service : providers)
@@ -431,81 +311,35 @@ public class OrbitContainer
                 }
             }
 
-            Set<String> providersConfig = properties.getAll().keySet().stream().filter(e -> e.startsWith(ORBIT_PROVIDERS_)).collect(Collectors.toSet());
-            for (String providerConfig : providersConfig)
-            {
-                String value = properties.getAsString(providerConfig, "enabled");
-                String key = providerConfig.substring(ORBIT_PROVIDERS_.length());
-                ComponentState state = components.get(key);
-                if (state == null)
-                {
-                    state = new ComponentState();
-                    state.implClassName = key;
-                    components.put(key, state);
-                }
-                switch (value)
-                {
-                    case "enabled":
-                        state.enabled = true;
-                        break;
-                    default:
-                        state.enabled = false;
-                }
-            }
-
-            // figuring out what needs to be a proxy
-            for (ComponentState state : components.values())
-            {
-                if (state.enabled)
-                {
-                    if (state.implClass == null)
-                    {
-                        state.implClass = Class.forName(state.implClassName);
-                    }
-                }
-            }
-
-
-            Set<Class<?>> newComps = new LinkedHashSet<>();
             // Instantiating modules
             for (ComponentState state : components.values())
             {
-                if (state.enabled && state.instance == null && Module.class.isAssignableFrom(state.implClass))
+                if (state.instance == null && Module.class.isAssignableFrom(state.implClass))
                 {
-                    state.instance = state.implClass.newInstance();
-                    injectState(state);
+                    state.instance = registry.locate(state.implClass);
+                }
+            }
+
+            // Getting module classes
+            Set<Class<?>> newComps = new LinkedHashSet<>();
+            for (ComponentState state : components.values())
+            {
+                if (state.instance != null && Module.class.isAssignableFrom(state.implClass))
+                {
                     newComps.addAll(((Module) state.instance).getClasses());
                 }
             }
             newComps.forEach(c -> add(c));
 
-            List<ComponentState> comps = new ArrayList<>(components.values());
+            // component snapshot
+            Set<ComponentState> comps = new LinkedHashSet<>(components.values());
 
-            // Instantiating
+            // Instantiating startables
             for (ComponentState state : comps)
             {
-                if (state.enabled && state.instance == null && state.isSingleton && Startable.class.isAssignableFrom(state.implClass))
+                if (state.instance == null && state.isSingleton && Startable.class.isAssignableFrom(state.implClass))
                 {
-                    state.instance = state.implClass.newInstance();
-                }
-            }
-
-            // Injecting fields
-            for (ComponentState state : comps)
-            {
-                if (state.enabled && state.instance != null && !state.initialized)
-                {
-                    injectState(state);
-                }
-            }
-
-            // Calling post constructors.
-            for (ComponentState state : comps)
-            {
-                if (state.enabled && state.instance != null && !state.initialized)
-                {
-                    postConstruct(state.instance);
-                    state.initialized = true;
+                    state.instance = registry.locate(state.implClass);
                 }
             }
 
@@ -519,8 +353,9 @@ public class OrbitContainer
             // Call start methods
             for (ComponentState state : comps)
             {
-                if (state.enabled && state.instance != null && state.instance instanceof Startable)
+                if (state.instance != null && state.instance instanceof Startable)
                 {
+
                     final Task<?> future = ((Startable) state.instance).start();
                     if (future != null && !future.isDone())
                     {
@@ -551,7 +386,7 @@ public class OrbitContainer
         state = ContainerState.STOPPING;
         for (ComponentState componentState : components.values())
         {
-            if (componentState.enabled && componentState.instance != null && componentState.instance instanceof Startable)
+            if (componentState.instance != null && componentState.instance instanceof Startable)
             {
                 try
                 {
@@ -563,7 +398,7 @@ public class OrbitContainer
                     throw new UncheckedException("Error stopping " + componentState.implClass.getName(), e);
                 }
             }
-    }
+        }
         stopFuture.complete(null);
         state = ContainerState.STOPPED;
     }
@@ -603,7 +438,7 @@ public class OrbitContainer
         List<Object> list = new ArrayList<>(components.size());
         for (ComponentState state : components.values())
         {
-            if (state.enabled && state.instance != null)
+            if (state.instance != null)
             {
                 list.add(state.instance);
             }
@@ -612,7 +447,7 @@ public class OrbitContainer
     }
 
     @SuppressWarnings("unchecked")
-	public <T> List<T> components(final Class<T> actorClass)
+    public <T> List<T> components(final Class<T> actorClass)
     {
         List<T> list = new ArrayList<T>();
         for (ComponentState s : components.values())

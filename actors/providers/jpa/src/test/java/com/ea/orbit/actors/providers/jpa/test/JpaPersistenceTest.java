@@ -28,96 +28,39 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.providers.jpa.test;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.providers.jpa.JpaStorageProvider;
-import com.ea.orbit.actors.test.FakeClusterPeer;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ea.orbit.actors.test.IStorageTestActor;
+import com.ea.orbit.actors.test.IStorageTestState;
+import com.ea.orbit.actors.test.StorageBaseTest;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
 
-import static org.junit.Assert.assertEquals;
-
 @SuppressWarnings("unused")
-public class JpaPersistenceTest
+public class JpaPersistenceTest extends StorageBaseTest
 {
 
-    private String clusterName = "cluster." + Math.random();
-    private ObjectMapper objectMapper;
     private EntityManagerFactory emf;
 
-    @Test
-    public void checkWritesTest() throws Exception
+    @Override
+    public Class<? extends IStorageTestActor> getActorInterfaceClass()
     {
-        OrbitStage stage = createStage();
-        assertEquals(0, count(IHelloActor.class));
-        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
-        helloActor.sayHello("Meep Meep").join();
-        assertEquals(1, count(IHelloActor.class));
+        return IHelloActor.class;
     }
 
-    @Test
-    public void checkReadTest() throws Exception
+    @Override
+    public IOrbitProvider getStorageProvider()
     {
-        OrbitStage stage = createStage();
-        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
-        helloActor.sayHello("Meep Meep").join();
-        assertEquals(readHelloState("300").lastName, "Meep Meep");
-    }
-
-    @Test
-    public void checkClearTest() throws Exception
-    {
-        OrbitStage stage = createStage();
-        assertEquals(0, count(IHelloActor.class));
-        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
-        helloActor.sayHello("Meep Meep").join();
-        assertEquals(1, count(IHelloActor.class));
-        helloActor.clear().join();
-        assertEquals(0, count(IHelloActor.class));
-    }
-
-    @Test
-    public void checkUpdateTest() throws Exception
-    {
-        OrbitStage stage = createStage();
-        assertEquals(0, count(IHelloActor.class));
-        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
-        helloActor.sayHello("Meep Meep").join();
-        assertEquals(1, count(IHelloActor.class));
-        helloActor.sayHello("Peem Peem").join();
-        assertEquals(readHelloState("300").lastName, "Peem Peem");
-    }
-
-    public OrbitStage createStage() throws Exception
-    {
-        OrbitStage stage = new OrbitStage();
         final JpaStorageProvider storageProvider = new JpaStorageProvider();
         storageProvider.setPersistenceUnit("jpa-storage-test");
-        stage.addProvider(storageProvider);
-        stage.setClusterName(clusterName);
-        stage.setClusterPeer(new FakeClusterPeer());
-        stage.start().get();
-        stage.bind();
-        return stage;
+        return storageProvider;
     }
 
-    @Before
-    public void setup() throws Exception
-    {
-        this.objectMapper = new ObjectMapper();
-    }
-
-    @After
-    public void cleanup() throws Exception
+    @Override
+    public void initStorage()
     {
         emf = Persistence.createEntityManagerFactory("jpa-storage-test");
         EntityManager em = emf.createEntityManager();
@@ -128,7 +71,19 @@ public class JpaPersistenceTest
         em.close();
     }
 
-    private long count(Class<?> actorInterface) throws Exception
+    @Override
+    public void closeStorage()
+    {
+        EntityManager em = emf.createEntityManager();
+        Query query = em.createQuery("delete from " + HelloState.class.getSimpleName());
+        em.getTransaction().begin();
+        query.executeUpdate();
+        em.getTransaction().commit();
+        em.close();
+        emf.close();
+    }
+
+    public long count()
     {
         emf = Persistence.createEntityManagerFactory("jpa-storage-test");
         EntityManager em = emf.createEntityManager();
@@ -138,7 +93,14 @@ public class JpaPersistenceTest
         return count;
     }
 
-    private HelloState readHelloState(String identity) throws Exception
+    @Override
+    public int loadTestSize()
+    {
+        return 100;
+    }
+
+    @Override
+    public IStorageTestState readState(final String identity)
     {
         emf = Persistence.createEntityManagerFactory("jpa-storage-test");
         EntityManager em = emf.createEntityManager();
@@ -148,5 +110,6 @@ public class JpaPersistenceTest
         em.close();
         return state;
     }
+
 
 }

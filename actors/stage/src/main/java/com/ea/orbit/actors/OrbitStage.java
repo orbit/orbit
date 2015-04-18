@@ -154,12 +154,12 @@ public class OrbitStage implements Startable
     {
         startCalled = true;
 
-        if(clusterName == null || clusterName.isEmpty())
+        if (clusterName == null || clusterName.isEmpty())
         {
             setClusterName("orbit-cluster");
         }
 
-        if(nodeName == null || nodeName.isEmpty())
+        if (nodeName == null || nodeName.isEmpty())
         {
             setNodeName(getClusterName());
         }
@@ -208,11 +208,16 @@ public class OrbitStage implements Startable
         execution.start();
 
 
+        Task<?> future = clusterPeer.join(clusterName, nodeName);
+        if (mode == StageMode.HOST)
+        {
+            future = future.thenRun(() -> IActor.getReference(IReminderController.class, "0").ensureStart());
+        }
+        startFuture = future;
 
-        startFuture = clusterPeer.join(clusterName, nodeName);
-        // todo remove this
         startFuture.join();
         bind();
+
         return startFuture;
     }
 

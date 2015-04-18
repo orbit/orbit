@@ -34,7 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <groupId>com.ea.orbit</groupId>
         <artifactId>orbit-parent</artifactId>
         <version>0.2.2-SNAPSHOT</version>
-        <relativePath>..</relativePath>
+        <relativePath>../..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
