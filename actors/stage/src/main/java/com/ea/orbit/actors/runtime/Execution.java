@@ -34,7 +34,12 @@ import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.IRemindable;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.cluster.INodeAddress;
-import com.ea.orbit.actors.providers.*;
+import com.ea.orbit.actors.providers.IActorClassFinder;
+import com.ea.orbit.actors.providers.IInvokeHookProvider;
+import com.ea.orbit.actors.providers.IInvokeListenerProvider;
+import com.ea.orbit.actors.providers.ILifetimeProvider;
+import com.ea.orbit.actors.providers.IOrbitProvider;
+import com.ea.orbit.actors.providers.IStorageProvider;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -73,6 +78,8 @@ import java.util.stream.Collectors;
 
 public class Execution implements IRuntime
 {
+    public static boolean traceEnabled = false;
+
     private static final Logger logger = LoggerFactory.getLogger(Execution.class);
     private final String runtimeIdentity;
     private IActorClassFinder finder;
@@ -827,6 +834,47 @@ public class Execution implements IRuntime
 
     }
 
+    static class MessageContext
+    {
+        ReferenceEntry theEntry;
+        int methodId;
+        INodeAddress from;
+        long traceId;
+        public static final AtomicLong counter = new AtomicLong(0L);
+
+        public MessageContext(final ReferenceEntry theEntry, final int methodId, final INodeAddress from)
+        {
+            traceId = counter.incrementAndGet();
+            this.theEntry = theEntry;
+            this.methodId = methodId;
+            this.from = from;
+        }
+    }
+
+    @Override
+    public ActorReference getCurrentActivation()
+    {
+        MessageContext current = currentMessage.get();
+        if (current == null)
+        {
+            return null;
+        }
+        return current.theEntry.reference;
+    }
+
+    @Override
+    public long getCurrentTraceId()
+    {
+        MessageContext current = currentMessage.get();
+        if (current == null)
+        {
+            return 0;
+        }
+        return current.traceId;
+    }
+
+    ThreadLocal<MessageContext> currentMessage = new ThreadLocal<>();
+
     private Task<?> executeMessage(
             final ReferenceEntry theEntry,
             final boolean oneway,
@@ -838,6 +886,8 @@ public class Execution implements IRuntime
     {
         try
         {
+
+            currentMessage.set(new MessageContext(theEntry, methodId, from));
             Activation activation = theEntry.popActivation();
             activation.lastAccess = clock.millis();
             Task<?> future;
@@ -984,13 +1034,43 @@ public class Execution implements IRuntime
 
     public Task<?> invoke(IAddressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
     {
+        final ActorReference source = getCurrentActivation();
+        final long traceId = getCurrentTraceId();
+        if (traceEnabled)
+        {
+            if (source != null)
+            {
+                String sourceInterface = ActorReference.getInterfaceClass(source).getName();
+                String targetInterface = ActorReference.getInterfaceClass((ActorReference) toReference).getName();
+                for (IInvokeListenerProvider v : getAllProviders(IInvokeListenerProvider.class))
+                {
+                    v.preInvoke(traceId, sourceInterface, String.valueOf(ActorReference.getId(source)), targetInterface, String.valueOf(ActorReference.getId((ActorReference) toReference)), methodId, params);
+                }
+            }
+        }
         if (invokeHook == null)
         {
-            return sendMessage(toReference, oneWay, methodId, params);
+            return sendMessage(toReference, oneWay, methodId, params).whenComplete((r, e) -> {
+                if (traceEnabled)
+                {
+                    for (IInvokeListenerProvider v : getAllProviders(IInvokeListenerProvider.class))
+                    {
+                        v.postInvoke(traceId, r);
+                    }
+                }
+            });
         }
         else
         {
-            return invokeHook.invoke(this, toReference, m, oneWay, methodId, params);
+            return invokeHook.invoke(this, toReference, m, oneWay, methodId, params).whenComplete((r, e) -> {
+                if (traceEnabled)
+                {
+                    for (IInvokeListenerProvider v : getAllProviders(IInvokeListenerProvider.class))
+                    {
+                        v.postInvoke(traceId, r);
+                    }
+                }
+            });
         }
     }
 

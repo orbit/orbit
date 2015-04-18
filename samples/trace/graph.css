@@ -1,0 +1,26 @@
+graph {
+    fill-color: white;
+}
+
+edge {
+    arrow-shape: arrow;
+    text-background-mode: rounded-box;
+    text-color: black;
+    text-background-color: yellow;
+    text-alignment: along;
+    shape: cubic-curve;
+}
+
+node {
+    text-alignment: above;
+    text-color: white;
+    text-style: bold;
+    text-background-mode: rounded-box;
+    text-background-color: #222C;
+    text-padding: 4px, 3px;
+    text-offset: 0px, -6px;
+}
+
+node:clicked {
+    fill-color: red;
+}

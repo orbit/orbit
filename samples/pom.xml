@@ -46,6 +46,7 @@
         <module>chat</module>
         <module>hello</module>
 		<module>memoize</module>
+		<module>trace</module>
     </modules>
 
     <profiles>
