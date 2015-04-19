@@ -63,8 +63,6 @@ import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -92,16 +90,22 @@ class Transformer implements ClassFileTransformer
     private static final String ASYNC_DESCRIPTOR = "Lcom/ea/orbit/async/Async;";
     private static final String AWAIT_NAME = "com/ea/orbit/async/Await";
 
+    public static final String AWAIT_METHOD_DESC = "(Ljava/util/concurrent/CompletableFuture;)Ljava/lang/Object;";
+    public static final String AWAIT_METHOD_NAME = "await";
+
     private static final Type ASYNC_STATE_TYPE = Type.getType("Lcom/ea/orbit/async/runtime/AsyncAwaitState;");
     private static final String ASYNC_STATE_NAME = ASYNC_STATE_TYPE.getInternalName();
 
-    private static final Type COMPLETABLE_FUTURE_TYPE = Type.getType(CompletableFuture.class);
+    private static final Type COMPLETABLE_FUTURE_TYPE = Type.getType("Ljava/util/concurrent/CompletableFuture;");
     private static final String COMPLETABLE_FUTURE_NAME = "java/util/concurrent/CompletableFuture";
-    private static final Type COMPLETION_STAGE_TYPE = Type.getType(CompletionStage.class);
+    private static final Type COMPLETION_STAGE_TYPE = Type.getType("Ljava/util/concurrent/CompletionStage;");
 
     private static final Type OBJECT_TYPE = Type.getType(Object.class);
     private static final String _THIS = "_this";
     private static final String DYN_FUNCTION = "(" + ASYNC_STATE_TYPE.getDescriptor() + ")Ljava/util/function/Function;";
+
+    private static final String TASK_DESCRIPTOR = "Lcom/ea/orbit/concurrent/Task;";
+    private static final String TASK_NAME = "com/ea/orbit/concurrent/Task";
 
     static class AsyncClassLoader extends ClassLoader
     {
@@ -126,9 +130,10 @@ class Transformer implements ClassFileTransformer
             {
                 return null;
             }
-            if (needsInstrumentation(new FastByteInput(classfileBuffer)))
+            ClassReader cr = new ClassReader(classfileBuffer);
+            if (needsInstrumentation(cr))
             {
-                return transform(new FastByteInput(classfileBuffer));
+                return transform(cr);
             }
             return null;
         }
@@ -141,39 +146,30 @@ class Transformer implements ClassFileTransformer
 
     public <T> Class<T> instrument(Class<T> c)
     {
-        final boolean needsInstrumentation = needsInstrumentation(c);
-        if (!needsInstrumentation)
-        {
-            return c;
-        }
+
         try
         {
-            final String binName = c.getName();
-            byte[] bytes = transform(c);
-            if (bytes != null)
+            String internalName = Type.getInternalName(c);
+            InputStream resourceAsStream = c.getClassLoader().getResourceAsStream(internalName + ".class");
+            if (resourceAsStream == null)
             {
-                AsyncClassLoader loader = new AsyncClassLoader(c.getClassLoader());
-                return (Class<T>) loader.define(binName, bytes, 0, bytes.length);
+                throw new IllegalArgumentException("Can't find class file for: " + c.getName());
+            }
+            final ClassReader cr = new ClassReader(resourceAsStream);
+            if (needsInstrumentation(cr))
+            {
+                byte[] bytes = transform(cr);
+                if (bytes != null)
+                {
+                    AsyncClassLoader loader = new AsyncClassLoader(c.getClassLoader());
+                    return (Class<T>) loader.define(c.getName(), bytes, 0, bytes.length);
+                }
             }
             return c;
         }
         catch (Exception e)
         {
             throw new RuntimeException(e);
-        }
-    }
-
-    public byte[] transform(final Class<?> clazz)
-    {
-        try
-        {
-            String internalName = Type.getInternalName(clazz);
-            return transform(clazz.getClassLoader().getResourceAsStream(internalName + ".class"));
-        }
-        catch (Exception ex)
-        {
-            ex.printStackTrace();
-            throw new RuntimeException(ex);
         }
     }
 
@@ -192,9 +188,8 @@ class Transformer implements ClassFileTransformer
         return (offset == buffer.length) ? buffer : Arrays.copyOf(buffer, offset);
     }
 
-    public byte[] transform(InputStream in) throws IOException, AnalyzerException, NoSuchMethodException
+    public byte[] transform(ClassReader cr) throws IOException, AnalyzerException, NoSuchMethodException
     {
-        final ClassReader cr = new ClassReader(in);
         ClassNode cn = new ClassNode();
         cr.accept(cn, 0);
 
@@ -213,7 +208,7 @@ class Transformer implements ClassFileTransformer
             {
                 if ((visibleAnnotations.get(i)).desc.equals(ASYNC_DESCRIPTOR))
                 {
-                    mn.visibleAnnotations.remove(i);
+                    // mn.visibleAnnotations.remove(i);
                 }
             }
             countInstrumented++;
@@ -260,10 +255,10 @@ class Transformer implements ClassFileTransformer
                 {
                     // TODO: check cast at instrumentation time
                     MethodInsnNode methodIns = (MethodInsnNode) ins;
-                    if (ins.getOpcode() == Opcodes.INVOKESTATIC
-                            && "await".equals(methodIns.name)
-                            && methodIns.owner.equals(AWAIT_NAME)
-                            && methodIns.desc.equals("(Ljava/util/concurrent/CompletableFuture;)Ljava/lang/Object;"))
+                    if (methodIns.getOpcode() == Opcodes.INVOKESTATIC
+                            && AWAIT_METHOD_NAME.equals(methodIns.name)
+                            && AWAIT_NAME.equals(methodIns.owner)
+                            && AWAIT_METHOD_DESC.equals(methodIns.desc))
                     {
                         // TODO: other comparisons.
                         mv.visitInsn(Opcodes.DUP);
@@ -398,7 +393,7 @@ class Transformer implements ClassFileTransformer
 
             Type futureType = Type.getReturnType(mn.desc);
             if (!COMPLETABLE_FUTURE_TYPE.equals(futureType)
-                    && futureType.getInternalName().equals("com/ea/orbit/concurrent/Task"))
+                    && futureType.getInternalName().equals(TASK_NAME))
             {
                 mn.visitMethodInsn(INVOKESTATIC,
                         futureType.getInternalName(),
@@ -606,32 +601,143 @@ class Transformer implements ClassFileTransformer
         }
     }
 
-    boolean needsInstrumentation(InputStream in)
+    boolean needsInstrumentation(ClassReader cr)
     {
-        if (in == null)
-        {
-            // assuming that classes without a file are generated and don't need instrumentation.
-            return false;
-        }
         try
         {
-            ClassReader cr = new ClassReader(in);
-            HasAsyncMethodsChecker classVisitor = new HasAsyncMethodsChecker();
+            // checks the class pool for references
+            // to the class com.ea.orbit.async.Await
+            // and to the method Await.await(CompletableFuture)Object
+
+            // https://docs.oracle.com/javase/specs/jvms/se8/jvms8.pdf
+
+            boolean hasAwaitCall = false;
+            boolean hasAwait = false;
+            for (int i = 1, c = cr.getItemCount(); i < c; i++)
+            {
+                final int address = cr.getItem(i);
+                if (address > 0
+                        && cr.readByte(address - 1) == 7
+                        && equalsUtf8(cr, address, AWAIT_NAME))
+                {
+                    // CONSTANT_Class_info {
+                    //    u1 tag; = 7
+                    //    u2 name_index; -> utf8
+                    // }
+                    hasAwait = true;
+                    break;
+                }
+            }
+            // failing fast, no references to Await implies nothing to do.
+            if (!hasAwait)
+            {
+                return false;
+            }
+
+            // now checking for method references to Await.await
+            for (int i = 1, c = cr.getItemCount(); i < c; i++)
+            {
+                final int address = cr.getItem(i);
+                if (address > 0)
+                {
+                    // CONSTANT_Methodref_info | CONSTANT_InterfaceMethodref_info {
+                    //    u1 tag; = 10 or 11
+                    //    u2 class_index; -> class info
+                    //    u2 name_and_type_index;
+                    //}
+                    // CONSTANT_Class_info {
+                    //    u1 tag;
+                    //    u2 name_index; -> utf8
+                    // }
+                    // CONSTANT_NameAndType_info {
+                    //    u1 tag;
+                    //    u2 name_index; -> utf8
+                    //    u2 descriptor_index;; -> utf8
+                    // }
+                    int tag = cr.readByte(address - 1);
+                    if (tag == 11 || tag == 10)
+                    {
+                        int classIndex = cr.readUnsignedShort(address);
+                        if (classIndex == 0) continue;
+                        int classAddress = cr.getItem(classIndex);
+
+                        int ntIndex = cr.readUnsignedShort(address + 2);
+                        if (ntIndex == 0) continue;
+                        int ntAddress = cr.getItem(ntIndex);
+
+                        if (equalsUtf8(cr, classAddress, AWAIT_NAME)
+                                && equalsUtf8(cr, ntAddress, AWAIT_METHOD_NAME)
+                                && equalsUtf8(cr, ntAddress + 2, AWAIT_METHOD_DESC))
+                        {
+                            hasAwaitCall = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!hasAwaitCall)
+            {
+                return false;
+            }
+
+            // check for the annotations
+            NeedsInstrumentationChecker classVisitor = new NeedsInstrumentationChecker();
             cr.accept(classVisitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES | ClassReader.SKIP_CODE);
             return classVisitor.needsInstrumentation;
+
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             e.printStackTrace();
             return false;
         }
     }
 
+    private boolean equalsUtf8(final ClassReader cr, final int pointerToUtf8Index, final String str)
+    {
+        int utf8_index = cr.readUnsignedShort(pointerToUtf8Index);
+        if (utf8_index == 0)
+        {
+            return false;
+        }
+
+        //  CONSTANT_Utf8_info {
+        //    u1 tag;  = 1
+        //    u2 length;
+        //    u1 bytes[length];
+        // }
+
+        int utf8_address = cr.getItem(utf8_index);
+        final int utf8_length = cr.readUnsignedShort(utf8_address);
+        if (utf8_length == str.length())
+        {
+            // assuming the str is utf8 "safe", no special chars
+            int idx = utf8_address + 2;
+            for (int ic = 0; ic < utf8_length; ic++, idx++)
+            {
+                if (str.charAt(ic) != (char) cr.readByte(idx))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+
+    }
+
     boolean needsInstrumentation(final Class<?> c)
     {
         try
         {
-            return needsInstrumentation(c.getClassLoader().getResourceAsStream(Type.getInternalName(c) + ".class"));
+            InputStream resourceAsStream = c.getClassLoader().getResourceAsStream(Type.getInternalName(c) + ".class");
+            if (resourceAsStream == null)
+            {
+                return false;
+            }
+            byte[] bytes = toByteArray(resourceAsStream);
+            return needsInstrumentation(new ClassReader(bytes));
         }
         catch (Throwable ex)
         {
@@ -694,12 +800,12 @@ class Transformer implements ClassFileTransformer
         }
     }
 
-    private static class HasAsyncMethodsChecker extends ClassVisitor
+    private static class NeedsInstrumentationChecker extends ClassVisitor
     {
         boolean needsInstrumentation;
         MethodVisitor methodVisitor;
 
-        public HasAsyncMethodsChecker()
+        public NeedsInstrumentationChecker()
         {
             super(Opcodes.ASM5);
         }
