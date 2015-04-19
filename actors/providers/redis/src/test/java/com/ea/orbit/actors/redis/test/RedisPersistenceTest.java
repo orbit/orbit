@@ -59,7 +59,7 @@ public class RedisPersistenceTest extends StorageBaseTest
     public IOrbitProvider getStorageProvider()
     {
         final RedisStorageProvider storageProvider = new RedisStorageProvider();
-        storageProvider.setConnectionTimeout(60000);
+        storageProvider.setTimeout(60000);
         storageProvider.setDatabaseName(databaseName);
         return storageProvider;
     }

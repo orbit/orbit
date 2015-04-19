@@ -34,21 +34,24 @@ import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 public class RedisStorageProvider implements IStorageProvider {
 
-	private Jedis redis;
+	private JedisPool pool;
 	private ObjectMapper mapper;
 
 	private String host = "localhost";
 	private int port = 6379;
 	private String databaseName;
-    private int connectionTimeout = 10000;
-    private int soTimeout = 10000;
+    private int timeout = 10000;
 
     @Override
 	public Task<Void> start() {
@@ -59,7 +62,7 @@ public class RedisStorageProvider implements IStorageProvider {
 				.withGetterVisibility(JsonAutoDetect.Visibility.NONE)
 				.withSetterVisibility(JsonAutoDetect.Visibility.NONE)
 				.withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
-		redis = new Jedis(host, port, connectionTimeout, soTimeout);
+        pool = new JedisPool(new JedisPoolConfig(), host, port, timeout);
 		return Task.done();
 	}
 
@@ -70,26 +73,35 @@ public class RedisStorageProvider implements IStorageProvider {
 	}
 
 	@Override
-	public Task<Void> clearState(final ActorReference reference, final Object state) {
-		redis.del(asKey(reference));
+	public Task<Void> clearState(final ActorReference reference, final Object state)
+    {
+        try (Jedis redis = pool.getResource())
+        {
+            redis.del(asKey(reference));
+        }
 		return Task.done();
 	}
 
 	@Override
-	public Task<Void> stop() {
-		redis.close();
+	public Task<Void> stop()
+    {
+        pool.close();
 		return Task.done();
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public Task<Boolean> readState(final ActorReference reference, final Object state) {
-		String data = redis.get(asKey(reference));
+        String data;
+        try (Jedis redis = pool.getResource())
+        {
+            data = redis.get(asKey(reference));
+        }
 		if (data != null) {
 			try {
 				mapper.readerForUpdating(state).readValue(data);
 			} catch (Exception e) {
-				throw new UncheckedException(e);
+				throw new UncheckedException("Error parsing redis response: " + data, e);
 			}
 		}
 		return Task.fromValue(true);
@@ -104,7 +116,10 @@ public class RedisStorageProvider implements IStorageProvider {
 		} catch (JsonProcessingException e) {
 			throw new UncheckedException(e);
 		}
-		redis.set(asKey(reference), data);
+        try (Jedis redis = pool.getResource())
+        {
+            redis.set(asKey(reference), data);
+        }
 		return Task.done();
 	}
 
@@ -132,23 +147,14 @@ public class RedisStorageProvider implements IStorageProvider {
 		this.databaseName = databaseName;
 	}
 
-    public int getConnectionTimeout()
+    public int getTimeout()
     {
-        return connectionTimeout;
+        return timeout;
     }
 
-    public void setConnectionTimeout(final int connectionTimeout)
+    public void setTimeout(final int timeout)
     {
-        this.connectionTimeout = connectionTimeout;
+        this.timeout = timeout;
     }
 
-    public int getSoTimeout()
-    {
-        return soTimeout;
-    }
-
-    public void setSoTimeout(final int soTimeout)
-    {
-        this.soTimeout = soTimeout;
-    }
 }
