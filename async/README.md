@@ -36,7 +36,7 @@ Task<Integer> lenTask = getPageLength(new URL("http://example.com"));
 System.out.println(lenTask.join());
 
 ```
-#### With Java CompletableFuture
+#### With CompletableFuture
 ```java
 import com.ea.orbit.async.Async;
 import com.ea.orbit.async.Await;
