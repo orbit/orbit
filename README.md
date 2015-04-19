@@ -12,6 +12,7 @@ It was developed by [BioWare](http://www.bioware.com), a division of [Electronic
 
 Orbit is primarily made up of the following components:
 -  [Orbit Actors](actors/), a framework to write distributed systems using virtual actors.
+-  [Orbit Async](async/), async-await methods for the JVM.
 -  [Orbit Container](container/), a minimal inversion of control container for building online services.
 -  [Orbit Web](web/), a lightweight HTTP and Websockets container for Orbit, powered by Jetty.
 -  [Orbit Commons](commons/), various common utilities used by Orbit.
