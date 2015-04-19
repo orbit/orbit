@@ -50,7 +50,6 @@ import org.objectweb.asm.tree.analysis.Frame;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceMethodVisitor;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.instrument.ClassFileTransformer;
@@ -58,7 +57,6 @@ import java.lang.instrument.IllegalClassFormatException;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
@@ -83,6 +81,7 @@ class Transformer implements ClassFileTransformer
      * @see com.ea.orbit.async.instrumentation.InitializeAsync#ORBIT_ASYNC_RUNNING
      * @see com.ea.orbit.async.instrumentation.Transformer#ORBIT_ASYNC_RUNNING
      */
+    // there is a test case that asserts that these constants contain the same value.
     static final String ORBIT_ASYNC_RUNNING = "orbit-async.running";
 
     private static final String ASYNC_DESCRIPTOR = "Lcom/ea/orbit/async/Async;";
@@ -98,6 +97,7 @@ class Transformer implements ClassFileTransformer
     private static final Type COMPLETABLE_FUTURE_TYPE = Type.getType(COMPLETABLE_FUTURE_DESCRIPTOR);
     private static final String COMPLETABLE_FUTURE_RET = ")Ljava/util/concurrent/CompletableFuture;";
     private static final String COMPLETABLE_FUTURE_NAME = "java/util/concurrent/CompletableFuture";
+
     private static final Type COMPLETION_STAGE_TYPE = Type.getType("Ljava/util/concurrent/CompletionStage;");
 
     private static final Type OBJECT_TYPE = Type.getType(Object.class);
@@ -107,20 +107,6 @@ class Transformer implements ClassFileTransformer
     private static final String TASK_DESCRIPTOR = "Lcom/ea/orbit/concurrent/Task;";
     private static final String TASK_RET = ")Lcom/ea/orbit/concurrent/Task;";
     private static final String TASK_NAME = "com/ea/orbit/concurrent/Task";
-
-    static class AsyncClassLoader extends ClassLoader
-    {
-        public AsyncClassLoader(final ClassLoader parent)
-        {
-            super(parent);
-        }
-
-        public Class<?> define(String name, byte[] b, int off, int len)
-        {
-            return defineClass(name, b, off, len);
-        }
-    }
-
 
     @Override
     public byte[] transform(final ClassLoader loader, final String className, final Class<?> classBeingRedefined, final ProtectionDomain protectionDomain, final byte[] classfileBuffer) throws IllegalClassFormatException
@@ -144,52 +130,13 @@ class Transformer implements ClassFileTransformer
         }
     }
 
-
-    public <T> Class<T> instrument(Class<T> c)
-    {
-
-        try
-        {
-            String internalName = Type.getInternalName(c);
-            InputStream resourceAsStream = c.getClassLoader().getResourceAsStream(internalName + ".class");
-            if (resourceAsStream == null)
-            {
-                throw new IllegalArgumentException("Can't find class file for: " + c.getName());
-            }
-            final ClassReader cr = new ClassReader(resourceAsStream);
-            if (needsInstrumentation(cr))
-            {
-                byte[] bytes = transform(cr);
-                if (bytes != null)
-                {
-                    AsyncClassLoader loader = new AsyncClassLoader(c.getClassLoader());
-                    return (Class<T>) loader.define(c.getName(), bytes, 0, bytes.length);
-                }
-            }
-            return c;
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-    static byte[] toByteArray(InputStream input) throws IOException
-    {
-        byte[] buffer = new byte[Math.max(1024, input.available())];
-        int offset = 0;
-        for (int bytesRead; -1 != (bytesRead = input.read(buffer, offset, buffer.length - offset)); )
-        {
-            offset += bytesRead;
-            if (offset == buffer.length)
-            {
-                buffer = Arrays.copyOf(buffer, buffer.length + Math.max(input.available(), buffer.length >> 1));
-            }
-        }
-        return (offset == buffer.length) ? buffer : Arrays.copyOf(buffer, offset);
-    }
-
-    public byte[] transform(ClassReader cr) throws IOException, AnalyzerException, NoSuchMethodException
+    /**
+     * Does the actual instrumentation generating new bytecode
+     *
+     * @param cr the class reader for this class
+     * @return null or the new class bytes
+     */
+    public byte[] transform(ClassReader cr) throws AnalyzerException
     {
         ClassNode cn = new ClassNode();
         cr.accept(cn, 0);
@@ -201,9 +148,11 @@ class Transformer implements ClassFileTransformer
             boolean taskReturn = mn.desc.endsWith(TASK_RET);
             if (!taskReturn && !mn.desc.endsWith(COMPLETABLE_FUTURE_RET))
             {
+                // method must return completable future or task
                 continue;
             }
             boolean hasAwaitCall = false;
+            // checks if the method has a call to await()
             for (Iterator it = mn.instructions.iterator(); it.hasNext(); )
             {
                 Object o = it.next();
@@ -223,7 +172,7 @@ class Transformer implements ClassFileTransformer
                 continue;
             }
             countInstrumented++;
-            //printMethod(cn, mn);
+            // for development use: printMethod(cn, mn);
             final MethodNode mv = new MethodNode(Opcodes.ACC_PRIVATE | ACC_STATIC,
                     mn.name, mn.desc, mn.signature, (String[]) mn.exceptions.toArray(new String[mn.exceptions.size()]));
             mn.accept(mv);
@@ -268,7 +217,7 @@ class Transformer implements ClassFileTransformer
                         mv.visitInsn(Opcodes.DUP);
                         // stack: completableFuture completableFuture
 
-                        // original: future.join()
+                        // original: Await.await(future)  (that by default does: future.join())
 
                         // turns into:
 
@@ -282,6 +231,7 @@ class Transformer implements ClassFileTransformer
                         // code:    restoreStack;
                         // code:    restoreLocals;
                         // code: futureIsDone:
+                        // code: future.join():
 
                         Label futureIsDoneLabel = new Label();
 
@@ -307,12 +257,12 @@ class Transformer implements ClassFileTransformer
                         mv.visitMethodInsn(INVOKESTATIC, Type.getType(Function.class).getInternalName(), "identity", "()Ljava/util/function/Function;", false);
                         // stack: { state future function }
                         mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "exceptionally", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
-                        // stack: { state newfuture }
+                        // stack: { state new_future }
 
                         // code:    return future.exceptionally(x -> x).thenCompose(x -> _func(state));
 
                         mv.visitInsn(SWAP);
-                        // stack: { newfuture state}
+                        // stack: { new_future state}
 
                         mv.visitInvokeDynamicInsn("apply", DYN_FUNCTION,
                                 new Handle(Opcodes.H_INVOKESTATIC,
@@ -329,9 +279,9 @@ class Transformer implements ClassFileTransformer
                                 Type.getType("(Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;"));
 
 
-                        // stack: { newfuture function }
+                        // stack: { new_future function }
                         mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "thenCompose", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
-                        // stack: { newfuture2 }
+                        // stack: { new_future_02 }
                         mv.visitInsn(ARETURN);
 
                         // code: resumeLabel:
@@ -384,11 +334,11 @@ class Transformer implements ClassFileTransformer
             {
                 mv.maxLocals = Math.max(8, mv.maxLocals + 4);
                 mv.maxStack = Math.max(8, mv.maxStack + 4);
-                //printMethod(cn, mv);
+                // for development use: printMethod(cn, mv);
             }
 
             mn.instructions.clear();
-            //can't be done: mn.access |= ACC_SYNTHETIC;
+            // can't be done: mn.access |= ACC_SYNTHETIC;
             mn.tryCatchBlocks.clear();
 
             saveLocals(0, frames[0], mn);
@@ -409,8 +359,8 @@ class Transformer implements ClassFileTransformer
 
             {
                 mn.maxStack = 8;
-                //printMethod(cn, mn);
-                //printMethod(cn, mv);
+                // for development use: printMethod(cn, mn);
+                // for development use: printMethod(cn, mv);
             }
         }
         if (countInstrumented == 0)
@@ -429,7 +379,7 @@ class Transformer implements ClassFileTransformer
         cn.accept(cw);
         byte[] bytes = cw.toByteArray();
         {
-            // new ClassReader(bytes).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
+            // for development use: new ClassReader(bytes).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
         }
         return bytes;
     }
@@ -496,7 +446,7 @@ class Transformer implements ClassFileTransformer
         }
     }
 
-    private int saveLocals(int pos, Frame frame, MethodNode mv) throws NoSuchMethodException
+    private int saveLocals(int pos, Frame frame, MethodNode mv)
     {
         mv.visitTypeInsn(Opcodes.NEW, ASYNC_STATE_NAME);
         mv.visitInsn(Opcodes.DUP);
@@ -520,9 +470,9 @@ class Transformer implements ClassFileTransformer
         return count;
     }
 
-    private void saveStack(Frame frame, MethodNode mv) throws NoSuchMethodException
+    private void saveStack(Frame frame, MethodNode mv)
     {
-        // stack: { ... state }
+        // stack: { ... async_state }
         for (int i = frame.getStackSize(); --i >= 0; )
         {
             final BasicValue value = (BasicValue) frame.getStack(i);
@@ -532,17 +482,18 @@ class Transformer implements ClassFileTransformer
                         Type.getMethodDescriptor(ASYNC_STATE_TYPE, value.isReference() ? OBJECT_TYPE : value.getType(), ASYNC_STATE_TYPE), false);
             }
         }
-        // stack: { state }
+        // stack: { async_state }
     }
 
     private void restoreStackAndLocals(final Frame frame, final MethodNode mv)
     {
-        // local_1 = async state
+        // local_0 = async_state
 
         // count locals+stack
         int localsPlusStack = 0;
-        int startIndex = 0;
-        for (int i = startIndex; i < frame.getLocals(); i++)
+        final int firstLocal = 0;
+        // counting locals, counts double and long only once (they use two slots)
+        for (int i = firstLocal; i < frame.getLocals(); i++)
         {
             BasicValue local = (BasicValue) frame.getLocal(i);
             if (local != null && local != BasicValue.UNINITIALIZED_VALUE && local.getType() != null)
@@ -550,6 +501,7 @@ class Transformer implements ClassFileTransformer
                 localsPlusStack++;
             }
         }
+        // counting stack, counts double and long only once (they use two slots)
         for (int i = 0; i < frame.getStackSize(); i++)
         {
             BasicValue local = (BasicValue) frame.getStack(i);
@@ -559,14 +511,16 @@ class Transformer implements ClassFileTransformer
             }
         }
 
-        // async state
+        // local_0 = async_state
+        // restore stack
+        // stack: { }
         for (int i = 0; i < frame.getStackSize(); i++)
         {
             BasicValue local = (BasicValue) frame.getStack(i);
             if (local != null && local.getType() != null)
             {
                 final int idx = --localsPlusStack;
-                mv.visitVarInsn(Opcodes.ALOAD, startIndex);
+                mv.visitVarInsn(Opcodes.ALOAD, firstLocal);
                 mv.visitIntInsn(Opcodes.BIPUSH, idx);
 
                 if (local.isReference())
@@ -580,9 +534,11 @@ class Transformer implements ClassFileTransformer
                 }
             }
         }
-
-        // async state
-        for (int i = frame.getLocals(); --i >= startIndex; )
+        // stack: { ... }
+        // local_0 = async_state
+        // restore local vars
+        // from last to first to hold async_state until the very end
+        for (int i = frame.getLocals(); --i >= firstLocal; )
         {
             BasicValue local = (BasicValue) frame.getLocal(i);
             if (local != null && local != BasicValue.UNINITIALIZED_VALUE)
@@ -591,7 +547,7 @@ class Transformer implements ClassFileTransformer
                 {
                     final int idx = --localsPlusStack;
                     // dup the state
-                    mv.visitVarInsn(Opcodes.ALOAD, startIndex);
+                    mv.visitVarInsn(Opcodes.ALOAD, firstLocal);
                     mv.visitIntInsn(Opcodes.BIPUSH, idx);
                     if (local.isReference())
                     {
@@ -607,10 +563,13 @@ class Transformer implements ClassFileTransformer
                 else
                 {
                     throw new RuntimeException();
-                    //mv.visitVarInsn(ASTORE, i);
+                    // TODO: double check this, mv.visitVarInsn(ASTORE, i);
                 }
             }
         }
+        // stack: { ... }
+        // locals: { ... }
+        // local_0 = (this or ? if static method)
     }
 
     boolean needsInstrumentation(ClassReader cr)
@@ -738,8 +697,7 @@ class Transformer implements ClassFileTransformer
             {
                 return false;
             }
-            byte[] bytes = toByteArray(resourceAsStream);
-            return needsInstrumentation(new ClassReader(bytes));
+            return needsInstrumentation(new ClassReader(resourceAsStream));
         }
         catch (Throwable ex)
         {
@@ -748,6 +706,11 @@ class Transformer implements ClassFileTransformer
         return false;
     }
 
+
+    /**
+     * Used to discover the object types that are currently
+     * being stored in the stack and in the locals.
+     */
     private static class TypeInterpreter extends BasicInterpreter
     {
         @Override
@@ -767,9 +730,13 @@ class Transformer implements ClassFileTransformer
             {
                 Type t = ((BasicValue) v).getType();
                 Type u = ((BasicValue) w).getType();
-                if (t != null && u != null && t.getSort() == Type.OBJECT
+                if (t != null && u != null
+                        && t.getSort() == Type.OBJECT
                         && u.getSort() == Type.OBJECT)
                 {
+                    // could find a common super type here, a bit expensive
+                    // TODO: test this with an assignment
+                    //    like: local1 was CompletableFuture <- store Task
                     return BasicValue.REFERENCE_VALUE;
                 }
             }
@@ -777,6 +744,14 @@ class Transformer implements ClassFileTransformer
         }
     }
 
+    /**
+     * Emits a var opcode (STORE or LOAD) with the proper operand type.
+     *
+     * @param mv    the method visitor
+     * @param type  the var type
+     * @param store true for store, false for load
+     * @param local the index of the local variable
+     */
     private void varInsn(MethodVisitor mv, Type type, boolean store, int local)
     {
         switch (type.getSort())
