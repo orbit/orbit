@@ -114,9 +114,9 @@ public class RedisPersistenceTest extends StorageBaseTest
     }
 
     @Override
-    public int loadTestSize()
+    public int heavyTestSize()
     {
-        return 10000;
+        return 100;
     }
 
 

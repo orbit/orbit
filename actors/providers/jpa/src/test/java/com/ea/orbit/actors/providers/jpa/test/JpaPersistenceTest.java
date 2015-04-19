@@ -94,7 +94,7 @@ public class JpaPersistenceTest extends StorageBaseTest
     }
 
     @Override
-    public int loadTestSize()
+    public int heavyTestSize()
     {
         return 100;
     }

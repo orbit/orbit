@@ -54,23 +54,24 @@ public abstract class StorageBaseTest
     }
 
     @Test
-    public void loadTest() throws Exception
+    public void heavyTest() throws Exception
     {
+        // not a load test "per se" but rather a test with more than a few calls.
         OrbitStage stage = createStage();
         assertEquals(0, count());
-        for(int t=0;t<loadTestSize();t++){
+        for(int t=0;t< heavyTestSize();t++){
             String id =""+t;
             IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), id);
             helloActor.sayHello("Meep Meep"+t).join();
         }
-        assertEquals(loadTestSize(), count());
-        for(int t=0;t<loadTestSize();t++){
+        assertEquals(heavyTestSize(), count());
+        for(int t=0;t< heavyTestSize();t++){
             String id =""+t;
             IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), id);
             helloActor.sayHello("Meep Meep"+t).join();
             assertEquals(readState(id).lastName(), "Meep Meep"+t);
         }
-        for(int t=0;t<loadTestSize();t++){
+        for(int t=0;t< heavyTestSize();t++){
             String id =""+t;
             IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), id);
             helloActor.clear().join();
@@ -148,7 +149,7 @@ public abstract class StorageBaseTest
 
     public abstract long count();
 
-    public abstract int loadTestSize();
+    public abstract int heavyTestSize();
 
     public abstract IStorageTestState readState(String identity);
 
