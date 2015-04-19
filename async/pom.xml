@@ -29,18 +29,46 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.ea.orbit</groupId>
-        <artifactId>orbit-actors-parent</artifactId>
+        <artifactId>orbit-parent</artifactId>
         <version>0.2.2-SNAPSHOT</version>
+        <relativePath>..</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
+    <artifactId>orbit-async</artifactId>
+    <name>Orbit Async-Await</name>
 
-    <name>Orbit Actors Core</name>
-    <artifactId>orbit-actors-core</artifactId>
+    <properties>
+        <toolsjar>${java.home}/../lib/tools.jar</toolsjar>
+    </properties>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <!-- check this link to understand why: http://jira.codehaus.org/browse/MCOMPILER-97 -->
+                    <compilerArgument>-proc:none</compilerArgument>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.6</version>
+                <configuration>
+                    <archive>
+                        <index>true</index>
+                        <manifestEntries>
+                            <Premain-Class>com.ea.orbit.async.instrumentation.Premain</Premain-Class>
+                            <Agent-Class>com.ea.orbit.async.instrumentation.Agent</Agent-Class>
+                            <Can-Redefine-Classes>true</Can-Redefine-Classes>
+                            <Can-Retransform-Classes>true</Can-Retransform-Classes>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
             <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
                 <version>2.3</version>
@@ -53,23 +81,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         <configuration>
                             <artifactSet>
                                 <includes>
-                                    <include>com.googlecode.gentyref:gentyref</include>
-                                    <include>org.ow2.asm:asm</include>
-                                    <include>org.javassist:javassist</include>
+                                    <include>org.ow2.asm:asm-debug-all</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
                                 <relocation>
-                                    <pattern>com.googlecode.</pattern>
-                                    <shadedPattern>com.ea.orbit.actors.core.shaded.com.googlecode.</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>javassist.</pattern>
-                                    <shadedPattern>com.ea.orbit.actors.core.shaded.javassist.</shadedPattern>
-                                </relocation>
-                                <relocation>
                                     <pattern>org.objectweb.</pattern>
-                                    <shadedPattern>com.ea.orbit.actors.core.shaded.org.objectweb.</shadedPattern>
+                                    <shadedPattern>com.ea.orbit.async.shaded.org.objectweb.</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
@@ -78,31 +96,40 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>mac-profile</id>
+            <activation>
+                <file>
+                    <exists>${java.home}/../Classes/classes.jar</exists>
+                </file>
+            </activation>
+            <properties>
+                <toolsjar>${java.home}/../Classes/classes.jar</toolsjar>
+            </properties>
+        </profile>
+    </profiles>
+
     <dependencies>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-debug-all</artifactId>
+            <version>${asm.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-commons</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.googlecode.gentyref</groupId>
-            <artifactId>gentyref</artifactId>
-            <version>1.2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.10</version>
-        </dependency>
-        <dependency>
-            <groupId>org.javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <version>3.18.2-GA</version>
-        </dependency>
-        <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm</artifactId>
-            <version>${asm.version}</version>
+            <groupId>com.sun</groupId>
+            <artifactId>tools</artifactId>
+            <version>1.8.0</version>
+            <scope>system</scope>
+            <systemPath>${toolsjar}</systemPath>
         </dependency>
     </dependencies>
+
 </project>
