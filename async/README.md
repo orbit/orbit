@@ -13,22 +13,30 @@ Simple Examples
 =======
 #### With Orbit Tasks
 ```java
-@Async
-public Task<Integer> getPageLength(URL url)
+import com.ea.orbit.async.Await;
+import static com.ea.orbit.async.Await.await;
+ 
+public class Page
 {
-    Task<String> pageTask = getPage(url);
-
-    // this will never block, it will return a promise
-    String page = await(pageTask);
-
-    return Task.fromValue(page.length());
+    // has to be done at least once, usually in the main class.
+    static { Await.init(); }
+    
+    public Task<Integer> getPageLength(URL url)
+    {
+        Task<String> pageTask = getPage(url);
+ 
+        // this will never block, it will return a promise
+        String page = await(pageTask);
+ 
+        return Task.fromValue(page.length());
+    }
 }
-
+ 
 Task<Integer> lenTask = getPageLength(new URL("http://example.com"));
 System.out.println(lenTask.join());
-    
+
 ```
-#### With Java CompletableFuture
+#### With CompletableFuture
 ```java
 import com.ea.orbit.async.Async;
 import com.ea.orbit.async.Await;
@@ -39,6 +47,7 @@ public class Page
     // has to be done at least once, usually in the main class.
     static { Await.init(); }
 
+    // must mark CompletableFuture methods with @Async
     @Async
     public CompletableFuture<Integer> getPageLength(URL url)
     {
