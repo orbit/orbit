@@ -976,6 +976,7 @@ public class Execution implements IRuntime
         INodeAddress toNode = actorReference.address;
         if (toNode == null)
         {
+            // TODO: Ensure that both paths encode exception the same way.
             return hosting.locateActor(actorReference)
                     .thenCompose(x -> messaging.sendMessage(x, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params));
         }
