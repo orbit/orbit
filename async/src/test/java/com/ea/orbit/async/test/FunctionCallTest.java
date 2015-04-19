@@ -28,7 +28,6 @@
 
 package com.ea.orbit.async.test;
 
-import com.ea.orbit.async.Async;
 import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
 
@@ -52,7 +51,6 @@ public class FunctionCallTest
     {
         private List<CompletableFuture> blockers = new ArrayList<>();
 
-        @Async
         public Task<String> doSomething()
         {
             String res1 = await(blocker());
@@ -75,6 +73,7 @@ public class FunctionCallTest
             }
         }
     }
+
     @Test
     public void testBlockingAndException() throws IllegalAccessException, InstantiationException
     {

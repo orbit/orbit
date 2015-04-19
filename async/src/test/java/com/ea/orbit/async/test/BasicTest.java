@@ -45,7 +45,6 @@ public class BasicTest
         Await.init();
     }
 
-
     public static class SomethingAsync
     {
         @Async

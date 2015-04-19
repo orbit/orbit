@@ -28,7 +28,6 @@
 
 package com.ea.orbit.async.test;
 
-import com.ea.orbit.async.Async;
 import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
 
@@ -52,7 +51,6 @@ public class MultipleAwaitTest
     {
         private List<CompletableFuture> blockers = new ArrayList<>();
 
-        @Async
         public Task<String> doSomething()
         {
             String res1 = await(blocker());
@@ -60,8 +58,6 @@ public class MultipleAwaitTest
             return Task.fromValue(res1 + ":" + res2);
         }
 
-
-        @Async
         public Task<String> doSomething(Task<String> blocker1, Task<String> blocker2)
         {
             String res1 = await(blocker1);
@@ -69,7 +65,6 @@ public class MultipleAwaitTest
             return Task.fromValue(res1 + ":" + res2);
             //return Task.fromValue(res1 + ":" + res2);
         }
-
 
         private CompletableFuture<String> blocker()
         {

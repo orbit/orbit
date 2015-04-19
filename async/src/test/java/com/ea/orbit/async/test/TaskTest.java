@@ -28,7 +28,6 @@
 
 package com.ea.orbit.async.test;
 
-import com.ea.orbit.async.Async;
 import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
 
@@ -46,7 +45,6 @@ public class TaskTest
 
     public static class TaskSomethingAsync
     {
-        @Async
         public Task<Object> doSomething(Task<String> blocker)
         {
             String res = await(blocker);
@@ -56,7 +54,6 @@ public class TaskTest
 
     public static class TaskSomethingWithLocalsAndStack
     {
-        @Async
         public Task<Object> doSomething(Task<String> blocker)
         {
             int local = 7;
@@ -67,7 +64,6 @@ public class TaskTest
 
     public static class TaskSomethingAsyncWithException
     {
-        @Async
         public Task<Object> doSomething(Task<String> blocker)
         {
             try

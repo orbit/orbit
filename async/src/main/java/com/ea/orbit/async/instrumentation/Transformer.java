@@ -28,9 +28,7 @@
 
 package com.ea.orbit.async.instrumentation;
 
-import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
@@ -40,7 +38,6 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -62,6 +59,7 @@ import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
@@ -96,7 +94,9 @@ class Transformer implements ClassFileTransformer
     private static final Type ASYNC_STATE_TYPE = Type.getType("Lcom/ea/orbit/async/runtime/AsyncAwaitState;");
     private static final String ASYNC_STATE_NAME = ASYNC_STATE_TYPE.getInternalName();
 
-    private static final Type COMPLETABLE_FUTURE_TYPE = Type.getType("Ljava/util/concurrent/CompletableFuture;");
+    private static final String COMPLETABLE_FUTURE_DESCRIPTOR = "Ljava/util/concurrent/CompletableFuture;";
+    private static final Type COMPLETABLE_FUTURE_TYPE = Type.getType(COMPLETABLE_FUTURE_DESCRIPTOR);
+    private static final String COMPLETABLE_FUTURE_RET = ")Ljava/util/concurrent/CompletableFuture;";
     private static final String COMPLETABLE_FUTURE_NAME = "java/util/concurrent/CompletableFuture";
     private static final Type COMPLETION_STAGE_TYPE = Type.getType("Ljava/util/concurrent/CompletionStage;");
 
@@ -105,6 +105,7 @@ class Transformer implements ClassFileTransformer
     private static final String DYN_FUNCTION = "(" + ASYNC_STATE_TYPE.getDescriptor() + ")Ljava/util/function/Function;";
 
     private static final String TASK_DESCRIPTOR = "Lcom/ea/orbit/concurrent/Task;";
+    private static final String TASK_RET = ")Lcom/ea/orbit/concurrent/Task;";
     private static final String TASK_NAME = "com/ea/orbit/concurrent/Task";
 
     static class AsyncClassLoader extends ClassLoader
@@ -197,19 +198,29 @@ class Transformer implements ClassFileTransformer
 
         for (MethodNode mn : (List<MethodNode>) new ArrayList(cn.methods))
         {
-            if (mn.visibleAnnotations == null
-                    || !mn.visibleAnnotations.stream().anyMatch(a -> ((AnnotationNode) a).desc.equals(ASYNC_DESCRIPTOR)))
+            boolean taskReturn = mn.desc.endsWith(TASK_RET);
+            if (!taskReturn && !mn.desc.endsWith(COMPLETABLE_FUTURE_RET))
             {
                 continue;
             }
-            // removing async annotation to prevent reinstrumentation
-            List<AnnotationNode> visibleAnnotations = (List<AnnotationNode>) mn.visibleAnnotations;
-            for (int i = visibleAnnotations.size(); --i >= 0; )
+            boolean hasAwaitCall = false;
+            for (Iterator it = mn.instructions.iterator(); it.hasNext(); )
             {
-                if ((visibleAnnotations.get(i)).desc.equals(ASYNC_DESCRIPTOR))
+                Object o = it.next();
+                if (o instanceof MethodInsnNode && isAwaitCall((MethodInsnNode) o))
                 {
-                    // mn.visibleAnnotations.remove(i);
+                    hasAwaitCall = true;
+                    break;
                 }
+            }
+            if (!hasAwaitCall)
+            {
+                continue;
+            }
+            if (!taskReturn && (mn.visibleAnnotations == null
+                    || !mn.visibleAnnotations.stream().anyMatch(a -> ((AnnotationNode) a).desc.equals(ASYNC_DESCRIPTOR))))
+            {
+                continue;
             }
             countInstrumented++;
             //printMethod(cn, mn);
@@ -221,13 +232,9 @@ class Transformer implements ClassFileTransformer
             mv.desc = Type.getMethodDescriptor(COMPLETABLE_FUTURE_TYPE, ASYNC_STATE_TYPE, OBJECT_TYPE);
             mv.signature = null;
 
-            final InsnList instructions = mn.instructions;
-
-
             Analyzer analyzer = new Analyzer(new TypeInterpreter());
             Frame[] frames = analyzer.analyze(cn.name, mn);
-            final AbstractInsnNode[] isns = instructions.toArray();
-
+            final AbstractInsnNode[] instructions = mn.instructions.toArray();
 
             mv.instructions.clear();
 
@@ -246,19 +253,16 @@ class Transformer implements ClassFileTransformer
             switchIns.labels.add((LabelNode) mv.instructions.getLast());
             restoreStackAndLocals(frames[0], mv);
             Label lastRestorePoint = null;
-            for (int i = 0; i < isns.length; i++)
+            for (int i = 0; i < instructions.length; i++)
             {
-                final AbstractInsnNode ins = isns[i];
+                final AbstractInsnNode ins = instructions[i];
                 final Frame frame = frames[i];
 
                 if (ins instanceof MethodInsnNode)
                 {
                     // TODO: check cast at instrumentation time
                     MethodInsnNode methodIns = (MethodInsnNode) ins;
-                    if (methodIns.getOpcode() == Opcodes.INVOKESTATIC
-                            && AWAIT_METHOD_NAME.equals(methodIns.name)
-                            && AWAIT_NAME.equals(methodIns.owner)
-                            && AWAIT_METHOD_DESC.equals(methodIns.desc))
+                    if (isAwaitCall(methodIns))
                     {
                         // TODO: other comparisons.
                         mv.visitInsn(Opcodes.DUP);
@@ -428,6 +432,14 @@ class Transformer implements ClassFileTransformer
             // new ClassReader(bytes).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
         }
         return bytes;
+    }
+
+    private boolean isAwaitCall(final MethodInsnNode methodIns)
+    {
+        return methodIns.getOpcode() == Opcodes.INVOKESTATIC
+                && AWAIT_METHOD_NAME.equals(methodIns.name)
+                && AWAIT_NAME.equals(methodIns.owner)
+                && AWAIT_METHOD_DESC.equals(methodIns.desc);
     }
 
     private void printMethod(final ClassNode cn, final MethodNode mv)
@@ -675,17 +687,7 @@ class Transformer implements ClassFileTransformer
                     }
                 }
             }
-
-            if (!hasAwaitCall)
-            {
-                return false;
-            }
-
-            // check for the annotations
-            NeedsInstrumentationChecker classVisitor = new NeedsInstrumentationChecker();
-            cr.accept(classVisitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES | ClassReader.SKIP_CODE);
-            return classVisitor.needsInstrumentation;
-
+            return hasAwaitCall;
         }
         catch (Exception e)
         {
@@ -800,39 +802,4 @@ class Transformer implements ClassFileTransformer
         }
     }
 
-    private static class NeedsInstrumentationChecker extends ClassVisitor
-    {
-        boolean needsInstrumentation;
-        MethodVisitor methodVisitor;
-
-        public NeedsInstrumentationChecker()
-        {
-            super(Opcodes.ASM5);
-        }
-
-        @Override
-        public MethodVisitor visitMethod(final int access, final String name, final String desc, final String signature, final String[] exceptions)
-        {
-            if (needsInstrumentation)
-            {
-                return null;
-            }
-            if (methodVisitor == null)
-            {
-                methodVisitor = new MethodVisitor(ASM5)
-                {
-                    @Override
-                    public AnnotationVisitor visitAnnotation(final String desc, final boolean visible)
-                    {
-                        if (desc.equals(ASYNC_DESCRIPTOR))
-                        {
-                            needsInstrumentation = true;
-                        }
-                        return null;
-                    }
-                };
-            }
-            return methodVisitor;
-        }
-    }
 }
