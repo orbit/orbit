@@ -50,6 +50,6 @@ public class Premain
     {
         inst.addTransformer(new Transformer(), true);
         Transformer.initialized.complete(null);
-        System.setProperty("orbit-async.running", "true");
+        AgentLoaderLatch.countDown();
     }
 }

@@ -140,11 +140,7 @@ public class AgentLoader
             VirtualMachine vm = VirtualMachine.attach(pid);
             vm.loadAgent(jarName, "");
             vm.detach();
-            while (!"true".equals(System.getProperty("orbit-async.running", "false")))
-            {
-                Thread.sleep(1);
-            }
-            //Transformer.initialized.join();
+            AgentLoaderLatch.await();
         }
         catch (Throwable e)
         {
