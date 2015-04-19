@@ -18,7 +18,7 @@ public Task<Integer> getPageLength(URL url)
 {
     Task<String> pageTask = getPage(url);
 
-    // this will never block, it will return an promise
+    // this will never block, it will return a promise
     String page = await(pageTask);
 
     return Task.fromValue(page.length());
@@ -36,7 +36,7 @@ import static com.ea.orbit.async.Await.await;
 
 public class Page
 {
-    // has to be done at least once, usally in the main class.
+    // has to be done at least once, usually in the main class.
     static { Await.init(); }
 
     @Async
