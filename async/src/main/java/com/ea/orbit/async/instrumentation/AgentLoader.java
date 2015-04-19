@@ -144,6 +144,15 @@ class AgentLoader
             VirtualMachine vm = VirtualMachine.attach(pid);
             vm.loadAgent(jarName, "");
             vm.detach();
+
+            // In scenarios were the application class loader is not the system class loader
+            // we can't share application classes with the agent, since it they would just
+            // be loaded again by the system class loader.
+            //
+            // using System.properties is ugly but solves the problem of sharing data.
+            //
+            // keep in mind that this loop happens only once in the entire application lifecycle.
+            // and during the static initialization of the class Await.
             while (!"true".equals(System.getProperty(InitializeAsync.ORBIT_ASYNC_RUNNING, "false")))
             {
                 Thread.sleep(1);
