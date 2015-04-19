@@ -18,6 +18,9 @@ import static com.ea.orbit.async.Await.await;
  
 public class Page
 {
+    // has to be done at least once, usually in the main class.
+    static { Await.init(); }
+    
     public Task<Integer> getPageLength(URL url)
     {
         Task<String> pageTask = getPage(url);
