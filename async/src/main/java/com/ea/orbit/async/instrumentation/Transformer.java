@@ -77,21 +77,31 @@ import static org.objectweb.asm.Opcodes.*;
  */
 class Transformer implements ClassFileTransformer
 {
-    public static final String ASYNC_DESCRIPTOR = "Lcom/ea/orbit/async/Async;";
-    public static final String AWAIT_NAME = "com/ea/orbit/async/Await";
+    /**
+     * Name of the property that will be set by the
+     * Agent to flag that the instrumentation is already running.
+     *
+     * There are two definitions of this constant because the initialization
+     * classes are not supposed be accessed by the agent classes, and vice-versa
+     *
+     * @see com.ea.orbit.async.instrumentation.InitializeAsync#ORBIT_ASYNC_RUNNING
+     * @see com.ea.orbit.async.instrumentation.Transformer#ORBIT_ASYNC_RUNNING
+     */
+    static final String ORBIT_ASYNC_RUNNING = "orbit-async.running";
 
-    public static final Type ASYNC_STATE_TYPE = Type.getType("Lcom/ea/orbit/async/runtime/AsyncAwaitState;");
-    public static final String ASYNC_STATE_NAME = ASYNC_STATE_TYPE.getInternalName();
+    private static final String ASYNC_DESCRIPTOR = "Lcom/ea/orbit/async/Async;";
+    private static final String AWAIT_NAME = "com/ea/orbit/async/Await";
 
-    public static final Type COMPLETABLE_FUTURE_TYPE = Type.getType(CompletableFuture.class);
-    public static final String COMPLETABLE_FUTURE_NAME = "java/util/concurrent/CompletableFuture";
-    public static final Type COMPLETION_STAGE_TYPE = Type.getType(CompletionStage.class);
+    private static final Type ASYNC_STATE_TYPE = Type.getType("Lcom/ea/orbit/async/runtime/AsyncAwaitState;");
+    private static final String ASYNC_STATE_NAME = ASYNC_STATE_TYPE.getInternalName();
 
-    public static final Type OBJECT_TYPE = Type.getType(Object.class);
-    public static final String _THIS = "_this";
+    private static final Type COMPLETABLE_FUTURE_TYPE = Type.getType(CompletableFuture.class);
+    private static final String COMPLETABLE_FUTURE_NAME = "java/util/concurrent/CompletableFuture";
+    private static final Type COMPLETION_STAGE_TYPE = Type.getType(CompletionStage.class);
+
+    private static final Type OBJECT_TYPE = Type.getType(Object.class);
+    private static final String _THIS = "_this";
     private static final String DYN_FUNCTION = "(" + ASYNC_STATE_TYPE.getDescriptor() + ")Ljava/util/function/Function;";
-
-    static CompletableFuture initialized = new CompletableFuture();
 
     static class AsyncClassLoader extends ClassLoader
     {

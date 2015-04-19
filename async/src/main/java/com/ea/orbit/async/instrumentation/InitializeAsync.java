@@ -34,9 +34,21 @@ package com.ea.orbit.async.instrumentation;
  */
 public class InitializeAsync
 {
+    /**
+     * Name of the property that will be set by the
+     * Agent to flag that the instrumentation is already running.
+     *
+     * There are two definitions of this constant because the initialization
+     * classes are not supposed be accessed by the agent classes, and vice-versa
+     *
+     * @see com.ea.orbit.async.instrumentation.InitializeAsync#ORBIT_ASYNC_RUNNING
+     * @see com.ea.orbit.async.instrumentation.Transformer#ORBIT_ASYNC_RUNNING
+     */
+    static final String ORBIT_ASYNC_RUNNING = "orbit-async.running";
+
     static
     {
-        if (!Transformer.initialized.isDone())
+        if (!"true".equals(System.getProperty(InitializeAsync.ORBIT_ASYNC_RUNNING, "false")))
         {
             // the indirection is necessary to prevent
             // touching "com.sun.tools" when the agent was loaded via
@@ -50,5 +62,11 @@ public class InitializeAsync
                 throw new RuntimeException("Error attaching orbit-async java agent", e);
             }
         }
+    }
+
+    public static void init()
+    {
+        // does nothing but causes the static initialization to run.
+        // static initialization runs only once and it is synchronized.
     }
 }

@@ -49,7 +49,6 @@ public class Premain
     public static void premain(String agentArgs, Instrumentation inst)
     {
         inst.addTransformer(new Transformer(), true);
-        Transformer.initialized.complete(null);
-        System.setProperty("orbit-async.running", "true");
+        System.setProperty(Transformer.ORBIT_ASYNC_RUNNING, "true");
     }
 }

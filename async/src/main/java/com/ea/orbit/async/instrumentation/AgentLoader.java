@@ -53,14 +53,18 @@ import java.net.URLClassLoader;
  *
  * @author Daniel Sperry
  */
-public class AgentLoader
+class AgentLoader
 {
     static
     {
-        if (!Transformer.initialized.isDone())
+        // yes, a "global" variable.
+        // it's hard to escape this when the system class loader
+        // is different from the application class loader.
+        if (!"true".equals(System.getProperty(InitializeAsync.ORBIT_ASYNC_RUNNING, "false")))
         {
             loadAgent();
         }
+        // else: being here means that probably the agent was started it the -javaagent option
     }
 
     static URL getClassPathFor(Class<?> clazz) throws URISyntaxException, MalformedURLException
@@ -81,7 +85,7 @@ public class AgentLoader
             if (clazz.getPackage() != null)
             {
                 String pn = clazz.getPackage().getName();
-                for (int i = pn.indexOf('.'); i >= 0; i = pn.indexOf('.', i+1))
+                for (int i = pn.indexOf('.'); i >= 0; i = pn.indexOf('.', i + 1))
                 {
                     dir = dir.getParentFile();
                 }
@@ -91,7 +95,7 @@ public class AgentLoader
         }
     }
 
-    public static void loadAgent()
+    static void loadAgent()
     {
         String jarName = null;
         try
@@ -140,11 +144,10 @@ public class AgentLoader
             VirtualMachine vm = VirtualMachine.attach(pid);
             vm.loadAgent(jarName, "");
             vm.detach();
-            while (!"true".equals(System.getProperty("orbit-async.running", "false")))
+            while (!"true".equals(System.getProperty(InitializeAsync.ORBIT_ASYNC_RUNNING, "false")))
             {
                 Thread.sleep(1);
             }
-            //Transformer.initialized.join();
         }
         catch (Throwable e)
         {

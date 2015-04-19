@@ -28,49 +28,15 @@
 
 package com.ea.orbit.async.instrumentation;
 
-import java.lang.instrument.Instrumentation;
+import org.junit.Test;
 
-/**
- * Class called when a java agent is attached to the jvm in runtime.
- */
-public class Agent
+import static org.junit.Assert.assertEquals;
+
+public class ConstantTest
 {
-    /*
-     * From https://docs.oracle.com/javase/8/docs/api/index.html?java/lang/instrument/Instrumentation.html
-     *
-     * Agent-Class
-     *
-     * If an implementation supports a mechanism to start agents sometime
-     * after the VM has started then this attribute specifies the agent class.
-     * That is, the class containing the agentmain method. This attribute is
-     * required, if it is not present the agent will not be started. Note: this
-     * is a class name, not a file name or path.
-     */
-    public static void agentmain(String agentArgs, Instrumentation inst)
+    @Test
+    public void testSignalingConstant()
     {
-        Transformer transformer = new Transformer();
-        inst.addTransformer(transformer, true);
-        f1:
-        for (Class<?> clazz : inst.getAllLoadedClasses())
-        {
-            if (inst.isModifiableClass(clazz)
-                    && !clazz.getName().startsWith("java.")
-                    && !clazz.getName().startsWith("javax.")
-                    && !clazz.getName().startsWith("sun."))
-            {
-                try
-                {
-                    if (transformer.needsInstrumentation(clazz))
-                    {
-                        inst.retransformClasses(clazz);
-                    }
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        }
-        System.setProperty(Transformer.ORBIT_ASYNC_RUNNING, "true");
+        assertEquals("Signaling constants must match", Transformer.ORBIT_ASYNC_RUNNING, InitializeAsync.ORBIT_ASYNC_RUNNING);
     }
 }

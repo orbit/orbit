@@ -68,14 +68,12 @@ import java.util.concurrent.CompletableFuture;
  * Otherwise, the first method to call {@code await()} might be blocking,
  * and a warning message will be printed to the console.
  * Subsequent async methods will work as expected.
- *
  */
 public interface Await
 {
-    static Object async = new InitializeAsync();
-
     static void init()
     {
+        InitializeAsync.init();
     }
 
     public static <T> T await(CompletableFuture<T> future)
@@ -83,5 +81,4 @@ public interface Await
         System.out.printf("Warning: Illegal call to await, add static { Await.init(); } to the main program class ");
         return future.join();
     }
-
 }
