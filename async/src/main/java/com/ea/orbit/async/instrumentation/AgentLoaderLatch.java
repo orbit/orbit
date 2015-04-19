@@ -28,50 +28,22 @@
 
 package com.ea.orbit.async.instrumentation;
 
-import java.lang.instrument.Instrumentation;
+import java.util.concurrent.CountDownLatch;
 
 /**
- * Class called when a java agent is attached to the jvm in runtime.
+ * @author Johno Crawford (johno@sulake.com)
  */
-public class Agent
+public class AgentLoaderLatch
 {
-    /*
-     * From https://docs.oracle.com/javase/8/docs/api/index.html?java/lang/instrument/Instrumentation.html
-     *
-     * Agent-Class
-     *
-     * If an implementation supports a mechanism to start agents sometime
-     * after the VM has started then this attribute specifies the agent class.
-     * That is, the class containing the agentmain method. This attribute is
-     * required, if it is not present the agent will not be started. Note: this
-     * is a class name, not a file name or path.
-     */
-    public static void agentmain(String agentArgs, Instrumentation inst)
+    private static final CountDownLatch latch = new CountDownLatch(1);
+
+    public static void countDown()
     {
-        Transformer transformer = new Transformer();
-        inst.addTransformer(transformer, true);
-        f1:
-        for (Class<?> clazz : inst.getAllLoadedClasses())
-        {
-            if (inst.isModifiableClass(clazz)
-                    && !clazz.getName().startsWith("java.")
-                    && !clazz.getName().startsWith("javax.")
-                    && !clazz.getName().startsWith("sun."))
-            {
-                try
-                {
-                    if (transformer.needsInstrumentation(clazz))
-                    {
-                        inst.retransformClasses(clazz);
-                    }
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        }
-        Transformer.initialized.complete(null);
-        AgentLoaderLatch.countDown();
+        latch.countDown(); // blast-off
+    }
+
+    public static void await() throws InterruptedException
+    {
+        latch.await();
     }
 }
