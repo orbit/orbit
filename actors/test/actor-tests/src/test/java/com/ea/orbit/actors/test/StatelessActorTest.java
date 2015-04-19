@@ -95,7 +95,9 @@ public class StatelessActorTest extends ActorBaseTest
         // the client might have enough time to send another messages causing a new activation.
         // The problem here is that the fake network is too fast to test this properly
         // This could be "fixed" with some sleeps.
-        // We are using " awaitFor(stagesIdle)" to ensure no stages are processing any messages.
+
+        // We are using " awaitFor(stagesIdle)" to ensure no stages are processing any messages,
+        // but it's not bullet proof yet.
         assertEquals(4, set.size());
 
         set.clear();
