@@ -11,7 +11,7 @@ Orbit is licensed under the [BSD 3-Clause License](../LICENSE).
 
 Simple Examples
 =======
-#### With orbit Tasks
+#### With Orbit Tasks
 ```java
 @Async
 public Task<Integer> getPageLength(URL url)
@@ -24,11 +24,11 @@ public Task<Integer> getPageLength(URL url)
     return Task.fromValue(page.length());
 }
 
-Task<Ingeger> lenTask = getPageLength(new URL("http://example.com"));
+Task<Integer> lenTask = getPageLength(new URL("http://example.com"));
 System.out.println(lenTask.join());
     
 ```
-#### With CompletableFuture
+#### With Java CompletableFuture
 ```java
 import com.ea.orbit.async.Async;
 import com.ea.orbit.async.Await;
@@ -48,7 +48,7 @@ public class Page
     }
  }
 
-CompletableFuture<Ingeger> lenTask = getPageLength(new URL("http://example.com"));
+CompletableFuture<Integer> lenTask = getPageLength(new URL("http://example.com"));
 System.out.println(lenTask.join());
 
 ```
