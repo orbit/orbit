@@ -8,3 +8,4 @@ dependency-reduced-pom.xml
 .settings
 .factorypath
 .apt_generated
+**/log/**

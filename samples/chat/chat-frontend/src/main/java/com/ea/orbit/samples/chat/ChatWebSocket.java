@@ -31,6 +31,7 @@ package com.ea.orbit.samples.chat;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.concurrent.Task;
+
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
@@ -43,6 +44,9 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
 import java.io.StringReader;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 
 @ServerEndpoint("/sample/chat/{chatName}")
@@ -61,7 +65,11 @@ public class ChatWebSocket
             @Override
             public Task<Void> receiveMessage(final ChatMessageDto message)
             {
-                JsonObject jsonObject = Json.createObjectBuilder().add("message", message.getMessage()).add("sender", message.getSender()).build();
+                JsonObject jsonObject = Json.createObjectBuilder()
+                        .add("message", message.getMessage())
+                        .add("sender", message.getSender())
+                        .add("received", ZonedDateTime.ofInstant(message.getWhen().toInstant(), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_INSTANT))
+                        .build();
 
                 session.getAsyncRemote().sendObject(jsonObject.toString());
                 return Task.done();
@@ -71,7 +79,15 @@ public class ChatWebSocket
 
         chat.getHistory(100).thenAccept(ms -> {
                     JsonArrayBuilder array = Json.createArrayBuilder();
-                    ms.stream().forEach(m -> array.add(Json.createObjectBuilder().add("message", m.getMessage()).add("sender", m.getSender()).build()));
+                    ms.stream().forEach(
+                            m -> array.add(
+                                    Json.createObjectBuilder()
+                                            .add("message", m.getMessage())
+                                            .add("sender", m.getSender())
+                                            .add("received", m.getWhen().toInstant().atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_INSTANT))
+                                            .build()
+                            )
+                    );
                     session.getAsyncRemote().sendObject(
                             Json.createObjectBuilder().add("history", array).build().toString());
                 }
