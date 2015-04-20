@@ -275,6 +275,8 @@ public class OrbitContainer
     @SuppressWarnings("unchecked")
     public void start()
     {
+        logger.info("Starting Orbit Container");
+
         if (state != ContainerState.CREATED)
         {
             throw new IllegalStateException(state.toString());
@@ -306,7 +308,11 @@ public class OrbitContainer
             {
                 for (final Object service : providers)
                 {
-                    logger.info(service.toString());
+                    if(logger.isDebugEnabled())
+                    {
+                        logger.debug("Adding Provider: {0}", service.toString());
+                    }
+
                     add((service instanceof Class) ? (Class<?>) service : Class.forName(String.valueOf(service)));
                 }
             }
@@ -368,6 +374,8 @@ public class OrbitContainer
                 Task.allOf(futures).join();
             }
             state = ContainerState.STARTED;
+
+            logger.info("Orbit Container started");
         }
         catch (Throwable ex)
         {
@@ -378,6 +386,7 @@ public class OrbitContainer
 
     public void stop()
     {
+        logger.info("Stopping Orbit Container");
         if (state != ContainerState.STARTED)
         {
             throw new IllegalStateException(state.toString());
@@ -401,6 +410,7 @@ public class OrbitContainer
         }
         stopFuture.complete(null);
         state = ContainerState.STOPPED;
+        logger.info("Orbit Container stopped");
     }
 
 
