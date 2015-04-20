@@ -73,8 +73,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             // todo: escape?
             if(recv.user || recv.message) {
                 var msg = recv;
+				var dateString = "";
+				var date = new Date(msg.received)
+				if( !isNaN(date.getTime()) )
+				{
+					dateString = date.toLocaleString();
+				}
                 var $messageLine = $(
-                        '<tr><td class="date">' + (msg.received ? msg.received : "")
+                        '<tr><td class="date">' + dateString
                         + '</td><td class="user">' + msg.sender
                         + '</td><td class="message">' + msg.message
                         + '</td></tr>');
@@ -83,8 +89,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 $chatWindow.empty();
                 for(var i=0; i<recv.history.length; i++) {
                     var msg = recv.history[i];
+					var date = new Date(msg.received)
+					if( !isNaN(date.getTime()) )
+					{
+						dateString = date.toLocaleString();
+					}
                     var $messageLine = $(
-                            '<tr><td class="date">' + (msg.received ? msg.received : "")
+                            '<tr><td class="date">' + dateString
                             + '</td><td class="user">' + msg.sender
                             + '</td><td class="message">' + msg.message
                             + '</td></tr>');
