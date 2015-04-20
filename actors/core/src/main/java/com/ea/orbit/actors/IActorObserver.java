@@ -95,5 +95,12 @@ import com.ea.orbit.concurrent.Task;
  */
 public interface IActorObserver
 {
-
+    /**
+     * Allows the application to verify if the observer is still alive.
+     * Used by {@code ObserverManager.cleanup()}
+     */
+    default Task<?> ping()
+    {
+        return Task.done();
+    }
 }
