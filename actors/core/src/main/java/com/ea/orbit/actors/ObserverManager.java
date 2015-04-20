@@ -89,8 +89,7 @@ public class ObserverManager<T extends IActorObserver> implements Serializable
     public Task<?> cleanup()
     {
         final Stream<Task<?>> stream = observers.stream()
-                .map(o ->
-                        ((Task<?>) (o).ping()).whenComplete((final Object pr, final Throwable pe) ->
+                .map(o -> (o).ping().handle((final Object pr, final Throwable pe) ->
                         {
                             if (pe != null)
                             {
@@ -98,6 +97,7 @@ public class ObserverManager<T extends IActorObserver> implements Serializable
                                 // this shouldn't be a problem.
                                 observers.remove(o);
                             }
+                            return Task.done();
                         }));
         return Task.allOf(stream);
     }
