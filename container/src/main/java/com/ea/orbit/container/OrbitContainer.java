@@ -69,6 +69,7 @@ public class OrbitContainer
     @Config("orbit.providers")
     private List<Object> providers = new ArrayList<>();
 
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(OrbitContainer.class);
 
     private final DependencyRegistry registry = new DependencyRegistry()
     {
@@ -305,8 +306,7 @@ public class OrbitContainer
             {
                 for (final Object service : providers)
                 {
-                    // TODO: use logger
-                    System.out.println(service);
+                    logger.info(service.toString());
                     add((service instanceof Class) ? (Class<?>) service : Class.forName(String.valueOf(service)));
                 }
             }
