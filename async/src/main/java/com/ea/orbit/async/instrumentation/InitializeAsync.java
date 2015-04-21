@@ -28,6 +28,21 @@
 
 package com.ea.orbit.async.instrumentation;
 
+import com.ea.orbit.instrumentation.AgentLoader;
+import com.ea.orbit.instrumentation.ClassPathUtils;
+
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.analysis.Analyzer;
+
+import java.io.File;
+import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
+
 /**
  * Internal class to (when necessary) attach a java agent to
  * the jvm to instrument async-await methods.
@@ -48,7 +63,7 @@ public class InitializeAsync
     static final String ORBIT_ASYNC_RUNNING = "orbit-async.running";
 
     /**
-     * @see com.ea.orbit.async.instrumentation.AgentLoader
+     * @see com.ea.orbit.instrumentation.AgentLoader
      */
     static
     {
@@ -59,7 +74,21 @@ public class InitializeAsync
             // the jvm parameter "-javaagent"
             try
             {
-                Class.forName("com.ea.orbit.async.instrumentation.AgentLoader").newInstance();
+                loadAgent();
+
+                // TODO: replace this with a class forcefully loaded into the systemLoader
+                // In scenarios were the application class loader is not the system class loader
+                // we can't share application classes with the agent, since it they would just
+                // be loaded again by the system class loader.
+                //
+                // using System.properties is ugly but solves the problem of sharing data.
+                //
+                // keep in mind that this loop happens only once in the entire application lifecycle.
+                // and during the static initialization of the class Await.
+                while (!"true".equals(System.getProperty(InitializeAsync.ORBIT_ASYNC_RUNNING, "false")))
+                {
+                    Thread.sleep(1);
+                }
             }
             catch (Exception e)
             {
@@ -67,6 +96,73 @@ public class InitializeAsync
             }
         }
     }
+
+    static URL getClassPathFor(Class<?> clazz) throws URISyntaxException, MalformedURLException
+    {
+        return ClassPathUtils.getClassPathFor(clazz);
+    }
+
+    static void loadAgent()
+    {
+        String jarName = null;
+        try
+        {
+            String nameOfRunningVM = ManagementFactory.getRuntimeMXBean().getName();
+            int p = nameOfRunningVM.indexOf('@');
+            String pid = nameOfRunningVM.substring(0, p);
+
+            final URL url = getClassPathFor(InitializeAsync.class);
+            final File classPathFile = new File(url.toURI());
+            if (classPathFile.isFile())
+            {
+                jarName = classPathFile.getPath();
+            }
+            else
+            {
+                // test mode (or expanded jars mode)
+                // this happens during "mvn test" in the project dir
+                // or if someone expanded the jars
+                File jarFile = new File(InitializeAsync.class.getResource("orbit-async-meta.jar").toURI());
+                jarName = jarFile.getPath();
+
+                ClassLoader mainAppLoader = ClassLoader.getSystemClassLoader();
+                if (mainAppLoader != InitializeAsync.class.getClassLoader())
+                {
+                    // this happens during "mvn test" from the parent project
+                    final URL agentClassPath = getClassPathFor(InitializeAsync.class);
+                    final URL asmClassPath = getClassPathFor(ClassVisitor.class);
+                    final URL asmClassPath2 = getClassPathFor(ClassNode.class);
+                    final URL asmClassPath3 = getClassPathFor(Analyzer.class);
+                    try
+                    {
+                        final Method method = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{ URL.class });
+                        method.setAccessible(true);
+                        method.invoke(mainAppLoader, agentClassPath);
+                        method.invoke(mainAppLoader, asmClassPath);
+                        method.invoke(mainAppLoader, asmClassPath2);
+                        method.invoke(mainAppLoader, asmClassPath3);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new IllegalArgumentException("Add URL failed: " + agentClassPath, ex);
+                    }
+                }
+            }
+            AgentLoader.loadAgent(jarName, null);
+        }
+        catch (Throwable e)
+        {
+            if (jarName != null)
+            {
+                throw new RuntimeException("Error activating orbit-async agent from " + jarName, e);
+            }
+            else
+            {
+                throw new RuntimeException("Error activating orbit-async agent", e);
+            }
+        }
+    }
+
 
     public static void init()
     {

@@ -39,10 +39,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <artifactId>orbit-async</artifactId>
     <name>Orbit Async-Await</name>
 
-    <properties>
-        <toolsjar>${java.home}/../lib/tools.jar</toolsjar>
-    </properties>
-
     <build>
         <plugins>
             <plugin>
@@ -97,20 +93,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>mac-profile</id>
-            <activation>
-                <file>
-                    <exists>${java.home}/../Classes/classes.jar</exists>
-                </file>
-            </activation>
-            <properties>
-                <toolsjar>${java.home}/../Classes/classes.jar</toolsjar>
-            </properties>
-        </profile>
-    </profiles>
-
     <dependencies>
         <dependency>
             <groupId>org.ow2.asm</groupId>
@@ -124,11 +106,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.sun</groupId>
-            <artifactId>tools</artifactId>
-            <version>1.8.0</version>
-            <scope>system</scope>
-            <systemPath>${toolsjar}</systemPath>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-agent-loader</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
