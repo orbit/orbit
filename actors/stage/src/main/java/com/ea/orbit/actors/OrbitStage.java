@@ -31,15 +31,22 @@ package com.ea.orbit.actors;
 
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.IClusterPeer;
-import com.ea.orbit.actors.providers.IInvokeHookProvider;
 import com.ea.orbit.actors.providers.ILifetimeProvider;
 import com.ea.orbit.actors.providers.IOrbitProvider;
-import com.ea.orbit.actors.runtime.*;
+import com.ea.orbit.actors.runtime.Execution;
+import com.ea.orbit.actors.runtime.Hosting;
+import com.ea.orbit.actors.runtime.IHosting;
+import com.ea.orbit.actors.runtime.IReminderController;
+import com.ea.orbit.actors.runtime.Messaging;
+import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.OrbitContainer;
 import com.ea.orbit.container.Startable;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
 
@@ -51,6 +58,8 @@ import java.util.concurrent.ExecutorService;
 @Singleton
 public class OrbitStage implements Startable
 {
+    private static final Logger logger = LoggerFactory.getLogger(OrbitStage.class);
+
     @Config("orbit.actors.clusterName")
     private String clusterName;
 
@@ -81,6 +90,29 @@ public class OrbitStage implements Startable
     private Clock clock;
     private ExecutorService executionPool;
     private ExecutorService messagingPool;
+
+    static
+    {
+        // Initializes orbit async, but only if the application uses it.
+        try
+        {
+            Class.forName("com.ea.orbit.async.Async");
+            try
+            {
+                // async is present in the classpath, let's make sure await is initialized
+                Class.forName("com.ea.orbit.async.Await").newInstance();
+            }
+            catch (Exception ex)
+            {
+                // this might be a problem, logging.
+                logger.error("Error initializing orbit-async", ex);
+            }
+        }
+        catch (Exception ex)
+        {
+            // no problem, application doesn't use orbit async.
+        }
+    }
 
     public void setClock(final Clock clock)
     {
