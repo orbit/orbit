@@ -47,9 +47,9 @@ import java.util.stream.Stream;
  */
 public class ObserverManager<T extends IActorObserver> implements Serializable
 {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ObserverManager.class);
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ObserverManager.class);
 
     private final ConcurrentHashSet<T> observers = new ConcurrentHashSet<>();
 
@@ -83,8 +83,19 @@ public class ObserverManager<T extends IActorObserver> implements Serializable
      * The observer set can handle concurrent modifications.<br/>
      * So it is not necessary, nor recommended, to wait on the returned Task unless the application really needs.
      * </p>
+     * Recommended usage:
+     * <pre><code>
+     * public Task activateAsync()
+     * {
+     *     await(super.activateAsync());
+     *     // intentionally not waiting for the cleanup
+     *     state().observers.cleanup();
+     *     return Task.done();
+     * }
+     * </code></pre>
      *
-     * @return
+     * @return a task that will be completed when the cleanup process is finished.
+     * It's not recommended to wait on this task since it might take a while to finish the cleanup processes.
      */
     public Task<?> cleanup()
     {
