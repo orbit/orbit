@@ -81,7 +81,7 @@ public class ObserverManager<T extends IActorObserver> implements Serializable
      * </p>
      * <p>
      * The observer set can handle concurrent modifications.<br/>
-     * So it is not necessary, nor recommended, to wait on the returned Task unless the application really needs.
+     * So it is not necessary, nor recommended, to wait on the returned Task unless the application really needs it.
      * </p>
      * Recommended usage:
      * <pre><code>
@@ -95,7 +95,8 @@ public class ObserverManager<T extends IActorObserver> implements Serializable
      * </code></pre>
      *
      * @return a task that will be completed when the cleanup process is finished.
-     * It's not recommended to wait on this task since it might take a while to finish the cleanup processes.
+     * It's not recommended to wait on this task since it might take a while to finish the
+     * cleanup process and ObserverManager is thread safe.
      */
     public Task<?> cleanup()
     {
