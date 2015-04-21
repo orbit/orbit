@@ -47,7 +47,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>web</module>
         <module>samples</module>
         <module>packaging/all-docs</module>
-        <module>tools/agent-loader</module>
+        <module>utils/agent-loader</module>
     </modules>
 
     <licenses>
