@@ -47,6 +47,7 @@
         <module>hello</module>
         <module>async</module>
 		<module>memoize</module>
+		<module>trace</module>
     </modules>
 
     <profiles>
