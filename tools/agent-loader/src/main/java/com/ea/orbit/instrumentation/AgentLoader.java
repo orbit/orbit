@@ -176,9 +176,24 @@ public class AgentLoader
                     "shaded/HotSpotAttachProvider.class",
                     "shaded/HotSpotVirtualMachine.class",
                     "shaded/VirtualMachineDescriptor.class",
+
                     "shaded/WindowsAttachProvider.class",
                     "shaded/WindowsVirtualMachine.class",
+
+                    "shaded/SolarisAttachProvider.class",
+                    "shaded/SolarisVirtualMachine.class",
+
+                    "shaded/LinuxAttachProvider.class",
+                    "shaded/LinuxVirtualMachine.class",
+
+                    "shaded/BsdAttachProvider.class",
+                    "shaded/BsdVirtualMachine.class",
+
                     "shaded/HotSpotAttachProvider$HotSpotVirtualMachineDescriptor.class",
+
+                    "shaded/BsdVirtualMachine$SocketInputStream.class",
+                    "shaded/LinuxVirtualMachine$SocketInputStream.class",
+                    "shaded/SolarisVirtualMachine$SocketInputStream.class",
                     "shaded/WindowsVirtualMachine$PipedInputStream.class"
             );
             final ClassLoader systemLoader = ClassLoader.getSystemClassLoader();
