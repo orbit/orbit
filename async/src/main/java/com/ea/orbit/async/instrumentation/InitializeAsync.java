@@ -39,13 +39,17 @@ public class InitializeAsync
      * Agent to flag that the instrumentation is already running.
      *
      * There are two definitions of this constant because the initialization
-     * classes are not supposed be accessed by the agent classes, and vice-versa
+     * classes are not supposed be accessed by the agent classes, and vice-versa.
      *
      * @see com.ea.orbit.async.instrumentation.InitializeAsync#ORBIT_ASYNC_RUNNING
      * @see com.ea.orbit.async.instrumentation.Transformer#ORBIT_ASYNC_RUNNING
      */
+    // there is a test case that asserts that these constants contain the same value.
     static final String ORBIT_ASYNC_RUNNING = "orbit-async.running";
 
+    /**
+     * @see com.ea.orbit.async.instrumentation.AgentLoader
+     */
     static
     {
         if (!"true".equals(System.getProperty(InitializeAsync.ORBIT_ASYNC_RUNNING, "false")))

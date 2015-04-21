@@ -46,10 +46,10 @@ import java.net.URLClassLoader;
  * Internal class to (when necessary) attach a java agent to
  * the jvm to instrument async-await methods.
  * <p/>
- * This class used internal "com.sun.tools" classes to talk to
+ * This class uses internal "com.sun.tools" classes to talk to
  * talk to the jvm. This might not work with all jvms.
  * <p/>
- * When runtime agent attach is not possible use the "-javaagent:orbit-async-${project.version}.jar" option.
+ * When runtime agent attachment is not possible use the "-javaagent:orbit-async-${project.version}.jar" jvm option.
  *
  * @author Daniel Sperry
  */
