@@ -33,7 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <parent>
         <groupId>com.ea.orbit</groupId>
         <artifactId>orbit-actors-parent</artifactId>
-        <version>0.2.3-SNAPSHOT</version>
+        <version>0.2.2</version>
         <relativePath>..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
