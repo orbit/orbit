@@ -113,4 +113,12 @@ public interface IRuntime
      */
     String runtimeIdentity();
 
+    /**
+     *
+     * @return
+     */
+    ActorReference getCurrentActivation();
+
+    long getCurrentTraceId();
+
 }
