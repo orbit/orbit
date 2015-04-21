@@ -48,7 +48,6 @@
 
                 <executions>
                     <!-- without forking = child class loader will be used -->
-
                     <execution>
                         <id>test-fork-never</id>
                         <goals>
@@ -56,7 +55,7 @@
                         </goals>
                         <phase>test</phase>
                         <configuration>
-                            <forkMode>always</forkMode>
+                            <forkMode>never</forkMode>
                         </configuration>
                     </execution>
 
@@ -76,7 +75,7 @@
                         </configuration>
                     </execution>
 
-
+                    <!-- forking -->
                     <execution>
                         <id>test-fork-always</id>
                         <goals>
@@ -86,7 +85,6 @@
                         <configuration>
                             <forkMode>always</forkMode>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
-                            <useSystemClassLoader>false</useSystemClassLoader>
                             <forkMode>always</forkMode>
                         </configuration>
                     </execution>
@@ -99,7 +97,6 @@
                         <phase>test</phase>
                         <configuration>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
-                            <useSystemClassLoader>false</useSystemClassLoader>
                             <classpathDependencyExcludes>
                                 <classpathDependencyExclude>com.sun:tools</classpathDependencyExclude>
                             </classpathDependencyExcludes>

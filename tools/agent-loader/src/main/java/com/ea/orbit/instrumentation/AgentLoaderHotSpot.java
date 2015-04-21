@@ -38,7 +38,7 @@ import java.lang.reflect.Constructor;
  * Agent load for the hotspot virtual machine and virtual machines that provide con.sun.tools.attach.*
  * Don't use this class directly, prefer {@link AgentLoader} instead.
  */
-public class AgentLoaderHotSpot implements AgentLoader.IAgentLoader
+public class AgentLoaderHotSpot
 {
     /**
      * Dynamically loads a java agent.

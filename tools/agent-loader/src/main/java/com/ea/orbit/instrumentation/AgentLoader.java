@@ -31,10 +31,12 @@ package com.ea.orbit.instrumentation;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
@@ -55,61 +57,10 @@ public class AgentLoader
      * Internal class.
      */
     // used internally, has to be public to be accessible from the shadeClassLoaders
-    public interface IAgentLoader
+    interface IAgentLoader
     {
         void loadAgent(String agentJar, String options);
     }
-
-    static byte[] toByteArray(InputStream input) throws IOException
-    {
-        byte[] buffer = new byte[Math.max(1024, input.available())];
-        int offset = 0;
-        for (int bytesRead; -1 != (bytesRead = input.read(buffer, offset, buffer.length - offset)); )
-        {
-            offset += bytesRead;
-            if (offset == buffer.length)
-            {
-                buffer = Arrays.copyOf(buffer, buffer.length + Math.max(input.available(), buffer.length >> 1));
-            }
-        }
-        return (offset == buffer.length) ? buffer : Arrays.copyOf(buffer, offset);
-    }
-
-    static class ShadeClassLoader extends java.lang.ClassLoader
-    {
-        public ShadeClassLoader(ClassLoader parent)
-        {
-            super(parent);
-        }
-
-        public Class<?> defineClass(final InputStream resource)
-        {
-            byte[] bytes = new byte[0];
-            try
-            {
-                bytes = toByteArray(resource);
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-            return defineClass(null, bytes, 0, bytes.length);
-        }
-
-        /**
-         * Redefines a class from another ClassLoader in this class loader.
-         *
-         * @param clazz class to be redefined
-         * @return a new class
-         */
-        public Class<?> redefineClass(Class clazz)
-        {
-            int idx = clazz.getName().lastIndexOf('.');
-            final String fileName = (idx >= 0 ? clazz.getName().substring(idx + 1) : clazz.getName()) + ".class";
-            return defineClass(clazz.getResourceAsStream(fileName));
-        }
-    }
-
 
     /**
      * Dynamically loads a java agent.
@@ -212,28 +163,72 @@ public class AgentLoader
         catch (Exception ex)
         {
             // tools.jar not available in the class path
-            // so we load our own copy of those files in another class loader
-            final ShadeClassLoader shadeLoader = new ShadeClassLoader(AgentLoader.class.getClassLoader());
-            agentLoaderClass = (Class<IAgentLoader>) shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("AgentLoaderHotSpot.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("shaded/AttachProvider.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("shaded/VirtualMachine.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("AttachProviderPlaceHolder.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("shaded/AgentInitializationException.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("shaded/AgentLoadException.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("shaded/AttachNotSupportedException.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("shaded/AttachOperationFailedException.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("shaded/AttachPermission.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("shaded/HotSpotAttachProvider.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("shaded/HotSpotVirtualMachine.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("shaded/VirtualMachineDescriptor.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("shaded/WindowsAttachProvider.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("shaded/WindowsVirtualMachine.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("shaded/HotSpotAttachProvider$HotSpotVirtualMachineDescriptor.class"));
-            shadeLoader.defineClass(AgentLoader.class.getResourceAsStream("shaded/WindowsVirtualMachine$PipedInputStream.class"));
+            // so we load our own copy of those files
+            final List<String> shaded = Arrays.asList(
+                    "shaded/AttachProvider.class",
+                    "shaded/VirtualMachine.class",
+                    "AttachProviderPlaceHolder.class",
+                    "shaded/AgentInitializationException.class",
+                    "shaded/AgentLoadException.class",
+                    "shaded/AttachNotSupportedException.class",
+                    "shaded/AttachOperationFailedException.class",
+                    "shaded/AttachPermission.class",
+                    "shaded/HotSpotAttachProvider.class",
+                    "shaded/HotSpotVirtualMachine.class",
+                    "shaded/VirtualMachineDescriptor.class",
+                    "shaded/WindowsAttachProvider.class",
+                    "shaded/WindowsVirtualMachine.class",
+                    "shaded/HotSpotAttachProvider$HotSpotVirtualMachineDescriptor.class",
+                    "shaded/WindowsVirtualMachine$PipedInputStream.class"
+            );
+            final ClassLoader systemLoader = ClassLoader.getSystemClassLoader();
+            List<Class<?>> classes = new ArrayList<>();
+            for (String s : shaded)
+            {
+                // have to load those class in the system class loader
+                // to prevent getting "Native Library .../libattach.so already loaded in another classloader"
+                // when the vm is used more than once.
+                try
+                {
+                    classes.add(ClassPathUtils.defineClass(systemLoader, AgentLoader.class.getResourceAsStream(s)));
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException("Error defining: " + s, e);
+                }
+            }
+            try
+            {
+                agentLoaderClass = (Class<IAgentLoader>) ClassPathUtils.defineClass(systemLoader, AgentLoader.class.getResourceAsStream("/com/ea/orbit/instrumentation/AgentLoaderHotSpot.class"));
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Error loading AgentLoader implementation", e);
+            }
         }
         try
         {
-            agentLoader = agentLoaderClass.newInstance();
+            Object agentLoaderObject = agentLoaderClass.newInstance();
+
+            // the agent loader might be instantiated in another class loader
+            // so no interface it implements is guaranteed to be visible here.
+            // this reflection based implementation of this interface solves this problem.
+            agentLoader = new IAgentLoader()
+            {
+                @Override
+                public void loadAgent(final String agentJar, final String options)
+                {
+                    try
+                    {
+                        final Method loadAgentMethod = agentLoaderObject.getClass().getMethod("loadAgent", String.class, String.class);
+                        loadAgentMethod.invoke(agentLoaderObject, agentJar, options);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
         }
         catch (Exception e)
         {

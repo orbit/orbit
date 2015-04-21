@@ -29,9 +29,12 @@
 package com.ea.orbit.instrumentation;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
 
 /**
  * Class path and class loader utilities to help java agent developers.
@@ -125,6 +128,36 @@ public class ClassPathUtils
         catch (Exception ex)
         {
             throw new RuntimeException("Add URL failed: " + path, ex);
+        }
+    }
+
+    static byte[] toByteArray(InputStream input) throws IOException
+    {
+        byte[] buffer = new byte[Math.max(1024, input.available())];
+        int offset = 0;
+        for (int bytesRead; -1 != (bytesRead = input.read(buffer, offset, buffer.length - offset)); )
+        {
+            offset += bytesRead;
+            if (offset == buffer.length)
+            {
+                buffer = Arrays.copyOf(buffer, buffer.length + Math.max(input.available(), buffer.length >> 1));
+            }
+        }
+        return (offset == buffer.length) ? buffer : Arrays.copyOf(buffer, offset);
+    }
+
+    public static Class<?> defineClass(ClassLoader loader, InputStream inputStream)
+    {
+        try
+        {
+            final byte[] bytes = toByteArray(inputStream);
+            final Method defineClassMethod = ClassLoader.class.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class);
+            defineClassMethod.setAccessible(true);
+            return (Class<?>) defineClassMethod.invoke(loader, null, bytes, 0, bytes.length);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
         }
     }
 

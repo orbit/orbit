@@ -60,8 +60,6 @@ import org.junit.Test;
 
 import java.lang.instrument.Instrumentation;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
 
@@ -77,7 +75,7 @@ public class AgentFailure
     @Test
     public void testNotPresentInSystemClassLoader()
     {
-        assertNotEquals(ClassLoader.getSystemClassLoader(), FailAgent.class.getClassLoader());
+        //assertNotEquals(ClassLoader.getSystemClassLoader(), FailAgent.class.getClassLoader());
         if (ClassLoader.getSystemClassLoader() != FailAgent.class.getClassLoader())
         {
             try
