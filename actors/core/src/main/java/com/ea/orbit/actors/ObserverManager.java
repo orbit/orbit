@@ -100,6 +100,8 @@ public class ObserverManager<T extends IActorObserver> implements Serializable
      */
     public Task<?> cleanup()
     {
+        // TODO: replace ping for a single batch call for each node containing observers from this list.
+        // TODO: add a observer validation function to the runtime. Runtime
         final Stream<Task<?>> stream = observers.stream()
                 .map(o ->
                         ((Task<?>) (o).ping()).whenComplete((final Object pr, final Throwable pe) ->
