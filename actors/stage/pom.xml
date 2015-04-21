@@ -42,6 +42,18 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     <dependencies>
         <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-container</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-async</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-embedded</artifactId>
             <version>7.1.1.Final</version>
@@ -50,12 +62,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <dependency>
             <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-actors-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-container</artifactId>
             <version>${project.version}</version>
         </dependency>
 
