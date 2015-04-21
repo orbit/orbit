@@ -11,7 +11,7 @@ Documentation is located [here](http://orbit.bioware.com/).
 
 License
 =======
-Orbit is licensed under the [BSD 3-Clause License](../LICENSE).
+Orbit is licensed under the [BSD 3-Clause License](../../LICENSE).
 
 Example
 =======
