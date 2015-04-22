@@ -49,6 +49,11 @@
             <version>2.0.1</version>
         </dependency>
         <dependency>
+            <groupId>com.googlecode.gentyref</groupId>
+            <artifactId>gentyref</artifactId>
+            <version>1.2.0</version>
+        </dependency>
+        <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
             <version>2.17</version>

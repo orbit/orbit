@@ -38,6 +38,7 @@ import org.objectweb.asm.Opcodes;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -110,12 +111,26 @@ public class SignatureConversionTest
         }
     }
 
-    public static class C1 extends ArrayList<String>
+
+    public class C3<F,G> {
+
+    }
+
+    public abstract class C4<Q,Z,L,M> extends C3<L,M> implements List<Q>, Comparable<Z>
     {
 
     }
 
-    public static interface C2
+    public abstract class C5 extends C4<Object,Object,Object,Object>
+    {
+
+    }
+    public <Q,Z,L,M> C4<Q,Z,L,M> c4()
+    {
+        return null;
+    }
+
+    public static interface ClassWithGenericMethods
     {
         ArrayList<List<Map<?, String>>> m1();
 
@@ -166,25 +181,63 @@ public class SignatureConversionTest
         List<Integer[][][]> m24();
 
         List<List<int[][]>[][][]> m25();
+
+        class AA<Q>
+        {
+
+        }
+
+        class BB extends AA<String>
+        {
+            class CC
+            {
+            }
+        }
+
+        BB m26();
+
+        AA m27();
+
+        BB.CC m29();
+
+        AA<BB> m30();
+
+    }
+
+    public interface ClassWithParametrizedMethods {
+        <X> ClassWithGenericMethods.AA<X> m32();
+
+        <R> List<R> m31();
+    }
+
+
+    String toMethodSignature(Type type)
+    {
+        if (type instanceof Class)
+        {
+            return null;
+        }
+        return GenericUtils.toGenericSignature(type);
     }
 
     @Test
     public void testSignatureConversion() throws NoSuchMethodException
     {
-        for (Method m : C2.class.getDeclaredMethods())
+        for (Method m : ClassWithGenericMethods.class.getDeclaredMethods())
         {
-            String asmSignature = getSignature(C2.class, m.getName());
-            String mySignature = OrbitRestClient.toGenericSignature(m.getGenericReturnType());
+            String asmSignature = getSignature(ClassWithGenericMethods.class, m.getName());
+            String mySignature = toMethodSignature(m.getGenericReturnType());
             if (asmSignature != null)
             {
-                assertEquals(m.getName(), asmSignature.substring(2), mySignature);
+                assertEquals(m.getName(), asmSignature.replaceFirst("\\(\\)", ""), mySignature);
             }
             else
             {
                 assertNull(m.getName(), mySignature);
             }
         }
-        assertTrue(C2.class.getDeclaredMethods().length > 10);
+        assertEquals("Ljava/util/List<Ljava/lang/Object;>;", toMethodSignature(ClassWithParametrizedMethods.class.getDeclaredMethod("m31").getGenericReturnType()));
+        assertEquals("Lcom/ea/orbit/rest/async/SignatureConversionTest$ClassWithGenericMethods$AA<Ljava/lang/Object;>;", toMethodSignature(ClassWithParametrizedMethods.class.getDeclaredMethod("m32").getGenericReturnType()));
     }
 
 
@@ -198,9 +251,9 @@ public class SignatureConversionTest
         methodGenericSignature.setAccessible(true);
 
 
-        for (Method m : C2.class.getDeclaredMethods())
+        for (Method m : ClassWithGenericMethods.class.getDeclaredMethods())
         {
-            String asmSignature = getSignature(C2.class, m.getName());
+            String asmSignature = getSignature(ClassWithGenericMethods.class, m.getName());
             String mySignature = (String) methodGenericSignature.invoke(m);
             if (asmSignature != null)
             {
@@ -211,6 +264,21 @@ public class SignatureConversionTest
                 assertNull(m.getName(), mySignature);
             }
         }
-        assertTrue(C2.class.getDeclaredMethods().length > 10);
+        assertTrue(ClassWithGenericMethods.class.getDeclaredMethods().length > 10);
+    }
+
+
+    @Test
+    public void testClassTypes() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException
+    {
+        Method methodGenericSignature = Method.class.getDeclaredMethod(
+                "getGenericSignature",
+                (Class<?>[]) null
+        );
+        methodGenericSignature.setAccessible(true);
+
+        final Method c4 = SignatureConversionTest.class.getDeclaredMethod("c4");
+        assertEquals(getSignature(C5.class),
+                GenericUtils.toGenericSignature(c4.getGenericReturnType()));
     }
 }

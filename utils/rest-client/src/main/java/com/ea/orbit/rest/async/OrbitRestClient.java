@@ -35,6 +35,9 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import com.googlecode.gentyref.GenericTypeReflector;
+import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
+
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.Path;
 import javax.ws.rs.client.Invocation;
@@ -42,12 +45,10 @@ import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.client.WebTarget;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
-import java.lang.reflect.WildcardType;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -57,7 +58,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class OrbitRestClient
 {
     private WebTarget target;
-    private ConcurrentHashMap<Class<?>, Object> proxies = new ConcurrentHashMap<>();
+    private Map<Class<?>, Object> proxies = new ConcurrentHashMap<>();
+    private final static Map<String, Class<? extends RestInvocationCallback>> invocationClasses = new ConcurrentHashMap<>();
 
     public OrbitRestClient(WebTarget webTarget)
     {
@@ -88,10 +90,9 @@ public class OrbitRestClient
 
         Invocation.Builder builder = target.path("/").request();
 
-        builder.async().method(httpMethod, new RestInvocationCallbackImpl().future(future));
+        builder.async().method(httpMethod, createAsyncInvocationCallback(method).future(future));
         return future;
     }
-
 
     private String getHttpMethod(final Method method)
     {
@@ -111,34 +112,61 @@ public class OrbitRestClient
         return null;
     }
 
-
-    public static byte[] createGenericSubclass(Class<?> superClass, Type genericParameter) throws Exception
+    @SuppressWarnings("unchecked")
+    public static RestInvocationCallback<?> createAsyncInvocationCallback(Method method)
     {
 
-        ClassWriter cw = new ClassWriter(0);
-        FieldVisitor fv;
-        MethodVisitor mv;
-        AnnotationVisitor av0;
-
-        String name = "com/ea/orbit/rest/async/RestInvocationCallbackImpl";
-
-        //name.getClass().getTypeParameters()
-        //genericToSignature(genericParameter);
-
-
-        String superName = "com/ea/orbit/rest/async/OrbitRestClient$RestInvocationCallback";
-        String signature = "L" + superName + "<Ljava/lang/String;>;";
-        cw.visit(52, Opcodes.ACC_SUPER, name, signature, superName, null);
-
-        cw.visitSource("RestInvocationCallbackImpl.java", null);
-
-        cw.visitInnerClass(superName, "com/ea/orbit/rest/async/OrbitRestClient", "RestInvocationCallback", Opcodes.ACC_STATIC);
+        Type type = method.getGenericReturnType();
+        type = type != null ? type : method.getReturnType();
+        if (CompletableFuture.class.isAssignableFrom(method.getReturnType()))
         {
-            mv = cw.visitMethod(0, "<init>", "()V", null, null);
+            type = GenericTypeReflector.getTypeParameter(type,
+                    CompletableFuture.class.getTypeParameters()[0]);
+        }
+        String genericSignature = GenericUtils.toGenericSignature(type);
+
+        Class<?> clazz = invocationClasses.get(genericSignature);
+        if (clazz == null)
+        {
+            synchronized (invocationClasses)
+            {
+                clazz = invocationClasses.get(genericSignature);
+                if (clazz == null)
+                {
+                    clazz = createInvocationCallbackClass(genericSignature);
+                    invocationClasses.put(genericSignature, (Class<? extends RestInvocationCallback>) clazz);
+                }
+            }
+        }
+        try
+        {
+            return (RestInvocationCallback<?>) clazz.newInstance();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Class<?> createInvocationCallbackClass(final String genericSignature)
+    {
+        org.objectweb.asm.Type superType = org.objectweb.asm.Type.getType(RestInvocationCallback.class);
+        ClassWriter cw = new ClassWriter(0);
+        MethodVisitor mv;
+
+        String name = "com/ea/orbit/rest/async/RestInvocationCallback_" + (genericSignature.hashCode() & 0xffff);
+
+        String superName = superType.getInternalName();
+        String signature = "L" + superName + "<" + genericSignature + ">;";
+        cw.visit(Opcodes.V1_8, Opcodes.ACC_SUPER | Opcodes.ACC_PUBLIC, name, signature, superName, null);
+
+
+        cw.visitInnerClass(superName, "com/ea/orbit/rest/async/OrbitRestClient", "RestInvocationCallback", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC);
+        {
+            mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
             mv.visitCode();
             Label lbStart = new Label();
             mv.visitLabel(lbStart);
-            mv.visitLineNumber(31, lbStart);
             mv.visitVarInsn(Opcodes.ALOAD, 0);
             mv.visitMethodInsn(Opcodes.INVOKESPECIAL, superName, "<init>", "()V", false);
             mv.visitInsn(Opcodes.RETURN);
@@ -149,113 +177,24 @@ public class OrbitRestClient
             mv.visitEnd();
         }
         cw.visitEnd();
+        final byte[] bytes = cw.toByteArray();
+        // perhaps we should use the source class ClassLoader as parent.
+        class Loader extends ClassLoader
+        {
+            Loader()
+            {
+                super(OrbitRestClient.class.getClassLoader());
+            }
 
-        return cw.toByteArray();
+            public Class<?> define(final String o, final byte[] bytes)
+            {
+                return super.defineClass(o, bytes, 0, bytes.length);
+            }
+        }
+        return new Loader().define(null, bytes);
     }
 
-    static String toGenericSignature(final Type type)
-    {
-        if (type instanceof Class)
-        {
-            return null;
-        }
-        StringBuilder sb = new StringBuilder();
-        toGenericSignature(sb, type);
-        return sb.toString();
-    }
-
-    static void toGenericSignature(StringBuilder sb, final Type type)
-    {
-        if (type instanceof GenericArrayType)
-        {
-            sb.append("[");
-            toGenericSignature(sb, ((GenericArrayType) type).getGenericComponentType());
-        }
-        else if (type instanceof ParameterizedType)
-        {
-            ParameterizedType pt = (ParameterizedType) type;
-            if (pt.getOwnerType() != null)
-            {
-                toGenericSignature(sb, pt.getOwnerType());
-                sb.append("$");
-            }
-            sb.append('L');
-            sb.append(((Class) pt.getRawType()).getName().replace('.', '/'));
-            sb.append('<');
-            for (Type p : pt.getActualTypeArguments())
-            {
-                if (p instanceof Class)
-                {
-                    toGenericSignature(sb, p);
-                }
-                else
-                {
-                    toGenericSignature(sb, p);
-                }
-            }
-            sb.append(">;");
-        }
-        else if (type instanceof Class)
-        {
-            Class clazz = (Class) type;
-            if (!clazz.isPrimitive() && !clazz.isArray())
-            {
-                sb.append('L');
-                sb.append(clazz.getName().replace('.', '/'));
-                sb.append(';');
-            }
-            else
-            {
-                sb.append(clazz.getName().replace('.', '/'));
-            }
-        }
-        else if (type instanceof WildcardType)
-        {
-            WildcardType wc = (WildcardType) type;
-            Type[] lowerBounds = wc.getLowerBounds();
-            Type[] upperBounds = wc.getUpperBounds();
-            boolean hasLower = lowerBounds != null && lowerBounds.length > 0;
-            boolean hasUpper = upperBounds != null && upperBounds.length > 0;
-
-            if (hasUpper && hasLower && Object.class.equals(lowerBounds[0]) && Object.class.equals(upperBounds[0]))
-            {
-                sb.append('*');
-            }
-            else if (hasLower)
-            {
-                sb.append("-");
-                for (Type b : lowerBounds)
-                {
-                    toGenericSignature(sb, b);
-                }
-            }
-            else if (hasUpper)
-            {
-                if (upperBounds.length == 1 && Object.class.equals(upperBounds[0]))
-                {
-                    sb.append("*");
-                }
-                else
-                {
-                    sb.append("+");
-                    for (Type b : upperBounds)
-                    {
-                        toGenericSignature(sb, b);
-                    }
-                }
-            }
-            else
-            {
-                sb.append('*');
-            }
-        }
-        else
-        {
-            throw new IllegalArgumentException("Invalid type: " + type);
-        }
-    }
-
-    static class RestInvocationCallback<T> implements InvocationCallback<T>
+    public static class RestInvocationCallback<T> implements InvocationCallback<T>
     {
         private CompletableFuture<?> future;
 
