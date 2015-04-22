@@ -7,7 +7,7 @@ This enables writing REST client code in a fluent asynchronous way.
 
 Examples
 ========
-Using Orbit tasks
+Using Orbit Tasks
 -----
 
 ```java
@@ -24,7 +24,6 @@ public static void main(String args[])
 
     Hello hello = new OrbitRestClient(webTarget).get(Hello.class);
 
-    // task is a CompletableFuture 
     Task<String> response = hello.getHome();
 
     response.thenAccept(x -> System.out.println(x)); 
