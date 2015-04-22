@@ -27,7 +27,7 @@
  */
 
 /**
- * Tools to use {@ling java.util.concurrent.CompletableFuture} and {@link com.ea.orbit.concurrent.Task}
+ * Tools to use {@link java.util.concurrent.CompletableFuture} and {@link com.ea.orbit.concurrent.Task}
  * with jax-rs rest interfaces.
  *
  * Example:
