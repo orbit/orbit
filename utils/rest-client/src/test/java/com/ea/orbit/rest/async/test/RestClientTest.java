@@ -181,7 +181,7 @@ public class RestClientTest
     }
 
     @Test
-    public void testNormalProxy()
+    public void testNormalJerseyProxy()
     {
         WebTarget webTarget = getWebTarget();
 

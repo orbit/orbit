@@ -96,6 +96,12 @@ public class OrbitRestClient
         futureClass = futureClass1;
     }
 
+    /**
+     * Constructs an orbit rest client from a jax-rs WebTarget.
+     *
+     * @param webTarget a jax-rx target, can be obtained with a jax-rs implementation,
+     *                  for instance org.glassfish.jersey.core:jersey-clien.
+     */
     public OrbitRestClient(WebTarget webTarget)
     {
         target = webTarget;
@@ -111,6 +117,20 @@ public class OrbitRestClient
         return headers;
     }
 
+    /**
+     * Returns an implementation of a jax-rs interface.
+     * <p/>
+     * The methods will issue remote calls to the web target provite on the OrbitRestClient constructor.
+     * <p/>
+     * The there are other implementation of rest proxies.
+     * The special benefit of OrbitRestClient is that the interface method can return
+     * {@link java.util.concurrent.CompletableFuture} or {@linkg com.ea.orbit.concurrent.Task}
+     * If that is the case, those methods will return immediately and the Future will be completed asynchronously.
+     *
+     * @param interfaceClass the jax-rs annotated interface class
+     * @param <T>            The interface type
+     * @return an implementation of the interface that will make remote rest calls
+     */
     @SuppressWarnings("unchecked")
     public <T> T get(Class<T> interfaceClass)
     {

@@ -34,6 +34,9 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 
+/**
+ * @author Daniel Sperry
+ */
 class GenericUtils
 {
 
@@ -50,6 +53,7 @@ class GenericUtils
         return sb.toString();
     }
 
+    // see: http://stackoverflow.com/questions/29797393/how-to-convert-method-getgenericreturntype-to-a-jvm-type-signature
     static void toGenericSignature(StringBuilder sb, final Type type)
     {
         if (type instanceof GenericArrayType)

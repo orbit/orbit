@@ -45,6 +45,11 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 
+/**
+ * Test the generic type signature conversion for generation dynamic classes
+ *
+ *  This is not the test you are looking for.
+ */
 public class SignatureConversionTest
 {
     public String getSignature(Class c)
