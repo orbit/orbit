@@ -1,13 +1,13 @@
-Orbit Async Rest Client
+Orbit Async REST Client
 ============
 
-Allows calling jax-rs rest interfaces with methods returning `CompletableFuture` or orbit `Task`.
-This enables writing rest client code in a fluent asynchronous way.    
+Allows calling JAX-RS REST interfaces with methods returning `CompletableFuture` or Orbit `Task`.
+This enables writing REST client code in a fluent asynchronous way.    
 
 
 Examples
 ========
-Using orbit tasks
+Using Orbit tasks
 -----
 
 ```java
@@ -40,7 +40,7 @@ private static WebTarget getWebTarget(String host)
 }
 ```
 
-Using orbit CompletableFuture
+Using CompletableFuture
 -----
 
 ```java
