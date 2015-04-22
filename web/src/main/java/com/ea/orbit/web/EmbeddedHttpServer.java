@@ -29,6 +29,7 @@
 package com.ea.orbit.web;
 
 import com.ea.orbit.annotation.Config;
+import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.OrbitContainer;
 import com.ea.orbit.container.Startable;
@@ -36,6 +37,7 @@ import com.ea.orbit.exception.UncheckedException;
 
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.ResourceHandler;
@@ -61,6 +63,9 @@ import javax.websocket.server.ServerEndpoint;
 
 import java.net.URL;
 import java.security.ProtectionDomain;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Embedded http server providing jax-rs and web-socket support.
@@ -74,8 +79,16 @@ public class EmbeddedHttpServer implements Startable
     @Config("orbit.http.port")
     private int port = 9090;
 
-    @Inject
+    @Wired
     private OrbitContainer container;
+
+    @Config("orbit.http.providers")
+    private List<Class<?>> providers = new ArrayList<>();
+
+    public void registerProviders(Collection<Class<?>> classes)
+    {
+        providers.addAll(classes);
+    }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public Task<Void> start()
@@ -86,26 +99,31 @@ public class EmbeddedHttpServer implements Startable
         DynamicConfigurationService dcs = locator.getService(DynamicConfigurationService.class);
         DynamicConfiguration dc = dcs.createDynamicConfiguration();
 
-        for (final Class<?> c : container.getClasses())
+        final List<Class<?>> classes = new ArrayList<>(providers);
+        if (container != null)
         {
-            if (c.isAnnotationPresent(Singleton.class))
+            classes.addAll(container.getClasses());
+            for (final Class<?> c : container.getClasses())
             {
-                Injections.addBinding(
-                        Injections.newFactoryBinder(new Factory()
-                        {
-                            @Override
-                            public Object provide()
+                if (c.isAnnotationPresent(Singleton.class))
+                {
+                    Injections.addBinding(
+                            Injections.newFactoryBinder(new Factory()
                             {
-                                return container.get(c);
-                            }
+                                @Override
+                                public Object provide()
+                                {
+                                    return container.get(c);
+                                }
 
-                            @Override
-                            public void dispose(final Object instance)
-                            {
+                                @Override
+                                public void dispose(final Object instance)
+                                {
 
-                            }
-                        }).to(c),
-                        dc);
+                                }
+                            }).to(c),
+                            dc);
+                }
             }
         }
         dc.commit();
@@ -113,14 +131,13 @@ public class EmbeddedHttpServer implements Startable
         final ResourceConfig resourceConfig = new ResourceConfig();
 
         // installing jax-rs classes known by the orbit container.
-        for (final Class c : container.getClasses())
+        for (final Class c : classes)
         {
             if (c.isAnnotationPresent(javax.ws.rs.Path.class) || c.isAnnotationPresent(javax.ws.rs.ext.Provider.class))
             {
                 resourceConfig.register(c);
             }
         }
-
 
         final WebAppContext webAppContext = new WebAppContext();
         final ProtectionDomain protectionDomain = EmbeddedHttpServer.class.getProtectionDomain();
@@ -136,13 +153,13 @@ public class EmbeddedHttpServer implements Startable
         final ContextHandler resourceContext = new ContextHandler();
         ResourceHandler resourceHandler = new ResourceHandler();
         resourceHandler.setDirectoriesListed(true);
-        resourceHandler.setWelcomeFiles(new String[]{"index.html"});
+        resourceHandler.setWelcomeFiles(new String[]{ "index.html" });
         resourceHandler.setBaseResource(Resource.newClassPathResource("/web"));
 
         resourceContext.setHandler(resourceHandler);
         resourceContext.setInitParameter("useFileMappedBuffer", "false");
         final ContextHandlerCollection contexts = new ContextHandlerCollection();
-        contexts.setHandlers(new Handler[]{resourceContext, webAppContext});
+        contexts.setHandlers(new Handler[]{ resourceContext, webAppContext });
 
         server = new Server(port);
         server.setHandler(contexts);
@@ -151,7 +168,7 @@ public class EmbeddedHttpServer implements Startable
             ///Initialize javax.websocket layer
             final ServerContainer serverContainer = WebSocketServerContainerInitializer.configureContext(webAppContext);
 
-            for (Class c : container.getClasses())
+            for (Class c : classes)
             {
                 if (c.isAnnotationPresent(ServerEndpoint.class))
                 {
@@ -193,6 +210,16 @@ public class EmbeddedHttpServer implements Startable
         return Task.done();
     }
 
+    /**
+     * Gets the actual tcp port for the first server connector
+     *
+     * @return the actual port available only after start.
+     */
+    public int getLocalPort()
+    {
+        return ((ServerConnector) server.getConnectors()[0]).getLocalPort();
+    }
+
     public Task<Void> stop()
     {
         try
@@ -207,4 +234,13 @@ public class EmbeddedHttpServer implements Startable
         return Task.done();
     }
 
+    public int getPort()
+    {
+        return port;
+    }
+
+    public void setPort(final int port)
+    {
+        this.port = port;
+    }
 }

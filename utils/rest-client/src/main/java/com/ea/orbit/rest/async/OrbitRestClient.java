@@ -139,11 +139,13 @@ public class OrbitRestClient
 
         MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
         headers.putAll(this.headers);
+        target = addPath(target, method);
 
         Object entity = null;
         Type entityType = null;
 
         final Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+
         for (int i = 0; i < parameterAnnotations.length; i++)
         {
             Object value = args[i];
@@ -209,10 +211,10 @@ public class OrbitRestClient
                 entityType = getActualType(method.getParameterTypes()[i], method.getGenericParameterTypes()[i]);
             }
         }
-        target = addPath(target, method);
 
 
-        Invocation.Builder builder = target.request().headers(headers);
+        Invocation.Builder builder = target.request();
+        builder = builder.headers(headers);
         Produces produces = getAnnotation(interfaceClass, method, Produces.class);
         if (produces != null)
         {

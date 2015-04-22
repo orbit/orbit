@@ -33,13 +33,13 @@
     <parent>
         <groupId>com.ea.orbit</groupId>
         <artifactId>orbit-parent</artifactId>
-        <version>0.2.2-SNAPSHOT</version>
+        <version>0.2.3-SNAPSHOT</version>
         <relativePath>../..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <name>Orbit Rest Client</name>
-    <description>An asynchronous jax-rs rest client </description>
+    <description>An asynchronous jax-rs rest client</description>
     <artifactId>orbit-rest-client</artifactId>
 
     <dependencies>
@@ -54,6 +54,21 @@
             <version>1.2.0</version>
         </dependency>
         <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>5.0.3</version>
+        </dependency>
+
+        <!-- optional -->
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-commons</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <!--Test dependencies-->
+        <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
             <version>2.17</version>
@@ -67,20 +82,33 @@
         </dependency>
         <dependency>
             <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-commons</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm</artifactId>
-            <version>5.0.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-agent-loader</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-web</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-json-provider</artifactId>
+            <version>2.5.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-jackson</artifactId>
+            <version>2.17</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 </project>
