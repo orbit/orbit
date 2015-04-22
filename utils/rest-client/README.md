@@ -7,7 +7,7 @@ or Orbit
 [`Task`](http://orbit.bioware.com/apidocs/development/com/ea/orbit/concurrent/Task.html).
 This enables writing REST client code in a fluent asynchronous way.    
 
-The project orbit-rest-client depends only on the [jax-rs standard](https://jax-rs-spec.java.net/) and it is in principle 
+The project orbit-rest-client depends only on the [JAX-RS standard](https://jax-rs-spec.java.net/) and it is in principle 
 compatible with any client library that provides [javax.ws.rs.client.WebTarget](http://docs.oracle.com/javaee/7/api/javax/ws/rs/client/package-summary.html).
 It has been tested with
 [jersey-client](https://jersey.java.net/documentation/latest/modules-and-dependencies.html#client-jdk).
