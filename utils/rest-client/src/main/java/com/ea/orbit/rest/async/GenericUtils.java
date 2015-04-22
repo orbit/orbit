@@ -36,6 +36,13 @@ import java.lang.reflect.WildcardType;
 
 class GenericUtils
 {
+
+    /**
+     * Converts a type to a jvm signature with the type parameters replaced.
+     *
+     * @param type the generic java type to be converted
+     * @return a generic signature like:  {@code Ljava/util/List<Ljava/lang/Number;>;}
+     */
     static String toGenericSignature(final Type type)
     {
         StringBuilder sb = new StringBuilder();
@@ -118,10 +125,8 @@ class GenericUtils
         }
         else if (type instanceof TypeVariable)
         {
-            //sb.append("T");
-            //sb.append(((TypeVariable) type).getName());
-            //sb.append(";");
-            // work around: replaces the type variable with it's first bound.
+            // This is the other option: sb.append("T").append(((TypeVariable) type).getName()).append(";");
+            // Instead replace the type variable with it's first bound.
             toGenericSignature(sb, ((TypeVariable) type).getBounds()[0]);
         }
         else

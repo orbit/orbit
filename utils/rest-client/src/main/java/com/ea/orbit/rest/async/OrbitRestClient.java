@@ -28,26 +28,43 @@
 
 package com.ea.orbit.rest.async;
 
-import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import com.googlecode.gentyref.GenericTypeReflector;
-import com.sun.org.apache.bcel.internal.generic.INVOKESPECIAL;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.CookieParam;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.HttpMethod;
+import javax.ws.rs.MatrixParam;
+import javax.ws.rs.NotSupportedException;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.GenericEntity;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedHashMap;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,13 +74,41 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class OrbitRestClient
 {
+    private final static Map<String, Class<? extends RestInvocationCallback>> invocationClasses = new ConcurrentHashMap<>();
+    private static final Class<? extends CompletableFuture> futureClass;
+
     private WebTarget target;
     private Map<Class<?>, Object> proxies = new ConcurrentHashMap<>();
-    private final static Map<String, Class<? extends RestInvocationCallback>> invocationClasses = new ConcurrentHashMap<>();
+    private MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+
+    static
+    {
+        Class<CompletableFuture> futureClass1;
+        try
+        {
+            //noinspection unchecked
+            futureClass1 = (Class<CompletableFuture>) Class.forName("com.ea.orbit.concurrent.Task");
+        }
+        catch (Exception e)
+        {
+            futureClass1 = CompletableFuture.class;
+        }
+        futureClass = futureClass1;
+    }
 
     public OrbitRestClient(WebTarget webTarget)
     {
         target = webTarget;
+    }
+
+    /**
+     * Http Headers used for all proxies.
+     * <p/>
+     * Values stored in this collection are used for all subsequent calls from proxies created by this rest client.
+     */
+    public MultivaluedHashMap<String, Object> headers()
+    {
+        return headers;
     }
 
     @SuppressWarnings("unchecked")
@@ -72,27 +117,196 @@ public class OrbitRestClient
         Object proxy = proxies.get(interfaceClass);
         if (proxy == null)
         {
+            final WebTarget interfaceTarget = addPath(target, interfaceClass);
             proxy = Proxy.newProxyInstance(OrbitRestClient.class.getClassLoader(), new Class[]{ interfaceClass },
-                    (theProxy, method, args) -> invoke(interfaceClass, method, args));
+                    (theProxy, method, args) -> invoke(interfaceClass, interfaceTarget, method, args));
             proxies.put(interfaceClass, proxy);
         }
         return (T) proxy;
     }
 
-    private Object invoke(final Class<?> interfaceClass, final Method method, final Object[] args)
+    private Object invoke(final Class<?> interfaceClass, WebTarget target, final Method method, final Object[] args)
     {
-        CompletableFuture<Object> future = new CompletableFuture<>();
-        Path annotation = interfaceClass.getAnnotation(Path.class);
-        final Class<?> returnType = method.getReturnType();
-        final Type genericReturnType = method.getGenericReturnType();
+        Type methodGenericReturnType = method.getGenericReturnType();
+        Type genericReturnType;
+        genericReturnType = getActualType(method.getReturnType(), methodGenericReturnType);
 
         String httpMethod = getHttpMethod(method);
+        if (httpMethod == null)
+        {
+            throw new IllegalArgumentException("Method not annotate with a valid http method annotation" + method);
+        }
 
-        Invocation.Builder builder = target.path("/").request();
+        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+        headers.putAll(this.headers);
 
-        builder.async().method(httpMethod, createAsyncInvocationCallback(method).future(future));
-        return future;
+        Object entity = null;
+        Type entityType = null;
+
+        final Annotation[][] parameterAnnotations = method.getParameterAnnotations();
+        for (int i = 0; i < parameterAnnotations.length; i++)
+        {
+            Object value = args[i];
+            if (value instanceof CompletableFuture)
+            {
+                // TODO: make this entire method async if it returns CompletableFuture, and await() on the params
+                value = ((CompletableFuture) value).join();
+            }
+            if (value == null)
+            {
+                // scan for a default value
+                for (Annotation ann : parameterAnnotations[i])
+                {
+                    if (ann instanceof DefaultValue)
+                    {
+                        value = ((DefaultValue) ann).value();
+                    }
+                }
+            }
+            int paramAnnotationCount = parameterAnnotations[i].length;
+            for (Annotation ann : parameterAnnotations[i])
+            {
+                if (ann instanceof PathParam)
+                {
+                    target = target.resolveTemplate(((PathParam) ann).value(), value);
+                }
+                else if (ann instanceof QueryParam)
+                {
+                    target = target.queryParam(((QueryParam) ann).value(), value);
+                }
+                else if (ann instanceof MatrixParam)
+                {
+                    target = target.matrixParam(((MatrixParam) ann).value(), value);
+                }
+                else if (ann instanceof HeaderParam)
+                {
+                    if (value instanceof Collection)
+                    {
+                        headers.addAll(((HeaderParam) ann).value(), ((Collection) value).toArray());
+                    }
+                    else
+                    {
+                        headers.add(((HeaderParam) ann).value(), value);
+                    }
+                }
+                else if (ann instanceof FormParam)
+                {
+                    throw new NotSupportedException("Form params are not supported " + method.getName() + " param " + i);
+                }
+                else if (ann instanceof CookieParam)
+                {
+                    throw new NotSupportedException("Cookie params are not supported " + method.getName() + " param " + i);
+                }
+                else
+                {
+                    // not a param annotation...
+                    paramAnnotationCount--;
+                }
+            }
+            if (paramAnnotationCount == 0)
+            {
+                entity = value;
+                entityType = getActualType(method.getParameterTypes()[i], method.getGenericParameterTypes()[i]);
+            }
+        }
+        target = addPath(target, method);
+
+
+        Invocation.Builder builder = target.request().headers(headers);
+        Produces produces = getAnnotation(interfaceClass, method, Produces.class);
+        if (produces != null)
+        {
+            builder = builder.accept(produces.value());
+        }
+
+        final GenericType responseGenericType = new GenericType(genericReturnType);
+
+        if (entity != null)
+        {
+            String contentType = getContentType(interfaceClass, method, headers);
+
+            if (entityType instanceof ParameterizedType)
+            {
+                //noinspection unchecked
+                entity = new GenericEntity(entity, entityType);
+            }
+            if (CompletableFuture.class.isAssignableFrom(method.getReturnType()))
+            {
+                CompletableFuture<Object> future = createFuture(method);
+                builder.async().method(httpMethod, Entity.entity(entity, contentType), createAsyncInvocationCallback(genericReturnType).future(future));
+                return future;
+            }
+            else
+            {
+                //noinspection unchecked
+                return builder.method(httpMethod, Entity.entity(entity, contentType), responseGenericType);
+            }
+        }
+
+        // no entity
+        if (CompletableFuture.class.isAssignableFrom(method.getReturnType()))
+        {
+            CompletableFuture<Object> future = createFuture(method);
+            builder.async().method(httpMethod, createAsyncInvocationCallback(genericReturnType).future(future));
+            return future;
+        }
+        else
+        {
+            return builder.method(httpMethod, responseGenericType);
+        }
     }
+
+    private String getContentType(
+            final Class<?> interfaceClass,
+            final Method method,
+            final MultivaluedHashMap<String, Object> headers)
+    {
+
+        final List<Object> contentTypes = headers.get(HttpHeaders.CONTENT_TYPE);
+        if ((contentTypes != null) && (!contentTypes.isEmpty()))
+        {
+            // gets the first one
+            return contentTypes.get(0).toString();
+        }
+        Consumes consumes = getAnnotation(interfaceClass, method, Consumes.class);
+        if (consumes != null && consumes.value().length > 0)
+        {
+            // gets the first one
+            return consumes.value()[0];
+        }
+        return null;
+    }
+
+    private Type getActualType(final Class rawType, final Type type)
+    {
+        if (CompletableFuture.class.isAssignableFrom(rawType))
+        {
+            return GenericTypeReflector.getTypeParameter(type,
+                    CompletableFuture.class.getTypeParameters()[0]);
+        }
+        return type;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected CompletableFuture<Object> createFuture(final Method method)
+    {
+        try
+        {
+            return futureClass.newInstance();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Can't instantiate future class: " + futureClass);
+        }
+    }
+
+
+    private static WebTarget addPath(WebTarget target, final AnnotatedElement element)
+    {
+        final Path path = element.getAnnotation(Path.class);
+        return (path != null) ? target.path(path.value()) : target;
+    }
+
 
     private String getHttpMethod(final Method method)
     {
@@ -112,17 +326,21 @@ public class OrbitRestClient
         return null;
     }
 
+    private <T extends Annotation> T getAnnotation(Class<?> interfaceClass, Method method, Class<T> annotationClass)
+    {
+        T annotation = method.getAnnotation(annotationClass);
+        if (annotation == null)
+        {
+            return interfaceClass.getAnnotation(annotationClass);
+        }
+        return annotation;
+    }
+
     @SuppressWarnings("unchecked")
-    public static RestInvocationCallback<?> createAsyncInvocationCallback(Method method)
+    public static RestInvocationCallback<?> createAsyncInvocationCallback(Type type)
     {
 
-        Type type = method.getGenericReturnType();
-        type = type != null ? type : method.getReturnType();
-        if (CompletableFuture.class.isAssignableFrom(method.getReturnType()))
-        {
-            type = GenericTypeReflector.getTypeParameter(type,
-                    CompletableFuture.class.getTypeParameters()[0]);
-        }
+
         String genericSignature = GenericUtils.toGenericSignature(type);
 
         Class<?> clazz = invocationClasses.get(genericSignature);
