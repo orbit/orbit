@@ -33,6 +33,8 @@ import com.ea.orbit.async.Async;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -45,6 +47,7 @@ import java.util.Set;
  * Annotation processor to detect misuses of {@literal@}Async
  */
 @SupportedAnnotationTypes({ "com.orbit.async.Async" })
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class Processor extends AbstractProcessor
 {
     @Override
