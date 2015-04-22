@@ -38,8 +38,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Orbit Rest Client</name>
-    <description>An asynchronous jax-rs rest client</description>
+    <name>Orbit REST Client</name>
+    <description>An asynchronous JAX-RS REST client</description>
     <artifactId>orbit-rest-client</artifactId>
 
     <dependencies>
@@ -51,12 +51,10 @@
         <dependency>
             <groupId>com.googlecode.gentyref</groupId>
             <artifactId>gentyref</artifactId>
-            <version>1.2.0</version>
         </dependency>
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
-            <version>5.0.3</version>
         </dependency>
 
         <!-- optional -->
