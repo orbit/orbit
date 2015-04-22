@@ -1,7 +1,10 @@
 Orbit Async REST Client
 ============
 
-Allows calling JAX-RS REST interfaces with methods returning `CompletableFuture` or Orbit `Task`.
+Allows calling JAX-RS REST interfaces with methods returning 
+[`CompletableFuture`](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html)
+or Orbit 
+[`Task`](http://orbit.bioware.com/apidocs/development/com/ea/orbit/concurrent/Task.html).
 This enables writing REST client code in a fluent asynchronous way.    
 
 The project orbit-rest-client depends only on the [jax-rs standard](https://jax-rs-spec.java.net/) and it is in principle 
