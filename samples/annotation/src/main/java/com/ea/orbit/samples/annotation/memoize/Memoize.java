@@ -1,4 +1,4 @@
-package com.ea.orbit.samples.memoize;
+package com.ea.orbit.samples.annotation.memoize;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

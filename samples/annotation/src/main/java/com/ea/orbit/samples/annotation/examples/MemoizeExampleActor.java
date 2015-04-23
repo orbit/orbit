@@ -26,14 +26,14 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.samples.memoize;
+package com.ea.orbit.samples.annotation.examples;
 
 
 import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.Task;
 
 @SuppressWarnings("rawtypes")
-public class ExampleActor extends OrbitActor implements IExample
+public class MemoizeExampleActor extends OrbitActor implements IMemoizeExample
 {
     public static int accessCount = 0;
 

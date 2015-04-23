@@ -30,6 +30,7 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.IRemindable;
+import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.concurrent.Task;
 
 import java.lang.reflect.Method;
@@ -114,11 +115,24 @@ public interface IRuntime
     String runtimeIdentity();
 
     /**
+     * Gets current Activation, the actor reference that is currently invoking the method
      *
-     * @return
+     * @return caller actor
      */
     ActorReference getCurrentActivation();
 
+    /**
+     * Gets a long representing the current tracing id
+     *
+     * @return unique trace id
+     */
     long getCurrentTraceId();
+
+    /**
+     * Gets an address for an active actor
+     *
+     * @return actor address, null if actor is not active
+     */
+    Task<INodeAddress> locateActiveActor(final IAddressable actorReference);
 
 }

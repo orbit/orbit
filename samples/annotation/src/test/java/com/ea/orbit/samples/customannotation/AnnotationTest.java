@@ -26,54 +26,83 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.samples.helloworld;
+package com.ea.orbit.samples.customannotation;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.actors.test.FakeClusterPeer;
 import com.ea.orbit.actors.test.FakeStorageProvider;
-import com.ea.orbit.samples.memoize.ExampleActor;
-import com.ea.orbit.samples.memoize.IExample;
-import com.ea.orbit.samples.memoize.MemoizeHookProvider;
+import com.ea.orbit.samples.annotation.AnnotationHookProvider;
+import com.ea.orbit.samples.annotation.examples.IMemoizeExample;
+import com.ea.orbit.samples.annotation.examples.IOnlyExample;
+import com.ea.orbit.samples.annotation.examples.MemoizeExampleActor;
+import com.ea.orbit.samples.annotation.examples.OnlyExampleActor;
+import com.ea.orbit.samples.annotation.memoize.MemoizeAnnotationHandler;
+import com.ea.orbit.samples.annotation.onlyifactivated.OnlyIfActivatedAnnotationHandler;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class MemoizeTest extends ActorBaseTest
+public class AnnotationTest extends ActorBaseTest
 {
+
     @Test
-    public void test()
+    public void onlyIfActivatedTest()
     {
-        OrbitStage stage1 = initStage();
+        OrbitStage stage = initStage();
 
-        IExample memoize = IActor.getReference(IExample.class, "0");
+        IOnlyExample only = IActor.getReference(IOnlyExample.class, "234");
+        only.doSomethingSpecial("A").join();
+        only.doSomethingSpecial("A").join();
+        only.doSomethingSpecial("A").join();
+        only.doSomethingSpecial("A").join();
+        only.doSomethingSpecial("A").join();
+        assertEquals(0, OnlyExampleActor.accessCount);
+        only.makeActiveNow().join();
+        only.doSomethingSpecial("A").join();
+        only.doSomethingSpecial("A").join();
+        only.doSomethingSpecial("A").join();
+        only.doSomethingSpecial("A").join();
+        only.doSomethingSpecial("A").join();
+        assertEquals(5, OnlyExampleActor.accessCount);
+    }
 
-        stage1.bind();
+    @Test
+    public void memoizeTest()
+    {
+        OrbitStage stage = initStage();
+
+        IMemoizeExample memoize = IActor.getReference(IMemoizeExample.class, "45");
 
         long firstA = memoize.getNow("A").join();
         sleep(1000);
         long firstB = memoize.getNow("B").join();
         long secondA = memoize.getNow("A").join();
-        assertTrue(ExampleActor.accessCount == 2);
+        assertTrue(MemoizeExampleActor.accessCount == 2);
         assertTrue(firstA != firstB);
         assertTrue(firstA == secondA);
         sleep(1000);
         long thirdA = memoize.getNow("A").join();
         long secondB = memoize.getNow("B").join();
-        assertTrue(ExampleActor.accessCount == 2);
+        assertTrue(MemoizeExampleActor.accessCount == 2);
         assertTrue(thirdA != secondB);
         assertTrue(secondA == thirdA);
         assertTrue(firstB == secondB);
         sleep(4500);
         long fourthA = memoize.getNow("A").join();
         long thirdB = memoize.getNow("B").join();
-        assertTrue(ExampleActor.accessCount == 4);
+        assertTrue(MemoizeExampleActor.accessCount == 4);
         assertTrue(thirdA != fourthA);
         assertTrue(secondB != thirdB);
 
+        //stage.cleanup(true);
+        stage.stop().join();
+
     }
+
 
     public static void sleep(long millis)
     {
@@ -93,7 +122,13 @@ public class MemoizeTest extends ActorBaseTest
         stage.setMode(OrbitStage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
-        stage.addProvider(new MemoizeHookProvider());
+
+        AnnotationHookProvider custom = new AnnotationHookProvider();
+        custom.addHandler(new MemoizeAnnotationHandler());
+        custom.addHandler(new OnlyIfActivatedAnnotationHandler());
+        stage.addProvider(custom);
+
+
         stage.addProvider(new FakeStorageProvider(fakeDatabase));
 
         stage.setClock(clock);

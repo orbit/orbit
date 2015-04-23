@@ -37,8 +37,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Orbit Samples: Memoize</name>
-    <artifactId>orbit-samples-memoize</artifactId>
+    <name>Orbit Samples: Annotation</name>
+    <artifactId>orbit-samples-annotation</artifactId>
 
     <dependencies>
         <dependency>
@@ -96,7 +96,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.3.2</version>
                 <configuration>
-                    <mainClass>com.ea.orbit.samples.memoize.Main</mainClass>
+                    <mainClass>com.ea.orbit.samples.customannotation.Main</mainClass>
                 </configuration>
             </plugin>
         </plugins>

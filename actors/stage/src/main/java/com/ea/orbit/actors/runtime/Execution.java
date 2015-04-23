@@ -1027,7 +1027,7 @@ public class Execution implements IRuntime
         if (toNode == null)
         {
             // TODO: Ensure that both paths encode exception the same way.
-            return hosting.locateActor(actorReference)
+            return hosting.locateAndActivateActor(actorReference)
                     .thenCompose(x -> messaging.sendMessage(x, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params));
         }
         return messaging.sendMessage(toNode, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params);
@@ -1140,5 +1140,9 @@ public class Execution implements IRuntime
         {
             Task.allOf(futures).join();
         }
+    }
+
+    public Task<INodeAddress> locateActiveActor(final IAddressable actorReference){
+        return hosting.locateActiveActor(actorReference);
     }
 }

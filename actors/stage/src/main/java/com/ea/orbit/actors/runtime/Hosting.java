@@ -167,7 +167,18 @@ public class Hosting implements IHosting, Startable
         }
     }
 
-    public Task<INodeAddress> locateActor(final IAddressable actorReference)
+    public Task<INodeAddress> locateActiveActor(final IAddressable actorReference){
+        ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
+                String.valueOf(((ActorReference) actorReference).id));
+        INodeAddress address = localAddressCache.get(addressable);
+        if (address != null && activeNodes.containsKey(address))
+        {
+            return Task.fromValue(address);
+        }
+        return Task.fromValue(null);
+    }
+
+    public Task<INodeAddress> locateAndActivateActor(final IAddressable actorReference)
     {
         ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
                 String.valueOf(((ActorReference) actorReference).id));

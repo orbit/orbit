@@ -118,7 +118,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.3.2</version>
                 <configuration>
-                    <mainClass>com.ea.orbit.samples.memoize.Main</mainClass>
+                    <mainClass>com.ea.orbit.samples.trace.demo</mainClass>
                 </configuration>
             </plugin>
         </plugins>

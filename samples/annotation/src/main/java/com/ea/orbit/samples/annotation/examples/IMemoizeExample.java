@@ -26,14 +26,15 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.samples.memoize;
+package com.ea.orbit.samples.annotation.examples;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.samples.annotation.memoize.Memoize;
 
 import java.util.concurrent.TimeUnit;
 
-public interface IExample extends IActor
+public interface IMemoizeExample extends IActor
 {
 
     @Memoize(time = 5, unit = TimeUnit.SECONDS)
