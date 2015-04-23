@@ -130,6 +130,13 @@ class Transformer implements ClassFileTransformer
         }
     }
 
+    static class SwitchEntry
+    {
+        int key;
+        Frame frame;
+        Label futureIsDoneLabel;
+    }
+
     /**
      * Does the actual instrumentation generating new bytecode
      *
@@ -202,6 +209,8 @@ class Transformer implements ClassFileTransformer
             switchIns.labels.add((LabelNode) mv.instructions.getLast());
             restoreStackAndLocals(frames[0], mv);
             Label lastRestorePoint = null;
+            int awaitCallsCount = 0;
+            List<SwitchEntry> switchEntries = new ArrayList<>();
             for (int i = 0; i < instructions.length; i++)
             {
                 final AbstractInsnNode ins = instructions[i];
@@ -227,13 +236,20 @@ class Transformer implements ClassFileTransformer
                 // code:    return future.exceptionally(nop).thenCompose(x -> _func(x, state));
                 // code: }
                 // code: jump futureIsDoneLabel:
+                // code: future.join():
+
+                // and this is added to the switch
                 // code: resumeLabel:
                 // code:    restoreStack;
                 // code:    restoreLocals;
-                // code: futureIsDone:
-                // code: future.join():
+                // code: futureIsDoneLabel:
 
                 Label futureIsDoneLabel = new Label();
+                SwitchEntry se = new SwitchEntry();
+                se.frame = frame;
+                se.futureIsDoneLabel = futureIsDoneLabel;
+                se.key = ++awaitCallsCount;
+                switchEntries.add(se);
 
                 mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "isDone", "()Z", false);
                 // code: jump futureIsDoneLabel:
@@ -241,7 +257,7 @@ class Transformer implements ClassFileTransformer
 
                 // code:    saveStack to new state
                 // code:    saveLocals to new state
-                int offset = saveLocals(switchIns.labels.size(), frame, mv);
+                int offset = saveLocals(se.key, se.frame, mv);
                 // stack { .. future state }
 
                 // clears the stack and leaves asyncState in the top
@@ -283,7 +299,22 @@ class Transformer implements ClassFileTransformer
                 mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "thenCompose", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
                 // stack: { new_future_02 }
                 mv.visitInsn(ARETURN);
+                // code: futureIsDone:
+                mv.visitLabel(futureIsDoneLabel);
+                mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "join", "()Ljava/lang/Object;", false);
+                // end of instruction loop
+            }
 
+            // adding the switch entries and restore code
+            // the local variable restoration has to occur outside
+            // the try-catch blocks to avoid problems with the
+            // local-frame analysis
+            //
+            // Where the jvm is unsure of the actual type of a local var
+            // when inside the exception handler because the var has changed.
+
+            for (SwitchEntry se : switchEntries)
+            {
                 // code: resumeLabel:
                 Label resumeLabel = new Label();
                 mv.visitLabel(resumeLabel);
@@ -291,7 +322,7 @@ class Transformer implements ClassFileTransformer
 
                 // code:    restoreStack;
                 // code:    restoreLocals;
-                restoreStackAndLocals(frame, mv);
+                restoreStackAndLocals(se.frame, mv);
                 if (!Modifier.isStatic(mn.access))
                 {
                     if (lastRestorePoint != null)
@@ -301,11 +332,7 @@ class Transformer implements ClassFileTransformer
                     lastRestorePoint = new Label();
                     mv.visitLabel(lastRestorePoint);
                 }
-
-                // code: futureIsDone:
-                mv.visitLabel(futureIsDoneLabel);
-                mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "join", "()Ljava/lang/Object;", false);
-
+                mv.visitJumpInsn(GOTO, se.futureIsDoneLabel);
             }
             switchIns.max = switchIns.labels.size() - 1;
 

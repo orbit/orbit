@@ -87,11 +87,8 @@ public class ExceptionTest extends BaseTest
         }
         catch (Exception ex)
         {
-            // this is causing a verification error, due to the locals analysis
-            // solution: the code to restore the local vars must be added outside the
-            // original method's try catch blocks.
-            //
-            // c = c + 1;
+            // once this was causing a verification error, now fixed
+            c = c + 1;
         }
         return Task.done();
     }
