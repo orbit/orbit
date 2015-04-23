@@ -53,14 +53,16 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 
 public class RestClientTest
@@ -95,6 +97,7 @@ public class RestClientTest
                 @PathParam("p1") String p1,
                 @HeaderParam("h1") String h1,
                 @QueryParam("q1") String q1,
+                // intentionally not the same default as the server
                 @DefaultValue("oo") @QueryParam("q2") String q2,
                 MessageDto message);
 
@@ -102,6 +105,36 @@ public class RestClientTest
         @Path("/pathParam/{p1}")
         @GET
         Task<String> getPathParam(@PathParam("p1") String p1);
+
+        @Path("/genericReturn")
+        @POST
+        @Produces(MediaType.APPLICATION_JSON)
+        @Consumes(MediaType.APPLICATION_JSON)
+        Task<Map<String, SomeResponseDto>> getGenericReturn(String key);
+
+        @Path("/genericReturn")
+        @POST
+        @Produces(MediaType.APPLICATION_JSON)
+        @Consumes(MediaType.APPLICATION_JSON)
+        Task<Map<String, ? extends SomeResponseDto>> getGenericReturnMessing1(String key);
+
+        @Path("/genericReturn")
+        @POST
+        @Produces(MediaType.APPLICATION_JSON)
+        @Consumes(MediaType.APPLICATION_JSON)
+        Task<Map<?, ? extends SomeResponseDto>> getGenericReturnMessing2(String key);
+
+        @Path("/genericReturn")
+        @POST
+        @Produces(MediaType.APPLICATION_JSON)
+        @Consumes(MediaType.APPLICATION_JSON)
+        Task<Map<Object, SomeResponseDto>> getGenericReturnMessing3(String key);
+
+        @Path("/genericReturn")
+        @POST
+        @Produces(MediaType.APPLICATION_JSON)
+        @Consumes(MediaType.APPLICATION_JSON)
+        Task<Map<Object, ? super SomeResponseDto>> getGenericReturnMessing4(String key);
     }
 
     public static class MessageDto
@@ -116,6 +149,7 @@ public class RestClientTest
         public MessageDto original;
         public String resp;
     }
+
 
     @Path("/")
     public static class HelloImpl
@@ -142,13 +176,27 @@ public class RestClientTest
                 @PathParam("p1") String p1,
                 @HeaderParam("h1") String h1,
                 @QueryParam("q1") String q1,
-                @DefaultValue("oo") @QueryParam("q2") String q2,
+                @DefaultValue("xx") @QueryParam("q2") String q2,
                 MessageDto message)
         {
             final SomeResponseDto response = new SomeResponseDto();
             response.original = message;
             response.resp = p1 + ":" + h1 + ":" + q1 + ":" + q2 + ":" + message.data;
             return response;
+        }
+
+
+        @Path("/genericReturn")
+        @POST
+        @Produces(MediaType.APPLICATION_JSON)
+        @Consumes(MediaType.APPLICATION_JSON)
+        public Map<String, SomeResponseDto> getGenericReturn(String key)
+        {
+            final SomeResponseDto response = new SomeResponseDto();
+            response.resp = "::" + key;
+            Map<String, SomeResponseDto> map = new HashMap<>();
+            map.put(key, response);
+            return map;
         }
     }
 
@@ -226,6 +274,53 @@ public class RestClientTest
         final Hello hello = new OrbitRestClient(webTarget).get(Hello.class);
         assertEquals("::xx", hello.getPathParam("xx").join());
 
+    }
+
+    @Test
+    public void testGenericReturn()
+    {
+        WebTarget webTarget = getWebTarget();
+
+        final Hello hello = new OrbitRestClient(webTarget).get(Hello.class);
+        final Task<Map<String, SomeResponseDto>> resp = hello.getGenericReturn("xx");
+        final Map<String, SomeResponseDto> map = resp.join();
+        assertEquals("::xx", map.get("xx").resp);
+    }
+
+    @Test
+    public void testGenericReturnWithWeirdTypes()
+    {
+        WebTarget webTarget = getWebTarget();
+
+        final Hello hello = new OrbitRestClient(webTarget).get(Hello.class);
+        assertEquals("::xx", hello.getGenericReturn("xx").join().get("xx").resp);
+        assertEquals("::xx", hello.getGenericReturnMessing1("xx").join().get("xx").resp);
+        assertEquals("::xx", hello.getGenericReturnMessing2("xx").join().get("xx").resp);
+        assertEquals("::xx", hello.getGenericReturnMessing3("xx").join().get("xx").resp);
+        // "? super" as constraint is challenging...
+        assertEquals(LinkedHashMap.class, hello.getGenericReturnMessing4("xx").join().get("xx").getClass());
+    }
+
+    @Test
+    public void testProxyCaching()
+    {
+        WebTarget webTarget = getWebTarget();
+
+        // different client, different proxies
+        {
+            final Hello hello1 = new OrbitRestClient(webTarget).get(Hello.class);
+            final Hello hello2 = new OrbitRestClient(webTarget).get(Hello.class);
+            assertNotSame(hello1, hello2);
+        }
+
+        // same client, same proxies
+        {
+            final OrbitRestClient orbitRestClient = new OrbitRestClient(webTarget);
+            final Hello hello1 = orbitRestClient.get(Hello.class);
+            final Hello hello2 = orbitRestClient.get(Hello.class);
+
+            assertSame(hello1, hello2);
+        }
     }
 
     private WebTarget getWebTarget()
