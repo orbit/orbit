@@ -207,108 +207,105 @@ class Transformer implements ClassFileTransformer
                 final AbstractInsnNode ins = instructions[i];
                 final Frame frame = frames[i];
 
-                if (ins instanceof MethodInsnNode)
+                if ((!(ins instanceof MethodInsnNode)) || (!isAwaitCall((MethodInsnNode) ins)))
                 {
-                    // TODO: check cast at instrumentation time
-                    MethodInsnNode methodIns = (MethodInsnNode) ins;
-                    if (isAwaitCall(methodIns))
-                    {
-                        // TODO: other comparisons.
-                        mv.visitInsn(Opcodes.DUP);
-                        // stack: completableFuture completableFuture
-
-                        // original: Await.await(future)  (that by default does: future.join())
-
-                        // turns into:
-
-                        // code: if(!future.isDone()) {
-                        // code:    saveLocals to new state
-                        // code:    saveStack to new state
-                        // code:    return future.exceptionally(nop).thenCompose(x -> _func(x, state));
-                        // code: }
-                        // code: jump futureIsDoneLabel:
-                        // code: resumeLabel:
-                        // code:    restoreStack;
-                        // code:    restoreLocals;
-                        // code: futureIsDone:
-                        // code: future.join():
-
-                        Label futureIsDoneLabel = new Label();
-
-                        mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "isDone", "()Z", false);
-                        // code: jump futureIsDoneLabel:
-                        mv.visitJumpInsn(Opcodes.IFNE, futureIsDoneLabel);
-
-                        // code:    saveStack to new state
-                        // code:    saveLocals to new state
-                        int offset = saveLocals(switchIns.labels.size(), frame, mv);
-                        // stack { .. future state }
-
-                        // clears the stack and leaves asyncState in the top
-                        saveStack(frame, mv);
-                        // stack: { state }
-                        mv.visitInsn(DUP);
-                        // stack: { state state }
-                        mv.visitIntInsn(SIPUSH, offset);
-                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "getObj", Type.getMethodDescriptor(OBJECT_TYPE, Type.INT_TYPE), false);
-                        mv.visitTypeInsn(CHECKCAST, COMPLETABLE_FUTURE_NAME);
-
-                        // stack: { state future }
-                        mv.visitMethodInsn(INVOKESTATIC, Type.getType(Function.class).getInternalName(), "identity", "()Ljava/util/function/Function;", false);
-                        // stack: { state future function }
-                        mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "exceptionally", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
-                        // stack: { state new_future }
-
-                        // code:    return future.exceptionally(x -> x).thenCompose(x -> _func(state));
-
-                        mv.visitInsn(SWAP);
-                        // stack: { new_future state}
-
-                        mv.visitInvokeDynamicInsn("apply", DYN_FUNCTION,
-                                new Handle(Opcodes.H_INVOKESTATIC,
-                                        "java/lang/invoke/LambdaMetafactory",
-                                        "metafactory",
-                                        "(Ljava/lang/invoke/MethodHandles$Lookup;"
-                                                + "Ljava/lang/String;Ljava/lang/invoke/MethodType;"
-                                                + "Ljava/lang/invoke/MethodType;"
-                                                + "Ljava/lang/invoke/MethodHandle;"
-                                                + "Ljava/lang/invoke/MethodType;"
-                                                + ")Ljava/lang/invoke/CallSite;"),
-                                Type.getType("(Ljava/lang/Object;)Ljava/lang/Object;"),
-                                new Handle(Opcodes.H_INVOKESTATIC, cn.name, mv.name, mv.desc),
-                                Type.getType("(Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;"));
-
-
-                        // stack: { new_future function }
-                        mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "thenCompose", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
-                        // stack: { new_future_02 }
-                        mv.visitInsn(ARETURN);
-
-                        // code: resumeLabel:
-                        Label resumeLabel = new Label();
-                        mv.visitLabel(resumeLabel);
-                        switchIns.labels.add((LabelNode) mv.instructions.getLast());
-
-                        // code:    restoreStack;
-                        // code:    restoreLocals;
-                        restoreStackAndLocals(frame, mv);
-                        if (!Modifier.isStatic(mn.access))
-                        {
-                            if (lastRestorePoint != null)
-                            {
-                                mv.visitLocalVariable(_THIS, "L" + cn.name + ";", null, lastRestorePoint, resumeLabel, 0);
-                            }
-                            lastRestorePoint = new Label();
-                            mv.visitLabel(lastRestorePoint);
-                        }
-
-                        // code: futureIsDone:
-                        mv.visitLabel(futureIsDoneLabel);
-                        mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "join", "()Ljava/lang/Object;", false);
-                        continue;
-                    }
+                    ins.accept(mv);
+                    continue;
                 }
-                ins.accept(mv);
+
+                // TODO: other comparisons.
+                mv.visitInsn(Opcodes.DUP);
+                // stack: completableFuture completableFuture
+
+                // original: Await.await(future)  (that by default does: future.join())
+
+                // turns into:
+
+                // code: if(!future.isDone()) {
+                // code:    saveLocals to new state
+                // code:    saveStack to new state
+                // code:    return future.exceptionally(nop).thenCompose(x -> _func(x, state));
+                // code: }
+                // code: jump futureIsDoneLabel:
+                // code: resumeLabel:
+                // code:    restoreStack;
+                // code:    restoreLocals;
+                // code: futureIsDone:
+                // code: future.join():
+
+                Label futureIsDoneLabel = new Label();
+
+                mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "isDone", "()Z", false);
+                // code: jump futureIsDoneLabel:
+                mv.visitJumpInsn(Opcodes.IFNE, futureIsDoneLabel);
+
+                // code:    saveStack to new state
+                // code:    saveLocals to new state
+                int offset = saveLocals(switchIns.labels.size(), frame, mv);
+                // stack { .. future state }
+
+                // clears the stack and leaves asyncState in the top
+                saveStack(frame, mv);
+                // stack: { state }
+                mv.visitInsn(DUP);
+                // stack: { state state }
+                mv.visitIntInsn(SIPUSH, offset);
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "getObj", Type.getMethodDescriptor(OBJECT_TYPE, Type.INT_TYPE), false);
+                mv.visitTypeInsn(CHECKCAST, COMPLETABLE_FUTURE_NAME);
+
+                // stack: { state future }
+                mv.visitMethodInsn(INVOKESTATIC, Type.getType(Function.class).getInternalName(), "identity", "()Ljava/util/function/Function;", false);
+                // stack: { state future function }
+                mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "exceptionally", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
+                // stack: { state new_future }
+
+                // code:    return future.exceptionally(x -> x).thenCompose(x -> _func(state));
+
+                mv.visitInsn(SWAP);
+                // stack: { new_future state}
+
+                mv.visitInvokeDynamicInsn("apply", DYN_FUNCTION,
+                        new Handle(Opcodes.H_INVOKESTATIC,
+                                "java/lang/invoke/LambdaMetafactory",
+                                "metafactory",
+                                "(Ljava/lang/invoke/MethodHandles$Lookup;"
+                                        + "Ljava/lang/String;Ljava/lang/invoke/MethodType;"
+                                        + "Ljava/lang/invoke/MethodType;"
+                                        + "Ljava/lang/invoke/MethodHandle;"
+                                        + "Ljava/lang/invoke/MethodType;"
+                                        + ")Ljava/lang/invoke/CallSite;"),
+                        Type.getType("(Ljava/lang/Object;)Ljava/lang/Object;"),
+                        new Handle(Opcodes.H_INVOKESTATIC, cn.name, mv.name, mv.desc),
+                        Type.getType("(Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;"));
+
+
+                // stack: { new_future function }
+                mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "thenCompose", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
+                // stack: { new_future_02 }
+                mv.visitInsn(ARETURN);
+
+                // code: resumeLabel:
+                Label resumeLabel = new Label();
+                mv.visitLabel(resumeLabel);
+                switchIns.labels.add((LabelNode) mv.instructions.getLast());
+
+                // code:    restoreStack;
+                // code:    restoreLocals;
+                restoreStackAndLocals(frame, mv);
+                if (!Modifier.isStatic(mn.access))
+                {
+                    if (lastRestorePoint != null)
+                    {
+                        mv.visitLocalVariable(_THIS, "L" + cn.name + ";", null, lastRestorePoint, resumeLabel, 0);
+                    }
+                    lastRestorePoint = new Label();
+                    mv.visitLabel(lastRestorePoint);
+                }
+
+                // code: futureIsDone:
+                mv.visitLabel(futureIsDoneLabel);
+                mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "join", "()Ljava/lang/Object;", false);
+
             }
             switchIns.max = switchIns.labels.size() - 1;
 
@@ -327,9 +324,6 @@ class Transformer implements ClassFileTransformer
                 }
             }
             mv.accept(cn);
-
-            mv.access &= ~ACC_PUBLIC;
-            mv.access |= ACC_PRIVATE;
 
             {
                 mv.maxLocals = Math.max(8, mv.maxLocals + 4);
