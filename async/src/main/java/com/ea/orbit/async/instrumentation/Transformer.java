@@ -99,6 +99,7 @@ class Transformer implements ClassFileTransformer
     private static final String COMPLETABLE_FUTURE_NAME = "java/util/concurrent/CompletableFuture";
 
     private static final Type COMPLETION_STAGE_TYPE = Type.getType("Ljava/util/concurrent/CompletionStage;");
+    private static final String COMPLETION_STAGE_RET = ")Ljava/util/concurrent/CompletionStage;";
 
     private static final Type OBJECT_TYPE = Type.getType(Object.class);
     private static final String _THIS = "_this";
@@ -153,7 +154,7 @@ class Transformer implements ClassFileTransformer
         for (MethodNode mn : (List<MethodNode>) new ArrayList(cn.methods))
         {
             boolean taskReturn = mn.desc.endsWith(TASK_RET);
-            if (!taskReturn && !mn.desc.endsWith(COMPLETABLE_FUTURE_RET))
+            if (!taskReturn && !mn.desc.endsWith(COMPLETABLE_FUTURE_RET) && !mn.desc.endsWith(COMPLETION_STAGE_RET))
             {
                 // method must return completable future or task
                 continue;
@@ -173,7 +174,7 @@ class Transformer implements ClassFileTransformer
             {
                 continue;
             }
-            if (!taskReturn && (mn.visibleAnnotations == null
+            if (!taskReturn && !mn.name.contains("$") && (mn.visibleAnnotations == null
                     || !mn.visibleAnnotations.stream().anyMatch(a -> ((AnnotationNode) a).desc.equals(ASYNC_DESCRIPTOR))))
             {
                 continue;
