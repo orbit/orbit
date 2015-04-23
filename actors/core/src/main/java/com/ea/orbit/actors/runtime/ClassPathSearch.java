@@ -203,6 +203,7 @@ public class ClassPathSearch
                     try
                     {
                         ClassInfo clazz = getClassInfo(cn);
+
                         if (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers()))
                         {
                             if (theInterfaceInfo.isAssignableFrom(clazz))
@@ -225,17 +226,7 @@ public class ClassPathSearch
                                 // found the best match!
                                 return Class.forName(cn.replace('/', '.'));
                             }
-                            for (ClassInfo base : classesOfInterestInfos)
-                            {
-                                if (base.isAssignableFrom(clazz))
-                                {
-                                    // keep the classes that are part of the classes of interest list
-                                    return null;
-                                }
-                            }
                         }
-                        // culling the list for the next search
-                        unprocessed.remove(cn);
                         return null;
                     }
                     catch (Throwable e)
