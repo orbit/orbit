@@ -11,6 +11,7 @@ Orbit is a modern framework for JVM languages that makes it easier to build and 
 It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com). For the latest news, follow us on [Twitter](https://twitter.com/OrbitFramework). 
 
 Orbit is primarily made up of the following components:
+
 -  [Orbit Actors](actors/), a framework to write distributed systems using virtual actors.
 -  [Orbit Async](async/), async-await methods for the JVM.
 -  [Orbit Container](container/), a minimal inversion of control container for building online services.
