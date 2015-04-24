@@ -30,6 +30,9 @@ package com.ea.orbit.async;
 
 import com.ea.orbit.async.instrumentation.InitializeAsync;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -76,9 +79,19 @@ public interface Await
         InitializeAsync.init();
     }
 
-    public static <T> T await(CompletableFuture<T> future)
+    Logger logger = LoggerFactory.getLogger(Await.class);
+
+    static <T> T await(CompletableFuture<T> future)
     {
-        System.out.printf("Warning: Illegal call to await, add static { Await.init(); } to the main program class ");
+        String warning = "Warning: Illegal call to await, does your method return Task or CompletableFuture? Did you add static { Await.init(); } to the main program class? ";
+        if (logger.isDebugEnabled())
+        {
+            logger.warn(warning, new Throwable());
+        }
+        else
+        {
+            logger.warn(warning);
+        }
         return future.join();
     }
 }
