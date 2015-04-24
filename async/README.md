@@ -86,12 +86,11 @@ Orbit Async requires jvm 1.8 as it relies on CompletableFuture, a new class.
 #### Option 1 - Runtime
 On your main class or as early as possible, call at least once:
 ```
-  Await.init();
+Await.init();
 ```
 Provided that your jvm has the capability enabled this will start a runtime instrumentation agent.
 
 This is the prefered solution for testing and development, the least amount of configuration.
-
 If you forget to call this function the first call to `await` will initialize the system (and print a warning).
 
 #### Option 2 - Jvm parameter
@@ -126,12 +125,4 @@ This is the best option for libraries.
     </plugins>
 </build>
 ```
-
-
-
-
-  
-
-Orbit Async uses bytecode instumentation 
-
 
