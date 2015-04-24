@@ -74,6 +74,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                     <dependencySourceIncludes>
                                         <dependencySourceInclude>com.ea.*:*</dependencySourceInclude>
                                     </dependencySourceIncludes>
+                                    <excludePackageNames>*.instrumentation;*.processor</excludePackageNames>
                                     <failOnError>false</failOnError>
                                     <additionalparam>-Xdoclint:none</additionalparam>
                                 </configuration>
