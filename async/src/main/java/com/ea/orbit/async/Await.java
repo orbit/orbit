@@ -83,7 +83,7 @@ public interface Await
 
     static <T> T await(CompletableFuture<T> future)
     {
-        String warning = "Warning: Illegal call to await, does your method return Task or CompletableFuture? Did you add static { Await.init(); } to the main program class? ";
+        String warning = "Warning: Illegal call to await, static { Await.init(); } must be added to the main program class and the method must return Task or CompletableFuture";
         if (logger.isDebugEnabled())
         {
             logger.warn(warning, new Throwable());
