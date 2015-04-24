@@ -36,7 +36,7 @@ Add the build plugin that will instrument the uses of `await`
         <plugin>
             <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-async-maven-plugin</artifactId>
-            <version>${project.version}</version>
+            <version>${orbit.version}</version>
             <executions>
                 <execution>
                     <goals>
