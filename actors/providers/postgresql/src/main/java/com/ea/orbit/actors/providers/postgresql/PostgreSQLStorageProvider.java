@@ -46,6 +46,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class PostgreSQLStorageProvider implements IStorageProvider {
 
@@ -96,7 +97,7 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
     }
 
     @Override
-    public synchronized Task<Boolean> readState(final ActorReference<?> reference, final Object state) {
+    public synchronized Task<Void> readState(final ActorReference<?> reference, final AtomicReference<Object> stateReference) {
         String actor = getName(reference), identity = getIdentity(reference);
         try {
             readState.setString(1, actor);
@@ -104,11 +105,10 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
             ResultSet results = readState.executeQuery();
             if (results.next()) {
                 String json = results.getString("state");
-                mapper.readerForUpdating(state).readValue(json);
+                mapper.readerForUpdating(stateReference.get()).readValue(json);
                 results.close();
-                return Task.fromValue(true);
-            } else
-                return Task.fromValue(false);
+            }
+            return Task.done();
         } catch(SQLException | IOException e) {
             throw new UncheckedException(e);
         }

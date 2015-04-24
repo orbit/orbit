@@ -26,40 +26,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.providers;
+package com.ea.orbit.actors.memcached.test;
 
+import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.test.IStorageTestActor;
 
-import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.concurrent.Task;
-
-import java.util.concurrent.atomic.AtomicReference;
-
-/**
- * Storage providers are used by the orbit actors framework to load and store actor states.
- */
-public interface IStorageProvider extends IOrbitProvider
+public interface IHelloActor extends IActor, IStorageTestActor
 {
-    /**
-     * Asynchronously clears an actors state.
-     * @param reference an reference to the actor (contains the interface name and actor key)
-     * @param state the state object, not modified.
-     * @return a completion promise
-     */
-    Task<Void> clearState(ActorReference<?> reference, Object state);
-
-    /**
-     * Asynchronously reads an actors state.
-     * @param reference an reference to the actor (contains the interface name and actor key)
-     * @param stateReference reference to state object, modified by the storage provider implementation
-     * @return a completion promise
-     */
-    Task<Void> readState(ActorReference<?> reference, AtomicReference<Object> stateReference);
-
-    /**
-     * Asynchronously writes an actors state.
-     * @param reference an reference to the actor (contains the interface name and actor key)
-     * @param state the state object, not modified by the call
-     * @return a completion promise
-     */
-    Task<Void> writeState(ActorReference<?> reference, Object state);
+    //basic tasks from IStorageTestActor interface
 }

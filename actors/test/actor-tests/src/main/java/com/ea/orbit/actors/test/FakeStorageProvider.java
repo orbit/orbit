@@ -41,6 +41,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class FakeStorageProvider implements IStorageProvider
 {
@@ -74,7 +75,7 @@ public class FakeStorageProvider implements IStorageProvider
     }
 
     @Override
-    public Task<Boolean> readState(final ActorReference<?> reference, final Object state)
+    public Task<Void> readState(final ActorReference<?> reference, final AtomicReference<Object> stateReference)
     {
         String databaseObject = (String) database.get(reference);
         if (databaseObject != null)
@@ -83,7 +84,7 @@ public class FakeStorageProvider implements IStorageProvider
             {
                 try
                 {
-                    mapper.readerForUpdating(state).readValue(databaseObject);
+                    mapper.readerForUpdating(stateReference.get()).readValue(databaseObject);
                 }
                 catch (IOException e)
                 {
@@ -91,7 +92,7 @@ public class FakeStorageProvider implements IStorageProvider
                 }
             }
         }
-        return Task.fromValue(databaseObject != null);
+        return Task.done();
     }
 
     @Override

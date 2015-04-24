@@ -50,6 +50,7 @@ import org.mongojack.internal.object.BsonObjectTraversingParser;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class MongoDBStorageProvider implements IStorageProvider
 {
@@ -134,12 +135,13 @@ public class MongoDBStorageProvider implements IStorageProvider
 
     @Override
     @SuppressWarnings("unchecked")
-    public Task<Boolean> readState(final ActorReference<?> reference, final Object state)
+    public Task<Void> readState(final ActorReference<?> reference, final AtomicReference<Object> stateReference)
     {
         DB db = mongoClient.getDB(database);
+        Object objectState = stateReference.get();
         final DBCollection col = db.getCollection(ActorReference.getInterfaceClass(reference).getSimpleName());
         JacksonDBCollection<Object, String> coll = JacksonDBCollection.wrap(
-                col, (Class<Object>) state.getClass(), String.class, mapper);
+                col, (Class<Object>) objectState.getClass(), String.class, mapper);
 
         DBObject obj = col.findOne(String.valueOf(ActorReference.getId(reference)));
         if (obj != null)
@@ -147,7 +149,7 @@ public class MongoDBStorageProvider implements IStorageProvider
             try
             {
                 obj.removeField("_id");
-                mapper.readerForUpdating(state).readValue(new BsonObjectTraversingParser(
+                mapper.readerForUpdating(objectState).readValue(new BsonObjectTraversingParser(
                         coll, obj, mapper));
             }
             catch (Exception e)
@@ -155,7 +157,7 @@ public class MongoDBStorageProvider implements IStorageProvider
                 throw new UncheckedException("Error reading state of: " + reference, e);
             }
         }
-        return Task.fromValue(true);
+        return Task.done();
     }
 
     @Override

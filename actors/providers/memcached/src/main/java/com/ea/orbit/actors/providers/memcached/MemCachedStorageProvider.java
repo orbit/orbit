@@ -26,7 +26,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.providers.redis;
+package com.ea.orbit.actors.providers.memcached;
 
 import com.ea.orbit.actors.providers.IStorageProvider;
 import com.ea.orbit.actors.providers.json.ActorReferenceModule;
@@ -38,24 +38,24 @@ import com.ea.orbit.exception.UncheckedException;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
+import com.whalin.MemCached.MemCachedClient;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public class RedisStorageProvider implements IStorageProvider {
+/**
+ * {@link MemCachedStorageProvider} provides Memcached support for storing actor states.
+ *
+ * @author Johno Crawford (johno@sulake.com)
+ */
+public class MemCachedStorageProvider implements IStorageProvider {
 
-	private JedisPool pool;
+	private MemCachedClient memCachedClient;
 	private ObjectMapper mapper;
 
-	private String host = "localhost";
-	private int port = 6379;
-	private String databaseName;
-    private int timeout = 10000;
+	private boolean useShortKeys = false;
+	private boolean serializeStateAsJson = false;
 
-    @Override
+	@Override
 	public Task<Void> start() {
 		mapper = new ObjectMapper();
 		mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
@@ -64,46 +64,43 @@ public class RedisStorageProvider implements IStorageProvider {
 				.withGetterVisibility(JsonAutoDetect.Visibility.NONE)
 				.withSetterVisibility(JsonAutoDetect.Visibility.NONE)
 				.withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
-        pool = new JedisPool(new JedisPoolConfig(), host, port, timeout);
+		if (memCachedClient == null) {
+			memCachedClient = MemCachedClientFactory.getClient();
+		}
 		return Task.done();
 	}
 
 	private String asKey(final ActorReference reference) {
-		String clazzName = ActorReference.getInterfaceClass(reference).getName();
-		String id = String.valueOf(ActorReference.getId(reference));
-		return databaseName + "_" + clazzName + "_" + id;
+		String clazzName = useShortKeys ? ActorReference.getInterfaceClass(reference).getSimpleName() : ActorReference.getInterfaceClass(reference).getName();
+		return clazzName + "|" + String.valueOf(ActorReference.getId(reference));
 	}
 
 	@Override
 	public Task<Void> clearState(final ActorReference reference, final Object state)
     {
-        try (Jedis redis = pool.getResource())
-        {
-            redis.del(asKey(reference));
-        }
+		memCachedClient.delete(asKey(reference));
 		return Task.done();
 	}
 
 	@Override
 	public Task<Void> stop()
     {
-        pool.close();
 		return Task.done();
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public Task<Void> readState(final ActorReference<?> reference, final AtomicReference<Object> stateReference) {
-        String data;
-        try (Jedis redis = pool.getResource())
-        {
-            data = redis.get(asKey(reference));
-        }
+	public Task<Void> readState(final ActorReference<?> reference, final AtomicReference<Object> stateReference)
+	{
+		Object data = memCachedClient.get(asKey(reference));
 		if (data != null) {
-			try {
-				mapper.readerForUpdating(stateReference.get()).readValue(data);
-			} catch (Exception e) {
-				throw new UncheckedException("Error parsing redis response: " + data, e);
+			if (serializeStateAsJson) {
+				try {
+					mapper.readerForUpdating(stateReference.get()).readValue(data.toString());
+				} catch (Exception e) {
+					throw new UncheckedException("Error parsing memcached response: " + data, e);
+				}
+			} else {
+				stateReference.set(data);
 			}
 		}
 		return Task.done();
@@ -112,51 +109,33 @@ public class RedisStorageProvider implements IStorageProvider {
 	@Override
 	@SuppressWarnings("unchecked")
 	public Task<Void> writeState(final ActorReference reference, final Object state) {
-		String data;
-		try {
-			data = mapper.writeValueAsString(state);
-		} catch (JsonProcessingException e) {
-			throw new UncheckedException(e);
+		if (serializeStateAsJson) {
+			String data;
+			try {
+				data = mapper.writeValueAsString(state);
+			} catch (JsonProcessingException e) {
+				throw new UncheckedException(e);
+			}
+			memCachedClient.set(asKey(reference), data);
+		} else {
+			memCachedClient.set(asKey(reference), state);
 		}
-        try (Jedis redis = pool.getResource())
-        {
-            redis.set(asKey(reference), data);
-        }
 		return Task.done();
 	}
 
-	public String getHost() {
-		return host;
+	public void setUseShortKeys(final boolean useShortKeys)
+	{
+		this.useShortKeys = useShortKeys;
 	}
 
-	public void setHost(String host) {
-		this.host = host;
+	public void setSerializeStateAsJson(final boolean serializeStateAsJson)
+	{
+		this.serializeStateAsJson = serializeStateAsJson;
 	}
 
-	public int getPort() {
-		return port;
+	public void setMemCachedClient(final MemCachedClient memCachedClient)
+	{
+		this.memCachedClient = memCachedClient;
 	}
-
-	public void setPort(int port) {
-		this.port = port;
-	}
-
-	public String getDatabaseName() {
-		return databaseName;
-	}
-
-	public void setDatabaseName(String databaseName) {
-		this.databaseName = databaseName;
-	}
-
-    public int getTimeout()
-    {
-        return timeout;
-    }
-
-    public void setTimeout(final int timeout)
-    {
-        this.timeout = timeout;
-    }
 
 }

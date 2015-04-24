@@ -26,40 +26,26 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.providers;
+package com.ea.orbit.actors.memcached.test;
 
-
-import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.Task;
 
-import java.util.concurrent.atomic.AtomicReference;
-
-/**
- * Storage providers are used by the orbit actors framework to load and store actor states.
- */
-public interface IStorageProvider extends IOrbitProvider
+public class HelloActor extends OrbitActor<HelloState> implements IHelloActor
 {
-    /**
-     * Asynchronously clears an actors state.
-     * @param reference an reference to the actor (contains the interface name and actor key)
-     * @param state the state object, not modified.
-     * @return a completion promise
-     */
-    Task<Void> clearState(ActorReference<?> reference, Object state);
 
-    /**
-     * Asynchronously reads an actors state.
-     * @param reference an reference to the actor (contains the interface name and actor key)
-     * @param stateReference reference to state object, modified by the storage provider implementation
-     * @return a completion promise
-     */
-    Task<Void> readState(ActorReference<?> reference, AtomicReference<Object> stateReference);
+    @Override
+    public Task<String> sayHello(String name)
+    {
+        state().lastName = name;
+        writeState().join();
+        return Task.fromValue("Hello " + name);
+    }
 
-    /**
-     * Asynchronously writes an actors state.
-     * @param reference an reference to the actor (contains the interface name and actor key)
-     * @param state the state object, not modified by the call
-     * @return a completion promise
-     */
-    Task<Void> writeState(ActorReference<?> reference, Object state);
+    @Override
+    public Task<Void> clear()
+    {
+        clearState().join();
+        return Task.done();
+    }
 }

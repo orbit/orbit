@@ -42,6 +42,8 @@ import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 public class JpaStorageProvider implements IStorageProvider
 {
 
@@ -78,13 +80,14 @@ public class JpaStorageProvider implements IStorageProvider
     }
 
     @Override
-    public synchronized Task<Boolean> readState(final ActorReference<?> reference, final Object state)
+    public synchronized Task<Void> readState(final ActorReference<?> reference, final AtomicReference<Object> stateReference)
     {
         try
         {
+            Object objectState = stateReference.get();
             String stateId = getIdentity(reference);
             EntityManager em = emf.createEntityManager();
-            Query query = em.createQuery("select s from " + state.getClass().getSimpleName() + " s where s.stateId=:stateId");
+            Query query = em.createQuery("select s from " + objectState.getClass().getSimpleName() + " s where s.stateId=:stateId");
             query.setParameter("stateId", stateId);
             Object newState;
             try
@@ -93,11 +96,11 @@ public class JpaStorageProvider implements IStorageProvider
             }
             catch (NoResultException e)
             {
-                newState = state.getClass().newInstance();
+                newState = objectState.getClass().newInstance();
             }
-            mapper.readerForUpdating(state).readValue(mapper.writeValueAsString(newState));
+            mapper.readerForUpdating(objectState).readValue(mapper.writeValueAsString(newState));
             em.close();
-            return Task.fromValue(true);
+            return Task.done();
         }
         catch (Exception e)
         {
