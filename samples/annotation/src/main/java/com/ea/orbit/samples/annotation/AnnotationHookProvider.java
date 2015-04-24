@@ -45,6 +45,10 @@ public class AnnotationHookProvider implements IInvokeHookProvider
     @Override
     public Task invoke(IRuntime runtime, IAddressable toReference, Method m, boolean oneWay, int methodId, Object[] params)
     {
+        // TODO: it would be better to chain the handlers instead, this could be done form the Execution
+        // like: handler.handler(..., nextHandler); where nextHandler is actually an iterator.
+        // so each handler would be able to do something, perhaps modify the parameters,
+        // then call the next, and potentially to listen for the result of the next.
         for (IAnnotationHandler handler : handlers)
         {
             if (m.isAnnotationPresent(handler.annotationClass()))

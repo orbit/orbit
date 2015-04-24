@@ -834,6 +834,9 @@ public class Execution implements IRuntime
 
     }
 
+
+    ThreadLocal<MessageContext> currentMessage = new ThreadLocal<>();
+
     static class MessageContext
     {
         ReferenceEntry theEntry;
@@ -851,7 +854,6 @@ public class Execution implements IRuntime
         }
     }
 
-    @Override
     public ActorReference getCurrentActivation()
     {
         MessageContext current = currentMessage.get();
@@ -862,7 +864,6 @@ public class Execution implements IRuntime
         return current.theEntry.reference;
     }
 
-    @Override
     public long getCurrentTraceId()
     {
         MessageContext current = currentMessage.get();
@@ -872,8 +873,6 @@ public class Execution implements IRuntime
         }
         return current.traceId;
     }
-
-    ThreadLocal<MessageContext> currentMessage = new ThreadLocal<>();
 
     private Task<?> executeMessage(
             final ReferenceEntry theEntry,
@@ -1027,7 +1026,7 @@ public class Execution implements IRuntime
         if (toNode == null)
         {
             // TODO: Ensure that both paths encode exception the same way.
-            return hosting.locateAndActivateActor(actorReference)
+            return hosting.locateActor(actorReference, true)
                     .thenCompose(x -> messaging.sendMessage(x, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params));
         }
         return messaging.sendMessage(toNode, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params);
@@ -1035,12 +1034,15 @@ public class Execution implements IRuntime
 
     public Task<?> invoke(IAddressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
     {
-        final ActorReference source = getCurrentActivation();
-        final long traceId = getCurrentTraceId();
         if (traceEnabled)
         {
+            // TODO: remove this, this should be an invoke hook, and the invoke hooks should be chained together.
+
+            final ActorReference source = getCurrentActivation();
+
             if (source != null)
             {
+                final long traceId = getCurrentTraceId();
                 String sourceInterface = ActorReference.getInterfaceClass(source).getName();
                 String targetInterface = ActorReference.getInterfaceClass((ActorReference) toReference).getName();
                 for (IInvokeListenerProvider v : getAllProviders(IInvokeListenerProvider.class))
@@ -1049,30 +1051,28 @@ public class Execution implements IRuntime
                 }
             }
         }
+        Task<?> task;
         if (invokeHook == null)
         {
-            return sendMessage(toReference, oneWay, methodId, params).whenComplete((r, e) -> {
-                if (traceEnabled)
-                {
-                    for (IInvokeListenerProvider v : getAllProviders(IInvokeListenerProvider.class))
-                    {
-                        v.postInvoke(traceId, r);
-                    }
-                }
-            });
+            task = sendMessage(toReference, oneWay, methodId, params);
         }
         else
         {
-            return invokeHook.invoke(this, toReference, m, oneWay, methodId, params).whenComplete((r, e) -> {
-                if (traceEnabled)
+            task = invokeHook.invoke(this, toReference, m, oneWay, methodId, params);
+        }
+        if (traceEnabled)
+        {
+            final long traceId = getCurrentTraceId();
+            // TODO: remove this, this should be an invoke hook, and the invoke hooks should be chained together.
+
+            return task.whenComplete((r, e) -> {
+                for (IInvokeListenerProvider v : getAllProviders(IInvokeListenerProvider.class))
                 {
-                    for (IInvokeListenerProvider v : getAllProviders(IInvokeListenerProvider.class))
-                    {
-                        v.postInvoke(traceId, r);
-                    }
+                    v.postInvoke(traceId, r);
                 }
             });
         }
+        return task;
     }
 
     public void activationCleanup(final boolean block)
@@ -1142,7 +1142,8 @@ public class Execution implements IRuntime
         }
     }
 
-    public Task<INodeAddress> locateActiveActor(final IAddressable actorReference){
-        return hosting.locateActiveActor(actorReference);
+    public Task<INodeAddress> locateActor(final IAddressable actorReference, final boolean forceActivation)
+    {
+        return hosting.locateActor(actorReference, false);
     }
 }

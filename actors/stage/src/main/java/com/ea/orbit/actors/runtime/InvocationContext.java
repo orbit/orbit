@@ -26,42 +26,28 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.samples.annotation.onlyifactivated;
+package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.IAddressable;
-import com.ea.orbit.actors.cluster.INodeAddress;
-import com.ea.orbit.actors.runtime.IRuntime;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.samples.annotation.IAnnotationHandler;
 
 import java.lang.reflect.Method;
 
-public class OnlyIfActivatedAnnotationHandler implements IAnnotationHandler<OnlyIfActivated>
+public interface InvocationContext
 {
+    IRuntime getRuntime();
 
-    @Override
-    public Class<OnlyIfActivated> annotationClass()
-    {
-        return OnlyIfActivated.class;
-    }
-
-    @Override
-    public Task<?> invoke(final OnlyIfActivated ann, final IRuntime runtime, final IAddressable toReference, final Method m, final boolean oneWay, final int methodId, final Object[] params)
-    {
-        // TODO: Do this instead:
-        //        return context.getRuntime().locateActor(toReference, false)
-        //                .thenCompose(address -> {
-        //                    if (address == null)
-        //                    {
-        //                        return (Task) Task.done();
-        //                    }
-        //                    return context.invokeNext(toReference, method, methodId, params);
-        //                });
-        INodeAddress address = runtime.locateActor(toReference, false).join();
-        if (address == null)
-        {
-            return Task.done();
-        }
-        return runtime.sendMessage(toReference, oneWay, methodId, params);
-    }
+    /**
+     * Invokes the next handler.
+     *
+     * @param toReference the target actor or observer
+     * @param method      the method
+     * @param methodId    the method id
+     * @param params      param array
+     * @return a promise of completion
+     */
+    Task<?> invokeNext(final IAddressable toReference,
+                       final Method method,
+                       final int methodId,
+                       final Object[] params);
 }

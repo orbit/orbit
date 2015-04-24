@@ -138,7 +138,7 @@ public class ClientTest extends ActorBaseTest
             ISomeActor player = IActor.getReference(ISomeActor.class, String.valueOf(i));
             client.bind();
             assertEquals("bla", player.sayHello("meh").join());
-            assertTrue(serverAddresses.contains(client.getHosting().locateAndActivateActor((ActorReference<?>) player).join()));
+            assertTrue(serverAddresses.contains(client.getHosting().locateActor((ActorReference<?>) player, true).join()));
         }
 
     }

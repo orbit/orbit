@@ -167,7 +167,14 @@ public class Hosting implements IHosting, Startable
         }
     }
 
-    public Task<INodeAddress> locateActiveActor(final IAddressable actorReference){
+    public Task<INodeAddress> locateActor(final IAddressable reference, final boolean forceActivation)
+    {
+        return (forceActivation) ? locateAndActivateActor(reference) : locateActiveActor(reference);
+    }
+
+
+    private Task<INodeAddress> locateActiveActor(final IAddressable actorReference)
+    {
         ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
                 String.valueOf(((ActorReference) actorReference).id));
         INodeAddress address = localAddressCache.get(addressable);
@@ -178,7 +185,7 @@ public class Hosting implements IHosting, Startable
         return Task.fromValue(null);
     }
 
-    public Task<INodeAddress> locateAndActivateActor(final IAddressable actorReference)
+    private Task<INodeAddress> locateAndActivateActor(final IAddressable actorReference)
     {
         ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
                 String.valueOf(((ActorReference) actorReference).id));

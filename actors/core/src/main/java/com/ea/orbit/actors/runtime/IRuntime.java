@@ -115,24 +115,13 @@ public interface IRuntime
     String runtimeIdentity();
 
     /**
-     * Gets current Activation, the actor reference that is currently invoking the method
+     * Locates the node address of an actor.
      *
-     * @return caller actor
+     * @param forceActivation a node will be chosen to activate the actor if
+     *                        it's not currently active.
+     *                        Actual activation is postponed until the actor receives one message.
+     * @return actor address, null if actor is not active and forceActivation==false
      */
-    ActorReference getCurrentActivation();
-
-    /**
-     * Gets a long representing the current tracing id
-     *
-     * @return unique trace id
-     */
-    long getCurrentTraceId();
-
-    /**
-     * Gets an address for an active actor
-     *
-     * @return actor address, null if actor is not active
-     */
-    Task<INodeAddress> locateActiveActor(final IAddressable actorReference);
+    Task<INodeAddress> locateActor(final IAddressable actorReference, final boolean forceActivation);
 
 }
