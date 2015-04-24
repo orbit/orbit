@@ -3,7 +3,7 @@ Orbit Async Maven Plugin
 
 [Orbit Async](..) implements async-await methods in the JVM. It allows programmers to write asynchronous code in a sequential fashion. It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com).
 
-The orbit Async Maven plugins executes compile time instrumentation of classes that use Orbit Async. 
+The Orbit Async Maven Plugin executes compile time instrumentation of classes that use Orbit Async. 
 
 A sample project can be found [here](src/test/project-to-test/pom.xml).
 
