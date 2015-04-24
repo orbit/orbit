@@ -66,3 +66,72 @@ System.out.println(lenTask.join());
 
 ```
 
+Getting started
+---------------
+
+Orbit Async requires jvm 1.8 as it relies on CompletableFuture, a new class.
+
+### Using with maven
+
+```xml
+<dependency>
+    <groupId>com.ea.orbit</groupId>
+    <artifactId>orbit-async</artifactId>
+    <version>${orbit.version}</version>
+</dependency>
+```
+
+### Instumenting your code
+
+#### Option 1 - Runtime
+On your main class or as early as possible, call at least once:
+```
+  Await.init();
+```
+Provided that your jvm has the capability enabled this will start a runtime instrumentation agent.
+
+This is the prefered solution for testing and development, the least amount of configuration.
+
+If you forget to call this function the first call to `await` will initialize the system (and print a warning).
+
+#### Option 2 - Jvm parameter
+
+Start your application with an extra JVM parameter: `-javaagent:orbit-async-VERSION.jar`
+```
+ java -javaagent:orbit-async-VERSION.jar -cp your_claspath YourMainClass args...
+```
+
+#### Option 3 - Compile time instrumentation, with Maven
+
+Use the [orbit-async-maven-plugin](maven-plugin).
+
+This is the best option for libraries.
+
+```
+<build>
+    <plugins>
+        <plugin>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-async-maven-plugin</artifactId>
+            <version>${orbit.version}</version>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>instrument</goal>
+                        <goal>instrument-test</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+```
+
+
+
+
+  
+
+Orbit Async uses bytecode instumentation 
+
+
