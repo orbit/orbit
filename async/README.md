@@ -22,9 +22,6 @@ import static com.ea.orbit.async.Await.await;
  
 public class Page
 {
-    // has to be done at least once, usually in the main class.
-    static { Await.init(); }
-    
     public Task<Integer> getPageLength(URL url)
     {
         Task<String> pageTask = getPage(url);
@@ -35,7 +32,10 @@ public class Page
         return Task.fromValue(page.length());
     }
 }
- 
+
+// do this once in the main class, or use the orbit-async-maven-plugin, or use -javaagent:orbit-async.jar
+Await.init();
+
 Task<Integer> lenTask = getPageLength(new URL("http://example.com"));
 System.out.println(lenTask.join());
 
@@ -48,9 +48,6 @@ import static com.ea.orbit.async.Await.await;
 
 public class Page
 {
-    // has to be done at least once, usually in the main class.
-    static { Await.init(); }
-
     // must mark CompletableFuture methods with @Async
     @Async
     public CompletableFuture<Integer> getPageLength(URL url)
@@ -60,6 +57,9 @@ public class Page
         return CompletableFuture.completedFuture(page.length());
     }
  }
+
+// do this once in the main class, or use the orbit-async-maven-plugin, or use -javaagent:orbit-async.jar
+Await.init();
 
 CompletableFuture<Integer> lenTask = getPageLength(new URL("http://example.com"));
 System.out.println(lenTask.join());
