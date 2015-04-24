@@ -49,7 +49,7 @@ public class ExecutionSerializer<T>
     private static final Logger logger = LoggerFactory.getLogger(Execution.class);
     private ExecutorService executorService;
     private Map<Object, Runner> running = new HashMap<>();
-    private Object mutex = new Object();
+    private final Object mutex = new Object();
 
     public ExecutionSerializer()
     {
