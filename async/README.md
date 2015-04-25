@@ -104,7 +104,7 @@ Start your application with an extra JVM parameter: `-javaagent:orbit-async-VERS
 
 #### Option 3 - Compile time instrumentation, with Maven
 
-Use the [orbit-async-maven-plugin](maven-plugin).
+Use the [orbit-async-maven-plugin](maven-plugin). It will instrument your classes in compile time and remove all references to `await`.
 
 This is the best option for libraries.
 
