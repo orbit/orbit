@@ -69,9 +69,9 @@ System.out.println(lenTask.join());
 Getting started
 ---------------
 
-Orbit Async requires jvm 1.8.x as it relies on CompletableFuture, a new class.
+Orbit Async requires JVM 1.8.x as it relies on CompletableFuture, a new class.
 
-It can work with java and scala and with any jvm language that generates jvm classes using methods with CompletableFuture, CompletionStage, or com.ea.orbit.concurrrent.Task return types.
+It can work with java and scala and with any JVM language that generates classes using methods with CompletableFuture, CompletionStage, or com.ea.orbit.concurrrent.Task return types.
 
 ### Using with maven
 
@@ -90,12 +90,12 @@ On your main class or as early as possible, call at least once:
 ```
 Await.init();
 ```
-Provided that your jvm has the capability enabled, this will start a runtime instrumentation agent.
+Provided that your JVM has the capability enabled, this will start a runtime instrumentation agent.
 
 This is the prefered solution for testing and development, it has the least amount of configuration.
 If you forget to invoke this function the first call to `await` will initialize the system (and print a warning).
 
-#### Option 2 - Jvm parameter
+#### Option 2 - JVM parameter
 
 Start your application with an extra JVM parameter: `-javaagent:orbit-async-VERSION.jar`
 ```
