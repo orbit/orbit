@@ -93,7 +93,7 @@ Await.init();
 Provided that your JVM has the capability enabled, this will start a runtime instrumentation agent.
 
 This is the prefered solution for testing and development, it has the least amount of configuration.
-If you forget to invoke this function the first call to `await` will initialize the system (and print a warning).
+If you forget to invoke this function, the first call to `await` will initialize the system (and print a warning).
 
 #### Option 2 - JVM parameter
 
