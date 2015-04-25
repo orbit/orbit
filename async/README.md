@@ -69,7 +69,9 @@ System.out.println(lenTask.join());
 Getting started
 ---------------
 
-Orbit Async requires jvm 1.8 as it relies on CompletableFuture, a new class.
+Orbit Async requires jvm 1.8.x as it relies on CompletableFuture, a new class.
+
+It can work with java and scala and with any jvm language that generates jvm classes using methods with CompletableFuture, CompletionStage, or com.ea.orbit.concurrrent.Task return types.
 
 ### Using with maven
 
