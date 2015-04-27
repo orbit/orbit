@@ -73,16 +73,16 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     {
         for (int i = 0; i < heavyTestSize(); i++)
         {
-            memCachedClient.delete(getActorInterfaceClass().getName() + KEY_SEPARATOR + String.valueOf(i));
+            memCachedClient.delete(asKey(getActorInterfaceClass(), String.valueOf(i)));
         }
     }
 
-    public long count(Class<?> actorInterface)
+    public long count(Class<? extends IStorageTestActor> actorInterface)
     {
         int count = 0;
         for (int i = 0; i < heavyTestSize(); i++)
         {
-            if (memCachedStorageHelper.get(actorInterface.getName() + KEY_SEPARATOR + String.valueOf(i)) != null)
+            if (memCachedStorageHelper.get(asKey(actorInterface, String.valueOf(i))) != null)
             {
                 count++;
             }
@@ -90,10 +90,15 @@ public class MemCachedPersistenceTest extends StorageBaseTest
         return count;
     }
 
+    private String asKey(final Class<? extends IStorageTestActor> actor, String identity)
+    {
+        return actor.getName() + KEY_SEPARATOR + identity;
+    }
+
     @Override
     public IStorageTestState readState(final String identity)
     {
-        return (IStorageTestState) memCachedStorageHelper.get(IHelloActor.class.getName() + KEY_SEPARATOR + identity);
+        return (IStorageTestState) memCachedStorageHelper.get(asKey(IHelloActor.class, identity));
     }
 
     public long count()

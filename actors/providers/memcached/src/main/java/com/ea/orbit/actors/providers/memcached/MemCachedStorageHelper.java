@@ -52,26 +52,36 @@ public class MemCachedStorageHelper
         this.memCachedClient = memCachedClient;
     }
 
-    public Object get(String key) {
+    public Object get(String key)
+    {
         return deserialize(key, getMemcachedValueAsBytes(key));
     }
 
-    public void set(String key, Object value) {
+    public void set(String key, Object value)
+    {
         memCachedClient.set(key, serialize(value));
     }
 
-    public byte[] serialize(Object value) {
+    public byte[] serialize(Object value)
+    {
         return (value != null) ? ByteUtils.serializeObject(value) : null;
     }
 
     @SuppressWarnings("unchecked")
-    private Object deserialize(String key, byte[] serializedValue) {
-        if(serializedValue != null) {
-            try {
+    private Object deserialize(String key, byte[] serializedValue)
+    {
+        if (serializedValue != null)
+        {
+            try
+            {
                 return ByteUtils.getSerializedObject(serializedValue);
-            } catch (IOException ioe) {
+            }
+            catch (IOException ioe)
+            {
                 logger.info("IOException during cache value deserialization for key: " + key + " - removing entry");
-            } catch (ClassNotFoundException cnfe) {
+            }
+            catch (ClassNotFoundException cnfe)
+            {
                 logger.info("ClassNotFoundException during cache value deserialization for key: " + key + " - removing entry");
             }
 
@@ -82,7 +92,8 @@ public class MemCachedStorageHelper
         return null;
     }
 
-    private byte[] getMemcachedValueAsBytes(String key) {
+    private byte[] getMemcachedValueAsBytes(String key)
+    {
         // Though the source code is unclear, testing shows that com.meetup.memcached.MemcachedClient will always fetch
         // and return a stored byte[] as a byte[] and not a String.
         return (byte[]) memCachedClient.get(key);
