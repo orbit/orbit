@@ -30,6 +30,7 @@ package com.ea.orbit.actors.memcached.test;
 
 import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.providers.memcached.MemCachedClientFactory;
+import com.ea.orbit.actors.providers.memcached.MemCachedStorageHelper;
 import com.ea.orbit.actors.providers.memcached.MemCachedStorageProvider;
 import com.ea.orbit.actors.test.IStorageTestActor;
 import com.ea.orbit.actors.test.IStorageTestState;
@@ -37,12 +38,13 @@ import com.ea.orbit.actors.test.StorageBaseTest;
 
 import com.whalin.MemCached.MemCachedClient;
 
-import static com.ea.orbit.actors.providers.memcached.MemCachedStorageProvider.*;
+import static com.ea.orbit.actors.providers.memcached.MemCachedStorageHelper.KEY_SEPARATOR;
 
 public class MemCachedPersistenceTest extends StorageBaseTest
 {
 
     private MemCachedClient memCachedClient;
+    private MemCachedStorageHelper memCachedStorageHelper;
 
     @Override
     public Class<? extends IStorageTestActor> getActorInterfaceClass()
@@ -62,6 +64,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     public void initStorage()
     {
         memCachedClient = MemCachedClientFactory.getClient();
+        memCachedStorageHelper = new MemCachedStorageHelper(memCachedClient);
         closeStorage();
     }
 
@@ -79,7 +82,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
         int count = 0;
         for (int i = 0; i < heavyTestSize(); i++)
         {
-            if (memCachedClient.get(actorInterface.getName() + KEY_SEPARATOR + String.valueOf(i)) != null)
+            if (memCachedStorageHelper.get(actorInterface.getName() + KEY_SEPARATOR + String.valueOf(i)) != null)
             {
                 count++;
             }
@@ -90,7 +93,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     @Override
     public IStorageTestState readState(final String identity)
     {
-        return (IStorageTestState) memCachedClient.get(IHelloActor.class.getName() + KEY_SEPARATOR + identity);
+        return (IStorageTestState) memCachedStorageHelper.get(IHelloActor.class.getName() + KEY_SEPARATOR + identity);
     }
 
     public long count()

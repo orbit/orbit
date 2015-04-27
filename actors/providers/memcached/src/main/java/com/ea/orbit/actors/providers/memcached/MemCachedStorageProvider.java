@@ -37,6 +37,8 @@ import org.dozer.Mapper;
 
 import com.whalin.MemCached.MemCachedClient;
 
+import static com.ea.orbit.actors.providers.memcached.MemCachedStorageHelper.*;
+
 /**
  * {@link MemCachedStorageProvider} provides Memcached support for storing actor states.
  *
@@ -45,10 +47,9 @@ import com.whalin.MemCached.MemCachedClient;
 public class MemCachedStorageProvider implements IStorageProvider
 {
 
-    public static final String KEY_SEPARATOR = "|";
-
     private Mapper mapper;
     private MemCachedClient memCachedClient;
+    private MemCachedStorageHelper memCachedStorageHelper;
 
     private boolean useShortKeys = false;
 
@@ -60,13 +61,8 @@ public class MemCachedStorageProvider implements IStorageProvider
         {
             memCachedClient = MemCachedClientFactory.getClient();
         }
+        memCachedStorageHelper = new MemCachedStorageHelper(memCachedClient);
         return Task.done();
-    }
-
-    private String asKey(final ActorReference reference)
-    {
-        String clazzName = useShortKeys ? ActorReference.getInterfaceClass(reference).getSimpleName() : ActorReference.getInterfaceClass(reference).getName();
-        return clazzName + KEY_SEPARATOR + String.valueOf(ActorReference.getId(reference));
     }
 
     @Override
@@ -85,10 +81,10 @@ public class MemCachedStorageProvider implements IStorageProvider
     @Override
     public Task<Boolean> readState(final ActorReference<?> reference, final Object state)
     {
-        Object data = memCachedClient.get(asKey(reference));
-        if (data != null)
+        Object value = memCachedStorageHelper.get(asKey(reference));
+        if (value != null)
         {
-            mapper.map(data, state);
+            mapper.map(value, state);
             return Task.fromValue(true);
         }
         return Task.fromValue(false);
@@ -98,8 +94,14 @@ public class MemCachedStorageProvider implements IStorageProvider
     @SuppressWarnings("unchecked")
     public Task<Void> writeState(final ActorReference reference, final Object state)
     {
-        memCachedClient.set(asKey(reference), state);
+        memCachedStorageHelper.set(asKey(reference), state);
         return Task.done();
+    }
+
+    private String asKey(final ActorReference reference)
+    {
+        String clazzName = useShortKeys ? ActorReference.getInterfaceClass(reference).getSimpleName() : ActorReference.getInterfaceClass(reference).getName();
+        return clazzName + KEY_SEPARATOR + String.valueOf(ActorReference.getId(reference));
     }
 
     public void setUseShortKeys(final boolean useShortKeys)
