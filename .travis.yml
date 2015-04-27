@@ -4,6 +4,7 @@ jdk: oraclejdk8
 services:
   - mongodb
   - redis-server
+  - memcached
 
 addons:
   postgresql: "9.3"
@@ -11,7 +12,7 @@ addons:
 before_script:
   - psql -c 'create database orbit;' -U postgres
 
-script: "mvn test -P withMongoTests,withPostgresTests,withRedisTests,withScala"
+script: "mvn test -P withMongoTests,withPostgresTests,withRedisTests,withMemcachedTests,withScala"
 
 notifications:
   webhooks:
