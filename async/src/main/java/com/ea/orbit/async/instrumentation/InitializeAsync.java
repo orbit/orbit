@@ -62,12 +62,15 @@ public class InitializeAsync
     // there is a test case that asserts that these constants contain the same value.
     static final String ORBIT_ASYNC_RUNNING = "orbit-async.running";
 
+    static boolean isRunning;
+
     /**
      * @see com.ea.orbit.instrumentation.AgentLoader
      */
     static
     {
-        if (!"true".equals(System.getProperty(InitializeAsync.ORBIT_ASYNC_RUNNING, "false")))
+        isRunning = "true".equals(System.getProperty(InitializeAsync.ORBIT_ASYNC_RUNNING, "false"));
+        if (!isRunning)
         {
             // the indirection is necessary to prevent
             // touching "com.sun.tools" when the agent was loaded via
@@ -89,6 +92,7 @@ public class InitializeAsync
                 {
                     Thread.sleep(1);
                 }
+                isRunning = true;
             }
             catch (Exception e)
             {
@@ -168,5 +172,10 @@ public class InitializeAsync
     {
         // does nothing but causes the static initialization to run.
         // static initialization runs only once and it is synchronized.
+    }
+
+    public static boolean isRunning()
+    {
+        return isRunning;
     }
 }

@@ -50,6 +50,7 @@ import org.objectweb.asm.tree.analysis.Frame;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceMethodVisitor;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.instrument.ClassFileTransformer;
@@ -69,7 +70,7 @@ import static org.objectweb.asm.Opcodes.*;
  *
  * @author Daniel Sperry
  */
-class Transformer implements ClassFileTransformer
+public class Transformer implements ClassFileTransformer
 {
     /**
      * Name of the property that will be set by the
@@ -136,6 +137,23 @@ class Transformer implements ClassFileTransformer
         int key;
         Frame frame;
         Label futureIsDoneLabel;
+    }
+
+    public byte[] instrument(InputStream inputStream)
+    {
+        try
+        {
+            ClassReader cr = new ClassReader(inputStream);
+            if (needsInstrumentation(cr))
+            {
+                return transform(cr);
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+        return null;
     }
 
     /**

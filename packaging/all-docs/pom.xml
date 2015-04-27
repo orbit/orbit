@@ -74,6 +74,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                     <dependencySourceIncludes>
                                         <dependencySourceInclude>com.ea.*:*</dependencySourceInclude>
                                     </dependencySourceIncludes>
+                                    <excludePackageNames>*.instrumentation;*.processor</excludePackageNames>
                                     <failOnError>false</failOnError>
                                     <additionalparam>-Xdoclint:none</additionalparam>
                                 </configuration>
@@ -109,6 +110,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <dependency>
             <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-web</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-async</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-rest-client</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
