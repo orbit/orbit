@@ -216,12 +216,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </activation>
             <distributionManagement>
                 <snapshotRepository>
-                    <id>${internalReleaseRepo.id}</id>
-                    <url>${internalReleaseRepo.url}</url>
-                </snapshotRepository>
-                <repository>
                     <id>${internalSnapshotRepo.id}</id>
                     <url>${internalSnapshotRepo.url}</url>
+                </snapshotRepository>
+                <repository>
+                    <id>${internalReleaseRepo.id}</id>
+                    <url>${internalReleaseRepo.url}</url>
                 </repository>
             </distributionManagement>
         </profile>
