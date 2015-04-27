@@ -29,28 +29,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.memcached.test;
 
 import com.ea.orbit.actors.providers.IOrbitProvider;
-import com.ea.orbit.actors.providers.json.ActorReferenceModule;
 import com.ea.orbit.actors.providers.memcached.MemCachedClientFactory;
 import com.ea.orbit.actors.providers.memcached.MemCachedStorageProvider;
-import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.actors.test.IStorageTestActor;
 import com.ea.orbit.actors.test.IStorageTestState;
 import com.ea.orbit.actors.test.StorageBaseTest;
-import com.ea.orbit.exception.UncheckedException;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.whalin.MemCached.MemCachedClient;
 
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import static com.ea.orbit.actors.providers.memcached.MemCachedStorageProvider.*;
 
 public class MemCachedPersistenceTest extends StorageBaseTest
 {
 
     private MemCachedClient memCachedClient;
-    private ObjectMapper mapper;
 
     @Override
     public Class<? extends IStorageTestActor> getActorInterfaceClass()
@@ -62,7 +54,6 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     public IOrbitProvider getStorageProvider()
     {
         MemCachedStorageProvider storageProvider = new MemCachedStorageProvider();
-        storageProvider.setSerializeStateAsJson(true);
         storageProvider.setUseShortKeys(false);
         return storageProvider;
     }
@@ -71,52 +62,26 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     public void initStorage()
     {
         memCachedClient = MemCachedClientFactory.getClient();
-
         closeStorage();
-
-        mapper = new ObjectMapper();
-        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
-        mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
-                .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
-                .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
-                .withSetterVisibility(JsonAutoDetect.Visibility.NONE)
-                .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
     }
 
     @Override
     public void closeStorage()
     {
-        memCachedClient.flushAll();
+        for (int i = 0; i < heavyTestSize(); i++)
+        {
+            memCachedClient.delete(getActorInterfaceClass().getName() + KEY_SEPARATOR + String.valueOf(i));
+        }
     }
 
-    private static final Pattern ITEMS_PATTERN = Pattern.compile("items:(\\d+):number");
-
-    // couldn't find any other ways to count items in the Memcached instance..
     public long count(Class<?> actorInterface)
     {
         int count = 0;
-        Map<String, Map<String, String>> statsItems = memCachedClient.statsItems();
-
-        for (Map<String, String> items : statsItems.values())
+        for (int i = 0; i < heavyTestSize(); i++)
         {
-            for (String item : items.keySet())
+            if (memCachedClient.get(actorInterface.getName() + KEY_SEPARATOR + String.valueOf(i)) != null)
             {
-                Matcher matcher =  ITEMS_PATTERN.matcher(item);
-                if (matcher.matches())
-                {
-                    int slabNumber = Integer.valueOf(matcher.group(1));
-                    Map<String, Map<String, String>> cacheDump = memCachedClient.statsCacheDump(slabNumber, 10000);
-                    for (Map<String, String> cacheItem : cacheDump.values())
-                    {
-                        for (String key : cacheItem.keySet())
-                        {
-                            if (key.startsWith(actorInterface.getName())) {
-                                count++;
-                            }
-                        }
-                    }
-
-                }
+                count++;
             }
         }
         return count;
@@ -125,21 +90,8 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     @Override
     public IStorageTestState readState(final String identity)
     {
-        Object data = memCachedClient.get(IHelloActor.class.getName() + "|" + identity);
-        if (data != null)
-        {
-            try
-            {
-                return mapper.readValue(data.toString(), HelloState.class);
-            }
-            catch (Exception e)
-            {
-                throw new UncheckedException(e);
-            }
-        }
-        return null;
+        return (IStorageTestState) memCachedClient.get(IHelloActor.class.getName() + KEY_SEPARATOR + identity);
     }
-
 
     public long count()
     {
@@ -149,7 +101,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     @Override
     public int heavyTestSize()
     {
-        return 100;
+        return 1000;
     }
 
 

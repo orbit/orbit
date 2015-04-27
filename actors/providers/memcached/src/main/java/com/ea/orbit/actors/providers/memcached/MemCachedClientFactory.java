@@ -40,7 +40,7 @@ public abstract class MemCachedClientFactory
 {
     public static MemCachedClient getClient()
     {
-        MemCachedClient memCachedClient = new MemCachedClient();
+        MemCachedClient memCachedClient = new MemCachedClient(true);
 
         SchoonerSockIOPool pool = SchoonerSockIOPool.getInstance();
         pool.setServers(new String[]{ "localhost:11211" });

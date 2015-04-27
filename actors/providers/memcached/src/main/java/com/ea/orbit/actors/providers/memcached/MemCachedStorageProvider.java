@@ -29,113 +29,87 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.providers.memcached;
 
 import com.ea.orbit.actors.providers.IStorageProvider;
-import com.ea.orbit.actors.providers.json.ActorReferenceModule;
 import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.exception.UncheckedException;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.dozer.DozerBeanMapper;
+import org.dozer.Mapper;
+
 import com.whalin.MemCached.MemCachedClient;
-
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * {@link MemCachedStorageProvider} provides Memcached support for storing actor states.
  *
  * @author Johno Crawford (johno@sulake.com)
  */
-public class MemCachedStorageProvider implements IStorageProvider {
+public class MemCachedStorageProvider implements IStorageProvider
+{
 
-	private MemCachedClient memCachedClient;
-	private ObjectMapper mapper;
+    public static final String KEY_SEPARATOR = "|";
 
-	private boolean useShortKeys = false;
-	private boolean serializeStateAsJson = false;
+    private Mapper mapper;
+    private MemCachedClient memCachedClient;
 
-	@Override
-	public Task<Void> start() {
-		mapper = new ObjectMapper();
-		mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
-		mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
-				.withFieldVisibility(JsonAutoDetect.Visibility.ANY)
-				.withGetterVisibility(JsonAutoDetect.Visibility.NONE)
-				.withSetterVisibility(JsonAutoDetect.Visibility.NONE)
-				.withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
-		if (memCachedClient == null) {
-			memCachedClient = MemCachedClientFactory.getClient();
-		}
-		return Task.done();
-	}
+    private boolean useShortKeys = false;
 
-	private String asKey(final ActorReference reference) {
-		String clazzName = useShortKeys ? ActorReference.getInterfaceClass(reference).getSimpleName() : ActorReference.getInterfaceClass(reference).getName();
-		return clazzName + "|" + String.valueOf(ActorReference.getId(reference));
-	}
-
-	@Override
-	public Task<Void> clearState(final ActorReference reference, final Object state)
+    @Override
+    public Task<Void> start()
     {
-		memCachedClient.delete(asKey(reference));
-		return Task.done();
-	}
+        mapper = new DozerBeanMapper();
+        if (memCachedClient == null)
+        {
+            memCachedClient = MemCachedClientFactory.getClient();
+        }
+        return Task.done();
+    }
 
-	@Override
-	public Task<Void> stop()
+    private String asKey(final ActorReference reference)
     {
-		return Task.done();
-	}
+        String clazzName = useShortKeys ? ActorReference.getInterfaceClass(reference).getSimpleName() : ActorReference.getInterfaceClass(reference).getName();
+        return clazzName + KEY_SEPARATOR + String.valueOf(ActorReference.getId(reference));
+    }
 
-	@Override
-	public Task<Void> readState(final ActorReference<?> reference, final AtomicReference<Object> stateReference)
-	{
-		Object data = memCachedClient.get(asKey(reference));
-		if (data != null) {
-			if (serializeStateAsJson) {
-				try {
-					mapper.readerForUpdating(stateReference.get()).readValue(data.toString());
-				} catch (Exception e) {
-					throw new UncheckedException("Error parsing memcached response: " + data, e);
-				}
-			} else {
-				stateReference.set(data);
-			}
-		}
-		return Task.done();
-	}
+    @Override
+    public Task<Void> clearState(final ActorReference reference, final Object state)
+    {
+        memCachedClient.delete(asKey(reference));
+        return Task.done();
+    }
 
-	@Override
-	@SuppressWarnings("unchecked")
-	public Task<Void> writeState(final ActorReference reference, final Object state) {
-		if (serializeStateAsJson) {
-			String data;
-			try {
-				data = mapper.writeValueAsString(state);
-			} catch (JsonProcessingException e) {
-				throw new UncheckedException(e);
-			}
-			memCachedClient.set(asKey(reference), data);
-		} else {
-			memCachedClient.set(asKey(reference), state);
-		}
-		return Task.done();
-	}
+    @Override
+    public Task<Void> stop()
+    {
+        return Task.done();
+    }
 
-	public void setUseShortKeys(final boolean useShortKeys)
-	{
-		this.useShortKeys = useShortKeys;
-	}
+    @Override
+    public Task<Boolean> readState(final ActorReference<?> reference, final Object state)
+    {
+        Object data = memCachedClient.get(asKey(reference));
+        if (data != null)
+        {
+            mapper.map(data, state);
+            return Task.fromValue(true);
+        }
+        return Task.fromValue(false);
+    }
 
-	public void setSerializeStateAsJson(final boolean serializeStateAsJson)
-	{
-		this.serializeStateAsJson = serializeStateAsJson;
-	}
+    @Override
+    @SuppressWarnings("unchecked")
+    public Task<Void> writeState(final ActorReference reference, final Object state)
+    {
+        memCachedClient.set(asKey(reference), state);
+        return Task.done();
+    }
 
-	public void setMemCachedClient(final MemCachedClient memCachedClient)
-	{
-		this.memCachedClient = memCachedClient;
-	}
+    public void setUseShortKeys(final boolean useShortKeys)
+    {
+        this.useShortKeys = useShortKeys;
+    }
+
+    public void setMemCachedClient(final MemCachedClient memCachedClient)
+    {
+        this.memCachedClient = memCachedClient;
+    }
 
 }

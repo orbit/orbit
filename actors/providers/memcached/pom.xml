@@ -60,9 +60,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-actors-json</artifactId>
-            <version>${project.version}</version>
+            <groupId>net.sf.dozer</groupId>
+            <artifactId>dozer</artifactId>
+            <version>5.5.1</version>
         </dependency>
         <dependency>
             <groupId>com.whalin</groupId>

@@ -28,11 +28,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.providers;
 
-
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.concurrent.Task;
-
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Storage providers are used by the orbit actors framework to load and store actor states.
@@ -50,10 +47,10 @@ public interface IStorageProvider extends IOrbitProvider
     /**
      * Asynchronously reads an actors state.
      * @param reference an reference to the actor (contains the interface name and actor key)
-     * @param stateReference reference to state object, modified by the storage provider implementation
-     * @return a completion promise
+     * @param state the state object, modified by the storage provider implementation
+     * @return a boolean completion promise of whether or not the state was modified
      */
-    Task<Void> readState(ActorReference<?> reference, AtomicReference<Object> stateReference);
+    Task<Boolean> readState(ActorReference<?> reference, Object state);
 
     /**
      * Asynchronously writes an actors state.

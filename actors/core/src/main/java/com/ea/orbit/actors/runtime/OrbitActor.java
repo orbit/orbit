@@ -41,7 +41,6 @@ import com.googlecode.gentyref.GenericTypeReflector;
 import java.util.LinkedHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Base class to all actor implementations.
@@ -121,9 +120,9 @@ public class OrbitActor<T>
      *
      * @return a completion promise
      */
-    protected Task<Void> readState()
+    protected Task<Boolean> readState()
     {
-        return stateProvider.readState(reference, new AtomicReference<>(state));
+        return stateProvider.readState(reference, state);
     }
 
     /**

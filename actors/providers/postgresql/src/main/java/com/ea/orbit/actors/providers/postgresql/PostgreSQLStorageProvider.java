@@ -46,7 +46,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class PostgreSQLStorageProvider implements IStorageProvider {
 
@@ -56,7 +55,7 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
     private String username;
     private String password;
 
-    private Connection conn;
+    private Connection connection;
     private PreparedStatement insertState;
     private PreparedStatement updateState;
     private PreparedStatement readState;
@@ -97,39 +96,66 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
     }
 
     @Override
-    public synchronized Task<Void> readState(final ActorReference<?> reference, final AtomicReference<Object> stateReference) {
+    public synchronized Task<Boolean> readState(final ActorReference<?> reference, final Object state)
+    {
         String actor = getName(reference), identity = getIdentity(reference);
-        try {
+        ResultSet results = null;
+        try
+        {
             readState.setString(1, actor);
             readState.setString(2, identity);
-            ResultSet results = readState.executeQuery();
-            if (results.next()) {
+            results = readState.executeQuery();
+            if (results.next())
+            {
                 String json = results.getString("state");
-                mapper.readerForUpdating(stateReference.get()).readValue(json);
-                results.close();
+                mapper.readerForUpdating(state).readValue(json);
+                return Task.fromValue(true);
             }
-            return Task.done();
-        } catch(SQLException | IOException e) {
+            else
+            {
+                return Task.fromValue(false);
+            }
+        }
+        catch (SQLException | IOException e)
+        {
             throw new UncheckedException(e);
+        }
+        finally
+        {
+            if (results != null)
+            {
+                try
+                {
+                    results.close();
+                }
+                catch (SQLException ignore)
+                {
+                }
+            }
         }
     }
 
     @Override
-    public synchronized Task<Void> writeState(final ActorReference<?> reference, final Object state) {
+    public synchronized Task<Void> writeState(final ActorReference<?> reference, final Object state)
+    {
         String actor = getName(reference), identity = getIdentity(reference);
-        try {
+        try
+        {
             String serializedState = mapper.writeValueAsString(state);
             updateState.setString(1, serializedState);
             updateState.setString(2, actor);
             updateState.setString(3, identity);
-            if (updateState.executeUpdate() < 1) {
+            if (updateState.executeUpdate() < 1)
+            {
                 insertState.setString(1, actor);
                 insertState.setString(2, identity);
                 insertState.setString(3, serializedState);
                 insertState.execute();
             }
             return Task.done();
-        } catch(SQLException | JsonProcessingException e) {
+        }
+        catch (SQLException | JsonProcessingException e)
+        {
             throw new UncheckedException(e);
         }
     }
@@ -157,7 +183,7 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
     @Override
     public Task<Void> stop() {
         try {
-            this.conn.close();
+            this.connection.close();
             return Task.done();
         } catch (SQLException e) {
             throw new UncheckedException(e);
@@ -174,7 +200,7 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
 
     private void openConn() {
         try {
-            this.conn = DriverManager.getConnection(toConnString(), username, password);
+            this.connection = DriverManager.getConnection(toConnString(), username, password);
         } catch (SQLException e) {
             throw new UncheckedException("open connection to postgres failed", e);
         }
@@ -183,7 +209,7 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
     private void createTableIfNotExists() {
         if(!tableExists()) {
             try {
-                Statement stmt = this.conn.createStatement();
+                Statement stmt = this.connection.createStatement();
                 stmt.execute("CREATE TABLE actor_states ( actor text NOT NULL, identity text NOT NULL, state text NOT NULL, PRIMARY KEY (actor, identity) )");
                 stmt.close();
             } catch(SQLException e) {
@@ -194,7 +220,7 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
 
     private boolean tableExists() {
         try {
-            Statement stmt = this.conn.createStatement();
+            Statement stmt = this.connection.createStatement();
             ResultSet results = stmt.executeQuery(
                     "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'actor_states')");
             boolean exists = results.next() && results.getBoolean(1);
@@ -207,10 +233,10 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
 
     private void prepareStatements() {
         try {
-            this.insertState = this.conn.prepareCall("INSERT INTO actor_states (actor, identity, state) VALUES (?, ?, ?)");
-            this.updateState = this.conn.prepareCall("UPDATE actor_states SET state = ? WHERE actor = ? AND identity = ?");
-            this.readState = this.conn.prepareCall("SELECT state AS \"state\" FROM actor_states WHERE actor = ?  AND identity = ?");
-            this.clearState = this.conn.prepareCall("DELETE FROM actor_states WHERE actor = ? AND identity = ?");
+            this.insertState = this.connection.prepareCall("INSERT INTO actor_states (actor, identity, state) VALUES (?, ?, ?)");
+            this.updateState = this.connection.prepareCall("UPDATE actor_states SET state = ? WHERE actor = ? AND identity = ?");
+            this.readState = this.connection.prepareCall("SELECT state AS \"state\" FROM actor_states WHERE actor = ?  AND identity = ?");
+            this.clearState = this.connection.prepareCall("DELETE FROM actor_states WHERE actor = ? AND identity = ?");
         } catch(SQLException e) {
             throw new UncheckedException(e);
         }

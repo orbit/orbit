@@ -43,8 +43,6 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 public class RedisStorageProvider implements IStorageProvider {
 
 	private JedisPool pool;
@@ -93,7 +91,7 @@ public class RedisStorageProvider implements IStorageProvider {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Task<Void> readState(final ActorReference<?> reference, final AtomicReference<Object> stateReference) {
+	public Task<Boolean> readState(final ActorReference reference, final Object state) {
         String data;
         try (Jedis redis = pool.getResource())
         {
@@ -101,12 +99,13 @@ public class RedisStorageProvider implements IStorageProvider {
         }
 		if (data != null) {
 			try {
-				mapper.readerForUpdating(stateReference.get()).readValue(data);
+				mapper.readerForUpdating(state).readValue(data);
+				return Task.fromValue(true);
 			} catch (Exception e) {
 				throw new UncheckedException("Error parsing redis response: " + data, e);
 			}
 		}
-		return Task.done();
+		return Task.fromValue(false);
 	}
 
 	@Override
