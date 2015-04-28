@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +92,21 @@ public class Hosting implements IHosting, Startable
     public void setNodeType(final NodeTypeEnum nodeType)
     {
         this.nodeType = nodeType;
+    }
+
+    public List<INodeAddress> getAllNodes()
+    {
+        return Collections.unmodifiableList(new ArrayList<>(activeNodes.keySet()));
+    }
+
+    public List<INodeAddress> getServerNodes()
+    {
+        final ArrayList<INodeAddress> set = new ArrayList<>(serverNodes.size());
+        for (NodeInfo s : serverNodes)
+        {
+            set.add(s.address);
+        }
+        return Collections.unmodifiableList(set);
     }
 
     private static class NodeInfo
