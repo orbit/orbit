@@ -28,6 +28,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.memcached.test;
 
+import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.providers.memcached.MemCachedClientFactory;
 import com.ea.orbit.actors.providers.memcached.MemCachedStorageHelper;
@@ -36,15 +38,29 @@ import com.ea.orbit.actors.test.IStorageTestActor;
 import com.ea.orbit.actors.test.IStorageTestState;
 import com.ea.orbit.actors.test.StorageBaseTest;
 
+import org.junit.Test;
+
 import com.whalin.MemCached.MemCachedClient;
 
 import static com.ea.orbit.actors.providers.memcached.MemCachedStorageHelper.KEY_SEPARATOR;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class MemCachedPersistenceTest extends StorageBaseTest
 {
 
     private MemCachedClient memCachedClient;
     private MemCachedStorageHelper memCachedStorageHelper;
+
+    @Test
+    public void testObserverSerialization() throws Exception
+    {
+        createStage();
+        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "1");
+        helloActor.addObserver(new HelloObserver()).join();
+        HelloState helloState = (HelloState) readState("1");
+        helloState.observers.cleanup();
+    }
 
     @Override
     public Class<? extends IStorageTestActor> getActorInterfaceClass()

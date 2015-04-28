@@ -57,9 +57,9 @@ public class MemCachedStorageHelper
         return deserialize(key, getMemcachedValueAsBytes(key));
     }
 
-    public void set(String key, Object value)
+    public boolean set(String key, Object value)
     {
-        memCachedClient.set(key, serialize(value));
+        return memCachedClient.set(key, serialize(value));
     }
 
     public byte[] serialize(Object value)

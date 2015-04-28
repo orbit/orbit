@@ -35,11 +35,25 @@ public class HelloActor extends OrbitActor<HelloState> implements IHelloActor
 {
 
     @Override
+    public Task<?> activateAsync()
+    {
+        return super.activateAsync().thenRun(state().observers::cleanup);
+    }
+
+    @Override
     public Task<String> sayHello(String name)
     {
         state().lastName = name;
         writeState().join();
         return Task.fromValue("Hello " + name);
+    }
+
+    @Override
+    public Task addObserver(final IHelloObserver observer)
+    {
+        state().observers.addObserver(observer);
+        writeState().join();
+        return Task.done();
     }
 
     @Override

@@ -28,6 +28,8 @@
 
 package com.ea.orbit.actors.providers.memcached;
 
+import com.ea.orbit.actors.runtime.ActorReference;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -53,7 +55,28 @@ public class ByteUtils
         ByteArrayInputStream str = new ByteArrayInputStream(byteArray);
         Object result = null;
 
-        ObjectInputStream ois = new ObjectInputStream(str);
+        ObjectInputStream ois = new ObjectInputStream(str) {
+
+            {
+                enableResolveObject(true);
+            }
+            @Override
+            protected Object resolveObject(final Object obj) throws IOException
+            {
+                if (obj instanceof ReferenceReplacement)
+                {
+                    ReferenceReplacement replacement = (ReferenceReplacement) obj;
+                    // TODO: help?
+                    if (replacement.address != null)
+                    {
+                        //return execution.getRemoteObserverReference(replacement.address, (Class)replacement.interfaceClass, replacement.id);
+                    }
+                    //return execution.getReference((Class)replacement.interfaceClass, replacement.id);
+
+                }
+                return super.resolveObject(obj);
+            }
+        };
         result = ois.readObject();
         return result;
     }
@@ -66,16 +89,41 @@ public class ByteUtils
      */
     public static byte[] serializeObject(Object object)
     {
-        ByteArrayOutputStream str = new ByteArrayOutputStream();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try
         {
-            ObjectOutputStream oos = new ObjectOutputStream(str);
+            ObjectOutputStream oos = new ObjectOutputStream(baos)
+            {
+                {
+                    enableReplaceObject(true);
+                }
+
+                @SuppressWarnings("rawtypes")
+                @Override
+                protected Object replaceObject(final Object obj) throws IOException
+                {
+                    if (!(obj instanceof ActorReference))
+                    {
+                        return super.replaceObject(obj);
+                    }
+                    return getReferenceReplacement((ActorReference) obj);
+                }
+            };
             oos.writeObject(object);
         }
         catch (IOException impossible)
         {
             throw new RuntimeException("Failed to serialize object " + object + " to byte array", impossible);
         }
-        return str.toByteArray();
+        return baos.toByteArray();
+    }
+
+    private static ReferenceReplacement getReferenceReplacement(final ActorReference reference)
+    {
+        ReferenceReplacement replacement = new ReferenceReplacement();
+        replacement.address = ActorReference.getAddress(reference);
+        replacement.interfaceClass = ActorReference.getInterfaceClass(reference);
+        replacement.id = ActorReference.getId(reference);
+        return replacement;
     }
 }

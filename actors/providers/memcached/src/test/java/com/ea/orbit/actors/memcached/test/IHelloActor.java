@@ -30,8 +30,9 @@ package com.ea.orbit.actors.memcached.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.test.IStorageTestActor;
+import com.ea.orbit.concurrent.Task;
 
 public interface IHelloActor extends IActor, IStorageTestActor
 {
-    //basic tasks from IStorageTestActor interface
+    Task addObserver(IHelloObserver observer);
 }
