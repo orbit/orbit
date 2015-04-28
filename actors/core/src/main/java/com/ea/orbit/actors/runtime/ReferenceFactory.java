@@ -109,4 +109,9 @@ public class ReferenceFactory implements IReferenceFactory
         return instance.getReference(iActor, NoIdentity.NO_IDENTITY);
     }
 
+    public static <T extends IActorObserver> T observerRef(UUID nodeId, Class<T> iActorObserver, String id)
+    {
+        return instance.getObserverReference(nodeId, iActorObserver, id);
+    }
+
 }

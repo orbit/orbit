@@ -159,9 +159,13 @@ public class DependencyRegistry
                 o[0] = aClazz.newInstance();
                 return initialize(aClazz, (T) o[0], true);
             }
-            catch (InstantiationException | IllegalAccessException e)
+            catch (Exception e)
             {
-                throw new UncheckedException(e);
+                throw new UncheckedException("Error instantiating: "+ aClazz.getName(), e);
+            }
+            catch (Error e)
+            {
+                throw new UncheckedException("Error instantiating: "+ aClazz.getName(), e);
             }
 
         }

@@ -187,18 +187,44 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         </plugins>
     </reporting>
 
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
-
     <profiles>
+        <profile>
+            <id>public-deploy</id>
+            <activation>
+                <property>
+                    <name>!internalDeploy</name>
+                </property>
+            </activation>
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>ossrh</id>
+                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+                </snapshotRepository>
+                <repository>
+                    <id>ossrh</id>
+                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+        <profile>
+            <id>internal-deploy</id>
+            <activation>
+                <property>
+                    <name>internalDeploy</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>${internalSnapshotRepo.id}</id>
+                    <url>${internalSnapshotRepo.url}</url>
+                </snapshotRepository>
+                <repository>
+                    <id>${internalReleaseRepo.id}</id>
+                    <url>${internalReleaseRepo.url}</url>
+                </repository>
+            </distributionManagement>
+        </profile>
         <profile>
             <id>stageRelease</id>
             <build>
