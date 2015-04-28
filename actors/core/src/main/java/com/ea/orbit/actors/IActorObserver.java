@@ -29,6 +29,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors;
 
 
+import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.concurrent.Task;
 
 /**
@@ -102,5 +104,19 @@ public interface IActorObserver
     default Task<?> ping()
     {
         return Task.done();
+    }
+
+    /**
+     * Gets a reference to a remote observer.
+     *
+     * @param node           the node address
+     * @param iActorObserver the interface
+     * @param id             the observer id
+     * @param <T>            the interface type
+     * @return an actor reference
+     */
+    static <T extends IActorObserver> T getObserverReference(INodeAddress node, Class<T> iActorObserver, String id)
+    {
+        return ReferenceFactory.observerRef(node.asUUID(), iActorObserver, id);
     }
 }
