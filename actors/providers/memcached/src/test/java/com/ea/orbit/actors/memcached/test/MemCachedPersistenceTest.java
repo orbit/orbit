@@ -53,7 +53,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     private MemCachedStorageHelper memCachedStorageHelper;
 
     @Test
-    public void testObserverSerialization() throws Exception
+    public void testReferenceSerialization() throws Exception
     {
         createStage();
         IHelloActor helloActor = IActor.getReference(IHelloActor.class, "1");
