@@ -28,8 +28,9 @@
 
 package com.ea.orbit.actors.providers.memcached;
 
+import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.IActorObserver;
 import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.ReferenceFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -44,8 +45,6 @@ import java.io.ObjectOutputStream;
  */
 public class ByteUtils
 {
-
-    private static final ReferenceFactory referenceFactory = new ReferenceFactory();
 
     /**
      * Extracts an object which has been serialized into a byte array
@@ -65,6 +64,7 @@ public class ByteUtils
             }
 
             @Override
+            @SuppressWarnings("unchecked")
             protected Object resolveObject(final Object obj) throws IOException
             {
                 if (obj instanceof ReferenceReplacement)
@@ -72,10 +72,9 @@ public class ByteUtils
                     ReferenceReplacement replacement = (ReferenceReplacement) obj;
                     if (replacement.address != null)
                     {
-                        return referenceFactory.getObserverReference(replacement.address.asUUID(), (Class) replacement.interfaceClass, replacement.id);
+                        return IActorObserver.getObserverReference(replacement.address, (Class<? extends IActorObserver>) replacement.interfaceClass, String.valueOf(replacement.id));
                     }
-                    return referenceFactory.getReference((Class) replacement.interfaceClass, replacement.id);
-
+                    return IActor.getReference((Class<? extends IActor>) replacement.interfaceClass, String.valueOf(replacement.id));
                 }
                 return super.resolveObject(obj);
             }
