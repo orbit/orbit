@@ -29,7 +29,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors;
 
 import com.ea.orbit.actors.runtime.ReferenceFactory;
-import com.ea.orbit.concurrent.Task;
 
 /**
  * Interface marker for orbit actors.
@@ -71,7 +70,7 @@ public interface IActor
      * @param <T>    the interface type
      * @return an actor reference
      */
-    public static <T extends IActor> T getReference(Class<T> iActor, String id)
+    static <T extends IActor> T getReference(Class<T> iActor, String id)
     {
         return ReferenceFactory.ref(iActor, id);
     }
