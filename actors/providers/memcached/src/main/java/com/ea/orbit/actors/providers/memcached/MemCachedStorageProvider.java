@@ -56,7 +56,10 @@ public class MemCachedStorageProvider implements IStorageProvider
     @Override
     public Task<Void> start()
     {
-        mapper = new DozerBeanMapper();
+        if (mapper == null)
+        {
+            mapper = new DozerBeanMapper();
+        }
         if (memCachedClient == null)
         {
             memCachedClient = MemCachedClientFactory.getClient();
@@ -114,4 +117,8 @@ public class MemCachedStorageProvider implements IStorageProvider
         this.memCachedClient = memCachedClient;
     }
 
+    public void setMapper(final Mapper mapper)
+    {
+        this.mapper = mapper;
+    }
 }

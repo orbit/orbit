@@ -43,7 +43,7 @@ import java.io.ObjectOutputStream;
  *
  * @author Johno Crawford (johno@sulake.com)
  */
-public class ByteUtils
+public class ReferenceAwareByteUtils
 {
 
     /**

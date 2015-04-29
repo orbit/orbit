@@ -64,7 +64,7 @@ public class MemCachedStorageHelper
 
     public byte[] serialize(Object value)
     {
-        return (value != null) ? ByteUtils.serializeObject(value) : null;
+        return (value != null) ? ReferenceAwareByteUtils.serializeObject(value) : null;
     }
 
     @SuppressWarnings("unchecked")
@@ -74,7 +74,7 @@ public class MemCachedStorageHelper
         {
             try
             {
-                return ByteUtils.getSerializedObject(serializedValue);
+                return ReferenceAwareByteUtils.getSerializedObject(serializedValue);
             }
             catch (IOException ioe)
             {
