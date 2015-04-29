@@ -26,40 +26,11 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.memcached.test;
+package com.ea.orbit.actors.providers.memcached;
 
-import com.ea.orbit.actors.runtime.OrbitActor;
-import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.test.IStorageTestActor;
 
-public class HelloActor extends OrbitActor<HelloState> implements IHelloActor
+public interface IHelloActor extends IActor, IStorageTestActor
 {
-
-    @Override
-    public Task<?> activateAsync()
-    {
-        return super.activateAsync().thenRun(state().observers::cleanup);
-    }
-
-    @Override
-    public Task<String> sayHello(String name)
-    {
-        state().lastName = name;
-        writeState().join();
-        return Task.fromValue("Hello " + name);
-    }
-
-    @Override
-    public Task addObserver(final IHelloObserver observer)
-    {
-        state().observers.addObserver(observer);
-        writeState().join();
-        return Task.done();
-    }
-
-    @Override
-    public Task<Void> clear()
-    {
-        clearState().join();
-        return Task.done();
-    }
 }

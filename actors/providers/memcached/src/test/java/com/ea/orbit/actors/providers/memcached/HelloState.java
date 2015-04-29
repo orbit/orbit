@@ -28,18 +28,19 @@
 
 package com.ea.orbit.actors.providers.memcached;
 
-import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.actors.test.IStorageTestState;
 
 import java.io.Serializable;
 
-/**
- * @author Johno Crawford (johno@sulake.com)
- */
-public class ReferenceReplacement implements Serializable
+public class HelloState implements IStorageTestState, Serializable
 {
-    private static final long serialVersionUID = 1L;
 
-    Class<?> interfaceClass;
-    Object id;
-    INodeAddress address;
+    public String lastName;
+
+    @Override
+    public String lastName()
+    {
+        return lastName;
+    }
+
 }

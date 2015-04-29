@@ -26,41 +26,26 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.memcached.test;
+package com.ea.orbit.actors.providers.memcached;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.providers.IOrbitProvider;
-import com.ea.orbit.actors.providers.memcached.MemCachedClientFactory;
-import com.ea.orbit.actors.providers.memcached.MemCachedStorageHelper;
-import com.ea.orbit.actors.providers.memcached.MemCachedStorageProvider;
+import com.ea.orbit.actors.providers.json.ActorReferenceModule;
+import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.actors.test.IStorageTestActor;
 import com.ea.orbit.actors.test.IStorageTestState;
 import com.ea.orbit.actors.test.StorageBaseTest;
+import com.ea.orbit.exception.UncheckedException;
 
-import org.junit.Test;
-
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.whalin.MemCached.MemCachedClient;
-
-import static com.ea.orbit.actors.providers.memcached.MemCachedStorageHelper.KEY_SEPARATOR;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class MemCachedPersistenceTest extends StorageBaseTest
 {
 
-    private MemCachedClient memCachedClient;
-    private MemCachedStorageHelper memCachedStorageHelper;
+    private ObjectMapper mapper;
 
-    @Test
-    public void testReferenceSerialization() throws Exception
-    {
-        createStage();
-        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "1");
-        helloActor.addObserver(new HelloObserver()).join();
-        HelloState helloState = (HelloState) readState("1");
-        helloState.observers.cleanup();
-    }
+    private MemCachedClient memCachedClient;
 
     @Override
     public Class<? extends IStorageTestActor> getActorInterfaceClass()
@@ -79,8 +64,15 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     @Override
     public void initStorage()
     {
+        mapper = new ObjectMapper();
+        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
+        mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
+                .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
+                .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
+                .withSetterVisibility(JsonAutoDetect.Visibility.NONE)
+                .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
+
         memCachedClient = MemCachedClientFactory.getClient();
-        memCachedStorageHelper = new MemCachedStorageHelper(memCachedClient);
         closeStorage();
     }
 
@@ -98,7 +90,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
         int count = 0;
         for (int i = 0; i < heavyTestSize(); i++)
         {
-            if (memCachedStorageHelper.get(asKey(actorInterface, String.valueOf(i))) != null)
+            if (memCachedClient.get(asKey(actorInterface, String.valueOf(i))) != null)
             {
                 count++;
             }
@@ -108,13 +100,25 @@ public class MemCachedPersistenceTest extends StorageBaseTest
 
     private String asKey(final Class<? extends IStorageTestActor> actor, String identity)
     {
-        return actor.getName() + KEY_SEPARATOR + identity;
+        return actor.getName() + MemCachedStorageProvider.KEY_SEPARATOR + identity;
     }
 
     @Override
     public IStorageTestState readState(final String identity)
     {
-        return (IStorageTestState) memCachedStorageHelper.get(asKey(IHelloActor.class, identity));
+        Object data = memCachedClient.get(asKey(IHelloActor.class, identity));
+        if (data != null)
+        {
+            try
+            {
+                return mapper.readValue(data.toString(), HelloState.class);
+            }
+            catch (Exception e)
+            {
+                throw new UncheckedException(e);
+            }
+        }
+        return null;
     }
 
     public long count()
