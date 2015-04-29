@@ -29,15 +29,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.providers.memcached;
 
 import com.ea.orbit.actors.providers.IStorageProvider;
+import com.ea.orbit.actors.providers.json.ActorReferenceModule;
 import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.exception.UncheckedException;
 
-import org.dozer.DozerBeanMapper;
-import org.dozer.Mapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.whalin.MemCached.MemCachedClient;
 
-import static com.ea.orbit.actors.providers.memcached.MemCachedStorageHelper.*;
+import java.io.IOException;
 
 /**
  * {@link MemCachedStorageProvider} provides Memcached support for storing actor states.
@@ -47,21 +52,31 @@ import static com.ea.orbit.actors.providers.memcached.MemCachedStorageHelper.*;
 public class MemCachedStorageProvider implements IStorageProvider
 {
 
-    private Mapper mapper;
+    private static final Logger logger = LoggerFactory.getLogger(MemCachedStorageProvider.class);
+
+    static final String KEY_SEPARATOR = "|";
+
+    private ObjectMapper mapper;
+
     private MemCachedClient memCachedClient;
-    private MemCachedStorageHelper memCachedStorageHelper;
 
     private boolean useShortKeys = false;
 
     @Override
     public Task<Void> start()
     {
-        mapper = new DozerBeanMapper();
+        mapper = new ObjectMapper();
+        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
+        mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
+                .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
+                .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
+                .withSetterVisibility(JsonAutoDetect.Visibility.NONE)
+                .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
+
         if (memCachedClient == null)
         {
             memCachedClient = MemCachedClientFactory.getClient();
         }
-        memCachedStorageHelper = new MemCachedStorageHelper(memCachedClient);
         return Task.done();
     }
 
@@ -81,11 +96,21 @@ public class MemCachedStorageProvider implements IStorageProvider
     @Override
     public Task<Boolean> readState(final ActorReference<?> reference, final Object state)
     {
-        Object value = memCachedStorageHelper.get(asKey(reference));
-        if (value != null)
+        try
         {
-            mapper.map(value, state);
-            return Task.fromValue(true);
+            Object newState = memCachedClient.get(asKey(reference));
+            if (newState != null)
+            {
+                mapper.readerForUpdating(state).readValue(String.valueOf(newState));
+            }
+            return Task.fromValue(newState != null);
+        }
+        catch (RuntimeException | IOException e)
+        {
+            logger.warn("Exception during cache value deserialization for key: " + asKey(reference) + " - removing entry");
+
+            // Remove the entry upon error deserializing its value..
+            memCachedClient.delete(asKey(reference));
         }
         return Task.fromValue(false);
     }
@@ -94,8 +119,16 @@ public class MemCachedStorageProvider implements IStorageProvider
     @SuppressWarnings("unchecked")
     public Task<Void> writeState(final ActorReference reference, final Object state)
     {
-        memCachedStorageHelper.set(asKey(reference), state);
-        return Task.done();
+        try
+        {
+            String serializedState = mapper.writeValueAsString(state);
+            memCachedClient.set(asKey(reference), serializedState);
+            return Task.done();
+        }
+        catch (RuntimeException | IOException e)
+        {
+            throw new UncheckedException(e);
+        }
     }
 
     private String asKey(final ActorReference reference)
