@@ -26,19 +26,13 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.redis.test;
+package com.ea.orbit.actors.memcached.test;
 
-import com.ea.orbit.actors.test.IStorageTestState;
+import com.ea.orbit.actors.IActorObserver;
 
-public class HelloState implements IStorageTestState
+/**
+ * @author Johno Crawford (johno@sulake.com)
+ */
+public interface IHelloObserver extends IActorObserver
 {
-
-    public String lastName;
-
-    @Override
-    public String lastName()
-    {
-        return lastName;
-    }
-
 }

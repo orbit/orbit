@@ -149,13 +149,14 @@ public class MongoDBStorageProvider implements IStorageProvider
                 obj.removeField("_id");
                 mapper.readerForUpdating(state).readValue(new BsonObjectTraversingParser(
                         coll, obj, mapper));
+                return Task.fromValue(true);
             }
             catch (Exception e)
             {
                 throw new UncheckedException("Error reading state of: " + reference, e);
             }
         }
-        return Task.fromValue(true);
+        return Task.fromValue(false);
     }
 
     @Override

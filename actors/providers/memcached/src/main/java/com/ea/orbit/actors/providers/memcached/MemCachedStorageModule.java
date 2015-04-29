@@ -26,19 +26,10 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.redis.test;
+package com.ea.orbit.actors.providers.memcached;
 
-import com.ea.orbit.actors.test.IStorageTestState;
+import com.ea.orbit.container.Module;
 
-public class HelloState implements IStorageTestState
+public class MemCachedStorageModule extends Module
 {
-
-    public String lastName;
-
-    @Override
-    public String lastName()
-    {
-        return lastName;
-    }
-
 }

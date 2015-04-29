@@ -26,19 +26,33 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.redis.test;
+package com.ea.orbit.actors.providers.memcached;
 
-import com.ea.orbit.actors.test.IStorageTestState;
+import com.schooner.MemCached.SchoonerSockIOPool;
+import com.whalin.MemCached.MemCachedClient;
 
-public class HelloState implements IStorageTestState
+/**
+ * {@link MemCachedClientFactory} provides a simple Memcached clients (not suitable for production use).
+ *
+ * @author Johno Crawford (johno@sulake.com)
+ */
+public abstract class MemCachedClientFactory
 {
-
-    public String lastName;
-
-    @Override
-    public String lastName()
+    public static MemCachedClient getClient()
     {
-        return lastName;
-    }
+        MemCachedClient memCachedClient = new MemCachedClient(true);
 
+        SchoonerSockIOPool pool = SchoonerSockIOPool.getInstance();
+        pool.setServers(new String[]{ "localhost:11211" });
+
+        pool.setInitConn(5);
+        pool.setMinConn(5);
+        pool.setMaxConn(10);
+        pool.setMaintSleep(0);
+        pool.setNagle(false);
+
+        pool.initialize();
+
+        return memCachedClient;
+    }
 }
