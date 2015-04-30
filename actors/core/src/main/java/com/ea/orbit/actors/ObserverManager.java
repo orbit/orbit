@@ -103,7 +103,7 @@ public class ObserverManager<T extends IActorObserver> implements Serializable
     }
 
     /**
-     * Used to notify the orbservers (call some method of their remote interface)
+     * Used to notify the observers (call some method of their remote interface)
      * <p>
      * <pre>
      * String message = "...";
