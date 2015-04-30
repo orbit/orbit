@@ -33,4 +33,5 @@ package com.ea.orbit.actors;
  */
 public interface IAddressable
 {
+
 }

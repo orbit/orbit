@@ -29,16 +29,18 @@
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.runtime.IReminderController;
 import com.ea.orbit.concurrent.ExecutorUtils;
+import com.ea.orbit.exception.UncheckedException;
 
+import java.lang.reflect.Field;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static org.junit.Assert.fail;
 
@@ -47,7 +49,7 @@ public class ActorBaseTest
 {
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
-    protected ConcurrentHashMap<Object,Object> fakeDatabase = new ConcurrentHashMap<>();
+    protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
     protected static final ExecutorService commonPool = ExecutorUtils.newScalingThreadPool(200);
 
     public OrbitStage createClient() throws ExecutionException, InterruptedException
@@ -76,7 +78,6 @@ public class ActorBaseTest
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().join();
         stage.bind();
-        IActor.getReference(IReminderController.class, "0").ensureStart();
         return stage;
     }
 
@@ -105,4 +106,55 @@ public class ActorBaseTest
         }
         fail("Was expecting some exception");
     }
+
+    private Object getField(Object target, String name) throws IllegalAccessException, NoSuchFieldException
+    {
+        final Field f = target.getClass().getDeclaredField(name);
+        f.setAccessible(true);
+        return f.get(target);
+    }
+
+    /**
+     * Spins waiting for a given condition to be true.
+     *
+     * @param condition a function that must eventually return true
+     */
+    protected void awaitFor(Supplier<Boolean> condition)
+    {
+        try
+        {
+            while (!condition.get())
+            {
+                Thread.sleep(5);
+            }
+        }
+        catch (Exception e)
+        {
+
+            throw new UncheckedException(e);
+        }
+    }
+
+    /**
+     * Checks if the that stages' execution is done running tasks
+     *
+     * @return boolean if there are no task running.
+     */
+    protected boolean isIdle(OrbitStage stage)
+    {
+        try
+        {
+            // this is very ad hoc, but should work for our tests, until execution changes.
+            // for starters access to this map should be synchronized.
+            Map running = (Map) getField(getField(getField(stage, "execution"), "executionSerializer"), "running");
+
+            return running.size() == 0;
+        }
+        catch (Exception e)
+        {
+
+            throw new UncheckedException(e);
+        }
+    }
+
 }

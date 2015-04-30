@@ -31,12 +31,20 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.runtime.ActorKey;
 import com.ea.orbit.actors.test.actors.ISomeMatch;
 import com.ea.orbit.actors.test.actors.ISomePlayer;
 
 import org.junit.Test;
 
+import com.google.common.collect.Sets;
+
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
+
+import static org.junit.Assert.fail;
 
 @SuppressWarnings("unused")
 public class ReferenceSerializationTest extends ActorBaseTest
@@ -59,5 +67,43 @@ public class ReferenceSerializationTest extends ActorBaseTest
         ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
         somePlayer.joinMatch(someMatch).join();
     }
+
+    /**
+     * Asserts that no classes other than NodeAddress and ActorKey get into the distributed caches
+     */
+    @Test
+    public void distributedDirectoryClassesTest() throws ExecutionException, InterruptedException
+    {
+
+        OrbitStage stage1 = createStage();
+        OrbitStage client = createClient();
+        client.bind();
+        ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
+        ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
+        somePlayer.joinMatch(someMatch).join();
+
+
+        Set<Class<?>> validClasses = Sets.newHashSet(ActorKey.class, NodeAddress.class, String.class);
+
+        for (Map.Entry e : FakeGroup.get(clusterName).getCaches().entrySet())
+        {
+            Map<Object, Object> cache = (Map) e.getValue();
+            for (Map.Entry e2 : cache.entrySet())
+            {
+                Object key = e2.getKey();
+                if (!validClasses.contains(key.getClass()))
+                {
+                    fail("Invalid class found in the distributed cache: " + key.getClass());
+                }
+
+                Object value = e2.getValue();
+                if (!validClasses.contains(value.getClass()))
+                {
+                    fail("Invalid class found in the distributed cache: " + value.getClass());
+                }
+            }
+        }
+    }
+
 
 }

@@ -29,7 +29,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.cluster.IClusterPeer;
@@ -44,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,8 +63,8 @@ public class Hosting implements IHosting, Startable
     private volatile List<NodeInfo> serverNodes = new ArrayList<>(0);
     private final Object serverNodesUpdateMutex = new Object();
     private Execution execution;
-    private ConcurrentMap<IAddressable, INodeAddress> localAddressCache = new ConcurrentHashMap<>();
-    private volatile ConcurrentMap<IAddressable, INodeAddress> distributedDirectory;
+    private ConcurrentMap<ActorKey, INodeAddress> localAddressCache = new ConcurrentHashMap<>();
+    private volatile ConcurrentMap<ActorKey, INodeAddress> distributedDirectory;
     @Config("orbit.actors.timeToWaitForServersMillis")
     private long timeToWaitForServersMillis = 30000;
     private Random random = new Random();
@@ -92,6 +92,21 @@ public class Hosting implements IHosting, Startable
     public void setNodeType(final NodeTypeEnum nodeType)
     {
         this.nodeType = nodeType;
+    }
+
+    public List<INodeAddress> getAllNodes()
+    {
+        return Collections.unmodifiableList(new ArrayList<>(activeNodes.keySet()));
+    }
+
+    public List<INodeAddress> getServerNodes()
+    {
+        final ArrayList<INodeAddress> set = new ArrayList<>(serverNodes.size());
+        for (NodeInfo s : serverNodes)
+        {
+            set.add(s.address);
+        }
+        return Collections.unmodifiableList(set);
     }
 
     private static class NodeInfo
@@ -168,14 +183,35 @@ public class Hosting implements IHosting, Startable
         }
     }
 
-    public Task<INodeAddress> locateActor(final IAddressable addressable)
+    public Task<INodeAddress> locateActor(final IAddressable reference, final boolean forceActivation)
     {
+        return (forceActivation) ? locateAndActivateActor(reference) : locateActiveActor(reference);
+    }
+
+
+    private Task<INodeAddress> locateActiveActor(final IAddressable actorReference)
+    {
+        ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
+                String.valueOf(((ActorReference) actorReference).id));
         INodeAddress address = localAddressCache.get(addressable);
         if (address != null && activeNodes.containsKey(address))
         {
             return Task.fromValue(address);
         }
-        final Class<?> interfaceClass = ((ActorReference<?>) addressable)._interfaceClass();
+        return Task.fromValue(null);
+    }
+
+    private Task<INodeAddress> locateAndActivateActor(final IAddressable actorReference)
+    {
+        ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
+                String.valueOf(((ActorReference) actorReference).id));
+
+        INodeAddress address = localAddressCache.get(addressable);
+        if (address != null && activeNodes.containsKey(address))
+        {
+            return Task.fromValue(address);
+        }
+        final Class<?> interfaceClass = ((ActorReference<?>) actorReference)._interfaceClass();
         final String interfaceClassName = interfaceClass.getName();
         if (interfaceClass.isAnnotationPresent(StatelessWorker.class))
         {
@@ -233,7 +269,6 @@ public class Hosting implements IHosting, Startable
                 localAddressCache.put(addressable, otherNodeAddress);
                 return otherNodeAddress;
             }
-            // TODO: signal the node to create the actor.
             localAddressCache.put(addressable, nodeAddress);
             return nodeAddress;
         }, execution.getExecutor());

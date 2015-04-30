@@ -43,7 +43,10 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class StatelessActorTest extends ActorBaseTest
@@ -65,19 +68,25 @@ public class StatelessActorTest extends ActorBaseTest
         IStatelessThing actor5 = IActor.getReference(IStatelessThing.class, "1000");
 
         final Set<UUID> set = new HashSet<>();
+        Supplier stagesIdle = () -> Stream.of(stage1, stage2, stage3, stage4).allMatch(s -> isIdle(s));
         for (int i = 0; i < 25; i++)
         {
             // there will be no concurrent executions here
             // each node will have at most one activation of the stateless worker
             stage1.bind();
+            awaitFor(stagesIdle);
             set.add(actor1.getUniqueActivationId().join());
             stage2.bind();
+            awaitFor(stagesIdle);
             set.add(actor2.getUniqueActivationId().join());
             stage3.bind();
+            awaitFor(stagesIdle);
             set.add(actor3.getUniqueActivationId().join());
             stage4.bind();
+            awaitFor(stagesIdle);
             set.add(actor4.getUniqueActivationId().join());
             client.bind();
+            awaitFor(stagesIdle);
             set.add(actor5.getUniqueActivationId().join());
         }
         // Statistics might let us down from time to time here...
@@ -86,9 +95,10 @@ public class StatelessActorTest extends ActorBaseTest
         // the client might have enough time to send another messages causing a new activation.
         // The problem here is that the fake network is too fast to test this properly
         // This could be "fixed" with some sleeps.
-        // TODO: add a hook to the executor to test the single activation of stateless.
-        // Waiting on a call completion hook this would be true:
-        //      assertEquals(4, set.size());
+
+        // We are using " awaitFor(stagesIdle)" to ensure no stages are processing any messages,
+        // but it's not bullet proof yet.
+        assertEquals(4, set.size());
 
         set.clear();
         List<Future<UUID>> futures = new ArrayList<>();

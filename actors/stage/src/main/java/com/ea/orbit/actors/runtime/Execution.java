@@ -35,6 +35,8 @@ import com.ea.orbit.actors.IRemindable;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.actors.providers.IActorClassFinder;
+import com.ea.orbit.actors.providers.IInvokeHookProvider;
+import com.ea.orbit.actors.providers.IInvokeListenerProvider;
 import com.ea.orbit.actors.providers.ILifetimeProvider;
 import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.providers.IStorageProvider;
@@ -48,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.MapMaker;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -75,6 +78,8 @@ import java.util.stream.Collectors;
 
 public class Execution implements IRuntime
 {
+    public static boolean traceEnabled = false;
+
     private static final Logger logger = LoggerFactory.getLogger(Execution.class);
     private final String runtimeIdentity;
     private IActorClassFinder finder;
@@ -101,6 +106,7 @@ public class Execution implements IRuntime
     private List<IOrbitProvider> orbitProviders = new ArrayList<>();
 
     private final WeakReference<IRuntime> cachedRef = new WeakReference<>(this);
+    private IInvokeHookProvider invokeHook;
 
     public Execution()
     {
@@ -539,8 +545,11 @@ public class Execution implements IRuntime
                                       final long dueTime, final long period,
                                       final TimeUnit timeUnit)
     {
+        // TODO: handle deactivation.
         final TimerTask timerTask = new TimerTask()
         {
+            boolean canceled;
+
             @Override
             public void run()
             {
@@ -550,7 +559,10 @@ public class Execution implements IRuntime
                             bind();
                             try
                             {
-                                return taskCallable.call();
+                                if (!canceled)
+                                {
+                                    return taskCallable.call();
+                                }
                             }
                             catch (Exception ex)
                             {
@@ -558,6 +570,13 @@ public class Execution implements IRuntime
                             }
                             return Task.done();
                         }, 1000);
+            }
+
+            @Override
+            public boolean cancel()
+            {
+                canceled = true;
+                return super.cancel();
             }
         };
         timer.schedule(timerTask, timeUnit.toMillis(dueTime), timeUnit.toMillis(period));
@@ -619,6 +638,9 @@ public class Execution implements IRuntime
             executor = ExecutorUtils.newScalingThreadPool(1000);
         }
         executionSerializer = new ExecutionSerializer<>(executor);
+
+        invokeHook = getFirstProvider(IInvokeHookProvider.class);
+
         orbitProviders.forEach(v -> v.start());
         // schedules the cleanup
         timer.schedule(new TimerTask()
@@ -812,6 +834,46 @@ public class Execution implements IRuntime
 
     }
 
+
+    ThreadLocal<MessageContext> currentMessage = new ThreadLocal<>();
+
+    static class MessageContext
+    {
+        ReferenceEntry theEntry;
+        int methodId;
+        INodeAddress from;
+        long traceId;
+        public static final AtomicLong counter = new AtomicLong(0L);
+
+        public MessageContext(final ReferenceEntry theEntry, final int methodId, final INodeAddress from)
+        {
+            traceId = counter.incrementAndGet();
+            this.theEntry = theEntry;
+            this.methodId = methodId;
+            this.from = from;
+        }
+    }
+
+    public ActorReference getCurrentActivation()
+    {
+        MessageContext current = currentMessage.get();
+        if (current == null)
+        {
+            return null;
+        }
+        return current.theEntry.reference;
+    }
+
+    public long getCurrentTraceId()
+    {
+        MessageContext current = currentMessage.get();
+        if (current == null)
+        {
+            return 0;
+        }
+        return current.traceId;
+    }
+
     private Task<?> executeMessage(
             final ReferenceEntry theEntry,
             final boolean oneway,
@@ -823,6 +885,8 @@ public class Execution implements IRuntime
     {
         try
         {
+
+            currentMessage.set(new MessageContext(theEntry, methodId, from));
             Activation activation = theEntry.popActivation();
             activation.lastAccess = clock.millis();
             Task<?> future;
@@ -897,7 +961,7 @@ public class Execution implements IRuntime
     }
 
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "unchecked" })
     <T> T createReference(final INodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
@@ -961,10 +1025,54 @@ public class Execution implements IRuntime
         INodeAddress toNode = actorReference.address;
         if (toNode == null)
         {
-            return hosting.locateActor(actorReference)
+            // TODO: Ensure that both paths encode exception the same way.
+            return hosting.locateActor(actorReference, true)
                     .thenCompose(x -> messaging.sendMessage(x, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params));
         }
         return messaging.sendMessage(toNode, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params);
+    }
+
+    public Task<?> invoke(IAddressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
+    {
+        if (traceEnabled)
+        {
+            // TODO: remove this, this should be an invoke hook, and the invoke hooks should be chained together.
+
+            final ActorReference source = getCurrentActivation();
+
+            if (source != null)
+            {
+                final long traceId = getCurrentTraceId();
+                String sourceInterface = ActorReference.getInterfaceClass(source).getName();
+                String targetInterface = ActorReference.getInterfaceClass((ActorReference) toReference).getName();
+                for (IInvokeListenerProvider v : getAllProviders(IInvokeListenerProvider.class))
+                {
+                    v.preInvoke(traceId, sourceInterface, String.valueOf(ActorReference.getId(source)), targetInterface, String.valueOf(ActorReference.getId((ActorReference) toReference)), methodId, params);
+                }
+            }
+        }
+        Task<?> task;
+        if (invokeHook == null)
+        {
+            task = sendMessage(toReference, oneWay, methodId, params);
+        }
+        else
+        {
+            task = invokeHook.invoke(this, toReference, m, oneWay, methodId, params);
+        }
+        if (traceEnabled)
+        {
+            final long traceId = getCurrentTraceId();
+            // TODO: remove this, this should be an invoke hook, and the invoke hooks should be chained together.
+
+            return task.whenComplete((r, e) -> {
+                for (IInvokeListenerProvider v : getAllProviders(IInvokeListenerProvider.class))
+                {
+                    v.postInvoke(traceId, r);
+                }
+            });
+        }
+        return task;
     }
 
     public void activationCleanup(final boolean block)
@@ -1032,5 +1140,10 @@ public class Execution implements IRuntime
         {
             Task.allOf(futures).join();
         }
+    }
+
+    public Task<INodeAddress> locateActor(final IAddressable actorReference, final boolean forceActivation)
+    {
+        return hosting.locateActor(actorReference, false);
     }
 }

@@ -29,14 +29,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors;
 
 
-import com.ea.orbit.actors.annotation.NoIdentity;
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.IClusterPeer;
+import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.actors.providers.ILifetimeProvider;
 import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Hosting;
 import com.ea.orbit.actors.runtime.IHosting;
+import com.ea.orbit.actors.runtime.IReminderController;
 import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.annotation.Config;
@@ -45,18 +46,27 @@ import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.OrbitContainer;
 import com.ea.orbit.container.Startable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.inject.Singleton;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 @Singleton
 public class OrbitStage implements Startable
 {
+    private static final Logger logger = LoggerFactory.getLogger(OrbitStage.class);
+
     @Config("orbit.actors.clusterName")
     private String clusterName;
+
+    @Config("orbit.actors.nodeName")
+    private String nodeName;
 
     @Config("orbit.actors.stageMode")
     private StageMode mode = StageMode.HOST;
@@ -76,12 +86,35 @@ public class OrbitStage implements Startable
     private IClusterPeer clusterPeer;
     private Task<?> startFuture;
     private Messaging messaging;
-    private Execution execution;
+    private Execution execution = new Execution();
     private Hosting hosting;
     private boolean startCalled;
     private Clock clock;
     private ExecutorService executionPool;
     private ExecutorService messagingPool;
+
+    static
+    {
+        // Initializes orbit async, but only if the application uses it.
+        try
+        {
+            Class.forName("com.ea.orbit.async.Async");
+            try
+            {
+                // async is present in the classpath, let's make sure await is initialized
+                Class.forName("com.ea.orbit.async.Await");
+            }
+            catch (Exception ex)
+            {
+                // this might be a problem, logging.
+                logger.error("Error initializing orbit-async", ex);
+            }
+        }
+        catch (Exception ex)
+        {
+            // no problem, application doesn't use orbit async.
+        }
+    }
 
     public void setClock(final Clock clock)
     {
@@ -127,6 +160,16 @@ public class OrbitStage implements Startable
         this.clusterName = clusterName;
     }
 
+    public String getNodeName()
+    {
+        return nodeName;
+    }
+
+    public void setNodeName(final String nodeName)
+    {
+        this.nodeName = nodeName;
+    }
+
     public StageMode getMode()
     {
         return mode;
@@ -144,6 +187,16 @@ public class OrbitStage implements Startable
     public Task<?> start()
     {
         startCalled = true;
+
+        if (clusterName == null || clusterName.isEmpty())
+        {
+            setClusterName("orbit-cluster");
+        }
+
+        if (nodeName == null || nodeName.isEmpty())
+        {
+            setNodeName(getClusterName());
+        }
 
         if (hosting == null)
         {
@@ -187,10 +240,18 @@ public class OrbitStage implements Startable
         messaging.start();
         hosting.start();
         execution.start();
-        startFuture = clusterPeer.join(clusterName);
-        // todo remove this
+
+
+        Task<?> future = clusterPeer.join(clusterName, nodeName);
+        if (mode == StageMode.HOST)
+        {
+            future = future.thenRun(() -> IActor.getReference(IReminderController.class, "0").ensureStart());
+        }
+        startFuture = future;
+
         startFuture.join();
         bind();
+
         return startFuture;
     }
 
@@ -240,16 +301,35 @@ public class OrbitStage implements Startable
                 .thenRun(clusterPeer::leave);
     }
 
+    /**
+     * @deprecated Use #registerObserver instead
+     */
+    @Deprecated
     public <T extends IActorObserver> T getObserverReference(Class<T> iClass, final T observer)
+    {
+        return registerObserver(iClass, observer);
+
+    }
+
+    /**
+     * @deprecated Use #registerObserver instead
+     */
+    @Deprecated
+    public <T extends IActorObserver> T getObserverReference(final T observer)
+    {
+        return registerObserver(null, observer);
+    }
+
+    public <T extends IActorObserver> T registerObserver(Class<T> iClass, final T observer)
     {
         return execution.getObjectReference(iClass, observer);
     }
 
-
-    public <T extends IActorObserver> T getObserverReference(final T observer)
+    public <T extends IActorObserver> T registerObserver(Class<T> iClass, String id, final T observer)
     {
-        return execution.getObjectReference(null, observer);
+        return execution.getObserverReference(iClass, observer, id);
     }
+
 
     public Hosting getHosting()
     {
@@ -286,5 +366,24 @@ public class OrbitStage implements Startable
     {
         execution.bind();
     }
+
+    public List<INodeAddress> getAllNodes()
+    {
+        if (hosting == null)
+        {
+            return Collections.emptyList();
+        }
+        return hosting.getAllNodes();
+    }
+
+    public List<INodeAddress> getServerNodes()
+    {
+        if (hosting == null)
+        {
+            return Collections.emptyList();
+        }
+        return hosting.getServerNodes();
+    }
+
 
 }

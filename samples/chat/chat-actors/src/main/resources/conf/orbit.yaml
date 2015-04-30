@@ -27,6 +27,7 @@
 #
 
 orbit.actors.clusterName: chat
+orbit.actors.nodeName: chat-backend
 
 orbit.actors.providers:
   - !!com.ea.orbit.actors.providers.mongodb.MongoDBStorageProvider

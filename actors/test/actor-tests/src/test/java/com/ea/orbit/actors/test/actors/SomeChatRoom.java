@@ -32,7 +32,7 @@ public class SomeChatRoom extends OrbitActor implements ISomeChatRoom
     }
 
     @SuppressWarnings("unchecked")
-	@Override
+    @Override
     public Task<Void> startCountdown(final int count, final String message)
     {
         countDown.set(count);
@@ -47,7 +47,8 @@ public class SomeChatRoom extends OrbitActor implements ISomeChatRoom
         {
             timer.dispose();
             timer = null;
-        } else
+        }
+        else
         {
             observers.forEach(o -> o.receiveMessage(null, message + " " + count));
         }

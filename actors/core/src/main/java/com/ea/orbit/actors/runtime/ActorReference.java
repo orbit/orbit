@@ -33,6 +33,7 @@ import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.concurrent.Task;
 
 import java.io.Serializable;
+import java.lang.reflect.Method;
 
 /**
  * Base class for IActor or IActorObserver references.
@@ -95,9 +96,9 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
      * @return a task that will contain the returned value, or if one-way a task indicating if the message could be send.
      */
     @SuppressWarnings("unchecked")
-    protected <R> Task<R> invoke(final boolean oneWay, final int methodId, final Object[] params)
+    protected <R> Task<R> invoke(final Method method, final boolean oneWay, final int methodId, final Object[] params)
     {
-        return (Task<R>) (runtime != null ? runtime : Runtime.getRuntime()).sendMessage(this, oneWay, methodId, params);
+        return (Task<R>) (runtime != null ? runtime : Runtime.getRuntime()).invoke(this, method, oneWay, methodId, params);
     }
 
     @Override
@@ -186,4 +187,10 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
     {
         reference.address = nodeAddress;
     }
+
+    public static ActorReference from(OrbitActor actor)
+    {
+        return actor.reference;
+    }
+
 }

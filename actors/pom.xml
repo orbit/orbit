@@ -33,7 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <parent>
         <groupId>com.ea.orbit</groupId>
         <artifactId>orbit-parent</artifactId>
-        <version>0.2.1-SNAPSHOT</version>
+        <version>0.2.3-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>orbit-actors-parent</artifactId>
@@ -45,10 +45,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>stage</module>
         <module>client</module>
         <module>server</module>
+        <module>providers/jpa</module>
         <module>providers/json</module>
         <module>providers/mongodb</module>
-		<module>providers/redis</module>
+        <module>providers/redis</module>
         <module>providers/postgresql</module>
+        <module>providers/spring</module>
         <module>test/actor-tests</module>
         <module>actors-all</module>
     </modules>

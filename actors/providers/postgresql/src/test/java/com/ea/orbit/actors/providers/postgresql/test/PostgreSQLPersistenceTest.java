@@ -101,10 +101,10 @@ public class PostgreSQLPersistenceTest
     {
         OrbitStage stage = new OrbitStage();
         final PostgreSQLStorageProvider storageProvider = new PostgreSQLStorageProvider();
-        storageProvider.setPort(5433);
+        storageProvider.setPort(5432);
         storageProvider.setDatabase("orbit");
-        storageProvider.setUsername("orbit");
-        storageProvider.setPassword("secret");
+        storageProvider.setUsername("postgres");
+        storageProvider.setPassword(null);
         stage.addProvider(storageProvider);
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
@@ -117,7 +117,7 @@ public class PostgreSQLPersistenceTest
     public void setup() throws Exception
     {
         Class.forName("org.postgresql.Driver");
-        this.conn = DriverManager.getConnection("jdbc:postgresql://localhost:5433/orbit", "orbit", "secret");
+        this.conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/orbit", "postgres", null);
         this.objectMapper = new ObjectMapper();
     }
 

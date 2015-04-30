@@ -116,7 +116,7 @@ public class ClusterPeer implements IClusterPeer
         }
     }
 
-    public Task<?> join(final String clusterName)
+    public Task<?> join(final String clusterName, final String nodeName)
     {
         final ForkJoinTask<Address> f = ForkJoinTask.adapt(new Callable<Address>()
         {
@@ -134,7 +134,7 @@ public class ClusterPeer implements IClusterPeer
                     // It must be asserted that the production network support (enables) this.
                     // Otherwise it's also possible to change the discovery mechanism.
                     JChannel baseChannel = new JChannel(configToURL(getJgroupsConfig()));
-                    baseChannel.setName(clusterName);
+                    baseChannel.setName(nodeName);
 
                     if (isNameBasedUpdPort() && baseChannel.getProtocolStack().getBottomProtocol() instanceof UDP)
                     {
@@ -169,7 +169,7 @@ public class ClusterPeer implements IClusterPeer
 
                     final GlobalConfigurationBuilder globalConfigurationBuilder = GlobalConfigurationBuilder.defaultClusteredBuilder();
                     globalConfigurationBuilder.globalJmxStatistics().allowDuplicateDomains(true);
-                    globalConfigurationBuilder.transport().nodeName(clusterName).transport(new JGroupsTransport(baseChannel));
+                    globalConfigurationBuilder.transport().nodeName(nodeName).transport(new JGroupsTransport(baseChannel));
 
                     ConfigurationBuilder builder = new ConfigurationBuilder();
                     builder.clustering().cacheMode(CacheMode.DIST_ASYNC);
@@ -184,12 +184,12 @@ public class ClusterPeer implements IClusterPeer
                     cacheManager.getCache("clusterTopologyCache");
                     local = new NodeInfo(channel.getAddress());
                     logger.info("Registering the local address");
-                    logger.info("Done with jgroups initialization");
+                    logger.info("Done with JGroups initialization");
                     return local.address;
                 }
                 catch (final Exception e)
                 {
-                    logger.error("Error during jgroups initialization", e);
+                    logger.error("Error during JGroups initialization", e);
                     throw new UncheckedException(e);
                 }
             }

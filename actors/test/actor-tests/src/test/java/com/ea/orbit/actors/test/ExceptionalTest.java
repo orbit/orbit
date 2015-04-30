@@ -31,18 +31,16 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.annotation.NoIdentity;
 import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @SuppressWarnings("unused")
 public class ExceptionalTest extends ActorBaseTest
@@ -107,10 +105,54 @@ public class ExceptionalTest extends ActorBaseTest
         OrbitStage stage1 = createStage();
         final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
         final Task<String> fut = ref.justThrowAnException();
-        // TODO: check this.
-        final Throwable ex = fut.handle((r, e) -> e.getCause()).join();
+
+        final Throwable ex = fut.handle((r, e) -> e).join();
+
+        // The response here sometimes is CompletionException sometimes RuntimeException.
+        // It's a jdk bug.
+        // https://bugs.openjdk.java.net/browse/JDK-8068432
+
         assertTrue(fut.isCompletedExceptionally());
+        // TODO: as the fixed jdk version (u60) becomes current, test this properly.
+        //assertEquals(RuntimeException.class, ex.getClass());
         assertTrue(ex instanceof RuntimeException);
-        assertEquals("as requested, one exception!", ex.getMessage());
+        assertTrue(ex.getMessage(), ex.getMessage().endsWith("as requested, one exception!"));
+    }
+
+    //@Test
+    // fixed on jdk 8_60
+    public void checkCompletableFutureBehaviour()
+    {
+        // https://bugs.openjdk.java.net/browse/JDK-8068432
+        // this test will fail once this bug is fixed
+        Exception ex = new RuntimeException("x");
+        // The order of events change how thenCompose wraps the returned exception
+        {
+            CompletableFuture<Object> base = new CompletableFuture<>();
+
+            CompletableFuture<String> job = new CompletableFuture<>();
+            CompletableFuture<String> composed = base.thenCompose(x -> job);
+            job.completeExceptionally(ex);
+            base.complete(null);
+
+            Throwable rex = composed.handle((r, e) -> e).join();
+            assertNotSame(ex, rex);
+            assertEquals(CompletionException.class, rex.getClass());
+        }
+        // using then compose means the exception gets wrapped
+        {
+            CompletableFuture<Object> base = new CompletableFuture<>();
+
+            base.complete(null);
+            CompletableFuture<String> job = new CompletableFuture<>();
+            CompletableFuture<String> composed = base.thenCompose(x -> job);
+            job.completeExceptionally(ex);
+
+            Throwable rex = composed.handle((r, e) -> e).join();
+            //assertNotSame(ex, rex);
+            //assertEquals(CompletionException.class, rex.getClass());
+            assertSame(ex, rex);
+            assertEquals("Use jdk 1.8.0_60 or above", RuntimeException.class, rex.getClass());
+        }
     }
 }

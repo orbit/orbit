@@ -30,8 +30,10 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.IRemindable;
+import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.concurrent.Task;
 
+import java.lang.reflect.Method;
 import java.time.Clock;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +54,18 @@ public interface IRuntime
      * @return a future with the return value, or a future with null (if one-way)
      */
     Task<?> sendMessage(IAddressable toReference, boolean oneWay, int methodId, Object[] params);
+
+    /**
+     * Handles calls to actor reference methods.
+     *
+     * @param toReference destination actor reference or observer reference
+     * @param oneWay      should expect an answer,
+     *                    if false the task is completed with null.
+     * @param methodId    the generated id for the method
+     * @param params      the method parameters, must all be serializable.
+     * @return a future with the return value, or a future with null (if one-way)
+     */
+    Task<?> invoke(IAddressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params);
 
     /**
      * Registers a timer to for the orbit actor
@@ -99,4 +113,15 @@ public interface IRuntime
      * @return unique identity string
      */
     String runtimeIdentity();
+
+    /**
+     * Locates the node address of an actor.
+     *
+     * @param forceActivation a node will be chosen to activate the actor if
+     *                        it's not currently active.
+     *                        Actual activation is postponed until the actor receives one message.
+     * @return actor address, null if actor is not active and forceActivation==false
+     */
+    Task<INodeAddress> locateActor(final IAddressable actorReference, final boolean forceActivation);
+
 }

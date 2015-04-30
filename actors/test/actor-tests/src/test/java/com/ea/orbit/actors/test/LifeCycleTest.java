@@ -68,6 +68,7 @@ public class LifeCycleTest extends ActorBaseTest
         int machEventCount = player.getMatchEventCount().get();
 
         // moving the time ahead
+        awaitFor(() -> isIdle(stage));
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
 
         // touching the player to prevent it's deactivation;

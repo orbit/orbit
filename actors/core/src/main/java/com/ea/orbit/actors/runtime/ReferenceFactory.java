@@ -30,9 +30,12 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.IActorObserver;
+import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.annotation.NoIdentity;
 import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.concurrent.Task;
 
+import java.lang.reflect.Method;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -67,7 +70,12 @@ public class ReferenceFactory implements IReferenceFactory
         {
             try
             {
-                factory = (ActorFactory<T>) Class.forName(iClass.getPackage().getName() + "." + iClass.getSimpleName().replaceAll("^I", "") + "Factory").newInstance();
+                String factoryClazz = iClass.getSimpleName() + "Factory";
+                if (factoryClazz.charAt(0) == 'I')
+                {
+                    factoryClazz = factoryClazz.substring(1); // remove leading 'I'
+                }
+                factory = (ActorFactory<T>) Class.forName(iClass.getPackage().getName() + "." + factoryClazz).newInstance();
             }
             catch (Exception e)
             {
@@ -100,4 +108,10 @@ public class ReferenceFactory implements IReferenceFactory
         }
         return instance.getReference(iActor, NoIdentity.NO_IDENTITY);
     }
+
+    public static <T extends IActorObserver> T observerRef(UUID nodeId, Class<T> iActorObserver, String id)
+    {
+        return instance.getObserverReference(nodeId, iActorObserver, id);
+    }
+
 }

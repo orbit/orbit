@@ -1,14 +1,23 @@
 Orbit Framework
 =======
+[![Build Status](https://travis-ci.org/electronicarts/orbit.svg?branch=master)](https://travis-ci.org/electronicarts/orbit)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.ea.orbit/orbit-parent/badge.svg)](https://repo1.maven.org/maven2/com/ea/orbit/)
+[![Issue Stats](http://www.issuestats.com/github/electronicarts/orbit/badge/issue?style=flat)](http://www.issuestats.com/github/electronicarts/orbit)
+[![Issue Stats](http://www.issuestats.com/github/electronicarts/orbit/badge/pr?style=flat)](http://www.issuestats.com/github/electronicarts/orbit)
+
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/electronicarts/orbit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Orbit is a modern framework for JVM languages that makes it easier to build and maintain distributed and scalable online services.
-
-Orbit contains two primary components:
--  [Orbit Actors](actors/), a framework to write distributed systems using virtual actors.
--  [Orbit Container](container/), a minimal inversion of control container for building online services.
-
 It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com). For the latest news, follow us on [Twitter](https://twitter.com/OrbitFramework). 
-<br /> If you're looking for virtual actors on the .NET CLR, see [Orleans](https://github.com/dotnet/Orleans).
+
+Orbit is primarily made up of the following components:
+
+-  [Orbit Actors](actors/), a framework to write distributed systems using virtual actors.
+-  [Orbit Async](async/), async-await methods for the JVM.
+-  [Orbit Container](container/), a minimal inversion of control container for building online services.
+-  [Orbit Utils](utils/), a set of utils to help simplify various tasks on the JVM.
+-  [Orbit Web](web/), a lightweight HTTP and Websockets container for Orbit, powered by Jetty.
+-  [Orbit Commons](commons/), various common utilities used by Orbit.
 
 Documentation
 =======

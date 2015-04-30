@@ -58,11 +58,31 @@ public class ClassPathSearchTest
     {
     }
 
+    public interface IPla3 extends IAA
+    {
+    }
+
+    public interface IPla4 extends IAA
+    {
+    }
+
     public class Pla1 implements IPla1
     {
     }
 
     public class Pla2 implements IPla2
+    {
+    }
+
+    public interface IAA
+    {
+    }
+
+    public class XPla4 implements IPla3
+    {
+    }
+
+    public class XPla3 implements IPla4
     {
     }
 
@@ -72,6 +92,14 @@ public class ClassPathSearchTest
         ClassPathSearch classPathSearch = new ClassPathSearch();
         assertSame(Pla1.class, classPathSearch.findImplementation(IPla1.class));
         assertSame(Pla2.class, classPathSearch.findImplementation(IPla2.class));
+    }
+
+    @Test
+    public void testEarlyRemovalBug()
+    {
+        ClassPathSearch classPathSearch = new ClassPathSearch(IAA.class);
+        assertSame(XPla3.class, classPathSearch.findImplementation(IPla4.class));
+        assertSame(XPla4.class, classPathSearch.findImplementation(IPla3.class));
     }
 
     public interface IMul

@@ -1,0 +1,9 @@
+<component name="CopyrightManager">
+  <copyright>
+    <option name="notice" value="Copyright (C) &amp;#36;today.year Electronic Arts Inc.  All rights reserved.&#10;&#10;Redistribution and use in source and binary forms, with or without&#10;modification, are permitted provided that the following conditions&#10;are met:&#10;&#10;1.  Redistributions of source code must retain the above copyright&#10;    notice, this list of conditions and the following disclaimer.&#10;2.  Redistributions in binary form must reproduce the above copyright&#10;    notice, this list of conditions and the following disclaimer in the&#10;    documentation and/or other materials provided with the distribution.&#10;3.  Neither the name of Electronic Arts, Inc. (&quot;EA&quot;) nor the names of&#10;    its contributors may be used to endorse or promote products derived&#10;    from this software without specific prior written permission.&#10;&#10;THIS SOFTWARE IS PROVIDED BY ELECTRONIC ARTS AND ITS CONTRIBUTORS &quot;AS IS&quot; AND ANY&#10;EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED&#10;WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE&#10;DISCLAIMED. IN NO EVENT SHALL ELECTRONIC ARTS OR ITS CONTRIBUTORS BE LIABLE FOR ANY&#10;DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES&#10;(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;&#10;LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND&#10;ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT&#10;(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF&#10;THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE." />
+    <option name="keyword" value="Copyright" />
+    <option name="allowReplaceKeyword" value="" />
+    <option name="myName" value="Orbit Copyright" />
+    <option name="myLocal" value="true" />
+  </copyright>
+</component>

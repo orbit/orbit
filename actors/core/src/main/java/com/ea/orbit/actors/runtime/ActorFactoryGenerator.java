@@ -4,17 +4,10 @@ import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
-import javassist.CannotCompileException;
-import javassist.ClassClassPath;
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtMethod;
-import javassist.CtNewConstructor;
-import javassist.CtNewMethod;
-import javassist.CtPrimitiveType;
-import javassist.NotFoundException;
+import javassist.*;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -26,7 +19,14 @@ import java.util.stream.Stream;
  */
 public class ActorFactoryGenerator
 {
-    private static ClassPool classPool;
+    private final static ClassPool classPool;
+
+    static
+    {
+        classPool = new ClassPool(null);
+        classPool.appendSystemPath();
+        classPool.appendClassPath(new ClassClassPath(ActorFactoryGenerator.class));
+    }
 
     private static class GenericActorFactory<T> extends ActorFactory<T>
     {
@@ -72,7 +72,12 @@ public class ActorFactoryGenerator
     {
         final String interfaceFullName = aInterface.getName().replace('$', '.');
         final String packageName = aInterface.getPackage().getName();
-        final String baseName = aInterface.getSimpleName().replaceAll("^I", "");
+        String baseName = aInterface.getSimpleName();
+        if (baseName.charAt(0) == 'I')
+        {
+            baseName = baseName.substring(1); // remove leading 'I'
+        }
+
         final int interfaceId = interfaceFullName.hashCode();
         final String referenceName = baseName + "Reference";
         final String invokerName = baseName + "Invoker";
@@ -101,38 +106,31 @@ public class ActorFactoryGenerator
     @SuppressWarnings("unchecked")
     private <T> Class<T> makeReferenceClass(final Class<T> aInterface, final String interfaceFullName, final int interfaceId, final String referenceFullName) throws NotFoundException, CannotCompileException
     {
-        try
+        Class clazz = lookup(referenceFullName);
+        if (clazz != null)
         {
-            return (Class<T>) Class.forName(referenceFullName);
-        }
-        catch (final Exception ex)
-        {
-            // ignore;
-        }
-        final ClassPool pool = getClassPool();
-        try
-        {
-            return (Class<T>) pool.getClassLoader().loadClass(referenceFullName);
-        }
-        catch (final Exception ex2)
-        {
-            // ignore;
-        }
-
-        if ("ISomeChatObserver".equals(aInterface.getSimpleName()))
-        {
-            System.out.println();
+            return clazz;
         }
 
         synchronized (aInterface)
         {
+            // trying again from within the synchronized block.
+            clazz = lookup(referenceFullName);
+            if (clazz != null)
+            {
+                return clazz;
+            }
+
+            final ClassPool pool = classPool;
+
             final CtClass cc = pool.makeClass(referenceFullName);
             final CtClass ccInterface = pool.get(aInterface.getName());
             final CtClass ccActorReference = pool.get(ActorReference.class.getName());
             cc.setSuperclass(ccActorReference);
             cc.addInterface(ccInterface);
-            cc.addConstructor(CtNewConstructor.make(new CtClass[]{pool.get(String.class.getName())}, null, "{ super($1); }", cc));
+            cc.addConstructor(CtNewConstructor.make(new CtClass[]{ pool.get(String.class.getName()) }, null, "{ super($1); }", cc));
 
+            int count = 0;
             for (final CtMethod m : ccInterface.getMethods())
             {
                 if (!m.getDeclaringClass().isInterface() || !m.getReturnType().getName().equals(Task.class.getName()))
@@ -140,14 +138,23 @@ public class ActorFactoryGenerator
                     continue;
                 }
 
+                count++;
                 final boolean oneWay = m.hasAnnotation(OneWay.class);
-                final String methodSignature = m.getName() + "(" +
-                        Stream.of(m.getParameterTypes()).map(p -> p.getName()).collect(Collectors.joining(","))
-                        + ")";
+
+                final String methodSignature = m.getName() + "(" + Stream.of(m.getParameterTypes()).map(p -> p.getName()).collect(Collectors.joining(",")) + ")";
                 final int methodId = methodSignature.hashCode();
+
+                final String methodReferenceField = m.getName() + "_" + count;
+                cc.addField(CtField.make("private static java.lang.reflect.Method " + methodReferenceField + " = null;", cc));
+
+                // TODO: move this to a static initializer
+                final String lazyMethodReferenceInit = "(" + methodReferenceField + "!=null) ? " + methodReferenceField + " : ( "
+                        + methodReferenceField + "=" + aInterface.getName() + ".class.getMethod(\"" + m.getName() + "\",$sig) )";
+
+                // TODO: remove the method parameter from the invoke, this could be an utility method of ActorReference
                 final CtMethod newMethod = CtNewMethod.make(m.getReturnType(), m.getName(),
                         m.getParameterTypes(), m.getExceptionTypes(),
-                        "{ return super.invoke(" + oneWay + ", " + methodId + ", $args);  }",
+                        "{ return super.invoke(" + lazyMethodReferenceInit + ", " + oneWay + ", " + methodId + ", $args);  }",
                         cc);
                 cc.addMethod(newMethod);
             }
@@ -159,32 +166,28 @@ public class ActorFactoryGenerator
 
     private <T> Class<?> makeInvokerClass(final Class<T> aInterface, final String invokerFullName) throws NotFoundException, CannotCompileException
     {
-        try
+        Class clazz = lookup(invokerFullName);
+        if (clazz != null)
         {
-            return Class.forName(invokerFullName);
-        }
-        catch (final Exception ex)
-        {
-            // ignore;
-        }
-        final ClassPool pool = getClassPool();
-        try
-        {
-            return pool.getClassLoader().loadClass(invokerFullName);
-        }
-        catch (final Exception ex2)
-        {
-            // ignore;
+            return clazz;
         }
 
         synchronized (aInterface)
         {
+            // trying again from within the synchronized block.
+            clazz = lookup(invokerFullName);
+            if (clazz != null)
+            {
+                return clazz;
+            }
+            ClassPool pool = classPool;
+
             final CtClass cc = pool.makeClass(invokerFullName);
             final CtClass ccInterface = pool.get(aInterface.getName());
             final CtClass ccActorInvoker = pool.get(ActorInvoker.class.getName());
             cc.setSuperclass(ccActorInvoker);
 
-            final StringBuilder sb = new StringBuilder();
+            final StringBuilder sb = new StringBuilder(2000);
             sb.append("public " + Task.class.getName() + " invoke(Object target, int methodId, Object[] params) {");
             final CtMethod[] declaredMethods = ccInterface.getMethods();
             sb.append(" switch(methodId) { ");
@@ -226,16 +229,25 @@ public class ActorFactoryGenerator
         }
     }
 
-    private static synchronized ClassPool getClassPool()
+    private Class lookup(String className)
     {
-        if (classPool == null)
+        try
         {
-            classPool = new ClassPool(null);
-            classPool.appendSystemPath();
-            classPool.appendClassPath(new ClassClassPath(ActorFactoryGenerator.class));
+            return Class.forName(className);
         }
-
-        return classPool;
+        catch (final Exception ex)
+        {
+            // ignore;
+        }
+        try
+        {
+            return classPool.getClassLoader().loadClass(className);
+        }
+        catch (final Exception ex2)
+        {
+            // ignore;
+        }
+        return null;
     }
 
 }

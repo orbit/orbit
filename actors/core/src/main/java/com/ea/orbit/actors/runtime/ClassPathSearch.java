@@ -1,6 +1,7 @@
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.IActor;
+import com.ea.orbit.concurrent.ConcurrentHashSet;
 import com.ea.orbit.util.ClassPath;
 
 import org.objectweb.asm.ClassReader;
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -24,9 +26,10 @@ import java.util.stream.Stream;
 public class ClassPathSearch
 {
     private static final Logger logger = LoggerFactory.getLogger(ClassPathSearch.class);
-    private final ConcurrentHashMap<String, ClassInfo> unprocessed = new ConcurrentHashMap<>();
+    private final ConcurrentHashSet<String> unprocessed = new ConcurrentHashSet<>();
+    private final ConcurrentHashMap<String, ClassInfo> classes = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Class<?>, Class<?>> concreteImplementations = new ConcurrentHashMap<>();
-    private final Set<ClassInfo> classesOfInterestInfos;
+    private final ClassInfo[] classesOfInterestInfos;
 
     private static class ClassInfo
     {
@@ -47,7 +50,16 @@ public class ClassPathSearch
 
         public boolean isAssignableFrom(ClassInfo clazz)
         {
-            return clazz.allInterfaces.contains(this) || clazz.allSuperClasses.contains(this);
+            return clazz.isSubclassOf(this);
+        }
+
+        public boolean isSubclassOf(ClassInfo base)
+        {
+            if (this.equals(base) || allInterfaces.contains(base) || allSuperClasses.contains(base))
+            {
+                return true;
+            }
+            return false;
         }
 
         public Set<ClassInfo> getInterfaces()
@@ -78,14 +90,16 @@ public class ClassPathSearch
         this.classesOfInterestInfos = Stream.of(classesOfInterest)
                 .map(c -> c.getName().replace('.', '/'))
                 .map(this::getClassInfo)
-                .collect(Collectors.toSet());
+                .toArray(x -> new ClassPathSearch.ClassInfo[x]);
 
         // get all class names from class path
         ClassPath.get().getAllResources().stream()
                 .map(ClassPath.ResourceInfo::getResourceName)
                 .filter(rn -> rn.endsWith(".class"))
                 .map(rn -> rn.substring(0, rn.length() - 6))
-                .forEach(rn -> unprocessed.putIfAbsent(rn, new ClassInfo(rn)));
+                .forEach(rn -> classes.putIfAbsent(rn, new ClassInfo(rn)));
+
+        unprocessed.addAll(classes.keySet());
 
     }
 
@@ -93,7 +107,7 @@ public class ClassPathSearch
     {
         // TODO: add default handling for posterior versions of the class file format
 
-        ClassInfo info = unprocessed.get(className);
+        ClassInfo info = classes.get(className);
         if (info != null && info.modifiers != -1)
         {
             return info;
@@ -107,7 +121,7 @@ public class ClassPathSearch
             {
                 newInfo.allInterfaces = Collections.emptySet();
                 newInfo.allSuperClasses = Collections.emptySet();
-                unprocessed.put(className, newInfo);
+                classes.put(className, newInfo);
                 return newInfo;
             }
             ClassReader reader = new ClassReader(in);
@@ -129,35 +143,43 @@ public class ClassPathSearch
 
 
             newInfo.modifiers = _modifiers[0];
+            newInfo.allSuperClasses =
+                    newInfo.allInterfaces = new HashSet<>(_interfaces[0].length);
             if (_superName[0] != null && !"java/lang/Object".equals(_superName[0]))
             {
                 ClassInfo superClass = getClassInfo(_superName[0]);
                 if (superClass != null)
                 {
-                    newInfo.allSuperClasses = Stream.concat(Stream.of(superClass),
-                            superClass.allSuperClasses.stream()).collect(Collectors.toSet());
-                    newInfo.allInterfaces = Stream.concat(Stream.of(_interfaces[0]).map(ClassPathSearch.this::getClassInfo),
-                            superClass.allInterfaces.stream()).collect(Collectors.toSet());
-                    unprocessed.put(className, newInfo);
-                    return newInfo;
+                    newInfo.allSuperClasses = new HashSet<>(superClass.allSuperClasses.size() + 1);
+                    newInfo.allSuperClasses.add(superClass);
+                    newInfo.allSuperClasses.addAll(superClass.allSuperClasses);
+                    if (superClass.allInterfaces.size() > 0)
+                    {
+                        newInfo.allInterfaces.addAll(superClass.allInterfaces);
+                    }
                 }
             }
-            newInfo.allSuperClasses = Collections.emptySet();
-            newInfo.allInterfaces = Stream.of(_interfaces[0]).map(ClassPathSearch.this::getClassInfo).collect(Collectors.toSet());
+            for (String itf : _interfaces[0])
+            {
+                final ClassInfo itfInfo = getClassInfo(itf);
+                newInfo.allInterfaces.add(itfInfo);
+                newInfo.allInterfaces.addAll(itfInfo.allInterfaces);
+            }
+
         }
         catch (IOException e)
         {
             // .. ignore
-            newInfo.allInterfaces = Collections.emptySet();
-            newInfo.allSuperClasses = Collections.emptySet();
+            newInfo.allInterfaces = newInfo.allInterfaces!=null ? newInfo.allInterfaces : Collections.emptySet();
+            newInfo.allSuperClasses = newInfo.allSuperClasses!=null ? newInfo.allSuperClasses : Collections.emptySet();
         }
-        unprocessed.put(className, newInfo);
+        classes.put(className, newInfo);
         return newInfo;
     }
 
     public <T, R extends T> Class<R> findImplementation(Class<T> theInterface)
     {
-        return findImplementation(theInterface, unprocessed.size());
+        return findImplementation(theInterface, classes.size());
     }
 
     @SuppressWarnings("unchecked")
@@ -182,7 +204,7 @@ public class ClassPathSearch
             logger.debug("Searching implementation class for: " + theInterface);
         }
         // searching
-        implementationClass = Stream.of(unprocessed.keySet().toArray())
+        implementationClass = Stream.of(unprocessed.toArray())
                 .map(o -> (String) o)
                 .sorted((a, b) -> {
                     // order by closest name to the interface.
@@ -191,6 +213,7 @@ public class ClassPathSearch
                     return (sa != sb) ? (sb - sa) : a.length() - b.length();
                 })
                 .limit(limit)
+                        // fixes a bug with older java 8 versions
                 .collect(Collectors.toList()).stream()
                         // use this for development: .peek(System.out::println)
                 .map(cn -> {
@@ -203,6 +226,7 @@ public class ClassPathSearch
                     try
                     {
                         ClassInfo clazz = getClassInfo(cn);
+
                         if (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers()))
                         {
                             if (theInterfaceInfo.isAssignableFrom(clazz))
@@ -225,6 +249,9 @@ public class ClassPathSearch
                                 // found the best match!
                                 return Class.forName(cn.replace('/', '.'));
                             }
+                        }
+                        if (classesOfInterestInfos.length > 0)
+                        {
                             for (ClassInfo base : classesOfInterestInfos)
                             {
                                 if (base.isAssignableFrom(clazz))
@@ -233,9 +260,8 @@ public class ClassPathSearch
                                     return null;
                                 }
                             }
+                            unprocessed.remove(cn);
                         }
-                        // culling the list for the next search
-                        unprocessed.remove(cn);
                         return null;
                     }
                     catch (Throwable e)
