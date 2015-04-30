@@ -56,6 +56,7 @@ import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -70,6 +71,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * Utility class to create proxies for JAX-RS client interfaces.
+ * <p/>
+ * This class is  thread safe and immutable.
+ *
  * @author Daniel Sperry
  */
 public class OrbitRestClient
@@ -78,8 +83,10 @@ public class OrbitRestClient
     private static final Class<? extends CompletableFuture> futureClass;
 
     private WebTarget target;
-    private Map<Class<?>, Object> proxies = new ConcurrentHashMap<>();
     private MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+
+    // This is an internal cache. It changes, but the instance behaviour stays the same.
+    private Map<Class<?>, Object> proxies = new ConcurrentHashMap<>();
 
     static
     {
@@ -107,14 +114,54 @@ public class OrbitRestClient
         target = webTarget;
     }
 
-    /**
-     * Http Headers used for all proxies.
-     * <p/>
-     * Values stored in this collection are used for all subsequent calls from proxies created by this rest client.
-     */
-    public MultivaluedHashMap<String, Object> headers()
+    public OrbitRestClient(final WebTarget target, final MultivaluedHashMap<String, Object> headers)
     {
-        return headers;
+        this.target = target;
+        this.headers = headers;
+    }
+
+    /**
+     * Returns a <b>copy</b> of the headers.
+     */
+    public MultivaluedMap<String, Object> getHeaders()
+    {
+        return new MultivaluedHashMap<String, Object>(headers);
+    }
+
+    /**
+     * Returns a new orbit rest client replacing all the headers
+     */
+    public <T extends OrbitRestClient> T setHeaders(MultivaluedMap<String, Object> headers)
+    {
+        final MultivaluedHashMap<String, Object> newHeaders = new MultivaluedHashMap<>();
+        newHeaders.putAll(headers);
+        return newClient(target, newHeaders);
+    }
+
+    /**
+     * Returns a new OrbitRestClient with the header {@code key} replaced/set
+     */
+    public <T extends OrbitRestClient> T setHeader(String key, String value)
+    {
+        final MultivaluedHashMap<String, Object> newHeaders = new MultivaluedHashMap<String, Object>(headers);
+        newHeaders.putSingle(key, value);
+        return newClient(target, newHeaders);
+    }
+
+    /**
+     * Returns a new OrbitRestClient with where with an extra header
+     */
+    public <T extends OrbitRestClient> T addHeader(String key, String value)
+    {
+        final MultivaluedHashMap<String, Object> newHeaders = new MultivaluedHashMap<String, Object>(headers);
+        newHeaders.add(key, value);
+        return newClient(target, newHeaders);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T extends OrbitRestClient> T newClient(WebTarget target, MultivaluedHashMap<String, Object> headers)
+    {
+        return (T) new OrbitRestClient(target, headers);
     }
 
     /**
@@ -138,14 +185,14 @@ public class OrbitRestClient
         if (proxy == null)
         {
             final WebTarget interfaceTarget = addPath(target, interfaceClass);
-            proxy = Proxy.newProxyInstance(OrbitRestClient.class.getClassLoader(), new Class[]{ interfaceClass },
+            proxy = Proxy.newProxyInstance(OrbitRestClient.class.getClassLoader(), new Class[]{interfaceClass},
                     (theProxy, method, args) -> invoke(interfaceClass, interfaceTarget, method, args));
             proxies.put(interfaceClass, proxy);
         }
         return (T) proxy;
     }
 
-    private Object invoke(final Class<?> interfaceClass, WebTarget target, final Method method, final Object[] args)
+    private Object invoke(final Class<?> interfaceClass, WebTarget localTarget, final Method method, final Object[] args)
     {
         Type methodGenericReturnType = method.getGenericReturnType();
         Type genericReturnType;
@@ -157,9 +204,9 @@ public class OrbitRestClient
             throw new IllegalArgumentException("Method not annotate with a valid http method annotation" + method);
         }
 
-        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
-        headers.putAll(this.headers);
-        target = addPath(target, method);
+        MultivaluedHashMap<String, Object> localHeaders = new MultivaluedHashMap<>();
+        localHeaders.putAll(this.headers);
+        localTarget = addPath(localTarget, method);
 
         Object entity = null;
         Type entityType = null;
@@ -190,25 +237,25 @@ public class OrbitRestClient
             {
                 if (ann instanceof PathParam)
                 {
-                    target = target.resolveTemplate(((PathParam) ann).value(), value);
+                    localTarget = localTarget.resolveTemplate(((PathParam) ann).value(), value);
                 }
                 else if (ann instanceof QueryParam)
                 {
-                    target = target.queryParam(((QueryParam) ann).value(), value);
+                    localTarget = localTarget.queryParam(((QueryParam) ann).value(), value);
                 }
                 else if (ann instanceof MatrixParam)
                 {
-                    target = target.matrixParam(((MatrixParam) ann).value(), value);
+                    localTarget = localTarget.matrixParam(((MatrixParam) ann).value(), value);
                 }
                 else if (ann instanceof HeaderParam)
                 {
                     if (value instanceof Collection)
                     {
-                        headers.addAll(((HeaderParam) ann).value(), ((Collection) value).toArray());
+                        localHeaders.addAll(((HeaderParam) ann).value(), ((Collection) value).toArray());
                     }
                     else
                     {
-                        headers.add(((HeaderParam) ann).value(), value);
+                        localHeaders.add(((HeaderParam) ann).value(), value);
                     }
                 }
                 else if (ann instanceof FormParam)
@@ -233,8 +280,8 @@ public class OrbitRestClient
         }
 
 
-        Invocation.Builder builder = target.request();
-        builder = builder.headers(headers);
+        Invocation.Builder builder = localTarget.request();
+        builder = builder.headers(localHeaders);
         Produces produces = getAnnotation(interfaceClass, method, Produces.class);
         if (produces != null)
         {
@@ -245,7 +292,7 @@ public class OrbitRestClient
 
         if (entity != null)
         {
-            String contentType = getContentType(interfaceClass, method, headers);
+            String contentType = getContentType(interfaceClass, method, localHeaders);
 
             if (entityType instanceof ParameterizedType)
             {
@@ -359,10 +406,8 @@ public class OrbitRestClient
     }
 
     @SuppressWarnings("unchecked")
-    public static RestInvocationCallback<?> createAsyncInvocationCallback(Type type)
+    static RestInvocationCallback<?> createAsyncInvocationCallback(Type type)
     {
-
-
         String genericSignature = GenericUtils.toGenericSignature(type);
 
         Class<?> clazz = invocationClasses.get(genericSignature);

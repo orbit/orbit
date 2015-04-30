@@ -36,6 +36,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -47,9 +48,14 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import java.util.Arrays;
@@ -135,6 +141,20 @@ public class RestClientTest
         @Produces(MediaType.APPLICATION_JSON)
         @Consumes(MediaType.APPLICATION_JSON)
         Task<Map<Object, ? super SomeResponseDto>> getGenericReturnMessing4(String key);
+
+        @Path("/returnHeaders")
+        @POST
+        @Produces(MediaType.APPLICATION_JSON)
+        @Consumes(MediaType.APPLICATION_JSON)
+        List<String> returnHeaders(String name);
+
+        // TODO: support header setting
+        @HeaderParam("Header1")
+        void setHeader1(String value);
+
+        // TODO: support query setting
+        @QueryParam("queryParam1")
+        void setQueryParam1(String value);
     }
 
     public static class MessageDto
@@ -197,6 +217,15 @@ public class RestClientTest
             Map<String, SomeResponseDto> map = new HashMap<>();
             map.put(key, response);
             return map;
+        }
+
+        @Path("/returnHeaders")
+        @POST
+        @Produces(MediaType.APPLICATION_JSON)
+        @Consumes(MediaType.APPLICATION_JSON)
+        public List<String> returnHeaders(@Context HttpHeaders headers, String name)
+        {
+            return headers.getRequestHeaders().get(name);
         }
     }
 
@@ -320,6 +349,42 @@ public class RestClientTest
             final Hello hello2 = orbitRestClient.get(Hello.class);
 
             assertSame(hello1, hello2);
+        }
+    }
+
+    @Test
+    public void testHeaderMutation()
+    {
+        WebTarget webTarget = getWebTarget();
+
+        final OrbitRestClient client = new OrbitRestClient(webTarget);
+        {
+            final OrbitRestClient client1 = client.addHeader("H", "A");
+            final OrbitRestClient client2 = client1.addHeader("H", "B");
+            final OrbitRestClient client3 = client2.setHeader("H", "C");
+            final OrbitRestClient client4 = client3.setHeader("H", "D");
+
+            final MultivaluedMap<String, Object> newHeaders = new MultivaluedHashMap<>();
+            newHeaders.add("H", "E");
+            final OrbitRestClient client5 = client4.setHeaders(newHeaders);
+
+            client2.getHeaders().remove("H");
+            client3.getHeaders().clear();
+            client4.getHeaders().add("H", "X");
+
+            assertNull(client.get(Hello.class).returnHeaders("A"));
+            assertEquals(Arrays.asList("A"), client1.get(Hello.class).returnHeaders("H"));
+            assertEquals(Arrays.asList("A,B"), client2.get(Hello.class).returnHeaders("H"));
+            assertEquals(Arrays.asList("C"), client3.get(Hello.class).returnHeaders("H"));
+            assertEquals(Arrays.asList("D"), client4.get(Hello.class).returnHeaders("H"));
+            assertEquals(Arrays.asList("E"), client5.get(Hello.class).returnHeaders("H"));
+
+            assertNull(client.get(Hello.class).returnHeaders("A"));
+            assertEquals(Arrays.asList("A"), client1.get(Hello.class).returnHeaders("H"));
+            assertEquals(Arrays.asList("A,B"), client2.get(Hello.class).returnHeaders("H"));
+            assertEquals(Arrays.asList("C"), client3.get(Hello.class).returnHeaders("H"));
+            assertEquals(Arrays.asList("D"), client4.get(Hello.class).returnHeaders("H"));
+            assertEquals(Arrays.asList("E"), client5.get(Hello.class).returnHeaders("H"));
         }
     }
 
