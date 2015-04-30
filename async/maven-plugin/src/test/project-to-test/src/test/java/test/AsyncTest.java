@@ -30,7 +30,6 @@ package test;
 
 import com.ea.orbit.concurrent.Task;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.ea.orbit.async.Await.await;

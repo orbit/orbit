@@ -33,6 +33,7 @@ import com.ea.orbit.concurrent.Task;
 import org.junit.Test;
 
 import static com.ea.orbit.async.Await.await;
+import static com.ea.orbit.concurrent.Task.fromValue;
 import static org.junit.Assert.assertEquals;
 
 public class LambdaTest extends BaseTest
@@ -44,5 +45,22 @@ public class LambdaTest extends BaseTest
                 .thenCompose(x -> Task.fromValue(x + await(getBlockedFuture(20))));
         completeFutures();
         assertEquals((Integer) 30, task.join());
+    }
+
+
+    @Test
+    public void testLongLambda()
+    {
+        System.out.println("aaa");
+        Task<Integer> task = getBlockedTask(5)
+                .thenCompose(x -> {
+                    await(getBlockedTask());
+                    await(getBlockedTask());
+                    await(getBlockedTask());
+                    await(getBlockedTask());
+                    return fromValue(11);
+                });
+        completeFutures();
+        assertEquals((Integer) 11, task.join());
     }
 }
