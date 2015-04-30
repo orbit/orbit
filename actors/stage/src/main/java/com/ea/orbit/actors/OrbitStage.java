@@ -31,6 +31,7 @@ package com.ea.orbit.actors;
 
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.IClusterPeer;
+import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.actors.providers.ILifetimeProvider;
 import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.runtime.Execution;
@@ -52,6 +53,7 @@ import javax.inject.Singleton;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -84,7 +86,7 @@ public class OrbitStage implements Startable
     private IClusterPeer clusterPeer;
     private Task<?> startFuture;
     private Messaging messaging;
-    private Execution execution;
+    private Execution execution = new Execution();
     private Hosting hosting;
     private boolean startCalled;
     private Clock clock;
@@ -299,16 +301,35 @@ public class OrbitStage implements Startable
                 .thenRun(clusterPeer::leave);
     }
 
+    /**
+     * @deprecated Use #registerObserver instead
+     */
+    @Deprecated
     public <T extends IActorObserver> T getObserverReference(Class<T> iClass, final T observer)
+    {
+        return registerObserver(iClass, observer);
+
+    }
+
+    /**
+     * @deprecated Use #registerObserver instead
+     */
+    @Deprecated
+    public <T extends IActorObserver> T getObserverReference(final T observer)
+    {
+        return registerObserver(null, observer);
+    }
+
+    public <T extends IActorObserver> T registerObserver(Class<T> iClass, final T observer)
     {
         return execution.getObjectReference(iClass, observer);
     }
 
-
-    public <T extends IActorObserver> T getObserverReference(final T observer)
+    public <T extends IActorObserver> T registerObserver(Class<T> iClass, String id, final T observer)
     {
-        return execution.getObjectReference(null, observer);
+        return execution.getObserverReference(iClass, observer, id);
     }
+
 
     public Hosting getHosting()
     {
@@ -344,6 +365,24 @@ public class OrbitStage implements Startable
     public void bind()
     {
         execution.bind();
+    }
+
+    public List<INodeAddress> getAllNodes()
+    {
+        if (hosting == null)
+        {
+            return Collections.emptyList();
+        }
+        return hosting.getAllNodes();
+    }
+
+    public List<INodeAddress> getServerNodes()
+    {
+        if (hosting == null)
+        {
+            return Collections.emptyList();
+        }
+        return hosting.getServerNodes();
     }
 
 
