@@ -26,28 +26,32 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.runtime;
+package com.ea.orbit.samples.annotation.onlyifactivated;
 
 import com.ea.orbit.actors.IAddressable;
+import com.ea.orbit.actors.providers.IInvokeHookProvider;
+import com.ea.orbit.actors.providers.InvocationContext;
 import com.ea.orbit.concurrent.Task;
 
 import java.lang.reflect.Method;
 
-public interface InvocationContext
+public class OnlyIfActivatedExtension implements IInvokeHookProvider
 {
-    IRuntime getRuntime();
 
-    /**
-     * Invokes the next handler.
-     *
-     * @param toReference the target actor or observer
-     * @param method      the method
-     * @param methodId    the method id
-     * @param params      param array
-     * @return a promise of completion
-     */
-    Task<?> invokeNext(final IAddressable toReference,
-                       final Method method,
-                       final int methodId,
-                       final Object[] params);
+    public Task<?> invoke(InvocationContext context, IAddressable toReference, Method method, int methodId, Object[] params)
+    {
+        if (method.isAnnotationPresent(OnlyIfActivated.class))
+        {
+            return context.getRuntime().locateActor(toReference, false).thenCompose(address -> {
+                if (address == null)
+                {
+                    return (Task) Task.done();
+                }
+                return context.invokeNext(toReference, method, methodId, params);
+            });
+        }
+
+        return context.invokeNext(toReference, method, methodId, params);
+    }
+
 }

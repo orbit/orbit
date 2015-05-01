@@ -33,13 +33,12 @@ import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.actors.test.FakeClusterPeer;
 import com.ea.orbit.actors.test.FakeStorageProvider;
-import com.ea.orbit.samples.annotation.AnnotationHookProvider;
 import com.ea.orbit.samples.annotation.examples.IMemoizeExample;
 import com.ea.orbit.samples.annotation.examples.IOnlyExample;
 import com.ea.orbit.samples.annotation.examples.MemoizeExampleActor;
 import com.ea.orbit.samples.annotation.examples.OnlyExampleActor;
-import com.ea.orbit.samples.annotation.memoize.MemoizeAnnotationHandler;
-import com.ea.orbit.samples.annotation.onlyifactivated.OnlyIfActivatedAnnotationHandler;
+import com.ea.orbit.samples.annotation.memoize.MemoizeExtension;
+import com.ea.orbit.samples.annotation.onlyifactivated.OnlyIfActivatedExtension;
 
 import org.junit.Test;
 
@@ -81,24 +80,23 @@ public class AnnotationTest extends ActorBaseTest
         sleep(1000);
         long firstB = memoize.getNow("B").join();
         long secondA = memoize.getNow("A").join();
-        assertTrue(MemoizeExampleActor.accessCount == 2);
+        assertEquals(2, MemoizeExampleActor.accessCount);
         assertTrue(firstA != firstB);
         assertTrue(firstA == secondA);
         sleep(1000);
         long thirdA = memoize.getNow("A").join();
         long secondB = memoize.getNow("B").join();
-        assertTrue(MemoizeExampleActor.accessCount == 2);
+        assertEquals(2, MemoizeExampleActor.accessCount);
         assertTrue(thirdA != secondB);
         assertTrue(secondA == thirdA);
         assertTrue(firstB == secondB);
         sleep(4500);
         long fourthA = memoize.getNow("A").join();
         long thirdB = memoize.getNow("B").join();
-        assertTrue(MemoizeExampleActor.accessCount == 4);
+        assertEquals(4, MemoizeExampleActor.accessCount);
         assertTrue(thirdA != fourthA);
         assertTrue(secondB != thirdB);
 
-        //stage.cleanup(true);
         stage.stop().join();
 
     }
@@ -123,11 +121,9 @@ public class AnnotationTest extends ActorBaseTest
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
 
-        AnnotationHookProvider custom = new AnnotationHookProvider();
-        custom.addHandler(new MemoizeAnnotationHandler());
-        custom.addHandler(new OnlyIfActivatedAnnotationHandler());
-        stage.addProvider(custom);
 
+        stage.addProvider(new MemoizeExtension());
+        stage.addProvider(new OnlyIfActivatedExtension());
 
         stage.addProvider(new FakeStorageProvider(fakeDatabase));
 

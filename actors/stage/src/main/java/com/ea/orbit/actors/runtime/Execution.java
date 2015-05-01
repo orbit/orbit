@@ -36,10 +36,10 @@ import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.actors.providers.IActorClassFinder;
 import com.ea.orbit.actors.providers.IInvokeHookProvider;
-import com.ea.orbit.actors.providers.IInvokeListenerProvider;
 import com.ea.orbit.actors.providers.ILifetimeProvider;
 import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.providers.IStorageProvider;
+import com.ea.orbit.actors.providers.InvocationContext;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -78,7 +78,6 @@ import java.util.stream.Collectors;
 
 public class Execution implements IRuntime
 {
-    public static boolean traceEnabled = false;
 
     private static final Logger logger = LoggerFactory.getLogger(Execution.class);
     private final String runtimeIdentity;
@@ -106,7 +105,8 @@ public class Execution implements IRuntime
     private List<IOrbitProvider> orbitProviders = new ArrayList<>();
 
     private final WeakReference<IRuntime> cachedRef = new WeakReference<>(this);
-    private IInvokeHookProvider invokeHook;
+
+    private List<IInvokeHookProvider> hookProviders;
 
     public Execution()
     {
@@ -639,7 +639,7 @@ public class Execution implements IRuntime
         }
         executionSerializer = new ExecutionSerializer<>(executor);
 
-        invokeHook = getFirstProvider(IInvokeHookProvider.class);
+        hookProviders = getAllProviders(IInvokeHookProvider.class);
 
         orbitProviders.forEach(v -> v.start());
         // schedules the cleanup
@@ -1034,45 +1034,29 @@ public class Execution implements IRuntime
 
     public Task<?> invoke(IAddressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
     {
-        if (traceEnabled)
+        Iterator<IInvokeHookProvider> it = hookProviders.iterator();
+
+        InvocationContext ctx = new InvocationContext()
         {
-            // TODO: remove this, this should be an invoke hook, and the invoke hooks should be chained together.
-
-            final ActorReference source = getCurrentActivation();
-
-            if (source != null)
+            @Override
+            public IRuntime getRuntime()
             {
-                final long traceId = getCurrentTraceId();
-                String sourceInterface = ActorReference.getInterfaceClass(source).getName();
-                String targetInterface = ActorReference.getInterfaceClass((ActorReference) toReference).getName();
-                for (IInvokeListenerProvider v : getAllProviders(IInvokeListenerProvider.class))
-                {
-                    v.preInvoke(traceId, sourceInterface, String.valueOf(ActorReference.getId(source)), targetInterface, String.valueOf(ActorReference.getId((ActorReference) toReference)), methodId, params);
-                }
+                return Execution.this;
             }
-        }
-        Task<?> task;
-        if (invokeHook == null)
-        {
-            task = sendMessage(toReference, oneWay, methodId, params);
-        }
-        else
-        {
-            task = invokeHook.invoke(this, toReference, m, oneWay, methodId, params);
-        }
-        if (traceEnabled)
-        {
-            final long traceId = getCurrentTraceId();
-            // TODO: remove this, this should be an invoke hook, and the invoke hooks should be chained together.
 
-            return task.whenComplete((r, e) -> {
-                for (IInvokeListenerProvider v : getAllProviders(IInvokeListenerProvider.class))
+            @Override
+            public Task<?> invokeNext(final IAddressable toReference, final Method method, final int methodId, final Object[] params)
+            {
+                if (it.hasNext())
                 {
-                    v.postInvoke(traceId, r);
+                    return it.next().invoke(this, toReference, method, methodId, params);
                 }
-            });
-        }
-        return task;
+                return sendMessage(toReference, oneWay, methodId, params);
+            }
+        };
+
+        return ctx.invokeNext(toReference, m, methodId, params);
+
     }
 
     public void activationCleanup(final boolean block)
