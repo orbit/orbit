@@ -26,11 +26,13 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.redis.test;
+package com.ea.orbit.actors.providers.memcached;
 
 import com.ea.orbit.actors.test.IStorageTestState;
 
-public class HelloState implements IStorageTestState
+import java.io.Serializable;
+
+public class HelloState implements IStorageTestState, Serializable
 {
 
     public String lastName;

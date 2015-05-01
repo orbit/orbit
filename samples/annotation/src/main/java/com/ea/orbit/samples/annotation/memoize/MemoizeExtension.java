@@ -26,45 +26,42 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.samples.annotation;
+package com.ea.orbit.samples.annotation.memoize;
 
 import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.providers.IInvokeHookProvider;
-import com.ea.orbit.actors.runtime.IRuntime;
+import com.ea.orbit.actors.providers.InvocationContext;
 import com.ea.orbit.concurrent.Task;
 
+import net.jodah.expiringmap.ExpiringMap;
+
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class AnnotationHookProvider implements IInvokeHookProvider
+public class MemoizeExtension implements IInvokeHookProvider
 {
+    private ExpiringMap<String, Task> memoizeMap = ExpiringMap.builder().variableExpiration().build();
 
-    private List<IAnnotationHandler> handlers = new ArrayList<>();
-
-    @Override
-    public Task invoke(IRuntime runtime, IAddressable toReference, Method m, boolean oneWay, int methodId, Object[] params)
+    public Task<?> invoke(InvocationContext context, IAddressable toReference, Method method, int methodId, Object[] params)
     {
-        // TODO: it would be better to chain the handlers instead, this could be done form the Execution
-        // like: handler.handler(..., nextHandler); where nextHandler is actually an iterator.
-        // so each handler would be able to do something, perhaps modify the parameters,
-        // then call the next, and potentially to listen for the result of the next.
-        for (IAnnotationHandler handler : handlers)
+        Memoize memoize = method.getAnnotation(Memoize.class);
+        if (memoize != null)
         {
-            if (m.isAnnotationPresent(handler.annotationClass()))
+            long memoizeMaxMillis = memoize.unit().toMillis(memoize.time());
+            String key = Integer.toString(methodId) + "_" + Stream.of(params).map(p -> Integer.toString(p.hashCode())).collect(Collectors.joining("_"));
+            Task cached = memoizeMap.get(key);
+            if (cached == null)
             {
-                Task<?> result = handler.invoke(m.getAnnotation(handler.annotationClass()), runtime, toReference, m, oneWay, methodId, params);
-                if (result != null)
-                {
-                    return result;
-                }
+                return context.invokeNext(toReference, method, methodId, params).thenApply((Object r) -> {
+                    memoizeMap.put(key, Task.fromValue(r), ExpiringMap.ExpirationPolicy.CREATED, memoizeMaxMillis, TimeUnit.MILLISECONDS);
+                    return r;
+                });
             }
+            return cached;
         }
-        return runtime.sendMessage(toReference, oneWay, methodId, params);
-    }
 
-    public void addHandler(IAnnotationHandler handler)
-    {
-        handlers.add(handler);
+        return context.invokeNext(toReference, method, methodId, params);
     }
 }

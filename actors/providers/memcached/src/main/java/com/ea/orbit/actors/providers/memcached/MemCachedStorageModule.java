@@ -26,28 +26,10 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.runtime;
+package com.ea.orbit.actors.providers.memcached;
 
-import com.ea.orbit.actors.IAddressable;
-import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.container.Module;
 
-import java.lang.reflect.Method;
-
-public interface InvocationContext
+public class MemCachedStorageModule extends Module
 {
-    IRuntime getRuntime();
-
-    /**
-     * Invokes the next handler.
-     *
-     * @param toReference the target actor or observer
-     * @param method      the method
-     * @param methodId    the method id
-     * @param params      param array
-     * @return a promise of completion
-     */
-    Task<?> invokeNext(final IAddressable toReference,
-                       final Method method,
-                       final int methodId,
-                       final Object[] params);
 }

@@ -100,11 +100,12 @@ public class RedisStorageProvider implements IStorageProvider {
 		if (data != null) {
 			try {
 				mapper.readerForUpdating(state).readValue(data);
+				return Task.fromValue(true);
 			} catch (Exception e) {
 				throw new UncheckedException("Error parsing redis response: " + data, e);
 			}
 		}
-		return Task.fromValue(true);
+		return Task.fromValue(false);
 	}
 
 	@Override

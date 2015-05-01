@@ -26,19 +26,33 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.samples.annotation;
+package com.ea.orbit.actors.providers.memcached;
 
-import com.ea.orbit.actors.IAddressable;
-import com.ea.orbit.actors.runtime.IRuntime;
-import com.ea.orbit.concurrent.Task;
+import com.schooner.MemCached.SchoonerSockIOPool;
+import com.whalin.MemCached.MemCachedClient;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-
-public interface IAnnotationHandler<T extends Annotation>
+/**
+ * {@link MemCachedClientFactory} provides a simple Memcached clients (not suitable for production use).
+ *
+ * @author Johno Crawford (johno@sulake.com)
+ */
+public abstract class MemCachedClientFactory
 {
-    Class<T> annotationClass();
+    public static MemCachedClient getClient()
+    {
+        MemCachedClient memCachedClient = new MemCachedClient(true);
 
-    Task<?> invoke(T ann, IRuntime runtime, IAddressable toReference, Method m, boolean oneWay, int methodId, Object[] params);
+        SchoonerSockIOPool pool = SchoonerSockIOPool.getInstance();
+        pool.setServers(new String[]{ "localhost:11211" });
 
+        pool.setInitConn(5);
+        pool.setMinConn(5);
+        pool.setMaxConn(10);
+        pool.setMaintSleep(0);
+        pool.setNagle(false);
+
+        pool.initialize();
+
+        return memCachedClient;
+    }
 }

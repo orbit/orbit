@@ -90,20 +90,22 @@ public class JpaStorageProvider implements IStorageProvider
             try
             {
                 newState = query.getSingleResult();
+                mapper.readerForUpdating(state).readValue(mapper.writeValueAsString(newState));
+                return Task.fromValue(true);
             }
-            catch (NoResultException e)
+            catch (NoResultException ignore)
             {
-                newState = state.getClass().newInstance();
             }
-            mapper.readerForUpdating(state).readValue(mapper.writeValueAsString(newState));
-            em.close();
-            return Task.fromValue(true);
+            finally
+            {
+                em.close();
+            }
+            return Task.fromValue(false);
         }
         catch (Exception e)
         {
             throw new UncheckedException(e);
         }
-
     }
 
     @Override

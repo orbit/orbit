@@ -29,39 +29,29 @@
 package com.ea.orbit.samples.annotation.onlyifactivated;
 
 import com.ea.orbit.actors.IAddressable;
-import com.ea.orbit.actors.cluster.INodeAddress;
-import com.ea.orbit.actors.runtime.IRuntime;
+import com.ea.orbit.actors.providers.IInvokeHookProvider;
+import com.ea.orbit.actors.providers.InvocationContext;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.samples.annotation.IAnnotationHandler;
 
 import java.lang.reflect.Method;
 
-public class OnlyIfActivatedAnnotationHandler implements IAnnotationHandler<OnlyIfActivated>
+public class OnlyIfActivatedExtension implements IInvokeHookProvider
 {
 
-    @Override
-    public Class<OnlyIfActivated> annotationClass()
+    public Task<?> invoke(InvocationContext context, IAddressable toReference, Method method, int methodId, Object[] params)
     {
-        return OnlyIfActivated.class;
+        if (method.isAnnotationPresent(OnlyIfActivated.class))
+        {
+            return context.getRuntime().locateActor(toReference, false).thenCompose(address -> {
+                if (address == null)
+                {
+                    return (Task) Task.done();
+                }
+                return context.invokeNext(toReference, method, methodId, params);
+            });
+        }
+
+        return context.invokeNext(toReference, method, methodId, params);
     }
 
-    @Override
-    public Task<?> invoke(final OnlyIfActivated ann, final IRuntime runtime, final IAddressable toReference, final Method m, final boolean oneWay, final int methodId, final Object[] params)
-    {
-        // TODO: Do this instead:
-        //        return context.getRuntime().locateActor(toReference, false)
-        //                .thenCompose(address -> {
-        //                    if (address == null)
-        //                    {
-        //                        return (Task) Task.done();
-        //                    }
-        //                    return context.invokeNext(toReference, method, methodId, params);
-        //                });
-        INodeAddress address = runtime.locateActor(toReference, false).join();
-        if (address == null)
-        {
-            return Task.done();
-        }
-        return runtime.sendMessage(toReference, oneWay, methodId, params);
-    }
 }

@@ -26,41 +26,29 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.samples.annotation.memoize;
+package com.ea.orbit.actors.providers;
 
 import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.runtime.IRuntime;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.samples.annotation.IAnnotationHandler;
-
-import net.jodah.expiringmap.ExpiringMap;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class MemoizeAnnotationHandler implements IAnnotationHandler<Memoize>
+public interface InvocationContext
 {
-    ExpiringMap<String, Task> memoizeMap = ExpiringMap.builder().variableExpiration().build();
+    IRuntime getRuntime();
 
-    @Override
-    public Class<Memoize> annotationClass()
-    {
-        return Memoize.class;
-    }
-
-    @Override
-    public Task<?> invoke(Memoize memoize, final IRuntime runtime, final IAddressable toReference, final Method m, final boolean oneWay, final int methodId, final Object[] params)
-    {
-        long memoizeMaxMillis = memoize.unit().toMillis(memoize.time());
-        String key = Integer.toString(methodId) + "_" + Stream.of(params).map(p -> Integer.toString(p.hashCode())).collect(Collectors.joining("_"));
-        Task cached = memoizeMap.get(key);
-        if (cached == null)
-        {
-            cached = runtime.sendMessage(toReference, oneWay, methodId, params);
-            memoizeMap.put(key, cached, ExpiringMap.ExpirationPolicy.CREATED, memoizeMaxMillis, TimeUnit.MILLISECONDS);
-        }
-        return cached;
-    }
+    /**
+     * Invokes the next handler.
+     *
+     * @param toReference the target actor or observer
+     * @param method      the method
+     * @param methodId    the method id
+     * @param params      param array
+     * @return a promise of completion
+     */
+    Task<?> invokeNext(final IAddressable toReference,
+                       final Method method,
+                       final int methodId,
+                       final Object[] params);
 }

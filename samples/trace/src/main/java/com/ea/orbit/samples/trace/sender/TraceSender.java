@@ -29,8 +29,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.samples.trace.sender;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.providers.IInvokeListenerProvider;
+import com.ea.orbit.actors.IAddressable;
+import com.ea.orbit.actors.providers.IInvokeHookProvider;
+import com.ea.orbit.actors.providers.InvocationContext;
+import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.Execution;
+import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.samples.trace.messaging.ITraceMessaging;
 import com.ea.orbit.samples.trace.messaging.TraceInfo;
 import com.ea.orbit.samples.trace.messaging.TraceMulticastMessaging;
@@ -38,27 +42,41 @@ import com.ea.orbit.samples.trace.messaging.TraceMulticastMessaging;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
-public class TraceSender implements IInvokeListenerProvider
+public class TraceSender implements IInvokeHookProvider
 {
+
+    private Cache<Long, TraceInfo> traceMap = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.MINUTES)
+            .build();
 
     private ITraceMessaging messaging = new TraceMulticastMessaging(); //default implementation
 
     public TraceSender()
     {
-        Execution.traceEnabled = true;
     }
 
-    Cache<Long, TraceInfo> traceMap = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.MINUTES)
-            .build();
+    public Task<?> invoke(InvocationContext context, IAddressable toReference, Method method, int methodId, Object[] params)
+    {
+
+        final ActorReference source = ((Execution) context.getRuntime()).getCurrentActivation();
+        if (source!=null)
+        {
+            final long traceId = ((Execution) context.getRuntime()).getCurrentTraceId();
+            String sourceInterface = ActorReference.getInterfaceClass(source).getName();
+            String targetInterface = ActorReference.getInterfaceClass((ActorReference) toReference).getName();
+            preInvoke(traceId, sourceInterface, String.valueOf(ActorReference.getId(source)), targetInterface, String.valueOf(ActorReference.getId((ActorReference) toReference)), methodId, params);
+            return context.invokeNext(toReference, method, methodId, params).thenApply((Object r) -> {
+                postInvoke(traceId, r);
+                return r;
+            });
+        }
+        return context.invokeNext(toReference, method, methodId, params);
+    }
 
     public void preInvoke(long traceId, String sourceInterface, String sourceId, String targetInterface, String targetId, int methodId, Object[] params)
     {
-        if (!Execution.traceEnabled)
-        {
-            return;
-        }
         try
         {
             if (isIgnorable(sourceInterface) || isIgnorable(targetInterface))
@@ -84,10 +102,6 @@ public class TraceSender implements IInvokeListenerProvider
 
     public void postInvoke(long traceId, Object result)
     {
-        if (!Execution.traceEnabled)
-        {
-            return;
-        }
         try
         {
             TraceInfo info = traceMap.getIfPresent(traceId);

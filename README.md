@@ -51,7 +51,7 @@ IActor.getReference(IHello.class, "0").sayHello("Meep Meep");
 ```
 
 #### Actors - Scala
-```java
+```scala
 trait IHello extends IActor {
   def sayHello(greeting: String): Task[String]
 }
