@@ -26,42 +26,42 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.samples.annotation.onlyifactivated;
+package com.ea.orbit.samples.annotation.memoize;
 
 import com.ea.orbit.actors.IAddressable;
-import com.ea.orbit.actors.cluster.INodeAddress;
-import com.ea.orbit.actors.runtime.IRuntime;
+import com.ea.orbit.actors.providers.IInvokeHookProvider;
+import com.ea.orbit.actors.providers.InvocationContext;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.samples.annotation.IAnnotationHandler;
+
+import net.jodah.expiringmap.ExpiringMap;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class OnlyIfActivatedAnnotationHandler implements IAnnotationHandler<OnlyIfActivated>
+public class MemoizeExtension implements IInvokeHookProvider
 {
+    private ExpiringMap<String, Task> memoizeMap = ExpiringMap.builder().variableExpiration().build();
 
-    @Override
-    public Class<OnlyIfActivated> annotationClass()
+    public Task<?> invoke(InvocationContext context, IAddressable toReference, Method method, int methodId, Object[] params)
     {
-        return OnlyIfActivated.class;
-    }
-
-    @Override
-    public Task<?> invoke(final OnlyIfActivated ann, final IRuntime runtime, final IAddressable toReference, final Method m, final boolean oneWay, final int methodId, final Object[] params)
-    {
-        // TODO: Do this instead:
-        //        return context.getRuntime().locateActor(toReference, false)
-        //                .thenCompose(address -> {
-        //                    if (address == null)
-        //                    {
-        //                        return (Task) Task.done();
-        //                    }
-        //                    return context.invokeNext(toReference, method, methodId, params);
-        //                });
-        INodeAddress address = runtime.locateActor(toReference, false).join();
-        if (address == null)
+        Memoize memoize = method.getAnnotation(Memoize.class);
+        if (memoize != null)
         {
-            return Task.done();
+            long memoizeMaxMillis = memoize.unit().toMillis(memoize.time());
+            String key = Integer.toString(methodId) + "_" + Stream.of(params).map(p -> Integer.toString(p.hashCode())).collect(Collectors.joining("_"));
+            Task cached = memoizeMap.get(key);
+            if (cached == null)
+            {
+                return context.invokeNext(toReference, method, methodId, params).thenApply((Object r) -> {
+                    memoizeMap.put(key, Task.fromValue(r), ExpiringMap.ExpirationPolicy.CREATED, memoizeMaxMillis, TimeUnit.MILLISECONDS);
+                    return r;
+                });
+            }
+            return cached;
         }
-        return runtime.sendMessage(toReference, oneWay, methodId, params);
+
+        return context.invokeNext(toReference, method, methodId, params);
     }
 }

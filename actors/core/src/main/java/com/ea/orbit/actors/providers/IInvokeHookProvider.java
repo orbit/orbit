@@ -45,17 +45,16 @@ public interface IInvokeHookProvider extends IOrbitProvider
     /**
      * Invoke hook for actor methods.
      *
-     * @param runtime     current runtime executing the method
+     * @param context     current invocation context
      * @param toReference the reference to the actor
      * @param method      the method reflection information
-     * @param oneWay      if the target should send the response back.
      * @param methodId    the target method id
      * @param params      parameters for the method, must all be serializable.
      * @return a completion promise, the framework will wait if necessary.
      */
-    default Task<?> invoke(IRuntime runtime, IAddressable toReference, Method method, boolean oneWay, int methodId, Object[] params)
+    default Task<?> invoke(InvocationContext context, IAddressable toReference, Method method, int methodId, Object[] params)
     {
-        return runtime.sendMessage(toReference, oneWay, methodId, params);
+        return context.invokeNext(toReference, method, methodId, params);
     }
 
 }
