@@ -49,6 +49,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Request based injection can be done by composition (adding the parent singletons to the request Registry)
  * <p/>
  * Please note: The parent registry should not be modified once the request/child contexts start running in their threads.
+ * This class it not thread safe.
  */
 public class DependencyRegistry
 {
