@@ -32,7 +32,7 @@ The Orbit Team
 =======
 * [Joe Hegarty](https://github.com/JoeHegarty) - Maintainer
 * [Daniel Sperry](https://github.com/DanielSperry) - Maintainer
-* [Blake Grant](https://github.com/JLeeChan)
+* [Blake Grant](https://github.com/aybarasan)
 * [Chris Christou](https://github.com/BioChristou)
 * [Owen Borstad](https://github.com/OwenBorstad)
 * [Jerome Lee](https://github.com/JLeeChan)
