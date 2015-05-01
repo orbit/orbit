@@ -961,7 +961,7 @@ public class Execution implements IRuntime
     }
 
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({"unchecked"})
     <T> T createReference(final INodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
@@ -1034,8 +1034,16 @@ public class Execution implements IRuntime
 
     public Task<?> invoke(IAddressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
     {
+        if (hookProviders.size() == 0)
+        {
+            // no hooks
+            return sendMessage(toReference, oneWay, methodId, params);
+        }
+
         Iterator<IInvokeHookProvider> it = hookProviders.iterator();
 
+        // invoke the hook providers as a chain where one can
+        // filter the input and output of the next.
         InvocationContext ctx = new InvocationContext()
         {
             @Override
