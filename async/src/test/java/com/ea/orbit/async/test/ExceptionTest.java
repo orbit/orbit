@@ -94,4 +94,68 @@ public class ExceptionTest extends BaseTest
     }
 
 
+    @Test
+    public void testTryCatch3() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
+    {
+        final Task res = doTryCatch3();
+        completeFutures();
+        assertEquals("fail", res.join());
+    }
+
+    @Async
+    private Task doTryCatch3()
+    {
+        int c = 1;
+        try
+        {
+            await(getBlockedTask());
+            await(getBlockedTask());
+            await(getBlockedTask());
+            await(getBlockedTask());
+            await(Task.fromException(new Exception("fail")));
+        }
+        catch (Exception ex)
+        {
+            await(getBlockedTask());
+            await(getBlockedTask());
+            await(getBlockedTask());
+            await(getBlockedTask());
+            return Task.fromValue(ex.getCause().getMessage());
+        }
+        return Task.done();
+    }
+
+
+    @Test
+    public void testTryCatch4() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
+    {
+        final Task res = doTryCatch4();
+        completeFutures();
+        assertEquals("fail", res.join());
+    }
+
+    @Async
+    private Task doTryCatch4()
+    {
+        int c = 1;
+        try
+        {
+            await(getBlockedTask());
+            await(getBlockedTask());
+            if (await(getBlockedTask()) == null)
+            {
+                throw new Exception("fail");
+            }
+            await(getBlockedTask());
+        }
+        catch (Exception ex)
+        {
+            await(getBlockedTask());
+            await(getBlockedTask());
+            await(getBlockedTask());
+            await(getBlockedTask());
+            return Task.fromValue(ex.getMessage());
+        }
+        return Task.done();
+    }
 }
