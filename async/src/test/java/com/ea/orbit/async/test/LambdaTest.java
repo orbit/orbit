@@ -51,7 +51,6 @@ public class LambdaTest extends BaseTest
     @Test
     public void testLongLambda()
     {
-        System.out.println("aaa");
         Task<Integer> task = getBlockedTask(5)
                 .thenCompose(x -> {
                     await(getBlockedTask());
