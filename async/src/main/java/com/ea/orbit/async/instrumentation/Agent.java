@@ -65,7 +65,7 @@ public class Agent
                         inst.retransformClasses(clazz);
                     }
                 }
-                catch (Exception e)
+                catch (Exception | Error e)
                 {
                     e.printStackTrace();
                 }
