@@ -268,6 +268,8 @@ public class ClassPathSearch
                     {
                         // there is some problem with this class
                         // culling the list for the next search
+                        logger.error("Error finding implementation of: "
+                                + theInterface.getName() + " as " + cn, e);
                         unprocessed.remove(cn);
                         return null;
                     }
