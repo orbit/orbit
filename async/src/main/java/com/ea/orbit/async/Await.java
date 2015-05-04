@@ -72,14 +72,14 @@ import java.util.concurrent.CompletableFuture;
  * and a warning message will be printed to the console.
  * Subsequent async methods will work as expected.
  */
-public interface Await
+public class Await
 {
-    static void init()
+    public static void init()
     {
         InitializeAsync.init();
     }
 
-    Logger logger = LoggerFactory.getLogger(Await.class);
+    private static Logger logger;
 
     /**
      * Calls to this method are replaced by the orbit-async instrumentation.
@@ -88,7 +88,7 @@ public interface Await
      * @param <T>    the return type of future.join()
      * @return the return value of the future
      */
-    static <T> T await(CompletableFuture<T> future)
+    public static <T> T await(CompletableFuture<T> future)
     {
         String warning;
         if (!InitializeAsync.isRunning())
@@ -98,6 +98,11 @@ public interface Await
         else
         {
             warning = "Warning: Illegal call to await, the method invoking await must return Task<?>, or CompletableFuture<?> with the annotation @Async";
+        }
+        LoggerFactory.getLogger(Await.class);
+        if (logger == null)
+        {
+            logger = LoggerFactory.getLogger(Await.class);
         }
         if (logger.isDebugEnabled())
         {
