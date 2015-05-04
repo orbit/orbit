@@ -238,7 +238,7 @@ public class Transformer implements ClassFileTransformer
             final MethodNode continued = new MethodNode(Opcodes.ACC_PRIVATE | ACC_STATIC,
                     original.name, original.desc, original.signature, (String[]) original.exceptions.toArray(new String[original.exceptions.size()]));
 
-            String continuedName = original.name + "$async";
+            String continuedName = "async$" + original.name;
             Integer countUses = nameUseCount.get(continuedName);
             nameUseCount.put(continuedName, countUses == null ? 1 : countUses + 1);
 
