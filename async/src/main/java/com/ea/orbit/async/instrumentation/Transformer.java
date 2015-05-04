@@ -417,6 +417,7 @@ public class Transformer implements ClassFileTransformer
 
             // lable to the point to jump if the future is completed (isDone())
             Label futureIsDoneLabel = new Label();
+            futureIsDoneLabel.info = new LabelNode();
             SwitchEntry se = new SwitchEntry();
             se.frame = frame;
             se.futureIsDoneLabel = futureIsDoneLabel;
