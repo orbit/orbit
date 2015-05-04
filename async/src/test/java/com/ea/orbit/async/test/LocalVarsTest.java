@@ -30,7 +30,6 @@ package com.ea.orbit.async.test;
 
 import com.ea.orbit.concurrent.Task;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
@@ -43,8 +42,7 @@ import static org.junit.Assert.assertEquals;
 public class LocalVarsTest extends BaseTest
 {
 
-    @Test(timeout = 1_000)
-    @Ignore
+    @Test
     public void testRepeatedLocalVarsNames() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
     {
         final Task<Integer> res = done().thenCompose(o -> {
@@ -61,4 +59,24 @@ public class LocalVarsTest extends BaseTest
         assertEquals((Integer) 10, res.join());
     }
 
+    @Test
+    public void testRepeatedLocalVarsNames2() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
+    {
+        final Task<Integer> res = done().thenCompose(o -> {
+            {
+                String a = "a1";
+                String b = "b1";
+                int c = 1;
+            }
+            await(getBlockedTask());
+            {
+                String a = "a2";
+                String b = "b2";
+                int c = 10;
+                return fromValue(c);
+            }
+        });
+        completeFutures();
+        assertEquals((Integer) 10, res.join());
+    }
 }

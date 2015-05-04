@@ -28,7 +28,6 @@
 
 package com.ea.orbit.async.test;
 
-import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
@@ -36,13 +35,8 @@ import org.junit.Test;
 import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.assertEquals;
 
-public class TaskTest
+public class TaskTest extends BaseTest
 {
-    static
-    {
-        Await.init();
-    }
-
     public static class TaskSomethingAsync
     {
         public Task<Object> doSomething(Task<String> blocker)

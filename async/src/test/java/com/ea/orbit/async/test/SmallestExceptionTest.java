@@ -28,26 +28,38 @@
 
 package com.ea.orbit.async.test;
 
+import com.ea.orbit.concurrent.Task;
+
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.concurrent.CompletableFuture;
 
-import static org.junit.Assert.assertEquals;
+import static com.ea.orbit.async.Await.await;
+import static org.junit.Assert.assertNull;
 
-public class NoPackageTest extends BaseTest
+public class SmallestExceptionTest extends BaseTest
 {
+
     @Test
-    public void testPackageLessClass() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException
+    public void testRepeatedLocalVarsNames() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
     {
-
-        Class<?> newClass = Class.forName("NoPackageAsync");
-        final Method method = newClass.getMethod("noPackageMethod", CompletableFuture.class, int.class);
-
-        CompletableFuture<String> blocker = new CompletableFuture<>();
-        final CompletableFuture<String> res = (CompletableFuture<String>) method.invoke(newClass.newInstance(), blocker, 5);
-        blocker.complete("zzz");
-        assertEquals("5:10000000000:1.5:3.5:zzz:true", res.join());
+        final Task<Void> res = doIt();
+        completeFutures();
+        assertNull(res.join());
     }
+
+
+    private Task<Void> doIt()
+    {
+        try
+        {
+            await(getBlockedTask());
+            return Task.done();
+        }
+        catch (Exception ex)
+        {
+            return Task.done();
+        }
+    }
+
 }

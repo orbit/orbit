@@ -28,7 +28,6 @@
 
 package com.ea.orbit.async.test;
 
-import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
@@ -40,13 +39,8 @@ import java.util.concurrent.CompletableFuture;
 import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.assertEquals;
 
-public class FunctionCallTest
+public class FunctionCallTest extends BaseTest
 {
-    static
-    {
-        Await.init();
-    }
-
     public static class TaskSomethingAsync
     {
         private List<CompletableFuture> blockers = new ArrayList<>();
@@ -54,7 +48,7 @@ public class FunctionCallTest
         public Task<String> doSomething()
         {
             String res1 = await(blocker());
-            return Task.fromValue(":"+res1);
+            return Task.fromValue(":" + res1);
         }
 
         private CompletableFuture<String> blocker()

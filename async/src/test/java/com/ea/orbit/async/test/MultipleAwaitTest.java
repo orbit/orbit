@@ -28,7 +28,6 @@
 
 package com.ea.orbit.async.test;
 
-import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
@@ -40,13 +39,8 @@ import java.util.concurrent.CompletableFuture;
 import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.assertEquals;
 
-public class MultipleAwaitTest
+public class MultipleAwaitTest extends BaseTest
 {
-    static
-    {
-        Await.init();
-    }
-
     public static class TaskSomethingAsync
     {
         private List<CompletableFuture> blockers = new ArrayList<>();

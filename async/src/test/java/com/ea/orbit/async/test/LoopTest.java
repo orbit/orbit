@@ -28,18 +28,12 @@
 
 package com.ea.orbit.async.test;
 
-import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -48,42 +42,8 @@ import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class LoopTest
+public class LoopTest extends BaseTest
 {
-    static
-    {
-        Await.init();
-    }
-
-    // pairs of completable futures and the future completions.
-    Queue<Pair<CompletableFuture, Object>> blockedFutures = new LinkedList<>();
-
-    // just calls a function
-    <T> Task<T> futureFrom(Supplier<Task<T>> supplier)
-    {
-        return supplier.get();
-    }
-
-    // creates and an uncompleted future and adds it the the queue for later completion.
-    // to help with the tests
-    public <T> CompletableFuture<T> getBlockedFuture(T value)
-    {
-        final CompletableFuture<T> future = new CompletableFuture<>();
-        blockedFutures.add(Pair.of(future, value));
-        return future;
-    }
-
-    void completeFutures()
-    {
-        while (blockedFutures.size() > 0)
-        {
-            final Pair<CompletableFuture, Object> pair = blockedFutures.poll();
-            if (pair != null)
-            {
-                pair.getKey().complete(pair.getValue());
-            }
-        }
-    }
 
 
     @Test
