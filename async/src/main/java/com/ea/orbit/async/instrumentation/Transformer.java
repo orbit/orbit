@@ -343,21 +343,24 @@ public class Transformer implements ClassFileTransformer
         byte[] bytes = cw.toByteArray();
         {
             // for development use: new ClassReader(bytes).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
+            // for development use: debugSave(classNode, bytes);
         }
+        return bytes;
+    }
+
+    private void debugSave(final ClassNode classNode, final byte[] bytes)
+    {
         try
         {
             Path path = Paths.get("target/classes2/" + classNode.name + ".class");
             Files.createDirectories(path.getParent());
             Files.write(path, bytes);
-
         }
         catch (IOException e)
         {
             e.printStackTrace();
         }
-        return bytes;
     }
-
 
     /**
      * Replaces calls to Await.await with returing a promise or with a join().
