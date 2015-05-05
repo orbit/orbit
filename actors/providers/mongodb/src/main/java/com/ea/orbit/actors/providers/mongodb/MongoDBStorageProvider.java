@@ -62,7 +62,7 @@ public class MongoDBStorageProvider implements IStorageProvider
     private String host = "localhost";
     private int port = 27017;
     private String password;
-    private String name;
+    private String name = "default";
 
     public void setHost(final String host)
     {
