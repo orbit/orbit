@@ -31,13 +31,15 @@ package com.ea.orbit.actors.providers;
 public abstract class AbstractStorageProvider implements IStorageProvider
 {
 
-    protected String name;
+    protected String name = "default";
 
-    public void setName(String name){
+    public void setName(String name)
+    {
         this.name = name;
     }
 
-    public String name(){
+    public String getName()
+    {
         return name;
     }
 

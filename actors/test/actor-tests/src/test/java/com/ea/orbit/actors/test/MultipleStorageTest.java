@@ -97,7 +97,7 @@ public class MultipleStorageTest extends ActorBaseTest
         stage.setMode(OrbitStage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
-        stage.addProvider(new FakeStorageProvider("fake1", fakeDatabase1));
+        stage.addProvider(new FakeStorageProvider("default", fakeDatabase1));
         stage.addProvider(new FakeStorageProvider("fake2", fakeDatabase2));
         stage.setClock(clock);
         stage.setClusterName(clusterName);

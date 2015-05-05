@@ -450,10 +450,13 @@ public class Execution implements IRuntime
             return null;
         }
         StorageProvider ann = actor.getClass().getAnnotation(StorageProvider.class);
-        return (T) orbitProviders.stream().filter(p -> (ann == null) ?
-                        (IStorageProvider.class.isInstance(p)) :
-                        (IStorageProvider.class.isInstance(p) && ((IStorageProvider) p).name().equals(ann.name()))
-        ).findFirst().orElse(null);
+        String providerName = ann == null ? "default" : ann.value();
+
+        // selects the fist provider with the right name
+        return (T) orbitProviders.stream()
+                .filter(p -> (p instanceof IStorageProvider) && providerName.equals(((IStorageProvider) p).getName()))
+                .findFirst()
+                .orElse(null);
     }
 
     public void setHosting(final Hosting hosting)

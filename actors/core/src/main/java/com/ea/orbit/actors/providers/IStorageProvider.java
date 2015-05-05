@@ -41,7 +41,7 @@ public interface IStorageProvider extends IOrbitProvider
      * Returns this storage provider name.
      * @return storage provider name
      */
-    default String name() { return "default"; }
+    String getName();
 
     /**
      * Asynchronously clears an actors state.

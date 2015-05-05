@@ -39,6 +39,6 @@ import java.lang.annotation.Target;
 public @interface StorageProvider
 {
 
-    String name() default "default";
+    String value() default "default";
 
 }

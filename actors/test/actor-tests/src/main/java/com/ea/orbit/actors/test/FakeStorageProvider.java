@@ -48,14 +48,14 @@ public class FakeStorageProvider implements IStorageProvider
     private ObjectMapper mapper = new ObjectMapper();
     private String name;
 
-    public String name()
+    public String getName()
     {
         return name;
     }
 
     public FakeStorageProvider(final ConcurrentMap<Object, Object> database)
     {
-        this("fake", database);
+        this("default", database);
     }
 
     public FakeStorageProvider(String name, final ConcurrentMap<Object, Object> database)
