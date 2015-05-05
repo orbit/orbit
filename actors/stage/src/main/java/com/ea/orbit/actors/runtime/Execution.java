@@ -33,6 +33,7 @@ import com.ea.orbit.actors.IActorObserver;
 import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.IRemindable;
 import com.ea.orbit.actors.annotation.StatelessWorker;
+import com.ea.orbit.actors.annotation.StorageProvider;
 import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.actors.providers.IActorClassFinder;
 import com.ea.orbit.actors.providers.IInvokeHookProvider;
@@ -390,7 +391,7 @@ public class Execution implements IRuntime
                     final OrbitActor<?> orbitActor = (OrbitActor<?>) newInstance;
                     orbitActor.reference = entry.reference;
 
-                    orbitActor.stateProvider = getFirstProvider(IStorageProvider.class);
+                    orbitActor.stateProvider = getStorageProviderFor(orbitActor);
 
                     Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preActivation(orbitActor))).join();
 
@@ -439,6 +440,20 @@ public class Execution implements IRuntime
     {
         return orbitProviders == null ? Collections.emptyList()
                 : (List<T>) orbitProviders.stream().filter(p -> itemType.isInstance(p)).collect(Collectors.toList());
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends IOrbitProvider> T getStorageProviderFor(OrbitActor actor)
+    {
+        if (orbitProviders == null)
+        {
+            return null;
+        }
+        StorageProvider ann = actor.getClass().getAnnotation(StorageProvider.class);
+        return (T) orbitProviders.stream().filter(p -> (ann == null) ?
+                        (IStorageProvider.class.isInstance(p)) :
+                        (IStorageProvider.class.isInstance(p) && ((IStorageProvider) p).name().equals(ann.name()))
+        ).findFirst().orElse(null);
     }
 
     public void setHosting(final Hosting hosting)
@@ -961,7 +976,7 @@ public class Execution implements IRuntime
     }
 
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "unchecked" })
     <T> T createReference(final INodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
