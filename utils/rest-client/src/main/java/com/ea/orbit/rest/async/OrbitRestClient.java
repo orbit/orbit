@@ -51,7 +51,6 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Form;
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
@@ -68,6 +67,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -167,11 +167,11 @@ public class OrbitRestClient
     /**
      * Returns an implementation of a jax-rs interface.
      * <p/>
-     * The methods will issue remote calls to the web target provite on the OrbitRestClient constructor.
+     * The methods will issue remote calls to the web target provided on the OrbitRestClient constructor.
      * <p/>
      * The there are other implementation of rest proxies.
      * The special benefit of OrbitRestClient is that the interface method can return
-     * {@link java.util.concurrent.CompletableFuture} or {@linkg com.ea.orbit.concurrent.Task}
+     * {@link java.util.concurrent.CompletableFuture} or {@link com.ea.orbit.concurrent.Task}
      * If that is the case, those methods will return immediately and the Future will be completed asynchronously.
      *
      * @param interfaceClass the jax-rs annotated interface class
@@ -192,7 +192,45 @@ public class OrbitRestClient
         return (T) proxy;
     }
 
+    /**
+     * Allows Rest Clients to filter exceptions that may arises from invoked calls.
+     * @param throwable The exception that was encountered
+     * @param <TThrowable> The Throwable type that will be returned
+     * @param <TResult> The actual type returned
+     * @return The filtered exception
+     * @throws TThrowable
+     */
+    @SuppressWarnings("unchecked")
+    protected static <TThrowable extends Throwable, TResult> TResult reThrow(Throwable throwable) throws TThrowable {
+        throw (TThrowable)throwable;
+    }
+
+    protected Object handleInvokeException(Throwable e)
+    {
+        System.out.println("base handle invoke exception");
+        return reThrow(e);
+    }
+
     private Object invoke(final Class<?> interfaceClass, WebTarget localTarget, final Method method, final Object[] args)
+    {
+        try
+        {
+            final Object invokeResult = invokeInternal(interfaceClass, localTarget, method, args);
+
+            if (invokeResult instanceof CompletionStage)
+            {
+                return ((CompletionStage)invokeResult).exceptionally(throwable -> handleInvokeException((Throwable)throwable));
+            }
+
+            return invokeResult;
+        }
+        catch (Exception e)
+        {
+            return handleInvokeException(e);
+        }
+    }
+
+    private Object invokeInternal(final Class<?> interfaceClass, WebTarget localTarget, final Method method, final Object[] args)
     {
         Type methodGenericReturnType = method.getGenericReturnType();
         Type genericReturnType;
