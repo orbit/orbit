@@ -28,26 +28,55 @@
 
 package com.ea.orbit.async.test;
 
+import com.ea.orbit.concurrent.Task;
+
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.concurrent.CompletableFuture;
 
+import static com.ea.orbit.async.Await.await;
+import static com.ea.orbit.concurrent.Task.done;
+import static com.ea.orbit.concurrent.Task.fromValue;
 import static org.junit.Assert.assertEquals;
 
-public class NoPackageTest extends BaseTest
+public class LocalVarsTest extends BaseTest
 {
+
     @Test
-    public void testPackageLessClass() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException, ClassNotFoundException
+    public void testRepeatedLocalVarsNames() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
     {
+        final Task<Integer> res = done().thenCompose(o -> {
+            {
+                String a = "a1";
+            }
+            await(getBlockedTask());
+            {
+                String a = "a2";
+            }
+            return fromValue(10);
+        });
+        completeFutures();
+        assertEquals((Integer) 10, res.join());
+    }
 
-        Class<?> newClass = Class.forName("NoPackageAsync");
-        final Method method = newClass.getMethod("noPackageMethod", CompletableFuture.class, int.class);
-
-        CompletableFuture<String> blocker = new CompletableFuture<>();
-        final CompletableFuture<String> res = (CompletableFuture<String>) method.invoke(newClass.newInstance(), blocker, 5);
-        blocker.complete("zzz");
-        assertEquals("5:10000000000:1.5:3.5:zzz:true", res.join());
+    @Test
+    public void testRepeatedLocalVarsNames2() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
+    {
+        final Task<Integer> res = done().thenCompose(o -> {
+            {
+                String a = "a1";
+                String b = "b1";
+                int c = 1;
+            }
+            await(getBlockedTask());
+            {
+                String a = "a2";
+                String b = "b2";
+                int c = 10;
+                return fromValue(c);
+            }
+        });
+        completeFutures();
+        assertEquals((Integer) 10, res.join());
     }
 }

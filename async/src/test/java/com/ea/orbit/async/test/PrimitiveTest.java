@@ -29,7 +29,6 @@
 package com.ea.orbit.async.test;
 
 import com.ea.orbit.async.Async;
-import com.ea.orbit.async.Await;
 
 import org.junit.Test;
 
@@ -40,13 +39,8 @@ import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class PrimitiveTest
+public class PrimitiveTest extends BaseTest
 {
-    static
-    {
-        Await.init();
-    }
-
     public static abstract class Base
     {
         int i1;

@@ -363,10 +363,10 @@ public class OrbitContainer
             // component snapshot
             Set<ComponentState> comps = new LinkedHashSet<>(components.values());
 
-            // Instantiating startables
+            // Instantiating the singletons
             for (ComponentState state : comps)
             {
-                if (state.instance == null && state.isSingleton && Startable.class.isAssignableFrom(state.implClass))
+                if (state.instance == null && state.isSingleton)
                 {
                     state.instance = registry.locate(state.implClass);
                 }

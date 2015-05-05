@@ -29,7 +29,6 @@
 package com.ea.orbit.async.test;
 
 import com.ea.orbit.async.Async;
-import com.ea.orbit.async.Await;
 
 import org.junit.Test;
 
@@ -38,13 +37,8 @@ import java.util.concurrent.CompletableFuture;
 import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.assertEquals;
 
-public class BasicTest
+public class BasicTest extends BaseTest
 {
-    static
-    {
-        Await.init();
-    }
-
     public static class SomethingAsync
     {
         @Async
@@ -63,7 +57,7 @@ public class BasicTest
             String op = "1";
             String res = "[" + await(blocker) + "]";
             op = op + "2";
-            return CompletableFuture.completedFuture(":" + op +res);
+            return CompletableFuture.completedFuture(":" + op + res);
         }
     }
 
@@ -129,7 +123,7 @@ public class BasicTest
         assertEquals(":10", res.join());
     }
 
-    @Test
+    @Test(timeout = 2_000)
     public void testBlockingAndException() throws IllegalAccessException, InstantiationException
     {
         final SomethingAsyncWithEx a = new SomethingAsyncWithEx();

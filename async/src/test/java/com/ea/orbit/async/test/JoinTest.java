@@ -29,7 +29,6 @@
 package com.ea.orbit.async.test;
 
 import com.ea.orbit.async.Async;
-import com.ea.orbit.async.Await;
 
 import org.junit.Test;
 
@@ -38,13 +37,8 @@ import java.util.concurrent.CompletableFuture;
 import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.assertEquals;
 
-public class JoinTest
+public class JoinTest extends BaseTest
 {
-    static
-    {
-        Await.init();
-    }
-
     public static class OtherJoinCalls
     {
         @Async

@@ -38,6 +38,8 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -56,10 +58,15 @@ import java.io.PrintWriter;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.reflect.Modifier;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -109,13 +116,14 @@ public class Transformer implements ClassFileTransformer
     private static final String TASK_DESCRIPTOR = "Lcom/ea/orbit/concurrent/Task;";
     private static final String TASK_RET = ")Lcom/ea/orbit/concurrent/Task;";
     private static final String TASK_NAME = "com/ea/orbit/concurrent/Task";
+    private static final Type TASK_TYPE = Type.getType("Lcom/ea/orbit/concurrent/Task;");
 
     @Override
     public byte[] transform(final ClassLoader loader, final String className, final Class<?> classBeingRedefined, final ProtectionDomain protectionDomain, final byte[] classfileBuffer) throws IllegalClassFormatException
     {
         try
         {
-            if (className.startsWith("java"))
+            if (className != null && className.startsWith("java"))
             {
                 return null;
             }
@@ -128,6 +136,12 @@ public class Transformer implements ClassFileTransformer
         }
         catch (Exception e)
         {
+            // TODO: better formatting.
+            // Avoid using slf4j or any dependency here.
+            // this is supposed to be a critical error.
+            // it should be ok to write directly to the syserr.
+            // Alternatively using the standard java logging is also a possibility.
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
@@ -164,22 +178,28 @@ public class Transformer implements ClassFileTransformer
      */
     public byte[] transform(ClassReader cr) throws AnalyzerException
     {
-        ClassNode cn = new ClassNode();
-        cr.accept(cn, 0);
+        ClassNode classNode = new ClassNode();
+        cr.accept(classNode, 0);
 
         int countInstrumented = 0;
 
-        for (MethodNode mn : (List<MethodNode>) new ArrayList(cn.methods))
+        Map<String, Integer> nameUseCount = new HashMap<>();
+
+        // TODO: also remove calls to `Await.init()`
+        for (MethodNode original : (List<MethodNode>) new ArrayList(classNode.methods))
         {
-            boolean taskReturn = mn.desc.endsWith(TASK_RET);
-            if (!taskReturn && !mn.desc.endsWith(COMPLETABLE_FUTURE_RET) && !mn.desc.endsWith(COMPLETION_STAGE_RET))
+            Integer countOriginalUses = nameUseCount.get(original.name);
+            nameUseCount.put(original.name, countOriginalUses == null ? 1 : countOriginalUses + 1);
+
+            boolean taskReturn = original.desc.endsWith(TASK_RET);
+            if (!taskReturn && !original.desc.endsWith(COMPLETABLE_FUTURE_RET) && !original.desc.endsWith(COMPLETION_STAGE_RET))
             {
                 // method must return completable future or task
                 continue;
             }
             boolean hasAwaitCall = false;
             // checks if the method has a call to await()
-            for (Iterator it = mn.instructions.iterator(); it.hasNext(); )
+            for (Iterator it = original.instructions.iterator(); it.hasNext(); )
             {
                 Object o = it.next();
                 if (o instanceof MethodInsnNode && isAwaitCall((MethodInsnNode) o))
@@ -192,137 +212,16 @@ public class Transformer implements ClassFileTransformer
             {
                 continue;
             }
-            if (!taskReturn && !mn.name.contains("$") && (mn.visibleAnnotations == null
-                    || !mn.visibleAnnotations.stream().anyMatch(a -> ((AnnotationNode) a).desc.equals(ASYNC_DESCRIPTOR))))
+            if (!taskReturn && !original.name.contains("$") && (original.visibleAnnotations == null
+                    || !original.visibleAnnotations.stream().anyMatch(a -> ((AnnotationNode) a).desc.equals(ASYNC_DESCRIPTOR))))
             {
                 continue;
             }
             countInstrumented++;
-            // for development use: printMethod(cn, mn);
-            final MethodNode mv = new MethodNode(Opcodes.ACC_PRIVATE | ACC_STATIC,
-                    mn.name, mn.desc, mn.signature, (String[]) mn.exceptions.toArray(new String[mn.exceptions.size()]));
-            mn.accept(mv);
-            // TODO generate better names, reuse names if possible
-            mv.name = mn.name + "$" + countInstrumented;
-            mv.desc = Type.getMethodDescriptor(COMPLETABLE_FUTURE_TYPE, ASYNC_STATE_TYPE, OBJECT_TYPE);
-            mv.signature = null;
 
             Analyzer analyzer = new Analyzer(new TypeInterpreter());
-            Frame[] frames = analyzer.analyze(cn.name, mn);
-            final AbstractInsnNode[] instructions = mn.instructions.toArray();
+            Frame[] frames = analyzer.analyze(classNode.name, original);
 
-            mv.instructions.clear();
-
-            // get pos
-            mv.visitVarInsn(ALOAD, !Modifier.isStatic(mv.access) ? 1 : 0);
-            mv.visitMethodInsn(INVOKEVIRTUAL, ASYNC_STATE_NAME, "getPos", Type.getMethodDescriptor(Type.INT_TYPE), false);
-
-            final Label defaultLabel = new Label();
-            mv.visitTableSwitchInsn(0, 0, defaultLabel, new Label[0]);
-            TableSwitchInsnNode switchIns = (TableSwitchInsnNode) mv.instructions.getLast();
-            final Label entryPointLabel = new Label();
-
-            // original entry point
-
-            mv.visitLabel(entryPointLabel);
-            switchIns.labels.add((LabelNode) mv.instructions.getLast());
-            restoreStackAndLocals(frames[0], mv);
-            Label lastRestorePoint = null;
-            int awaitCallsCount = 0;
-            List<SwitchEntry> switchEntries = new ArrayList<>();
-            for (int i = 0; i < instructions.length; i++)
-            {
-                final AbstractInsnNode ins = instructions[i];
-                final Frame frame = frames[i];
-
-                if ((!(ins instanceof MethodInsnNode)) || (!isAwaitCall((MethodInsnNode) ins)))
-                {
-                    ins.accept(mv);
-                    continue;
-                }
-
-                // TODO: other comparisons.
-                mv.visitInsn(Opcodes.DUP);
-                // stack: completableFuture completableFuture
-
-                // original: Await.await(future)  (that by default does: future.join())
-
-                // turns into:
-
-                // code: if(!future.isDone()) {
-                // code:    saveLocals to new state
-                // code:    saveStack to new state
-                // code:    return future.exceptionally(nop).thenCompose(x -> _func(x, state));
-                // code: }
-                // code: jump futureIsDoneLabel:
-                // code: future.join():
-
-                // and this is added to the switch
-                // code: resumeLabel:
-                // code:    restoreStack;
-                // code:    restoreLocals;
-                // code: futureIsDoneLabel:
-
-                Label futureIsDoneLabel = new Label();
-                SwitchEntry se = new SwitchEntry();
-                se.frame = frame;
-                se.futureIsDoneLabel = futureIsDoneLabel;
-                se.key = ++awaitCallsCount;
-                switchEntries.add(se);
-
-                mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "isDone", "()Z", false);
-                // code: jump futureIsDoneLabel:
-                mv.visitJumpInsn(Opcodes.IFNE, futureIsDoneLabel);
-
-                // code:    saveStack to new state
-                // code:    saveLocals to new state
-                int offset = saveLocals(se.key, se.frame, mv);
-                // stack { .. future state }
-
-                // clears the stack and leaves asyncState in the top
-                saveStack(frame, mv);
-                // stack: { state }
-                mv.visitInsn(DUP);
-                // stack: { state state }
-                mv.visitIntInsn(SIPUSH, offset);
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "getObj", Type.getMethodDescriptor(OBJECT_TYPE, Type.INT_TYPE), false);
-                mv.visitTypeInsn(CHECKCAST, COMPLETABLE_FUTURE_NAME);
-
-                // stack: { state future }
-                mv.visitMethodInsn(INVOKESTATIC, Type.getType(Function.class).getInternalName(), "identity", "()Ljava/util/function/Function;", false);
-                // stack: { state future function }
-                mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "exceptionally", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
-                // stack: { state new_future }
-
-                // code:    return future.exceptionally(x -> x).thenCompose(x -> _func(state));
-
-                mv.visitInsn(SWAP);
-                // stack: { new_future state}
-
-                mv.visitInvokeDynamicInsn("apply", DYN_FUNCTION,
-                        new Handle(Opcodes.H_INVOKESTATIC,
-                                "java/lang/invoke/LambdaMetafactory",
-                                "metafactory",
-                                "(Ljava/lang/invoke/MethodHandles$Lookup;"
-                                        + "Ljava/lang/String;Ljava/lang/invoke/MethodType;"
-                                        + "Ljava/lang/invoke/MethodType;"
-                                        + "Ljava/lang/invoke/MethodHandle;"
-                                        + "Ljava/lang/invoke/MethodType;"
-                                        + ")Ljava/lang/invoke/CallSite;"),
-                        Type.getType("(Ljava/lang/Object;)Ljava/lang/Object;"),
-                        new Handle(Opcodes.H_INVOKESTATIC, cn.name, mv.name, mv.desc),
-                        Type.getType("(Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;"));
-
-
-                // stack: { new_future function }
-                mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "thenCompose", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
-                // stack: { new_future_02 }
-                mv.visitInsn(ARETURN);
-                // code: futureIsDone:
-                mv.visitLabel(futureIsDoneLabel);
-                mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "join", "()Ljava/lang/Object;", false);
-                // end of instruction loop
-            }
 
             // adding the switch entries and restore code
             // the local variable restoration has to occur outside
@@ -331,78 +230,102 @@ public class Transformer implements ClassFileTransformer
             //
             // Where the jvm is unsure of the actual type of a local var
             // when inside the exception handler because the var has changed.
+            // for development use: printMethod(cn, mn);
 
+            final MethodNode replacement = new MethodNode(original.access,
+                    original.name, original.desc, original.signature, (String[]) original.exceptions.toArray(new String[original.exceptions.size()]));
+
+            final MethodNode continued = new MethodNode(Opcodes.ACC_PRIVATE | ACC_STATIC,
+                    original.name, original.desc, original.signature, (String[]) original.exceptions.toArray(new String[original.exceptions.size()]));
+
+            String continuedName = "async$" + original.name;
+            Integer countUses = nameUseCount.get(continuedName);
+            nameUseCount.put(continuedName, countUses == null ? 1 : countUses + 1);
+
+            continued.name = (countUses == null) ? continuedName : (continuedName + "$" + countUses);
+            continued.desc = Type.getMethodDescriptor(COMPLETABLE_FUTURE_TYPE, ASYNC_STATE_TYPE, OBJECT_TYPE);
+            continued.signature = null;
+
+
+            // get pos
+            continued.visitVarInsn(ALOAD, !Modifier.isStatic(continued.access) ? 1 : 0);
+            continued.visitMethodInsn(INVOKEVIRTUAL, ASYNC_STATE_NAME, "getPos", Type.getMethodDescriptor(Type.INT_TYPE), false);
+
+            final Label defaultLabel = new Label();
+            continued.visitTableSwitchInsn(0, 0, defaultLabel, new Label[0]);
+            TableSwitchInsnNode switchIns = (TableSwitchInsnNode) continued.instructions.getLast();
+            final Label entryPointLabel = new Label();
+
+            // original entry point
+
+            continued.visitLabel(entryPointLabel);
+            switchIns.labels.add((LabelNode) continued.instructions.getLast());
+            restoreStackAndLocals(frames[0], continued);
+
+            final int continuedOffset = continued.instructions.size();
+            original.accept(replacement);
+            original.accept(continued);
+
+            // do the actual transformation of the Await.await calls.
+            transformAwaits(classNode, replacement, frames, 0, continued);
+            List<SwitchEntry> switchEntries = transformAwaits(classNode, continued, frames, continuedOffset, continued);
+
+            // add switch entries for the continuation state machine
+            Label lastRestorePoint = null;
             for (SwitchEntry se : switchEntries)
             {
                 // code: resumeLabel:
                 Label resumeLabel = new Label();
-                mv.visitLabel(resumeLabel);
-                switchIns.labels.add((LabelNode) mv.instructions.getLast());
+                continued.visitLabel(resumeLabel);
+                switchIns.labels.add((LabelNode) continued.instructions.getLast());
 
                 // code:    restoreStack;
                 // code:    restoreLocals;
-                restoreStackAndLocals(se.frame, mv);
-                if (!Modifier.isStatic(mn.access))
+                restoreStackAndLocals(se.frame, continued);
+                if (!Modifier.isStatic(original.access))
                 {
                     if (lastRestorePoint != null)
                     {
-                        mv.visitLocalVariable(_THIS, "L" + cn.name + ";", null, lastRestorePoint, resumeLabel, 0);
+                        continued.visitLocalVariable(_THIS, "L" + classNode.name + ";", null, lastRestorePoint, resumeLabel, 0);
                     }
                     lastRestorePoint = new Label();
-                    mv.visitLabel(lastRestorePoint);
+                    continued.visitLabel(lastRestorePoint);
                 }
-                mv.visitJumpInsn(GOTO, se.futureIsDoneLabel);
+                continued.visitJumpInsn(GOTO, se.futureIsDoneLabel);
             }
             switchIns.max = switchIns.labels.size() - 1;
 
-            mv.visitLabel(defaultLabel);
-            mv.visitTypeInsn(NEW, "java/lang/IllegalArgumentException");
-            mv.visitInsn(DUP);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "()V", false);
-            mv.visitInsn(ATHROW);
-            if (!Modifier.isStatic(mn.access))
+            // last switch case
+            continued.visitLabel(defaultLabel);
+            continued.visitTypeInsn(NEW, "java/lang/IllegalArgumentException");
+            continued.visitInsn(DUP);
+            continued.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "()V", false);
+            continued.visitInsn(ATHROW);
+            if (!Modifier.isStatic(original.access))
             {
                 if (lastRestorePoint != null)
                 {
                     Label endLabel = new Label();
-                    mv.visitLabel(endLabel);
-                    mv.visitLocalVariable(_THIS, "L" + cn.name + ";", null, lastRestorePoint, endLabel, 0);
+                    continued.visitLabel(endLabel);
+                    continued.visitLocalVariable(_THIS, "L" + classNode.name + ";", null, lastRestorePoint, endLabel, 0);
                 }
             }
-            mv.accept(cn);
 
-            {
-                mv.maxLocals = Math.max(8, mv.maxLocals + 4);
-                mv.maxStack = Math.max(8, mv.maxStack + 4);
-                // for development use: printMethod(cn, mv);
-            }
+            // removing original method
+            classNode.methods.remove(original);
+            replacement.maxStack = Math.max(16, replacement.maxStack + 16);
+            // adding replacement
+            replacement.accept(classNode);
 
-            mn.instructions.clear();
-            // can't be done: mn.access |= ACC_SYNTHETIC;
-            mn.tryCatchBlocks.clear();
+            continued.maxLocals = Math.max(16, continued.maxLocals + 16);
+            continued.maxStack = Math.max(16, continued.maxStack + 16);
+            // adding the continuation method
+            continued.accept(classNode);
 
-            saveLocals(0, frames[0], mn);
-            mn.visitInsn(ACONST_NULL);
-            mn.visitMethodInsn(INVOKESTATIC, cn.name, mv.name, mv.desc, false);
-
-            Type futureType = Type.getReturnType(mn.desc);
-            if (!COMPLETABLE_FUTURE_TYPE.equals(futureType)
-                    && futureType.getInternalName().equals(TASK_NAME))
-            {
-                mn.visitMethodInsn(INVOKESTATIC,
-                        futureType.getInternalName(),
-                        "from",
-                        Type.getMethodDescriptor(futureType, COMPLETION_STAGE_TYPE),
-                        false);
-            }
-            mn.visitInsn(ARETURN);
-
-            {
-                mn.maxStack = 8;
-                // for development use: printMethod(cn, mn);
-                // for development use: printMethod(cn, mv);
-            }
+            // for development use: printMethod(classNode, replacement);
+            // for development use: printMethod(classNode, continued);
         }
+        // no changes.
         if (countInstrumented == 0)
         {
             return null;
@@ -416,12 +339,162 @@ public class Transformer implements ClassFileTransformer
                 return "java/lang/Object";
             }
         };
-        cn.accept(cw);
+        classNode.accept(cw);
         byte[] bytes = cw.toByteArray();
         {
             // for development use: new ClassReader(bytes).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
+            // for development use: debugSave(classNode, bytes);
         }
         return bytes;
+    }
+
+    private void debugSave(final ClassNode classNode, final byte[] bytes)
+    {
+        try
+        {
+            Path path = Paths.get("target/classes2/" + classNode.name + ".class");
+            Files.createDirectories(path.getParent());
+            Files.write(path, bytes);
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Replaces calls to Await.await with returing a promise or with a join().
+     *
+     * @param cn                 the class node containing the async method
+     * @param mv                 the method node whose instructions are being modified
+     * @param frames             the frame nodes with the local vars and stack information for each instruction.
+     * @param instructionsOffset offset of the first instruction to be processed, frames[0] refers to the instruction at this offset.
+     * @param continued          the method node of the continuation state machine method (the one that will receive the callbacks)
+     * @return a list of switch entries to finish the continuation state machine
+     */
+    private List<SwitchEntry> transformAwaits(
+            final ClassNode cn, final MethodNode mv,
+            final Frame[] frames,
+            final int instructionsOffset,
+            final MethodNode continued)
+    {
+        int awaitCallsCount = 0;
+        List<SwitchEntry> switchEntries = new ArrayList<>();
+        final AbstractInsnNode[] instructions = mv.instructions.toArray();
+        final InsnList mvInstructions = mv.instructions;
+        for (int i = instructionsOffset; i < instructions.length; i++)
+        {
+            final AbstractInsnNode ins = instructions[i];
+            final Frame frame = frames[i - instructionsOffset];
+
+            if ((!(ins instanceof MethodInsnNode)) || (!isAwaitCall((MethodInsnNode) ins)))
+            {
+                continue;
+            }
+
+            final InsnList list = new InsnList();
+            // temporally replacing the instructions list. makes it easier to insert new instructions.
+            mv.instructions = list;
+
+            // stack: completableFuture
+            mv.visitInsn(DUP);
+            // stack: completableFuture completableFuture
+
+            // original: Await.await(future)  (that by default does: future.join())
+
+            // turns into:
+
+            // code: if(!future.isDone()) {
+            // code:    saveLocals to new state
+            // code:    saveStack to new state
+            // code:    return future.exceptionally(nop).thenCompose(x -> _func(x, state));
+            // code: }
+            // code: jump futureIsDoneLabel:
+            // code: future.join():
+
+            // and this is added to the switch
+            // code: resumeLabel:
+            // code:    restoreStack;
+            // code:    restoreLocals;
+            // code: futureIsDoneLabel:
+
+            // lable to the point to jump if the future is completed (isDone())
+            Label futureIsDoneLabel = new Label();
+            futureIsDoneLabel.info = new LabelNode();
+            SwitchEntry se = new SwitchEntry();
+            se.frame = frame;
+            se.futureIsDoneLabel = futureIsDoneLabel;
+            se.key = ++awaitCallsCount;
+            switchEntries.add(se);
+
+            mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "isDone", "()Z", false);
+            // code: jump futureIsDoneLabel:
+            list.add(new JumpInsnNode(Opcodes.IFNE, (LabelNode) futureIsDoneLabel.info));
+
+            // code:    saveStack to new state
+            // code:    saveLocals to new state
+            int offset = saveLocals(se.key, se.frame, mv);
+            // stack { .. future state }
+
+            // clears the stack and leaves asyncState in the top
+            saveStack(frame, mv);
+            // stack: { state }
+            mv.visitInsn(DUP);
+            // stack: { state state }
+            mv.visitInsn(DUP);
+            mv.visitIntInsn(SIPUSH, offset);
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "getObj", Type.getMethodDescriptor(OBJECT_TYPE, Type.INT_TYPE), false);
+            mv.visitTypeInsn(CHECKCAST, COMPLETABLE_FUTURE_NAME);
+
+            // stack: { state future }
+            mv.visitMethodInsn(INVOKESTATIC, Type.getType(Function.class).getInternalName(), "identity", "()Ljava/util/function/Function;", false);
+            // stack: { state future function }
+            // this discards any exception. the exception will be thrown by calling join.
+            // the other option is not to use thenCompose and use something more complex.
+            mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "exceptionally", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
+            // stack: { state new_future }
+
+            // code:    return future.exceptionally(x -> x).thenCompose(x -> _func(state));
+
+            mv.visitInsn(SWAP);
+            // stack: { new_future state}
+
+            mv.visitInvokeDynamicInsn("apply", DYN_FUNCTION,
+                    new Handle(Opcodes.H_INVOKESTATIC,
+                            "java/lang/invoke/LambdaMetafactory",
+                            "metafactory",
+                            "(Ljava/lang/invoke/MethodHandles$Lookup;"
+                                    + "Ljava/lang/String;Ljava/lang/invoke/MethodType;"
+                                    + "Ljava/lang/invoke/MethodType;"
+                                    + "Ljava/lang/invoke/MethodHandle;"
+                                    + "Ljava/lang/invoke/MethodType;"
+                                    + ")Ljava/lang/invoke/CallSite;"),
+                    Type.getType("(Ljava/lang/Object;)Ljava/lang/Object;"),
+                    new Handle(Opcodes.H_INVOKESTATIC, cn.name, continued.name, continued.desc),
+                    Type.getType("(Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;"));
+
+
+            // stack: { new_future function }
+            mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "thenCompose", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
+            // stack: { new_future_02 }
+            if (mv != continued && mv.desc.endsWith(TASK_RET))
+            {
+                mv.visitMethodInsn(INVOKESTATIC,
+                        TASK_NAME, "from",
+                        Type.getMethodDescriptor(TASK_TYPE, COMPLETION_STAGE_TYPE),
+                        false);
+            }
+            mv.visitInsn(ARETURN);
+            // code: futureIsDone:
+            mv.visitLabel(futureIsDoneLabel);
+            mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "join", "()Ljava/lang/Object;", false);
+            // changing back the instruction list
+            mv.instructions = mvInstructions;
+            mv.instructions.insert(ins, list);
+            mv.instructions.remove(ins);
+            // end of instruction loop
+        }
+        return switchEntries;
     }
 
     private boolean isAwaitCall(final MethodInsnNode methodIns)
@@ -434,6 +507,11 @@ public class Transformer implements ClassFileTransformer
 
     private void printMethod(final ClassNode cn, final MethodNode mv)
     {
+        final PrintWriter pw = new PrintWriter(System.out);
+        pw.println("method " + mv.name + mv.desc);
+        Textifier p = new Textifier();
+        final TraceMethodVisitor tv = new TraceMethodVisitor(p);
+
         try
         {
             Analyzer analyzer2 = new Analyzer(new TypeInterpreter());
@@ -442,16 +520,23 @@ public class Transformer implements ClassFileTransformer
             {
                 frames2 = analyzer2.analyze(cn.superName, mv);
             }
+            catch (AnalyzerException ex)
+            {
+                if (ex.node != null)
+                {
+                    pw.print("Error at: ");
+                    ex.node.accept(tv);
+                }
+                ex.printStackTrace();
+                frames2 = null;
+            }
             catch (Exception ex)
             {
                 ex.printStackTrace();
                 frames2 = null;
             }
+
             final AbstractInsnNode[] isns2 = mv.instructions.toArray();
-            final PrintWriter pw = new PrintWriter(System.out);
-            pw.println("method " + mv.name + mv.desc);
-            Textifier p = new Textifier();
-            final TraceMethodVisitor tv = new TraceMethodVisitor(p);
 
             for (int i = 0; i < isns2.length; i++)
             {
