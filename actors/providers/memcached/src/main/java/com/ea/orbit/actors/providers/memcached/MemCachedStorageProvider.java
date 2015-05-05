@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.providers.memcached;
 
+import com.ea.orbit.actors.providers.AbstractStorageProvider;
 import com.ea.orbit.actors.providers.IStorageProvider;
 import com.ea.orbit.actors.providers.json.ActorReferenceModule;
 import com.ea.orbit.actors.runtime.ActorReference;
@@ -49,7 +50,7 @@ import java.io.IOException;
  *
  * @author Johno Crawford (johno@sulake.com)
  */
-public class MemCachedStorageProvider implements IStorageProvider
+public class MemCachedStorageProvider extends AbstractStorageProvider
 {
 
     private static final Logger logger = LoggerFactory.getLogger(MemCachedStorageProvider.class);

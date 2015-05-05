@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.providers.redis;
 
-import com.ea.orbit.actors.providers.IStorageProvider;
+import com.ea.orbit.actors.providers.AbstractStorageProvider;
 import com.ea.orbit.actors.providers.json.ActorReferenceModule;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.ReferenceFactory;
@@ -43,110 +43,128 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
-public class RedisStorageProvider implements IStorageProvider {
+public class RedisStorageProvider extends AbstractStorageProvider
+{
 
-	private JedisPool pool;
-	private ObjectMapper mapper;
+    private JedisPool pool;
+    private ObjectMapper mapper;
 
-	private String host = "localhost";
-	private int port = 6379;
-	private String databaseName;
+    private String host = "localhost";
+    private int port = 6379;
+    private String databaseName;
     private int timeout = 10000;
 
     @Override
-	public Task<Void> start() {
-		mapper = new ObjectMapper();
-		mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
-		mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
-				.withFieldVisibility(JsonAutoDetect.Visibility.ANY)
-				.withGetterVisibility(JsonAutoDetect.Visibility.NONE)
-				.withSetterVisibility(JsonAutoDetect.Visibility.NONE)
-				.withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
+    public Task<Void> start()
+    {
+        mapper = new ObjectMapper();
+        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
+        mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
+                .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
+                .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
+                .withSetterVisibility(JsonAutoDetect.Visibility.NONE)
+                .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
         pool = new JedisPool(new JedisPoolConfig(), host, port, timeout);
-		return Task.done();
-	}
+        return Task.done();
+    }
 
-	private String asKey(final ActorReference reference) {
-		String clazzName = ActorReference.getInterfaceClass(reference).getName();
-		String id = String.valueOf(ActorReference.getId(reference));
-		return databaseName + "_" + clazzName + "_" + id;
-	}
+    private String asKey(final ActorReference reference)
+    {
+        String clazzName = ActorReference.getInterfaceClass(reference).getName();
+        String id = String.valueOf(ActorReference.getId(reference));
+        return databaseName + "_" + clazzName + "_" + id;
+    }
 
-	@Override
-	public Task<Void> clearState(final ActorReference reference, final Object state)
+    @Override
+    public Task<Void> clearState(final ActorReference reference, final Object state)
     {
         try (Jedis redis = pool.getResource())
         {
             redis.del(asKey(reference));
         }
-		return Task.done();
-	}
+        return Task.done();
+    }
 
-	@Override
-	public Task<Void> stop()
+    @Override
+    public Task<Void> stop()
     {
         pool.close();
-		return Task.done();
-	}
+        return Task.done();
+    }
 
-	@Override
-	@SuppressWarnings("unchecked")
-	public Task<Boolean> readState(final ActorReference reference, final Object state) {
+    @Override
+    @SuppressWarnings("unchecked")
+    public Task<Boolean> readState(final ActorReference reference, final Object state)
+    {
         String data;
         try (Jedis redis = pool.getResource())
         {
             data = redis.get(asKey(reference));
         }
-		if (data != null) {
-			try {
-				mapper.readerForUpdating(state).readValue(data);
-				return Task.fromValue(true);
-			} catch (Exception e) {
-				throw new UncheckedException("Error parsing redis response: " + data, e);
-			}
-		}
-		return Task.fromValue(false);
-	}
+        if (data != null)
+        {
+            try
+            {
+                mapper.readerForUpdating(state).readValue(data);
+                return Task.fromValue(true);
+            }
+            catch (Exception e)
+            {
+                throw new UncheckedException("Error parsing redis response: " + data, e);
+            }
+        }
+        return Task.fromValue(false);
+    }
 
-	@Override
-	@SuppressWarnings("unchecked")
-	public Task<Void> writeState(final ActorReference reference, final Object state) {
-		String data;
-		try {
-			data = mapper.writeValueAsString(state);
-		} catch (JsonProcessingException e) {
-			throw new UncheckedException(e);
-		}
+    @Override
+    @SuppressWarnings("unchecked")
+    public Task<Void> writeState(final ActorReference reference, final Object state)
+    {
+        String data;
+        try
+        {
+            data = mapper.writeValueAsString(state);
+        }
+        catch (JsonProcessingException e)
+        {
+            throw new UncheckedException(e);
+        }
         try (Jedis redis = pool.getResource())
         {
             redis.set(asKey(reference), data);
         }
-		return Task.done();
-	}
+        return Task.done();
+    }
 
-	public String getHost() {
-		return host;
-	}
+    public String getHost()
+    {
+        return host;
+    }
 
-	public void setHost(String host) {
-		this.host = host;
-	}
+    public void setHost(String host)
+    {
+        this.host = host;
+    }
 
-	public int getPort() {
-		return port;
-	}
+    public int getPort()
+    {
+        return port;
+    }
 
-	public void setPort(int port) {
-		this.port = port;
-	}
+    public void setPort(int port)
+    {
+        this.port = port;
+    }
 
-	public String getDatabaseName() {
-		return databaseName;
-	}
+    public String getDatabaseName()
+    {
+        return databaseName;
+    }
 
-	public void setDatabaseName(String databaseName) {
-		this.databaseName = databaseName;
-	}
+    public void setDatabaseName(String databaseName)
+    {
+        this.databaseName = databaseName;
+    }
 
     public int getTimeout()
     {

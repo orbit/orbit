@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.providers.jpa;
 
-import com.ea.orbit.actors.providers.IStorageProvider;
+import com.ea.orbit.actors.providers.AbstractStorageProvider;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -42,7 +42,7 @@ import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
 
-public class JpaStorageProvider implements IStorageProvider
+public class JpaStorageProvider extends AbstractStorageProvider
 {
 
     private String persistenceUnitName = "jp-storage-production";

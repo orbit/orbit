@@ -44,11 +44,23 @@ import java.util.concurrent.ConcurrentMap;
 
 public class FakeStorageProvider implements IStorageProvider
 {
-    private ConcurrentMap<Object,Object> database;
+    private ConcurrentMap<Object, Object> database;
     private ObjectMapper mapper = new ObjectMapper();
+    private String name;
 
-    public FakeStorageProvider(final ConcurrentMap<Object,Object> database)
+    public String name()
     {
+        return name;
+    }
+
+    public FakeStorageProvider(final ConcurrentMap<Object, Object> database)
+    {
+        this("fake", database);
+    }
+
+    public FakeStorageProvider(String name, final ConcurrentMap<Object, Object> database)
+    {
+        this.name = name;
         this.database = database;
         mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
 

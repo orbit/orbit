@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.providers.postgresql;
 
-import com.ea.orbit.actors.providers.IStorageProvider;
+import com.ea.orbit.actors.providers.AbstractStorageProvider;
 import com.ea.orbit.actors.providers.json.ActorReferenceModule;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.ReferenceFactory;
@@ -47,7 +47,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class PostgreSQLStorageProvider implements IStorageProvider {
+public class PostgreSQLStorageProvider extends AbstractStorageProvider
+{
 
     private String host = "localhost";
     private int port = 5432; // PostgreSQL standard port
@@ -63,34 +64,43 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
 
     private ObjectMapper mapper;
 
-    public void setHost(final String host) {
+    public void setHost(final String host)
+    {
         this.host = host;
     }
 
-    public void setPort(final int port) {
+    public void setPort(final int port)
+    {
         this.port = port;
     }
 
-    public void setDatabase(final String database) {
+    public void setDatabase(final String database)
+    {
         this.database = database;
     }
 
-    public void setUsername(final String username) {
+    public void setUsername(final String username)
+    {
         this.username = username;
     }
 
-    public void setPassword(final String password) {
+    public void setPassword(final String password)
+    {
         this.password = password;
     }
 
     @Override
-    public synchronized Task<Void> clearState(final ActorReference<?> reference, final Object state) {
-        try {
+    public synchronized Task<Void> clearState(final ActorReference<?> reference, final Object state)
+    {
+        try
+        {
             clearState.setString(1, getName(reference));
             clearState.setString(2, getIdentity(reference));
             clearState.execute();
             return Task.done();
-        } catch(SQLException e) {
+        }
+        catch (SQLException e)
+        {
             throw new UncheckedException(e);
         }
     }
@@ -161,7 +171,8 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
     }
 
     @Override
-    public Task<Void> start() {
+    public Task<Void> start()
+    {
         // initialize DB connection
         loadDriver();
         openConn();
@@ -181,76 +192,104 @@ public class PostgreSQLStorageProvider implements IStorageProvider {
     }
 
     @Override
-    public Task<Void> stop() {
-        try {
+    public Task<Void> stop()
+    {
+        try
+        {
             this.connection.close();
             return Task.done();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e)
+        {
             throw new UncheckedException(e);
         }
     }
 
-    private void loadDriver() {
-        try {
+    private void loadDriver()
+    {
+        try
+        {
             Class.forName("org.postgresql.Driver");
-        } catch (ClassNotFoundException e) {
+        }
+        catch (ClassNotFoundException e)
+        {
             throw new UncheckedException(e);
         }
     }
 
-    private void openConn() {
-        try {
+    private void openConn()
+    {
+        try
+        {
             this.connection = DriverManager.getConnection(toConnString(), username, password);
-        } catch (SQLException e) {
+        }
+        catch (SQLException e)
+        {
             throw new UncheckedException("open connection to postgres failed", e);
         }
     }
 
-    private void createTableIfNotExists() {
-        if(!tableExists()) {
-            try {
+    private void createTableIfNotExists()
+    {
+        if (!tableExists())
+        {
+            try
+            {
                 Statement stmt = this.connection.createStatement();
                 stmt.execute("CREATE TABLE actor_states ( actor text NOT NULL, identity text NOT NULL, state text NOT NULL, PRIMARY KEY (actor, identity) )");
                 stmt.close();
-            } catch(SQLException e) {
+            }
+            catch (SQLException e)
+            {
                 throw new UncheckedException(e);
             }
         }
     }
 
-    private boolean tableExists() {
-        try {
+    private boolean tableExists()
+    {
+        try
+        {
             Statement stmt = this.connection.createStatement();
             ResultSet results = stmt.executeQuery(
                     "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'actor_states')");
             boolean exists = results.next() && results.getBoolean(1);
             stmt.close();
             return exists;
-        } catch(SQLException e) {
+        }
+        catch (SQLException e)
+        {
             throw new UncheckedException(e);
         }
     }
 
-    private void prepareStatements() {
-        try {
+    private void prepareStatements()
+    {
+        try
+        {
             this.insertState = this.connection.prepareCall("INSERT INTO actor_states (actor, identity, state) VALUES (?, ?, ?)");
             this.updateState = this.connection.prepareCall("UPDATE actor_states SET state = ? WHERE actor = ? AND identity = ?");
             this.readState = this.connection.prepareCall("SELECT state AS \"state\" FROM actor_states WHERE actor = ?  AND identity = ?");
             this.clearState = this.connection.prepareCall("DELETE FROM actor_states WHERE actor = ? AND identity = ?");
-        } catch(SQLException e) {
+        }
+        catch (SQLException e)
+        {
             throw new UncheckedException(e);
         }
     }
 
-    private String toConnString() {
+    private String toConnString()
+    {
         return String.format("jdbc:postgresql://%s:%d/%s", host, port, database);
     }
 
-    private String getName(final ActorReference<?> reference) {
+    private String getName(final ActorReference<?> reference)
+    {
         return ActorReference.getInterfaceClass(reference).getSimpleName();
     }
 
-    private String getIdentity(final ActorReference<?> reference) {
+    private String getIdentity(final ActorReference<?> reference)
+    {
         return String.valueOf(ActorReference.getId(reference));
     }
 }
