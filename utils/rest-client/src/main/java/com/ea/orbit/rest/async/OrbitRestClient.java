@@ -219,7 +219,10 @@ public class OrbitRestClient
 
             if (invokeResult instanceof CompletionStage)
             {
-                return ((CompletionStage)invokeResult).exceptionally(throwable -> handleInvokeException((Throwable)throwable));
+                return ((CompletionStage)invokeResult).exceptionally(e -> {
+                    Throwable throwable = (Throwable)e;
+                    return handleInvokeException(throwable.getCause());
+                });
             }
 
             return invokeResult;
