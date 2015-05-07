@@ -45,6 +45,7 @@ import javax.ws.rs.MatrixParam;
 import javax.ws.rs.NotSupportedException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.client.Entity;
@@ -207,7 +208,6 @@ public class OrbitRestClient
 
     protected Object handleInvokeException(Throwable e)
     {
-        System.out.println("base handle invoke exception");
         return reThrow(e);
     }
 
@@ -221,13 +221,19 @@ public class OrbitRestClient
             {
                 return ((CompletionStage)invokeResult).exceptionally(e -> {
                     Throwable throwable = (Throwable)e;
-                    return handleInvokeException(throwable.getCause());
+
+                    if (throwable instanceof ProcessingException)
+                    {
+                        throwable = throwable.getCause();
+                    }
+
+                    return handleInvokeException(throwable);
                 });
             }
 
             return invokeResult;
         }
-        catch (Exception e)
+        catch (Exception | Error e)
         {
             return handleInvokeException(e);
         }
