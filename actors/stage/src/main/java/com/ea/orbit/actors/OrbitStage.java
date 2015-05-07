@@ -297,6 +297,13 @@ public class OrbitStage implements Startable
 
     public Task<?> stop()
     {
+        // * refuse new actor activations
+        // * deactivate all actors
+        // * notify rest of the cluster (no more observer messages)
+        // * finalize all timers
+        // * stop processing new received messages
+        // * wait pending tasks execution
+        // * stop the network
         return execution.stop()
                 .thenRun(clusterPeer::leave);
     }
