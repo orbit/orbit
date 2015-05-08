@@ -275,6 +275,11 @@ public class ClusterPeer implements IClusterPeer
             {
                 throw new IllegalArgumentException("Cluster node not found: " + address);
             }
+            ForkChannel channel = this.channel;
+            if (channel == null || !channel.isOpen())
+            {
+                throw new IllegalStateException("Cluster not connected");
+            }
             channel.send(node.address, message);
         }
         catch (Exception e)

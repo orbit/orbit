@@ -50,19 +50,3 @@ Add the build plugin that will instrument the uses of `await`
 </build>
 ```
 
-Advanced usage
-=========
-
-Make the orbit-async dependency optional. Requires using no methods from orbit-async other than `Await.await`.
-
-This is possible because the instrumentation will replace all references to `await` with other bytecodes.
-
-```xml
-<dependency>
-    <groupId>com.ea.orbit</groupId>
-    <artifactId>orbit-async</artifactId>
-    <version>${orbit.version}</version>
-    <optional>true</optional>
-</dependency>
-```
-

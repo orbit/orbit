@@ -62,6 +62,7 @@ public class MongoDBStorageProvider implements IStorageProvider
     private String host = "localhost";
     private int port = 27017;
     private String password;
+    private String name = "default";
 
     public void setHost(final String host)
     {
@@ -114,6 +115,12 @@ public class MongoDBStorageProvider implements IStorageProvider
             throw new UncheckedException(e);
         }
         return Task.done();
+    }
+
+    @Override
+    public String getName()
+    {
+        return name;
     }
 
     @Override
@@ -178,4 +185,8 @@ public class MongoDBStorageProvider implements IStorageProvider
         this.database = database;
     }
 
+    public void setName(final String name)
+    {
+        this.name = name;
+    }
 }

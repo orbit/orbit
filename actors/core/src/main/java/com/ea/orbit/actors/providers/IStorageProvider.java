@@ -36,6 +36,13 @@ import com.ea.orbit.concurrent.Task;
  */
 public interface IStorageProvider extends IOrbitProvider
 {
+
+    /**
+     * Returns this storage provider name.
+     * @return storage provider name
+     */
+    String getName();
+
     /**
      * Asynchronously clears an actors state.
      * @param reference an reference to the actor (contains the interface name and actor key)
