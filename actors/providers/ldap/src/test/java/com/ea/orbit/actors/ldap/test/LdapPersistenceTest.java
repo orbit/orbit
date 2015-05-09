@@ -36,6 +36,8 @@ import com.ea.orbit.actors.test.FakeClusterPeer;
 import org.apache.directory.ldap.client.api.LdapConnection;
 import org.apache.directory.ldap.client.api.LdapNetworkConnection;
 import org.apache.directory.shared.ldap.model.cursor.EntryCursor;
+import org.apache.directory.shared.ldap.model.entry.DefaultEntry;
+import org.apache.directory.shared.ldap.model.entry.Entry;
 import org.apache.directory.shared.ldap.model.message.SearchScope;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,7 +50,7 @@ public class LdapPersistenceTest
     private String clusterName = "cluster." + Math.random();
 
     @Test
-    public void mytest() throws Exception
+    public void ldapTest() throws Exception
     {
         OrbitStage stage = createStage();
 
@@ -124,6 +126,15 @@ public class LdapPersistenceTest
         {
             connection.delete(cursor.get().getDn());
         }
+        Entry entry = connection.lookup("ou=people, dc=example, dc=com");
+        if (entry != null)
+        {
+            connection.delete(entry.getDn());
+        }
+        connection.add(new DefaultEntry("ou=people, dc=example, dc=com",
+                "objectclass: organizationalUnit",
+                "objectclass: top",
+                "ou: people"));
         connection.close();
     }
 
