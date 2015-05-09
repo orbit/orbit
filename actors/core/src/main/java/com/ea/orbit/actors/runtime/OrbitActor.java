@@ -54,23 +54,9 @@ public class OrbitActor<T>
     ActorReference<?> reference;
     Logger logger;
 
-    @SuppressWarnings({"PMD.LooseCoupling", "unchecked"})
     protected OrbitActor()
     {
-        Class<?> c = (Class<?>) GenericTypeReflector.getTypeParameter(getClass(),
-                OrbitActor.class.getTypeParameters()[0]);
-        if (c == null)
-        {
-            c = LinkedHashMap.class;
-        }
-        try
-        {
-            state = (T) c.newInstance();
-        }
-        catch (Exception e)
-        {
-            throw new UncheckedException(e);
-        }
+        this.createDefaultState();
     }
 
     /**
@@ -93,6 +79,28 @@ public class OrbitActor<T>
     {
         // TODO wrap the logger to add some context about the actor and the current call
         return LoggerFactory.getLogger(name);
+    }
+
+    /**
+     * Creates a default state representation for this actor
+     */
+    @SuppressWarnings({"PMD.LooseCoupling", "unchecked"})
+    protected void createDefaultState()
+    {
+        Class<?> c = (Class<?>) GenericTypeReflector.getTypeParameter(getClass(),
+                OrbitActor.class.getTypeParameters()[0]);
+        if (c == null)
+        {
+            c = LinkedHashMap.class;
+        }
+        try
+        {
+            state = (T) c.newInstance();
+        }
+        catch (Exception e)
+        {
+            throw new UncheckedException(e);
+        }
     }
 
     /**
@@ -132,7 +140,7 @@ public class OrbitActor<T>
      */
     protected Task<Void> clearState()
     {
-        return stateProvider.clearState(reference, state);
+        return stateProvider.clearState(reference, state).thenRun(this::createDefaultState);
     }
 
     /**
