@@ -26,28 +26,21 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.providers;
+package com.ea.orbit.actors.providers.ldap;
 
-import com.ea.orbit.actors.runtime.ActorReference;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public abstract class AbstractStorageProvider implements IStorageProvider
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface LdapEntity
 {
+    String dnKey();
 
-    protected String name = "default";
+    String baseDn();
 
-    public void setName(String name)
-    {
-        this.name = name;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    protected String getIdentity(final ActorReference<?> reference)
-    {
-        return String.valueOf(ActorReference.getId(reference));
-    }
+    String[] attributes();
 
 }

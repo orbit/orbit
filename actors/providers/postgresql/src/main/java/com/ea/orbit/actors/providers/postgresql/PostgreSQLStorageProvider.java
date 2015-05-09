@@ -288,8 +288,4 @@ public class PostgreSQLStorageProvider extends AbstractStorageProvider
         return ActorReference.getInterfaceClass(reference).getSimpleName();
     }
 
-    private String getIdentity(final ActorReference<?> reference)
-    {
-        return String.valueOf(ActorReference.getId(reference));
-    }
 }

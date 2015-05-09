@@ -26,28 +26,31 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.providers;
+package com.ea.orbit.actors.ldap.test;
 
-import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.providers.ldap.LdapAttribute;
+import com.ea.orbit.actors.providers.ldap.LdapEntity;
 
-public abstract class AbstractStorageProvider implements IStorageProvider
+@LdapEntity(
+        dnKey = "uid",
+        baseDn = "ou=people, dc=example, dc=com",
+        attributes = {
+                "ObjectClass: inetOrgPerson",
+                "ObjectClass: organizationalPerson",
+                "ObjectClass: top",
+                "ObjectClass: person"
+        })
+public class LdapUserState
 {
 
-    protected String name = "default";
+    @LdapAttribute("cn")
+    public String commonName;
 
-    public void setName(String name)
-    {
-        this.name = name;
-    }
+    @LdapAttribute("sn")
+    public String surName;
 
-    public String getName()
-    {
-        return name;
-    }
+    public String postalCode;
 
-    protected String getIdentity(final ActorReference<?> reference)
-    {
-        return String.valueOf(ActorReference.getId(reference));
-    }
+    public String userPassword;
 
 }

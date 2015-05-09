@@ -26,28 +26,31 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.providers;
+package com.ea.orbit.actors.providers.ldap;
 
-import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.exception.UncheckedException;
 
-public abstract class AbstractStorageProvider implements IStorageProvider
+import sun.misc.BASE64Encoder;
+
+import java.security.MessageDigest;
+
+public class LdapStorageUtil
 {
 
-    protected String name = "default";
-
-    public void setName(String name)
+    public static String toPasswordHash(final String password)
     {
-        this.name = name;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    protected String getIdentity(final ActorReference<?> reference)
-    {
-        return String.valueOf(ActorReference.getId(reference));
+        try
+        {
+            MessageDigest md = MessageDigest.getInstance("SHA");
+            md.update(password.getBytes());
+            byte[] bytes = md.digest();
+            BASE64Encoder base64encoder = new BASE64Encoder();
+            return "{SHA}" + base64encoder.encode(bytes);
+        }
+        catch (Exception e)
+        {
+            throw new UncheckedException(e);
+        }
     }
 
 }
