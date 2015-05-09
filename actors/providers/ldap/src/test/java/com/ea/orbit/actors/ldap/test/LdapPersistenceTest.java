@@ -33,12 +33,12 @@ import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.providers.ldap.LdapStorageProvider;
 import com.ea.orbit.actors.test.FakeClusterPeer;
 
+import org.apache.directory.api.ldap.model.cursor.EntryCursor;
+import org.apache.directory.api.ldap.model.entry.DefaultEntry;
+import org.apache.directory.api.ldap.model.entry.Entry;
+import org.apache.directory.api.ldap.model.message.SearchScope;
 import org.apache.directory.ldap.client.api.LdapConnection;
 import org.apache.directory.ldap.client.api.LdapNetworkConnection;
-import org.apache.directory.shared.ldap.model.cursor.EntryCursor;
-import org.apache.directory.shared.ldap.model.entry.DefaultEntry;
-import org.apache.directory.shared.ldap.model.entry.Entry;
-import org.apache.directory.shared.ldap.model.message.SearchScope;
 import org.junit.Before;
 import org.junit.Test;
 

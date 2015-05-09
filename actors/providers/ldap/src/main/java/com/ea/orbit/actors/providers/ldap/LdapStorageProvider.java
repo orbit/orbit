@@ -33,15 +33,15 @@ import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
+import org.apache.directory.api.ldap.model.cursor.EntryCursor;
+import org.apache.directory.api.ldap.model.entry.DefaultEntry;
+import org.apache.directory.api.ldap.model.entry.DefaultModification;
+import org.apache.directory.api.ldap.model.entry.Modification;
+import org.apache.directory.api.ldap.model.entry.ModificationOperation;
+import org.apache.directory.api.ldap.model.exception.LdapException;
+import org.apache.directory.api.ldap.model.message.SearchScope;
 import org.apache.directory.ldap.client.api.LdapConnection;
 import org.apache.directory.ldap.client.api.LdapNetworkConnection;
-import org.apache.directory.shared.ldap.model.cursor.EntryCursor;
-import org.apache.directory.shared.ldap.model.entry.DefaultEntry;
-import org.apache.directory.shared.ldap.model.entry.DefaultModification;
-import org.apache.directory.shared.ldap.model.entry.Modification;
-import org.apache.directory.shared.ldap.model.entry.ModificationOperation;
-import org.apache.directory.shared.ldap.model.exception.LdapException;
-import org.apache.directory.shared.ldap.model.message.SearchScope;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -110,7 +110,7 @@ public class LdapStorageProvider extends AbstractStorageProvider
                 Map<String, Field> map = getFieldAttributeMap(state.getClass());
                 for (String key : map.keySet())
                 {
-                    map.get(key).set(state, cursor.get().get(key).getString());
+                    map.get(key).set(state, cursor.get().get(key).get().getString());
                 }
             }
             else

@@ -66,10 +66,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <version>${project.version}</version>
         </dependency>
         <dependency>
-			<groupId>org.apache.directory.shared</groupId>
-			<artifactId>apache-ldap-api</artifactId>
-			<version>1.0.0-M13</version>
-		</dependency>
+            <groupId>org.apache.directory.api</groupId>
+            <artifactId>api-all</artifactId>
+            <version>1.0.0-M30</version>
+        </dependency>
         <dependency>
             <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-actors-tests</artifactId>
