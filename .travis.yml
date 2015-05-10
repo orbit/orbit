@@ -12,7 +12,7 @@ addons:
 before_script:
   - psql -c 'create database orbit;' -U postgres
 
-script: "mvn test -P withMongoTests,withPostgresTests,withRedisTests,withMemcachedTests,withScala"
+script: "mvn test -P withMongoTests,withPostgresTests,withRedisTests,withMemcachedTests,withScala,withLDAPTests"
 
 notifications:
   webhooks:

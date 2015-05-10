@@ -65,11 +65,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <artifactId>orbit-actors-json</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
-            <groupId>org.apache.directory.api</groupId>
-            <artifactId>api-all</artifactId>
-            <version>1.0.0-M30</version>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-all</artifactId>
+            <version>2.0.0-M20</version>
         </dependency>
+
         <dependency>
             <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-actors-tests</artifactId>
