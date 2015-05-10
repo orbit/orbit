@@ -82,8 +82,8 @@ public class OrbitRestClient
     private final static Map<String, Class<? extends RestInvocationCallback>> invocationClasses = new ConcurrentHashMap<>();
     private static final Class<? extends CompletableFuture> futureClass;
 
-    private WebTarget target;
-    private MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+    private final WebTarget target;
+    private final MultivaluedHashMap<String, Object> headers;
 
     // This is an internal cache. It changes, but the instance behaviour stays the same.
     private Map<Class<?>, Object> proxies = new ConcurrentHashMap<>();
@@ -112,6 +112,7 @@ public class OrbitRestClient
     public OrbitRestClient(WebTarget webTarget)
     {
         target = webTarget;
+        headers = new MultivaluedHashMap<>();
     }
 
     public OrbitRestClient(final WebTarget target, final MultivaluedHashMap<String, Object> headers)

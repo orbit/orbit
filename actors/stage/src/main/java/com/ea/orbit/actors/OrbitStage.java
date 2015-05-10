@@ -298,6 +298,8 @@ public class OrbitStage implements Startable
     public Task<?> stop()
     {
         // * refuse new actor activations
+        // first notify other nodes
+
         // * deactivate all actors
         // * notify rest of the cluster (no more observer messages)
         // * finalize all timers
@@ -350,7 +352,14 @@ public class OrbitStage implements Startable
 
     public void cleanup(boolean block)
     {
-        execution.activationCleanup(block);
+        if (block)
+        {
+            execution.activationCleanup().join();
+        }
+        else
+        {
+            execution.activationCleanup();
+        }
         messaging.timeoutCleanup();
     }
 

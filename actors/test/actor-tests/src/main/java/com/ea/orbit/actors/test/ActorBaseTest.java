@@ -33,6 +33,8 @@ import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.exception.UncheckedException;
 
+import com.google.common.util.concurrent.ForwardingExecutorService;
+
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,7 +52,29 @@ public class ActorBaseTest
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
     protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
-    protected static final ExecutorService commonPool = ExecutorUtils.newScalingThreadPool(200);
+    protected static final ExecutorService commonPool = new ForwardingExecutorService()
+    {
+        ExecutorService delegate = ExecutorUtils.newScalingThreadPool(200);
+        @Override
+        protected ExecutorService delegate()
+        {
+            return delegate;
+        }
+
+        @Override
+        public void shutdown()
+        {
+            try
+            {
+                delegate.awaitTermination(0, TimeUnit.SECONDS);
+            }
+            catch (InterruptedException e)
+            {
+                throw new UncheckedException(e);
+            }
+            // ignore
+        }
+    };
 
     public OrbitStage createClient() throws ExecutionException, InterruptedException
     {

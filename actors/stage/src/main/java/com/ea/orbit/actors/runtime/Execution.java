@@ -109,6 +109,8 @@ public class Execution implements IRuntime
 
     private List<IInvokeHookProvider> hookProviders;
 
+    private IHosting.NodeState state = IHosting.NodeState.RUNNING;
+
     public Execution()
     {
         // the last runtime created will be the default.
@@ -137,6 +139,10 @@ public class Execution implements IRuntime
 
     public boolean canActivateActor(String interfaceName, int interfaceId)
     {
+        if (state != IHosting.NodeState.RUNNING)
+        {
+            return false;
+        }
         Class<IActor> aInterface = classForName(interfaceName);
         final InterfaceDescriptor descriptor = getDescriptor(aInterface);
         if (descriptor == null || descriptor.cannotActivate)
@@ -471,8 +477,31 @@ public class Execution implements IRuntime
 
     public Task<?> stop()
     {
+        // * refuse new actor activations
+        state = IHosting.NodeState.STOPPING;
+        hosting.notifyStateChange();
+
+        // * deactivate all actors
+        activationCleanup().join();
+
+        // * finalize all timers
         timer.cancel();
-        return Task.allOf(orbitProviders.stream().map(v -> v.stop()));
+
+        // * stop processing new received messages (responses still work)
+        // * notify rest of the cluster (no more observer messages)
+        state = IHosting.NodeState.STOPPED;
+        hosting.notifyStateChange();
+
+        // * wait pending tasks execution
+        executionSerializer.shutDown();
+
+        // ** stops all providers
+        Task.allOf(orbitProviders.stream().map(v -> v.stop())).join();
+
+        // * cancel all pending messages, and prevents sending new ones
+        //messaging.stop();
+
+        return Task.done();
     }
 
     /**
@@ -666,7 +695,10 @@ public class Execution implements IRuntime
             @Override
             public void run()
             {
-                ForkJoinTask.adapt(() -> activationCleanup(true)).fork();
+                if (state == IHosting.NodeState.RUNNING)
+                {
+                    ForkJoinTask.adapt(() -> activationCleanup().join()).fork();
+                }
             }
         }, cleanupIntervalMillis, cleanupIntervalMillis);
 
@@ -1085,11 +1117,11 @@ public class Execution implements IRuntime
 
     }
 
-    public void activationCleanup(final boolean block)
+    public Task<?> activationCleanup()
     {
 
         long cutOut = clock.millis() - TimeUnit.MINUTES.toMillis(10);
-        final List<CompletableFuture<?>> futures = block ? new ArrayList<>() : null;
+        final List<CompletableFuture<?>> futures = new ArrayList<>();
         for (Iterator<Map.Entry<EntryKey, ReferenceEntry>> iterator = localActors.entrySet().iterator(); iterator.hasNext(); )
         {
             Map.Entry<EntryKey, ReferenceEntry> mEntry = iterator.next();
@@ -1103,7 +1135,7 @@ public class Execution implements IRuntime
             {
                 continue;
             }
-            if (act.lastAccess < cutOut)
+            if (state != IHosting.NodeState.RUNNING || act.lastAccess < cutOut)
             {
                 CompletableFuture<Object> future = new CompletableFuture<>();
                 final Supplier<Task<?>> task = () -> {
@@ -1140,20 +1172,23 @@ public class Execution implements IRuntime
                         throw new UncheckedException(ex);
                     }
                 };
-                if (executionSerializer.offerJob(mEntry.getKey(), task, maxQueueSize) && block)
+                if (executionSerializer.offerJob(mEntry.getKey(), task, maxQueueSize))
                 {
                     futures.add(future);
                 }
             }
         }
-        if (block)
-        {
-            Task.allOf(futures).join();
-        }
+        Task<List<CompletableFuture<?>>> listTask = Task.allOf(futures);
+        return listTask;
     }
 
     public Task<INodeAddress> locateActor(final IAddressable actorReference, final boolean forceActivation)
     {
         return hosting.locateActor(actorReference, false);
+    }
+
+    IHosting.NodeState getState()
+    {
+        return state;
     }
 }
