@@ -30,8 +30,15 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.providers.ILifetimeProvider;
+import com.ea.orbit.actors.providers.IOrbitProvider;
+import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.ExecutorUtils;
+import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
+import com.ea.orbit.injection.DependencyRegistry;
+
+import com.google.common.util.concurrent.ForwardingExecutorService;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -50,11 +57,46 @@ public class ActorBaseTest
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
     protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
-    protected static final ExecutorService commonPool = ExecutorUtils.newScalingThreadPool(200);
+    protected static final ExecutorService commonPool = new ForwardingExecutorService()
+    {
+        ExecutorService delegate = ExecutorUtils.newScalingThreadPool(200);
+
+        @Override
+        protected ExecutorService delegate()
+        {
+            return delegate;
+        }
+
+        @Override
+        public void shutdown()
+        {
+            try
+            {
+                // Attention: intentionally not calling delegate.shutdown() to keep reusing it for other tests.
+                delegate.awaitTermination(0, TimeUnit.SECONDS);
+            }
+            catch (InterruptedException e)
+            {
+                throw new UncheckedException(e);
+            }
+        }
+    };
+    protected FakeSync fakeSync = new FakeSync();
 
     public OrbitStage createClient() throws ExecutionException, InterruptedException
     {
         OrbitStage client = new OrbitStage();
+        DependencyRegistry dr = new DependencyRegistry();
+        dr.addSingleton(FakeSync.class, fakeSync);
+        client.addProvider(new ILifetimeProvider()
+        {
+            @Override
+            public Task<?> preActivation(final OrbitActor<?> actor)
+            {
+                dr.inject(actor);
+                return Task.done();
+            }
+        });
         client.setMode(OrbitStage.StageMode.FRONT_END);
         client.setExecutionPool(commonPool);
         client.setMessagingPool(commonPool);
@@ -69,6 +111,17 @@ public class ActorBaseTest
     public OrbitStage createStage() throws ExecutionException, InterruptedException
     {
         OrbitStage stage = new OrbitStage();
+        DependencyRegistry dr = new DependencyRegistry();
+        dr.addSingleton(FakeSync.class, fakeSync);
+        stage.addProvider(new ILifetimeProvider()
+        {
+            @Override
+            public Task<?> preActivation(final OrbitActor<?> actor)
+            {
+                dr.inject(actor);
+                return Task.done();
+            }
+        });
         stage.setMode(OrbitStage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
