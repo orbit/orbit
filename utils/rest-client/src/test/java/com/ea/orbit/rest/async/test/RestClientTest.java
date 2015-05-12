@@ -27,10 +27,12 @@ package com.ea.orbit.rest.async.test;/*
  */
 
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.rest.async.OrbitRestClient;
 import com.ea.orbit.web.EmbeddedHttpServer;
 
 import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.proxy.WebResourceFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -44,11 +46,12 @@ import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Context;
@@ -58,12 +61,16 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import java.lang.reflect.Field;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -73,6 +80,7 @@ import static org.junit.Assert.*;
 
 public class RestClientTest
 {
+    private static final int EXPECTED_REDIRECT_TEST_VALUE = 1000;
 
     private static EmbeddedHttpServer embeddedHttpServer;
     private static String host;
@@ -147,6 +155,26 @@ public class RestClientTest
         @Produces(MediaType.APPLICATION_JSON)
         @Consumes(MediaType.APPLICATION_JSON)
         List<String> returnHeaders(String name);
+
+        /**
+         * Test method that redirects to redirectEnd
+         * @return
+         */
+        @Path("/redirect/start")
+        @POST
+        @Produces(MediaType.APPLICATION_JSON)
+        @Consumes(MediaType.APPLICATION_JSON)
+        Task<Integer> redirectStart();
+
+        /**
+         * Test method redirected to from redirectStart
+         * @return
+         */
+        @Path("/redirect/end")
+        @GET
+        @Produces(MediaType.APPLICATION_JSON)
+        @Consumes(MediaType.APPLICATION_JSON)
+        Task<Integer> redirectEnd();
 
         // TODO: support header setting
         @HeaderParam("Header1")
@@ -226,6 +254,31 @@ public class RestClientTest
         public List<String> returnHeaders(@Context HttpHeaders headers, String name)
         {
             return headers.getRequestHeaders().get(name);
+        }
+
+        @Path("/redirect/start")
+        @POST
+        @Produces(MediaType.APPLICATION_JSON)
+        @Consumes(MediaType.APPLICATION_JSON)
+        public Integer redirectStart()
+        {
+            try
+            {
+                throw new WebApplicationException(Response.status(Response.Status.FOUND).location(new URI("/redirect/end")).build());
+            }
+            catch (URISyntaxException e)
+            {
+                throw new UncheckedException(e);
+            }
+        }
+
+        @Path("/redirect/end")
+        @GET
+        @Produces(MediaType.APPLICATION_JSON)
+        @Consumes(MediaType.APPLICATION_JSON)
+        public Integer redirectEnd()
+        {
+            return EXPECTED_REDIRECT_TEST_VALUE;
         }
     }
 
@@ -385,6 +438,88 @@ public class RestClientTest
             assertEquals(Arrays.asList("C"), client3.get(Hello.class).returnHeaders("H"));
             assertEquals(Arrays.asList("D"), client4.get(Hello.class).returnHeaders("H"));
             assertEquals(Arrays.asList("E"), client5.get(Hello.class).returnHeaders("H"));
+        }
+    }
+
+    /**
+     * Test that we can set a WebTarget property, and that it will not affect
+     * the original Rest Client.
+     */
+    @Test
+    public void testWebClientRedirectMutation()
+    {
+        final int INITIAL_TIMEOUT_VALUE = 4444;
+        final int MODIFIED_TIMEOUT_VALUE = 8888;
+
+        WebTarget webTarget = getWebTarget();
+
+        final OrbitRestClient client = new OrbitRestClient(webTarget)
+                .property(ClientProperties.FOLLOW_REDIRECTS, true)
+                .property(ClientProperties.CONNECT_TIMEOUT, INITIAL_TIMEOUT_VALUE);
+
+        // Mutate the client before using either of them
+        final OrbitRestClient noRedirectClient = client.property(ClientProperties.FOLLOW_REDIRECTS, false);
+
+        // Mutate the initial client once more
+        final OrbitRestClient mutatedConnectTimeoutClient = client.property(ClientProperties.CONNECT_TIMEOUT, MODIFIED_TIMEOUT_VALUE);
+
+        // Validate the client properties
+        assertEquals(true, getConfiguration(client).getProperty(ClientProperties.FOLLOW_REDIRECTS));
+        assertEquals((Integer) INITIAL_TIMEOUT_VALUE, getConfiguration(client).getProperty(ClientProperties.CONNECT_TIMEOUT));
+
+        assertEquals(false, getConfiguration(noRedirectClient).getProperty(ClientProperties.FOLLOW_REDIRECTS));
+        assertEquals((Integer) INITIAL_TIMEOUT_VALUE, getConfiguration(noRedirectClient).getProperty(ClientProperties.CONNECT_TIMEOUT));
+
+        assertEquals(true, getConfiguration(mutatedConnectTimeoutClient).getProperty(ClientProperties.FOLLOW_REDIRECTS));
+        assertEquals((Integer) MODIFIED_TIMEOUT_VALUE, getConfiguration(mutatedConnectTimeoutClient).getProperty(ClientProperties.CONNECT_TIMEOUT));
+
+        // Test that the redirect happens in the initial client
+        assertEquals((Integer) EXPECTED_REDIRECT_TEST_VALUE, client.get(Hello.class).redirectStart().join());
+
+        // Test that the redirect does not happen in the noRedirectClient client
+        try
+        {
+            Integer redirectValue = noRedirectClient.get(Hello.class).redirectStart().join();
+            assertTrue("A redirect successfully resolved when it was not supposed to.", false);
+        }
+        catch (Exception e)
+        {
+            // We expect to be able to get a WebApplicationException that contains a 302 status
+            Throwable cause = e;
+            WebApplicationException webAppEx = null;
+
+            if (cause instanceof CompletionException)
+            {
+                cause = cause.getCause();
+            }
+
+            if (cause instanceof ProcessingException)
+            {
+                cause = cause.getCause();
+            }
+
+            if (cause instanceof WebApplicationException)
+            {
+                webAppEx = (WebApplicationException) cause;
+            }
+
+            assertTrue(webAppEx instanceof WebApplicationException);
+            assertEquals(Response.Status.FOUND.getStatusCode(), webAppEx.getResponse().getStatus());
+        }
+    }
+
+    private javax.ws.rs.core.Configuration getConfiguration(final OrbitRestClient client)
+    {
+        try
+        {
+            final Field target = client.getClass().getDeclaredField("target");
+            target.setAccessible(true);
+            final WebTarget wt = (WebTarget) target.get(client);
+            return wt.getConfiguration();
+        }
+        catch (Exception e)
+        {
+            throw new UncheckedException(e);
         }
     }
 
