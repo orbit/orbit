@@ -33,20 +33,41 @@ import com.ea.orbit.actors.OrbitStage;
 import com.ea.orbit.actors.providers.ldap.LdapStorageProvider;
 import com.ea.orbit.actors.test.FakeClusterPeer;
 
-import org.apache.directory.api.ldap.model.cursor.EntryCursor;
 import org.apache.directory.api.ldap.model.entry.DefaultEntry;
-import org.apache.directory.api.ldap.model.entry.Entry;
-import org.apache.directory.api.ldap.model.message.SearchScope;
 import org.apache.directory.ldap.client.api.LdapConnection;
 import org.apache.directory.ldap.client.api.LdapNetworkConnection;
+import org.apache.directory.server.annotations.CreateLdapServer;
+import org.apache.directory.server.annotations.CreateTransport;
+import org.apache.directory.server.core.annotations.ContextEntry;
+import org.apache.directory.server.core.annotations.CreateDS;
+import org.apache.directory.server.core.annotations.CreatePartition;
+import org.apache.directory.server.core.integ.AbstractLdapTestUnit;
+import org.apache.directory.server.core.integ.FrameworkRunner;
+import org.apache.directory.server.ldap.LdapServer;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class LdapPersistenceTest
+
+@RunWith(FrameworkRunner.class)
+@CreateDS(allowAnonAccess = true, name = "example", partitions = {
+        @CreatePartition(name = "example", suffix = "dc=example,dc=com",
+                contextEntry = @ContextEntry(entryLdif = "dn: dc=example,dc=com\n"
+                        + "objectclass: domain\n"
+                        + "objectclass: top\n"
+                        + "objectclass: extensibleObject\n" + "dc: example")) })
+@CreateLdapServer(
+        transports =
+                {
+                        @CreateTransport(protocol = "LDAP", port = 10389)
+                })
+public class LdapPersistenceTest extends AbstractLdapTestUnit
 {
+    public static LdapServer ldapServer;
+
     private String clusterName = "cluster." + Math.random();
 
     @Test
@@ -112,25 +133,10 @@ public class LdapPersistenceTest
     }
 
     @Before
-    public void setup() throws Exception
-    {
-        removeAll();
-    }
-
-    private void removeAll() throws Exception
+    public void setUp() throws Exception
     {
         LdapConnection connection = new LdapNetworkConnection("localhost", 10389);
         connection.bind("uid=admin,ou=system", "secret");
-        EntryCursor cursor = connection.search("ou=people, dc=example, dc=com", "(objectclass=*)", SearchScope.ONELEVEL, "*");
-        while (cursor.next())
-        {
-            connection.delete(cursor.get().getDn());
-        }
-        Entry entry = connection.lookup("ou=people, dc=example, dc=com");
-        if (entry != null)
-        {
-            connection.delete(entry.getDn());
-        }
         connection.add(new DefaultEntry("ou=people, dc=example, dc=com",
                 "objectclass: organizationalUnit",
                 "objectclass: top",
