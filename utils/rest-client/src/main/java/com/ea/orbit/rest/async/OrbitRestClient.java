@@ -541,4 +541,18 @@ public class OrbitRestClient
             future.completeExceptionally(throwable);
         }
     }
+
+    /**
+     * Builds a new Rest Client with a WebTarget that applies the specified property.
+     * @param propertyName Property to set a value on
+     * @param propertyValue Value to apply
+     * @param <T> Rest Client
+     * @return new Rest Client with applied change
+     */
+    public <T extends OrbitRestClient> T property(String propertyName, Object propertyValue)
+    {
+        return newClient(
+            target.path("").property(propertyName, propertyValue),
+            this.headers);
+    }
 }
