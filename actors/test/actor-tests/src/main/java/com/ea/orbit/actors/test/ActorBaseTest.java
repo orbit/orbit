@@ -72,13 +72,13 @@ public class ActorBaseTest
         {
             try
             {
+                // Attention: intentionally not calling delegate.shutdown() to keep reusing it for other tests.
                 delegate.awaitTermination(0, TimeUnit.SECONDS);
             }
             catch (InterruptedException e)
             {
                 throw new UncheckedException(e);
             }
-            // ignore
         }
     };
     protected FakeSync fakeSync = new FakeSync();
