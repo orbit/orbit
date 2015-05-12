@@ -26,28 +26,10 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.providers;
+package com.ea.orbit.actors.providers.ldap;
 
-import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.container.Module;
 
-public abstract class AbstractStorageProvider implements IStorageProvider
+public class LdapStorageModule extends Module
 {
-
-    protected String name = "default";
-
-    public void setName(String name)
-    {
-        this.name = name;
-    }
-
-    public String getName()
-    {
-        return name;
-    }
-
-    protected String getIdentity(final ActorReference<?> reference)
-    {
-        return String.valueOf(ActorReference.getId(reference));
-    }
-
 }
