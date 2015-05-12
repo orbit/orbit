@@ -495,7 +495,7 @@ public class Execution implements IRuntime
         // * wait pending tasks execution
         executionSerializer.shutDown();
 
-        // ** stops all providers
+        // ** stop all providers
         Task.allOf(orbitProviders.stream().map(v -> v.stop())).join();
 
         // * cancel all pending messages, and prevents sending new ones
@@ -1131,7 +1131,7 @@ public class Execution implements IRuntime
                 continue;
             }
             Activation act = entry.peekOldActivation();
-            if (act == null)
+            if (act == null && state == IHosting.NodeState.RUNNING)
             {
                 continue;
             }
@@ -1187,7 +1187,7 @@ public class Execution implements IRuntime
         return hosting.locateActor(actorReference, false);
     }
 
-    IHosting.NodeState getState()
+    public IHosting.NodeState getState()
     {
         return state;
     }

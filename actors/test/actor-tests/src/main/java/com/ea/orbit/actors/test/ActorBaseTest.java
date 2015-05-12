@@ -30,8 +30,13 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.providers.ILifetimeProvider;
+import com.ea.orbit.actors.providers.IOrbitProvider;
+import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.ExecutorUtils;
+import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
+import com.ea.orbit.injection.DependencyRegistry;
 
 import com.google.common.util.concurrent.ForwardingExecutorService;
 
@@ -55,6 +60,7 @@ public class ActorBaseTest
     protected static final ExecutorService commonPool = new ForwardingExecutorService()
     {
         ExecutorService delegate = ExecutorUtils.newScalingThreadPool(200);
+
         @Override
         protected ExecutorService delegate()
         {
@@ -75,10 +81,22 @@ public class ActorBaseTest
             // ignore
         }
     };
+    protected FakeSync fakeSync = new FakeSync();
 
     public OrbitStage createClient() throws ExecutionException, InterruptedException
     {
         OrbitStage client = new OrbitStage();
+        DependencyRegistry dr = new DependencyRegistry();
+        dr.addSingleton(FakeSync.class, fakeSync);
+        client.addProvider(new ILifetimeProvider()
+        {
+            @Override
+            public Task<?> preActivation(final OrbitActor<?> actor)
+            {
+                dr.inject(actor);
+                return Task.done();
+            }
+        });
         client.setMode(OrbitStage.StageMode.FRONT_END);
         client.setExecutionPool(commonPool);
         client.setMessagingPool(commonPool);
@@ -93,6 +111,17 @@ public class ActorBaseTest
     public OrbitStage createStage() throws ExecutionException, InterruptedException
     {
         OrbitStage stage = new OrbitStage();
+        DependencyRegistry dr = new DependencyRegistry();
+        dr.addSingleton(FakeSync.class, fakeSync);
+        stage.addProvider(new ILifetimeProvider()
+        {
+            @Override
+            public Task<?> preActivation(final OrbitActor<?> actor)
+            {
+                dr.inject(actor);
+                return Task.done();
+            }
+        });
         stage.setMode(OrbitStage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);

@@ -401,5 +401,9 @@ public class OrbitStage implements Startable
         return hosting.getServerNodes();
     }
 
+    public IHosting.NodeState getState()
+    {
+        return execution.getState();
+    }
 
 }
