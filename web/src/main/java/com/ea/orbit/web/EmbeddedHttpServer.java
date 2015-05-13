@@ -31,7 +31,7 @@ package com.ea.orbit.web;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.container.OrbitContainer;
+import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -56,7 +56,6 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.servlet.ServletProperties;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.websocket.server.ServerContainer;
 import javax.websocket.server.ServerEndpoint;
@@ -80,7 +79,7 @@ public class EmbeddedHttpServer implements Startable
     private int port = 9090;
 
     @Wired
-    private OrbitContainer container;
+    private Container container;
 
     @Config("orbit.http.providers")
     private List<Class<?>> providers = new ArrayList<>();

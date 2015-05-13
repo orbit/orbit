@@ -59,7 +59,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-public class OrbitContainer
+public class Container
 {
     private OrbitProperties properties;
     private Map<String, ComponentState> components = new ConcurrentHashMap<>();
@@ -69,7 +69,7 @@ public class OrbitContainer
     @Config("orbit.providers")
     private List<Object> providers = new ArrayList<>();
 
-    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(OrbitContainer.class);
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Container.class);
 
     static
     {
@@ -102,7 +102,7 @@ public class OrbitContainer
             super.postInject(o);
             try
             {
-                OrbitContainer.this.injectConfig(o);
+                Container.this.injectConfig(o);
             }
             catch (IllegalAccessException e)
             {

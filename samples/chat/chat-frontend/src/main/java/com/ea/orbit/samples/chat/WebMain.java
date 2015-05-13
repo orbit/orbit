@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.chat;
 
-import com.ea.orbit.container.OrbitContainer;
+import com.ea.orbit.container.Container;
 
 import java.util.concurrent.ExecutionException;
 
@@ -36,7 +36,7 @@ public class WebMain
 {
     public static void main(String[] args) throws ExecutionException, InterruptedException
     {
-        final OrbitContainer container = new OrbitContainer();
+        final Container container = new Container();
         container.start();
     }
 }

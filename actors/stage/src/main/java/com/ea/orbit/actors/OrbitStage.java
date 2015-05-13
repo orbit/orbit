@@ -43,7 +43,7 @@ import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.container.OrbitContainer;
+import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
 
 import org.slf4j.Logger;
@@ -75,7 +75,7 @@ public class OrbitStage implements Startable
     private List<IOrbitProvider> providers = new ArrayList<>();
 
     @Wired
-    OrbitContainer orbitContainer;
+    Container container;
 
     public enum StageMode
     {
@@ -258,7 +258,7 @@ public class OrbitStage implements Startable
     private void configureOrbitContainer()
     {
         // orbitContainer will be null if the application is not using it
-        if (orbitContainer != null)
+        if (container != null)
         {
             // Create a lifetime provider for actor DI
             ILifetimeProvider containerLifetime = new ILifetimeProvider()
@@ -266,7 +266,7 @@ public class OrbitStage implements Startable
                 @Override
                 public Task<?> preActivation(OrbitActor<?> actor)
                 {
-                    orbitContainer.inject(actor);
+                    container.inject(actor);
                     return Task.done();
                 }
             };

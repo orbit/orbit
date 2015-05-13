@@ -34,7 +34,7 @@ public class Bootstrap
 {
     public static void main(String[] args) throws ExecutionException, InterruptedException
     {
-        final OrbitContainer container = new OrbitContainer();
+        final Container container = new Container();
         container.start();
     }
 }

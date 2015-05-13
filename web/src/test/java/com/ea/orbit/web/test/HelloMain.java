@@ -28,7 +28,7 @@
 
 package com.ea.orbit.web.test;
 
-import com.ea.orbit.container.OrbitContainer;
+import com.ea.orbit.container.Container;
 import com.ea.orbit.web.OrbitWebModule;
 
 import java.util.Arrays;
@@ -39,7 +39,7 @@ public class HelloMain
 {
     public static void main(final String args[]) throws Exception
     {
-        OrbitContainer container = new OrbitContainer();
+        Container container = new Container();
         Map<String,Object> props = new HashMap<>();
         props.put("orbit.http.port", 8080);
         props.put("orbit.providers", Arrays.asList(OrbitWebModule.class, Module1.class));
