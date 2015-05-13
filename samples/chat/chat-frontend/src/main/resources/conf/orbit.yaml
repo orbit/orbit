@@ -33,5 +33,5 @@ orbit.actors.nodeName: chat-frontend
 
 orbit.providers:
   - com.ea.orbit.samples.chat.ChatWebModule
-  - com.ea.orbit.web.OrbitWebModule
+  - com.ea.orbit.web.WebModule
   - com.ea.orbit.actors.client.ClientModule

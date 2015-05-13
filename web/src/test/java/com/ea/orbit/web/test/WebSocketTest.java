@@ -30,7 +30,7 @@ package com.ea.orbit.web.test;
 
 import com.ea.orbit.container.Container;
 import com.ea.orbit.util.NetUtils;
-import com.ea.orbit.web.OrbitWebModule;
+import com.ea.orbit.web.WebModule;
 
 import org.junit.Test;
 
@@ -82,7 +82,7 @@ public class WebSocketTest
         final int port = NetUtils.findFreePort();
         Map<String,Object> props = new HashMap<>();
         props.put("orbit.http.port", port);
-        props.put("orbit.providers", Arrays.asList(OrbitWebModule.class, Module1.class));
+        props.put("orbit.providers", Arrays.asList(WebModule.class, Module1.class));
         container.setProperties(props);
         container.start();
 

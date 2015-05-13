@@ -30,6 +30,6 @@ package com.ea.orbit.web;
 
 import com.ea.orbit.container.Module;
 
-public class OrbitWebModule extends Module
+public class WebModule extends Module
 {
 }
