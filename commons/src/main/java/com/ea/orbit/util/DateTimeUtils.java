@@ -36,6 +36,11 @@ import java.util.Locale;
 
 public final class DateTimeUtils
 {
+    /**
+     * Number of milliseconds per second.
+     */
+    public static final long MILLISECOND_PER_SECOND = 1000L;
+
     private DateTimeUtils()
     {
     }
