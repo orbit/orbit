@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.samples.scala
 
 import com.ea.orbit.actors.runtime.OrbitActor
-import com.ea.orbit.actors.{IActor, OrbitStage}
+import com.ea.orbit.actors.{IActor, Stage}
 import com.ea.orbit.concurrent.Task
 
 object Main {
