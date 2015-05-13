@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.Task;
 
@@ -63,7 +63,7 @@ public class DynamicReferencesTest extends ActorBaseTest
     @SuppressWarnings("unused")
     public void test() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         // this won't the your run of the mill apt generated class
         IAptUnfriendly ref = IActor.getReference(IAptUnfriendly.class, "0");
         assertEquals("hello", ref.hello().join());

@@ -29,7 +29,7 @@
 package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.ActorClassFinder;
 import com.ea.orbit.actors.test.actors.ISomeActor;
 import com.ea.orbit.actors.test.actors.ISomeMatch;
@@ -65,8 +65,8 @@ public class AsymmetricalStagesTest extends ActorBaseTest
     public void asymmetricalNodeTest() throws ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException
     {
         // Asymmetrical nodes, one has Match other has Player, both have SomeActor
-        OrbitStage stage1 = createStage(SomeMatch.class);
-        OrbitStage stage2 = createStage(SomePlayer.class);
+        Stage stage1 = createStage(SomeMatch.class);
+        Stage stage2 = createStage(SomePlayer.class);
 
         final List<Task<String>> tasksA = new ArrayList<>();
         final List<Task<String>> tasksP = new ArrayList<>();
@@ -112,9 +112,9 @@ public class AsymmetricalStagesTest extends ActorBaseTest
         f.set(target, value);
     }
 
-    public OrbitStage createStage(Class<?>... excludedActorClasses) throws ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException
+    public Stage createStage(Class<?>... excludedActorClasses) throws ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException
     {
-        OrbitStage stage = new OrbitStage();
+        Stage stage = new Stage();
         List<Class<?>> excludedClasses = Arrays.asList(excludedActorClasses);
         stage.addProvider(new ActorClassFinder()
         {
@@ -125,7 +125,7 @@ public class AsymmetricalStagesTest extends ActorBaseTest
                 return excludedClasses.contains(c) ? null : c;
             }
         });
-        stage.setMode(OrbitStage.StageMode.HOST);
+        stage.setMode(Stage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
         stage.addProvider(new FakeStorageProvider(fakeDatabase));
@@ -140,11 +140,11 @@ public class AsymmetricalStagesTest extends ActorBaseTest
     public void waitForNodeTest() throws ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException
     {
         // Asymmetrical nodes, one has Match other has Player, both have SomeActor
-        OrbitStage stage1 = createStage(SomeActor.class, SomePlayer.class);
+        Stage stage1 = createStage(SomeActor.class, SomePlayer.class);
 
         final Task<String> test = IActor.getReference(ISomeMatch.class, "100").getNodeId();
 
-        OrbitStage stage2 = createStage(SomeActor.class, SomeMatch.class);
+        Stage stage2 = createStage(SomeActor.class, SomeMatch.class);
 
         assertNotNull(test.join());
     }

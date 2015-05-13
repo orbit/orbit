@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.ISomeActor;
 
 import org.junit.Test;
@@ -48,16 +48,16 @@ public class FailureTest extends ActorBaseTest
     @Test
     public void nodeDropTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage stage2 = createStage();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
 
         ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
         stage1.bind();
         UUID uuid = someActor.getUniqueActivationId().join();
         assertEquals("bla", someActor.sayHello("bla").join());
 
-        OrbitStage stage3 = createStage();
-        OrbitStage stage4 = createStage();
+        Stage stage3 = createStage();
+        Stage stage4 = createStage();
 
 
         ISomeActor someActor_r3 = IActor.getReference(ISomeActor.class, "1");

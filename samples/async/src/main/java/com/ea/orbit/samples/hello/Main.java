@@ -29,7 +29,7 @@
 package com.ea.orbit.samples.hello;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.async.Async;
 import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
@@ -54,7 +54,7 @@ public class Main
 
     public static void main(String[] args) throws IOException
     {
-        OrbitStage stage = new OrbitStage();
+        Stage stage = new Stage();
         stage.setClusterName("helloWorldCluster");
         stage.start().join();
 

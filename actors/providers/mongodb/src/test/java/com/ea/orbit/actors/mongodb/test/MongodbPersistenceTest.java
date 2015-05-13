@@ -30,7 +30,7 @@ package com.ea.orbit.actors.mongodb.test;
 
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.providers.mongodb.MongoDBStorageProvider;
 import com.ea.orbit.actors.test.FakeClusterPeer;
 
@@ -52,7 +52,7 @@ public class MongodbPersistenceTest
     @Test
     public void checkWritesTest() throws Exception
     {
-        OrbitStage stage1 = createStage();
+        Stage stage1 = createStage();
         assertEquals(0, database.getCollection("ISomeMatch").count());
         ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
         ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
@@ -66,7 +66,7 @@ public class MongodbPersistenceTest
         assertEquals(0, database.getCollection("ISomeMatch").count());
         {
             // adding some state and then tearing down the cluster.
-            OrbitStage stage1 = createStage();
+            Stage stage1 = createStage();
             stage1.bind();
             ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
             ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
@@ -75,7 +75,7 @@ public class MongodbPersistenceTest
         }
         assertEquals(1, database.getCollection("ISomeMatch").count());
         {
-            OrbitStage stage2 = createStage();
+            Stage stage2 = createStage();
             stage2.bind();
             ISomeMatch someMatch_r2 = IActor.getReference(ISomeMatch.class, "300");
             ISomePlayer somePlayer_r2 = IActor.getReference(ISomePlayer.class, "101");
@@ -89,7 +89,7 @@ public class MongodbPersistenceTest
     {
         assertEquals(0, database.getCollection("ISomeMatch").count());
         // adding some state and then tearing down the cluster.
-        OrbitStage stage1 = createStage();
+        Stage stage1 = createStage();
         ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
         ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
         someMatch.addPlayer(somePlayer).get();
@@ -100,10 +100,10 @@ public class MongodbPersistenceTest
     }
 
 
-    public OrbitStage createStage() throws Exception
+    public Stage createStage() throws Exception
     {
 
-        OrbitStage stage = new OrbitStage();
+        Stage stage = new Stage();
         final MongoDBStorageProvider storageProvider = new MongoDBStorageProvider();
         storageProvider.setDatabase(database.getName());
         stage.addProvider(storageProvider);

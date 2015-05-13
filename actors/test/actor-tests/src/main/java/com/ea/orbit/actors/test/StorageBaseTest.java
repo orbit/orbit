@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.providers.IOrbitProvider;
 
 import org.junit.After;
@@ -46,7 +46,7 @@ public abstract class StorageBaseTest
     @Test
     public void checkWritesTest() throws Exception
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         assertEquals(0, count());
         IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), "300");
         helloActor.sayHello("Meep Meep").join();
@@ -57,7 +57,7 @@ public abstract class StorageBaseTest
     public void heavyTest() throws Exception
     {
         // not a load test "per se" but rather a test with more than a few calls.
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         assertEquals(0, count());
         for(int t=0;t< heavyTestSize();t++){
             String id =""+t;
@@ -82,7 +82,7 @@ public abstract class StorageBaseTest
     @Test
     public void checkReadTest() throws Exception
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(readState("300").lastName(), "Meep Meep");
@@ -91,7 +91,7 @@ public abstract class StorageBaseTest
     @Test
     public void checkClearTest() throws Exception
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         assertEquals(0, count());
         IStorageTestActor helloActor1 = IActor.getReference(getActorInterfaceClass(), "300");
         helloActor1.sayHello("Meep Meep").join();
@@ -107,7 +107,7 @@ public abstract class StorageBaseTest
     @Test
     public void checkUpdateTest() throws Exception
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         assertEquals(0, count());
         IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), "300");
         helloActor.sayHello("Meep Meep").join();
@@ -116,9 +116,9 @@ public abstract class StorageBaseTest
         assertEquals(readState("300").lastName(), "Peem Peem");
     }
 
-    public OrbitStage createStage() throws Exception
+    public Stage createStage() throws Exception
     {
-        OrbitStage stage = new OrbitStage();
+        Stage stage = new Stage();
         stage.addProvider(getStorageProvider());
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());

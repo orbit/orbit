@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.test.actors.ISomeActor;
@@ -72,8 +72,8 @@ public class ClientTest extends ActorBaseTest
     @Test
     public void basicClientTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage = createStage();
-        OrbitStage client = createClient();
+        Stage stage = createStage();
+        Stage client = createClient();
         ISomeActor player = IActor.getReference(ISomeActor.class, "232");
         client.bind();
         assertEquals("bla", player.sayHello("meh").get());
@@ -82,10 +82,10 @@ public class ClientTest extends ActorBaseTest
     @Test
     public void observerTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage stage2 = createStage();
-        OrbitStage client1 = createClient();
-        OrbitStage client2 = createClient();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
+        Stage client1 = createClient();
+        Stage client2 = createClient();
 
         SomeChatObserver observer1 = new SomeChatObserver();
         SomeChatObserver observer2 = new SomeChatObserver();
@@ -108,7 +108,7 @@ public class ClientTest extends ActorBaseTest
     @Test
     public void lonelyClientTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage client = createClient();
+        Stage client = createClient();
         ISomeActor player = IActor.getReference(ISomeActor.class, "232");
         client.getHosting().setTimeToWaitForServersMillis(100);
         expectException(() -> player.sayHello("meh"));
@@ -117,8 +117,8 @@ public class ClientTest extends ActorBaseTest
 	@Test
     public void ensureNoObjectsAreCreatedClientTest() throws ExecutionException, InterruptedException
     {
-        List<OrbitStage> clients = new ArrayList<>();
-        List<OrbitStage> servers = new ArrayList<>();
+        List<Stage> clients = new ArrayList<>();
+        List<Stage> servers = new ArrayList<>();
         Set<INodeAddress> serverAddresses = new HashSet<>();
 
         for (int i = 0; i < 20; i++)
@@ -128,13 +128,13 @@ public class ClientTest extends ActorBaseTest
 
         for (int i = 0; i < 5; i++)
         {
-            final OrbitStage server = createStage();
+            final Stage server = createStage();
             servers.add(server);
             serverAddresses.add(server.getClusterPeer().localAddress());
         }
         for (int i = 0; i < 50; i++)
         {
-            final OrbitStage client = clients.get((int) (Math.random() * clients.size()));
+            final Stage client = clients.get((int) (Math.random() * clients.size()));
             ISomeActor player = IActor.getReference(ISomeActor.class, String.valueOf(i));
             client.bind();
             assertEquals("bla", player.sayHello("meh").join());

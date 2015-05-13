@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.runtime.ActorKey;
 import com.ea.orbit.actors.test.actors.ISomeMatch;
@@ -52,7 +52,7 @@ public class ReferenceSerializationTest extends ActorBaseTest
     @Test
     public void referencePassingTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
+        Stage stage1 = createStage();
         ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
         ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
         someMatch.addPlayer(somePlayer).join();
@@ -62,7 +62,7 @@ public class ReferenceSerializationTest extends ActorBaseTest
     @Test
     public void passingActorInsteadOfReferenceTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
+        Stage stage1 = createStage();
         ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
         ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
         somePlayer.joinMatch(someMatch).join();
@@ -75,8 +75,8 @@ public class ReferenceSerializationTest extends ActorBaseTest
     public void distributedDirectoryClassesTest() throws ExecutionException, InterruptedException
     {
 
-        OrbitStage stage1 = createStage();
-        OrbitStage client = createClient();
+        Stage stage1 = createStage();
+        Stage client = createClient();
         client.bind();
         ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
         ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");

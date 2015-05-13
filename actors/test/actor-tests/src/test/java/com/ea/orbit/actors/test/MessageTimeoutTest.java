@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.ISomeActor;
 
 import org.junit.Test;
@@ -49,8 +49,8 @@ public class MessageTimeoutTest extends ActorBaseTest
     @Test
     public void timeoutTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage client = createClient();
+        Stage stage1 = createStage();
+        Stage client = createClient();
 
         ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
 
@@ -66,8 +66,8 @@ public class MessageTimeoutTest extends ActorBaseTest
     @Test
     public void timeoutWithTwoMessagesTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage client = createClient();
+        Stage stage1 = createStage();
+        Stage client = createClient();
 
         ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
 

@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.samples.customannotation;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.actors.test.FakeClusterPeer;
 import com.ea.orbit.actors.test.FakeStorageProvider;
@@ -51,7 +51,7 @@ public class AnnotationTest extends ActorBaseTest
     @Test
     public void onlyIfActivatedTest()
     {
-        OrbitStage stage = initStage();
+        Stage stage = initStage();
 
         IOnlyExample only = IActor.getReference(IOnlyExample.class, "234");
         only.doSomethingSpecial("A").join();
@@ -72,7 +72,7 @@ public class AnnotationTest extends ActorBaseTest
     @Test
     public void memoizeTest()
     {
-        OrbitStage stage = initStage();
+        Stage stage = initStage();
 
         IMemoizeExample memoize = IActor.getReference(IMemoizeExample.class, "45");
 
@@ -114,10 +114,10 @@ public class AnnotationTest extends ActorBaseTest
         }
     }
 
-    public OrbitStage initStage()
+    public Stage initStage()
     {
-        OrbitStage stage = new OrbitStage();
-        stage.setMode(OrbitStage.StageMode.HOST);
+        Stage stage = new Stage();
+        stage.setMode(Stage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
 

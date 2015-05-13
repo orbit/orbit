@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.Task;
 
@@ -119,8 +119,8 @@ public class MessagingTest extends ActorBaseTest
     @Test
     public void blockingReceptionTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage client = createClient();
+        Stage stage1 = createStage();
+        Stage client = createClient();
 
         IBlockingResponder blockingResponder = IActor.getReference(IBlockingResponder.class, "1");
         IBlockingResponder responder = IActor.getReference(IBlockingResponder.class, "free");
@@ -141,8 +141,8 @@ public class MessagingTest extends ActorBaseTest
     @Test
     public void blockingReceptionTestWithABunch() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage client = createClient();
+        Stage stage1 = createStage();
+        Stage client = createClient();
 
         IBlockingResponder blockingResponder2 = IActor.getReference(IBlockingResponder.class, "free");
         ArrayList<Task<?>> blocked = new ArrayList<>();

@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.ISomeMatch;
 import com.ea.orbit.actors.test.actors.ISomePlayer;
 
@@ -48,7 +48,7 @@ public class PersistenceTest extends ActorBaseTest
     @Test
     public void checkWritesTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
+        Stage stage1 = createStage();
         assertEquals(0, fakeDatabase.values().size());
         ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
         ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
@@ -61,7 +61,7 @@ public class PersistenceTest extends ActorBaseTest
     {
         {
             // adding some state and then tearing down the cluster.
-            OrbitStage stage1 = createStage();
+            Stage stage1 = createStage();
             assertEquals(0, fakeDatabase.values().size());
             ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
             ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
@@ -70,7 +70,7 @@ public class PersistenceTest extends ActorBaseTest
             stage1.stop();
         }
         {
-            OrbitStage stage2 = createStage();
+            Stage stage2 = createStage();
             ISomeMatch someMatch_r2 = IActor.getReference(ISomeMatch.class, "300");
             ISomePlayer somePlayer_r2 = IActor.getReference(ISomePlayer.class, "101");
             assertEquals(1, someMatch_r2.getPlayers().get().size());

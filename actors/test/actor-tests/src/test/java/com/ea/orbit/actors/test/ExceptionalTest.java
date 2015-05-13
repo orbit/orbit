@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.Task;
 
@@ -69,7 +69,7 @@ public class ExceptionalTest extends ActorBaseTest
     @Test
     public void noException() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
+        Stage stage1 = createStage();
         final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
         assertEquals("resp", ref.justRespond().join());
     }
@@ -77,7 +77,7 @@ public class ExceptionalTest extends ActorBaseTest
     @Test(expected = CompletionException.class)
     public void withException() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
+        Stage stage1 = createStage();
         final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
         ref.justThrowAnException().join();
     }
@@ -85,7 +85,7 @@ public class ExceptionalTest extends ActorBaseTest
     @Test
     public void catchingTheException() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
+        Stage stage1 = createStage();
         final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
         try
         {
@@ -102,7 +102,7 @@ public class ExceptionalTest extends ActorBaseTest
     @Test
     public void checkingTheException() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
+        Stage stage1 = createStage();
         final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
         final Task<String> fut = ref.justThrowAnException();
 

@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.providers.postgresql.test;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.providers.postgresql.PostgreSQLStorageProvider;
 import com.ea.orbit.actors.test.FakeClusterPeer;
 
@@ -57,7 +57,7 @@ public class PostgreSQLPersistenceTest
     @Test
     public void checkWritesTest() throws Exception
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         assertEquals(0, count(IHelloActor.class));
         IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
         helloActor.sayHello("Meep Meep").join();
@@ -67,7 +67,7 @@ public class PostgreSQLPersistenceTest
     @Test
     public void checkReadTest() throws Exception
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(readHelloState("300").lastName, "Meep Meep");
@@ -76,7 +76,7 @@ public class PostgreSQLPersistenceTest
     @Test
     public void checkClearTest() throws Exception
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         assertEquals(0, count(IHelloActor.class));
         IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
         helloActor.sayHello("Meep Meep").join();
@@ -88,7 +88,7 @@ public class PostgreSQLPersistenceTest
     @Test
     public void checkUpdateTest() throws Exception
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         assertEquals(0, count(IHelloActor.class));
         IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
         helloActor.sayHello("Meep Meep").join();
@@ -97,9 +97,9 @@ public class PostgreSQLPersistenceTest
         assertEquals(readHelloState("300").lastName, "Peem Peem");
     }
 
-    public OrbitStage createStage() throws Exception
+    public Stage createStage() throws Exception
     {
-        OrbitStage stage = new OrbitStage();
+        Stage stage = new Stage();
         final PostgreSQLStorageProvider storageProvider = new PostgreSQLStorageProvider();
         storageProvider.setPort(5432);
         storageProvider.setDatabase("orbit");

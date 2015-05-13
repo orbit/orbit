@@ -29,7 +29,7 @@
 package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.IStorage1Actor;
 import com.ea.orbit.actors.test.actors.IStorage2Actor;
 
@@ -49,7 +49,7 @@ public class MultipleStorageTest extends ActorBaseTest
     @Test
     public void checkWritesTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
+        Stage stage1 = createStage();
         assertEquals(0, fakeDatabase1.values().size());
         assertEquals(0, fakeDatabase2.values().size());
 
@@ -72,7 +72,7 @@ public class MultipleStorageTest extends ActorBaseTest
         assertEquals(4, fakeDatabase1.values().size());
         assertEquals(2, fakeDatabase2.values().size());
 
-        OrbitStage stage2 = createStage();
+        Stage stage2 = createStage();
 
         IStorage1Actor storage1AA = IActor.getReference(IStorage1Actor.class, "301");
         IStorage1Actor storage1BB = IActor.getReference(IStorage1Actor.class, "302");
@@ -91,10 +91,10 @@ public class MultipleStorageTest extends ActorBaseTest
     }
 
     @Override
-    public OrbitStage createStage() throws ExecutionException, InterruptedException
+    public Stage createStage() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage = new OrbitStage();
-        stage.setMode(OrbitStage.StageMode.HOST);
+        Stage stage = new Stage();
+        stage.setMode(Stage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
         stage.addProvider(new FakeStorageProvider("default", fakeDatabase1));

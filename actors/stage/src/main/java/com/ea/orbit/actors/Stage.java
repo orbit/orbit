@@ -58,9 +58,9 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 @Singleton
-public class OrbitStage implements Startable
+public class Stage implements Startable
 {
-    private static final Logger logger = LoggerFactory.getLogger(OrbitStage.class);
+    private static final Logger logger = LoggerFactory.getLogger(Stage.class);
 
     @Config("orbit.actors.clusterName")
     private String clusterName;

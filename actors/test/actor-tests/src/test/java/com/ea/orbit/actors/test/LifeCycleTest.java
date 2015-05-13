@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.ISomeActor;
 import com.ea.orbit.actors.test.actors.ISomeMatch;
 import com.ea.orbit.actors.test.actors.ISomePlayer;
@@ -48,8 +48,8 @@ public class LifeCycleTest extends ActorBaseTest
     @Test
     public void activationTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage = createStage();
-        OrbitStage client = createClient();
+        Stage stage = createStage();
+        Stage client = createClient();
 
         ISomeActor actor1 = IActor.getReference(ISomeActor.class, "1000");
 
@@ -59,8 +59,8 @@ public class LifeCycleTest extends ActorBaseTest
     @Test
     public void deactivationTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage = createStage();
-        OrbitStage client = createClient();
+        Stage stage = createStage();
+        Stage client = createClient();
 
         ISomeMatch match = IActor.getReference(ISomeMatch.class, "1000");
         ISomePlayer player = IActor.getReference(ISomePlayer.class, "101");

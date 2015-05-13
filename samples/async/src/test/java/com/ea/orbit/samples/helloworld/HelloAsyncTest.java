@@ -29,7 +29,7 @@
 package com.ea.orbit.samples.helloworld;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.async.Async;
 import com.ea.orbit.async.Await;
@@ -60,8 +60,8 @@ public class HelloAsyncTest extends ActorBaseTest
     @Test
     public void test() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage stage2 = createStage();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
         System.out.println("Stages initialized");
 
         final Task<String> res = asyncMethod();

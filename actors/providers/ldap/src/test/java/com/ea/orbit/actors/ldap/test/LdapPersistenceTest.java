@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.ldap.test;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.providers.ldap.LdapStorageProvider;
 import com.ea.orbit.actors.test.FakeClusterPeer;
 
@@ -73,7 +73,7 @@ public class LdapPersistenceTest extends AbstractLdapTestUnit
     @Test
     public void ldapTest() throws Exception
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
 
         ILdapAuthenticateActor user1 = IActor.getReference(ILdapAuthenticateActor.class, "rmello");
         boolean authenticated1 = user1.authenticate("123456").join();
@@ -99,7 +99,7 @@ public class LdapPersistenceTest extends AbstractLdapTestUnit
         authenticated2 = user2.authenticate("mypassword").join();
         assertTrue(authenticated2);
 
-        OrbitStage stage2 = createStage();
+        Stage stage2 = createStage();
 
         ILdapAuthenticateActor user3 = IActor.getReference(ILdapAuthenticateActor.class, "jcrawford");
         boolean authenticated3 = user3.authenticate("mypassword").join();
@@ -118,9 +118,9 @@ public class LdapPersistenceTest extends AbstractLdapTestUnit
         assertFalse(authenticated3);
     }
 
-    public OrbitStage createStage() throws Exception
+    public Stage createStage() throws Exception
     {
-        OrbitStage stage = new OrbitStage();
+        Stage stage = new Stage();
         LdapStorageProvider provider = new LdapStorageProvider();
         provider.setDn("uid=admin,ou=system");
         provider.setCredentials("secret");

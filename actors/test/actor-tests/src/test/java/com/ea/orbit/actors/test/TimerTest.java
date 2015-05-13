@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.ISomeChatObserver;
 import com.ea.orbit.actors.test.actors.ISomeChatRoom;
 import com.ea.orbit.concurrent.Task;
@@ -67,8 +67,8 @@ public class TimerTest extends ActorBaseTest
     @Test
     public void timerTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage frontend = createClient();
+        Stage stage1 = createStage();
+        Stage frontend = createClient();
 
         ISomeChatRoom chatRoom = IActor.getReference(ISomeChatRoom.class, "1");
         SomeChatObserver observer = new SomeChatObserver();

@@ -29,9 +29,8 @@
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.providers.ILifetimeProvider;
-import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.runtime.OrbitActor;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
@@ -83,9 +82,9 @@ public class ActorBaseTest
     };
     protected FakeSync fakeSync = new FakeSync();
 
-    public OrbitStage createClient() throws ExecutionException, InterruptedException
+    public Stage createClient() throws ExecutionException, InterruptedException
     {
-        OrbitStage client = new OrbitStage();
+        Stage client = new Stage();
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
         client.addProvider(new ILifetimeProvider()
@@ -97,7 +96,7 @@ public class ActorBaseTest
                 return Task.done();
             }
         });
-        client.setMode(OrbitStage.StageMode.FRONT_END);
+        client.setMode(Stage.StageMode.FRONT_END);
         client.setExecutionPool(commonPool);
         client.setMessagingPool(commonPool);
         client.setClock(clock);
@@ -108,9 +107,9 @@ public class ActorBaseTest
         return client;
     }
 
-    public OrbitStage createStage() throws ExecutionException, InterruptedException
+    public Stage createStage() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage = new OrbitStage();
+        Stage stage = new Stage();
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
         stage.addProvider(new ILifetimeProvider()
@@ -122,7 +121,7 @@ public class ActorBaseTest
                 return Task.done();
             }
         });
-        stage.setMode(OrbitStage.StageMode.HOST);
+        stage.setMode(Stage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
         stage.addProvider(new FakeStorageProvider(fakeDatabase));
@@ -193,7 +192,7 @@ public class ActorBaseTest
      *
      * @return boolean if there are no task running.
      */
-    protected boolean isIdle(OrbitStage stage)
+    protected boolean isIdle(Stage stage)
     {
         try
         {

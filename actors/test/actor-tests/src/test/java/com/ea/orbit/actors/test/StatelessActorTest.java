@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.IStatelessThing;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -55,11 +55,11 @@ public class StatelessActorTest extends ActorBaseTest
     @Test
     public void statelessTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage stage2 = createStage();
-        OrbitStage stage3 = createStage();
-        OrbitStage stage4 = createStage();
-        OrbitStage client = createClient();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
+        Stage stage3 = createStage();
+        Stage stage4 = createStage();
+        Stage client = createClient();
 
         IStatelessThing actor1 = IActor.getReference(IStatelessThing.class, "1000");
         IStatelessThing actor2 = IActor.getReference(IStatelessThing.class, "1000");
@@ -141,8 +141,8 @@ public class StatelessActorTest extends ActorBaseTest
     @Test
     public void heavierTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage stage2 = createStage();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
 
         IStatelessThing actor1 = IActor.getReference(IStatelessThing.class, "1000");
         IStatelessThing actor2 = IActor.getReference(IStatelessThing.class, "1000");

@@ -26,24 +26,18 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.server;
+package com.ea.orbit.actors.client;
 
+
+import com.ea.orbit.actors.Stage;
 
 import javax.inject.Singleton;
 
-import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.concurrent.Task;
-
 @Singleton
-public class OrbitStageServer extends OrbitStage
+public class FrontendStage extends Stage
 {
-    public OrbitStageServer()
+    public FrontendStage()
     {
-        setMode(StageMode.HOST);
-    }
-
-    public Task<?> start()
-    {
-        return super.start();
+        setMode(StageMode.FRONT_END);
     }
 }
