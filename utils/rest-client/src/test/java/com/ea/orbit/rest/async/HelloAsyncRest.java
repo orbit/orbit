@@ -52,7 +52,7 @@ public class HelloAsyncRest
     {
         WebTarget webTarget = getWebTarget("http://example.com");
 
-        Hello hello = new OrbitRestClient(webTarget).get(Hello.class);
+        Hello hello = new RestClient(webTarget).get(Hello.class);
         Task<String> response = hello.getHome();
         response.thenAccept(x -> System.out.println(x));
         response.join();

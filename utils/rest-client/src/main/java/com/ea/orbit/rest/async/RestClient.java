@@ -45,7 +45,6 @@ import javax.ws.rs.MatrixParam;
 import javax.ws.rs.NotSupportedException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.ProcessingException;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.client.Entity;
@@ -78,7 +77,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author Daniel Sperry
  */
-public class OrbitRestClient
+public class RestClient
 {
     private final static Map<String, Class<? extends RestInvocationCallback>> invocationClasses = new ConcurrentHashMap<>();
     private static final Class<? extends CompletableFuture> futureClass;
@@ -110,13 +109,13 @@ public class OrbitRestClient
      * @param webTarget a jax-rx target, can be obtained with a jax-rs implementation,
      *                  for instance org.glassfish.jersey.core:jersey-clien.
      */
-    public OrbitRestClient(WebTarget webTarget)
+    public RestClient(WebTarget webTarget)
     {
         target = webTarget;
         headers = new MultivaluedHashMap<>();
     }
 
-    public OrbitRestClient(final WebTarget target, final MultivaluedHashMap<String, Object> headers)
+    public RestClient(final WebTarget target, final MultivaluedHashMap<String, Object> headers)
     {
         this.target = target;
         this.headers = headers;
@@ -133,7 +132,7 @@ public class OrbitRestClient
     /**
      * Returns a new orbit rest client replacing all the headers
      */
-    public <T extends OrbitRestClient> T setHeaders(MultivaluedMap<String, Object> headers)
+    public <T extends RestClient> T setHeaders(MultivaluedMap<String, Object> headers)
     {
         final MultivaluedHashMap<String, Object> newHeaders = new MultivaluedHashMap<>();
         newHeaders.putAll(headers);
@@ -143,7 +142,7 @@ public class OrbitRestClient
     /**
      * Returns a new OrbitRestClient with the header {@code key} replaced/set
      */
-    public <T extends OrbitRestClient> T setHeader(String key, String value)
+    public <T extends RestClient> T setHeader(String key, String value)
     {
         final MultivaluedHashMap<String, Object> newHeaders = new MultivaluedHashMap<String, Object>(headers);
         newHeaders.putSingle(key, value);
@@ -153,7 +152,7 @@ public class OrbitRestClient
     /**
      * Returns a new OrbitRestClient with where with an extra header
      */
-    public <T extends OrbitRestClient> T addHeader(String key, String value)
+    public <T extends RestClient> T addHeader(String key, String value)
     {
         final MultivaluedHashMap<String, Object> newHeaders = new MultivaluedHashMap<String, Object>(headers);
         newHeaders.add(key, value);
@@ -161,9 +160,9 @@ public class OrbitRestClient
     }
 
     @SuppressWarnings("unchecked")
-    protected <T extends OrbitRestClient> T newClient(WebTarget target, MultivaluedHashMap<String, Object> headers)
+    protected <T extends RestClient> T newClient(WebTarget target, MultivaluedHashMap<String, Object> headers)
     {
-        return (T) new OrbitRestClient(target, headers);
+        return (T) new RestClient(target, headers);
     }
 
     /**
@@ -187,7 +186,7 @@ public class OrbitRestClient
         if (proxy == null)
         {
             final WebTarget interfaceTarget = addPath(target, interfaceClass);
-            proxy = Proxy.newProxyInstance(OrbitRestClient.class.getClassLoader(), new Class[]{interfaceClass},
+            proxy = Proxy.newProxyInstance(RestClient.class.getClassLoader(), new Class[]{interfaceClass},
                     (theProxy, method, args) -> invoke(interfaceClass, interfaceTarget, method, args));
             proxies.put(interfaceClass, proxy);
         }
@@ -507,7 +506,7 @@ public class OrbitRestClient
         {
             Loader()
             {
-                super(OrbitRestClient.class.getClassLoader());
+                super(RestClient.class.getClassLoader());
             }
 
             public Class<?> define(final String o, final byte[] bytes)
@@ -550,7 +549,7 @@ public class OrbitRestClient
      * @param <T> Rest Client
      * @return new Rest Client with applied change
      */
-    public <T extends OrbitRestClient> T property(String propertyName, Object propertyValue)
+    public <T extends RestClient> T property(String propertyName, Object propertyValue)
     {
         return newClient(
             target.path("").property(propertyName, propertyValue),
