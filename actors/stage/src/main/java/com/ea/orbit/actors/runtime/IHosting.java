@@ -29,13 +29,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.IActorObserver;
+import com.ea.orbit.actors.annotation.OneWay;
+import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.concurrent.Task;
 
 public interface IHosting extends IActorObserver
 {
-    public enum NodeTypeEnum
+    enum NodeTypeEnum
     {
         SERVER, CLIENT
+    }
+    enum NodeState
+    {
+        RUNNING, STOPPING, state, STOPPED
     }
 
     int actorSupported_yes = 1;
@@ -48,4 +55,7 @@ public interface IHosting extends IActorObserver
      * @return #actorSupported_yes, #actorSupported_no, or #actorSupported_noneSupported
      */
     Task<Integer> canActivate(String interfaceName, int interfaceId);
+
+    @OneWay
+    Task<Void> nodeModeChanged(INodeAddress nodeAddress, NodeState newMode);
 }

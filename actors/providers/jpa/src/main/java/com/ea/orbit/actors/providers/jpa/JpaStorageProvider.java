@@ -158,8 +158,4 @@ public class JpaStorageProvider extends AbstractStorageProvider
         }
     }
 
-    private String getIdentity(final ActorReference<?> reference)
-    {
-        return String.valueOf(ActorReference.getId(reference));
-    }
 }

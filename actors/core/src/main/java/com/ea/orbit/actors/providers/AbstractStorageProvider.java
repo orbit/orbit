@@ -28,6 +28,8 @@
 
 package com.ea.orbit.actors.providers;
 
+import com.ea.orbit.actors.runtime.ActorReference;
+
 public abstract class AbstractStorageProvider implements IStorageProvider
 {
 
@@ -41,6 +43,11 @@ public abstract class AbstractStorageProvider implements IStorageProvider
     public String getName()
     {
         return name;
+    }
+
+    protected String getIdentity(final ActorReference<?> reference)
+    {
+        return String.valueOf(ActorReference.getId(reference));
     }
 
 }

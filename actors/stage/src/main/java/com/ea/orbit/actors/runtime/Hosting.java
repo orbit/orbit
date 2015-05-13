@@ -109,10 +109,19 @@ public class Hosting implements IHosting, Startable
         return Collections.unmodifiableList(set);
     }
 
+    public void notifyStateChange()
+    {
+        for (NodeInfo info : activeNodes.values())
+        {
+            info.hosting.nodeModeChanged(clusterPeer.localAddress(), execution.getState());
+        }
+    }
+
     private static class NodeInfo
     {
         boolean active;
         INodeAddress address;
+        NodeState state = NodeState.RUNNING;
         IHosting hosting;
         boolean cannotHostActors;
         final ConcurrentHashMap<String, Integer> canActivate = new ConcurrentHashMap<>();
@@ -126,9 +135,28 @@ public class Hosting implements IHosting, Startable
     @Override
     public Task<Integer> canActivate(String interfaceName, int interfaceId)
     {
-        return Task.fromValue(nodeType == NodeTypeEnum.CLIENT ? actorSupported_noneSupported
-                : execution.canActivateActor(interfaceName, interfaceId) ? actorSupported_yes
+        if (nodeType == NodeTypeEnum.CLIENT || execution.getState() != NodeState.RUNNING)
+        {
+            return Task.fromValue(actorSupported_noneSupported);
+        }
+        return Task.fromValue(execution.canActivateActor(interfaceName, interfaceId) ? actorSupported_yes
                 : actorSupported_no);
+    }
+
+    @Override
+    public Task<Void> nodeModeChanged(final INodeAddress nodeAddress, final NodeState newState)
+    {
+        final NodeInfo node = activeNodes.get(nodeAddress);
+        if (node != null)
+        {
+            node.state = newState;
+            if (node.state != NodeState.RUNNING)
+            {
+                // clear list of actors this node can activate
+                node.canActivate.clear();
+            }
+        }
+        return Task.done();
     }
 
     public void setClusterPeer(final IClusterPeer clusterPeer)
@@ -292,7 +320,7 @@ public class Hosting implements IHosting, Startable
             List<NodeInfo> currentServerNodes = serverNodes;
 
             potentialNodes = currentServerNodes.stream()
-                    .filter(n -> !n.cannotHostActors
+                    .filter(n -> (!n.cannotHostActors && n.state == NodeState.RUNNING)
                             && IHosting.actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, IHosting.actorSupported_yes))
                     .collect(Collectors.toList());
 
