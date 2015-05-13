@@ -52,7 +52,7 @@ object Main {
   }
 
   def initStage(clusterId: String, stageId: String) = {
-    val stage = new OrbitStage()
+    val stage = new Stage()
     stage.setClusterName(clusterId)
     stage.start().join()
     stage
