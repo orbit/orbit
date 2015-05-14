@@ -37,5 +37,5 @@ orbit.actors.extensions:
 
 orbit.chat.maxMessages: 500
 
-orbit.providers:
+orbit.components:
   - com.ea.orbit.actors.server.ServerModule

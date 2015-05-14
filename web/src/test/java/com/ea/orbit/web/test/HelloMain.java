@@ -42,7 +42,7 @@ public class HelloMain
         Container container = new Container();
         Map<String,Object> props = new HashMap<>();
         props.put("orbit.http.port", 8080);
-        props.put("orbit.providers", Arrays.asList(WebModule.class, Module1.class));
+        props.put("orbit.components", Arrays.asList(WebModule.class, Module1.class));
         container.setProperties(props);
         container.start();
         System.in.read();

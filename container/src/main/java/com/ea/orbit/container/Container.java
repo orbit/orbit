@@ -62,12 +62,12 @@ import java.util.stream.Collectors;
 public class Container
 {
     private ContainerConfig properties;
-    private Map<String, ComponentState> components = new ConcurrentHashMap<>();
+    private Map<String, ComponentState> componentMap = new ConcurrentHashMap<>();
 
     private CompletableFuture<?> stopFuture = new CompletableFuture<>();
 
-    @Config("orbit.providers")
-    private List<Object> providers = new ArrayList<>();
+    @Config("orbit.components")
+    private List<Object> components = new ArrayList<>();
 
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Container.class);
 
@@ -113,7 +113,7 @@ public class Container
 
     public List<Class<?>> getClasses()
     {
-        return components.values().stream().map(c -> c.implClass).collect(Collectors.toList());
+        return componentMap.values().stream().map(c -> c.implClass).collect(Collectors.toList());
     }
 
     public void join() throws ExecutionException, InterruptedException
@@ -146,11 +146,11 @@ public class Container
 
     public void add(final Class<?> componentClass)
     {
-        ComponentState state = components.get(componentClass.getName());
+        ComponentState state = componentMap.get(componentClass.getName());
         if (state == null)
         {
             state = new ComponentState();
-            components.put(componentClass.getName(), state);
+            componentMap.put(componentClass.getName(), state);
             state.isSingleton = componentClass.isAnnotationPresent(Singleton.class);
             if (state.isSingleton)
             {
@@ -164,11 +164,11 @@ public class Container
     public <T> void addInstance(T instance)
     {
         registry.addSingleton(instance.getClass(), instance);
-        ComponentState state = components.get(instance.getClass().getName());
+        ComponentState state = componentMap.get(instance.getClass().getName());
         if (state == null)
         {
             state = new ComponentState();
-            components.put(instance.getClass().getName(), state);
+            componentMap.put(instance.getClass().getName(), state);
         }
         if (state.implClass == null)
         {
@@ -289,10 +289,10 @@ public class Container
      * <li>Looks for component declarations in the classpath: META-INF/services/orbit/*</li>
      * </ul>
      * </li>
-     * <li>Instantiates all the components</li>
-     * <li>Wires the components together by injecting fields and the configuration </li>
-     * <li>Calls &#64;PostConstructor on all components</li>
-     * <li>Calls start on all components that implement Startable</li>
+     * <li>Instantiates all the componentMap</li>
+     * <li>Wires the componentMap together by injecting fields and the configuration </li>
+     * <li>Calls &#64;PostConstructor on all componentMap</li>
+     * <li>Calls start on all componentMap that implement Startable</li>
      * </ol>
      */
     @SuppressWarnings("unchecked")
@@ -327,13 +327,13 @@ public class Container
             addInstance(registry);
             registry.addSingleton(ContainerConfig.class, properties);
 
-            if (providers != null)
+            if (components != null)
             {
-                for (final Object service : providers)
+                for (final Object service : components)
                 {
                     if(logger.isDebugEnabled())
                     {
-                        logger.debug("Adding Provider: {0}", service.toString());
+                        logger.debug("Adding Component: {0}", service.toString());
                     }
 
                     add((service instanceof Class) ? (Class<?>) service : Class.forName(String.valueOf(service)));
@@ -341,7 +341,7 @@ public class Container
             }
 
             // Instantiating modules
-            for (ComponentState state : components.values())
+            for (ComponentState state : componentMap.values())
             {
                 if (state.instance == null && Module.class.isAssignableFrom(state.implClass))
                 {
@@ -351,7 +351,7 @@ public class Container
 
             // Getting module classes
             Set<Class<?>> newComps = new LinkedHashSet<>();
-            for (ComponentState state : components.values())
+            for (ComponentState state : componentMap.values())
             {
                 if (state.instance != null && Module.class.isAssignableFrom(state.implClass))
                 {
@@ -361,7 +361,7 @@ public class Container
             newComps.forEach(c -> add(c));
 
             // component snapshot
-            Set<ComponentState> comps = new LinkedHashSet<>(components.values());
+            Set<ComponentState> comps = new LinkedHashSet<>(componentMap.values());
 
             // Instantiating the singletons
             for (ComponentState state : comps)
@@ -372,10 +372,10 @@ public class Container
                 }
             }
 
-            // just in case the post constructor added new components
-            if (components.size() != comps.size())
+            // just in case the post constructor added new componentMap
+            if (componentMap.size() != comps.size())
             {
-                comps.addAll(components.values());
+                comps.addAll(componentMap.values());
             }
 
             List<Task<?>> futures = new ArrayList<>();
@@ -416,7 +416,7 @@ public class Container
         }
 
         state = ContainerState.STOPPING;
-        for (ComponentState componentState : components.values())
+        for (ComponentState componentState : componentMap.values())
         {
             if (componentState.instance != null && componentState.instance instanceof Startable)
             {
@@ -439,12 +439,12 @@ public class Container
 
     protected ComponentState getState(final Class<?> componentClass)
     {
-        ComponentState state = components.get(componentClass.getName());
+        ComponentState state = componentMap.get(componentClass.getName());
         if (state != null && state.instance != null)
         {
             return state;
         }
-        for (ComponentState s : components.values())
+        for (ComponentState s : componentMap.values())
         {
             if (s.instance != null && componentClass.isInstance(s.instance))
             {
@@ -468,8 +468,8 @@ public class Container
 
     public List<Object> components()
     {
-        List<Object> list = new ArrayList<>(components.size());
-        for (ComponentState state : components.values())
+        List<Object> list = new ArrayList<>(componentMap.size());
+        for (ComponentState state : componentMap.values())
         {
             if (state.instance != null)
             {
@@ -483,7 +483,7 @@ public class Container
     public <T> List<T> components(final Class<T> actorClass)
     {
         List<T> list = new ArrayList<T>();
-        for (ComponentState s : components.values())
+        for (ComponentState s : componentMap.values())
         {
             if (s.instance != null && actorClass.isInstance(s.instance))
             {
