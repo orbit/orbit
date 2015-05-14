@@ -37,7 +37,7 @@ import java.lang.annotation.Target;
  * Actor methods annotated with {@literal@}OneWay will not message back the invocation result.
  * Therefore their return type must be {@code Task<Void>} or simply {@code Task}.
  * <p><pre>
- * public interface IHello implements IActor
+ * public interface Hello implements Actor
  * {
  *     {@literal@}OneWay
  *     Task someMethod();

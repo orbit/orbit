@@ -26,23 +26,41 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.samples.chat;
+package com.ea.orbit.samples.trace.demo;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.annotation.OneWay;
+import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.Registration;
 import com.ea.orbit.concurrent.Task;
 
-import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-public interface IChat extends IActor
+public class ExampleAActor extends AbstractActor implements ExampleA
 {
 
-    @OneWay
-    Task<Void> say(ChatMessageDto message);
+    Registration timer;
 
-    Task<Boolean> join(IChatObserver observer);
+    @Override
+    public Task activateAsync()
+    {
+        int interval = 100 + ((int) Math.random() * 3000);
+        timer = registerTimer(() -> callRandomB(), interval, interval, TimeUnit.MILLISECONDS);
+        return super.activateAsync();
+    }
 
-    Task<Boolean> leave(IChatObserver observer);
+    @Override
+    public Task<Void> callRandomB()
+    {
+        if (Math.random() > 0.5d) return Task.done(); //some variance to the calls
+        String id = Integer.toString((int) (Math.random() * 10));
+        ExampleB b = IActor.getReference(ExampleB.class, id);
+        b.someWork().join();
+        return Task.done();
+    }
 
-    Task<List<ChatMessageDto>> getHistory(int messageCount);
+    public Task<Integer> someWork()
+    {
+        return Task.fromValue(42);
+    }
+
 }

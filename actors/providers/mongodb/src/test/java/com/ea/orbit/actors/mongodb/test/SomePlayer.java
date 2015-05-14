@@ -28,26 +28,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.mongodb.test;
 
-import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.concurrent.Task;
 
-public class SomePlayer extends AbstractActor<SomePlayer.SomePlayerStateDto> implements ISomePlayer
+public interface SomePlayer extends IActor
 {
-    public static class SomePlayerStateDto
-    {
+    Task<String> getName();
 
-    }
-
-    @Override
-    public Task<String> getName()
-    {
-        return Task.fromValue(null);
-    }
-
-    @Override
-    public Task<Void> joinMatch(final ISomeMatch someMatch)
-    {
-        return someMatch.addPlayer(this);
-    }
-
+    Task<Void> joinMatch(SomeMatch someMatch);
 }

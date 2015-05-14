@@ -31,7 +31,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.test.actors.ISomeActor;
+import com.ea.orbit.actors.test.actors.SomeActor;
 
 import org.junit.Test;
 
@@ -51,7 +51,7 @@ public class FailureTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage stage2 = createStage();
 
-        ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
+        SomeActor someActor = IActor.getReference(SomeActor.class, "1");
         stage1.bind();
         UUID uuid = someActor.getUniqueActivationId().join();
         assertEquals("bla", someActor.sayHello("bla").join());
@@ -60,7 +60,7 @@ public class FailureTest extends ActorBaseTest
         Stage stage4 = createStage();
 
 
-        ISomeActor someActor_r3 = IActor.getReference(ISomeActor.class, "1");
+        SomeActor someActor_r3 = IActor.getReference(SomeActor.class, "1");
         stage3.bind();
         assertEquals(uuid, someActor_r3.getUniqueActivationId().join());
 
@@ -71,7 +71,7 @@ public class FailureTest extends ActorBaseTest
         stage3.bind();
         final UUID secondUUID = someActor_r3.getUniqueActivationId().join();
         assertNotEquals(uuid, secondUUID);
-        ISomeActor someActor_r4 = IActor.getReference(ISomeActor.class, "1");
+        SomeActor someActor_r4 = IActor.getReference(SomeActor.class, "1");
         stage3.bind();
         assertEquals(secondUUID, someActor_r4.getUniqueActivationId().join());
         // BTW, timing issues will sometimes make this fail by timeout with the real network.

@@ -30,8 +30,8 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.test.actors.IStorage1Actor;
-import com.ea.orbit.actors.test.actors.IStorage2Actor;
+import com.ea.orbit.actors.test.actors.Storage1;
+import com.ea.orbit.actors.test.actors.Storage2;
 
 import org.junit.Test;
 
@@ -53,12 +53,12 @@ public class MultipleStorageTest extends ActorBaseTest
         assertEquals(0, fakeDatabase1.values().size());
         assertEquals(0, fakeDatabase2.values().size());
 
-        IStorage1Actor storage1A = IActor.getReference(IStorage1Actor.class, "301");
-        IStorage1Actor storage1B = IActor.getReference(IStorage1Actor.class, "302");
-        IStorage1Actor storage1C = IActor.getReference(IStorage1Actor.class, "303");
-        IStorage1Actor storage1D = IActor.getReference(IStorage1Actor.class, "304");
-        IStorage2Actor storage2A = IActor.getReference(IStorage2Actor.class, "400");
-        IStorage2Actor storage2B = IActor.getReference(IStorage2Actor.class, "401");
+        Storage1 storage1A = IActor.getReference(Storage1.class, "301");
+        Storage1 storage1B = IActor.getReference(Storage1.class, "302");
+        Storage1 storage1C = IActor.getReference(Storage1.class, "303");
+        Storage1 storage1D = IActor.getReference(Storage1.class, "304");
+        Storage2 storage2A = IActor.getReference(Storage2.class, "400");
+        Storage2 storage2B = IActor.getReference(Storage2.class, "401");
 
         storage1A.put("I").join();
         storage1B.put("am").join();
@@ -74,12 +74,12 @@ public class MultipleStorageTest extends ActorBaseTest
 
         Stage stage2 = createStage();
 
-        IStorage1Actor storage1AA = IActor.getReference(IStorage1Actor.class, "301");
-        IStorage1Actor storage1BB = IActor.getReference(IStorage1Actor.class, "302");
-        IStorage1Actor storage1CC = IActor.getReference(IStorage1Actor.class, "303");
-        IStorage1Actor storage1DD = IActor.getReference(IStorage1Actor.class, "304");
-        IStorage2Actor storage2AA = IActor.getReference(IStorage2Actor.class, "400");
-        IStorage2Actor storage2BB = IActor.getReference(IStorage2Actor.class, "401");
+        Storage1 storage1AA = IActor.getReference(Storage1.class, "301");
+        Storage1 storage1BB = IActor.getReference(Storage1.class, "302");
+        Storage1 storage1CC = IActor.getReference(Storage1.class, "303");
+        Storage1 storage1DD = IActor.getReference(Storage1.class, "304");
+        Storage2 storage2AA = IActor.getReference(Storage2.class, "400");
+        Storage2 storage2BB = IActor.getReference(Storage2.class, "401");
 
         assertEquals("I", storage1AA.get().join());
         assertEquals("am", storage1BB.get().join());

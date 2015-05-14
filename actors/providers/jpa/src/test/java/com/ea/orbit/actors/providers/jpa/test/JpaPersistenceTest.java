@@ -30,7 +30,7 @@ package com.ea.orbit.actors.providers.jpa.test;
 
 import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.providers.jpa.JpaStorageProvider;
-import com.ea.orbit.actors.test.IStorageTestActor;
+import com.ea.orbit.actors.test.StorageTest;
 import com.ea.orbit.actors.test.IStorageTestState;
 import com.ea.orbit.actors.test.StorageBaseTest;
 
@@ -46,9 +46,9 @@ public class JpaPersistenceTest extends StorageBaseTest
     private EntityManagerFactory emf;
 
     @Override
-    public Class<? extends IStorageTestActor> getActorInterfaceClass()
+    public Class<? extends StorageTest> getActorInterfaceClass()
     {
-        return IHelloActor.class;
+        return Hello.class;
     }
 
     @Override

@@ -53,7 +53,7 @@ import java.lang.annotation.Target;
  * Usage:
  * <pre>
  *  {@literal@}StatelessWorker
- *  public interface ISomeActor extends IActor {
+ *  public interface SomeActor extends Actor {
  *     Task&lt;Integer&gt; add(int a, int b);
  *  }</pre>
  * </p>

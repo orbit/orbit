@@ -26,12 +26,40 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.providers.postgresql.test;
+package com.ea.orbit.samples.trace.demo;
 
 import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.Registration;
 import com.ea.orbit.concurrent.Task;
 
-public interface IHelloActor extends IActor {
-    Task<String> sayHello(String name);
-    Task<Void> clear();
+import java.util.concurrent.TimeUnit;
+
+public class ExampleBActor extends AbstractActor implements ExampleB
+{
+
+    Registration timer;
+
+    @Override
+    public Task activateAsync()
+    {
+        int interval = 100 + ((int) Math.random() * 3000);
+        timer = registerTimer(() -> callRandomA(), interval, interval, TimeUnit.MILLISECONDS);
+        return super.activateAsync();
+    }
+
+    @Override
+    public Task<Void> callRandomA()
+    {
+        if (Math.random() > 0.5d) return Task.done(); //some variance to the calls
+        String id = Integer.toString((int) (Math.random() * 10));
+        ExampleA a = IActor.getReference(ExampleA.class, id);
+        a.someWork().join();
+        return Task.done();
+    }
+
+    public Task<Integer> someWork()
+    {
+        return Task.fromValue(24);
+    }
 }

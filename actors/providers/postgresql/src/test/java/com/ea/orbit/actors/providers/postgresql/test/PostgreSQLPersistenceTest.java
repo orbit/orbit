@@ -58,17 +58,17 @@ public class PostgreSQLPersistenceTest
     public void checkWritesTest() throws Exception
     {
         Stage stage = createStage();
-        assertEquals(0, count(IHelloActor.class));
-        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
+        assertEquals(0, count(Hello.class));
+        Hello helloActor = IActor.getReference(Hello.class, "300");
         helloActor.sayHello("Meep Meep").join();
-        assertEquals(1, count(IHelloActor.class));
+        assertEquals(1, count(Hello.class));
     }
 
     @Test
     public void checkReadTest() throws Exception
     {
         Stage stage = createStage();
-        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
+        Hello helloActor = IActor.getReference(Hello.class, "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(readHelloState("300").lastName, "Meep Meep");
     }
@@ -77,22 +77,22 @@ public class PostgreSQLPersistenceTest
     public void checkClearTest() throws Exception
     {
         Stage stage = createStage();
-        assertEquals(0, count(IHelloActor.class));
-        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
+        assertEquals(0, count(Hello.class));
+        Hello helloActor = IActor.getReference(Hello.class, "300");
         helloActor.sayHello("Meep Meep").join();
-        assertEquals(1, count(IHelloActor.class));
+        assertEquals(1, count(Hello.class));
         helloActor.clear().join();
-        assertEquals(0, count(IHelloActor.class));
+        assertEquals(0, count(Hello.class));
     }
 
     @Test
     public void checkUpdateTest() throws Exception
     {
         Stage stage = createStage();
-        assertEquals(0, count(IHelloActor.class));
-        IHelloActor helloActor = IActor.getReference(IHelloActor.class, "300");
+        assertEquals(0, count(Hello.class));
+        Hello helloActor = IActor.getReference(Hello.class, "300");
         helloActor.sayHello("Meep Meep").join();
-        assertEquals(1, count(IHelloActor.class));
+        assertEquals(1, count(Hello.class));
         helloActor.sayHello("Peem Peem").join();
         assertEquals(readHelloState("300").lastName, "Peem Peem");
     }
@@ -145,7 +145,7 @@ public class PostgreSQLPersistenceTest
     {
         Statement stmt = this.conn.createStatement();
         ResultSet results = stmt.executeQuery(
-                "SELECT state AS \"state\" FROM actor_states WHERE actor = '" + IHelloActor.class.getSimpleName()
+                "SELECT state AS \"state\" FROM actor_states WHERE actor = '" + Hello.class.getSimpleName()
                         + "' AND identity = '" + identity + "'");
         results.next();
         HelloActor.State state = objectMapper.readValue(results.getString("state"), HelloActor.State.class);

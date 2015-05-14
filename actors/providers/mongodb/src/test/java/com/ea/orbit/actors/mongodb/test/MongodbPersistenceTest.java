@@ -53,32 +53,32 @@ public class MongodbPersistenceTest
     public void checkWritesTest() throws Exception
     {
         Stage stage1 = createStage();
-        assertEquals(0, database.getCollection("ISomeMatch").count());
-        ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
-        ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
+        assertEquals(0, database.getCollection("SomeMatch").count());
+        SomeMatch someMatch = IActor.getReference(SomeMatch.class, "300");
+        SomePlayer somePlayer = IActor.getReference(SomePlayer.class, "101");
         someMatch.addPlayer(somePlayer).get();
-        assertEquals(1, database.getCollection("ISomeMatch").count());
+        assertEquals(1, database.getCollection("SomeMatch").count());
     }
 
     @Test
     public void checkReads() throws Exception
     {
-        assertEquals(0, database.getCollection("ISomeMatch").count());
+        assertEquals(0, database.getCollection("SomeMatch").count());
         {
             // adding some state and then tearing down the cluster.
             Stage stage1 = createStage();
             stage1.bind();
-            ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
-            ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
+            SomeMatch someMatch = IActor.getReference(SomeMatch.class, "300");
+            SomePlayer somePlayer = IActor.getReference(SomePlayer.class, "101");
             someMatch.addPlayer(somePlayer).get();
             stage1.stop();
         }
-        assertEquals(1, database.getCollection("ISomeMatch").count());
+        assertEquals(1, database.getCollection("SomeMatch").count());
         {
             Stage stage2 = createStage();
             stage2.bind();
-            ISomeMatch someMatch_r2 = IActor.getReference(ISomeMatch.class, "300");
-            ISomePlayer somePlayer_r2 = IActor.getReference(ISomePlayer.class, "101");
+            SomeMatch someMatch_r2 = IActor.getReference(SomeMatch.class, "300");
+            SomePlayer somePlayer_r2 = IActor.getReference(SomePlayer.class, "101");
             assertEquals(1, someMatch_r2.getPlayers().get().size());
             assertEquals(somePlayer_r2, someMatch_r2.getPlayers().get().get(0));
         }
@@ -87,16 +87,16 @@ public class MongodbPersistenceTest
     @Test
     public void checkClearState() throws Exception
     {
-        assertEquals(0, database.getCollection("ISomeMatch").count());
+        assertEquals(0, database.getCollection("SomeMatch").count());
         // adding some state and then tearing down the cluster.
         Stage stage1 = createStage();
-        ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
-        ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
+        SomeMatch someMatch = IActor.getReference(SomeMatch.class, "300");
+        SomePlayer somePlayer = IActor.getReference(SomePlayer.class, "101");
         someMatch.addPlayer(somePlayer).get();
-        assertEquals(1, database.getCollection("ISomeMatch").count());
+        assertEquals(1, database.getCollection("SomeMatch").count());
 
         someMatch.delete().get();
-        assertEquals(0, database.getCollection("ISomeMatch").count());
+        assertEquals(0, database.getCollection("SomeMatch").count());
     }
 
 

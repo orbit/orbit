@@ -26,19 +26,11 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.samples.annotation.examples;
+package com.ea.orbit.actors.providers.memcached;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.samples.annotation.memoize.Memoize;
+import com.ea.orbit.actors.test.StorageTest;
 
-import java.util.concurrent.TimeUnit;
-
-public interface IMemoizeExample extends IActor
+public interface Hello extends IActor, StorageTest
 {
-
-    @Memoize(time = 5, unit = TimeUnit.SECONDS)
-    Task<Long> getNow(String greeting);
-
 }
-

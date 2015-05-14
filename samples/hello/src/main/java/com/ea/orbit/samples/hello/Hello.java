@@ -26,18 +26,13 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.ldap.test;
+package com.ea.orbit.samples.hello;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.concurrent.Task;
 
-public interface ILdapAuthenticateActor extends IActor
+public interface Hello extends IActor
 {
-
-    Task<Boolean> authenticate(String password);
-
-    Task<Void> register(String name, String surname, String postalcode, String password);
-
-    Task<Void> remove();
-
+    Task<String> sayHello(String greeting);
 }
+

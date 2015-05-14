@@ -48,7 +48,7 @@ public abstract class StorageBaseTest
     {
         Stage stage = createStage();
         assertEquals(0, count());
-        IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), "300");
+        StorageTest helloActor = IActor.getReference(getActorInterfaceClass(), "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(1, count());
     }
@@ -61,19 +61,19 @@ public abstract class StorageBaseTest
         assertEquals(0, count());
         for(int t=0;t< heavyTestSize();t++){
             String id =""+t;
-            IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), id);
+            StorageTest helloActor = IActor.getReference(getActorInterfaceClass(), id);
             helloActor.sayHello("Meep Meep"+t).join();
         }
         assertEquals(heavyTestSize(), count());
         for(int t=0;t< heavyTestSize();t++){
             String id =""+t;
-            IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), id);
+            StorageTest helloActor = IActor.getReference(getActorInterfaceClass(), id);
             helloActor.sayHello("Meep Meep"+t).join();
             assertEquals(readState(id).lastName(), "Meep Meep"+t);
         }
         for(int t=0;t< heavyTestSize();t++){
             String id =""+t;
-            IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), id);
+            StorageTest helloActor = IActor.getReference(getActorInterfaceClass(), id);
             helloActor.clear().join();
         }
         assertEquals(0, count());
@@ -83,7 +83,7 @@ public abstract class StorageBaseTest
     public void checkReadTest() throws Exception
     {
         Stage stage = createStage();
-        IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), "300");
+        StorageTest helloActor = IActor.getReference(getActorInterfaceClass(), "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(readState("300").lastName(), "Meep Meep");
     }
@@ -93,9 +93,9 @@ public abstract class StorageBaseTest
     {
         Stage stage = createStage();
         assertEquals(0, count());
-        IStorageTestActor helloActor1 = IActor.getReference(getActorInterfaceClass(), "300");
+        StorageTest helloActor1 = IActor.getReference(getActorInterfaceClass(), "300");
         helloActor1.sayHello("Meep Meep").join();
-        IStorageTestActor helloActor2 = IActor.getReference(getActorInterfaceClass(), "301");
+        StorageTest helloActor2 = IActor.getReference(getActorInterfaceClass(), "301");
         helloActor2.sayHello("Meep Meep").join();
         assertEquals(2, count());
         helloActor1.clear().join();
@@ -109,7 +109,7 @@ public abstract class StorageBaseTest
     {
         Stage stage = createStage();
         assertEquals(0, count());
-        IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), "300");
+        StorageTest helloActor = IActor.getReference(getActorInterfaceClass(), "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(1, count());
         helloActor.sayHello("Peem Peem").join();
@@ -139,7 +139,7 @@ public abstract class StorageBaseTest
         closeStorage();
     }
 
-    public abstract Class<? extends IStorageTestActor> getActorInterfaceClass();
+    public abstract Class<? extends StorageTest> getActorInterfaceClass();
 
     public abstract IOrbitProvider getStorageProvider();
 

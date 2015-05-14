@@ -70,7 +70,7 @@ public class TraceDemoMain
 
         //start some cluster activity
         stage.start().join();
-        IExampleA first = IActor.getReference(IExampleA.class, "0");
+        ExampleA first = IActor.getReference(ExampleA.class, "0");
         first.someWork().join();
 
     }

@@ -45,7 +45,7 @@ import static org.junit.Assert.*;
 @SuppressWarnings("unused")
 public class ExceptionalTest extends ActorBaseTest
 {
-    public interface IExceptionalThing extends IActor
+    public interface ExceptionalThing extends IActor
     {
         Task<String> justRespond();
 
@@ -53,7 +53,7 @@ public class ExceptionalTest extends ActorBaseTest
     }
 
     @SuppressWarnings("rawtypes")
-    public static class ExceptionalThing extends AbstractActor implements IExceptionalThing
+    public static class ExceptionalThingActor extends AbstractActor implements ExceptionalThing
     {
         public Task<String> justRespond()
         {
@@ -70,7 +70,7 @@ public class ExceptionalTest extends ActorBaseTest
     public void noException() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
+        final ExceptionalThing ref = IActor.getReference(ExceptionalThing.class, "0");
         assertEquals("resp", ref.justRespond().join());
     }
 
@@ -78,7 +78,7 @@ public class ExceptionalTest extends ActorBaseTest
     public void withException() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
+        final ExceptionalThing ref = IActor.getReference(ExceptionalThing.class, "0");
         ref.justThrowAnException().join();
     }
 
@@ -86,7 +86,7 @@ public class ExceptionalTest extends ActorBaseTest
     public void catchingTheException() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
+        final ExceptionalThing ref = IActor.getReference(ExceptionalThing.class, "0");
         try
         {
             ref.justThrowAnException().join();
@@ -103,7 +103,7 @@ public class ExceptionalTest extends ActorBaseTest
     public void checkingTheException() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
+        final ExceptionalThing ref = IActor.getReference(ExceptionalThing.class, "0");
         final Task<String> fut = ref.justThrowAnException();
 
         final Throwable ex = fut.handle((r, e) -> e).join();

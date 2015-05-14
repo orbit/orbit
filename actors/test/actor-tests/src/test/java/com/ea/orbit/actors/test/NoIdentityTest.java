@@ -45,13 +45,13 @@ import static org.junit.Assert.assertEquals;
 public class NoIdentityTest extends ActorBaseTest
 {
     @NoIdentity
-    public interface ISingularThing extends IActor
+    public interface SingularThing extends IActor
     {
         Task<String> justRespond();
     }
 
 	@SuppressWarnings("rawtypes")
-	public static class SingularThing extends AbstractActor implements ISingularThing
+	public static class SingularThingActor extends AbstractActor implements SingularThing
     {
         public Task<String> justRespond()
         {
@@ -63,7 +63,7 @@ public class NoIdentityTest extends ActorBaseTest
     public void callIt() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        final ISingularThing ref = IActor.getReference(ISingularThing.class);
+        final SingularThing ref = IActor.getReference(SingularThing.class);
         assertEquals("resp", ref.justRespond().join());
     }
 
@@ -71,14 +71,14 @@ public class NoIdentityTest extends ActorBaseTest
     public void usingNullId2() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        IActor.getReference(ISingularThing.class, null);
+        IActor.getReference(SingularThing.class, null);
     }
 
     @Test
     public void callIt2() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        final ISingularThing ref = IActor.getReference(ISingularThing.class);
+        final SingularThing ref = IActor.getReference(SingularThing.class);
         assertEquals("resp", ref.justRespond().join());
     }
 
@@ -86,6 +86,6 @@ public class NoIdentityTest extends ActorBaseTest
     public void breakIt() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        IActor.getReference(ISingularThing.class, "aaa");
+        IActor.getReference(SingularThing.class, "aaa");
     }
 }

@@ -1,44 +1,16 @@
 package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.UUID;
 
-@SuppressWarnings("rawtypes")
-public class StatelessThing extends AbstractActor implements IStatelessThing
+
+@StatelessWorker
+public interface StatelessThing extends IActor
 {
-    private UUID uuid = UUID.randomUUID();
+    Task<UUID> getUniqueActivationId();
 
-    @Override
-    public Task<UUID> getUniqueActivationId()
-    {
-        // just to ensure some parallelism;
-        Thread.yield();
-        return Task.fromValue(uuid);
-    }
-
-    @Override
-    public Task<UUID> getUniqueActivationId(final long sleepNanos)
-    {
-        // just to ensure some parallelism;
-        Thread.yield();
-        long start = System.nanoTime();
-        if (sleepNanos >= 1000)
-        {
-            try
-            {
-                Thread.sleep(sleepNanos / 1000);
-            }
-            catch (InterruptedException e)
-            {
-                getLogger().error("Error sleeping", e);
-            }
-        }
-        while (start + sleepNanos >= System.nanoTime())
-        {
-            // do nothing, waiting.
-        }
-        return Task.fromValue(uuid);
-    }
+    Task<UUID> getUniqueActivationId(long sleepNanos);
 }

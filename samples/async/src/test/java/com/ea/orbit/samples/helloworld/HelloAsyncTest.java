@@ -34,7 +34,7 @@ import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.async.Async;
 import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.samples.hello.IHello;
+import com.ea.orbit.samples.async.Hello;
 
 import org.junit.Test;
 
@@ -50,7 +50,7 @@ public class HelloAsyncTest extends ActorBaseTest
     @Async
     public Task<String> asyncMethod()
     {
-        IHello helloActor = IActor.getReference(IHello.class, "0");
+        Hello helloActor = IActor.getReference(Hello.class, "0");
         String h1 = await(helloActor.sayHello("hello"));
         String h2 = await(helloActor.sayHello("hi"));
         String h3 = await(helloActor.sayHello("hey"));

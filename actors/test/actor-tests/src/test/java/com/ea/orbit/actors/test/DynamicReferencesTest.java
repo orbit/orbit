@@ -43,13 +43,13 @@ import static org.junit.Assert.assertEquals;
 public class DynamicReferencesTest extends ActorBaseTest
 {
 
-    public static interface IAptUnfriendly extends IActor
+    public static interface AptUnfriendly extends IActor
     {
         Task<String> hello();
     }
 
     @SuppressWarnings("rawtypes")
-    public static class AptUnfriendly extends AbstractActor implements IAptUnfriendly
+    public static class AptUnfriendlyActor extends AbstractActor implements AptUnfriendly
     {
         @Override
         public Task<String> hello()
@@ -65,7 +65,7 @@ public class DynamicReferencesTest extends ActorBaseTest
     {
         Stage stage = createStage();
         // this won't the your run of the mill apt generated class
-        IAptUnfriendly ref = IActor.getReference(IAptUnfriendly.class, "0");
+        AptUnfriendly ref = IActor.getReference(AptUnfriendly.class, "0");
         assertEquals("hello", ref.hello().join());
     }
 

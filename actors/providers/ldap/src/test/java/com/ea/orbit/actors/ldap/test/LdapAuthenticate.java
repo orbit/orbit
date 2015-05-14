@@ -26,17 +26,18 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.samples.trace.demo;
+package com.ea.orbit.actors.ldap.test;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.concurrent.Task;
 
-public interface IExampleB extends IActor
+public interface LdapAuthenticate extends IActor
 {
-    @OneWay
-    Task<Void> callRandomA();
 
-    Task<Integer> someWork();
+    Task<Boolean> authenticate(String password);
+
+    Task<Void> register(String name, String surname, String postalcode, String password);
+
+    Task<Void> remove();
 
 }

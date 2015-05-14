@@ -1,57 +1,14 @@
 package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.actors.runtime.Registration;
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.concurrent.Task;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-@SuppressWarnings("rawtypes")
-public class SomeChatRoom extends AbstractActor implements ISomeChatRoom
+public interface SomeChatRoom extends IActor
 {
+    Task<Void> join(ISomeChatObserver chatObserver);
 
-    Set<ISomeChatObserver> observers = new HashSet<>();
-    Registration timer;
-    AtomicInteger countDown = new AtomicInteger();
+    Task<Void> sendMessage(ISomeChatObserver chatObserver, String message);
 
-    @Override
-    public Task<Void> join(final ISomeChatObserver chatObserver)
-    {
-        observers.add(chatObserver);
-        return Task.done();
-    }
+    Task<?> startCountdown(int count, String message);
 
-    @Override
-    public Task<Void> sendMessage(final ISomeChatObserver sender, final String message)
-    {
-        observers.forEach(o -> o.receiveMessage(sender, message));
-        return Task.done();
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public Task<Void> startCountdown(final int count, final String message)
-    {
-        countDown.set(count);
-        timer = registerTimer(() -> sendCountDown(message), 5, 5, TimeUnit.MILLISECONDS);
-        return Task.done();
-    }
-
-    private Task<Void> sendCountDown(String message)
-    {
-        final int count = countDown.decrementAndGet();
-        if (count < 0)
-        {
-            timer.dispose();
-            timer = null;
-        }
-        else
-        {
-            observers.forEach(o -> o.receiveMessage(null, message + " " + count));
-        }
-        return Task.done();
-    }
 }

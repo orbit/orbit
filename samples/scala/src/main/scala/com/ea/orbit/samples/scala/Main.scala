@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.samples.scala
 
 import com.ea.orbit.actors.runtime.AbstractActor
-import com.ea.orbit.actors.{IActor, Stage}
+import com.ea.orbit.actors.{Actor, Stage}
 import com.ea.orbit.concurrent.Task
 
 object Main {
@@ -40,8 +40,8 @@ object Main {
     val stage1 = initStage(CLUSTER_NAME, "stage1")
     val stage2 = initStage(CLUSTER_NAME, "stage2")
 
-    val helloFrom1 = IActor.getReference(classOf[IHello], "0")
-    val helloFrom2 = IActor.getReference(classOf[IHello], "0")
+    val helloFrom1 = Actor.getReference(classOf[Hello], "0")
+    val helloFrom2 = Actor.getReference(classOf[Hello], "0")
 
     stage1.bind()
     println(helloFrom1.sayHello("Hi from 01").join())
@@ -60,11 +60,11 @@ object Main {
 
 }
 
-trait IHello extends IActor {
+trait Hello extends Actor {
   def sayHello(greeting: String): Task[String]
 }
 
-class HelloActor extends AbstractActor[AnyRef] with IHello {
+class HelloActor extends AbstractActor[AnyRef] with Hello {
 
   def sayHello(greeting: String): Task[String] = {
     getLogger.info("Here: " + greeting)

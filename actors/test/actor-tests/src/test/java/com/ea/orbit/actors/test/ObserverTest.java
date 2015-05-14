@@ -32,7 +32,7 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.ISomeChatObserver;
-import com.ea.orbit.actors.test.actors.ISomeChatRoom;
+import com.ea.orbit.actors.test.actors.SomeChatRoom;
 import com.ea.orbit.concurrent.Task;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -79,7 +79,7 @@ public class ObserverTest extends ActorBaseTest
     public void basicObserverTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        ISomeChatRoom chatRoom = IActor.getReference(ISomeChatRoom.class, "1");
+        SomeChatRoom chatRoom = IActor.getReference(SomeChatRoom.class, "1");
         SomeChatObserver observer = new SomeChatObserver();
         final ISomeChatObserver observerReference = stage1.getObserverReference(ISomeChatObserver.class, observer);
         assertNotNull(observerReference);
@@ -94,7 +94,7 @@ public class ObserverTest extends ActorBaseTest
     public void observerSerializationTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        ISomeChatRoom chatRoom = IActor.getReference(ISomeChatRoom.class, "1");
+        SomeChatRoom chatRoom = IActor.getReference(SomeChatRoom.class, "1");
         SomeChatObserver observer = new SomeChatObserver();
         chatRoom.join(observer).get();
         chatRoom.sendMessage(observer, "bla").get();
@@ -116,7 +116,7 @@ public class ObserverTest extends ActorBaseTest
         final ISomeChatObserver observerReference2 = stage2.getObserverReference(ISomeChatObserver.class, observer2);
 
 
-        ISomeChatRoom chatRoom = IActor.getReference(ISomeChatRoom.class, "1");
+        SomeChatRoom chatRoom = IActor.getReference(SomeChatRoom.class, "1");
 
         stage1.bind();
         chatRoom.join(observerReference1).join();
@@ -142,8 +142,8 @@ public class ObserverTest extends ActorBaseTest
         SomeChatObserver observer1 = new SomeChatObserver();
         SomeChatObserver observer2 = new SomeChatObserver();
 
-        ISomeChatRoom chatRoom_s1 = IActor.getReference(ISomeChatRoom.class, "1");
-        ISomeChatRoom chatRoom_s2 = IActor.getReference(ISomeChatRoom.class, "1");
+        SomeChatRoom chatRoom_s1 = IActor.getReference(SomeChatRoom.class, "1");
+        SomeChatRoom chatRoom_s2 = IActor.getReference(SomeChatRoom.class, "1");
 
         stage1.bind();
         chatRoom_s1.join(observer1).join();

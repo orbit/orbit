@@ -26,14 +26,38 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.test;
+package com.ea.orbit.actors.mongodb.test;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
-public interface IStorageTestActor extends IActor
-{
-    Task<String> sayHello(String name);
+import java.util.ArrayList;
+import java.util.List;
 
-    Task<Void> clear();
+public class SomeMatchActor extends AbstractActor<SomeMatchActor.SomeMatchDto> implements SomeMatch
+{
+    public static class SomeMatchDto
+    {
+        private List<SomePlayer> players = new ArrayList<>();
+
+    }
+
+    @Override
+    public Task<Void> addPlayer(final SomePlayer player)
+    {
+        state().players.add(player);
+        return writeState();
+    }
+
+    @Override
+    public Task<List<SomePlayer>> getPlayers()
+    {
+        return Task.fromValue(state().players);
+    }
+
+    @Override
+    public Task<Void> delete()
+    {
+        return clearState();
+    }
 }

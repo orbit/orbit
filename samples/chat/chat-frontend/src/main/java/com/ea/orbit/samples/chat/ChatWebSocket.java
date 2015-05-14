@@ -53,14 +53,14 @@ import java.time.format.DateTimeFormatter;
 public class ChatWebSocket
 {
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ChatWebSocket.class);
-    private IChat chat;
-    private IChatObserver observer;
+    private Chat chat;
+    private ChatObserver observer;
 
     @OnOpen
     public void onWebSocketConnect(Session session)
     {
-        chat = IActor.getReference(IChat.class, session.getPathParameters().get("chatName"));
-        observer = new IChatObserver()
+        chat = IActor.getReference(Chat.class, session.getPathParameters().get("chatName"));
+        observer = new ChatObserver()
         {
             @Override
             public Task<Void> receiveMessage(final ChatMessageDto message)

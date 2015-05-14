@@ -33,8 +33,8 @@ import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.actors.test.FakeClusterPeer;
 import com.ea.orbit.actors.test.FakeStorageProvider;
-import com.ea.orbit.samples.annotation.examples.IMemoizeExample;
-import com.ea.orbit.samples.annotation.examples.IOnlyExample;
+import com.ea.orbit.samples.annotation.examples.MemoizeExample;
+import com.ea.orbit.samples.annotation.examples.OnlyExample;
 import com.ea.orbit.samples.annotation.examples.MemoizeExampleActor;
 import com.ea.orbit.samples.annotation.examples.OnlyExampleActor;
 import com.ea.orbit.samples.annotation.memoize.MemoizeExtension;
@@ -53,7 +53,7 @@ public class AnnotationTest extends ActorBaseTest
     {
         Stage stage = initStage();
 
-        IOnlyExample only = IActor.getReference(IOnlyExample.class, "234");
+        OnlyExample only = IActor.getReference(OnlyExample.class, "234");
         only.doSomethingSpecial("A").join();
         only.doSomethingSpecial("A").join();
         only.doSomethingSpecial("A").join();
@@ -74,7 +74,7 @@ public class AnnotationTest extends ActorBaseTest
     {
         Stage stage = initStage();
 
-        IMemoizeExample memoize = IActor.getReference(IMemoizeExample.class, "45");
+        MemoizeExample memoize = IActor.getReference(MemoizeExample.class, "45");
 
         long firstA = memoize.getNow("A").join();
         sleep(1000);

@@ -37,7 +37,7 @@ import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Hosting;
 import com.ea.orbit.actors.runtime.IHosting;
-import com.ea.orbit.actors.runtime.IReminderController;
+import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.annotation.Config;
@@ -245,7 +245,7 @@ public class Stage implements Startable
         Task<?> future = clusterPeer.join(clusterName, nodeName);
         if (mode == StageMode.HOST)
         {
-            future = future.thenRun(() -> IActor.getReference(IReminderController.class, "0").ensureStart());
+            future = future.thenRun(() -> IActor.getReference(ReminderController.class, "0").ensureStart());
         }
         startFuture = future;
 

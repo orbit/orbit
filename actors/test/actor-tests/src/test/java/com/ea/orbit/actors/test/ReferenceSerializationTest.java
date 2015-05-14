@@ -33,8 +33,8 @@ import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.runtime.ActorKey;
-import com.ea.orbit.actors.test.actors.ISomeMatch;
-import com.ea.orbit.actors.test.actors.ISomePlayer;
+import com.ea.orbit.actors.test.actors.SomeMatch;
+import com.ea.orbit.actors.test.actors.SomePlayer;
 
 import org.junit.Test;
 
@@ -53,8 +53,8 @@ public class ReferenceSerializationTest extends ActorBaseTest
     public void referencePassingTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
-        ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
+        SomeMatch someMatch = IActor.getReference(SomeMatch.class, "300");
+        SomePlayer somePlayer = IActor.getReference(SomePlayer.class, "101");
         someMatch.addPlayer(somePlayer).join();
     }
 
@@ -63,8 +63,8 @@ public class ReferenceSerializationTest extends ActorBaseTest
     public void passingActorInsteadOfReferenceTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
-        ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
+        SomeMatch someMatch = IActor.getReference(SomeMatch.class, "300");
+        SomePlayer somePlayer = IActor.getReference(SomePlayer.class, "101");
         somePlayer.joinMatch(someMatch).join();
     }
 
@@ -78,8 +78,8 @@ public class ReferenceSerializationTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage client = createClient();
         client.bind();
-        ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
-        ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
+        SomeMatch someMatch = IActor.getReference(SomeMatch.class, "300");
+        SomePlayer somePlayer = IActor.getReference(SomePlayer.class, "101");
         somePlayer.joinMatch(someMatch).join();
 
 

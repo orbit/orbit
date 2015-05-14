@@ -26,19 +26,47 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.samples.annotation.examples;
+package com.ea.orbit.samples.async;
 
 import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.async.Async;
+import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.samples.annotation.onlyifactivated.OnlyIfActivated;
 
-public interface IOnlyExample extends IActor
+import java.io.IOException;
+
+import static com.ea.orbit.async.Await.await;
+
+public class Main
 {
+    static { Await.init(); }
 
-    @OnlyIfActivated
-    Task<Void> doSomethingSpecial(String greeting);
+    @Async
+    public static Task<String> asyncMethod()
+    {
+        Hello helloActor = IActor.getReference(Hello.class, "0");
+        String h1 = await(helloActor.sayHello("hello"));
+        String h2 = await(helloActor.sayHello("hi"));
+        String h3 = await(helloActor.sayHello("hey"));
+        return Task.fromValue(h1 + " " + h2 + " " + h3);
+    }
 
-    Task<Void> makeActiveNow();
+    public static void main(String[] args) throws IOException
+    {
+        Stage stage = new Stage();
+        stage.setClusterName("helloWorldCluster");
+        stage.start().join();
+
+
+        Task<String> response = asyncMethod();
+
+        System.out.println("IsDone: " + response.isDone());
+        System.out.println(response.join());
+
+        stage.stop().join();
+        System.exit(0);
+    }
 
 }
 

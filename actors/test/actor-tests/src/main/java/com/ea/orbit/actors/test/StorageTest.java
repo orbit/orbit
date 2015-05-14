@@ -26,50 +26,14 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.runtime;
+package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.IRemindable;
 import com.ea.orbit.concurrent.Task;
 
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-public interface IReminderController extends IActor
+public interface StorageTest extends IActor
 {
-    /**
-     * Adds or updates a reminder
-     *
-     * @param actor        the actor that owns of the reminder
-     * @param reminderName the name, used with actor as reminder key
-     * @param dueTime      the first time the reminder will trigger
-     * @param period       the period of the reminder after the first time.
-     * @param timeUnit     the time unit for period
-     * @return a task that returns the reminder name
-     */
-    Task<String> registerOrUpdateReminder(IRemindable actor, String reminderName,
-                                          Date dueTime,
-                                          long period,
-                                          TimeUnit timeUnit);
+    Task<String> sayHello(String name);
 
-    /**
-     * Cancels a reminder registration.
-     * It's not guaranteed that the reminder won't be called after this method a the invocation might have already being triggered
-     *
-     * @param actor        the target actor
-     * @param reminderName the reminder handle
-     * @return a task holding the reminder name.
-     */
-    Task<String> unregisterReminder(IRemindable actor, String reminderName);
-
-    /**
-     * Gets all reminders tied to the actor actor.
-     *
-     * @param actor the target actor
-     * @return a task holding the list of reminder names.
-     */
-    Task<List<String>> getReminders(IRemindable actor);
-
-    Task<Void> ensureStart();
+    Task<Void> clear();
 }

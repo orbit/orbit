@@ -26,47 +26,16 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.samples.hello;
+package com.ea.orbit.actors.test.actors;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.Stage;
-import com.ea.orbit.async.Async;
-import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
 
-import java.io.IOException;
-
-import static com.ea.orbit.async.Await.await;
-
-public class Main
+public interface Storage2 extends IActor
 {
-    static { Await.init(); }
 
-    @Async
-    public static Task<String> asyncMethod()
-    {
-        IHello helloActor = IActor.getReference(IHello.class, "0");
-        String h1 = await(helloActor.sayHello("hello"));
-        String h2 = await(helloActor.sayHello("hi"));
-        String h3 = await(helloActor.sayHello("hey"));
-        return Task.fromValue(h1 + " " + h2 + " " + h3);
-    }
+    Task<Void> put(String value);
 
-    public static void main(String[] args) throws IOException
-    {
-        Stage stage = new Stage();
-        stage.setClusterName("helloWorldCluster");
-        stage.start().join();
-
-
-        Task<String> response = asyncMethod();
-
-        System.out.println("IsDone: " + response.isDone());
-        System.out.println(response.join());
-
-        stage.stop().join();
-        System.exit(0);
-    }
+    Task<String> get();
 
 }
-

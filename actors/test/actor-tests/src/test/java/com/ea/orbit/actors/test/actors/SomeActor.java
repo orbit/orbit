@@ -1,66 +1,19 @@
 package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.UUID;
 
-@SuppressWarnings("rawtypes")
-public class SomeActor extends AbstractActor implements ISomeActor
+public interface SomeActor extends IActor
 {
-    private UUID uniqueActivationId = UUID.randomUUID();
-    private boolean activationWasCalled;
+    Task<String> sayHello(String greeting);
 
-    @Override
-    public Task<String> sayHello(final String greeting)
-    {
-        return Task.fromValue("bla");
-    }
+    Task<UUID> getUniqueActivationId();
 
-    @Override
-    public Task<UUID> getUniqueActivationId()
-    {
-        return Task.fromValue(uniqueActivationId);
-    }
+    Task<UUID> getUniqueActivationId(long sleepNanos);
 
-    @Override
-    public Task<UUID> getUniqueActivationId(final long sleepNanos)
-    {
-        long start = System.nanoTime();
-        if (sleepNanos >= 1000)
-        {
-            try
-            {
-                Thread.sleep(sleepNanos / 1000);
-            }
-            catch (InterruptedException e)
-            {
-                getLogger().error("Error sleeping", e);
-            }
-        }
-        while (start + sleepNanos >= System.nanoTime())
-        {
-            // do nothing, waiting.
-        }
-        return Task.fromValue(uniqueActivationId);
-    }
+    Task<Boolean> getActivationWasCalled();
 
-
-    @Override
-    public Task<Boolean> getActivationWasCalled()
-    {
-        return Task.fromValue(activationWasCalled);
-    }
-
-    public Task<?> activateAsync()
-    {
-        activationWasCalled = true;
-        return super.activateAsync();
-    }
-
-    @Override
-    public Task<String> getNodeId()
-    {
-        return Task.fromValue(runtimeIdentity());
-    }
+    Task<String> getNodeId();
 }

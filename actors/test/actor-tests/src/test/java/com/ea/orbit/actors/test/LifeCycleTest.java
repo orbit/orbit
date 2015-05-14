@@ -31,9 +31,9 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.test.actors.ISomeActor;
-import com.ea.orbit.actors.test.actors.ISomeMatch;
-import com.ea.orbit.actors.test.actors.ISomePlayer;
+import com.ea.orbit.actors.test.actors.SomeActor;
+import com.ea.orbit.actors.test.actors.SomeMatch;
+import com.ea.orbit.actors.test.actors.SomePlayer;
 
 import org.junit.Test;
 
@@ -51,7 +51,7 @@ public class LifeCycleTest extends ActorBaseTest
         Stage stage = createStage();
         Stage client = createClient();
 
-        ISomeActor actor1 = IActor.getReference(ISomeActor.class, "1000");
+        SomeActor actor1 = IActor.getReference(SomeActor.class, "1000");
 
         assertTrue(actor1.getActivationWasCalled().get());
     }
@@ -62,8 +62,8 @@ public class LifeCycleTest extends ActorBaseTest
         Stage stage = createStage();
         Stage client = createClient();
 
-        ISomeMatch match = IActor.getReference(ISomeMatch.class, "1000");
-        ISomePlayer player = IActor.getReference(ISomePlayer.class, "101");
+        SomeMatch match = IActor.getReference(SomeMatch.class, "1000");
+        SomePlayer player = IActor.getReference(SomePlayer.class, "101");
         match.addPlayer(player).get();
         int machEventCount = player.getMatchEventCount().get();
 

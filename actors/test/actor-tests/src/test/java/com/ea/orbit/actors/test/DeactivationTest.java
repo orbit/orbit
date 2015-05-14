@@ -31,8 +31,8 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.test.actors.ISomeActor;
-import com.ea.orbit.actors.test.actors.IStatelessThing;
+import com.ea.orbit.actors.test.actors.SomeActor;
+import com.ea.orbit.actors.test.actors.StatelessThing;
 
 import org.junit.Test;
 
@@ -58,7 +58,7 @@ public class DeactivationTest extends ClientTest
         Stage stage = createStage();
         Stage client = createClient();
 
-        ISomeActor actor1 = IActor.getReference(ISomeActor.class, "1000");
+        SomeActor actor1 = IActor.getReference(SomeActor.class, "1000");
 
         final Set<UUID> set = new HashSet<>();
         client.bind();
@@ -89,7 +89,7 @@ public class DeactivationTest extends ClientTest
         Stage stage1 = createStage();
         Stage client = createClient();
 
-        IStatelessThing actor5 = IActor.getReference(IStatelessThing.class, "1000");
+        StatelessThing actor5 = IActor.getReference(StatelessThing.class, "1000");
 
         final Set<UUID> set1 = new HashSet<>();
         {

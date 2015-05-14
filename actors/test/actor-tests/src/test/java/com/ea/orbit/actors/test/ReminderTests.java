@@ -47,11 +47,11 @@ import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 
 @SuppressWarnings("unused")
-public class ReminderTest extends ActorBaseTest
+public class ReminderTests extends ActorBaseTest
 {
     // At the moment the clock injected to the stage is not used by the timer subsystem.
 
-    public static interface IReminderTestActor extends IActor, IRemindable
+    public static interface ReminderTest extends IActor, IRemindable
     {
 
         Task<?> addReminder(String name, long start, long period, TimeUnit unit);
@@ -60,7 +60,7 @@ public class ReminderTest extends ActorBaseTest
     private static BlockingQueue<String> remindersReceived = new LinkedBlockingQueue<>();
 
     @SuppressWarnings("rawtypes")
-    public static class ReminderTestActor extends AbstractActor implements IReminderTestActor
+    public static class ReminderTestActor extends AbstractActor implements ReminderTest
     {
 
         @Override
@@ -83,7 +83,7 @@ public class ReminderTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage frontend = createClient();
 
-        IReminderTestActor actor = IActor.getReference(IReminderTestActor.class, "1");
+        ReminderTest actor = IActor.getReference(ReminderTest.class, "1");
         actor.addReminder("bla", 0, 50, TimeUnit.MILLISECONDS).join();
         assertEquals("bla", remindersReceived.poll(5, TimeUnit.SECONDS));
         assertEquals("bla", remindersReceived.poll(5, TimeUnit.SECONDS));
@@ -95,7 +95,7 @@ public class ReminderTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage frontend = createClient();
 
-        IReminderTestActor actor = IActor.getReference(IReminderTestActor.class, "1");
+        ReminderTest actor = IActor.getReference(ReminderTest.class, "1");
         frontend.bind();
         actor.addReminder("bla", 0, 20, TimeUnit.MILLISECONDS).join();
         assertEquals("bla", remindersReceived.poll(5, TimeUnit.SECONDS));

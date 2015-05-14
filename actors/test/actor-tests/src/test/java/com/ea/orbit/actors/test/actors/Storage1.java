@@ -31,7 +31,7 @@ package com.ea.orbit.actors.test.actors;
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.concurrent.Task;
 
-public interface IStorage2Actor extends IActor
+public interface Storage1 extends IActor
 {
 
     Task<Void> put(String value);

@@ -26,14 +26,14 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.samples.hello;
+package com.ea.orbit.samples.async;
 
 
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 @SuppressWarnings("rawtypes")
-public class HelloActor extends AbstractActor implements IHello
+public class HelloActor extends AbstractActor implements Hello
 {
     public Task<String> sayHello(String greeting)
     {

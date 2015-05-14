@@ -35,12 +35,12 @@ import com.ea.orbit.actors.runtime.ReferenceFactory;
  * <p>
  * <b>Example:</b>
  * <pre>{@code
- * public interface IHello extends IActor
+ * public interface Hello extends Actor
  * {
  *      Task<String> sayHello();
  * }
  * <p/>
- * public class Hello extends OrbitActor implements IHello
+ * public class HelloActor extends AbstractActor implements Hello
  * {
  *     public Task<String> sayHello() {
  *         return Task.fromValue("hello!");
@@ -49,15 +49,14 @@ import com.ea.orbit.actors.runtime.ReferenceFactory;
  * }</pre>
  * </p>
  * <p>
- * The presence of the IActor interface instructs the java compiler to
+ * The presence of the Actor interface instructs the java compiler to
  * generate a reference factory class for that interface.
  * </p><p>
  * Application code will never touch actor instances directly. It should rather
  * obtain references:
  * <pre>{@code
- *  IHello helloActor = HelloFactory.createReference("001");
+ *  Hello helloActor = IActor.getReference(Hello.class, "001");
  * }</pre>
- * Where HelloFactory was automatically created by the framework.
  * </p>
  */
 public interface IActor
@@ -65,25 +64,25 @@ public interface IActor
     /**
      * Gets a reference to an actor.
      *
-     * @param iActor the actor interface
+     * @param actorInterface the actor interface
      * @param id     the actor id
      * @param <T>    the interface type
      * @return an actor reference
      */
-    static <T extends IActor> T getReference(Class<T> iActor, String id)
+    static <T extends IActor> T getReference(Class<T> actorInterface, String id)
     {
-        return ReferenceFactory.ref(iActor, id);
+        return ReferenceFactory.ref(actorInterface, id);
     }
 
     /**
      * Gets a reference to an actor that has the {@literal@}NoIdentity annotation.
      *
-     * @param iActor the actor interface
+     * @param actorInterface the actor interface
      * @param <T>    the interface type
      * @return an actor reference
      */
-    static <T extends IActor> T getReference(Class<T> iActor)
+    static <T extends IActor> T getReference(Class<T> actorInterface)
     {
-        return ReferenceFactory.ref(iActor);
+        return ReferenceFactory.ref(actorInterface);
     }
 }

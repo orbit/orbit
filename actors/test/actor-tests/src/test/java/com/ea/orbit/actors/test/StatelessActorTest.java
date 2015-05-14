@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.test.actors.IStatelessThing;
+import com.ea.orbit.actors.test.actors.StatelessThing;
 import com.ea.orbit.exception.UncheckedException;
 
 import org.junit.Test;
@@ -61,11 +61,11 @@ public class StatelessActorTest extends ActorBaseTest
         Stage stage4 = createStage();
         Stage client = createClient();
 
-        IStatelessThing actor1 = IActor.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor2 = IActor.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor3 = IActor.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor4 = IActor.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor5 = IActor.getReference(IStatelessThing.class, "1000");
+        StatelessThing actor1 = IActor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor2 = IActor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor3 = IActor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor4 = IActor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor5 = IActor.getReference(StatelessThing.class, "1000");
 
         final Set<UUID> set = new HashSet<>();
         Supplier stagesIdle = () -> Stream.of(stage1, stage2, stage3, stage4).allMatch(s -> isIdle(s));
@@ -144,8 +144,8 @@ public class StatelessActorTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage stage2 = createStage();
 
-        IStatelessThing actor1 = IActor.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor2 = IActor.getReference(IStatelessThing.class, "1000");
+        StatelessThing actor1 = IActor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor2 = IActor.getReference(StatelessThing.class, "1000");
 
         final Set<UUID> set = new HashSet<>();
 

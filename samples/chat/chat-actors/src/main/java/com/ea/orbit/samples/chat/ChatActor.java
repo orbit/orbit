@@ -39,7 +39,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class Chat extends AbstractActor<Chat.State> implements IChat
+public class ChatActor extends AbstractActor<ChatActor.State> implements Chat
 {
     @Config("orbit.chat.maxMessages")
     private int maxMessages = 1000;
@@ -48,7 +48,7 @@ public class Chat extends AbstractActor<Chat.State> implements IChat
 
     public static class State
     {
-        ObserverManager<IChatObserver> observers = new ObserverManager<>();
+        ObserverManager<ChatObserver> observers = new ObserverManager<>();
         LinkedList<ChatMessageDto> history = new LinkedList<>();
     }
 
@@ -71,7 +71,7 @@ public class Chat extends AbstractActor<Chat.State> implements IChat
     }
 
     @Override
-    public Task<Boolean> join(final IChatObserver observer)
+    public Task<Boolean> join(final ChatObserver observer)
     {
         state().observers.addObserver(observer);
         return writeState().thenApply(x -> true);
@@ -86,7 +86,7 @@ public class Chat extends AbstractActor<Chat.State> implements IChat
     }
 
     @Override
-    public Task<Boolean> leave(final IChatObserver observer)
+    public Task<Boolean> leave(final ChatObserver observer)
     {
         state().observers.removeObserver(observer);
         return writeState().thenApply(x -> true);

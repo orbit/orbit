@@ -231,10 +231,10 @@ public class ClassPathSearch
                         {
                             if (theInterfaceInfo.isAssignableFrom(clazz))
                             {
-                                // when searching for IHello1, must avoid:
-                                // IHello1 <- IHello2
-                                // IHello1 <- HelloImpl1
-                                // IHello2 <-s HelloImpl2  (wrong return, lest strict.
+                                // when searching for Hello1, must avoid:
+                                // Hello1 <- HelloActor2
+                                // Hello1 <- HelloImpl1
+                                // Hello2 <-s HelloImpl2  (wrong return, least strict).
 
                                 // However the application **should not** do this kind of class tree.
 

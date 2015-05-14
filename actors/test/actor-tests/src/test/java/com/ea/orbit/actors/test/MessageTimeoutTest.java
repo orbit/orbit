@@ -31,7 +31,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.test.actors.ISomeActor;
+import com.ea.orbit.actors.test.actors.SomeActor;
 
 import org.junit.Test;
 
@@ -52,7 +52,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage client = createClient();
 
-        ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
+        SomeActor someActor = IActor.getReference(SomeActor.class, "1");
 
         UUID uuid = someActor.getUniqueActivationId(0).get();
         assertEquals(uuid, someActor.getUniqueActivationId().get());
@@ -69,7 +69,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage client = createClient();
 
-        ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
+        SomeActor someActor = IActor.getReference(SomeActor.class, "1");
 
         UUID uuid = someActor.getUniqueActivationId(0).get();
         assertEquals(uuid, someActor.getUniqueActivationId().get());

@@ -26,17 +26,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.samples.trace.demo;
+package com.ea.orbit.actors.redis.test;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.annotation.OneWay;
-import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.actors.test.StorageTest;
 
-public interface IExampleA extends IActor
+public interface Hello extends IActor, StorageTest
 {
-    @OneWay
-    Task<Void> callRandomB();
-
-    Task<Integer> someWork();
-
+    //basic tasks from StorageTest interface
 }

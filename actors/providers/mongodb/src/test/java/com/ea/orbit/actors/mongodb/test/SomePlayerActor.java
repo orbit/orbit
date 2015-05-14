@@ -26,11 +26,28 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.providers.memcached;
+package com.ea.orbit.actors.mongodb.test;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.test.IStorageTestActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.concurrent.Task;
 
-public interface IHelloActor extends IActor, IStorageTestActor
+public class SomePlayerActor extends AbstractActor<SomePlayerActor.SomePlayerStateDto> implements SomePlayer
 {
+    public static class SomePlayerStateDto
+    {
+
+    }
+
+    @Override
+    public Task<String> getName()
+    {
+        return Task.fromValue(null);
+    }
+
+    @Override
+    public Task<Void> joinMatch(final SomeMatch someMatch)
+    {
+        return someMatch.addPlayer(this);
+    }
+
 }

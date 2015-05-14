@@ -32,7 +32,7 @@ import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.providers.json.ActorReferenceModule;
 import com.ea.orbit.actors.providers.redis.RedisStorageProvider;
 import com.ea.orbit.actors.runtime.ReferenceFactory;
-import com.ea.orbit.actors.test.IStorageTestActor;
+import com.ea.orbit.actors.test.StorageTest;
 import com.ea.orbit.actors.test.IStorageTestState;
 import com.ea.orbit.actors.test.StorageBaseTest;
 import com.ea.orbit.exception.UncheckedException;
@@ -50,9 +50,9 @@ public class RedisPersistenceTest extends StorageBaseTest
     private ObjectMapper mapper;
 
     @Override
-    public Class<? extends IStorageTestActor> getActorInterfaceClass()
+    public Class<? extends StorageTest> getActorInterfaceClass()
     {
-        return IHelloActor.class;
+        return Hello.class;
     }
 
     @Override
@@ -92,7 +92,7 @@ public class RedisPersistenceTest extends StorageBaseTest
     @Override
     public IStorageTestState readState(final String identity)
     {
-        String data = database.get(databaseName + "_" + IHelloActor.class.getName() + "_" + identity);
+        String data = database.get(databaseName + "_" + Hello.class.getName() + "_" + identity);
         if (data != null)
         {
             try
@@ -110,7 +110,7 @@ public class RedisPersistenceTest extends StorageBaseTest
 
     public long count()
     {
-        return count(IHelloActor.class);
+        return count(Hello.class);
     }
 
     @Override

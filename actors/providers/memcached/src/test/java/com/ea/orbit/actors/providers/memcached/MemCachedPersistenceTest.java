@@ -31,7 +31,7 @@ package com.ea.orbit.actors.providers.memcached;
 import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.providers.json.ActorReferenceModule;
 import com.ea.orbit.actors.runtime.ReferenceFactory;
-import com.ea.orbit.actors.test.IStorageTestActor;
+import com.ea.orbit.actors.test.StorageTest;
 import com.ea.orbit.actors.test.IStorageTestState;
 import com.ea.orbit.actors.test.StorageBaseTest;
 import com.ea.orbit.exception.UncheckedException;
@@ -48,9 +48,9 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     private MemCachedClient memCachedClient;
 
     @Override
-    public Class<? extends IStorageTestActor> getActorInterfaceClass()
+    public Class<? extends StorageTest> getActorInterfaceClass()
     {
-        return IHelloActor.class;
+        return Hello.class;
     }
 
     @Override
@@ -85,7 +85,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
         }
     }
 
-    public long count(Class<? extends IStorageTestActor> actorInterface)
+    public long count(Class<? extends StorageTest> actorInterface)
     {
         int count = 0;
         for (int i = 0; i < heavyTestSize(); i++)
@@ -98,7 +98,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
         return count;
     }
 
-    private String asKey(final Class<? extends IStorageTestActor> actor, String identity)
+    private String asKey(final Class<? extends StorageTest> actor, String identity)
     {
         return actor.getName() + MemCachedStorageProvider.KEY_SEPARATOR + identity;
     }
@@ -106,7 +106,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     @Override
     public IStorageTestState readState(final String identity)
     {
-        Object data = memCachedClient.get(asKey(IHelloActor.class, identity));
+        Object data = memCachedClient.get(asKey(Hello.class, identity));
         if (data != null)
         {
             try
@@ -123,7 +123,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
 
     public long count()
     {
-        return count(IHelloActor.class);
+        return count(Hello.class);
     }
 
     @Override

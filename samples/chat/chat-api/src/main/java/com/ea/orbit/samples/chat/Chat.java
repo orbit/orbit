@@ -28,13 +28,21 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.chat;
 
-
-import com.ea.orbit.actors.IActorObserver;
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.concurrent.Task;
 
-public interface IChatObserver extends IActorObserver
+import java.util.List;
+
+public interface Chat extends IActor
 {
+
     @OneWay
-    Task<Void> receiveMessage(ChatMessageDto message);
+    Task<Void> say(ChatMessageDto message);
+
+    Task<Boolean> join(ChatObserver observer);
+
+    Task<Boolean> leave(ChatObserver observer);
+
+    Task<List<ChatMessageDto>> getHistory(int messageCount);
 }

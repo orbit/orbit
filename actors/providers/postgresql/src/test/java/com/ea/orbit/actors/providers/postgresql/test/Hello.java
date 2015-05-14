@@ -26,13 +26,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.samples.hello;
+package com.ea.orbit.actors.providers.postgresql.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.concurrent.Task;
 
-public interface IHello extends IActor
-{
-    Task<String> sayHello(String greeting);
+public interface Hello extends IActor {
+    Task<String> sayHello(String name);
+    Task<Void> clear();
 }
-

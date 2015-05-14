@@ -26,13 +26,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.samples.hello;
+package com.ea.orbit.actors.providers.jpa.test;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.actors.test.StorageTest;
 
-public interface IHello extends IActor
+public interface Hello extends IActor, StorageTest
 {
-    Task<String> sayHello(String greeting);
+    //basic tasks from StorageTest interface
 }
-

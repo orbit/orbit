@@ -50,14 +50,14 @@ public class ShutdownTest extends ActorBaseTest
 {
 
 
-    public interface IShut extends IActor
+    public interface Shut extends IActor
     {
         Task<Void> doSomething();
 
         Task<Void> doSomethingBlocking();
     }
 
-    public static class Shut extends AbstractActor implements IShut
+    public static class ShutActor extends AbstractActor implements Shut
     {
         @Inject
         FakeSync fakeSync;
@@ -81,11 +81,11 @@ public class ShutdownTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage client = createClient();
 
-        IActor.getReference(IShut.class, "0").doSomething().join();
+        IActor.getReference(Shut.class, "0").doSomething().join();
         Stage stage2 = createStage();
 
         stage1.stop().join();
-        IActor.getReference(IShut.class, "0").doSomething().join();
+        IActor.getReference(Shut.class, "0").doSomething().join();
     }
 
 
@@ -95,7 +95,7 @@ public class ShutdownTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage client = createClient();
 
-        Task<Void> methodCall = IActor.getReference(IShut.class, "0").doSomethingBlocking();
+        Task<Void> methodCall = IActor.getReference(Shut.class, "0").doSomethingBlocking();
         // is blocked in the doSomethingBlocking
         assertEquals(true, fakeSync.get("executing").join());
         Stage stage2 = createStage();

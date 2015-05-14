@@ -28,36 +28,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.mongodb.test;
 
-import com.ea.orbit.actors.runtime.AbstractActor;
+
+import com.ea.orbit.actors.IActor;
 import com.ea.orbit.concurrent.Task;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class SomeMatch extends AbstractActor<SomeMatch.SomeMatchDto> implements ISomeMatch
+public interface SomeMatch extends IActor
 {
-    public static class SomeMatchDto
-    {
-        private List<ISomePlayer> players = new ArrayList<>();
+    Task<Void> addPlayer(SomePlayer player);
 
-    }
+    Task<List<SomePlayer>> getPlayers();
 
-    @Override
-    public Task<Void> addPlayer(final ISomePlayer player)
-    {
-        state().players.add(player);
-        return writeState();
-    }
-
-    @Override
-    public Task<List<ISomePlayer>> getPlayers()
-    {
-        return Task.fromValue(state().players);
-    }
-
-    @Override
-    public Task<Void> delete()
-    {
-        return clearState();
-    }
+    Task<Void> delete();
 }

@@ -653,13 +653,13 @@ public class Execution implements IRuntime
     @Override
     public Task<?> registerReminder(final IRemindable actor, final String reminderName, final long dueTime, final long period, final TimeUnit timeUnit)
     {
-        return getReference(IReminderController.class, "0").registerOrUpdateReminder(actor, reminderName, new Date(clock.millis() + timeUnit.toMillis(dueTime)), period, timeUnit);
+        return getReference(ReminderController.class, "0").registerOrUpdateReminder(actor, reminderName, new Date(clock.millis() + timeUnit.toMillis(dueTime)), period, timeUnit);
     }
 
     @Override
     public Task<?> unregisterReminder(final IRemindable actor, final String reminderName)
     {
-        return getReference(IReminderController.class, "0").unregisterReminder(actor, reminderName);
+        return getReference(ReminderController.class, "0").unregisterReminder(actor, reminderName);
     }
 
     @Override

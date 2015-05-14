@@ -26,12 +26,15 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.redis.test;
+package com.ea.orbit.samples.chat;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.test.IStorageTestActor;
 
-public interface IHelloActor extends IActor, IStorageTestActor
+import com.ea.orbit.actors.IActorObserver;
+import com.ea.orbit.actors.annotation.OneWay;
+import com.ea.orbit.concurrent.Task;
+
+public interface ChatObserver extends IActorObserver
 {
-    //basic tasks from IStorageTestActor interface
+    @OneWay
+    Task<Void> receiveMessage(ChatMessageDto message);
 }

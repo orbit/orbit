@@ -26,16 +26,19 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.test.actors;
+package com.ea.orbit.samples.annotation.examples;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.samples.annotation.onlyifactivated.OnlyIfActivated;
 
-public interface IStorage1Actor extends IActor
+public interface OnlyExample extends IActor
 {
 
-    Task<Void> put(String value);
+    @OnlyIfActivated
+    Task<Void> doSomethingSpecial(String greeting);
 
-    Task<String> get();
+    Task<Void> makeActiveNow();
 
 }
+

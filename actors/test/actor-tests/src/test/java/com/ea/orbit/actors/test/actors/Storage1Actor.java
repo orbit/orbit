@@ -32,7 +32,7 @@ import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 //no storage provider annotation, will be the default storage (first found)
-public class Storage1Actor extends AbstractActor<Storage1Actor.State> implements IStorage1Actor
+public class Storage1Actor extends AbstractActor<Storage1Actor.State> implements Storage1
 {
 
     public static class State

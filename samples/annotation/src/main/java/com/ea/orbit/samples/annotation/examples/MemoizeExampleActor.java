@@ -33,7 +33,7 @@ import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 @SuppressWarnings("rawtypes")
-public class MemoizeExampleActor extends AbstractActor implements IMemoizeExample
+public class MemoizeExampleActor extends AbstractActor implements MemoizeExample
 {
     public static int accessCount = 0;
 

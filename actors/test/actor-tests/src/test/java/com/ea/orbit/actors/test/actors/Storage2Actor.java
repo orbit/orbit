@@ -33,7 +33,7 @@ import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 @StorageProvider("fake2")
-public class Storage2Actor extends AbstractActor<Storage2Actor.State> implements IStorage2Actor
+public class Storage2Actor extends AbstractActor<Storage2Actor.State> implements Storage2
 {
 
     public static class State

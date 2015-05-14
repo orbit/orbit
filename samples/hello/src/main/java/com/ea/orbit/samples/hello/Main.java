@@ -44,7 +44,7 @@ public class Main
         stage.setClusterName("helloWorldCluster");
         stage.start().join();
 
-        IHello helloActor = IActor.getReference(IHello.class, "0");
+        Hello helloActor = IActor.getReference(Hello.class, "0");
 
         Task<String> response = helloActor.sayHello("Hi from " + stage.runtimeIdentity());
         System.out.println(response.join());

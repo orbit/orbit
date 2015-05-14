@@ -32,7 +32,7 @@ import com.ea.orbit.actors.runtime.TickStatus;
 import com.ea.orbit.concurrent.Task;
 
 /**
- * Actors that register reminders must implement the interface IRemindable.
+ * Actors that register reminders must implement the interface Remindable.
  * <p>
  * Reminders are a low frequency persisted timers that will be called even if the actor is not currently activated.
  * </p>
