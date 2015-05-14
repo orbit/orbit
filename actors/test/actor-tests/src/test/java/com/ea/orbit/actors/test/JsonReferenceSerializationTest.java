@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.providers.json.ActorReferenceModule;
+import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
 import com.ea.orbit.actors.runtime.RefFactory;
 import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.actors.test.actors.SomeActor;

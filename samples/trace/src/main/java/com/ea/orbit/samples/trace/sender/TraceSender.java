@@ -30,8 +30,8 @@ package com.ea.orbit.samples.trace.sender;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Addressable;
-import com.ea.orbit.actors.providers.IInvokeHookProvider;
-import com.ea.orbit.actors.providers.InvocationContext;
+import com.ea.orbit.actors.extensions.InvokeHookExtension;
+import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.concurrent.Task;
@@ -45,7 +45,7 @@ import com.google.common.cache.CacheBuilder;
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
-public class TraceSender implements IInvokeHookProvider
+public class TraceSender implements InvokeHookExtension
 {
 
     private Cache<Long, TraceInfo> traceMap = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.MINUTES)

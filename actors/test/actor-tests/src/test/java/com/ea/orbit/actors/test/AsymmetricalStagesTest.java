@@ -116,7 +116,7 @@ public class AsymmetricalStagesTest extends ActorBaseTest
     {
         Stage stage = new Stage();
         List<Class<?>> excludedClasses = Arrays.asList(excludedActorClasses);
-        stage.addProvider(new DefaultActorClassFinder()
+        stage.addExtension(new DefaultActorClassFinder()
         {
             @Override
             public <T extends Actor> Class<? extends T> findActorImplementation(Class<T> actorInterface)
@@ -128,7 +128,7 @@ public class AsymmetricalStagesTest extends ActorBaseTest
         stage.setMode(Stage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
-        stage.addProvider(new FakeStorageProvider(fakeDatabase));
+        stage.addExtension(new FakeStorageExtension(fakeDatabase));
         stage.setClock(clock);
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());

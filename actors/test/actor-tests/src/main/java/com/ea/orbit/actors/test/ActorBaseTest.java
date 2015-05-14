@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.providers.ILifetimeProvider;
+import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
@@ -87,7 +87,7 @@ public class ActorBaseTest
         Stage client = new Stage();
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
-        client.addProvider(new ILifetimeProvider()
+        client.addExtension(new LifetimeExtension()
         {
             @Override
             public Task<?> preActivation(final AbstractActor<?> actor)
@@ -112,7 +112,7 @@ public class ActorBaseTest
         Stage stage = new Stage();
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
-        stage.addProvider(new ILifetimeProvider()
+        stage.addExtension(new LifetimeExtension()
         {
             @Override
             public Task<?> preActivation(final AbstractActor<?> actor)
@@ -124,7 +124,7 @@ public class ActorBaseTest
         stage.setMode(Stage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
-        stage.addProvider(new FakeStorageProvider(fakeDatabase));
+        stage.addExtension(new FakeStorageExtension(fakeDatabase));
         stage.setClock(clock);
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());

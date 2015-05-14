@@ -56,7 +56,7 @@ public class TraceDemoMain
         //SENDER
         TraceSender sender = new TraceSender();
         sender.setMessaging(messaging);
-        stage.addProvider(sender);
+        stage.addExtension(sender);
 
         //RECEIVER
         TraceReceiver receiver = new TraceReceiver();

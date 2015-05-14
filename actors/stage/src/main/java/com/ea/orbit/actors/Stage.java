@@ -32,8 +32,8 @@ package com.ea.orbit.actors;
 import com.ea.orbit.actors.cluster.JGroupsClusterPeer;
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.actors.providers.ILifetimeProvider;
-import com.ea.orbit.actors.providers.IOrbitProvider;
+import com.ea.orbit.actors.extensions.LifetimeExtension;
+import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Hosting;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
@@ -71,8 +71,8 @@ public class Stage implements Startable
     @Config("orbit.actors.stageMode")
     private StageMode mode = StageMode.HOST;
 
-    @Config("orbit.actors.providers")
-    private List<IOrbitProvider> providers = new ArrayList<>();
+    @Config("orbit.actors.extensions")
+    private List<ActorExtension> extensions = new ArrayList<>();
 
     @Wired
     Container container;
@@ -235,7 +235,7 @@ public class Stage implements Startable
         hosting.setClusterPeer(clusterPeer);
         messaging.setClusterPeer(clusterPeer);
 
-        execution.setOrbitProviders(providers);
+        execution.setExtensions(extensions);
 
         messaging.start();
         hosting.start();
@@ -261,7 +261,7 @@ public class Stage implements Startable
         if (container != null)
         {
             // Create a lifetime provider for actor DI
-            ILifetimeProvider containerLifetime = new ILifetimeProvider()
+            LifetimeExtension containerLifetime = new LifetimeExtension()
             {
                 @Override
                 public Task<?> preActivation(AbstractActor<?> actor)
@@ -271,7 +271,7 @@ public class Stage implements Startable
                 }
             };
 
-            providers.add(containerLifetime);
+            extensions.add(containerLifetime);
         }
     }
 
@@ -285,14 +285,14 @@ public class Stage implements Startable
      * <p/>
      * Example:
      * <pre>
-     * stage.addProvider(new MongoDbProvider(...));
+     * stage.addExtension(new MongoDbProvider(...));
      * </pre>
      *
-     * @param provider Actor Provider instance.
+     * @param provider Actor Extensions instance.
      */
-    public void addProvider(final IOrbitProvider provider)
+    public void addExtension(final ActorExtension provider)
     {
-        this.providers.add(provider);
+        this.extensions.add(provider);
     }
 
     public Task<?> stop()

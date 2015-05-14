@@ -32,7 +32,7 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.actors.test.FakeClusterPeer;
-import com.ea.orbit.actors.test.FakeStorageProvider;
+import com.ea.orbit.actors.test.FakeStorageExtension;
 import com.ea.orbit.samples.annotation.examples.MemoizeExample;
 import com.ea.orbit.samples.annotation.examples.OnlyExample;
 import com.ea.orbit.samples.annotation.examples.MemoizeExampleActor;
@@ -122,10 +122,10 @@ public class AnnotationTest extends ActorBaseTest
         stage.setMessagingPool(commonPool);
 
 
-        stage.addProvider(new MemoizeExtension());
-        stage.addProvider(new OnlyIfActivatedExtension());
+        stage.addExtension(new MemoizeExtension());
+        stage.addExtension(new OnlyIfActivatedExtension());
 
-        stage.addProvider(new FakeStorageProvider(fakeDatabase));
+        stage.addExtension(new FakeStorageExtension(fakeDatabase));
 
         stage.setClock(clock);
         stage.setClusterName(clusterName);

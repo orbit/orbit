@@ -29,8 +29,8 @@
 package com.ea.orbit.samples.annotation.memoize;
 
 import com.ea.orbit.actors.Addressable;
-import com.ea.orbit.actors.providers.IInvokeHookProvider;
-import com.ea.orbit.actors.providers.InvocationContext;
+import com.ea.orbit.actors.extensions.InvokeHookExtension;
+import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.concurrent.Task;
 
 import net.jodah.expiringmap.ExpiringMap;
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class MemoizeExtension implements IInvokeHookProvider
+public class MemoizeExtension implements InvokeHookExtension
 {
     private ExpiringMap<String, Task> memoizeMap = ExpiringMap.builder().variableExpiration().build();
 

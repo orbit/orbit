@@ -45,14 +45,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>stage</module>
         <module>client</module>
         <module>server</module>
-        <module>providers/jpa</module>
-        <module>providers/json</module>
-        <module>providers/mongodb</module>
-        <module>providers/redis</module>
-		<module>providers/ldap</module>
-        <module>providers/postgresql</module>
-        <module>providers/spring</module>
-        <module>providers/memcached</module>
+        <module>extensions/jpa</module>
+        <module>extensions/json</module>
+        <module>extensions/mongodb</module>
+        <module>extensions/redis</module>
+		<module>extensions/ldap</module>
+        <module>extensions/postgresql</module>
+        <module>extensions/spring</module>
+        <module>extensions/memcached</module>
         <module>test/actor-tests</module>
         <module>actors-all</module>
     </modules>

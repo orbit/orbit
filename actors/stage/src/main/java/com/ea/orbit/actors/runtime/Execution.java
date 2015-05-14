@@ -35,12 +35,12 @@ import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.annotation.StorageProvider;
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.actors.providers.ActorClassFinder;
-import com.ea.orbit.actors.providers.IInvokeHookProvider;
-import com.ea.orbit.actors.providers.ILifetimeProvider;
-import com.ea.orbit.actors.providers.IOrbitProvider;
-import com.ea.orbit.actors.providers.IStorageProvider;
-import com.ea.orbit.actors.providers.InvocationContext;
+import com.ea.orbit.actors.extensions.ActorClassFinder;
+import com.ea.orbit.actors.extensions.InvokeHookExtension;
+import com.ea.orbit.actors.extensions.LifetimeExtension;
+import com.ea.orbit.actors.extensions.ActorExtension;
+import com.ea.orbit.actors.extensions.StorageExtension;
+import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -103,11 +103,11 @@ public class Execution implements IRuntime
     private ExecutorService executor;
     private ActorFactoryGenerator dynamicReferenceFactory = new ActorFactoryGenerator();
 
-    private List<IOrbitProvider> orbitProviders = new ArrayList<>();
+    private List<ActorExtension> extensions = new ArrayList<>();
 
     private final WeakReference<IRuntime> cachedRef = new WeakReference<>(this);
 
-    private List<IInvokeHookProvider> hookProviders;
+    private List<InvokeHookExtension> hookExtensions;
 
     private NodeCapabilities.NodeState state = NodeCapabilities.NodeState.RUNNING;
 
@@ -256,9 +256,9 @@ public class Execution implements IRuntime
 
                                 bind();
                                 AbstractActor<?> actor = (AbstractActor<?>) singleActivation.instance;
-                                Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preDeactivation(actor)))
+                                Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preDeactivation(actor)))
                                         .thenCompose(() -> actor.deactivateAsync())
-                                        .thenCompose(() -> Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.postDeactivation(actor))))
+                                        .thenCompose(() -> Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postDeactivation(actor))))
                                         .thenRun(() -> {
                                             singleActivation.instance = null;
                                             localActors.remove(key);
@@ -303,9 +303,9 @@ public class Execution implements IRuntime
                             {
                                 bind();
                                 AbstractActor<?> actor = (AbstractActor<?>) activation.instance;
-                                Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preDeactivation(actor)))
+                                Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preDeactivation(actor)))
                                         .thenCompose(() -> actor.deactivateAsync())
-                                        .thenCompose(() -> Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.postDeactivation(actor))))
+                                        .thenCompose(() -> Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postDeactivation(actor))))
                                         .thenRun(() -> {
                                             activation.instance = null;
                                         });
@@ -397,9 +397,9 @@ public class Execution implements IRuntime
                     final AbstractActor<?> actor = (AbstractActor<?>) newInstance;
                     actor.reference = entry.reference;
 
-                    actor.stateProvider = getStorageProviderFor(actor);
+                    actor.stateProvider = getStorageExtensionFor(actor);
 
-                    Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preActivation(actor))).join();
+                    Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preActivation(actor))).join();
 
                     if (actor.stateProvider != null)
                     {
@@ -419,7 +419,7 @@ public class Execution implements IRuntime
                     instance = newInstance;
 
                     actor.activateAsync().join();
-                    Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.postActivation(actor))).join();
+                    Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postActivation(actor))).join();
                 }
 
             }
@@ -428,30 +428,30 @@ public class Execution implements IRuntime
     }
 
 
-    public void setOrbitProviders(List<IOrbitProvider> orbitProviders)
+    public void setExtensions(List<ActorExtension> extensions)
     {
-        this.orbitProviders = orbitProviders;
+        this.extensions = extensions;
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends IOrbitProvider> T getFirstProvider(Class<T> itemType)
+    public <T extends ActorExtension> T getFirstExtension(Class<T> itemType)
     {
-        return (orbitProviders == null) ? null :
-                (T) orbitProviders.stream().filter(p -> itemType.isInstance(p)).findFirst().orElse(null);
+        return (extensions == null) ? null :
+                (T) extensions.stream().filter(p -> itemType.isInstance(p)).findFirst().orElse(null);
 
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends IOrbitProvider> List<T> getAllProviders(Class<T> itemType)
+    public <T extends ActorExtension> List<T> getAllExtensions(Class<T> itemType)
     {
-        return orbitProviders == null ? Collections.emptyList()
-                : (List<T>) orbitProviders.stream().filter(p -> itemType.isInstance(p)).collect(Collectors.toList());
+        return extensions == null ? Collections.emptyList()
+                : (List<T>) extensions.stream().filter(p -> itemType.isInstance(p)).collect(Collectors.toList());
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends IOrbitProvider> T getStorageProviderFor(AbstractActor actor)
+    public <T extends ActorExtension> T getStorageExtensionFor(AbstractActor actor)
     {
-        if (orbitProviders == null)
+        if (extensions == null)
         {
             return null;
         }
@@ -459,8 +459,8 @@ public class Execution implements IRuntime
         String providerName = ann == null ? "default" : ann.value();
 
         // selects the fist provider with the right name
-        return (T) orbitProviders.stream()
-                .filter(p -> (p instanceof IStorageProvider) && providerName.equals(((IStorageProvider) p).getName()))
+        return (T) extensions.stream()
+                .filter(p -> (p instanceof StorageExtension) && providerName.equals(((StorageExtension) p).getName()))
                 .findFirst()
                 .orElse(null);
     }
@@ -495,8 +495,8 @@ public class Execution implements IRuntime
         // * wait pending tasks execution
         executionSerializer.shutDown();
 
-        // ** stop all providers
-        Task.allOf(orbitProviders.stream().map(v -> v.stop())).join();
+        // ** stop all extensions
+        Task.allOf(extensions.stream().map(v -> v.stop())).join();
 
         // * cancel all pending messages, and prevents sending new ones
         //messaging.stop();
@@ -670,7 +670,7 @@ public class Execution implements IRuntime
 
     public void start()
     {
-        finder = getFirstProvider(ActorClassFinder.class);
+        finder = getFirstExtension(ActorClassFinder.class);
         if (finder == null)
         {
             finder = new DefaultActorClassFinder();
@@ -686,9 +686,9 @@ public class Execution implements IRuntime
         }
         executionSerializer = new ExecutionSerializer<>(executor);
 
-        hookProviders = getAllProviders(IInvokeHookProvider.class);
+        hookExtensions = getAllExtensions(InvokeHookExtension.class);
 
-        orbitProviders.forEach(v -> v.start());
+        extensions.forEach(v -> v.start());
         // schedules the cleanup
         timer.schedule(new TimerTask()
         {
@@ -1039,7 +1039,7 @@ public class Execution implements IRuntime
      * Should only be used if the application knows for sure that an observer with the given id
      * indeed exists on that other node.
      * <p/>
-     * This is a low level use of orbit-actors, recommended only for IOrbitProviders.
+     * This is a low level use of orbit-actors, recommended only for ActorExtensions.
      *
      * @param address the other node address.
      * @param iClass  the IObserverClass
@@ -1084,15 +1084,15 @@ public class Execution implements IRuntime
 
     public Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
     {
-        if (hookProviders.size() == 0)
+        if (hookExtensions.size() == 0)
         {
             // no hooks
             return sendMessage(toReference, oneWay, methodId, params);
         }
 
-        Iterator<IInvokeHookProvider> it = hookProviders.iterator();
+        Iterator<InvokeHookExtension> it = hookExtensions.iterator();
 
-        // invoke the hook providers as a chain where one can
+        // invoke the hook extensions as a chain where one can
         // filter the input and output of the next.
         InvocationContext ctx = new InvocationContext()
         {

@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Remindable;
-import com.ea.orbit.actors.providers.IStorageProvider;
+import com.ea.orbit.actors.extensions.StorageExtension;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractActor<T>
 {
     T state;
-    IStorageProvider stateProvider;
+    StorageExtension stateProvider;
     ActorReference<?> reference;
     Logger logger;
 

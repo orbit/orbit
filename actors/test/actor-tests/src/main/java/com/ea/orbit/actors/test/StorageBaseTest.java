@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.providers.IOrbitProvider;
+import com.ea.orbit.actors.extensions.ActorExtension;
 
 import org.junit.After;
 import org.junit.Before;
@@ -119,7 +119,7 @@ public abstract class StorageBaseTest
     public Stage createStage() throws Exception
     {
         Stage stage = new Stage();
-        stage.addProvider(getStorageProvider());
+        stage.addExtension(getStorageProvider());
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().get();
@@ -141,7 +141,7 @@ public abstract class StorageBaseTest
 
     public abstract Class<? extends StorageTest> getActorInterfaceClass();
 
-    public abstract IOrbitProvider getStorageProvider();
+    public abstract ActorExtension getStorageProvider();
 
     public abstract void initStorage();
 
