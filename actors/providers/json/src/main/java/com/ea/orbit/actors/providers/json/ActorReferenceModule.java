@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.providers.json;
 
 import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.IActorObserver;
+import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.IReferenceFactory;
@@ -238,7 +238,7 @@ public class ActorReferenceModule extends Module
                 {
                     return new RefDeserializer(rawClass, referenceFactory);
                 }
-                if (IActorObserver.class.isAssignableFrom(rawClass))
+                if (ActorObserver.class.isAssignableFrom(rawClass))
                 {
                     return new ObserverRefDeserializer(rawClass, referenceFactory);
                 }
@@ -255,7 +255,7 @@ public class ActorReferenceModule extends Module
                 {
                     return new RefSerializer(rawClass);
                 }
-                if (IActorObserver.class.isAssignableFrom(rawClass))
+                if (ActorObserver.class.isAssignableFrom(rawClass))
                 {
                     return new ObserverRefSerializer();
                 }

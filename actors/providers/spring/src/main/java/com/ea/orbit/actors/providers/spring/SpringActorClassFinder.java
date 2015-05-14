@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.providers.spring;
 
 import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.providers.IActorClassFinder;
+import com.ea.orbit.actors.providers.ActorClassFinder;
 import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.runtime.ReminderControllerActor;
 
@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
  * @author Johno Crawford (johno@sulake.com)
  */
 @Component
-public class SpringActorClassFinder implements IActorClassFinder
+public class SpringActorClassFinder implements ActorClassFinder
 {
 
     @Autowired

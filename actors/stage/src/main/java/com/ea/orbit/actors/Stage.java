@@ -36,7 +36,7 @@ import com.ea.orbit.actors.providers.ILifetimeProvider;
 import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Hosting;
-import com.ea.orbit.actors.runtime.IHosting;
+import com.ea.orbit.actors.runtime.NodeConfig;
 import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.AbstractActor;
@@ -221,7 +221,7 @@ public class Stage implements Startable
 
         this.configureOrbitContainer();
 
-        hosting.setNodeType(mode == StageMode.HOST ? IHosting.NodeTypeEnum.SERVER : IHosting.NodeTypeEnum.CLIENT);
+        hosting.setNodeType(mode == StageMode.HOST ? NodeConfig.NodeTypeEnum.SERVER : NodeConfig.NodeTypeEnum.CLIENT);
         execution.setClock(clock);
         execution.setHosting(hosting);
         execution.setMessaging(messaging);
@@ -314,7 +314,7 @@ public class Stage implements Startable
      * @deprecated Use #registerObserver instead
      */
     @Deprecated
-    public <T extends IActorObserver> T getObserverReference(Class<T> iClass, final T observer)
+    public <T extends ActorObserver> T getObserverReference(Class<T> iClass, final T observer)
     {
         return registerObserver(iClass, observer);
 
@@ -324,17 +324,17 @@ public class Stage implements Startable
      * @deprecated Use #registerObserver instead
      */
     @Deprecated
-    public <T extends IActorObserver> T getObserverReference(final T observer)
+    public <T extends ActorObserver> T getObserverReference(final T observer)
     {
         return registerObserver(null, observer);
     }
 
-    public <T extends IActorObserver> T registerObserver(Class<T> iClass, final T observer)
+    public <T extends ActorObserver> T registerObserver(Class<T> iClass, final T observer)
     {
         return execution.getObjectReference(iClass, observer);
     }
 
-    public <T extends IActorObserver> T registerObserver(Class<T> iClass, String id, final T observer)
+    public <T extends ActorObserver> T registerObserver(Class<T> iClass, String id, final T observer)
     {
         return execution.getObserverReference(iClass, observer, id);
     }
@@ -367,7 +367,7 @@ public class Stage implements Startable
      * Binds this stage to the current thread.
      * This tells ungrounded references to use this stage to call remote methods.
      * <p/>
-     * An ungrounded reference is a reference created with {@code IActor.getReference} and used outside of an actor method.
+     * An ungrounded reference is a reference created with {@code Actor.getReference} and used outside of an actor method.
      * <p/>
      * This is only necessary when there are <i>two or more</i> OrbitStages active in the same virtual machine and
      * remote calls need to be issued from outside an actor.
@@ -401,7 +401,7 @@ public class Stage implements Startable
         return hosting.getServerNodes();
     }
 
-    public IHosting.NodeState getState()
+    public NodeConfig.NodeState getState()
     {
         return execution.getState();
     }

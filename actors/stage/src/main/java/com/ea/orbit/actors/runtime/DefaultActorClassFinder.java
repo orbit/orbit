@@ -29,15 +29,16 @@
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.providers.IActorClassFinder;
 
-public class ActorClassFinder implements IActorClassFinder
+import com.ea.orbit.actors.providers.ActorClassFinder;
+
+public class DefaultActorClassFinder implements ActorClassFinder
 {
     private static final ClassPathSearch search = new ClassPathSearch(Actor.class);
 
 	@Override
-    public <T extends Actor> Class<? extends T> findActorImplementation(Class<T> iActorInterface)
+    public <T extends Actor> Class<? extends T> findActorImplementation(Class<T> actorInterface)
     {
-        return search.findImplementation(iActorInterface);
+        return search.findImplementation(actorInterface);
     }
 }

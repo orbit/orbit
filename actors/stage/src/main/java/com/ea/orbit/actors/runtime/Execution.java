@@ -29,13 +29,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.IActorObserver;
+import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.annotation.StorageProvider;
 import com.ea.orbit.actors.cluster.INodeAddress;
-import com.ea.orbit.actors.providers.IActorClassFinder;
+import com.ea.orbit.actors.providers.ActorClassFinder;
 import com.ea.orbit.actors.providers.IInvokeHookProvider;
 import com.ea.orbit.actors.providers.ILifetimeProvider;
 import com.ea.orbit.actors.providers.IOrbitProvider;
@@ -82,13 +82,13 @@ public class Execution implements IRuntime
 
     private static final Logger logger = LoggerFactory.getLogger(Execution.class);
     private final String runtimeIdentity;
-    private IActorClassFinder finder;
+    private ActorClassFinder finder;
     private Map<Class<?>, InterfaceDescriptor> descriptorMapByInterface = new HashMap<>();
     private Map<Integer, InterfaceDescriptor> descriptorMapByInterfaceId = new HashMap<>();
     private Map<EntryKey, ReferenceEntry> localActors = new ConcurrentHashMap<>();
-    private Map<EntryKey, IActorObserver> observerInstances = new MapMaker().weakValues().makeMap();
+    private Map<EntryKey, ActorObserver> observerInstances = new MapMaker().weakValues().makeMap();
     // from implementation to reference
-    private Map<IActorObserver, IActorObserver> observerReferences = new MapMaker().weakKeys().makeMap();
+    private Map<ActorObserver, ActorObserver> observerReferences = new MapMaker().weakKeys().makeMap();
 
     private Hosting hosting;
     private Messaging messaging;
@@ -109,7 +109,7 @@ public class Execution implements IRuntime
 
     private List<IInvokeHookProvider> hookProviders;
 
-    private IHosting.NodeState state = IHosting.NodeState.RUNNING;
+    private NodeConfig.NodeState state = NodeConfig.NodeState.RUNNING;
 
     public Execution()
     {
@@ -139,7 +139,7 @@ public class Execution implements IRuntime
 
     public boolean canActivateActor(String interfaceName, int interfaceId)
     {
-        if (state != IHosting.NodeState.RUNNING)
+        if (state != NodeConfig.NodeState.RUNNING)
         {
             return false;
         }
@@ -478,7 +478,7 @@ public class Execution implements IRuntime
     public Task<?> stop()
     {
         // * refuse new actor activations
-        state = IHosting.NodeState.STOPPING;
+        state = NodeConfig.NodeState.STOPPING;
         hosting.notifyStateChange();
 
         // * deactivate all actors
@@ -489,7 +489,7 @@ public class Execution implements IRuntime
 
         // * stop processing new received messages (responses still work)
         // * notify rest of the cluster (no more observer messages)
-        state = IHosting.NodeState.STOPPED;
+        state = NodeConfig.NodeState.STOPPED;
         hosting.notifyStateChange();
 
         // * wait pending tasks execution
@@ -508,13 +508,13 @@ public class Execution implements IRuntime
      * Installs this observer into this node.
      * Can called several times the object is registered only once.
      *
-     * @param iClass   hint to the framework about which IActorObserver interface this object represents.
+     * @param iClass   hint to the framework about which ActorObserver interface this object represents.
      *                 Can be null if there are no ambiguities.
      * @param observer the object to install
      * @param <T>      The type of reference class returned.
      * @return a remote reference that can be sent to actors.
      */
-    public <T extends IActorObserver> T getObjectReference(final Class<T> iClass, final T observer)
+    public <T extends ActorObserver> T getObjectReference(final Class<T> iClass, final T observer)
     {
         return getObserverReference(iClass, observer, null);
     }
@@ -524,7 +524,7 @@ public class Execution implements IRuntime
      * If called twice for the same observer, the ids must match.
      * Usually it's recommended to let the framework choose the id;
      *
-     * @param iClass   hint to the framework about which IActorObserver interface this object represents.
+     * @param iClass   hint to the framework about which ActorObserver interface this object represents.
      *                 Can be null if there are no ambiguities.
      * @param observer the object to install
      * @param id       can be null, in this case the framework will choose an id.
@@ -533,9 +533,9 @@ public class Execution implements IRuntime
      * @throws java.lang.IllegalArgumentException if called twice with the same observer and different ids
      */
     @SuppressWarnings("unchecked")
-    public <T extends IActorObserver> T getObserverReference(Class<T> iClass, final T observer, String id)
+    public <T extends ActorObserver> T getObserverReference(Class<T> iClass, final T observer, String id)
     {
-        final IActorObserver ref = observerReferences.get(observer);
+        final ActorObserver ref = observerReferences.get(observer);
         if (ref != null)
         {
             if (id != null && !id.equals(((ActorReference<?>) ref).id))
@@ -548,13 +548,13 @@ public class Execution implements IRuntime
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends IActorObserver> T createObjectReference(final Class<T> iClass, final T observer, String objectId)
+    private <T extends ActorObserver> T createObjectReference(final Class<T> iClass, final T observer, String objectId)
     {
 
         ActorFactory<?> factory;
         if (iClass == null)
         {
-            factory = findFactoryFor(IActorObserver.class, observer);
+            factory = findFactoryFor(ActorObserver.class, observer);
         }
         else
         {
@@ -567,7 +567,7 @@ public class Execution implements IRuntime
         final String id = objectId != null ? objectId : UUID.randomUUID().toString();
 
         EntryKey key = new EntryKey(factory.getInterfaceId(), id);
-        final IActorObserver existingObserver = observerInstances.get(key);
+        final ActorObserver existingObserver = observerInstances.get(key);
         if (existingObserver == null)
         {
             final ActorReference<T> reference = (ActorReference<T>) factory.createReference(id);
@@ -577,7 +577,7 @@ public class Execution implements IRuntime
             }
             reference.runtime = Execution.this;
             observerInstances.putIfAbsent(key, observer);
-            observerReferences.putIfAbsent(observer, (IActorObserver) reference);
+            observerReferences.putIfAbsent(observer, (ActorObserver) reference);
             return (T) reference;
         }
         else if (observer != existingObserver)
@@ -670,15 +670,15 @@ public class Execution implements IRuntime
 
     public void start()
     {
-        finder = getFirstProvider(IActorClassFinder.class);
+        finder = getFirstProvider(ActorClassFinder.class);
         if (finder == null)
         {
-            finder = new ActorClassFinder();
+            finder = new DefaultActorClassFinder();
             finder.start().join();
         }
 
-        getDescriptor(IHosting.class);
-        createObjectReference(IHosting.class, hosting, "");
+        getDescriptor(NodeConfig.class);
+        createObjectReference(NodeConfig.class, hosting, "");
 
         if (executor == null)
         {
@@ -695,7 +695,7 @@ public class Execution implements IRuntime
             @Override
             public void run()
             {
-                if (state == IHosting.NodeState.RUNNING)
+                if (state == NodeConfig.NodeState.RUNNING)
                 {
                     ForkJoinTask.adapt(() -> activationCleanup().join()).fork();
                 }
@@ -758,13 +758,13 @@ public class Execution implements IRuntime
         InterfaceDescriptor interfaceDescriptor = descriptorMapByInterface.get(aInterface);
         if (interfaceDescriptor == null)
         {
-            if (aInterface == Actor.class || aInterface == IActorObserver.class || !aInterface.isInterface())
+            if (aInterface == Actor.class || aInterface == ActorObserver.class || !aInterface.isInterface())
             {
                 return null;
             }
 
             interfaceDescriptor = new InterfaceDescriptor();
-            interfaceDescriptor.isObserver = IActorObserver.class.isAssignableFrom(aInterface);
+            interfaceDescriptor.isObserver = ActorObserver.class.isAssignableFrom(aInterface);
             interfaceDescriptor.factory = dynamicReferenceFactory.getFactoryFor(aInterface);
             interfaceDescriptor.invoker = (ActorInvoker<Object>) interfaceDescriptor.factory.getInvoker();
             descriptorMapByInterface.put(aInterface, interfaceDescriptor);
@@ -813,7 +813,7 @@ public class Execution implements IRuntime
         final InterfaceDescriptor descriptor = getDescriptor(interfaceId);
         if (descriptor.isObserver)
         {
-            final IActorObserver observer = observerInstances.get(entryKey);
+            final ActorObserver observer = observerInstances.get(entryKey);
             if (observer == null)
             {
                 if (!oneway)
@@ -1044,11 +1044,11 @@ public class Execution implements IRuntime
      * @param address the other node address.
      * @param iClass  the IObserverClass
      * @param id      the id, must not be null
-     * @param <T>     the IActorObserver sub interface
+     * @param <T>     the ActorObserver sub interface
      * @return a remote reference to the observer
      */
     @SuppressWarnings("unchecked")
-    public <T extends IActorObserver> T getRemoteObserverReference(INodeAddress address, final Class<T> iClass, final Object id)
+    public <T extends ActorObserver> T getRemoteObserverReference(INodeAddress address, final Class<T> iClass, final Object id)
     {
         if (id == null)
         {
@@ -1131,11 +1131,11 @@ public class Execution implements IRuntime
                 continue;
             }
             Activation act = entry.peekOldActivation();
-            if (act == null && state == IHosting.NodeState.RUNNING)
+            if (act == null && state == NodeConfig.NodeState.RUNNING)
             {
                 continue;
             }
-            if (state != IHosting.NodeState.RUNNING || act.lastAccess < cutOut)
+            if (state != NodeConfig.NodeState.RUNNING || act.lastAccess < cutOut)
             {
                 CompletableFuture<Object> future = new CompletableFuture<>();
                 final Supplier<Task<?>> task = () -> {
@@ -1187,7 +1187,7 @@ public class Execution implements IRuntime
         return hosting.locateActor(actorReference, false);
     }
 
-    public IHosting.NodeState getState()
+    public NodeConfig.NodeState getState()
     {
         return state;
     }

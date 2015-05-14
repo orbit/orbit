@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.IActorObserver;
+import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.annotation.NoIdentity;
 import com.ea.orbit.actors.cluster.NodeAddress;
 
@@ -51,7 +51,7 @@ public class ReferenceFactory implements IReferenceFactory
     }
 
     @Override
-    public <T extends IActorObserver> T getObserverReference(final UUID nodeId, final Class<T> iClass, final Object id)
+    public <T extends ActorObserver> T getObserverReference(final UUID nodeId, final Class<T> iClass, final Object id)
     {
         ActorFactory<T> factory = getFactory(iClass);
         final T reference = factory.createReference(String.valueOf(id));
@@ -88,27 +88,27 @@ public class ReferenceFactory implements IReferenceFactory
         return factory;
     }
 
-    public static <T extends Actor> T ref(Class<T> iActor, String id)
+    public static <T extends Actor> T ref(Class<T> actorInterface, String id)
     {
-        if (iActor.isAnnotationPresent(NoIdentity.class))
+        if (actorInterface.isAnnotationPresent(NoIdentity.class))
         {
-            throw new IllegalArgumentException("Shouldn't supply ids for IActors annotated with " + NoIdentity.class);
+            throw new IllegalArgumentException("Shouldn't supply ids for Actors annotated with " + NoIdentity.class);
         }
-        return instance.getReference(iActor, id);
+        return instance.getReference(actorInterface, id);
     }
 
-    public static <T extends Actor> T ref(Class<T> iActor)
+    public static <T extends Actor> T ref(Class<T> actorInterface)
     {
-        if (!iActor.isAnnotationPresent(NoIdentity.class))
+        if (!actorInterface.isAnnotationPresent(NoIdentity.class))
         {
             throw new IllegalArgumentException("Not annotated with " + NoIdentity.class);
         }
-        return instance.getReference(iActor, NoIdentity.NO_IDENTITY);
+        return instance.getReference(actorInterface, NoIdentity.NO_IDENTITY);
     }
 
-    public static <T extends IActorObserver> T observerRef(UUID nodeId, Class<T> iActorObserver, String id)
+    public static <T extends ActorObserver> T observerRef(UUID nodeId, Class<T> actorObserverInterface, String id)
     {
-        return instance.getObserverReference(nodeId, iActorObserver, id);
+        return instance.getObserverReference(nodeId, actorObserverInterface, id);
     }
 
 }

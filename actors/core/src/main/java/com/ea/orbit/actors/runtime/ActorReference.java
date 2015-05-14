@@ -36,16 +36,16 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 
 /**
- * Base class for IActor or IActorObserver references.
+ * Base class for Actor or ActorObserver references.
  *
  * <p>References classes ares automatically generated with runtime byte code generation</p>
  *
- * <p>The reference classes extends the IActor or IActorObserver interfaces
+ * <p>The reference classes extends the Actor or ActorObserver interfaces
  * and implement their methods as remote calls that are forwarded to the IRuntime</p>
  *
  * <p>References are java.io.Serializable and orbit also provides a jackson module to handle their serialization to json</p>
  *
- * @param <T> the IActor of IActorObserver implemented by this reference.
+ * @param <T> the Actor of ActorObserver implemented by this reference.
  */
 public abstract class ActorReference<T> implements Serializable, IAddressable
 {
@@ -122,7 +122,7 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
 
     /**
      * Utility method used by the framework and framework extensions to retrieve the integer identifier of
-     * the IActor or IActorObserver interface implemented by this reference.
+     * the Actor or ActorObserver interface implemented by this reference.
      *
      * <p>This is not exposed as an instance method to avoid clashes with the methods from implemented interfaces</p>
      *
@@ -147,7 +147,7 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
     }
 
     /**
-     * Utility method used by the framework and framework extensions to retrieve the IActor or IActorObserver
+     * Utility method used by the framework and framework extensions to retrieve the Actor or ActorObserver
      * interface implemented by this reference.
      *
      * <p>This is not exposed as an instance method to avoid clashes with the methods from implemented interfaces</p>

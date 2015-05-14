@@ -55,7 +55,7 @@ import com.ea.orbit.actors.runtime.ReferenceFactory;
  * Application code will never touch actor instances directly. It should rather
  * obtain references:
  * <pre>{@code
- *  Hello helloActor = IActor.getReference(Hello.class, "001");
+ *  HelloActor helloActor = Actor.getReference(Hello.class, "001");
  * }</pre>
  * </p>
  */

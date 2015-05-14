@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IActorObserver;
+import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.IClusterPeer;
 import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.concurrent.ExecutorUtils;
@@ -290,9 +290,9 @@ public class Messaging implements Startable
                     {
                         reference = ((AbstractActor) obj).reference;
                     }
-                    else if (obj instanceof IActorObserver)
+                    else if (obj instanceof ActorObserver)
                     {
-                        IActorObserver objectReference = execution.getObjectReference(null, (IActorObserver) obj);
+                        ActorObserver objectReference = execution.getObjectReference(null, (ActorObserver) obj);
                         reference = (ActorReference) objectReference;
                     }
                     else

@@ -30,7 +30,7 @@ package com.ea.orbit.actors.providers;
 
 import com.ea.orbit.actors.Actor;
 
-public interface IActorClassFinder extends IOrbitProvider
+public interface ActorClassFinder extends IOrbitProvider
 {
-    <T extends Actor> Class<? extends T> findActorImplementation(Class<T> iActorInterface);
+    <T extends Actor> Class<? extends T> findActorImplementation(Class<T> actorInterface);
 }

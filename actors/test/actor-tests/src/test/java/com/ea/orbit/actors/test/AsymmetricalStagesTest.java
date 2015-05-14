@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.runtime.ActorClassFinder;
+import com.ea.orbit.actors.runtime.DefaultActorClassFinder;
 import com.ea.orbit.actors.test.actors.SomeActor;
 import com.ea.orbit.actors.test.actors.SomeMatch;
 import com.ea.orbit.actors.test.actors.SomePlayer;
@@ -116,12 +116,12 @@ public class AsymmetricalStagesTest extends ActorBaseTest
     {
         Stage stage = new Stage();
         List<Class<?>> excludedClasses = Arrays.asList(excludedActorClasses);
-        stage.addProvider(new ActorClassFinder()
+        stage.addProvider(new DefaultActorClassFinder()
         {
             @Override
-            public <T extends Actor> Class<? extends T> findActorImplementation(Class<T> iActorInterface)
+            public <T extends Actor> Class<? extends T> findActorImplementation(Class<T> actorInterface)
             {
-                Class<? extends T> c = super.findActorImplementation(iActorInterface);
+                Class<? extends T> c = super.findActorImplementation(actorInterface);
                 return excludedClasses.contains(c) ? null : c;
             }
         });

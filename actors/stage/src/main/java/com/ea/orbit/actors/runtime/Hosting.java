@@ -53,7 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
-public class Hosting implements IHosting, Startable
+public class Hosting implements NodeConfig, Startable
 {
     private static final Logger logger = LoggerFactory.getLogger(Hosting.class);
     private NodeTypeEnum nodeType;
@@ -113,7 +113,7 @@ public class Hosting implements IHosting, Startable
     {
         for (NodeInfo info : activeNodes.values())
         {
-            info.hosting.nodeModeChanged(clusterPeer.localAddress(), execution.getState());
+            info.nodeConfig.nodeModeChanged(clusterPeer.localAddress(), execution.getState());
         }
     }
 
@@ -122,7 +122,7 @@ public class Hosting implements IHosting, Startable
         boolean active;
         INodeAddress address;
         NodeState state = NodeState.RUNNING;
-        IHosting hosting;
+        NodeConfig nodeConfig;
         boolean cannotHostActors;
         final ConcurrentHashMap<String, Integer> canActivate = new ConcurrentHashMap<>();
 
@@ -181,7 +181,7 @@ public class Hosting implements IHosting, Startable
             if (nodeInfo == null)
             {
                 nodeInfo = new NodeInfo(a);
-                nodeInfo.hosting = execution.createReference(a, IHosting.class, "");
+                nodeInfo.nodeConfig = execution.createReference(a, NodeConfig.class, "");
                 nodeInfo.active = true;
                 activeNodes.put(a, nodeInfo);
                 justAddedNodes.add(nodeInfo);
@@ -321,7 +321,7 @@ public class Hosting implements IHosting, Startable
 
             potentialNodes = currentServerNodes.stream()
                     .filter(n -> (!n.cannotHostActors && n.state == NodeState.RUNNING)
-                            && IHosting.actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, IHosting.actorSupported_yes))
+                            && NodeConfig.actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, NodeConfig.actorSupported_yes))
                     .collect(Collectors.toList());
 
             if (potentialNodes.size() == 0)
@@ -356,7 +356,7 @@ public class Hosting implements IHosting, Startable
                     // ask if the node can activate this type of actor.
                     try
                     {
-                        canActivate = nodeInfo.hosting.canActivate(interfaceClassName, -1).join();
+                        canActivate = nodeInfo.nodeConfig.canActivate(interfaceClassName, -1).join();
                         if (canActivate == actorSupported_noneSupported)
                         {
                             nodeInfo.cannotHostActors = true;

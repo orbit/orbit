@@ -29,11 +29,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.samples.chat;
 
 
-import com.ea.orbit.actors.IActorObserver;
+import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.concurrent.Task;
 
-public interface ChatObserver extends IActorObserver
+public interface ChatObserver extends ActorObserver
 {
     @OneWay
     Task<Void> receiveMessage(ChatMessageDto message);

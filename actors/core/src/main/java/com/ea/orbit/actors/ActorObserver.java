@@ -51,7 +51,7 @@ import com.ea.orbit.concurrent.Task;
  * The actor are allowed to hold and persist references to these client objects.
  * </p>
  * <p>
- * Since the observers are not indestructible, it is to be expected that references to IActorObservers may become invalid.
+ * Since the observers are not indestructible, it is to be expected that references to ActorObservers may become invalid.
  * The ping() method exists to allow application code to validate if the observer is still alive.
  * </p>
  * <p>
@@ -60,7 +60,7 @@ import com.ea.orbit.concurrent.Task;
  * <p>
  * <b>Example:</b>
  * <pre>
- *  public interface IChatMember extends IActorObserver
+ *  public interface ChatMember extends ActorObserver
  *  {
  *      {@literal@}OneWay
  *      Task&lt;Void&gt; receiveChatMessage(String message);
@@ -95,7 +95,7 @@ import com.ea.orbit.concurrent.Task;
  * </pre>
  * </p>
  */
-public interface IActorObserver
+public interface ActorObserver
 {
     /**
      * Allows the application to verify if the observer is still alive.
@@ -110,13 +110,13 @@ public interface IActorObserver
      * Gets a reference to a remote observer.
      *
      * @param node           the node address
-     * @param iActorObserver the interface
+     * @param actorObserverInterface the interface
      * @param id             the observer id
      * @param <T>            the interface type
      * @return an actor reference
      */
-    static <T extends IActorObserver> T getObserverReference(INodeAddress node, Class<T> iActorObserver, String id)
+    static <T extends ActorObserver> T getObserverReference(INodeAddress node, Class<T> actorObserverInterface, String id)
     {
-        return ReferenceFactory.observerRef(node.asUUID(), iActorObserver, id);
+        return ReferenceFactory.observerRef(node.asUUID(), actorObserverInterface, id);
     }
 }

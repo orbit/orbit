@@ -40,7 +40,7 @@ import java.lang.annotation.Target;
  * </p>
  * <pre>
  *  {@literal@}NoIdentity
- *  public interface ISingularThing extends IActor {
+ *  public interface SingularThing extends Actor {
  *     Task&lt;Integer&gt; add(int a, int b);
  *  }</pre>
  * </p>

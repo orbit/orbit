@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.IActorObserver;
+import com.ea.orbit.actors.ActorObserver;
 
 import java.util.UUID;
 
@@ -37,5 +37,5 @@ public interface IReferenceFactory
 {
     <T extends Actor> T getReference(Class<T> iClass, Object id);
 
-    <T extends IActorObserver> T getObserverReference(UUID nodeId, Class<T> iClass, Object id);
+    <T extends ActorObserver> T getObserverReference(UUID nodeId, Class<T> iClass, Object id);
 }
