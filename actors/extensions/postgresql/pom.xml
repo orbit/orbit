@@ -36,7 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <relativePath>../..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <name>Orbit Actors Storage Provider PostgreSQL</name>
+    <name>Orbit Actors Extension: PostgreSQL Storage</name>
 
     <artifactId>orbit-actors-postgresql</artifactId>
 	

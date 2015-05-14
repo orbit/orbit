@@ -37,7 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Orbit Actors Storage Provider MongoDB</name>
+    <name>Orbit Actors Extension: MongoDB Storage</name>
     <artifactId>orbit-actors-mongodb</artifactId>
 	
 	<properties>

@@ -37,7 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Orbit Actors Storage Provider Memcached</name>
+    <name>Orbit Actors Extension: Memcached Storage</name>
     <artifactId>orbit-actors-memcached</artifactId>
 
     <properties>

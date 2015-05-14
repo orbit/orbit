@@ -37,7 +37,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Orbit Actors Utilities for Json Storage</name>
+    <name>Orbit Actors Extension: JSON Utilities</name>
     <artifactId>orbit-actors-json</artifactId>
 
     <dependencies>
