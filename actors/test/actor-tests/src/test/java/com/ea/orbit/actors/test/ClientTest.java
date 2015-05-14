@@ -31,10 +31,9 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.test.actors.SomeActor;
-import com.ea.orbit.actors.test.actors.ISomeChatObserver;
 import com.ea.orbit.actors.test.actors.SomeChatRoom;
 import com.ea.orbit.concurrent.Task;
 
@@ -56,12 +55,12 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings("unused")
 public class ClientTest extends ActorBaseTest
 {
-    public static class SomeChatObserver implements ISomeChatObserver
+    public static class SomeChatObserver implements com.ea.orbit.actors.test.actors.SomeChatObserver
     {
-        BlockingQueue<Pair<ISomeChatObserver, String>> messagesReceived = new LinkedBlockingQueue<>();
+        BlockingQueue<Pair<com.ea.orbit.actors.test.actors.SomeChatObserver, String>> messagesReceived = new LinkedBlockingQueue<>();
 
         @Override
-        public Task<Void> receiveMessage(final ISomeChatObserver sender, final String message)
+        public Task<Void> receiveMessage(final com.ea.orbit.actors.test.actors.SomeChatObserver sender, final String message)
         {
             messagesReceived.add(Pair.of(sender, message));
             return Task.done();
@@ -97,7 +96,7 @@ public class ClientTest extends ActorBaseTest
         {
             client2.bind();
             SomeChatRoom chatRoom = Actor.getReference(SomeChatRoom.class, "chat");
-            final ISomeChatObserver reference = client2.getObserverReference(observer2);
+            final com.ea.orbit.actors.test.actors.SomeChatObserver reference = client2.getObserverReference(observer2);
             chatRoom.join(reference).get();
             chatRoom.sendMessage(reference, "bla");
         }
@@ -119,7 +118,7 @@ public class ClientTest extends ActorBaseTest
     {
         List<Stage> clients = new ArrayList<>();
         List<Stage> servers = new ArrayList<>();
-        Set<INodeAddress> serverAddresses = new HashSet<>();
+        Set<NodeAddress> serverAddresses = new HashSet<>();
 
         for (int i = 0; i < 20; i++)
         {

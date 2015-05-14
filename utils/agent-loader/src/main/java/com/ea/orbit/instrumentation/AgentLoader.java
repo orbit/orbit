@@ -51,13 +51,13 @@ import java.util.jar.Manifest;
  */
 public class AgentLoader
 {
-    private volatile static IAgentLoader agentLoader;
+    private volatile static AgentLoaderInterface agentLoader;
 
     /**
      * Internal class.
      */
     // used internally, has to be public to be accessible from the shadeClassLoaders
-    interface IAgentLoader
+    interface AgentLoaderInterface
     {
         void loadAgent(String agentJar, String options);
     }
@@ -72,7 +72,7 @@ public class AgentLoader
      */
     public static void loadAgent(String agentJar, String options)
     {
-        IAgentLoader agentLoader = getAgentLoader(agentJar);
+        AgentLoaderInterface agentLoader = getAgentLoader(agentJar);
         agentLoader.loadAgent(agentJar, options);
     }
 
@@ -148,17 +148,17 @@ public class AgentLoader
     }
 
     @SuppressWarnings("unchecked")
-    private synchronized static IAgentLoader getAgentLoader(final String agentJar)
+    private synchronized static AgentLoaderInterface getAgentLoader(final String agentJar)
     {
         if (agentLoader != null)
         {
             return agentLoader;
         }
-        Class<IAgentLoader> agentLoaderClass;
+        Class<AgentLoaderInterface> agentLoaderClass;
         try
         {
             Class.forName("com.sun.tools.attach.VirtualMachine");
-            agentLoaderClass = (Class<IAgentLoader>) Class.forName("com.ea.orbit.instrumentation.AgentLoaderHotSpot");
+            agentLoaderClass = (Class<AgentLoaderInterface>) Class.forName("com.ea.orbit.instrumentation.AgentLoaderHotSpot");
         }
         catch (Exception ex)
         {
@@ -214,7 +214,7 @@ public class AgentLoader
             }
             try
             {
-                agentLoaderClass = (Class<IAgentLoader>) ClassPathUtils.defineClass(systemLoader, AgentLoader.class.getResourceAsStream("/com/ea/orbit/instrumentation/AgentLoaderHotSpot.class"));
+                agentLoaderClass = (Class<AgentLoaderInterface>) ClassPathUtils.defineClass(systemLoader, AgentLoader.class.getResourceAsStream("/com/ea/orbit/instrumentation/AgentLoaderHotSpot.class"));
             }
             catch (Exception e)
             {
@@ -228,7 +228,7 @@ public class AgentLoader
             // the agent loader might be instantiated in another class loader
             // so no interface it implements is guaranteed to be visible here.
             // this reflection based implementation of this interface solves this problem.
-            agentLoader = new IAgentLoader()
+            agentLoader = new AgentLoaderInterface()
             {
                 @Override
                 public void loadAgent(final String agentJar, final String options)

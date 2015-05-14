@@ -31,7 +31,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.runtime.NodeConfig;
+import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
@@ -101,7 +101,7 @@ public class ShutdownTest extends ActorBaseTest
         Stage stage2 = createStage();
         assertFalse(methodCall.isDone());
         CompletableFuture<Void> stopFuture = CompletableFuture.runAsync(() -> stage1.stop().join());
-        awaitFor(() -> stage1.getState() == NodeConfig.NodeState.STOPPING);
+        awaitFor(() -> stage1.getState() == NodeCapabilities.NodeState.STOPPING);
 
         // release doSomethingTo finish
         fakeSync.put("canFinish", true);

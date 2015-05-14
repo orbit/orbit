@@ -28,7 +28,7 @@
 
 package com.ea.orbit.samples.annotation.memoize;
 
-import com.ea.orbit.actors.IAddressable;
+import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.providers.IInvokeHookProvider;
 import com.ea.orbit.actors.providers.InvocationContext;
 import com.ea.orbit.concurrent.Task;
@@ -44,7 +44,7 @@ public class MemoizeExtension implements IInvokeHookProvider
 {
     private ExpiringMap<String, Task> memoizeMap = ExpiringMap.builder().variableExpiration().build();
 
-    public Task<?> invoke(InvocationContext context, IAddressable toReference, Method method, int methodId, Object[] params)
+    public Task<?> invoke(InvocationContext context, Addressable toReference, Method method, int methodId, Object[] params)
     {
         Memoize memoize = method.getAnnotation(Memoize.class);
         if (memoize != null)

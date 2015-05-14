@@ -30,11 +30,11 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
-import com.ea.orbit.actors.IAddressable;
+import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.annotation.StorageProvider;
-import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.providers.ActorClassFinder;
 import com.ea.orbit.actors.providers.IInvokeHookProvider;
 import com.ea.orbit.actors.providers.ILifetimeProvider;
@@ -109,7 +109,7 @@ public class Execution implements IRuntime
 
     private List<IInvokeHookProvider> hookProviders;
 
-    private NodeConfig.NodeState state = NodeConfig.NodeState.RUNNING;
+    private NodeCapabilities.NodeState state = NodeCapabilities.NodeState.RUNNING;
 
     public Execution()
     {
@@ -139,7 +139,7 @@ public class Execution implements IRuntime
 
     public boolean canActivateActor(String interfaceName, int interfaceId)
     {
-        if (state != NodeConfig.NodeState.RUNNING)
+        if (state != NodeCapabilities.NodeState.RUNNING)
         {
             return false;
         }
@@ -478,7 +478,7 @@ public class Execution implements IRuntime
     public Task<?> stop()
     {
         // * refuse new actor activations
-        state = NodeConfig.NodeState.STOPPING;
+        state = NodeCapabilities.NodeState.STOPPING;
         hosting.notifyStateChange();
 
         // * deactivate all actors
@@ -489,7 +489,7 @@ public class Execution implements IRuntime
 
         // * stop processing new received messages (responses still work)
         // * notify rest of the cluster (no more observer messages)
-        state = NodeConfig.NodeState.STOPPED;
+        state = NodeCapabilities.NodeState.STOPPED;
         hosting.notifyStateChange();
 
         // * wait pending tasks execution
@@ -677,8 +677,8 @@ public class Execution implements IRuntime
             finder.start().join();
         }
 
-        getDescriptor(NodeConfig.class);
-        createObjectReference(NodeConfig.class, hosting, "");
+        getDescriptor(NodeCapabilities.class);
+        createObjectReference(NodeCapabilities.class, hosting, "");
 
         if (executor == null)
         {
@@ -695,7 +695,7 @@ public class Execution implements IRuntime
             @Override
             public void run()
             {
-                if (state == NodeConfig.NodeState.RUNNING)
+                if (state == NodeCapabilities.NodeState.RUNNING)
                 {
                     ForkJoinTask.adapt(() -> activationCleanup().join()).fork();
                 }
@@ -778,7 +778,7 @@ public class Execution implements IRuntime
         return descriptorMapByInterfaceId.get(interfaceId);
     }
 
-    public void onMessageReceived(final INodeAddress from,
+    public void onMessageReceived(final NodeAddress from,
                                   final boolean oneway, final int messageId, final int interfaceId, final int methodId,
                                   final Object key, final Object[] params)
     {
@@ -804,7 +804,7 @@ public class Execution implements IRuntime
     }
 
     // this method is executed serially by entryKey
-    private Task<?> handleOnMessageReceived(final EntryKey entryKey, final INodeAddress from,
+    private Task<?> handleOnMessageReceived(final EntryKey entryKey, final NodeAddress from,
                                             final boolean oneway, final int messageId, final int interfaceId,
                                             final int methodId, final Object key,
                                             final Object[] params)
@@ -891,11 +891,11 @@ public class Execution implements IRuntime
     {
         ReferenceEntry theEntry;
         int methodId;
-        INodeAddress from;
+        NodeAddress from;
         long traceId;
         public static final AtomicLong counter = new AtomicLong(0L);
 
-        public MessageContext(final ReferenceEntry theEntry, final int methodId, final INodeAddress from)
+        public MessageContext(final ReferenceEntry theEntry, final int methodId, final NodeAddress from)
         {
             traceId = counter.incrementAndGet();
             this.theEntry = theEntry;
@@ -930,7 +930,7 @@ public class Execution implements IRuntime
             final InterfaceDescriptor descriptor,
             final int methodId,
             final Object[] params,
-            final INodeAddress from,
+            final NodeAddress from,
             final int messageId)
     {
         try
@@ -961,7 +961,7 @@ public class Execution implements IRuntime
         return Task.done();
     }
 
-    protected void sendResponseAndLogError(boolean oneway, final INodeAddress from, int messageId, Object result, Throwable exception)
+    protected void sendResponseAndLogError(boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
     {
         if (exception != null && logger.isErrorEnabled())
         {
@@ -1012,7 +1012,7 @@ public class Execution implements IRuntime
 
 
     @SuppressWarnings({ "unchecked" })
-    <T> T createReference(final INodeAddress a, final Class<T> iClass, String id)
+    <T> T createReference(final NodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
         ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference("");
@@ -1048,7 +1048,7 @@ public class Execution implements IRuntime
      * @return a remote reference to the observer
      */
     @SuppressWarnings("unchecked")
-    public <T extends ActorObserver> T getRemoteObserverReference(INodeAddress address, final Class<T> iClass, final Object id)
+    public <T extends ActorObserver> T getRemoteObserverReference(NodeAddress address, final Class<T> iClass, final Object id)
     {
         if (id == null)
         {
@@ -1065,14 +1065,14 @@ public class Execution implements IRuntime
         return (T) reference;
     }
 
-    public Task<?> sendMessage(IAddressable toReference, boolean oneWay, final int methodId, final Object[] params)
+    public Task<?> sendMessage(Addressable toReference, boolean oneWay, final int methodId, final Object[] params)
     {
         if (logger.isDebugEnabled())
         {
             logger.debug("sending message to " + toReference);
         }
         ActorReference<?> actorReference = (ActorReference<?>) toReference;
-        INodeAddress toNode = actorReference.address;
+        NodeAddress toNode = actorReference.address;
         if (toNode == null)
         {
             // TODO: Ensure that both paths encode exception the same way.
@@ -1082,7 +1082,7 @@ public class Execution implements IRuntime
         return messaging.sendMessage(toNode, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params);
     }
 
-    public Task<?> invoke(IAddressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
+    public Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
     {
         if (hookProviders.size() == 0)
         {
@@ -1103,7 +1103,7 @@ public class Execution implements IRuntime
             }
 
             @Override
-            public Task<?> invokeNext(final IAddressable toReference, final Method method, final int methodId, final Object[] params)
+            public Task<?> invokeNext(final Addressable toReference, final Method method, final int methodId, final Object[] params)
             {
                 if (it.hasNext())
                 {
@@ -1131,11 +1131,11 @@ public class Execution implements IRuntime
                 continue;
             }
             Activation act = entry.peekOldActivation();
-            if (act == null && state == NodeConfig.NodeState.RUNNING)
+            if (act == null && state == NodeCapabilities.NodeState.RUNNING)
             {
                 continue;
             }
-            if (state != NodeConfig.NodeState.RUNNING || act.lastAccess < cutOut)
+            if (state != NodeCapabilities.NodeState.RUNNING || act.lastAccess < cutOut)
             {
                 CompletableFuture<Object> future = new CompletableFuture<>();
                 final Supplier<Task<?>> task = () -> {
@@ -1182,12 +1182,12 @@ public class Execution implements IRuntime
         return listTask;
     }
 
-    public Task<INodeAddress> locateActor(final IAddressable actorReference, final boolean forceActivation)
+    public Task<NodeAddress> locateActor(final Addressable actorReference, final boolean forceActivation)
     {
         return hosting.locateActor(actorReference, false);
     }
 
-    public NodeConfig.NodeState getState()
+    public NodeCapabilities.NodeState getState()
     {
         return state;
     }

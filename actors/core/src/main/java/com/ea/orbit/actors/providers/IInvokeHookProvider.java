@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.providers;
 
 
-import com.ea.orbit.actors.IAddressable;
+import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.concurrent.Task;
 
 import java.lang.reflect.Method;
@@ -50,7 +50,7 @@ public interface IInvokeHookProvider extends IOrbitProvider
      * @param params      parameters for the method, must all be serializable.
      * @return a completion promise, the framework will wait if necessary.
      */
-    default Task<?> invoke(InvocationContext context, IAddressable toReference, Method method, int methodId, Object[] params)
+    default Task<?> invoke(InvocationContext context, Addressable toReference, Method method, int methodId, Object[] params)
     {
         return context.invokeNext(toReference, method, methodId, params);
     }

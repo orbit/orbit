@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.samples.trace.sender;
 
 import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.IAddressable;
+import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.providers.IInvokeHookProvider;
 import com.ea.orbit.actors.providers.InvocationContext;
 import com.ea.orbit.actors.runtime.ActorReference;
@@ -57,7 +57,7 @@ public class TraceSender implements IInvokeHookProvider
     {
     }
 
-    public Task<?> invoke(InvocationContext context, IAddressable toReference, Method method, int methodId, Object[] params)
+    public Task<?> invoke(InvocationContext context, Addressable toReference, Method method, int methodId, Object[] params)
     {
 
         final ActorReference source = ((Execution) context.getRuntime()).getCurrentActivation();

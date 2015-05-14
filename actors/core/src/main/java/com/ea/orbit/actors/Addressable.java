@@ -26,14 +26,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.cluster;
-
-import java.util.UUID;
+package com.ea.orbit.actors;
 
 /**
- * Generic representation of a node address.
+ * Common interface for actor and observer references used internally by the framework.
  */
-public interface INodeAddress
+public interface Addressable
 {
-    UUID asUUID();
+
 }

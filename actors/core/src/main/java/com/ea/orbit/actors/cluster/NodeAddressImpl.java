@@ -26,29 +26,46 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.providers;
+package com.ea.orbit.actors.cluster;
 
-import com.ea.orbit.actors.Addressable;
-import com.ea.orbit.actors.runtime.IRuntime;
-import com.ea.orbit.concurrent.Task;
+import java.io.Serializable;
 
-import java.lang.reflect.Method;
-
-public interface InvocationContext
+/**
+ * The actual implementation of INodeAddress. Should not be used directly by the application.
+ */
+public class NodeAddressImpl implements NodeAddress, Serializable
 {
-    IRuntime getRuntime();
+	private static final long serialVersionUID = 1L;
 
-    /**
-     * Invokes the next handler.
-     *
-     * @param toReference the target actor or observer
-     * @param method      the method
-     * @param methodId    the method id
-     * @param params      param array
-     * @return a promise of completion
-     */
-    Task<?> invokeNext(final Addressable toReference,
-                       final Method method,
-                       final int methodId,
-                       final Object[] params);
+	private java.util.UUID address;
+
+    public NodeAddressImpl(final java.util.UUID address)
+    {
+        this.address = address;
+    }
+
+    @Override
+    public java.util.UUID asUUID()
+    {
+        return address;
+    }
+
+    @Override
+    public boolean equals(final Object o)
+    {
+        return this == o || ((o instanceof NodeAddressImpl)
+                && address.equals(((NodeAddressImpl) o).address));
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return address.hashCode();
+    }
+
+    @Override
+    public String toString()
+    {
+        return address.toString();
+    }
 }

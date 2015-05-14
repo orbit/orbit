@@ -30,9 +30,9 @@ package com.ea.orbit.actors.providers.json;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
-import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.IReferenceFactory;
+import com.ea.orbit.actors.runtime.RefFactory;
 import com.ea.orbit.exception.UncheckedException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -67,9 +67,9 @@ public class ActorReferenceModule extends Module
     /**
      * Class that will create concrete references to actor interfaces
      */
-    private final IReferenceFactory referenceFactory;
+    private final RefFactory referenceFactory;
 
-    public ActorReferenceModule(final IReferenceFactory referenceFactory)
+    public ActorReferenceModule(final RefFactory referenceFactory)
     {
         super();
         this.referenceFactory = referenceFactory;
@@ -142,7 +142,7 @@ public class ActorReferenceModule extends Module
         @Override
         public void serialize(final Object value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException
         {
-            final INodeAddress address = ActorReference.getAddress((ActorReference<?>) value);
+            final NodeAddress address = ActorReference.getAddress((ActorReference<?>) value);
             final Object actorId = ActorReference.getId((ActorReference<?>) value);
             jgen.writeString(address.asUUID() + "/" + actorId);
         }
@@ -151,9 +151,9 @@ public class ActorReferenceModule extends Module
     private static class RefDeserializer extends JsonDeserializer<Object>
     {
         private final Class<?> iClass;
-        private final IReferenceFactory factory;
+        private final RefFactory factory;
 
-        public RefDeserializer(final Class<?> iClass, final IReferenceFactory factory)
+        public RefDeserializer(final Class<?> iClass, final RefFactory factory)
         {
             super();
             this.iClass = iClass;
@@ -192,9 +192,9 @@ public class ActorReferenceModule extends Module
     private static class ObserverRefDeserializer extends JsonDeserializer<Object>
     {
         private final Class<?> iClass;
-        private final IReferenceFactory factory;
+        private final RefFactory factory;
 
-        public ObserverRefDeserializer(final Class<?> iClass, final IReferenceFactory factory)
+        public ObserverRefDeserializer(final Class<?> iClass, final RefFactory factory)
         {
             super();
             this.iClass = iClass;

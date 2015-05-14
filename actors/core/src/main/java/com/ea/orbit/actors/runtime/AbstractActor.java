@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @param <T> a class that represents the state of this actor.
  */
-public class AbstractActor<T>
+public abstract class AbstractActor<T>
 {
     T state;
     IStorageProvider stateProvider;

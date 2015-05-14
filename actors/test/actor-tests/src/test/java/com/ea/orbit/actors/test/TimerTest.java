@@ -31,7 +31,6 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.test.actors.ISomeChatObserver;
 import com.ea.orbit.actors.test.actors.SomeChatRoom;
 import com.ea.orbit.concurrent.Task;
 
@@ -52,12 +51,12 @@ public class TimerTest extends ActorBaseTest
 {
     // At the moment the clock injected to the stage is not used by the timer subsystem.
 
-    public static class SomeChatObserver implements ISomeChatObserver
+    public static class SomeChatObserver implements com.ea.orbit.actors.test.actors.SomeChatObserver
     {
-        BlockingQueue<Pair<ISomeChatObserver, String>> messagesReceived = new LinkedBlockingQueue<>();
+        BlockingQueue<Pair<com.ea.orbit.actors.test.actors.SomeChatObserver, String>> messagesReceived = new LinkedBlockingQueue<>();
 
         @Override
-        public Task<Void> receiveMessage(final ISomeChatObserver sender, final String message)
+        public Task<Void> receiveMessage(final com.ea.orbit.actors.test.actors.SomeChatObserver sender, final String message)
         {
             messagesReceived.add(Pair.of(sender, message));
             return Task.done();

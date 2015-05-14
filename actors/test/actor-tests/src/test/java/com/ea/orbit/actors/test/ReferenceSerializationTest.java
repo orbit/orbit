@@ -31,7 +31,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.cluster.NodeAddressImpl;
 import com.ea.orbit.actors.runtime.ActorKey;
 import com.ea.orbit.actors.test.actors.SomeMatch;
 import com.ea.orbit.actors.test.actors.SomePlayer;
@@ -83,7 +83,7 @@ public class ReferenceSerializationTest extends ActorBaseTest
         somePlayer.joinMatch(someMatch).join();
 
 
-        Set<Class<?>> validClasses = Sets.newHashSet(ActorKey.class, NodeAddress.class, String.class);
+        Set<Class<?>> validClasses = Sets.newHashSet(ActorKey.class, NodeAddressImpl.class, String.class);
 
         for (Map.Entry e : FakeGroup.get(clusterName).getCaches().entrySet())
         {

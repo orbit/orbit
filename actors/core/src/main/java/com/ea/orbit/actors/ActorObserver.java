@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors;
 
 
-import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.concurrent.Task;
 
@@ -115,7 +115,7 @@ public interface ActorObserver
      * @param <T>            the interface type
      * @return an actor reference
      */
-    static <T extends ActorObserver> T getObserverReference(INodeAddress node, Class<T> actorObserverInterface, String id)
+    static <T extends ActorObserver> T getObserverReference(NodeAddress node, Class<T> actorObserverInterface, String id)
     {
         return ReferenceFactory.observerRef(node.asUUID(), actorObserverInterface, id);
     }

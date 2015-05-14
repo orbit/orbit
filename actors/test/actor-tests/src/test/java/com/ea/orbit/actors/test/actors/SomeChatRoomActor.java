@@ -13,19 +13,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SomeChatRoomActor extends AbstractActor implements SomeChatRoom
 {
 
-    Set<ISomeChatObserver> observers = new HashSet<>();
+    Set<SomeChatObserver> observers = new HashSet<>();
     Registration timer;
     AtomicInteger countDown = new AtomicInteger();
 
     @Override
-    public Task<Void> join(final ISomeChatObserver chatObserver)
+    public Task<Void> join(final SomeChatObserver chatObserver)
     {
         observers.add(chatObserver);
         return Task.done();
     }
 
     @Override
-    public Task<Void> sendMessage(final ISomeChatObserver sender, final String message)
+    public Task<Void> sendMessage(final SomeChatObserver sender, final String message)
     {
         observers.forEach(o -> o.receiveMessage(sender, message));
         return Task.done();

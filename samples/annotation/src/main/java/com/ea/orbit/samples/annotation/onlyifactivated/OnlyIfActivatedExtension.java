@@ -28,7 +28,7 @@
 
 package com.ea.orbit.samples.annotation.onlyifactivated;
 
-import com.ea.orbit.actors.IAddressable;
+import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.providers.IInvokeHookProvider;
 import com.ea.orbit.actors.providers.InvocationContext;
 import com.ea.orbit.concurrent.Task;
@@ -38,7 +38,7 @@ import java.lang.reflect.Method;
 public class OnlyIfActivatedExtension implements IInvokeHookProvider
 {
 
-    public Task<?> invoke(InvocationContext context, IAddressable toReference, Method method, int methodId, Object[] params)
+    public Task<?> invoke(InvocationContext context, Addressable toReference, Method method, int methodId, Object[] params)
     {
         if (method.isAnnotationPresent(OnlyIfActivated.class))
         {

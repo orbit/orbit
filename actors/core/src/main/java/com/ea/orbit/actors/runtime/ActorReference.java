@@ -28,8 +28,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IAddressable;
-import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.actors.Addressable;
+import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.concurrent.Task;
 
 import java.io.Serializable;
@@ -47,11 +47,11 @@ import java.lang.reflect.Method;
  *
  * @param <T> the Actor of ActorObserver implemented by this reference.
  */
-public abstract class ActorReference<T> implements Serializable, IAddressable
+public abstract class ActorReference<T> implements Serializable, Addressable
 {
 	private static final long serialVersionUID = 1L;
 
-	INodeAddress address;
+	NodeAddress address;
     Object id;
     transient IRuntime runtime;
 
@@ -169,7 +169,7 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
      * @param reference the reference being inspected
      * @return the node address where the actor observer resides
      */
-    public static INodeAddress getAddress(final ActorReference<?> reference)
+    public static NodeAddress getAddress(final ActorReference<?> reference)
     {
         return reference.address;
     }
@@ -183,7 +183,7 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
      * @param reference   the reference being inspected
      * @param nodeAddress the node address where the actor observer resides
      */
-    public static void setAddress(final ActorReference<?> reference, final INodeAddress nodeAddress)
+    public static void setAddress(final ActorReference<?> reference, final NodeAddress nodeAddress)
     {
         reference.address = nodeAddress;
     }

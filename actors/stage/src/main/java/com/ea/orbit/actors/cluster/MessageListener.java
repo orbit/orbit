@@ -40,5 +40,5 @@ public interface MessageListener
      * @param from    the source address
      * @param message the message payload
      */
-    void receive(INodeAddress from, byte[] message);
+    void receive(NodeAddress from, byte[] message);
 }

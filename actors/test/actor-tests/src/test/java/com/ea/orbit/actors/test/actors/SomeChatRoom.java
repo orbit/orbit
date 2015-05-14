@@ -5,9 +5,9 @@ import com.ea.orbit.concurrent.Task;
 
 public interface SomeChatRoom extends Actor
 {
-    Task<Void> join(ISomeChatObserver chatObserver);
+    Task<Void> join(SomeChatObserver chatObserver);
 
-    Task<Void> sendMessage(ISomeChatObserver chatObserver, String message);
+    Task<Void> sendMessage(SomeChatObserver chatObserver, String message);
 
     Task<?> startCountdown(int count, String message);
 

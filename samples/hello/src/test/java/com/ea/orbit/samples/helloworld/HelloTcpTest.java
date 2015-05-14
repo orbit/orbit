@@ -30,7 +30,7 @@ package com.ea.orbit.samples.helloworld;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.cluster.ClusterPeer;
+import com.ea.orbit.actors.cluster.JGroupsClusterPeer;
 import com.ea.orbit.samples.hello.Hello;
 
 import org.junit.Test;
@@ -58,7 +58,7 @@ public class HelloTcpTest
     {
         Stage stage = new Stage();
         stage.setClusterName(clusterId);
-        ((ClusterPeer)stage.getClusterPeer()).setJgroupsConfig("classpath:/tcp.xml");
+        ((JGroupsClusterPeer)stage.getClusterPeer()).setJgroupsConfig("classpath:/tcp.xml");
         stage.start().join();
         return stage;
     }

@@ -26,12 +26,35 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors;
+package com.ea.orbit.actors.runtime;
 
-/**
- * Common interface for actor and observer references used internally by the framework.
- */
-public interface IAddressable
+import com.ea.orbit.actors.ActorObserver;
+import com.ea.orbit.actors.annotation.OneWay;
+import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.concurrent.Task;
+
+public interface NodeCapabilities extends ActorObserver
 {
+    enum NodeTypeEnum
+    {
+        SERVER, CLIENT
+    }
+    enum NodeState
+    {
+        RUNNING, STOPPING, state, STOPPED
+    }
 
+    int actorSupported_yes = 1;
+    int actorSupported_no = 0;
+    int actorSupported_noneSupported = 2;
+
+    /**
+     * Asked a single time or infrequently to find out if this node knows and is able to serve this kind of actor.
+     *
+     * @return #actorSupported_yes, #actorSupported_no, or #actorSupported_noneSupported
+     */
+    Task<Integer> canActivate(String interfaceName, int interfaceId);
+
+    @OneWay
+    Task<Void> nodeModeChanged(NodeAddress nodeAddress, NodeState newMode);
 }

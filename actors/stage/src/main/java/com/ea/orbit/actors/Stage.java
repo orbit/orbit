@@ -29,14 +29,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors;
 
 
+import com.ea.orbit.actors.cluster.JGroupsClusterPeer;
 import com.ea.orbit.actors.cluster.ClusterPeer;
-import com.ea.orbit.actors.cluster.IClusterPeer;
-import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.providers.ILifetimeProvider;
 import com.ea.orbit.actors.providers.IOrbitProvider;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Hosting;
-import com.ea.orbit.actors.runtime.NodeConfig;
+import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.AbstractActor;
@@ -83,7 +83,7 @@ public class Stage implements Startable
         HOST // allows activations
     }
 
-    private IClusterPeer clusterPeer;
+    private ClusterPeer clusterPeer;
     private Task<?> startFuture;
     private Messaging messaging;
     private Execution execution = new Execution();
@@ -212,7 +212,7 @@ public class Stage implements Startable
         }
         if (clusterPeer == null)
         {
-            clusterPeer = new ClusterPeer();
+            clusterPeer = new JGroupsClusterPeer();
         }
         if (clock == null)
         {
@@ -221,7 +221,7 @@ public class Stage implements Startable
 
         this.configureOrbitContainer();
 
-        hosting.setNodeType(mode == StageMode.HOST ? NodeConfig.NodeTypeEnum.SERVER : NodeConfig.NodeTypeEnum.CLIENT);
+        hosting.setNodeType(mode == StageMode.HOST ? NodeCapabilities.NodeTypeEnum.SERVER : NodeCapabilities.NodeTypeEnum.CLIENT);
         execution.setClock(clock);
         execution.setHosting(hosting);
         execution.setMessaging(messaging);
@@ -275,7 +275,7 @@ public class Stage implements Startable
         }
     }
 
-    public void setClusterPeer(final IClusterPeer clusterPeer)
+    public void setClusterPeer(final ClusterPeer clusterPeer)
     {
         this.clusterPeer = clusterPeer;
     }
@@ -345,9 +345,9 @@ public class Stage implements Startable
         return hosting;
     }
 
-    public IClusterPeer getClusterPeer()
+    public ClusterPeer getClusterPeer()
     {
-        return clusterPeer != null ? clusterPeer : (clusterPeer = new ClusterPeer());
+        return clusterPeer != null ? clusterPeer : (clusterPeer = new JGroupsClusterPeer());
     }
 
     public void cleanup(boolean block)
@@ -383,7 +383,7 @@ public class Stage implements Startable
         execution.bind();
     }
 
-    public List<INodeAddress> getAllNodes()
+    public List<NodeAddress> getAllNodes()
     {
         if (hosting == null)
         {
@@ -392,7 +392,7 @@ public class Stage implements Startable
         return hosting.getAllNodes();
     }
 
-    public List<INodeAddress> getServerNodes()
+    public List<NodeAddress> getServerNodes()
     {
         if (hosting == null)
         {
@@ -401,7 +401,7 @@ public class Stage implements Startable
         return hosting.getServerNodes();
     }
 
-    public NodeConfig.NodeState getState()
+    public NodeCapabilities.NodeState getState()
     {
         return execution.getState();
     }

@@ -31,13 +31,13 @@ package com.ea.orbit.actors.runtime;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.annotation.NoIdentity;
-import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.cluster.NodeAddressImpl;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class ReferenceFactory implements IReferenceFactory
+public class ReferenceFactory implements RefFactory
 {
     private static ReferenceFactory instance = new ReferenceFactory();
     private ConcurrentMap<Class<?>, ActorFactory<?>> factories = new ConcurrentHashMap<>();
@@ -55,7 +55,7 @@ public class ReferenceFactory implements IReferenceFactory
     {
         ActorFactory<T> factory = getFactory(iClass);
         final T reference = factory.createReference(String.valueOf(id));
-        ActorReference.setAddress((ActorReference<?>) reference, new NodeAddress(nodeId));
+        ActorReference.setAddress((ActorReference<?>) reference, new NodeAddressImpl(nodeId));
         return reference;
     }
 

@@ -33,7 +33,7 @@ import com.ea.orbit.actors.ActorObserver;
 
 import java.util.UUID;
 
-public interface IReferenceFactory
+public interface RefFactory
 {
     <T extends Actor> T getReference(Class<T> iClass, Object id);
 
