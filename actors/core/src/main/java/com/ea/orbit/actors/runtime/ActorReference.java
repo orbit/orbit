@@ -53,7 +53,7 @@ public abstract class ActorReference<T> implements Serializable, Addressable
 
 	NodeAddress address;
     Object id;
-    transient IRuntime runtime;
+    transient Runtime runtime;
 
 
     /**
@@ -98,7 +98,7 @@ public abstract class ActorReference<T> implements Serializable, Addressable
     @SuppressWarnings("unchecked")
     protected <R> Task<R> invoke(final Method method, final boolean oneWay, final int methodId, final Object[] params)
     {
-        return (Task<R>) (runtime != null ? runtime : Runtime.getRuntime()).invoke(this, method, oneWay, methodId, params);
+        return (Task<R>) (runtime != null ? runtime : ActorRuntime.getRuntime()).invoke(this, method, oneWay, methodId, params);
     }
 
     @Override

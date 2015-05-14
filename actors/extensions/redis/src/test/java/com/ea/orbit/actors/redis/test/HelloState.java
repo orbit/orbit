@@ -28,9 +28,9 @@
 
 package com.ea.orbit.actors.redis.test;
 
-import com.ea.orbit.actors.test.IStorageTestState;
+import com.ea.orbit.actors.test.StorageTestState;
 
-public class HelloState implements IStorageTestState
+public class HelloState implements StorageTestState
 {
 
     public String lastName;

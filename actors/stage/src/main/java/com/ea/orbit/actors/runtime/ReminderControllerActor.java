@@ -73,7 +73,7 @@ public class ReminderControllerActor extends AbstractActor<ReminderControllerAct
     private void registerLocalTimer(final ReminderEntry reminderEntry)
     {
         // adjusting start date.
-        long dueTime = reminderEntry.getStartAt().getTime() - Runtime.getRuntime().clock().millis();
+        long dueTime = reminderEntry.getStartAt().getTime() - ActorRuntime.getRuntime().clock().millis();
         if (dueTime < 0)
         {
             dueTime = reminderEntry.getPeriod() + (dueTime % reminderEntry.getPeriod());

@@ -31,7 +31,7 @@ package com.ea.orbit.actors.extensions.jpa.test;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.jpa.JpaStorageExtension;
 import com.ea.orbit.actors.test.StorageTest;
-import com.ea.orbit.actors.test.IStorageTestState;
+import com.ea.orbit.actors.test.StorageTestState;
 import com.ea.orbit.actors.test.StorageBaseTest;
 
 import javax.persistence.EntityManager;
@@ -100,7 +100,7 @@ public class JpaPersistenceTest extends StorageBaseTest
     }
 
     @Override
-    public IStorageTestState readState(final String identity)
+    public StorageTestState readState(final String identity)
     {
         emf = Persistence.createEntityManagerFactory("jpa-storage-test");
         EntityManager em = emf.createEntityManager();

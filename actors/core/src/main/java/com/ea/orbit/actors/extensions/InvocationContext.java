@@ -29,14 +29,14 @@
 package com.ea.orbit.actors.extensions;
 
 import com.ea.orbit.actors.Addressable;
-import com.ea.orbit.actors.runtime.IRuntime;
+import com.ea.orbit.actors.runtime.Runtime;
 import com.ea.orbit.concurrent.Task;
 
 import java.lang.reflect.Method;
 
 public interface InvocationContext
 {
-    IRuntime getRuntime();
+    Runtime getRuntime();
 
     /**
      * Invokes the next handler.

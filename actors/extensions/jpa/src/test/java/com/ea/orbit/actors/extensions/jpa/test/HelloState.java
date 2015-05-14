@@ -29,12 +29,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.extensions.jpa.test;
 
 import com.ea.orbit.actors.extensions.jpa.JpaState;
-import com.ea.orbit.actors.test.IStorageTestState;
+import com.ea.orbit.actors.test.StorageTestState;
 
 import javax.persistence.Entity;
 
 @Entity
-public class HelloState extends JpaState implements IStorageTestState
+public class HelloState extends JpaState implements StorageTestState
 {
 
     public String lastName;

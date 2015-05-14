@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.test;
 
-public interface IStorageTestState
+public interface StorageTestState
 {
 
     String lastName();

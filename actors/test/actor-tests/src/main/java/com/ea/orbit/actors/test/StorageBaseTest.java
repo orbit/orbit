@@ -151,7 +151,7 @@ public abstract class StorageBaseTest
 
     public abstract int heavyTestSize();
 
-    public abstract IStorageTestState readState(String identity);
+    public abstract StorageTestState readState(String identity);
 
 
 }

@@ -77,7 +77,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class Execution implements IRuntime
+public class Execution implements Runtime
 {
 
     private static final Logger logger = LoggerFactory.getLogger(Execution.class);
@@ -105,7 +105,7 @@ public class Execution implements IRuntime
 
     private List<ActorExtension> extensions = new ArrayList<>();
 
-    private final WeakReference<IRuntime> cachedRef = new WeakReference<>(this);
+    private final WeakReference<Runtime> cachedRef = new WeakReference<>(this);
 
     private List<InvokeHookExtension> hookExtensions;
 
@@ -114,7 +114,7 @@ public class Execution implements IRuntime
     public Execution()
     {
         // the last runtime created will be the default.
-        Runtime.runtimeCreated(cachedRef);
+        ActorRuntime.runtimeCreated(cachedRef);
 
         final UUID uuid = UUID.randomUUID();
         final String encoded = Base64.getEncoder().encodeToString(
@@ -632,7 +632,7 @@ public class Execution implements IRuntime
 
     public void bind()
     {
-        Runtime.setRuntime(this.cachedRef);
+        ActorRuntime.setRuntime(this.cachedRef);
     }
 
     public void bind(Object object)
@@ -1097,7 +1097,7 @@ public class Execution implements IRuntime
         InvocationContext ctx = new InvocationContext()
         {
             @Override
-            public IRuntime getRuntime()
+            public Runtime getRuntime()
             {
                 return Execution.this;
             }

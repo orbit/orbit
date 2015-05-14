@@ -32,7 +32,7 @@ import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
 import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.actors.test.StorageTest;
-import com.ea.orbit.actors.test.IStorageTestState;
+import com.ea.orbit.actors.test.StorageTestState;
 import com.ea.orbit.actors.test.StorageBaseTest;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -104,7 +104,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     }
 
     @Override
-    public IStorageTestState readState(final String identity)
+    public StorageTestState readState(final String identity)
     {
         Object data = memCachedClient.get(asKey(Hello.class, identity));
         if (data != null)

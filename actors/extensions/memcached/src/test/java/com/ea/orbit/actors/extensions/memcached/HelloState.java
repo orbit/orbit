@@ -28,11 +28,11 @@
 
 package com.ea.orbit.actors.extensions.memcached;
 
-import com.ea.orbit.actors.test.IStorageTestState;
+import com.ea.orbit.actors.test.StorageTestState;
 
 import java.io.Serializable;
 
-public class HelloState implements IStorageTestState, Serializable
+public class HelloState implements StorageTestState, Serializable
 {
 
     public String lastName;
