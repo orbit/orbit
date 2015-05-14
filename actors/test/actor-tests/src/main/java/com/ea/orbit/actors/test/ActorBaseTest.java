@@ -31,7 +31,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.providers.ILifetimeProvider;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -90,7 +90,7 @@ public class ActorBaseTest
         client.addProvider(new ILifetimeProvider()
         {
             @Override
-            public Task<?> preActivation(final OrbitActor<?> actor)
+            public Task<?> preActivation(final AbstractActor<?> actor)
             {
                 dr.inject(actor);
                 return Task.done();
@@ -115,7 +115,7 @@ public class ActorBaseTest
         stage.addProvider(new ILifetimeProvider()
         {
             @Override
-            public Task<?> preActivation(final OrbitActor<?> actor)
+            public Task<?> preActivation(final AbstractActor<?> actor)
             {
                 dr.inject(actor);
                 return Task.done();

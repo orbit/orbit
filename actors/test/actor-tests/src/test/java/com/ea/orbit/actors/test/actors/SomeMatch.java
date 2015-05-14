@@ -1,13 +1,13 @@
 package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SomeMatch extends OrbitActor<SomeMatch.SomeMatchDto> implements ISomeMatch
+public class SomeMatch extends AbstractActor<SomeMatch.SomeMatchDto> implements ISomeMatch
 {
     public static class SomeMatchDto
     {

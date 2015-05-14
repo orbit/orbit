@@ -29,13 +29,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.samples.trace.demo;
 
 import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Registration;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.concurrent.TimeUnit;
 
-public class ExampleB extends OrbitActor implements IExampleB
+public class ExampleB extends AbstractActor implements IExampleB
 {
 
     Registration timer;

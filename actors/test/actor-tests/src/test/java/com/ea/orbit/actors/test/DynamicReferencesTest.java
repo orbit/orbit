@@ -31,7 +31,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
@@ -49,7 +49,7 @@ public class DynamicReferencesTest extends ActorBaseTest
     }
 
     @SuppressWarnings("rawtypes")
-    public static class AptUnfriendly extends OrbitActor implements IAptUnfriendly
+    public static class AptUnfriendly extends AbstractActor implements IAptUnfriendly
     {
         @Override
         public Task<String> hello()

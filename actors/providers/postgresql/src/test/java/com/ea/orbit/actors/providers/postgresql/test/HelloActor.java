@@ -28,10 +28,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.providers.postgresql.test;
 
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
-public class HelloActor extends OrbitActor<HelloActor.State> implements IHelloActor {
+public class HelloActor extends AbstractActor<HelloActor.State> implements IHelloActor {
     public static class State {
         String lastName;
 

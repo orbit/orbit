@@ -1,9 +1,9 @@
 package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
-public class SomePlayer extends OrbitActor<SomePlayer.SomePlayerStateDto> implements ISomePlayer
+public class SomePlayer extends AbstractActor<SomePlayer.SomePlayerStateDto> implements ISomePlayer
 {
     public static class SomePlayerStateDto
     {

@@ -29,10 +29,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.ldap.test;
 
 import com.ea.orbit.actors.providers.ldap.LdapStorageUtil;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
-public class LdapAuthenticateActor extends OrbitActor<LdapUserState> implements ILdapAuthenticateActor
+public class LdapAuthenticateActor extends AbstractActor<LdapUserState> implements ILdapAuthenticateActor
 {
 
     @Override

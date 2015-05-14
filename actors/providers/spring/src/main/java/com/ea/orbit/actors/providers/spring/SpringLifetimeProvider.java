@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.providers.spring;
 
 import com.ea.orbit.actors.providers.ILifetimeProvider;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,7 +37,7 @@ import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * {@link SpringLifetimeProvider} allows Spring DI for {@link com.ea.orbit.actors.runtime.OrbitActor}.
+ * {@link SpringLifetimeProvider} allows Spring DI for {@link com.ea.orbit.actors.runtime.AbstractActor}.
  * Autowire mode can be set via <code>orbit.actors.autowireMode</code>.
  *
  * @author Johno Crawford (johno@sulake.com)
@@ -53,9 +53,9 @@ public class SpringLifetimeProvider implements ILifetimeProvider
     private int autowireMode;
 
     @Override
-    public Task preActivation(OrbitActor orbitActor)
+    public Task preActivation(AbstractActor actor)
     {
-        autowireCapableBeanFactory.autowireBeanProperties(orbitActor, autowireMode, false);
+        autowireCapableBeanFactory.autowireBeanProperties(actor, autowireMode, false);
         return Task.done();
     }
 }

@@ -47,14 +47,14 @@ import java.util.concurrent.TimeUnit;
  *
  * @param <T> a class that represents the state of this actor.
  */
-public class OrbitActor<T>
+public class AbstractActor<T>
 {
     T state;
     IStorageProvider stateProvider;
     ActorReference<?> reference;
     Logger logger;
 
-    protected OrbitActor()
+    protected AbstractActor()
     {
         this.createDefaultState();
     }
@@ -88,7 +88,7 @@ public class OrbitActor<T>
     protected void createDefaultState()
     {
         Class<?> c = (Class<?>) GenericTypeReflector.getTypeParameter(getClass(),
-                OrbitActor.class.getTypeParameters()[0]);
+                AbstractActor.class.getTypeParameters()[0]);
         if (c == null)
         {
             c = LinkedHashMap.class;

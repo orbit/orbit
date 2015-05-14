@@ -32,7 +32,7 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.annotation.NoIdentity;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
@@ -51,7 +51,7 @@ public class NoIdentityTest extends ActorBaseTest
     }
 
 	@SuppressWarnings("rawtypes")
-	public static class SingularThing extends OrbitActor implements ISingularThing
+	public static class SingularThing extends AbstractActor implements ISingularThing
     {
         public Task<String> justRespond()
         {

@@ -286,9 +286,9 @@ public class Messaging implements Startable
                 final ActorReference reference;
                 if (!(obj instanceof ActorReference))
                 {
-                    if (obj instanceof OrbitActor)
+                    if (obj instanceof AbstractActor)
                     {
-                        reference = ((OrbitActor) obj).reference;
+                        reference = ((AbstractActor) obj).reference;
                     }
                     else if (obj instanceof IActorObserver)
                     {

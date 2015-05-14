@@ -32,7 +32,7 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.IRemindable;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.TickStatus;
 import com.ea.orbit.concurrent.Task;
 
@@ -60,7 +60,7 @@ public class ReminderTest extends ActorBaseTest
     private static BlockingQueue<String> remindersReceived = new LinkedBlockingQueue<>();
 
     @SuppressWarnings("rawtypes")
-    public static class ReminderTestActor extends OrbitActor implements IReminderTestActor
+    public static class ReminderTestActor extends AbstractActor implements IReminderTestActor
     {
 
         @Override

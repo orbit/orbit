@@ -188,7 +188,7 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
         reference.address = nodeAddress;
     }
 
-    public static ActorReference from(OrbitActor actor)
+    public static ActorReference from(AbstractActor actor)
     {
         return actor.reference;
     }

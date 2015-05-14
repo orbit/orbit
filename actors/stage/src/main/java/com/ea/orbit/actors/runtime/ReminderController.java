@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class ReminderController extends OrbitActor<ReminderController.State> implements IReminderController
+public class ReminderController extends AbstractActor<ReminderController.State> implements IReminderController
 {
     public static class State
     {

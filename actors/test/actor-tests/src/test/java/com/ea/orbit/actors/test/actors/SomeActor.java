@@ -1,12 +1,12 @@
 package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.UUID;
 
 @SuppressWarnings("rawtypes")
-public class SomeActor extends OrbitActor implements ISomeActor
+public class SomeActor extends AbstractActor implements ISomeActor
 {
     private UUID uniqueActivationId = UUID.randomUUID();
     private boolean activationWasCalled;

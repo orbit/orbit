@@ -28,13 +28,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.mongodb.test;
 
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SomeMatch extends OrbitActor<SomeMatch.SomeMatchDto> implements ISomeMatch
+public class SomeMatch extends AbstractActor<SomeMatch.SomeMatchDto> implements ISomeMatch
 {
     public static class SomeMatchDto
     {

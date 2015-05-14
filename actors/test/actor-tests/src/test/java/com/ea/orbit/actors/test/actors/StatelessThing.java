@@ -1,12 +1,12 @@
 package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.UUID;
 
 @SuppressWarnings("rawtypes")
-public class StatelessThing extends OrbitActor implements IStatelessThing
+public class StatelessThing extends AbstractActor implements IStatelessThing
 {
     private UUID uuid = UUID.randomUUID();
 

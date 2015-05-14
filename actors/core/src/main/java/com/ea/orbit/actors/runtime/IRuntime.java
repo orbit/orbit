@@ -77,7 +77,7 @@ public interface IRuntime
      * @param timeUnit     the time unit for period and dueTime
      * @return a registration that allows to cancel the timer.
      */
-    Registration registerTimer(OrbitActor<?> actor, Callable<Task<?>> taskCallable, long dueTime, long period, TimeUnit timeUnit);
+    Registration registerTimer(AbstractActor<?> actor, Callable<Task<?>> taskCallable, long dueTime, long period, TimeUnit timeUnit);
 
     /**
      * Gets the local clock. It's usually the system clock, but it can be changed for testing.

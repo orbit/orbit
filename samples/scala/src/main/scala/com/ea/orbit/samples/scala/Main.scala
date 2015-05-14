@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.scala
 
-import com.ea.orbit.actors.runtime.OrbitActor
+import com.ea.orbit.actors.runtime.AbstractActor
 import com.ea.orbit.actors.{IActor, Stage}
 import com.ea.orbit.concurrent.Task
 
@@ -64,7 +64,7 @@ trait IHello extends IActor {
   def sayHello(greeting: String): Task[String]
 }
 
-class HelloActor extends OrbitActor[AnyRef] with IHello {
+class HelloActor extends AbstractActor[AnyRef] with IHello {
 
   def sayHello(greeting: String): Task[String] = {
     getLogger.info("Here: " + greeting)

@@ -29,11 +29,11 @@
 package com.ea.orbit.actors.test.actors;
 
 import com.ea.orbit.actors.annotation.StorageProvider;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 @StorageProvider("fake2")
-public class Storage2Actor extends OrbitActor<Storage2Actor.State> implements IStorage2Actor
+public class Storage2Actor extends AbstractActor<Storage2Actor.State> implements IStorage2Actor
 {
 
     public static class State

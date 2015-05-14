@@ -249,16 +249,16 @@ public class Execution implements IRuntime
                             return Task.done();
                         }
                         // TODO deactivation code
-                        if (singleActivation.instance instanceof OrbitActor)
+                        if (singleActivation.instance instanceof AbstractActor)
                         {
                             try
                             {
 
                                 bind();
-                                OrbitActor<?> orbitActor = (OrbitActor<?>) singleActivation.instance;
-                                Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preDeactivation(orbitActor)))
-                                        .thenCompose(() -> orbitActor.deactivateAsync())
-                                        .thenCompose(() -> Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.postDeactivation(orbitActor))))
+                                AbstractActor<?> actor = (AbstractActor<?>) singleActivation.instance;
+                                Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preDeactivation(actor)))
+                                        .thenCompose(() -> actor.deactivateAsync())
+                                        .thenCompose(() -> Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.postDeactivation(actor))))
                                         .thenRun(() -> {
                                             singleActivation.instance = null;
                                             localActors.remove(key);
@@ -297,15 +297,15 @@ public class Execution implements IRuntime
                     }
                     else
                     {
-                        if (activation.instance instanceof OrbitActor)
+                        if (activation.instance instanceof AbstractActor)
                         {
                             try
                             {
                                 bind();
-                                OrbitActor<?> orbitActor = (OrbitActor<?>) activation.instance;
-                                Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preDeactivation(orbitActor)))
-                                        .thenCompose(() -> orbitActor.deactivateAsync())
-                                        .thenCompose(() -> Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.postDeactivation(orbitActor))))
+                                AbstractActor<?> actor = (AbstractActor<?>) activation.instance;
+                                Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preDeactivation(actor)))
+                                        .thenCompose(() -> actor.deactivateAsync())
+                                        .thenCompose(() -> Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.postDeactivation(actor))))
                                         .thenRun(() -> {
                                             activation.instance = null;
                                         });
@@ -392,20 +392,20 @@ public class Execution implements IRuntime
             if (instance == null)
             {
                 Object newInstance = classForName(entry.descriptor.concreteClassName).newInstance();
-                if (newInstance instanceof OrbitActor)
+                if (newInstance instanceof AbstractActor)
                 {
-                    final OrbitActor<?> orbitActor = (OrbitActor<?>) newInstance;
-                    orbitActor.reference = entry.reference;
+                    final AbstractActor<?> actor = (AbstractActor<?>) newInstance;
+                    actor.reference = entry.reference;
 
-                    orbitActor.stateProvider = getStorageProviderFor(orbitActor);
+                    actor.stateProvider = getStorageProviderFor(actor);
 
-                    Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preActivation(orbitActor))).join();
+                    Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preActivation(actor))).join();
 
-                    if (orbitActor.stateProvider != null)
+                    if (actor.stateProvider != null)
                     {
                         try
                         {
-                            orbitActor.readState();
+                            actor.readState();
                         }
                         catch (Exception ex)
                         {
@@ -418,8 +418,8 @@ public class Execution implements IRuntime
                     }
                     instance = newInstance;
 
-                    orbitActor.activateAsync().join();
-                    Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.postActivation(orbitActor))).join();
+                    actor.activateAsync().join();
+                    Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.postActivation(actor))).join();
                 }
 
             }
@@ -449,7 +449,7 @@ public class Execution implements IRuntime
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends IOrbitProvider> T getStorageProviderFor(OrbitActor actor)
+    public <T extends IOrbitProvider> T getStorageProviderFor(AbstractActor actor)
     {
         if (orbitProviders == null)
         {
@@ -587,7 +587,7 @@ public class Execution implements IRuntime
         return (T) observerReferences.get(observer);
     }
 
-    public Registration registerTimer(final OrbitActor<?> actor,
+    public Registration registerTimer(final AbstractActor<?> actor,
                                       final Callable<Task<?>> taskCallable,
                                       final long dueTime, final long period,
                                       final TimeUnit timeUnit)

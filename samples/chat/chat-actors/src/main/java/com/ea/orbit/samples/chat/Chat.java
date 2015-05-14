@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.samples.chat;
 
 import com.ea.orbit.actors.ObserverManager;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.concurrent.Task;
 
@@ -39,7 +39,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class Chat extends OrbitActor<Chat.State> implements IChat
+public class Chat extends AbstractActor<Chat.State> implements IChat
 {
     @Config("orbit.chat.maxMessages")
     private int maxMessages = 1000;

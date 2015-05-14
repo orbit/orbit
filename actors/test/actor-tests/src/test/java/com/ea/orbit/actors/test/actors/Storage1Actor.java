@@ -28,11 +28,11 @@
 
 package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 //no storage provider annotation, will be the default storage (first found)
-public class Storage1Actor extends OrbitActor<Storage1Actor.State> implements IStorage1Actor
+public class Storage1Actor extends AbstractActor<Storage1Actor.State> implements IStorage1Actor
 {
 
     public static class State

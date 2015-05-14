@@ -39,7 +39,7 @@ import com.ea.orbit.actors.runtime.Hosting;
 import com.ea.orbit.actors.runtime.IHosting;
 import com.ea.orbit.actors.runtime.IReminderController;
 import com.ea.orbit.actors.runtime.Messaging;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
@@ -264,7 +264,7 @@ public class Stage implements Startable
             ILifetimeProvider containerLifetime = new ILifetimeProvider()
             {
                 @Override
-                public Task<?> preActivation(OrbitActor<?> actor)
+                public Task<?> preActivation(AbstractActor<?> actor)
                 {
                     container.inject(actor);
                     return Task.done();

@@ -32,7 +32,7 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.IHosting;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
@@ -57,7 +57,7 @@ public class ShutdownTest extends ActorBaseTest
         Task<Void> doSomethingBlocking();
     }
 
-    public static class Shut extends OrbitActor implements IShut
+    public static class Shut extends AbstractActor implements IShut
     {
         @Inject
         FakeSync fakeSync;

@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.providers;
 
 
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 /**
@@ -43,7 +43,7 @@ public interface ILifetimeProvider extends IOrbitProvider
      * @param actor the actor object being activated
      * @return a completion promise, the framework will wait if necessary.
      */
-    default Task<?> preActivation(OrbitActor<?> actor)
+    default Task<?> preActivation(AbstractActor<?> actor)
     {
         return Task.done();
     }
@@ -54,7 +54,7 @@ public interface ILifetimeProvider extends IOrbitProvider
      * @param actor the actor object being activated
      * @return a completion promise, the framework will wait if necessary.
      */
-    default Task<?> postActivation(OrbitActor<?> actor)
+    default Task<?> postActivation(AbstractActor<?> actor)
     {
         return Task.done();
     }
@@ -65,7 +65,7 @@ public interface ILifetimeProvider extends IOrbitProvider
      * @param actor the actor object being deactivated
      * @return a completion promise, the framework will wait if necessary.
      */
-    default Task<?> preDeactivation(OrbitActor<?> actor)
+    default Task<?> preDeactivation(AbstractActor<?> actor)
     {
         return Task.done();
     }
@@ -76,7 +76,7 @@ public interface ILifetimeProvider extends IOrbitProvider
      * @param actor the actor object being deactivated
      * @return a completion promise, the framework will wait if necessary.
      */
-    default Task<?> postDeactivation(OrbitActor<?> actor)
+    default Task<?> postDeactivation(AbstractActor<?> actor)
     {
         return Task.done();
     }

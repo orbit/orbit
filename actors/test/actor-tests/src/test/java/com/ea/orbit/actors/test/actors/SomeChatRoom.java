@@ -1,6 +1,6 @@
 package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Registration;
 import com.ea.orbit.concurrent.Task;
 
@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @SuppressWarnings("rawtypes")
-public class SomeChatRoom extends OrbitActor implements ISomeChatRoom
+public class SomeChatRoom extends AbstractActor implements ISomeChatRoom
 {
 
     Set<ISomeChatObserver> observers = new HashSet<>();

@@ -31,7 +31,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
@@ -60,7 +60,7 @@ public class MessagingTest extends ActorBaseTest
     static Semaphore semaphores[] = new Semaphore[]{new Semaphore(0), new Semaphore(0)};
 
     @SuppressWarnings("rawtypes")
-    public static class BlockingResponder extends OrbitActor implements IBlockingResponder
+    public static class BlockingResponder extends AbstractActor implements IBlockingResponder
     {
         public Task<?> blockOnReceiving(final int semaphoreIndex)
         {

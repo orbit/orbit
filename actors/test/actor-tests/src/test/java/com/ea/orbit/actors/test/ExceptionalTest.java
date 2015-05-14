@@ -31,7 +31,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.IActor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
@@ -53,7 +53,7 @@ public class ExceptionalTest extends ActorBaseTest
     }
 
     @SuppressWarnings("rawtypes")
-    public static class ExceptionalThing extends OrbitActor implements IExceptionalThing
+    public static class ExceptionalThing extends AbstractActor implements IExceptionalThing
     {
         public Task<String> justRespond()
         {

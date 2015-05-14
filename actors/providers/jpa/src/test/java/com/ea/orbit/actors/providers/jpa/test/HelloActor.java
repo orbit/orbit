@@ -28,10 +28,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.providers.jpa.test;
 
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
-public class HelloActor extends OrbitActor<HelloState> implements IHelloActor
+public class HelloActor extends AbstractActor<HelloState> implements IHelloActor
 {
 
     @Override
