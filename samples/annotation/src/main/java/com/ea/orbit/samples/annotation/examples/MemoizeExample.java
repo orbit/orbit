@@ -28,13 +28,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.annotation.examples;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.samples.annotation.memoize.Memoize;
 
 import java.util.concurrent.TimeUnit;
 
-public interface MemoizeExample extends IActor
+public interface MemoizeExample extends Actor
 {
 
     @Memoize(time = 5, unit = TimeUnit.SECONDS)

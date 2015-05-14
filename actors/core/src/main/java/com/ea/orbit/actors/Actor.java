@@ -59,7 +59,7 @@ import com.ea.orbit.actors.runtime.ReferenceFactory;
  * }</pre>
  * </p>
  */
-public interface IActor
+public interface Actor
 {
     /**
      * Gets a reference to an actor.
@@ -69,7 +69,7 @@ public interface IActor
      * @param <T>    the interface type
      * @return an actor reference
      */
-    static <T extends IActor> T getReference(Class<T> actorInterface, String id)
+    static <T extends Actor> T getReference(Class<T> actorInterface, String id)
     {
         return ReferenceFactory.ref(actorInterface, id);
     }
@@ -81,7 +81,7 @@ public interface IActor
      * @param <T>    the interface type
      * @return an actor reference
      */
-    static <T extends IActor> T getReference(Class<T> actorInterface)
+    static <T extends Actor> T getReference(Class<T> actorInterface)
     {
         return ReferenceFactory.ref(actorInterface);
     }

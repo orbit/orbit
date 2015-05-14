@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.mongodb.test;
 
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.providers.mongodb.MongoDBStorageProvider;
 import com.ea.orbit.actors.test.FakeClusterPeer;
@@ -54,8 +54,8 @@ public class MongodbPersistenceTest
     {
         Stage stage1 = createStage();
         assertEquals(0, database.getCollection("SomeMatch").count());
-        SomeMatch someMatch = IActor.getReference(SomeMatch.class, "300");
-        SomePlayer somePlayer = IActor.getReference(SomePlayer.class, "101");
+        SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
+        SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
         someMatch.addPlayer(somePlayer).get();
         assertEquals(1, database.getCollection("SomeMatch").count());
     }
@@ -68,8 +68,8 @@ public class MongodbPersistenceTest
             // adding some state and then tearing down the cluster.
             Stage stage1 = createStage();
             stage1.bind();
-            SomeMatch someMatch = IActor.getReference(SomeMatch.class, "300");
-            SomePlayer somePlayer = IActor.getReference(SomePlayer.class, "101");
+            SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
+            SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
             someMatch.addPlayer(somePlayer).get();
             stage1.stop();
         }
@@ -77,8 +77,8 @@ public class MongodbPersistenceTest
         {
             Stage stage2 = createStage();
             stage2.bind();
-            SomeMatch someMatch_r2 = IActor.getReference(SomeMatch.class, "300");
-            SomePlayer somePlayer_r2 = IActor.getReference(SomePlayer.class, "101");
+            SomeMatch someMatch_r2 = Actor.getReference(SomeMatch.class, "300");
+            SomePlayer somePlayer_r2 = Actor.getReference(SomePlayer.class, "101");
             assertEquals(1, someMatch_r2.getPlayers().get().size());
             assertEquals(somePlayer_r2, someMatch_r2.getPlayers().get().get(0));
         }
@@ -90,8 +90,8 @@ public class MongodbPersistenceTest
         assertEquals(0, database.getCollection("SomeMatch").count());
         // adding some state and then tearing down the cluster.
         Stage stage1 = createStage();
-        SomeMatch someMatch = IActor.getReference(SomeMatch.class, "300");
-        SomePlayer somePlayer = IActor.getReference(SomePlayer.class, "101");
+        SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
+        SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
         someMatch.addPlayer(somePlayer).get();
         assertEquals(1, database.getCollection("SomeMatch").count());
 

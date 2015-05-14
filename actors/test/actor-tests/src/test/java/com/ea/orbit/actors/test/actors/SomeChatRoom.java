@@ -1,9 +1,9 @@
 package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.concurrent.Task;
 
-public interface SomeChatRoom extends IActor
+public interface SomeChatRoom extends Actor
 {
     Task<Void> join(ISomeChatObserver chatObserver);
 

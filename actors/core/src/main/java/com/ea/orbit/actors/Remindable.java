@@ -69,7 +69,7 @@ import com.ea.orbit.concurrent.Task;
  * </table></p>
  *
  */
-public interface IRemindable extends IActor
+public interface Remindable extends Actor
 {
     /**
      * Receive reminder will be called by the reminder subsystem.

@@ -28,13 +28,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.chat;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.List;
 
-public interface Chat extends IActor
+public interface Chat extends Actor
 {
 
     @OneWay

@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.ldap.test;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.providers.ldap.LdapStorageProvider;
 import com.ea.orbit.actors.test.FakeClusterPeer;
@@ -75,7 +75,7 @@ public class LdapPersistenceTest extends AbstractLdapTestUnit
     {
         Stage stage = createStage();
 
-        LdapAuthenticate user1 = IActor.getReference(LdapAuthenticate.class, "rmello");
+        LdapAuthenticate user1 = Actor.getReference(LdapAuthenticate.class, "rmello");
         boolean authenticated1 = user1.authenticate("123456").join();
         assertFalse(authenticated1);
         user1.register("Ricardo", "Mello", "88034101", "123456").join();
@@ -90,7 +90,7 @@ public class LdapPersistenceTest extends AbstractLdapTestUnit
         authenticated1 = user1.authenticate("changedpassword").join();
         assertTrue(authenticated1);
 
-        LdapAuthenticate user2 = IActor.getReference(LdapAuthenticate.class, "jcrawford");
+        LdapAuthenticate user2 = Actor.getReference(LdapAuthenticate.class, "jcrawford");
         boolean authenticated2 = user2.authenticate("mypassword").join();
         assertFalse(authenticated2);
         user2.register("Johno", "Crawford", "08780290", "mypassword").join();
@@ -101,7 +101,7 @@ public class LdapPersistenceTest extends AbstractLdapTestUnit
 
         Stage stage2 = createStage();
 
-        LdapAuthenticate user3 = IActor.getReference(LdapAuthenticate.class, "jcrawford");
+        LdapAuthenticate user3 = Actor.getReference(LdapAuthenticate.class, "jcrawford");
         boolean authenticated3 = user3.authenticate("mypassword").join();
         assertTrue(authenticated3);
 

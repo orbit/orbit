@@ -28,14 +28,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.IActorObserver;
 
 import java.util.UUID;
 
 public interface IReferenceFactory
 {
-    <T extends IActor> T getReference(Class<T> iClass, Object id);
+    <T extends Actor> T getReference(Class<T> iClass, Object id);
 
     <T extends IActorObserver> T getObserverReference(UUID nodeId, Class<T> iClass, Object id);
 }

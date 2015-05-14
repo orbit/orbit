@@ -1,11 +1,11 @@
 package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.UUID;
 
-public interface SomeActor extends IActor
+public interface SomeActor extends Actor
 {
     Task<String> sayHello(String greeting);
 

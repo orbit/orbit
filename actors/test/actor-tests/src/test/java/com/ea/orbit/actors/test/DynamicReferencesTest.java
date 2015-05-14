@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
@@ -43,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 public class DynamicReferencesTest extends ActorBaseTest
 {
 
-    public static interface AptUnfriendly extends IActor
+    public static interface AptUnfriendly extends Actor
     {
         Task<String> hello();
     }
@@ -65,7 +65,7 @@ public class DynamicReferencesTest extends ActorBaseTest
     {
         Stage stage = createStage();
         // this won't the your run of the mill apt generated class
-        AptUnfriendly ref = IActor.getReference(AptUnfriendly.class, "0");
+        AptUnfriendly ref = Actor.getReference(AptUnfriendly.class, "0");
         assertEquals("hello", ref.hello().join());
     }
 

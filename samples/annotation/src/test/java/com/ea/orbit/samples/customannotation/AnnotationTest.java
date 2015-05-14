@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.customannotation;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.actors.test.FakeClusterPeer;
@@ -53,7 +53,7 @@ public class AnnotationTest extends ActorBaseTest
     {
         Stage stage = initStage();
 
-        OnlyExample only = IActor.getReference(OnlyExample.class, "234");
+        OnlyExample only = Actor.getReference(OnlyExample.class, "234");
         only.doSomethingSpecial("A").join();
         only.doSomethingSpecial("A").join();
         only.doSomethingSpecial("A").join();
@@ -74,7 +74,7 @@ public class AnnotationTest extends ActorBaseTest
     {
         Stage stage = initStage();
 
-        MemoizeExample memoize = IActor.getReference(MemoizeExample.class, "45");
+        MemoizeExample memoize = Actor.getReference(MemoizeExample.class, "45");
 
         long firstA = memoize.getNow("A").join();
         sleep(1000);

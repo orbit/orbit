@@ -28,10 +28,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.IActorObserver;
 import com.ea.orbit.actors.IAddressable;
-import com.ea.orbit.actors.IRemindable;
+import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.annotation.StorageProvider;
 import com.ea.orbit.actors.cluster.INodeAddress;
@@ -143,7 +143,7 @@ public class Execution implements IRuntime
         {
             return false;
         }
-        Class<IActor> aInterface = classForName(interfaceName);
+        Class<Actor> aInterface = classForName(interfaceName);
         final InterfaceDescriptor descriptor = getDescriptor(aInterface);
         if (descriptor == null || descriptor.cannotActivate)
         {
@@ -651,13 +651,13 @@ public class Execution implements IRuntime
     }
 
     @Override
-    public Task<?> registerReminder(final IRemindable actor, final String reminderName, final long dueTime, final long period, final TimeUnit timeUnit)
+    public Task<?> registerReminder(final Remindable actor, final String reminderName, final long dueTime, final long period, final TimeUnit timeUnit)
     {
         return getReference(ReminderController.class, "0").registerOrUpdateReminder(actor, reminderName, new Date(clock.millis() + timeUnit.toMillis(dueTime)), period, timeUnit);
     }
 
     @Override
-    public Task<?> unregisterReminder(final IRemindable actor, final String reminderName)
+    public Task<?> unregisterReminder(final Remindable actor, final String reminderName)
     {
         return getReference(ReminderController.class, "0").unregisterReminder(actor, reminderName);
     }
@@ -758,7 +758,7 @@ public class Execution implements IRuntime
         InterfaceDescriptor interfaceDescriptor = descriptorMapByInterface.get(aInterface);
         if (interfaceDescriptor == null)
         {
-            if (aInterface == IActor.class || aInterface == IActorObserver.class || !aInterface.isInterface())
+            if (aInterface == Actor.class || aInterface == IActorObserver.class || !aInterface.isInterface())
             {
                 return null;
             }
@@ -1024,7 +1024,7 @@ public class Execution implements IRuntime
 
 
     @SuppressWarnings("unchecked")
-    public <T extends IActor> T getReference(final Class<T> iClass, final Object id)
+    public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
         ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);

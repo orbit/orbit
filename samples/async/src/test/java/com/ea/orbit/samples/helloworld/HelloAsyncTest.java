@@ -28,7 +28,7 @@
 
 package com.ea.orbit.samples.helloworld;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.async.Async;
@@ -50,7 +50,7 @@ public class HelloAsyncTest extends ActorBaseTest
     @Async
     public Task<String> asyncMethod()
     {
-        Hello helloActor = IActor.getReference(Hello.class, "0");
+        Hello helloActor = Actor.getReference(Hello.class, "0");
         String h1 = await(helloActor.sayHello("hello"));
         String h2 = await(helloActor.sayHello("hi"));
         String h3 = await(helloActor.sayHello("hey"));

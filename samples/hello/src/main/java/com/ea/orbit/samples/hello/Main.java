@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.hello;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.concurrent.Task;
 
@@ -44,7 +44,7 @@ public class Main
         stage.setClusterName("helloWorldCluster");
         stage.start().join();
 
-        Hello helloActor = IActor.getReference(Hello.class, "0");
+        Hello helloActor = Actor.getReference(Hello.class, "0");
 
         Task<String> response = helloActor.sayHello("Hi from " + stage.runtimeIdentity());
         System.out.println(response.join());

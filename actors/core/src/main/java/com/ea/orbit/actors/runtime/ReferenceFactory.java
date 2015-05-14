@@ -28,14 +28,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.IActorObserver;
-import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.annotation.NoIdentity;
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.concurrent.Task;
 
-import java.lang.reflect.Method;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -47,7 +44,7 @@ public class ReferenceFactory implements IReferenceFactory
     private volatile ActorFactoryGenerator dynamicReferenceFactory;
 
     @Override
-    public <T extends IActor> T getReference(final Class<T> iClass, final Object id)
+    public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
     {
         ActorFactory<T> factory = getFactory(iClass);
         return factory.createReference(String.valueOf(id));
@@ -91,7 +88,7 @@ public class ReferenceFactory implements IReferenceFactory
         return factory;
     }
 
-    public static <T extends IActor> T ref(Class<T> iActor, String id)
+    public static <T extends Actor> T ref(Class<T> iActor, String id)
     {
         if (iActor.isAnnotationPresent(NoIdentity.class))
         {
@@ -100,7 +97,7 @@ public class ReferenceFactory implements IReferenceFactory
         return instance.getReference(iActor, id);
     }
 
-    public static <T extends IActor> T ref(Class<T> iActor)
+    public static <T extends Actor> T ref(Class<T> iActor)
     {
         if (!iActor.isAnnotationPresent(NoIdentity.class))
         {

@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.SomeMatch;
 import com.ea.orbit.actors.test.actors.SomePlayer;
@@ -50,8 +50,8 @@ public class PersistenceTest extends ActorBaseTest
     {
         Stage stage1 = createStage();
         assertEquals(0, fakeDatabase.values().size());
-        SomeMatch someMatch = IActor.getReference(SomeMatch.class, "300");
-        SomePlayer somePlayer = IActor.getReference(SomePlayer.class, "101");
+        SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
+        SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
         someMatch.addPlayer(somePlayer).get();
         assertTrue(fakeDatabase.values().size() > 0);
     }
@@ -63,16 +63,16 @@ public class PersistenceTest extends ActorBaseTest
             // adding some state and then tearing down the cluster.
             Stage stage1 = createStage();
             assertEquals(0, fakeDatabase.values().size());
-            SomeMatch someMatch = IActor.getReference(SomeMatch.class, "300");
-            SomePlayer somePlayer = IActor.getReference(SomePlayer.class, "101");
+            SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
+            SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
             someMatch.addPlayer(somePlayer).get();
             assertTrue(fakeDatabase.values().size() > 0);
             stage1.stop();
         }
         {
             Stage stage2 = createStage();
-            SomeMatch someMatch_r2 = IActor.getReference(SomeMatch.class, "300");
-            SomePlayer somePlayer_r2 = IActor.getReference(SomePlayer.class, "101");
+            SomeMatch someMatch_r2 = Actor.getReference(SomeMatch.class, "300");
+            SomePlayer somePlayer_r2 = Actor.getReference(SomePlayer.class, "101");
             assertEquals(1, someMatch_r2.getPlayers().get().size());
             assertEquals(somePlayer_r2, someMatch_r2.getPlayers().get().get(0));
         }

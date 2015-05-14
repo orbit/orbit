@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.StatelessThing;
 import com.ea.orbit.exception.UncheckedException;
@@ -61,11 +61,11 @@ public class StatelessActorTest extends ActorBaseTest
         Stage stage4 = createStage();
         Stage client = createClient();
 
-        StatelessThing actor1 = IActor.getReference(StatelessThing.class, "1000");
-        StatelessThing actor2 = IActor.getReference(StatelessThing.class, "1000");
-        StatelessThing actor3 = IActor.getReference(StatelessThing.class, "1000");
-        StatelessThing actor4 = IActor.getReference(StatelessThing.class, "1000");
-        StatelessThing actor5 = IActor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor1 = Actor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor2 = Actor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor3 = Actor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor4 = Actor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor5 = Actor.getReference(StatelessThing.class, "1000");
 
         final Set<UUID> set = new HashSet<>();
         Supplier stagesIdle = () -> Stream.of(stage1, stage2, stage3, stage4).allMatch(s -> isIdle(s));
@@ -144,8 +144,8 @@ public class StatelessActorTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage stage2 = createStage();
 
-        StatelessThing actor1 = IActor.getReference(StatelessThing.class, "1000");
-        StatelessThing actor2 = IActor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor1 = Actor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor2 = Actor.getReference(StatelessThing.class, "1000");
 
         final Set<UUID> set = new HashSet<>();
 

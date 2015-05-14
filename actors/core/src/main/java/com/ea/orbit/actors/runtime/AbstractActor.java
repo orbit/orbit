@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IRemindable;
+import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.providers.IStorageProvider;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -168,11 +168,11 @@ public class AbstractActor<T>
      */
     protected Task<?> registerReminder(String reminderName, long dueTime, long period, TimeUnit timeUnit)
     {
-        if (!(this instanceof IRemindable))
+        if (!(this instanceof Remindable))
         {
             throw new IllegalArgumentException("This must implement IRemindable: " + this.getClass().getName());
         }
-        return reference.runtime.registerReminder((IRemindable) reference, reminderName, dueTime, period, timeUnit);
+        return reference.runtime.registerReminder((Remindable) reference, reminderName, dueTime, period, timeUnit);
     }
 
     /**
@@ -183,7 +183,7 @@ public class AbstractActor<T>
      */
     protected Task<?> unregisterReminder(String reminderName)
     {
-        return reference.runtime.unregisterReminder((IRemindable) reference, reminderName);
+        return reference.runtime.unregisterReminder((Remindable) reference, reminderName);
     }
 
     /**

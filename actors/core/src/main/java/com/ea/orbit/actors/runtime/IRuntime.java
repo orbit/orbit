@@ -29,7 +29,7 @@
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.IAddressable;
-import com.ea.orbit.actors.IRemindable;
+import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.concurrent.Task;
 
@@ -96,7 +96,7 @@ public interface IRuntime
      * @param timeUnit     the time unit for dueTime and period
      * @return completion promise for this operation
      */
-    Task<?> registerReminder(IRemindable actor, String reminderName, long dueTime, long period, TimeUnit timeUnit);
+    Task<?> registerReminder(Remindable actor, String reminderName, long dueTime, long period, TimeUnit timeUnit);
 
     /**
      * Removes a previously registered reminder.
@@ -105,7 +105,7 @@ public interface IRuntime
      * @param reminderName the remainder's name
      * @return completion promise for this operation
      */
-    Task<?> unregisterReminder(IRemindable actor, String reminderName);
+    Task<?> unregisterReminder(Remindable actor, String reminderName);
 
     /**
      * Gets a string that represents uniquely the node that currently holds this actor.

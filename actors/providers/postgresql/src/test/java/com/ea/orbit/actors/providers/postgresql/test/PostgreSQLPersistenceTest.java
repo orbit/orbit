@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.providers.postgresql.test;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.providers.postgresql.PostgreSQLStorageProvider;
 import com.ea.orbit.actors.test.FakeClusterPeer;
@@ -59,7 +59,7 @@ public class PostgreSQLPersistenceTest
     {
         Stage stage = createStage();
         assertEquals(0, count(Hello.class));
-        Hello helloActor = IActor.getReference(Hello.class, "300");
+        Hello helloActor = Actor.getReference(Hello.class, "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(1, count(Hello.class));
     }
@@ -68,7 +68,7 @@ public class PostgreSQLPersistenceTest
     public void checkReadTest() throws Exception
     {
         Stage stage = createStage();
-        Hello helloActor = IActor.getReference(Hello.class, "300");
+        Hello helloActor = Actor.getReference(Hello.class, "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(readHelloState("300").lastName, "Meep Meep");
     }
@@ -78,7 +78,7 @@ public class PostgreSQLPersistenceTest
     {
         Stage stage = createStage();
         assertEquals(0, count(Hello.class));
-        Hello helloActor = IActor.getReference(Hello.class, "300");
+        Hello helloActor = Actor.getReference(Hello.class, "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(1, count(Hello.class));
         helloActor.clear().join();
@@ -90,7 +90,7 @@ public class PostgreSQLPersistenceTest
     {
         Stage stage = createStage();
         assertEquals(0, count(Hello.class));
-        Hello helloActor = IActor.getReference(Hello.class, "300");
+        Hello helloActor = Actor.getReference(Hello.class, "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(1, count(Hello.class));
         helloActor.sayHello("Peem Peem").join();

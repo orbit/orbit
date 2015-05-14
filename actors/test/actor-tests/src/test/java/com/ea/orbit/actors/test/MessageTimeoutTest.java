@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.SomeActor;
 
@@ -52,7 +52,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage client = createClient();
 
-        SomeActor someActor = IActor.getReference(SomeActor.class, "1");
+        SomeActor someActor = Actor.getReference(SomeActor.class, "1");
 
         UUID uuid = someActor.getUniqueActivationId(0).get();
         assertEquals(uuid, someActor.getUniqueActivationId().get());
@@ -69,7 +69,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage client = createClient();
 
-        SomeActor someActor = IActor.getReference(SomeActor.class, "1");
+        SomeActor someActor = Actor.getReference(SomeActor.class, "1");
 
         UUID uuid = someActor.getUniqueActivationId(0).get();
         assertEquals(uuid, someActor.getUniqueActivationId().get());

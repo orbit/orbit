@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.IHosting;
 import com.ea.orbit.actors.runtime.AbstractActor;
@@ -50,7 +50,7 @@ public class ShutdownTest extends ActorBaseTest
 {
 
 
-    public interface Shut extends IActor
+    public interface Shut extends Actor
     {
         Task<Void> doSomething();
 
@@ -81,11 +81,11 @@ public class ShutdownTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage client = createClient();
 
-        IActor.getReference(Shut.class, "0").doSomething().join();
+        Actor.getReference(Shut.class, "0").doSomething().join();
         Stage stage2 = createStage();
 
         stage1.stop().join();
-        IActor.getReference(Shut.class, "0").doSomething().join();
+        Actor.getReference(Shut.class, "0").doSomething().join();
     }
 
 
@@ -95,7 +95,7 @@ public class ShutdownTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage client = createClient();
 
-        Task<Void> methodCall = IActor.getReference(Shut.class, "0").doSomethingBlocking();
+        Task<Void> methodCall = Actor.getReference(Shut.class, "0").doSomethingBlocking();
         // is blocked in the doSomethingBlocking
         assertEquals(true, fakeSync.get("executing").join());
         Stage stage2 = createStage();

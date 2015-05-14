@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.trace.demo;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.samples.trace.messaging.TraceMulticastMessaging;
 import com.ea.orbit.samples.trace.receiver.TraceReceiver;
@@ -70,7 +70,7 @@ public class TraceDemoMain
 
         //start some cluster activity
         stage.start().join();
-        ExampleA first = IActor.getReference(ExampleA.class, "0");
+        ExampleA first = Actor.getReference(ExampleA.class, "0");
         first.someWork().join();
 
     }

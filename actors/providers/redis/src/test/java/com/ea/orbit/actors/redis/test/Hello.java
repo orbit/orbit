@@ -28,10 +28,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.redis.test;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.test.StorageTest;
 
-public interface Hello extends IActor, StorageTest
+public interface Hello extends Actor, StorageTest
 {
     //basic tasks from StorageTest interface
 }

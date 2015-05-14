@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.providers.json;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.IActorObserver;
 import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.actors.runtime.ActorReference;
@@ -81,7 +81,7 @@ public class ActorReferenceModule extends Module
 
         public RefSerializer(final Class<?> rawClass)
         {
-            if (rawClass != null && rawClass.isInterface() && IActor.class.isAssignableFrom(rawClass))
+            if (rawClass != null && rawClass.isInterface() && Actor.class.isAssignableFrom(rawClass))
             {
                 this.rawClass = rawClass;
             }
@@ -234,7 +234,7 @@ public class ActorReferenceModule extends Module
             public JsonDeserializer<?> findBeanDeserializer(final JavaType type, final DeserializationConfig config, final BeanDescription beanDesc)
             {
                 final Class<?> rawClass = type.getRawClass();
-                if (IActor.class.isAssignableFrom(rawClass))
+                if (Actor.class.isAssignableFrom(rawClass))
                 {
                     return new RefDeserializer(rawClass, referenceFactory);
                 }
@@ -251,7 +251,7 @@ public class ActorReferenceModule extends Module
             public JsonSerializer<?> findSerializer(final SerializationConfig config, final JavaType type, final BeanDescription beanDesc)
             {
                 final Class<?> rawClass = type.getRawClass();
-                if (IActor.class.isAssignableFrom(rawClass))
+                if (Actor.class.isAssignableFrom(rawClass))
                 {
                     return new RefSerializer(rawClass);
                 }

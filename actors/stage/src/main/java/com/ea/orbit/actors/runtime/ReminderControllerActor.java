@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IRemindable;
+import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.concurrent.ConcurrentHashSet;
 import com.ea.orbit.concurrent.Task;
 
@@ -49,7 +49,7 @@ public class ReminderControllerActor extends AbstractActor<ReminderControllerAct
     private Map<ReminderEntry, Registration> local = new ConcurrentHashMap<>();
 
     @Override
-    public Task<String> registerOrUpdateReminder(final IRemindable actor, final String reminderName, final Date startAt, final long period, final TimeUnit timeUnit)
+    public Task<String> registerOrUpdateReminder(final Remindable actor, final String reminderName, final Date startAt, final long period, final TimeUnit timeUnit)
     {
         final ReminderEntry newReminder = new ReminderEntry();
         newReminder.setPeriod(timeUnit.toMillis(period));
@@ -90,7 +90,7 @@ public class ReminderControllerActor extends AbstractActor<ReminderControllerAct
     }
 
     @Override
-    public Task<String> unregisterReminder(final IRemindable actor, final String reminderName)
+    public Task<String> unregisterReminder(final Remindable actor, final String reminderName)
     {
         final ReminderEntry newReminder = new ReminderEntry();
         newReminder.setReminderName(reminderName);
@@ -107,7 +107,7 @@ public class ReminderControllerActor extends AbstractActor<ReminderControllerAct
     }
 
     @Override
-    public Task<List<String>> getReminders(final IRemindable actor)
+    public Task<List<String>> getReminders(final Remindable actor)
     {
         final List<String> list = state.reminders.stream()
                 .filter(r -> reference.equals(actor))

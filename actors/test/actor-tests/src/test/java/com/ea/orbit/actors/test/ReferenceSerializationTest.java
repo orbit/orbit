@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.runtime.ActorKey;
@@ -53,8 +53,8 @@ public class ReferenceSerializationTest extends ActorBaseTest
     public void referencePassingTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        SomeMatch someMatch = IActor.getReference(SomeMatch.class, "300");
-        SomePlayer somePlayer = IActor.getReference(SomePlayer.class, "101");
+        SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
+        SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
         someMatch.addPlayer(somePlayer).join();
     }
 
@@ -63,8 +63,8 @@ public class ReferenceSerializationTest extends ActorBaseTest
     public void passingActorInsteadOfReferenceTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        SomeMatch someMatch = IActor.getReference(SomeMatch.class, "300");
-        SomePlayer somePlayer = IActor.getReference(SomePlayer.class, "101");
+        SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
+        SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
         somePlayer.joinMatch(someMatch).join();
     }
 
@@ -78,8 +78,8 @@ public class ReferenceSerializationTest extends ActorBaseTest
         Stage stage1 = createStage();
         Stage client = createClient();
         client.bind();
-        SomeMatch someMatch = IActor.getReference(SomeMatch.class, "300");
-        SomePlayer somePlayer = IActor.getReference(SomePlayer.class, "101");
+        SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
+        SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
         somePlayer.joinMatch(someMatch).join();
 
 

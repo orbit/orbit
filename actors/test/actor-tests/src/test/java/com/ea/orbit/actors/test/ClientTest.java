@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.cluster.INodeAddress;
 import com.ea.orbit.actors.runtime.ActorReference;
@@ -74,7 +74,7 @@ public class ClientTest extends ActorBaseTest
     {
         Stage stage = createStage();
         Stage client = createClient();
-        SomeActor player = IActor.getReference(SomeActor.class, "232");
+        SomeActor player = Actor.getReference(SomeActor.class, "232");
         client.bind();
         assertEquals("bla", player.sayHello("meh").get());
     }
@@ -90,13 +90,13 @@ public class ClientTest extends ActorBaseTest
         SomeChatObserver observer1 = new SomeChatObserver();
         SomeChatObserver observer2 = new SomeChatObserver();
         {
-            SomeChatRoom chatRoom = IActor.getReference(SomeChatRoom.class, "chat");
+            SomeChatRoom chatRoom = Actor.getReference(SomeChatRoom.class, "chat");
             client1.bind();
             chatRoom.join(observer1).get();
         }
         {
             client2.bind();
-            SomeChatRoom chatRoom = IActor.getReference(SomeChatRoom.class, "chat");
+            SomeChatRoom chatRoom = Actor.getReference(SomeChatRoom.class, "chat");
             final ISomeChatObserver reference = client2.getObserverReference(observer2);
             chatRoom.join(reference).get();
             chatRoom.sendMessage(reference, "bla");
@@ -109,7 +109,7 @@ public class ClientTest extends ActorBaseTest
     public void lonelyClientTest() throws ExecutionException, InterruptedException
     {
         Stage client = createClient();
-        SomeActor player = IActor.getReference(SomeActor.class, "232");
+        SomeActor player = Actor.getReference(SomeActor.class, "232");
         client.getHosting().setTimeToWaitForServersMillis(100);
         expectException(() -> player.sayHello("meh"));
     }
@@ -135,7 +135,7 @@ public class ClientTest extends ActorBaseTest
         for (int i = 0; i < 50; i++)
         {
             final Stage client = clients.get((int) (Math.random() * clients.size()));
-            SomeActor player = IActor.getReference(SomeActor.class, String.valueOf(i));
+            SomeActor player = Actor.getReference(SomeActor.class, String.valueOf(i));
             client.bind();
             assertEquals("bla", player.sayHello("meh").join());
             assertTrue(serverAddresses.contains(client.getHosting().locateActor((ActorReference<?>) player, true).join()));

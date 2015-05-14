@@ -28,11 +28,11 @@
 
 package com.ea.orbit.samples.annotation.examples;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.samples.annotation.onlyifactivated.OnlyIfActivated;
 
-public interface OnlyExample extends IActor
+public interface OnlyExample extends Actor
 {
 
     @OnlyIfActivated

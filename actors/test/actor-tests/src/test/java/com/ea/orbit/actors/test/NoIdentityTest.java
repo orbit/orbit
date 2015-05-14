@@ -29,7 +29,7 @@
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.annotation.NoIdentity;
 import com.ea.orbit.actors.runtime.AbstractActor;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertEquals;
 public class NoIdentityTest extends ActorBaseTest
 {
     @NoIdentity
-    public interface SingularThing extends IActor
+    public interface SingularThing extends Actor
     {
         Task<String> justRespond();
     }
@@ -63,7 +63,7 @@ public class NoIdentityTest extends ActorBaseTest
     public void callIt() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        final SingularThing ref = IActor.getReference(SingularThing.class);
+        final SingularThing ref = Actor.getReference(SingularThing.class);
         assertEquals("resp", ref.justRespond().join());
     }
 
@@ -71,14 +71,14 @@ public class NoIdentityTest extends ActorBaseTest
     public void usingNullId2() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        IActor.getReference(SingularThing.class, null);
+        Actor.getReference(SingularThing.class, null);
     }
 
     @Test
     public void callIt2() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        final SingularThing ref = IActor.getReference(SingularThing.class);
+        final SingularThing ref = Actor.getReference(SingularThing.class);
         assertEquals("resp", ref.justRespond().join());
     }
 
@@ -86,6 +86,6 @@ public class NoIdentityTest extends ActorBaseTest
     public void breakIt() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        IActor.getReference(SingularThing.class, "aaa");
+        Actor.getReference(SingularThing.class, "aaa");
     }
 }

@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.trace.sender;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.IAddressable;
 import com.ea.orbit.actors.providers.IInvokeHookProvider;
 import com.ea.orbit.actors.providers.InvocationContext;
@@ -131,7 +131,7 @@ public class TraceSender implements IInvokeHookProvider
 
         try
         {
-            if (!IActor.class.isAssignableFrom(Class.forName(value)))
+            if (!Actor.class.isAssignableFrom(Class.forName(value)))
             {
                 return true;
             }

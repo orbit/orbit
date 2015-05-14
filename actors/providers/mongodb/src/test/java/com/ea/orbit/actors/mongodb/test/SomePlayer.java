@@ -28,10 +28,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.mongodb.test;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.concurrent.Task;
 
-public interface SomePlayer extends IActor
+public interface SomePlayer extends Actor
 {
     Task<String> getName();
 

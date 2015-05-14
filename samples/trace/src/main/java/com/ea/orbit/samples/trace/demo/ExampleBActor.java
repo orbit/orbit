@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.trace.demo;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Registration;
 import com.ea.orbit.concurrent.Task;
@@ -53,7 +53,7 @@ public class ExampleBActor extends AbstractActor implements ExampleB
     {
         if (Math.random() > 0.5d) return Task.done(); //some variance to the calls
         String id = Integer.toString((int) (Math.random() * 10));
-        ExampleA a = IActor.getReference(ExampleA.class, id);
+        ExampleA a = Actor.getReference(ExampleA.class, id);
         a.someWork().join();
         return Task.done();
     }

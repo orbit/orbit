@@ -1,6 +1,6 @@
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.concurrent.ConcurrentHashSet;
 import com.ea.orbit.util.ClassPath;
 
@@ -116,7 +116,7 @@ public class ClassPathSearch
         newInfo.modifiers = 0;
         try
         {
-            InputStream in = IActor.class.getResourceAsStream('/' + className.replace('.', '/') + ".class");
+            InputStream in = Actor.class.getResourceAsStream('/' + className.replace('.', '/') + ".class");
             if (in == null)
             {
                 newInfo.allInterfaces = Collections.emptySet();

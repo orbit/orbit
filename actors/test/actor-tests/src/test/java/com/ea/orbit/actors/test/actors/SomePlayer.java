@@ -1,9 +1,9 @@
 package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.concurrent.Task;
 
-public interface SomePlayer extends IActor
+public interface SomePlayer extends Actor
 {
     Task<String> getName();
 

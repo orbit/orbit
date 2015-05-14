@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.providers.spring;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.providers.IActorClassFinder;
 import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.runtime.ReminderControllerActor;
@@ -85,7 +85,7 @@ public class SpringActorClassFinder implements IActorClassFinder
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends IActor> Class<? extends T> findActorImplementation(Class<T> clazz)
+    public <T extends Actor> Class<? extends T> findActorImplementation(Class<T> clazz)
     {
         return (Class<T>) concreteImplementations.get(clazz);
     }
@@ -98,7 +98,7 @@ public class SpringActorClassFinder implements IActorClassFinder
         public ActorImplementationProvider()
         {
             super(false);
-            addIncludeFilter(new AssignableTypeFilter(IActor.class));
+            addIncludeFilter(new AssignableTypeFilter(Actor.class));
         }
 
         public Map<Class<?>, Class<?>> getActorImplementations(List<Class<?>> clazzInterfaces)
@@ -138,7 +138,7 @@ public class SpringActorClassFinder implements IActorClassFinder
         public ActorInterfaceProvider()
         {
             super(false);
-            addIncludeFilter(new AssignableTypeFilter(IActor.class));
+            addIncludeFilter(new AssignableTypeFilter(Actor.class));
         }
 
         public List<Class<?>> getActorInterfaces()

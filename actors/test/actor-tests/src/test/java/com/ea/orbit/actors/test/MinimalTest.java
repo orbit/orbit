@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.SomeActor;
 
@@ -52,7 +52,7 @@ public class MinimalTest extends ActorBaseTest
     public void singleActorSingleStageTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        SomeActor someActor = IActor.getReference(SomeActor.class, "1");
+        SomeActor someActor = Actor.getReference(SomeActor.class, "1");
         assertEquals("bla", someActor.sayHello("bla").get());
     }
 
@@ -63,7 +63,7 @@ public class MinimalTest extends ActorBaseTest
         for (int i = 0; i < 2; i++)
         {
             Stage stage = createStage();
-            SomeActor someActor = IActor.getReference(SomeActor.class, "1");
+            SomeActor someActor = Actor.getReference(SomeActor.class, "1");
             assertEquals("bla", someActor.sayHello("bla").get());
         }
     }
@@ -81,7 +81,7 @@ public class MinimalTest extends ActorBaseTest
         for (int i = 0; i < 10; i++)
         {
             Stage stage = createStage();
-            SomeActor someActor = IActor.getReference(SomeActor.class, "1");
+            SomeActor someActor = Actor.getReference(SomeActor.class, "1");
             assertEquals("bla", someActor.sayHello("bla").get());
         }
     }
@@ -99,7 +99,7 @@ public class MinimalTest extends ActorBaseTest
         for (int i = 0; i < 100; i++)
         {
             stages.get(r.nextInt(stages.size())).bind();
-            SomeActor actor = IActor.getReference(SomeActor.class, String.valueOf(i));
+            SomeActor actor = Actor.getReference(SomeActor.class, String.valueOf(i));
             assertEquals("bla", actor.sayHello("bla").join());
         }
     }
@@ -108,11 +108,11 @@ public class MinimalTest extends ActorBaseTest
     public void ensureUniqueActivation() throws ExecutionException, InterruptedException
     {
         Stage stage0 = createStage();
-        UUID uuid = IActor.getReference(SomeActor.class, "1").getUniqueActivationId().get();
+        UUID uuid = Actor.getReference(SomeActor.class, "1").getUniqueActivationId().get();
         for (int i = 0; i < 10; i++)
         {
             Stage stage = createStage();
-            SomeActor someActor = IActor.getReference(SomeActor.class, "1");
+            SomeActor someActor = Actor.getReference(SomeActor.class, "1");
             assertEquals("bla", someActor.sayHello("bla").get());
             assertEquals(uuid, someActor.getUniqueActivationId().get());
         }

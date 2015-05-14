@@ -29,8 +29,8 @@
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.IRemindable;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.TickStatus;
@@ -51,7 +51,7 @@ public class ReminderTests extends ActorBaseTest
 {
     // At the moment the clock injected to the stage is not used by the timer subsystem.
 
-    public static interface ReminderTest extends IActor, IRemindable
+    public static interface ReminderTest extends Actor, Remindable
     {
 
         Task<?> addReminder(String name, long start, long period, TimeUnit unit);
@@ -83,7 +83,7 @@ public class ReminderTests extends ActorBaseTest
         Stage stage1 = createStage();
         Stage frontend = createClient();
 
-        ReminderTest actor = IActor.getReference(ReminderTest.class, "1");
+        ReminderTest actor = Actor.getReference(ReminderTest.class, "1");
         actor.addReminder("bla", 0, 50, TimeUnit.MILLISECONDS).join();
         assertEquals("bla", remindersReceived.poll(5, TimeUnit.SECONDS));
         assertEquals("bla", remindersReceived.poll(5, TimeUnit.SECONDS));
@@ -95,7 +95,7 @@ public class ReminderTests extends ActorBaseTest
         Stage stage1 = createStage();
         Stage frontend = createClient();
 
-        ReminderTest actor = IActor.getReference(ReminderTest.class, "1");
+        ReminderTest actor = Actor.getReference(ReminderTest.class, "1");
         frontend.bind();
         actor.addReminder("bla", 0, 20, TimeUnit.MILLISECONDS).join();
         assertEquals("bla", remindersReceived.poll(5, TimeUnit.SECONDS));

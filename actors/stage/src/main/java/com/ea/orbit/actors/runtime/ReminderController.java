@@ -28,15 +28,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.IRemindable;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public interface ReminderController extends IActor
+public interface ReminderController extends Actor
 {
     /**
      * Adds or updates a reminder
@@ -48,7 +48,7 @@ public interface ReminderController extends IActor
      * @param timeUnit     the time unit for period
      * @return a task that returns the reminder name
      */
-    Task<String> registerOrUpdateReminder(IRemindable actor, String reminderName,
+    Task<String> registerOrUpdateReminder(Remindable actor, String reminderName,
                                           Date dueTime,
                                           long period,
                                           TimeUnit timeUnit);
@@ -61,7 +61,7 @@ public interface ReminderController extends IActor
      * @param reminderName the reminder handle
      * @return a task holding the reminder name.
      */
-    Task<String> unregisterReminder(IRemindable actor, String reminderName);
+    Task<String> unregisterReminder(Remindable actor, String reminderName);
 
     /**
      * Gets all reminders tied to the actor actor.
@@ -69,7 +69,7 @@ public interface ReminderController extends IActor
      * @param actor the target actor
      * @return a task holding the list of reminder names.
      */
-    Task<List<String>> getReminders(IRemindable actor);
+    Task<List<String>> getReminders(Remindable actor);
 
     Task<Void> ensureStart();
 }

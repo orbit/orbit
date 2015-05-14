@@ -245,7 +245,7 @@ public class Stage implements Startable
         Task<?> future = clusterPeer.join(clusterName, nodeName);
         if (mode == StageMode.HOST)
         {
-            future = future.thenRun(() -> IActor.getReference(ReminderController.class, "0").ensureStart());
+            future = future.thenRun(() -> Actor.getReference(ReminderController.class, "0").ensureStart());
         }
         startFuture = future;
 

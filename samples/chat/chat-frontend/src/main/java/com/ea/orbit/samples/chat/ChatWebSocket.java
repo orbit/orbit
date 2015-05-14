@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.samples.chat;
 
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.concurrent.Task;
 
 import javax.json.Json;
@@ -59,7 +59,7 @@ public class ChatWebSocket
     @OnOpen
     public void onWebSocketConnect(Session session)
     {
-        chat = IActor.getReference(Chat.class, session.getPathParameters().get("chatName"));
+        chat = Actor.getReference(Chat.class, session.getPathParameters().get("chatName"));
         observer = new ChatObserver()
         {
             @Override

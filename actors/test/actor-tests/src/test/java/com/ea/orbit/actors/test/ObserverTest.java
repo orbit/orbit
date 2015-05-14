@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.ISomeChatObserver;
 import com.ea.orbit.actors.test.actors.SomeChatRoom;
@@ -79,7 +79,7 @@ public class ObserverTest extends ActorBaseTest
     public void basicObserverTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        SomeChatRoom chatRoom = IActor.getReference(SomeChatRoom.class, "1");
+        SomeChatRoom chatRoom = Actor.getReference(SomeChatRoom.class, "1");
         SomeChatObserver observer = new SomeChatObserver();
         final ISomeChatObserver observerReference = stage1.getObserverReference(ISomeChatObserver.class, observer);
         assertNotNull(observerReference);
@@ -94,7 +94,7 @@ public class ObserverTest extends ActorBaseTest
     public void observerSerializationTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        SomeChatRoom chatRoom = IActor.getReference(SomeChatRoom.class, "1");
+        SomeChatRoom chatRoom = Actor.getReference(SomeChatRoom.class, "1");
         SomeChatObserver observer = new SomeChatObserver();
         chatRoom.join(observer).get();
         chatRoom.sendMessage(observer, "bla").get();
@@ -116,7 +116,7 @@ public class ObserverTest extends ActorBaseTest
         final ISomeChatObserver observerReference2 = stage2.getObserverReference(ISomeChatObserver.class, observer2);
 
 
-        SomeChatRoom chatRoom = IActor.getReference(SomeChatRoom.class, "1");
+        SomeChatRoom chatRoom = Actor.getReference(SomeChatRoom.class, "1");
 
         stage1.bind();
         chatRoom.join(observerReference1).join();
@@ -142,8 +142,8 @@ public class ObserverTest extends ActorBaseTest
         SomeChatObserver observer1 = new SomeChatObserver();
         SomeChatObserver observer2 = new SomeChatObserver();
 
-        SomeChatRoom chatRoom_s1 = IActor.getReference(SomeChatRoom.class, "1");
-        SomeChatRoom chatRoom_s2 = IActor.getReference(SomeChatRoom.class, "1");
+        SomeChatRoom chatRoom_s1 = Actor.getReference(SomeChatRoom.class, "1");
+        SomeChatRoom chatRoom_s2 = Actor.getReference(SomeChatRoom.class, "1");
 
         stage1.bind();
         chatRoom_s1.join(observer1).join();

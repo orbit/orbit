@@ -29,12 +29,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.mongodb.test;
 
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.List;
 
-public interface SomeMatch extends IActor
+public interface SomeMatch extends Actor
 {
     Task<Void> addPlayer(SomePlayer player);
 

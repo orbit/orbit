@@ -28,7 +28,7 @@
 
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.ActorClassFinder;
 import com.ea.orbit.actors.test.actors.SomeActor;
@@ -73,22 +73,22 @@ public class AsymmetricalStagesTest extends ActorBaseTest
         final List<Task<String>> tasksM = new ArrayList<>();
 
         stage1.bind();
-        IActor.getReference(SomeMatch.class, "100_000").getNodeId().join();
+        Actor.getReference(SomeMatch.class, "100_000").getNodeId().join();
         stage2.bind();
-        IActor.getReference(SomePlayer.class, "100_000").getNodeId().join();
+        Actor.getReference(SomePlayer.class, "100_000").getNodeId().join();
 
         // touching up to 50 different actors of each type.
         for (int i = 0; i < 25; i++)
         {
             stage1.bind();
-            tasksA.add(IActor.getReference(SomeActor.class, "100_" + i).getNodeId());
-            tasksM.add(IActor.getReference(SomeMatch.class, "100_" + i).getNodeId());
-            tasksP.add(IActor.getReference(SomePlayer.class, "200_" + i).getNodeId());
+            tasksA.add(Actor.getReference(SomeActor.class, "100_" + i).getNodeId());
+            tasksM.add(Actor.getReference(SomeMatch.class, "100_" + i).getNodeId());
+            tasksP.add(Actor.getReference(SomePlayer.class, "200_" + i).getNodeId());
 
             stage2.bind();
-            tasksA.add(IActor.getReference(SomeActor.class, "100_" + i).getNodeId());
-            tasksM.add(IActor.getReference(SomeMatch.class, "300_" + i).getNodeId());
-            tasksP.add(IActor.getReference(SomePlayer.class, "400_" + i).getNodeId());
+            tasksA.add(Actor.getReference(SomeActor.class, "100_" + i).getNodeId());
+            tasksM.add(Actor.getReference(SomeMatch.class, "300_" + i).getNodeId());
+            tasksP.add(Actor.getReference(SomePlayer.class, "400_" + i).getNodeId());
         }
         final Set<String> setA = tasksA.stream().map(x -> x.join()).collect(Collectors.toSet());
         final Set<String> setM = tasksM.stream().map(x -> x.join()).collect(Collectors.toSet());
@@ -119,7 +119,7 @@ public class AsymmetricalStagesTest extends ActorBaseTest
         stage.addProvider(new ActorClassFinder()
         {
             @Override
-            public <T extends IActor> Class<? extends T> findActorImplementation(Class<T> iActorInterface)
+            public <T extends Actor> Class<? extends T> findActorImplementation(Class<T> iActorInterface)
             {
                 Class<? extends T> c = super.findActorImplementation(iActorInterface);
                 return excludedClasses.contains(c) ? null : c;
@@ -142,7 +142,7 @@ public class AsymmetricalStagesTest extends ActorBaseTest
         // Asymmetrical nodes, one has Match other has Player, both have SomeActor
         Stage stage1 = createStage(SomeActorImpl.class, SomePlayerActor.class);
 
-        final Task<String> test = IActor.getReference(SomeMatch.class, "100").getNodeId();
+        final Task<String> test = Actor.getReference(SomeMatch.class, "100").getNodeId();
 
         Stage stage2 = createStage(SomeActorImpl.class, SomeMatchActor.class);
 

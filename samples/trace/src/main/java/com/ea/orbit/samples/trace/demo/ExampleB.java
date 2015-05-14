@@ -28,11 +28,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.trace.demo;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.concurrent.Task;
 
-public interface ExampleB extends IActor
+public interface ExampleB extends Actor
 {
     @OneWay
     Task<Void> callRandomA();
