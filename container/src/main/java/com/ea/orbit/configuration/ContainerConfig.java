@@ -26,39 +26,34 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.exception;
+package com.ea.orbit.configuration;
 
-/**
- * This exception is the base for application exceptions that are not server
- * errors but instead expected outcomes of invalid input or invalid input sequence.
- */
-public class OrbitHandledException extends UncheckedException
+import java.util.List;
+import java.util.Map;
+
+public interface ContainerConfig
 {
-    private static final long serialVersionUID = 1L;
+    List<String> getCollection(String collectionName);
 
-    public OrbitHandledException()
-    {
-        super();
-    }
+    String getAsString(String key);
 
-    public OrbitHandledException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace)
-    {
-        super(message, cause, enableSuppression, writableStackTrace);
-    }
+    String getAsString(String key, String defaultValue);
 
-    public OrbitHandledException(String message, Throwable cause)
-    {
-        super(message, cause);
-    }
+    Integer getAsInt(String key);
 
-    public OrbitHandledException(String message)
-    {
-        super(message);
-    }
+    Integer getAsInt(String key, Integer defaultValue);
 
-    public OrbitHandledException(Throwable cause)
-    {
-        super(cause);
-    }
+    Boolean getAsBoolean(String key);
 
+    Boolean getAsBoolean(String key, Boolean defaultValue);
+
+    void put(String key, String value);
+
+    void putAll(ContainerConfig other);
+
+    void putAll(Map<?, ?> other);
+
+    Map<String, Object> getAll();
+
+    Map<String, Object> getPrefixedValues(String collectionPrefix);
 }

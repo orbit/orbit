@@ -54,11 +54,11 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     }
 
     @Override
-    public ActorExtension getStorageProvider()
+    public ActorExtension getStorageExtension()
     {
-        MemcachedStorageExtension storageProvider = new MemcachedStorageExtension();
-        storageProvider.setUseShortKeys(false);
-        return storageProvider;
+        MemcachedStorageExtension storageExtension = new MemcachedStorageExtension();
+        storageExtension.setUseShortKeys(false);
+        return storageExtension;
     }
 
     @Override

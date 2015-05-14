@@ -2,7 +2,7 @@
 Annotation Sample
 ===================
 
-This is a custom annotation provider.
+This is a custom annotation extension.
 
 
 

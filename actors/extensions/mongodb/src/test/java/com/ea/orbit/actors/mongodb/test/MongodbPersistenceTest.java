@@ -104,9 +104,9 @@ public class MongodbPersistenceTest
     {
 
         Stage stage = new Stage();
-        final MongoDBStorageExtension storageProvider = new MongoDBStorageExtension();
-        storageProvider.setDatabase(database.getName());
-        stage.addExtension(storageProvider);
+        final MongoDBStorageExtension storageExtension = new MongoDBStorageExtension();
+        storageExtension.setDatabase(database.getName());
+        stage.addExtension(storageExtension);
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().get();

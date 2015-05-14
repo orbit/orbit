@@ -121,10 +121,10 @@ public class LdapPersistenceTest extends AbstractLdapTestUnit
     public Stage createStage() throws Exception
     {
         Stage stage = new Stage();
-        LdapStorageExtension provider = new LdapStorageExtension();
-        provider.setDn("uid=admin,ou=system");
-        provider.setCredentials("secret");
-        stage.addExtension(provider);
+        LdapStorageExtension extension = new LdapStorageExtension();
+        extension.setDn("uid=admin,ou=system");
+        extension.setCredentials("secret");
+        stage.addExtension(extension);
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().get();

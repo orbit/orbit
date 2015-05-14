@@ -56,12 +56,12 @@ public class RedisPersistenceTest extends StorageBaseTest
     }
 
     @Override
-    public ActorExtension getStorageProvider()
+    public ActorExtension getStorageExtension()
     {
-        final RedisStorageExtension storageProvider = new RedisStorageExtension();
-        storageProvider.setTimeout(60000);
-        storageProvider.setDatabaseName(databaseName);
-        return storageProvider;
+        final RedisStorageExtension storageExtension = new RedisStorageExtension();
+        storageExtension.setTimeout(60000);
+        storageExtension.setDatabaseName(databaseName);
+        return storageExtension;
     }
 
     @Override

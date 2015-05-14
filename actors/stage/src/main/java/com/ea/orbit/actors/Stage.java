@@ -288,11 +288,11 @@ public class Stage implements Startable
      * stage.addExtension(new MongoDbProvider(...));
      * </pre>
      *
-     * @param provider Actor Extensions instance.
+     * @param extension Actor Extensions instance.
      */
-    public void addExtension(final ActorExtension provider)
+    public void addExtension(final ActorExtension extension)
     {
-        this.extensions.add(provider);
+        this.extensions.add(extension);
     }
 
     public Task<?> stop()

@@ -30,8 +30,8 @@ package com.ea.orbit.container;
 
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.configuration.OrbitProperties;
-import com.ea.orbit.configuration.OrbitPropertiesImpl;
+import com.ea.orbit.configuration.ContainerConfig;
+import com.ea.orbit.configuration.ContainerConfigImpl;
 import com.ea.orbit.configuration.Secret;
 import com.ea.orbit.configuration.SecretManager;
 import com.ea.orbit.exception.UncheckedException;
@@ -61,7 +61,7 @@ import java.util.stream.Collectors;
 
 public class Container
 {
-    private OrbitProperties properties;
+    private ContainerConfig properties;
     private Map<String, ComponentState> components = new ConcurrentHashMap<>();
 
     private CompletableFuture<?> stopFuture = new CompletableFuture<>();
@@ -181,7 +181,7 @@ public class Container
     {
         if (this.properties == null)
         {
-            this.properties = new OrbitPropertiesImpl();
+            this.properties = new ContainerConfigImpl();
             this.properties.putAll(System.getProperties());
             addInstance(this.properties);
         }
@@ -325,7 +325,7 @@ public class Container
             addInstance(this);
             injectConfig(this);
             addInstance(registry);
-            registry.addSingleton(OrbitProperties.class, properties);
+            registry.addSingleton(ContainerConfig.class, properties);
 
             if (providers != null)
             {

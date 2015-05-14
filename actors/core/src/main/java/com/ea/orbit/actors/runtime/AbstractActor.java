@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractActor<T>
 {
     T state;
-    StorageExtension stateProvider;
+    StorageExtension stateExtension;
     ActorReference<?> reference;
     Logger logger;
 
@@ -120,7 +120,7 @@ public abstract class AbstractActor<T>
      */
     protected Task<Void> writeState()
     {
-        return stateProvider.writeState(reference, state);
+        return stateExtension.writeState(reference, state);
     }
 
     /**
@@ -130,7 +130,7 @@ public abstract class AbstractActor<T>
      */
     protected Task<Boolean> readState()
     {
-        return stateProvider.readState(reference, state);
+        return stateExtension.readState(reference, state);
     }
 
     /**
@@ -140,7 +140,7 @@ public abstract class AbstractActor<T>
      */
     protected Task<Void> clearState()
     {
-        return stateProvider.clearState(reference, state).thenRun(this::createDefaultState);
+        return stateExtension.clearState(reference, state).thenRun(this::createDefaultState);
     }
 
     /**

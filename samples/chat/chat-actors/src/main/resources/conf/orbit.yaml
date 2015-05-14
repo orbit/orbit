@@ -30,7 +30,7 @@ orbit.actors.clusterName: chat
 orbit.actors.nodeName: chat-backend
 
 orbit.actors.extensions:
-  - !!com.ea.orbit.actors.extensions.mongodb.MongoDBStorageProvider
+  - !!com.ea.orbit.actors.extensions.mongodb.MongoDBStorageExtension
     host: localhost
     port: 27017
     database: chat

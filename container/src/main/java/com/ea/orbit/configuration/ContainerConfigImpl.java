@@ -36,7 +36,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-public class OrbitPropertiesImpl extends Properties implements OrbitProperties
+public class ContainerConfigImpl extends Properties implements ContainerConfig
 {
     private static final long serialVersionUID = 1L;
 
@@ -152,7 +152,7 @@ public class OrbitPropertiesImpl extends Properties implements OrbitProperties
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
-    public void putAll(final OrbitProperties other)
+    public void putAll(final ContainerConfig other)
     {
         super.putAll((Map) other);
     }

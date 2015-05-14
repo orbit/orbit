@@ -100,12 +100,12 @@ public class PostgreSQLPersistenceTest
     public Stage createStage() throws Exception
     {
         Stage stage = new Stage();
-        final PostgreSQLStorageExtension storageProvider = new PostgreSQLStorageExtension();
-        storageProvider.setPort(5432);
-        storageProvider.setDatabase("orbit");
-        storageProvider.setUsername("postgres");
-        storageProvider.setPassword(null);
-        stage.addExtension(storageProvider);
+        final PostgreSQLStorageExtension storageExtension = new PostgreSQLStorageExtension();
+        storageExtension.setPort(5432);
+        storageExtension.setDatabase("orbit");
+        storageExtension.setUsername("postgres");
+        storageExtension.setPassword(null);
+        stage.addExtension(storageExtension);
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().get();

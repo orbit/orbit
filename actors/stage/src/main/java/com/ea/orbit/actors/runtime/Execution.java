@@ -33,13 +33,12 @@ import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.annotation.StatelessWorker;
-import com.ea.orbit.actors.annotation.StorageProvider;
+import com.ea.orbit.actors.annotation.StorageExtension;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.ActorClassFinder;
 import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
-import com.ea.orbit.actors.extensions.StorageExtension;
 import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
@@ -397,11 +396,11 @@ public class Execution implements Runtime
                     final AbstractActor<?> actor = (AbstractActor<?>) newInstance;
                     actor.reference = entry.reference;
 
-                    actor.stateProvider = getStorageExtensionFor(actor);
+                    actor.stateExtension = getStorageExtensionFor(actor);
 
                     Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preActivation(actor))).join();
 
-                    if (actor.stateProvider != null)
+                    if (actor.stateExtension != null)
                     {
                         try
                         {
@@ -455,12 +454,12 @@ public class Execution implements Runtime
         {
             return null;
         }
-        StorageProvider ann = actor.getClass().getAnnotation(StorageProvider.class);
-        String providerName = ann == null ? "default" : ann.value();
+        StorageExtension ann = actor.getClass().getAnnotation(StorageExtension.class);
+        String extensionName = ann == null ? "default" : ann.value();
 
         // selects the fist provider with the right name
         return (T) extensions.stream()
-                .filter(p -> (p instanceof StorageExtension) && providerName.equals(((StorageExtension) p).getName()))
+                .filter(p -> (p instanceof com.ea.orbit.actors.extensions.StorageExtension) && extensionName.equals(((com.ea.orbit.actors.extensions.StorageExtension) p).getName()))
                 .findFirst()
                 .orElse(null);
     }

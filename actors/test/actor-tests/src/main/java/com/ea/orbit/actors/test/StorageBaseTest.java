@@ -119,7 +119,7 @@ public abstract class StorageBaseTest
     public Stage createStage() throws Exception
     {
         Stage stage = new Stage();
-        stage.addExtension(getStorageProvider());
+        stage.addExtension(getStorageExtension());
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().get();
@@ -141,7 +141,7 @@ public abstract class StorageBaseTest
 
     public abstract Class<? extends StorageTest> getActorInterfaceClass();
 
-    public abstract ActorExtension getStorageProvider();
+    public abstract ActorExtension getStorageExtension();
 
     public abstract void initStorage();
 

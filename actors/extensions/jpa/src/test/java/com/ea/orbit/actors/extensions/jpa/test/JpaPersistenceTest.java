@@ -52,11 +52,11 @@ public class JpaPersistenceTest extends StorageBaseTest
     }
 
     @Override
-    public ActorExtension getStorageProvider()
+    public ActorExtension getStorageExtension()
     {
-        final JpaStorageExtension storageProvider = new JpaStorageExtension();
-        storageProvider.setPersistenceUnit("jpa-storage-test");
-        return storageProvider;
+        final JpaStorageExtension storageExtension = new JpaStorageExtension();
+        storageExtension.setPersistenceUnit("jpa-storage-test");
+        return storageExtension;
     }
 
     @Override

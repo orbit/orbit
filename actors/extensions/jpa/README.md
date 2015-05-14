@@ -1,7 +1,7 @@
-JPA Storage Provider
+JPA Storage Extension
 ============
 
-This provider materializes states in relational databases.
+This extension materializes states in relational databases.
 
 Requirements
 =======
