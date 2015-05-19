@@ -37,6 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public abstract class StorageBaseTest
 {
@@ -59,20 +60,23 @@ public abstract class StorageBaseTest
         // not a load test "per se" but rather a test with more than a few calls.
         OrbitStage stage = createStage();
         assertEquals(0, count());
-        for(int t=0;t< heavyTestSize();t++){
-            String id =""+t;
+        for (int t = 0; t < heavyTestSize(); t++)
+        {
+            String id = "" + t;
             IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), id);
-            helloActor.sayHello("Meep Meep"+t).join();
+            helloActor.sayHello("Meep Meep" + t).join();
         }
         assertEquals(heavyTestSize(), count());
-        for(int t=0;t< heavyTestSize();t++){
-            String id =""+t;
+        for (int t = 0; t < heavyTestSize(); t++)
+        {
+            String id = "" + t;
             IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), id);
-            helloActor.sayHello("Meep Meep"+t).join();
-            assertEquals(readState(id).lastName(), "Meep Meep"+t);
+            helloActor.sayHello("Meep Meep" + t).join();
+            assertEquals(readState(id).lastName(), "Meep Meep" + t);
         }
-        for(int t=0;t< heavyTestSize();t++){
-            String id =""+t;
+        for (int t = 0; t < heavyTestSize(); t++)
+        {
+            String id = "" + t;
             IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), id);
             helloActor.clear().join();
         }
@@ -114,6 +118,29 @@ public abstract class StorageBaseTest
         assertEquals(1, count());
         helloActor.sayHello("Peem Peem").join();
         assertEquals(readState("300").lastName(), "Peem Peem");
+    }
+
+    @Test
+    public void checkReminderTest() throws Exception
+    {
+        OrbitStage stage = createStage();
+        assertEquals(0, count());
+        IReminderTestActor actor = IActor.getReference(IReminderTestActor.class, "999");
+        actor.startReminder().join();
+        int count = 0;
+        while (ReminderTestActor.waiting)
+        {
+            Thread.sleep(100);
+            count++;
+            if (count > 15)
+            {
+                fail("timeout");
+            }
+        }
+        if (count < 10)
+        {
+            fail("too early");
+        }
     }
 
     public OrbitStage createStage() throws Exception
