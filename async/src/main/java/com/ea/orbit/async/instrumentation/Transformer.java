@@ -134,15 +134,16 @@ public class Transformer implements ClassFileTransformer
             }
             return null;
         }
-        catch (Exception e)
+        catch (Exception | Error e)
         {
             // TODO: better formatting.
             // Avoid using slf4j or any dependency here.
             // this is supposed to be a critical error.
             // it should be ok to write directly to the syserr.
             // Alternatively using the standard java logging is also a possibility.
-            e.printStackTrace();
-            throw new RuntimeException(e);
+            final RuntimeException exception = new RuntimeException("Error instrumenting: " + className, e);
+            exception.printStackTrace();
+            throw exception;
         }
     }
 
