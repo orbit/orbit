@@ -26,14 +26,15 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.providers.jpa;
+package com.ea.orbit.actors.test;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Remindable;
+import com.ea.orbit.concurrent.Task;
 
-@Entity
-@Table(name = "orbit_generic_data")
-public class JpaGenericData extends JpaState
+public interface ReminderTest extends Actor, Remindable
 {
-    public String jsonData;
+
+    Task<Void> startReminder();
+
 }

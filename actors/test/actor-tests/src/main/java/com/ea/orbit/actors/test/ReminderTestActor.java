@@ -28,13 +28,13 @@
 
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.TickStatus;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.concurrent.TimeUnit;
 
-public class ReminderTestActor extends OrbitActor implements IReminderTestActor
+public class ReminderTestActor extends AbstractActor implements ReminderTest
 {
     public static boolean waiting;
 

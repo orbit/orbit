@@ -63,21 +63,21 @@ public abstract class StorageBaseTest
         for (int t = 0; t < heavyTestSize(); t++)
         {
             String id = "" + t;
-            StorageTest helloActor = IActor.getReference(getActorInterfaceClass(), id);
+            StorageTest helloActor = Actor.getReference(getActorInterfaceClass(), id);
             helloActor.sayHello("Meep Meep" + t).join();
         }
         assertEquals(heavyTestSize(), count());
         for (int t = 0; t < heavyTestSize(); t++)
         {
             String id = "" + t;
-            StorageTest helloActor = IActor.getReference(getActorInterfaceClass(), id);
+            StorageTest helloActor = Actor.getReference(getActorInterfaceClass(), id);
             helloActor.sayHello("Meep Meep" + t).join();
             assertEquals(readState(id).lastName(), "Meep Meep" + t);
         }
         for (int t = 0; t < heavyTestSize(); t++)
         {
             String id = "" + t;
-            StorageTest helloActor = IActor.getReference(getActorInterfaceClass(), id);
+            StorageTest helloActor = Actor.getReference(getActorInterfaceClass(), id);
             helloActor.clear().join();
         }
         assertEquals(0, count());
@@ -123,9 +123,9 @@ public abstract class StorageBaseTest
     @Test
     public void checkReminderTest() throws Exception
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         assertEquals(0, count());
-        IReminderTestActor actor = IActor.getReference(IReminderTestActor.class, "999");
+        ReminderTest actor = Actor.getReference(ReminderTest.class, "999");
         actor.startReminder().join();
         int count = 0;
         while (ReminderTestActor.waiting)
