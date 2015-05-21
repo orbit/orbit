@@ -28,9 +28,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.providers.IOrbitProvider;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.extensions.ActorExtension;
 
 import org.junit.After;
 import org.junit.Before;
@@ -47,9 +47,9 @@ public abstract class StorageBaseTest
     @Test
     public void checkWritesTest() throws Exception
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         assertEquals(0, count());
-        IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), "300");
+        StorageTest helloActor = Actor.getReference(getActorInterfaceClass(), "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(1, count());
     }
@@ -58,26 +58,26 @@ public abstract class StorageBaseTest
     public void heavyTest() throws Exception
     {
         // not a load test "per se" but rather a test with more than a few calls.
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         assertEquals(0, count());
         for (int t = 0; t < heavyTestSize(); t++)
         {
             String id = "" + t;
-            IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), id);
+            StorageTest helloActor = Actor.getReference(getActorInterfaceClass(), id);
             helloActor.sayHello("Meep Meep" + t).join();
         }
         assertEquals(heavyTestSize(), count());
         for (int t = 0; t < heavyTestSize(); t++)
         {
             String id = "" + t;
-            IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), id);
+            StorageTest helloActor = Actor.getReference(getActorInterfaceClass(), id);
             helloActor.sayHello("Meep Meep" + t).join();
             assertEquals(readState(id).lastName(), "Meep Meep" + t);
         }
         for (int t = 0; t < heavyTestSize(); t++)
         {
             String id = "" + t;
-            IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), id);
+            StorageTest helloActor = Actor.getReference(getActorInterfaceClass(), id);
             helloActor.clear().join();
         }
         assertEquals(0, count());
@@ -86,8 +86,8 @@ public abstract class StorageBaseTest
     @Test
     public void checkReadTest() throws Exception
     {
-        OrbitStage stage = createStage();
-        IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), "300");
+        Stage stage = createStage();
+        StorageTest helloActor = Actor.getReference(getActorInterfaceClass(), "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(readState("300").lastName(), "Meep Meep");
     }
@@ -95,11 +95,11 @@ public abstract class StorageBaseTest
     @Test
     public void checkClearTest() throws Exception
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         assertEquals(0, count());
-        IStorageTestActor helloActor1 = IActor.getReference(getActorInterfaceClass(), "300");
+        StorageTest helloActor1 = Actor.getReference(getActorInterfaceClass(), "300");
         helloActor1.sayHello("Meep Meep").join();
-        IStorageTestActor helloActor2 = IActor.getReference(getActorInterfaceClass(), "301");
+        StorageTest helloActor2 = Actor.getReference(getActorInterfaceClass(), "301");
         helloActor2.sayHello("Meep Meep").join();
         assertEquals(2, count());
         helloActor1.clear().join();
@@ -111,9 +111,9 @@ public abstract class StorageBaseTest
     @Test
     public void checkUpdateTest() throws Exception
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         assertEquals(0, count());
-        IStorageTestActor helloActor = IActor.getReference(getActorInterfaceClass(), "300");
+        StorageTest helloActor = Actor.getReference(getActorInterfaceClass(), "300");
         helloActor.sayHello("Meep Meep").join();
         assertEquals(1, count());
         helloActor.sayHello("Peem Peem").join();
@@ -123,9 +123,9 @@ public abstract class StorageBaseTest
     @Test
     public void checkReminderTest() throws Exception
     {
-        OrbitStage stage = createStage();
+        Stage stage = createStage();
         assertEquals(0, count());
-        IReminderTestActor actor = IActor.getReference(IReminderTestActor.class, "999");
+        ReminderTest actor = Actor.getReference(ReminderTest.class, "999");
         actor.startReminder().join();
         int count = 0;
         while (ReminderTestActor.waiting)
@@ -143,10 +143,10 @@ public abstract class StorageBaseTest
         }
     }
 
-    public OrbitStage createStage() throws Exception
+    public Stage createStage() throws Exception
     {
-        OrbitStage stage = new OrbitStage();
-        stage.addProvider(getStorageProvider());
+        Stage stage = new Stage();
+        stage.addExtension(getStorageExtension());
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().get();
@@ -166,9 +166,9 @@ public abstract class StorageBaseTest
         closeStorage();
     }
 
-    public abstract Class<? extends IStorageTestActor> getActorInterfaceClass();
+    public abstract Class<? extends StorageTest> getActorInterfaceClass();
 
-    public abstract IOrbitProvider getStorageProvider();
+    public abstract ActorExtension getStorageExtension();
 
     public abstract void initStorage();
 
@@ -178,7 +178,7 @@ public abstract class StorageBaseTest
 
     public abstract int heavyTestSize();
 
-    public abstract IStorageTestState readState(String identity);
+    public abstract StorageTestState readState(String identity);
 
 
 }

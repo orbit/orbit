@@ -28,10 +28,10 @@
 
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.test.actors.IStorage1Actor;
-import com.ea.orbit.actors.test.actors.IStorage2Actor;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.test.actors.Storage1;
+import com.ea.orbit.actors.test.actors.Storage2;
 
 import org.junit.Test;
 
@@ -49,16 +49,16 @@ public class MultipleStorageTest extends ActorBaseTest
     @Test
     public void checkWritesTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
+        Stage stage1 = createStage();
         assertEquals(0, fakeDatabase1.values().size());
         assertEquals(0, fakeDatabase2.values().size());
 
-        IStorage1Actor storage1A = IActor.getReference(IStorage1Actor.class, "301");
-        IStorage1Actor storage1B = IActor.getReference(IStorage1Actor.class, "302");
-        IStorage1Actor storage1C = IActor.getReference(IStorage1Actor.class, "303");
-        IStorage1Actor storage1D = IActor.getReference(IStorage1Actor.class, "304");
-        IStorage2Actor storage2A = IActor.getReference(IStorage2Actor.class, "400");
-        IStorage2Actor storage2B = IActor.getReference(IStorage2Actor.class, "401");
+        Storage1 storage1A = Actor.getReference(Storage1.class, "301");
+        Storage1 storage1B = Actor.getReference(Storage1.class, "302");
+        Storage1 storage1C = Actor.getReference(Storage1.class, "303");
+        Storage1 storage1D = Actor.getReference(Storage1.class, "304");
+        Storage2 storage2A = Actor.getReference(Storage2.class, "400");
+        Storage2 storage2B = Actor.getReference(Storage2.class, "401");
 
         storage1A.put("I").join();
         storage1B.put("am").join();
@@ -72,14 +72,14 @@ public class MultipleStorageTest extends ActorBaseTest
         assertEquals(4, fakeDatabase1.values().size());
         assertEquals(2, fakeDatabase2.values().size());
 
-        OrbitStage stage2 = createStage();
+        Stage stage2 = createStage();
 
-        IStorage1Actor storage1AA = IActor.getReference(IStorage1Actor.class, "301");
-        IStorage1Actor storage1BB = IActor.getReference(IStorage1Actor.class, "302");
-        IStorage1Actor storage1CC = IActor.getReference(IStorage1Actor.class, "303");
-        IStorage1Actor storage1DD = IActor.getReference(IStorage1Actor.class, "304");
-        IStorage2Actor storage2AA = IActor.getReference(IStorage2Actor.class, "400");
-        IStorage2Actor storage2BB = IActor.getReference(IStorage2Actor.class, "401");
+        Storage1 storage1AA = Actor.getReference(Storage1.class, "301");
+        Storage1 storage1BB = Actor.getReference(Storage1.class, "302");
+        Storage1 storage1CC = Actor.getReference(Storage1.class, "303");
+        Storage1 storage1DD = Actor.getReference(Storage1.class, "304");
+        Storage2 storage2AA = Actor.getReference(Storage2.class, "400");
+        Storage2 storage2BB = Actor.getReference(Storage2.class, "401");
 
         assertEquals("I", storage1AA.get().join());
         assertEquals("am", storage1BB.get().join());
@@ -91,14 +91,14 @@ public class MultipleStorageTest extends ActorBaseTest
     }
 
     @Override
-    public OrbitStage createStage() throws ExecutionException, InterruptedException
+    public Stage createStage() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage = new OrbitStage();
-        stage.setMode(OrbitStage.StageMode.HOST);
+        Stage stage = new Stage();
+        stage.setMode(Stage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
-        stage.addProvider(new FakeStorageProvider("default", fakeDatabase1));
-        stage.addProvider(new FakeStorageProvider("fake2", fakeDatabase2));
+        stage.addExtension(new FakeStorageExtension("default", fakeDatabase1));
+        stage.addExtension(new FakeStorageExtension("fake2", fakeDatabase2));
         stage.setClock(clock);
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());

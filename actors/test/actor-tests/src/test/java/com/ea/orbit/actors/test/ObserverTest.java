@@ -29,10 +29,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.test.actors.ISomeChatObserver;
-import com.ea.orbit.actors.test.actors.ISomeChatRoom;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.test.actors.SomeChatRoom;
 import com.ea.orbit.concurrent.Task;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -50,12 +49,12 @@ public class ObserverTest extends ActorBaseTest
 {
     String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
 
-    public static class SomeChatObserver implements ISomeChatObserver
+    public static class SomeChatObserver implements com.ea.orbit.actors.test.actors.SomeChatObserver
     {
-        BlockingQueue<Pair<ISomeChatObserver, String>> messagesReceived = new LinkedBlockingQueue<>();
+        BlockingQueue<Pair<com.ea.orbit.actors.test.actors.SomeChatObserver, String>> messagesReceived = new LinkedBlockingQueue<>();
 
         @Override
-        public Task<Void> receiveMessage(final ISomeChatObserver sender, final String message)
+        public Task<Void> receiveMessage(final com.ea.orbit.actors.test.actors.SomeChatObserver sender, final String message)
         {
             messagesReceived.add(Pair.of(sender, message));
             return Task.done();
@@ -66,11 +65,11 @@ public class ObserverTest extends ActorBaseTest
     @Test
     public void avoidReinsertionTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
+        Stage stage1 = createStage();
         SomeChatObserver observer = new SomeChatObserver();
-        ISomeChatObserver ref1 = stage1.getObserverReference(ISomeChatObserver.class, observer);
+        com.ea.orbit.actors.test.actors.SomeChatObserver ref1 = stage1.getObserverReference(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer);
         assertNotNull(ref1);
-        ISomeChatObserver ref2 = stage1.getObserverReference(ISomeChatObserver.class, observer);
+        com.ea.orbit.actors.test.actors.SomeChatObserver ref2 = stage1.getObserverReference(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer);
         assertNotNull(ref2);
         assertSame(ref1, ref2);
     }
@@ -78,14 +77,14 @@ public class ObserverTest extends ActorBaseTest
     @Test
     public void basicObserverTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        ISomeChatRoom chatRoom = IActor.getReference(ISomeChatRoom.class, "1");
+        Stage stage1 = createStage();
+        SomeChatRoom chatRoom = Actor.getReference(SomeChatRoom.class, "1");
         SomeChatObserver observer = new SomeChatObserver();
-        final ISomeChatObserver observerReference = stage1.getObserverReference(ISomeChatObserver.class, observer);
+        final com.ea.orbit.actors.test.actors.SomeChatObserver observerReference = stage1.getObserverReference(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer);
         assertNotNull(observerReference);
         chatRoom.join(observerReference).get();
         chatRoom.sendMessage(observerReference, "bla").get();
-        Pair<ISomeChatObserver, String> m = observer.messagesReceived.poll(5, TimeUnit.SECONDS);
+        Pair<com.ea.orbit.actors.test.actors.SomeChatObserver, String> m = observer.messagesReceived.poll(5, TimeUnit.SECONDS);
         assertNotNull(m);
         assertEquals("bla", m.getRight());
     }
@@ -93,12 +92,12 @@ public class ObserverTest extends ActorBaseTest
     @Test
     public void observerSerializationTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        ISomeChatRoom chatRoom = IActor.getReference(ISomeChatRoom.class, "1");
+        Stage stage1 = createStage();
+        SomeChatRoom chatRoom = Actor.getReference(SomeChatRoom.class, "1");
         SomeChatObserver observer = new SomeChatObserver();
         chatRoom.join(observer).get();
         chatRoom.sendMessage(observer, "bla").get();
-        Pair<ISomeChatObserver, String> m = observer.messagesReceived.poll(5, TimeUnit.SECONDS);
+        Pair<com.ea.orbit.actors.test.actors.SomeChatObserver, String> m = observer.messagesReceived.poll(5, TimeUnit.SECONDS);
         assertNotNull(m);
         assertEquals("bla", m.getRight());
     }
@@ -106,28 +105,28 @@ public class ObserverTest extends ActorBaseTest
     @Test
     public void twoObserversTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage stage2 = createStage();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
 
         SomeChatObserver observer1 = new SomeChatObserver();
-        final ISomeChatObserver observerReference1 = stage1.getObserverReference(ISomeChatObserver.class, observer1);
+        final com.ea.orbit.actors.test.actors.SomeChatObserver observerReference1 = stage1.getObserverReference(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer1);
 
         SomeChatObserver observer2 = new SomeChatObserver();
-        final ISomeChatObserver observerReference2 = stage2.getObserverReference(ISomeChatObserver.class, observer2);
+        final com.ea.orbit.actors.test.actors.SomeChatObserver observerReference2 = stage2.getObserverReference(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer2);
 
 
-        ISomeChatRoom chatRoom = IActor.getReference(ISomeChatRoom.class, "1");
+        SomeChatRoom chatRoom = Actor.getReference(SomeChatRoom.class, "1");
 
         stage1.bind();
         chatRoom.join(observerReference1).join();
         chatRoom.join(observerReference2).join();
         chatRoom.sendMessage(observerReference1, "bla").join();
 
-        Pair<ISomeChatObserver, String> m = observer1.messagesReceived.poll(5, TimeUnit.SECONDS);
+        Pair<com.ea.orbit.actors.test.actors.SomeChatObserver, String> m = observer1.messagesReceived.poll(5, TimeUnit.SECONDS);
         assertNotNull(m);
         assertEquals("bla", m.getRight());
 
-        Pair<ISomeChatObserver, String> m2 = observer2.messagesReceived.poll(5, TimeUnit.SECONDS);
+        Pair<com.ea.orbit.actors.test.actors.SomeChatObserver, String> m2 = observer2.messagesReceived.poll(5, TimeUnit.SECONDS);
         assertNotNull(m2);
         assertEquals("bla", m2.getRight());
     }
@@ -136,14 +135,14 @@ public class ObserverTest extends ActorBaseTest
     @Test
     public void twoObserversNoRefTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage stage2 = createStage();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
 
         SomeChatObserver observer1 = new SomeChatObserver();
         SomeChatObserver observer2 = new SomeChatObserver();
 
-        ISomeChatRoom chatRoom_s1 = IActor.getReference(ISomeChatRoom.class, "1");
-        ISomeChatRoom chatRoom_s2 = IActor.getReference(ISomeChatRoom.class, "1");
+        SomeChatRoom chatRoom_s1 = Actor.getReference(SomeChatRoom.class, "1");
+        SomeChatRoom chatRoom_s2 = Actor.getReference(SomeChatRoom.class, "1");
 
         stage1.bind();
         chatRoom_s1.join(observer1).join();
@@ -152,11 +151,11 @@ public class ObserverTest extends ActorBaseTest
         stage1.bind();
         chatRoom_s1.sendMessage(observer1, "bla").join();
 
-        Pair<ISomeChatObserver, String> m = observer1.messagesReceived.poll(5, TimeUnit.SECONDS);
+        Pair<com.ea.orbit.actors.test.actors.SomeChatObserver, String> m = observer1.messagesReceived.poll(5, TimeUnit.SECONDS);
         assertNotNull(m);
         assertEquals("bla", m.getRight());
 
-        Pair<ISomeChatObserver, String> m2 = observer2.messagesReceived.poll(5, TimeUnit.SECONDS);
+        Pair<com.ea.orbit.actors.test.actors.SomeChatObserver, String> m2 = observer2.messagesReceived.poll(5, TimeUnit.SECONDS);
         assertNotNull(m2);
         assertEquals("bla", m2.getRight());
     }
@@ -164,10 +163,10 @@ public class ObserverTest extends ActorBaseTest
     @Test
     public void observerGarbageCollection() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
+        Stage stage1 = createStage();
 
         SomeChatObserver observer1 = new SomeChatObserver();
-        final ISomeChatObserver ref1 = stage1.getObserverReference(observer1);
+        final com.ea.orbit.actors.test.actors.SomeChatObserver ref1 = stage1.getObserverReference(observer1);
 
         ref1.receiveMessage(null, "hello").join();
         observer1 = null;

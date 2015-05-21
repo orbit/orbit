@@ -28,13 +28,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.customannotation;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.actors.test.FakeClusterPeer;
-import com.ea.orbit.actors.test.FakeStorageProvider;
-import com.ea.orbit.samples.annotation.examples.IMemoizeExample;
-import com.ea.orbit.samples.annotation.examples.IOnlyExample;
+import com.ea.orbit.actors.test.FakeStorageExtension;
+import com.ea.orbit.samples.annotation.examples.MemoizeExample;
+import com.ea.orbit.samples.annotation.examples.OnlyExample;
 import com.ea.orbit.samples.annotation.examples.MemoizeExampleActor;
 import com.ea.orbit.samples.annotation.examples.OnlyExampleActor;
 import com.ea.orbit.samples.annotation.memoize.MemoizeExtension;
@@ -51,9 +51,9 @@ public class AnnotationTest extends ActorBaseTest
     @Test
     public void onlyIfActivatedTest()
     {
-        OrbitStage stage = initStage();
+        Stage stage = initStage();
 
-        IOnlyExample only = IActor.getReference(IOnlyExample.class, "234");
+        OnlyExample only = Actor.getReference(OnlyExample.class, "234");
         only.doSomethingSpecial("A").join();
         only.doSomethingSpecial("A").join();
         only.doSomethingSpecial("A").join();
@@ -72,9 +72,9 @@ public class AnnotationTest extends ActorBaseTest
     @Test
     public void memoizeTest()
     {
-        OrbitStage stage = initStage();
+        Stage stage = initStage();
 
-        IMemoizeExample memoize = IActor.getReference(IMemoizeExample.class, "45");
+        MemoizeExample memoize = Actor.getReference(MemoizeExample.class, "45");
 
         long firstA = memoize.getNow("A").join();
         sleep(1000);
@@ -114,18 +114,18 @@ public class AnnotationTest extends ActorBaseTest
         }
     }
 
-    public OrbitStage initStage()
+    public Stage initStage()
     {
-        OrbitStage stage = new OrbitStage();
-        stage.setMode(OrbitStage.StageMode.HOST);
+        Stage stage = new Stage();
+        stage.setMode(Stage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
 
 
-        stage.addProvider(new MemoizeExtension());
-        stage.addProvider(new OnlyIfActivatedExtension());
+        stage.addExtension(new MemoizeExtension());
+        stage.addExtension(new OnlyIfActivatedExtension());
 
-        stage.addProvider(new FakeStorageProvider(fakeDatabase));
+        stage.addExtension(new FakeStorageExtension(fakeDatabase));
 
         stage.setClock(clock);
         stage.setClusterName(clusterName);

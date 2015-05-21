@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.container.test;
 
-import com.ea.orbit.container.OrbitContainer;
+import com.ea.orbit.container.Container;
 import com.ea.orbit.container.test.module.test.Class1;
 import com.ea.orbit.container.test.module.test.Class2;
 import com.ea.orbit.container.test.module.test.Module1;
@@ -63,7 +63,7 @@ public class ModuleTest
     {
         final Module1 module = new Module1();
 
-        final OrbitContainer container = new OrbitContainer();
+        final Container container = new Container();
         container.add(Module1.class);
         container.start();
         final Class2 c2 = container.get(Class2.class);

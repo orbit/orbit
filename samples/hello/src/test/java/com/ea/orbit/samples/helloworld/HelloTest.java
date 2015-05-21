@@ -28,9 +28,9 @@
 
 package com.ea.orbit.samples.helloworld;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.samples.hello.IHello;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.samples.hello.Hello;
 
 import org.junit.Test;
 
@@ -40,12 +40,12 @@ public class HelloTest
     public void test()
     {
         final String clusterName = "helloWorldTestCluster." + System.currentTimeMillis();
-        OrbitStage stage1 = initStage(clusterName, "stage1");
-        OrbitStage stage2 = initStage(clusterName, "stage2");
+        Stage stage1 = initStage(clusterName, "stage1");
+        Stage stage2 = initStage(clusterName, "stage2");
         System.out.println("Stages initialized");
 
-        IHello helloFrom1 = IActor.getReference(IHello.class, "0");
-        IHello helloFrom2 = IActor.getReference(IHello.class, "0");
+        Hello helloFrom1 = Actor.getReference(Hello.class, "0");
+        Hello helloFrom2 = Actor.getReference(Hello.class, "0");
 
         stage1.bind();
         System.out.println(helloFrom1.sayHello("Hi from 01").join());
@@ -53,9 +53,9 @@ public class HelloTest
         System.out.println(helloFrom2.sayHello("Hi from 02").join());
     }
 
-    public static OrbitStage initStage(String clusterId, String stageId)
+    public static Stage initStage(String clusterId, String stageId)
     {
-        OrbitStage stage = new OrbitStage();
+        Stage stage = new Stage();
         stage.setClusterName(clusterId);
         stage.start().join();
         return stage;

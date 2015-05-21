@@ -28,19 +28,18 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.IActorObserver;
-import com.ea.orbit.actors.IAddressable;
-import com.ea.orbit.actors.IRemindable;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.ActorObserver;
+import com.ea.orbit.actors.Addressable;
+import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.annotation.StatelessWorker;
-import com.ea.orbit.actors.annotation.StorageProvider;
-import com.ea.orbit.actors.cluster.INodeAddress;
-import com.ea.orbit.actors.providers.IActorClassFinder;
-import com.ea.orbit.actors.providers.IInvokeHookProvider;
-import com.ea.orbit.actors.providers.ILifetimeProvider;
-import com.ea.orbit.actors.providers.IOrbitProvider;
-import com.ea.orbit.actors.providers.IStorageProvider;
-import com.ea.orbit.actors.providers.InvocationContext;
+import com.ea.orbit.actors.annotation.StorageExtension;
+import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.extensions.ActorClassFinder;
+import com.ea.orbit.actors.extensions.InvokeHookExtension;
+import com.ea.orbit.actors.extensions.LifetimeExtension;
+import com.ea.orbit.actors.extensions.ActorExtension;
+import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -77,18 +76,18 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class Execution implements IRuntime
+public class Execution implements Runtime
 {
 
     private static final Logger logger = LoggerFactory.getLogger(Execution.class);
     private final String runtimeIdentity;
-    private IActorClassFinder finder;
+    private ActorClassFinder finder;
     private Map<Class<?>, InterfaceDescriptor> descriptorMapByInterface = new HashMap<>();
     private Map<Integer, InterfaceDescriptor> descriptorMapByInterfaceId = new HashMap<>();
     private Map<EntryKey, ReferenceEntry> localActors = new ConcurrentHashMap<>();
-    private Map<EntryKey, IActorObserver> observerInstances = new MapMaker().weakValues().makeMap();
+    private Map<EntryKey, ActorObserver> observerInstances = new MapMaker().weakValues().makeMap();
     // from implementation to reference
-    private Map<IActorObserver, IActorObserver> observerReferences = new MapMaker().weakKeys().makeMap();
+    private Map<ActorObserver, ActorObserver> observerReferences = new MapMaker().weakKeys().makeMap();
 
     private Hosting hosting;
     private Messaging messaging;
@@ -103,18 +102,18 @@ public class Execution implements IRuntime
     private ExecutorService executor;
     private ActorFactoryGenerator dynamicReferenceFactory = new ActorFactoryGenerator();
 
-    private List<IOrbitProvider> orbitProviders = new ArrayList<>();
+    private List<ActorExtension> extensions = new ArrayList<>();
 
-    private final WeakReference<IRuntime> cachedRef = new WeakReference<>(this);
+    private final WeakReference<Runtime> cachedRef = new WeakReference<>(this);
 
-    private List<IInvokeHookProvider> hookProviders;
+    private List<InvokeHookExtension> hookExtensions;
 
-    private IHosting.NodeState state = IHosting.NodeState.RUNNING;
+    private NodeCapabilities.NodeState state = NodeCapabilities.NodeState.RUNNING;
 
     public Execution()
     {
         // the last runtime created will be the default.
-        Runtime.runtimeCreated(cachedRef);
+        ActorRuntime.runtimeCreated(cachedRef);
 
         final UUID uuid = UUID.randomUUID();
         final String encoded = Base64.getEncoder().encodeToString(
@@ -139,11 +138,11 @@ public class Execution implements IRuntime
 
     public boolean canActivateActor(String interfaceName, int interfaceId)
     {
-        if (state != IHosting.NodeState.RUNNING)
+        if (state != NodeCapabilities.NodeState.RUNNING)
         {
             return false;
         }
-        Class<IActor> aInterface = classForName(interfaceName);
+        Class<Actor> aInterface = classForName(interfaceName);
         final InterfaceDescriptor descriptor = getDescriptor(aInterface);
         if (descriptor == null || descriptor.cannotActivate)
         {
@@ -249,16 +248,16 @@ public class Execution implements IRuntime
                             return Task.done();
                         }
                         // TODO deactivation code
-                        if (singleActivation.instance instanceof OrbitActor)
+                        if (singleActivation.instance instanceof AbstractActor)
                         {
                             try
                             {
 
                                 bind();
-                                OrbitActor<?> orbitActor = (OrbitActor<?>) singleActivation.instance;
-                                Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preDeactivation(orbitActor)))
-                                        .thenCompose(() -> orbitActor.deactivateAsync())
-                                        .thenCompose(() -> Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.postDeactivation(orbitActor))))
+                                AbstractActor<?> actor = (AbstractActor<?>) singleActivation.instance;
+                                Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preDeactivation(actor)))
+                                        .thenCompose(() -> actor.deactivateAsync())
+                                        .thenCompose(() -> Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postDeactivation(actor))))
                                         .thenRun(() -> {
                                             singleActivation.instance = null;
                                             localActors.remove(key);
@@ -297,15 +296,15 @@ public class Execution implements IRuntime
                     }
                     else
                     {
-                        if (activation.instance instanceof OrbitActor)
+                        if (activation.instance instanceof AbstractActor)
                         {
                             try
                             {
                                 bind();
-                                OrbitActor<?> orbitActor = (OrbitActor<?>) activation.instance;
-                                Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preDeactivation(orbitActor)))
-                                        .thenCompose(() -> orbitActor.deactivateAsync())
-                                        .thenCompose(() -> Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.postDeactivation(orbitActor))))
+                                AbstractActor<?> actor = (AbstractActor<?>) activation.instance;
+                                Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preDeactivation(actor)))
+                                        .thenCompose(() -> actor.deactivateAsync())
+                                        .thenCompose(() -> Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postDeactivation(actor))))
                                         .thenRun(() -> {
                                             activation.instance = null;
                                         });
@@ -392,20 +391,20 @@ public class Execution implements IRuntime
             if (instance == null)
             {
                 Object newInstance = classForName(entry.descriptor.concreteClassName).newInstance();
-                if (newInstance instanceof OrbitActor)
+                if (newInstance instanceof AbstractActor)
                 {
-                    final OrbitActor<?> orbitActor = (OrbitActor<?>) newInstance;
-                    orbitActor.reference = entry.reference;
+                    final AbstractActor<?> actor = (AbstractActor<?>) newInstance;
+                    actor.reference = entry.reference;
 
-                    orbitActor.stateProvider = getStorageProviderFor(orbitActor);
+                    actor.stateExtension = getStorageExtensionFor(actor);
 
-                    Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.preActivation(orbitActor))).join();
+                    Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preActivation(actor))).join();
 
-                    if (orbitActor.stateProvider != null)
+                    if (actor.stateExtension != null)
                     {
                         try
                         {
-                            orbitActor.readState();
+                            actor.readState();
                         }
                         catch (Exception ex)
                         {
@@ -418,8 +417,8 @@ public class Execution implements IRuntime
                     }
                     instance = newInstance;
 
-                    orbitActor.activateAsync().join();
-                    Task.allOf(getAllProviders(ILifetimeProvider.class).stream().map(v -> v.postActivation(orbitActor))).join();
+                    actor.activateAsync().join();
+                    Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postActivation(actor))).join();
                 }
 
             }
@@ -428,39 +427,39 @@ public class Execution implements IRuntime
     }
 
 
-    public void setOrbitProviders(List<IOrbitProvider> orbitProviders)
+    public void setExtensions(List<ActorExtension> extensions)
     {
-        this.orbitProviders = orbitProviders;
+        this.extensions = extensions;
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends IOrbitProvider> T getFirstProvider(Class<T> itemType)
+    public <T extends ActorExtension> T getFirstExtension(Class<T> itemType)
     {
-        return (orbitProviders == null) ? null :
-                (T) orbitProviders.stream().filter(p -> itemType.isInstance(p)).findFirst().orElse(null);
+        return (extensions == null) ? null :
+                (T) extensions.stream().filter(p -> itemType.isInstance(p)).findFirst().orElse(null);
 
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends IOrbitProvider> List<T> getAllProviders(Class<T> itemType)
+    public <T extends ActorExtension> List<T> getAllExtensions(Class<T> itemType)
     {
-        return orbitProviders == null ? Collections.emptyList()
-                : (List<T>) orbitProviders.stream().filter(p -> itemType.isInstance(p)).collect(Collectors.toList());
+        return extensions == null ? Collections.emptyList()
+                : (List<T>) extensions.stream().filter(p -> itemType.isInstance(p)).collect(Collectors.toList());
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends IOrbitProvider> T getStorageProviderFor(OrbitActor actor)
+    public <T extends ActorExtension> T getStorageExtensionFor(AbstractActor actor)
     {
-        if (orbitProviders == null)
+        if (extensions == null)
         {
             return null;
         }
-        StorageProvider ann = actor.getClass().getAnnotation(StorageProvider.class);
-        String providerName = ann == null ? "default" : ann.value();
+        StorageExtension ann = actor.getClass().getAnnotation(StorageExtension.class);
+        String extensionName = ann == null ? "default" : ann.value();
 
         // selects the fist provider with the right name
-        return (T) orbitProviders.stream()
-                .filter(p -> (p instanceof IStorageProvider) && providerName.equals(((IStorageProvider) p).getName()))
+        return (T) extensions.stream()
+                .filter(p -> (p instanceof com.ea.orbit.actors.extensions.StorageExtension) && extensionName.equals(((com.ea.orbit.actors.extensions.StorageExtension) p).getName()))
                 .findFirst()
                 .orElse(null);
     }
@@ -478,7 +477,7 @@ public class Execution implements IRuntime
     public Task<?> stop()
     {
         // * refuse new actor activations
-        state = IHosting.NodeState.STOPPING;
+        state = NodeCapabilities.NodeState.STOPPING;
         hosting.notifyStateChange();
 
         // * deactivate all actors
@@ -489,14 +488,14 @@ public class Execution implements IRuntime
 
         // * stop processing new received messages (responses still work)
         // * notify rest of the cluster (no more observer messages)
-        state = IHosting.NodeState.STOPPED;
+        state = NodeCapabilities.NodeState.STOPPED;
         hosting.notifyStateChange();
 
         // * wait pending tasks execution
         executionSerializer.shutDown();
 
-        // ** stop all providers
-        Task.allOf(orbitProviders.stream().map(v -> v.stop())).join();
+        // ** stop all extensions
+        Task.allOf(extensions.stream().map(v -> v.stop())).join();
 
         // * cancel all pending messages, and prevents sending new ones
         //messaging.stop();
@@ -508,13 +507,13 @@ public class Execution implements IRuntime
      * Installs this observer into this node.
      * Can called several times the object is registered only once.
      *
-     * @param iClass   hint to the framework about which IActorObserver interface this object represents.
+     * @param iClass   hint to the framework about which ActorObserver interface this object represents.
      *                 Can be null if there are no ambiguities.
      * @param observer the object to install
      * @param <T>      The type of reference class returned.
      * @return a remote reference that can be sent to actors.
      */
-    public <T extends IActorObserver> T getObjectReference(final Class<T> iClass, final T observer)
+    public <T extends ActorObserver> T getObjectReference(final Class<T> iClass, final T observer)
     {
         return getObserverReference(iClass, observer, null);
     }
@@ -524,7 +523,7 @@ public class Execution implements IRuntime
      * If called twice for the same observer, the ids must match.
      * Usually it's recommended to let the framework choose the id;
      *
-     * @param iClass   hint to the framework about which IActorObserver interface this object represents.
+     * @param iClass   hint to the framework about which ActorObserver interface this object represents.
      *                 Can be null if there are no ambiguities.
      * @param observer the object to install
      * @param id       can be null, in this case the framework will choose an id.
@@ -533,9 +532,9 @@ public class Execution implements IRuntime
      * @throws java.lang.IllegalArgumentException if called twice with the same observer and different ids
      */
     @SuppressWarnings("unchecked")
-    public <T extends IActorObserver> T getObserverReference(Class<T> iClass, final T observer, String id)
+    public <T extends ActorObserver> T getObserverReference(Class<T> iClass, final T observer, String id)
     {
-        final IActorObserver ref = observerReferences.get(observer);
+        final ActorObserver ref = observerReferences.get(observer);
         if (ref != null)
         {
             if (id != null && !id.equals(((ActorReference<?>) ref).id))
@@ -548,13 +547,13 @@ public class Execution implements IRuntime
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends IActorObserver> T createObjectReference(final Class<T> iClass, final T observer, String objectId)
+    private <T extends ActorObserver> T createObjectReference(final Class<T> iClass, final T observer, String objectId)
     {
 
         ActorFactory<?> factory;
         if (iClass == null)
         {
-            factory = findFactoryFor(IActorObserver.class, observer);
+            factory = findFactoryFor(ActorObserver.class, observer);
         }
         else
         {
@@ -567,7 +566,7 @@ public class Execution implements IRuntime
         final String id = objectId != null ? objectId : UUID.randomUUID().toString();
 
         EntryKey key = new EntryKey(factory.getInterfaceId(), id);
-        final IActorObserver existingObserver = observerInstances.get(key);
+        final ActorObserver existingObserver = observerInstances.get(key);
         if (existingObserver == null)
         {
             final ActorReference<T> reference = (ActorReference<T>) factory.createReference(id);
@@ -577,7 +576,7 @@ public class Execution implements IRuntime
             }
             reference.runtime = Execution.this;
             observerInstances.putIfAbsent(key, observer);
-            observerReferences.putIfAbsent(observer, (IActorObserver) reference);
+            observerReferences.putIfAbsent(observer, (ActorObserver) reference);
             return (T) reference;
         }
         else if (observer != existingObserver)
@@ -587,7 +586,7 @@ public class Execution implements IRuntime
         return (T) observerReferences.get(observer);
     }
 
-    public Registration registerTimer(final OrbitActor<?> actor,
+    public Registration registerTimer(final AbstractActor<?> actor,
                                       final Callable<Task<?>> taskCallable,
                                       final long dueTime, final long period,
                                       final TimeUnit timeUnit)
@@ -632,7 +631,7 @@ public class Execution implements IRuntime
 
     public void bind()
     {
-        Runtime.setRuntime(this.cachedRef);
+        ActorRuntime.setRuntime(this.cachedRef);
     }
 
     public void bind(Object object)
@@ -651,15 +650,15 @@ public class Execution implements IRuntime
     }
 
     @Override
-    public Task<?> registerReminder(final IRemindable actor, final String reminderName, final long dueTime, final long period, final TimeUnit timeUnit)
+    public Task<?> registerReminder(final Remindable actor, final String reminderName, final long dueTime, final long period, final TimeUnit timeUnit)
     {
-        return getReference(IReminderController.class, "0").registerOrUpdateReminder(actor, reminderName, new Date(clock.millis() + timeUnit.toMillis(dueTime)), period, timeUnit);
+        return getReference(ReminderController.class, "0").registerOrUpdateReminder(actor, reminderName, new Date(clock.millis() + timeUnit.toMillis(dueTime)), period, timeUnit);
     }
 
     @Override
-    public Task<?> unregisterReminder(final IRemindable actor, final String reminderName)
+    public Task<?> unregisterReminder(final Remindable actor, final String reminderName)
     {
-        return getReference(IReminderController.class, "0").unregisterReminder(actor, reminderName);
+        return getReference(ReminderController.class, "0").unregisterReminder(actor, reminderName);
     }
 
     @Override
@@ -670,15 +669,15 @@ public class Execution implements IRuntime
 
     public void start()
     {
-        finder = getFirstProvider(IActorClassFinder.class);
+        finder = getFirstExtension(ActorClassFinder.class);
         if (finder == null)
         {
-            finder = new ActorClassFinder();
+            finder = new DefaultActorClassFinder();
             finder.start().join();
         }
 
-        getDescriptor(IHosting.class);
-        createObjectReference(IHosting.class, hosting, "");
+        getDescriptor(NodeCapabilities.class);
+        createObjectReference(NodeCapabilities.class, hosting, "");
 
         if (executor == null)
         {
@@ -686,16 +685,16 @@ public class Execution implements IRuntime
         }
         executionSerializer = new ExecutionSerializer<>(executor);
 
-        hookProviders = getAllProviders(IInvokeHookProvider.class);
+        hookExtensions = getAllExtensions(InvokeHookExtension.class);
 
-        orbitProviders.forEach(v -> v.start());
+        extensions.forEach(v -> v.start());
         // schedules the cleanup
         timer.schedule(new TimerTask()
         {
             @Override
             public void run()
             {
-                if (state == IHosting.NodeState.RUNNING)
+                if (state == NodeCapabilities.NodeState.RUNNING)
                 {
                     ForkJoinTask.adapt(() -> activationCleanup().join()).fork();
                 }
@@ -758,13 +757,13 @@ public class Execution implements IRuntime
         InterfaceDescriptor interfaceDescriptor = descriptorMapByInterface.get(aInterface);
         if (interfaceDescriptor == null)
         {
-            if (aInterface == IActor.class || aInterface == IActorObserver.class || !aInterface.isInterface())
+            if (aInterface == Actor.class || aInterface == ActorObserver.class || !aInterface.isInterface())
             {
                 return null;
             }
 
             interfaceDescriptor = new InterfaceDescriptor();
-            interfaceDescriptor.isObserver = IActorObserver.class.isAssignableFrom(aInterface);
+            interfaceDescriptor.isObserver = ActorObserver.class.isAssignableFrom(aInterface);
             interfaceDescriptor.factory = dynamicReferenceFactory.getFactoryFor(aInterface);
             interfaceDescriptor.invoker = (ActorInvoker<Object>) interfaceDescriptor.factory.getInvoker();
             descriptorMapByInterface.put(aInterface, interfaceDescriptor);
@@ -778,7 +777,7 @@ public class Execution implements IRuntime
         return descriptorMapByInterfaceId.get(interfaceId);
     }
 
-    public void onMessageReceived(final INodeAddress from,
+    public void onMessageReceived(final NodeAddress from,
                                   final boolean oneway, final int messageId, final int interfaceId, final int methodId,
                                   final Object key, final Object[] params)
     {
@@ -804,7 +803,7 @@ public class Execution implements IRuntime
     }
 
     // this method is executed serially by entryKey
-    private Task<?> handleOnMessageReceived(final EntryKey entryKey, final INodeAddress from,
+    private Task<?> handleOnMessageReceived(final EntryKey entryKey, final NodeAddress from,
                                             final boolean oneway, final int messageId, final int interfaceId,
                                             final int methodId, final Object key,
                                             final Object[] params)
@@ -813,7 +812,7 @@ public class Execution implements IRuntime
         final InterfaceDescriptor descriptor = getDescriptor(interfaceId);
         if (descriptor.isObserver)
         {
-            final IActorObserver observer = observerInstances.get(entryKey);
+            final ActorObserver observer = observerInstances.get(entryKey);
             if (observer == null)
             {
                 if (!oneway)
@@ -891,11 +890,11 @@ public class Execution implements IRuntime
     {
         ReferenceEntry theEntry;
         int methodId;
-        INodeAddress from;
+        NodeAddress from;
         long traceId;
         public static final AtomicLong counter = new AtomicLong(0L);
 
-        public MessageContext(final ReferenceEntry theEntry, final int methodId, final INodeAddress from)
+        public MessageContext(final ReferenceEntry theEntry, final int methodId, final NodeAddress from)
         {
             traceId = counter.incrementAndGet();
             this.theEntry = theEntry;
@@ -930,7 +929,7 @@ public class Execution implements IRuntime
             final InterfaceDescriptor descriptor,
             final int methodId,
             final Object[] params,
-            final INodeAddress from,
+            final NodeAddress from,
             final int messageId)
     {
         try
@@ -961,7 +960,7 @@ public class Execution implements IRuntime
         return Task.done();
     }
 
-    protected void sendResponseAndLogError(boolean oneway, final INodeAddress from, int messageId, Object result, Throwable exception)
+    protected void sendResponseAndLogError(boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
     {
         if (exception != null && logger.isErrorEnabled())
         {
@@ -1012,7 +1011,7 @@ public class Execution implements IRuntime
 
 
     @SuppressWarnings({ "unchecked" })
-    <T> T createReference(final INodeAddress a, final Class<T> iClass, String id)
+    <T> T createReference(final NodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
         ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference("");
@@ -1024,7 +1023,7 @@ public class Execution implements IRuntime
 
 
     @SuppressWarnings("unchecked")
-    public <T extends IActor> T getReference(final Class<T> iClass, final Object id)
+    public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
         ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
@@ -1039,16 +1038,16 @@ public class Execution implements IRuntime
      * Should only be used if the application knows for sure that an observer with the given id
      * indeed exists on that other node.
      * <p/>
-     * This is a low level use of orbit-actors, recommended only for IOrbitProviders.
+     * This is a low level use of orbit-actors, recommended only for ActorExtensions.
      *
      * @param address the other node address.
      * @param iClass  the IObserverClass
      * @param id      the id, must not be null
-     * @param <T>     the IActorObserver sub interface
+     * @param <T>     the ActorObserver sub interface
      * @return a remote reference to the observer
      */
     @SuppressWarnings("unchecked")
-    public <T extends IActorObserver> T getRemoteObserverReference(INodeAddress address, final Class<T> iClass, final Object id)
+    public <T extends ActorObserver> T getRemoteObserverReference(NodeAddress address, final Class<T> iClass, final Object id)
     {
         if (id == null)
         {
@@ -1065,14 +1064,14 @@ public class Execution implements IRuntime
         return (T) reference;
     }
 
-    public Task<?> sendMessage(IAddressable toReference, boolean oneWay, final int methodId, final Object[] params)
+    public Task<?> sendMessage(Addressable toReference, boolean oneWay, final int methodId, final Object[] params)
     {
         if (logger.isDebugEnabled())
         {
             logger.debug("sending message to " + toReference);
         }
         ActorReference<?> actorReference = (ActorReference<?>) toReference;
-        INodeAddress toNode = actorReference.address;
+        NodeAddress toNode = actorReference.address;
         if (toNode == null)
         {
             // TODO: Ensure that both paths encode exception the same way.
@@ -1082,28 +1081,28 @@ public class Execution implements IRuntime
         return messaging.sendMessage(toNode, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params);
     }
 
-    public Task<?> invoke(IAddressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
+    public Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
     {
-        if (hookProviders.size() == 0)
+        if (hookExtensions.size() == 0)
         {
             // no hooks
             return sendMessage(toReference, oneWay, methodId, params);
         }
 
-        Iterator<IInvokeHookProvider> it = hookProviders.iterator();
+        Iterator<InvokeHookExtension> it = hookExtensions.iterator();
 
-        // invoke the hook providers as a chain where one can
+        // invoke the hook extensions as a chain where one can
         // filter the input and output of the next.
         InvocationContext ctx = new InvocationContext()
         {
             @Override
-            public IRuntime getRuntime()
+            public Runtime getRuntime()
             {
                 return Execution.this;
             }
 
             @Override
-            public Task<?> invokeNext(final IAddressable toReference, final Method method, final int methodId, final Object[] params)
+            public Task<?> invokeNext(final Addressable toReference, final Method method, final int methodId, final Object[] params)
             {
                 if (it.hasNext())
                 {
@@ -1131,11 +1130,11 @@ public class Execution implements IRuntime
                 continue;
             }
             Activation act = entry.peekOldActivation();
-            if (act == null && state == IHosting.NodeState.RUNNING)
+            if (act == null && state == NodeCapabilities.NodeState.RUNNING)
             {
                 continue;
             }
-            if (state != IHosting.NodeState.RUNNING || act.lastAccess < cutOut)
+            if (state != NodeCapabilities.NodeState.RUNNING || act.lastAccess < cutOut)
             {
                 CompletableFuture<Object> future = new CompletableFuture<>();
                 final Supplier<Task<?>> task = () -> {
@@ -1182,12 +1181,12 @@ public class Execution implements IRuntime
         return listTask;
     }
 
-    public Task<INodeAddress> locateActor(final IAddressable actorReference, final boolean forceActivation)
+    public Task<NodeAddress> locateActor(final Addressable actorReference, final boolean forceActivation)
     {
         return hosting.locateActor(actorReference, false);
     }
 
-    public IHosting.NodeState getState()
+    public NodeCapabilities.NodeState getState()
     {
         return state;
     }

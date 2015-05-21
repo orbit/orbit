@@ -29,9 +29,9 @@
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
@@ -45,7 +45,7 @@ import static org.junit.Assert.*;
 @SuppressWarnings("unused")
 public class ExceptionalTest extends ActorBaseTest
 {
-    public interface IExceptionalThing extends IActor
+    public interface ExceptionalThing extends Actor
     {
         Task<String> justRespond();
 
@@ -53,7 +53,7 @@ public class ExceptionalTest extends ActorBaseTest
     }
 
     @SuppressWarnings("rawtypes")
-    public static class ExceptionalThing extends OrbitActor implements IExceptionalThing
+    public static class ExceptionalThingActor extends AbstractActor implements ExceptionalThing
     {
         public Task<String> justRespond()
         {
@@ -69,24 +69,24 @@ public class ExceptionalTest extends ActorBaseTest
     @Test
     public void noException() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
+        Stage stage1 = createStage();
+        final ExceptionalThing ref = Actor.getReference(ExceptionalThing.class, "0");
         assertEquals("resp", ref.justRespond().join());
     }
 
     @Test(expected = CompletionException.class)
     public void withException() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
+        Stage stage1 = createStage();
+        final ExceptionalThing ref = Actor.getReference(ExceptionalThing.class, "0");
         ref.justThrowAnException().join();
     }
 
     @Test
     public void catchingTheException() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
+        Stage stage1 = createStage();
+        final ExceptionalThing ref = Actor.getReference(ExceptionalThing.class, "0");
         try
         {
             ref.justThrowAnException().join();
@@ -102,8 +102,8 @@ public class ExceptionalTest extends ActorBaseTest
     @Test
     public void checkingTheException() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        final IExceptionalThing ref = IActor.getReference(IExceptionalThing.class, "0");
+        Stage stage1 = createStage();
+        final ExceptionalThing ref = Actor.getReference(ExceptionalThing.class, "0");
         final Task<String> fut = ref.justThrowAnException();
 
         final Throwable ex = fut.handle((r, e) -> e).join();

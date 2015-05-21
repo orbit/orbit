@@ -29,10 +29,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IAddressable;
+import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.annotation.StatelessWorker;
-import com.ea.orbit.actors.cluster.IClusterPeer;
-import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.actors.cluster.ClusterPeer;
+import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -53,18 +53,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
-public class Hosting implements IHosting, Startable
+public class Hosting implements NodeCapabilities, Startable
 {
     private static final Logger logger = LoggerFactory.getLogger(Hosting.class);
     private NodeTypeEnum nodeType;
-    private IClusterPeer clusterPeer;
+    private ClusterPeer clusterPeer;
 
-    private volatile Map<INodeAddress, NodeInfo> activeNodes = new HashMap<>(0);
+    private volatile Map<NodeAddress, NodeInfo> activeNodes = new HashMap<>(0);
     private volatile List<NodeInfo> serverNodes = new ArrayList<>(0);
     private final Object serverNodesUpdateMutex = new Object();
     private Execution execution;
-    private ConcurrentMap<ActorKey, INodeAddress> localAddressCache = new ConcurrentHashMap<>();
-    private volatile ConcurrentMap<ActorKey, INodeAddress> distributedDirectory;
+    private ConcurrentMap<ActorKey, NodeAddress> localAddressCache = new ConcurrentHashMap<>();
+    private volatile ConcurrentMap<ActorKey, NodeAddress> distributedDirectory;
     @Config("orbit.actors.timeToWaitForServersMillis")
     private long timeToWaitForServersMillis = 30000;
     private Random random = new Random();
@@ -94,14 +94,14 @@ public class Hosting implements IHosting, Startable
         this.nodeType = nodeType;
     }
 
-    public List<INodeAddress> getAllNodes()
+    public List<NodeAddress> getAllNodes()
     {
         return Collections.unmodifiableList(new ArrayList<>(activeNodes.keySet()));
     }
 
-    public List<INodeAddress> getServerNodes()
+    public List<NodeAddress> getServerNodes()
     {
-        final ArrayList<INodeAddress> set = new ArrayList<>(serverNodes.size());
+        final ArrayList<NodeAddress> set = new ArrayList<>(serverNodes.size());
         for (NodeInfo s : serverNodes)
         {
             set.add(s.address);
@@ -113,20 +113,20 @@ public class Hosting implements IHosting, Startable
     {
         for (NodeInfo info : activeNodes.values())
         {
-            info.hosting.nodeModeChanged(clusterPeer.localAddress(), execution.getState());
+            info.nodeCapabilities.nodeModeChanged(clusterPeer.localAddress(), execution.getState());
         }
     }
 
     private static class NodeInfo
     {
         boolean active;
-        INodeAddress address;
+        NodeAddress address;
         NodeState state = NodeState.RUNNING;
-        IHosting hosting;
+        NodeCapabilities nodeCapabilities;
         boolean cannotHostActors;
         final ConcurrentHashMap<String, Integer> canActivate = new ConcurrentHashMap<>();
 
-        public NodeInfo(final INodeAddress address)
+        public NodeInfo(final NodeAddress address)
         {
             this.address = address;
         }
@@ -144,7 +144,7 @@ public class Hosting implements IHosting, Startable
     }
 
     @Override
-    public Task<Void> nodeModeChanged(final INodeAddress nodeAddress, final NodeState newState)
+    public Task<Void> nodeModeChanged(final NodeAddress nodeAddress, final NodeState newState)
     {
         final NodeInfo node = activeNodes.get(nodeAddress);
         if (node != null)
@@ -159,7 +159,7 @@ public class Hosting implements IHosting, Startable
         return Task.done();
     }
 
-    public void setClusterPeer(final IClusterPeer clusterPeer)
+    public void setClusterPeer(final ClusterPeer clusterPeer)
     {
         this.clusterPeer = clusterPeer;
     }
@@ -170,18 +170,18 @@ public class Hosting implements IHosting, Startable
         return Task.done();
     }
 
-    private void onClusterViewChanged(final Collection<INodeAddress> nodes)
+    private void onClusterViewChanged(final Collection<NodeAddress> nodes)
     {
-        HashMap<INodeAddress, NodeInfo> oldNodes = new HashMap<>(activeNodes);
-        HashMap<INodeAddress, NodeInfo> newNodes = new HashMap<>(nodes.size());
+        HashMap<NodeAddress, NodeInfo> oldNodes = new HashMap<>(activeNodes);
+        HashMap<NodeAddress, NodeInfo> newNodes = new HashMap<>(nodes.size());
         List<NodeInfo> justAddedNodes = new ArrayList<>(Math.max(1, nodes.size() - oldNodes.size()));
-        for (final INodeAddress a : nodes)
+        for (final NodeAddress a : nodes)
         {
             NodeInfo nodeInfo = oldNodes.remove(a);
             if (nodeInfo == null)
             {
                 nodeInfo = new NodeInfo(a);
-                nodeInfo.hosting = execution.createReference(a, IHosting.class, "");
+                nodeInfo.nodeCapabilities = execution.createReference(a, NodeCapabilities.class, "");
                 nodeInfo.active = true;
                 activeNodes.put(a, nodeInfo);
                 justAddedNodes.add(nodeInfo);
@@ -211,17 +211,17 @@ public class Hosting implements IHosting, Startable
         }
     }
 
-    public Task<INodeAddress> locateActor(final IAddressable reference, final boolean forceActivation)
+    public Task<NodeAddress> locateActor(final Addressable reference, final boolean forceActivation)
     {
         return (forceActivation) ? locateAndActivateActor(reference) : locateActiveActor(reference);
     }
 
 
-    private Task<INodeAddress> locateActiveActor(final IAddressable actorReference)
+    private Task<NodeAddress> locateActiveActor(final Addressable actorReference)
     {
         ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
                 String.valueOf(((ActorReference) actorReference).id));
-        INodeAddress address = localAddressCache.get(addressable);
+        NodeAddress address = localAddressCache.get(addressable);
         if (address != null && activeNodes.containsKey(address))
         {
             return Task.fromValue(address);
@@ -229,12 +229,12 @@ public class Hosting implements IHosting, Startable
         return Task.fromValue(null);
     }
 
-    private Task<INodeAddress> locateAndActivateActor(final IAddressable actorReference)
+    private Task<NodeAddress> locateAndActivateActor(final Addressable actorReference)
     {
         ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
                 String.valueOf(((ActorReference) actorReference).id));
 
-        INodeAddress address = localAddressCache.get(addressable);
+        NodeAddress address = localAddressCache.get(addressable);
         if (address != null && activeNodes.containsKey(address))
         {
             return Task.fromValue(address);
@@ -252,7 +252,7 @@ public class Hosting implements IHosting, Startable
                     return Task.fromValue(clusterPeer.localAddress());
                 }
                 // randomly chooses one server node to process this actor
-                final INodeAddress nodeAddress = selectNode(interfaceClassName, false);
+                final NodeAddress nodeAddress = selectNode(interfaceClassName, false);
                 if (nodeAddress != null)
                 {
                     return Task.fromValue(nodeAddress);
@@ -260,8 +260,8 @@ public class Hosting implements IHosting, Startable
             }
         }
 
-        final CompletableFuture<INodeAddress> async = CompletableFuture.supplyAsync(() -> {
-            INodeAddress nodeAddress = null;
+        final CompletableFuture<NodeAddress> async = CompletableFuture.supplyAsync(() -> {
+            NodeAddress nodeAddress = null;
 
             if (interfaceClass.isAnnotationPresent(StatelessWorker.class))
             {
@@ -290,7 +290,7 @@ public class Hosting implements IHosting, Startable
                 distributedDirectory.remove(addressable, nodeAddress);
             }
             nodeAddress = selectNode(interfaceClassName, true);
-            INodeAddress otherNodeAddress = distributedDirectory.putIfAbsent(addressable, nodeAddress);
+            NodeAddress otherNodeAddress = distributedDirectory.putIfAbsent(addressable, nodeAddress);
             // someone got there first.
             if (otherNodeAddress != null)
             {
@@ -303,7 +303,7 @@ public class Hosting implements IHosting, Startable
         return Task.from(async);
     }
 
-    private INodeAddress selectNode(final String interfaceClassName, boolean allowToBlock)
+    private NodeAddress selectNode(final String interfaceClassName, boolean allowToBlock)
     {
         List<NodeInfo> potentialNodes;
         long start = System.currentTimeMillis();
@@ -321,7 +321,7 @@ public class Hosting implements IHosting, Startable
 
             potentialNodes = currentServerNodes.stream()
                     .filter(n -> (!n.cannotHostActors && n.state == NodeState.RUNNING)
-                            && IHosting.actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, IHosting.actorSupported_yes))
+                            && NodeCapabilities.actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, NodeCapabilities.actorSupported_yes))
                     .collect(Collectors.toList());
 
             if (potentialNodes.size() == 0)
@@ -356,7 +356,7 @@ public class Hosting implements IHosting, Startable
                     // ask if the node can activate this type of actor.
                     try
                     {
-                        canActivate = nodeInfo.hosting.canActivate(interfaceClassName, -1).join();
+                        canActivate = nodeInfo.nodeCapabilities.canActivate(interfaceClassName, -1).join();
                         if (canActivate == actorSupported_noneSupported)
                         {
                             nodeInfo.cannotHostActors = true;

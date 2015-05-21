@@ -28,8 +28,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.cluster.IClusterPeer;
-import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.actors.cluster.ClusterPeer;
+import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.cluster.MessageListener;
 import com.ea.orbit.actors.cluster.ViewListener;
 import com.ea.orbit.concurrent.Task;
@@ -46,12 +46,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * </p>
  * It's recommended to use the fake network for application unit tests.
  */
-public class FakeClusterPeer implements IClusterPeer
+public class FakeClusterPeer implements ClusterPeer
 {
     private ViewListener viewListener;
     private MessageListener messageListener;
     private FakeGroup group;
-    private INodeAddress address;
+    private NodeAddress address;
     private AtomicLong messagesSent = new AtomicLong();
     private AtomicLong messagesSentOk = new AtomicLong();
     private AtomicLong messagesReceived = new AtomicLong();
@@ -77,12 +77,12 @@ public class FakeClusterPeer implements IClusterPeer
         group.leave(this);
     }
 
-    public void onViewChanged(final List<INodeAddress> newView)
+    public void onViewChanged(final List<NodeAddress> newView)
     {
         viewListener.onViewChange(newView);
     }
 
-    public void onMessageReceived(final INodeAddress from, final byte[] buff)
+    public void onMessageReceived(final NodeAddress from, final byte[] buff)
     {
         messagesReceived.incrementAndGet();
         messageListener.receive(from, buff);
@@ -90,7 +90,7 @@ public class FakeClusterPeer implements IClusterPeer
     }
 
     @Override
-    public INodeAddress localAddress()
+    public NodeAddress localAddress()
     {
         return address;
     }
@@ -108,7 +108,7 @@ public class FakeClusterPeer implements IClusterPeer
     }
 
     @Override
-    public void sendMessage(final INodeAddress to, final byte[] message)
+    public void sendMessage(final NodeAddress to, final byte[] message)
     {
         startFuture.join();
         messagesSent.incrementAndGet();
@@ -122,7 +122,7 @@ public class FakeClusterPeer implements IClusterPeer
         return group.getCache(name);
     }
 
-    void setAddress(final INodeAddress address)
+    void setAddress(final NodeAddress address)
     {
         this.address = address;
     }

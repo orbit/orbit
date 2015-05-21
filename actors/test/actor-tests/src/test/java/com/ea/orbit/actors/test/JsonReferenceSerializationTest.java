@@ -28,10 +28,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.providers.json.ActorReferenceModule;
-import com.ea.orbit.actors.runtime.IReferenceFactory;
+import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
+import com.ea.orbit.actors.runtime.RefFactory;
 import com.ea.orbit.actors.runtime.ReferenceFactory;
-import com.ea.orbit.actors.test.actors.ISomeActor;
+import com.ea.orbit.actors.test.actors.SomeActor;
 
 import org.junit.Test;
 
@@ -45,13 +45,13 @@ import static org.junit.Assert.assertEquals;
 
 public class JsonReferenceSerializationTest
 {
-    private IReferenceFactory factory = new ReferenceFactory();
+    private RefFactory factory = new ReferenceFactory();
 
     @Test
     public void testSerialize() throws Exception
     {
         String json = "\"123\"";
-        ISomeActor actor = factory.getReference(ISomeActor.class, "123");
+        SomeActor actor = factory.getReference(SomeActor.class, "123");
         ObjectMapper mapper = createMapper();
         assertEquals(json, mapper.writeValueAsString(actor));
     }
@@ -60,29 +60,29 @@ public class JsonReferenceSerializationTest
     public void testDeserialize() throws Exception
     {
         String json = "\"123\"";
-        ISomeActor actor = factory.getReference(ISomeActor.class, "123");
+        SomeActor actor = factory.getReference(SomeActor.class, "123");
         ObjectMapper mapper = createMapper();
-        assertEquals(actor, mapper.readValue(json, ISomeActor.class));
+        assertEquals(actor, mapper.readValue(json, SomeActor.class));
     }
 
     @Test
     public void testList() throws Exception
     {
         String json = "[\"1\",\"2\"]";
-        ISomeActor actor1 = factory.getReference(ISomeActor.class, "1");
-        ISomeActor actor2 = factory.getReference(ISomeActor.class, "2");
+        SomeActor actor1 = factory.getReference(SomeActor.class, "1");
+        SomeActor actor2 = factory.getReference(SomeActor.class, "2");
         ObjectMapper mapper = createMapper();
-        List<ISomeActor> actors = Arrays.asList(actor1, actor2);
+        List<SomeActor> actors = Arrays.asList(actor1, actor2);
         String listJson = mapper.writeValueAsString(actors);
         assertEquals(json, listJson);
-        assertEquals(actors, mapper.readValue(listJson, mapper.getTypeFactory().constructCollectionType(List.class, ISomeActor.class)));
+        assertEquals(actors, mapper.readValue(listJson, mapper.getTypeFactory().constructCollectionType(List.class, SomeActor.class)));
     }
 
     public static class ComplexData
     {
-        ISomeActor a1;
-        ISomeActor a2;
-        List<ISomeActor> list;
+        SomeActor a1;
+        SomeActor a2;
+        List<SomeActor> list;
 
         @Override
         public boolean equals(final Object o)
@@ -105,8 +105,8 @@ public class JsonReferenceSerializationTest
     {
         String json = "{\"a1\":\"1\",\"a2\":\"2\",\"list\":[\"1\",\"2\"]}";
         ComplexData data = new ComplexData();
-        data.a1 = factory.getReference(ISomeActor.class, "1");
-        data.a2 = factory.getReference(ISomeActor.class, "2");
+        data.a1 = factory.getReference(SomeActor.class, "1");
+        data.a2 = factory.getReference(SomeActor.class, "2");
         data.list = Arrays.asList(data.a1, data.a2);
         ObjectMapper mapper = createMapper();
         assertEquals(json, mapper.writeValueAsString(data));

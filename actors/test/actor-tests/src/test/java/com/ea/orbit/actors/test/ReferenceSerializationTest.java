@@ -29,12 +29,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.cluster.NodeAddressImpl;
 import com.ea.orbit.actors.runtime.ActorKey;
-import com.ea.orbit.actors.test.actors.ISomeMatch;
-import com.ea.orbit.actors.test.actors.ISomePlayer;
+import com.ea.orbit.actors.test.actors.SomeMatch;
+import com.ea.orbit.actors.test.actors.SomePlayer;
 
 import org.junit.Test;
 
@@ -52,9 +52,9 @@ public class ReferenceSerializationTest extends ActorBaseTest
     @Test
     public void referencePassingTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
-        ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
+        Stage stage1 = createStage();
+        SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
+        SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
         someMatch.addPlayer(somePlayer).join();
     }
 
@@ -62,9 +62,9 @@ public class ReferenceSerializationTest extends ActorBaseTest
     @Test
     public void passingActorInsteadOfReferenceTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
-        ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
+        Stage stage1 = createStage();
+        SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
+        SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
         somePlayer.joinMatch(someMatch).join();
     }
 
@@ -75,15 +75,15 @@ public class ReferenceSerializationTest extends ActorBaseTest
     public void distributedDirectoryClassesTest() throws ExecutionException, InterruptedException
     {
 
-        OrbitStage stage1 = createStage();
-        OrbitStage client = createClient();
+        Stage stage1 = createStage();
+        Stage client = createClient();
         client.bind();
-        ISomeMatch someMatch = IActor.getReference(ISomeMatch.class, "300");
-        ISomePlayer somePlayer = IActor.getReference(ISomePlayer.class, "101");
+        SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
+        SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
         somePlayer.joinMatch(someMatch).join();
 
 
-        Set<Class<?>> validClasses = Sets.newHashSet(ActorKey.class, NodeAddress.class, String.class);
+        Set<Class<?>> validClasses = Sets.newHashSet(ActorKey.class, NodeAddressImpl.class, String.class);
 
         for (Map.Entry e : FakeGroup.get(clusterName).getCaches().entrySet())
         {

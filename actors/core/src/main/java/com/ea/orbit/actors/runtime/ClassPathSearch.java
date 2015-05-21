@@ -1,6 +1,6 @@
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IActor;
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.concurrent.ConcurrentHashSet;
 import com.ea.orbit.util.ClassPath;
 
@@ -116,7 +116,7 @@ public class ClassPathSearch
         newInfo.modifiers = 0;
         try
         {
-            InputStream in = IActor.class.getResourceAsStream('/' + className.replace('.', '/') + ".class");
+            InputStream in = Actor.class.getResourceAsStream('/' + className.replace('.', '/') + ".class");
             if (in == null)
             {
                 newInfo.allInterfaces = Collections.emptySet();
@@ -231,10 +231,10 @@ public class ClassPathSearch
                         {
                             if (theInterfaceInfo.isAssignableFrom(clazz))
                             {
-                                // when searching for IHello1, must avoid:
-                                // IHello1 <- IHello2
-                                // IHello1 <- HelloImpl1
-                                // IHello2 <-s HelloImpl2  (wrong return, lest strict.
+                                // when searching for Hello1, must avoid:
+                                // Hello1 <- HelloActor2
+                                // Hello1 <- HelloImpl1
+                                // Hello2 <-s HelloImpl2  (wrong return, least strict).
 
                                 // However the application **should not** do this kind of class tree.
 

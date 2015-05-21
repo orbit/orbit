@@ -28,9 +28,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.test.actors.IStatelessThing;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.test.actors.StatelessThing;
 import com.ea.orbit.exception.UncheckedException;
 
 import org.junit.Test;
@@ -55,17 +55,17 @@ public class StatelessActorTest extends ActorBaseTest
     @Test
     public void statelessTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage stage2 = createStage();
-        OrbitStage stage3 = createStage();
-        OrbitStage stage4 = createStage();
-        OrbitStage client = createClient();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
+        Stage stage3 = createStage();
+        Stage stage4 = createStage();
+        Stage client = createClient();
 
-        IStatelessThing actor1 = IActor.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor2 = IActor.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor3 = IActor.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor4 = IActor.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor5 = IActor.getReference(IStatelessThing.class, "1000");
+        StatelessThing actor1 = Actor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor2 = Actor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor3 = Actor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor4 = Actor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor5 = Actor.getReference(StatelessThing.class, "1000");
 
         final Set<UUID> set = new HashSet<>();
         Supplier stagesIdle = () -> Stream.of(stage1, stage2, stage3, stage4).allMatch(s -> isIdle(s));
@@ -141,11 +141,11 @@ public class StatelessActorTest extends ActorBaseTest
     @Test
     public void heavierTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage stage2 = createStage();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
 
-        IStatelessThing actor1 = IActor.getReference(IStatelessThing.class, "1000");
-        IStatelessThing actor2 = IActor.getReference(IStatelessThing.class, "1000");
+        StatelessThing actor1 = Actor.getReference(StatelessThing.class, "1000");
+        StatelessThing actor2 = Actor.getReference(StatelessThing.class, "1000");
 
         final Set<UUID> set = new HashSet<>();
 
