@@ -45,7 +45,7 @@ import java.util.stream.Stream;
  *
  * @param <T> observable type.
  */
-public class ObserverManager<T extends IActorObserver> implements Serializable
+public class ObserverManager<T extends ActorObserver> implements Serializable
 {
     private static final long serialVersionUID = 1L;
 

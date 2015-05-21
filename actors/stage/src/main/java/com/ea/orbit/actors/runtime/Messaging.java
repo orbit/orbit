@@ -28,9 +28,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IActorObserver;
-import com.ea.orbit.actors.cluster.IClusterPeer;
-import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.actors.ActorObserver;
+import com.ea.orbit.actors.cluster.ClusterPeer;
+import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -66,7 +66,7 @@ public class Messaging implements Startable
     // serializes the messages
     // pass received messages to Execution
 
-    private IClusterPeer clusterPeer;
+    private ClusterPeer clusterPeer;
     private Execution execution;
     private AtomicInteger messageIdGen = new AtomicInteger();
     private Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
@@ -83,12 +83,12 @@ public class Messaging implements Startable
         this.execution = execution;
     }
 
-    public void setClusterPeer(final IClusterPeer clusterPeer)
+    public void setClusterPeer(final ClusterPeer clusterPeer)
     {
         this.clusterPeer = clusterPeer;
     }
 
-    public INodeAddress getNodeAddress()
+    public NodeAddress getNodeAddress()
     {
         return clusterPeer.localAddress();
     }
@@ -160,7 +160,7 @@ public class Messaging implements Startable
         return Task.done();
     }
 
-    private void onMessageReceived(final INodeAddress from, final byte[] buff)
+    private void onMessageReceived(final NodeAddress from, final byte[] buff)
     {
         // deserialize and send to runtime
         try
@@ -236,13 +236,13 @@ public class Messaging implements Startable
         }
     }
 
-    public void onNodeDrop(final INodeAddress address)
+    public void onNodeDrop(final NodeAddress address)
     {
         // could be used to decrease the timeout of messages sent to failed nodes.
     }
 
 
-    public void sendResponse(INodeAddress to, int messageType, int messageId, Object res)
+    public void sendResponse(NodeAddress to, int messageType, int messageId, Object res)
     {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try
@@ -266,7 +266,7 @@ public class Messaging implements Startable
         
 		Class<?> interfaceClass;
         Object id;
-        INodeAddress address;
+        NodeAddress address;
     }
 
     private ObjectOutput createObjectOutput(final OutputStream outputStream) throws IOException
@@ -286,13 +286,13 @@ public class Messaging implements Startable
                 final ActorReference reference;
                 if (!(obj instanceof ActorReference))
                 {
-                    if (obj instanceof OrbitActor)
+                    if (obj instanceof AbstractActor)
                     {
-                        reference = ((OrbitActor) obj).reference;
+                        reference = ((AbstractActor) obj).reference;
                     }
-                    else if (obj instanceof IActorObserver)
+                    else if (obj instanceof ActorObserver)
                     {
-                        IActorObserver objectReference = execution.getObjectReference(null, (IActorObserver) obj);
+                        ActorObserver objectReference = execution.getObjectReference(null, (ActorObserver) obj);
                         reference = (ActorReference) objectReference;
                     }
                     else
@@ -341,7 +341,7 @@ public class Messaging implements Startable
     }
 
 
-    public Task<?> sendMessage(INodeAddress to, boolean oneWay, int interfaceId, int methodId, Object key, Object[] params)
+    public Task<?> sendMessage(NodeAddress to, boolean oneWay, int interfaceId, int methodId, Object key, Object[] params)
     {
         int messageId = messageIdGen.incrementAndGet();
         PendingResponse pendingResponse = new PendingResponse();

@@ -29,10 +29,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.test.actors.ISomeActor;
-import com.ea.orbit.actors.test.actors.IStatelessThing;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.test.actors.SomeActor;
+import com.ea.orbit.actors.test.actors.StatelessThing;
 
 import org.junit.Test;
 
@@ -55,10 +55,10 @@ public class DeactivationTest extends ClientTest
     @Test
     public void cleanupTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage = createStage();
-        OrbitStage client = createClient();
+        Stage stage = createStage();
+        Stage client = createClient();
 
-        ISomeActor actor1 = IActor.getReference(ISomeActor.class, "1000");
+        SomeActor actor1 = Actor.getReference(SomeActor.class, "1000");
 
         final Set<UUID> set = new HashSet<>();
         client.bind();
@@ -86,10 +86,10 @@ public class DeactivationTest extends ClientTest
     @Test
     public void statelessWorkerDeactivationTest() throws ExecutionException, InterruptedException, TimeoutException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage client = createClient();
+        Stage stage1 = createStage();
+        Stage client = createClient();
 
-        IStatelessThing actor5 = IActor.getReference(IStatelessThing.class, "1000");
+        StatelessThing actor5 = Actor.getReference(StatelessThing.class, "1000");
 
         final Set<UUID> set1 = new HashSet<>();
         {

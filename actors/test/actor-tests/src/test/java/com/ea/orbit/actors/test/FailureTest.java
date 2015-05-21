@@ -29,9 +29,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.test.actors.ISomeActor;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.test.actors.SomeActor;
 
 import org.junit.Test;
 
@@ -48,19 +48,19 @@ public class FailureTest extends ActorBaseTest
     @Test
     public void nodeDropTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage stage2 = createStage();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
 
-        ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
+        SomeActor someActor = Actor.getReference(SomeActor.class, "1");
         stage1.bind();
         UUID uuid = someActor.getUniqueActivationId().join();
         assertEquals("bla", someActor.sayHello("bla").join());
 
-        OrbitStage stage3 = createStage();
-        OrbitStage stage4 = createStage();
+        Stage stage3 = createStage();
+        Stage stage4 = createStage();
 
 
-        ISomeActor someActor_r3 = IActor.getReference(ISomeActor.class, "1");
+        SomeActor someActor_r3 = Actor.getReference(SomeActor.class, "1");
         stage3.bind();
         assertEquals(uuid, someActor_r3.getUniqueActivationId().join());
 
@@ -71,7 +71,7 @@ public class FailureTest extends ActorBaseTest
         stage3.bind();
         final UUID secondUUID = someActor_r3.getUniqueActivationId().join();
         assertNotEquals(uuid, secondUUID);
-        ISomeActor someActor_r4 = IActor.getReference(ISomeActor.class, "1");
+        SomeActor someActor_r4 = Actor.getReference(SomeActor.class, "1");
         stage3.bind();
         assertEquals(secondUUID, someActor_r4.getUniqueActivationId().join());
         // BTW, timing issues will sometimes make this fail by timeout with the real network.

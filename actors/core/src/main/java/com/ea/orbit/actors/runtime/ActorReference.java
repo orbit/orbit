@@ -28,32 +28,32 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IAddressable;
-import com.ea.orbit.actors.cluster.INodeAddress;
+import com.ea.orbit.actors.Addressable;
+import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.concurrent.Task;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
 
 /**
- * Base class for IActor or IActorObserver references.
+ * Base class for Actor or ActorObserver references.
  *
  * <p>References classes ares automatically generated with runtime byte code generation</p>
  *
- * <p>The reference classes extends the IActor or IActorObserver interfaces
+ * <p>The reference classes extends the Actor or ActorObserver interfaces
  * and implement their methods as remote calls that are forwarded to the IRuntime</p>
  *
  * <p>References are java.io.Serializable and orbit also provides a jackson module to handle their serialization to json</p>
  *
- * @param <T> the IActor of IActorObserver implemented by this reference.
+ * @param <T> the Actor of ActorObserver implemented by this reference.
  */
-public abstract class ActorReference<T> implements Serializable, IAddressable
+public abstract class ActorReference<T> implements Serializable, Addressable
 {
 	private static final long serialVersionUID = 1L;
 
-	INodeAddress address;
+	NodeAddress address;
     Object id;
-    transient IRuntime runtime;
+    transient Runtime runtime;
 
 
     /**
@@ -98,7 +98,7 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
     @SuppressWarnings("unchecked")
     protected <R> Task<R> invoke(final Method method, final boolean oneWay, final int methodId, final Object[] params)
     {
-        return (Task<R>) (runtime != null ? runtime : Runtime.getRuntime()).invoke(this, method, oneWay, methodId, params);
+        return (Task<R>) (runtime != null ? runtime : ActorRuntime.getRuntime()).invoke(this, method, oneWay, methodId, params);
     }
 
     @Override
@@ -122,7 +122,7 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
 
     /**
      * Utility method used by the framework and framework extensions to retrieve the integer identifier of
-     * the IActor or IActorObserver interface implemented by this reference.
+     * the Actor or ActorObserver interface implemented by this reference.
      *
      * <p>This is not exposed as an instance method to avoid clashes with the methods from implemented interfaces</p>
      *
@@ -147,7 +147,7 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
     }
 
     /**
-     * Utility method used by the framework and framework extensions to retrieve the IActor or IActorObserver
+     * Utility method used by the framework and framework extensions to retrieve the Actor or ActorObserver
      * interface implemented by this reference.
      *
      * <p>This is not exposed as an instance method to avoid clashes with the methods from implemented interfaces</p>
@@ -169,7 +169,7 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
      * @param reference the reference being inspected
      * @return the node address where the actor observer resides
      */
-    public static INodeAddress getAddress(final ActorReference<?> reference)
+    public static NodeAddress getAddress(final ActorReference<?> reference)
     {
         return reference.address;
     }
@@ -183,12 +183,12 @@ public abstract class ActorReference<T> implements Serializable, IAddressable
      * @param reference   the reference being inspected
      * @param nodeAddress the node address where the actor observer resides
      */
-    public static void setAddress(final ActorReference<?> reference, final INodeAddress nodeAddress)
+    public static void setAddress(final ActorReference<?> reference, final NodeAddress nodeAddress)
     {
         reference.address = nodeAddress;
     }
 
-    public static ActorReference from(OrbitActor actor)
+    public static ActorReference from(AbstractActor actor)
     {
         return actor.reference;
     }

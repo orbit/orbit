@@ -28,111 +28,48 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IRemindable;
-import com.ea.orbit.concurrent.ConcurrentHashSet;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
-public class ReminderController extends OrbitActor<ReminderController.State> implements IReminderController
+public interface ReminderController extends Actor
 {
-    public static class State
-    {
-        public ConcurrentHashSet<ReminderEntry> reminders = new ConcurrentHashSet<>();
-    }
+    /**
+     * Adds or updates a reminder
+     *
+     * @param actor        the actor that owns of the reminder
+     * @param reminderName the name, used with actor as reminder key
+     * @param dueTime      the first time the reminder will trigger
+     * @param period       the period of the reminder after the first time.
+     * @param timeUnit     the time unit for period
+     * @return a task that returns the reminder name
+     */
+    Task<String> registerOrUpdateReminder(Remindable actor, String reminderName,
+                                          Date dueTime,
+                                          long period,
+                                          TimeUnit timeUnit);
 
-    private Map<ReminderEntry, Registration> local = new ConcurrentHashMap<>();
+    /**
+     * Cancels a reminder registration.
+     * It's not guaranteed that the reminder won't be called after this method a the invocation might have already being triggered
+     *
+     * @param actor        the target actor
+     * @param reminderName the reminder handle
+     * @return a task holding the reminder name.
+     */
+    Task<String> unregisterReminder(Remindable actor, String reminderName);
 
-    @Override
-    public Task<String> registerOrUpdateReminder(final IRemindable actor, final String reminderName, final Date startAt, final long period, final TimeUnit timeUnit)
-    {
-        final ReminderEntry newReminder = new ReminderEntry();
-        newReminder.setPeriod(timeUnit.toMillis(period));
-        newReminder.setStartAt(startAt);
-        newReminder.setReminderName(reminderName);
-        newReminder.setReference(actor);
-        final Registration oldReminderData = local.remove(newReminder);
-        if (oldReminderData != null)
-        {
-            oldReminderData.dispose();
-        }
-        registerLocalTimer(newReminder);
-        // removes the previous reminder (reference,reminderName)
-        state().reminders.remove(newReminder);
-        // adds the new one.
-        state().reminders.add(newReminder);
-        // saves the state and returns the data
-        return writeState().thenReturn(() -> reminderName);
-    }
+    /**
+     * Gets all reminders tied to the actor actor.
+     *
+     * @param actor the target actor
+     * @return a task holding the list of reminder names.
+     */
+    Task<List<String>> getReminders(Remindable actor);
 
-    private void registerLocalTimer(final ReminderEntry reminderEntry)
-    {
-        // adjusting start date.
-        long dueTime = reminderEntry.getStartAt().getTime() - Runtime.getRuntime().clock().millis();
-        if (dueTime < 0)
-        {
-            dueTime = reminderEntry.getPeriod() + (dueTime % reminderEntry.getPeriod());
-        }
-        final Registration localData = registerTimer(() -> callRemainder(reminderEntry), dueTime, reminderEntry.getPeriod(), TimeUnit.MILLISECONDS);
-        local.put(reminderEntry, localData);
-    }
-
-    private Task<?> callRemainder(final ReminderEntry reminderEntry)
-    {
-        reminderEntry.getReference().receiveReminder(reminderEntry.getReminderName(), null);
-        // ignoring the return, reminders are fire and forget.
-        return Task.done();
-    }
-
-    @Override
-    public Task<String> unregisterReminder(final IRemindable actor, final String reminderName)
-    {
-        final ReminderEntry newReminder = new ReminderEntry();
-        newReminder.setReminderName(reminderName);
-        newReminder.setReference(actor);
-        final Registration oldReminderData = local.remove(newReminder);
-        if (oldReminderData != null)
-        {
-            oldReminderData.dispose();
-        }
-        // removes the previous reminder (reference,reminderName)
-        state().reminders.remove(newReminder);
-        // saves the state and returns the data
-        return writeState().thenReturn(() -> reminderName);
-    }
-
-    @Override
-    public Task<List<String>> getReminders(final IRemindable actor)
-    {
-        final List<String> list = state.reminders.stream()
-                .filter(r -> reference.equals(actor))
-                .map(r -> r.getReminderName())
-                .collect(Collectors.toList());
-        return Task.fromValue(list);
-    }
-
-    @Override
-    public Task<Void> ensureStart()
-    {
-        return Task.done();
-    }
-
-    public Task<?> activateAsync()
-    {
-        // registering the local timers.
-        return super.activateAsync().thenRun(
-                () -> state.reminders.forEach(r -> registerLocalTimer(r)));
-    }
-
-    public Task<?> deactivateAsync()
-    {
-        local.values().forEach(r -> r.dispose());
-        local.clear();
-        return super.deactivateAsync();
-    }
+    Task<Void> ensureStart();
 }

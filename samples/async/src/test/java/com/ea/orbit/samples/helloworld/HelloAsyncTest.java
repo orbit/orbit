@@ -28,13 +28,13 @@
 
 package com.ea.orbit.samples.helloworld;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.async.Async;
 import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.samples.hello.IHello;
+import com.ea.orbit.samples.async.Hello;
 
 import org.junit.Test;
 
@@ -50,7 +50,7 @@ public class HelloAsyncTest extends ActorBaseTest
     @Async
     public Task<String> asyncMethod()
     {
-        IHello helloActor = IActor.getReference(IHello.class, "0");
+        Hello helloActor = Actor.getReference(Hello.class, "0");
         String h1 = await(helloActor.sayHello("hello"));
         String h2 = await(helloActor.sayHello("hi"));
         String h3 = await(helloActor.sayHello("hey"));
@@ -60,8 +60,8 @@ public class HelloAsyncTest extends ActorBaseTest
     @Test
     public void test() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage stage2 = createStage();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
         System.out.println("Stages initialized");
 
         final Task<String> res = asyncMethod();

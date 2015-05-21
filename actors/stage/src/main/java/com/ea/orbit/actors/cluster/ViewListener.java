@@ -33,5 +33,5 @@ import java.util.Collection;
 @FunctionalInterface
 public interface ViewListener
 {
-    void onViewChange(Collection<INodeAddress> view);
+    void onViewChange(Collection<NodeAddress> view);
 }

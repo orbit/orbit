@@ -29,11 +29,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.samples.annotation.examples;
 
 
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 @SuppressWarnings("rawtypes")
-public class MemoizeExampleActor extends OrbitActor implements IMemoizeExample
+public class MemoizeExampleActor extends AbstractActor implements MemoizeExample
 {
     public static int accessCount = 0;
 

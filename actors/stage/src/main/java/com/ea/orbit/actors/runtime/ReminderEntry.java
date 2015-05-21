@@ -28,7 +28,7 @@
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.IRemindable;
+import com.ea.orbit.actors.Remindable;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -37,18 +37,18 @@ public class ReminderEntry implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 
-	private IRemindable reference;
+	private Remindable reference;
     private String reminderName;
 
     private Date startAt;
     private long period;
 
-     public IRemindable getReference()
+     public Remindable getReference()
     {
         return reference;
     }
 
-    public void setReference(final IRemindable reference)
+    public void setReference(final Remindable reference)
     {
         this.reference = reference;
     }

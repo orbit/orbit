@@ -28,10 +28,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.trace.sender;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.IAddressable;
-import com.ea.orbit.actors.providers.IInvokeHookProvider;
-import com.ea.orbit.actors.providers.InvocationContext;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Addressable;
+import com.ea.orbit.actors.extensions.InvokeHookExtension;
+import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.concurrent.Task;
@@ -45,7 +45,7 @@ import com.google.common.cache.CacheBuilder;
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
-public class TraceSender implements IInvokeHookProvider
+public class TraceSender implements InvokeHookExtension
 {
 
     private Cache<Long, TraceInfo> traceMap = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.MINUTES)
@@ -57,7 +57,7 @@ public class TraceSender implements IInvokeHookProvider
     {
     }
 
-    public Task<?> invoke(InvocationContext context, IAddressable toReference, Method method, int methodId, Object[] params)
+    public Task<?> invoke(InvocationContext context, Addressable toReference, Method method, int methodId, Object[] params)
     {
 
         final ActorReference source = ((Execution) context.getRuntime()).getCurrentActivation();
@@ -131,7 +131,7 @@ public class TraceSender implements IInvokeHookProvider
 
         try
         {
-            if (!IActor.class.isAssignableFrom(Class.forName(value)))
+            if (!Actor.class.isAssignableFrom(Class.forName(value)))
             {
                 return true;
             }

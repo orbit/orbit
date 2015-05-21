@@ -29,11 +29,11 @@
 package com.ea.orbit.samples.annotation.examples;
 
 
-import com.ea.orbit.actors.runtime.OrbitActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 @SuppressWarnings("rawtypes")
-public class OnlyExampleActor extends OrbitActor implements IOnlyExample
+public class OnlyExampleActor extends AbstractActor implements OnlyExample
 {
     public static int accessCount = 0;
 

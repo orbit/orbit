@@ -28,7 +28,7 @@ package com.ea.orbit.rest.async.test;/*
 
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
-import com.ea.orbit.rest.async.OrbitRestClient;
+import com.ea.orbit.rest.async.RestClient;
 import com.ea.orbit.web.EmbeddedHttpServer;
 
 import org.glassfish.jersey.client.ClientConfig;
@@ -38,7 +38,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -324,7 +323,7 @@ public class RestClientTest
     {
         WebTarget webTarget = getWebTarget();
 
-        final Hello hello = new OrbitRestClient(webTarget).get(Hello.class);
+        final Hello hello = new RestClient(webTarget).get(Hello.class);
 
         assertEquals("home", hello.getHome());
     }
@@ -334,7 +333,7 @@ public class RestClientTest
     {
         WebTarget webTarget = getWebTarget();
 
-        final Hello hello = new OrbitRestClient(webTarget).get(Hello.class);
+        final Hello hello = new RestClient(webTarget).get(Hello.class);
 
         final MessageDto message = new MessageDto();
         message.data = "data0";
@@ -353,7 +352,7 @@ public class RestClientTest
     {
         WebTarget webTarget = getWebTarget();
 
-        final Hello hello = new OrbitRestClient(webTarget).get(Hello.class);
+        final Hello hello = new RestClient(webTarget).get(Hello.class);
         assertEquals("::xx", hello.getPathParam("xx").join());
 
     }
@@ -363,7 +362,7 @@ public class RestClientTest
     {
         WebTarget webTarget = getWebTarget();
 
-        final Hello hello = new OrbitRestClient(webTarget).get(Hello.class);
+        final Hello hello = new RestClient(webTarget).get(Hello.class);
         final Task<Map<String, SomeResponseDto>> resp = hello.getGenericReturn("xx");
         final Map<String, SomeResponseDto> map = resp.join();
         assertEquals("::xx", map.get("xx").resp);
@@ -374,7 +373,7 @@ public class RestClientTest
     {
         WebTarget webTarget = getWebTarget();
 
-        final Hello hello = new OrbitRestClient(webTarget).get(Hello.class);
+        final Hello hello = new RestClient(webTarget).get(Hello.class);
         assertEquals("::xx", hello.getGenericReturn("xx").join().get("xx").resp);
         assertEquals("::xx", hello.getGenericReturnMessing1("xx").join().get("xx").resp);
         assertEquals("::xx", hello.getGenericReturnMessing2("xx").join().get("xx").resp);
@@ -390,16 +389,16 @@ public class RestClientTest
 
         // different client, different proxies
         {
-            final Hello hello1 = new OrbitRestClient(webTarget).get(Hello.class);
-            final Hello hello2 = new OrbitRestClient(webTarget).get(Hello.class);
+            final Hello hello1 = new RestClient(webTarget).get(Hello.class);
+            final Hello hello2 = new RestClient(webTarget).get(Hello.class);
             assertNotSame(hello1, hello2);
         }
 
         // same client, same proxies
         {
-            final OrbitRestClient orbitRestClient = new OrbitRestClient(webTarget);
-            final Hello hello1 = orbitRestClient.get(Hello.class);
-            final Hello hello2 = orbitRestClient.get(Hello.class);
+            final RestClient restClient = new RestClient(webTarget);
+            final Hello hello1 = restClient.get(Hello.class);
+            final Hello hello2 = restClient.get(Hello.class);
 
             assertSame(hello1, hello2);
         }
@@ -410,16 +409,16 @@ public class RestClientTest
     {
         WebTarget webTarget = getWebTarget();
 
-        final OrbitRestClient client = new OrbitRestClient(webTarget);
+        final RestClient client = new RestClient(webTarget);
         {
-            final OrbitRestClient client1 = client.addHeader("H", "A");
-            final OrbitRestClient client2 = client1.addHeader("H", "B");
-            final OrbitRestClient client3 = client2.setHeader("H", "C");
-            final OrbitRestClient client4 = client3.setHeader("H", "D");
+            final RestClient client1 = client.addHeader("H", "A");
+            final RestClient client2 = client1.addHeader("H", "B");
+            final RestClient client3 = client2.setHeader("H", "C");
+            final RestClient client4 = client3.setHeader("H", "D");
 
             final MultivaluedMap<String, Object> newHeaders = new MultivaluedHashMap<>();
             newHeaders.add("H", "E");
-            final OrbitRestClient client5 = client4.setHeaders(newHeaders);
+            final RestClient client5 = client4.setHeaders(newHeaders);
 
             client2.getHeaders().remove("H");
             client3.getHeaders().clear();
@@ -453,15 +452,15 @@ public class RestClientTest
 
         WebTarget webTarget = getWebTarget();
 
-        final OrbitRestClient client = new OrbitRestClient(webTarget)
+        final RestClient client = new RestClient(webTarget)
                 .property(ClientProperties.FOLLOW_REDIRECTS, true)
                 .property(ClientProperties.CONNECT_TIMEOUT, INITIAL_TIMEOUT_VALUE);
 
         // Mutate the client before using either of them
-        final OrbitRestClient noRedirectClient = client.property(ClientProperties.FOLLOW_REDIRECTS, false);
+        final RestClient noRedirectClient = client.property(ClientProperties.FOLLOW_REDIRECTS, false);
 
         // Mutate the initial client once more
-        final OrbitRestClient mutatedConnectTimeoutClient = client.property(ClientProperties.CONNECT_TIMEOUT, MODIFIED_TIMEOUT_VALUE);
+        final RestClient mutatedConnectTimeoutClient = client.property(ClientProperties.CONNECT_TIMEOUT, MODIFIED_TIMEOUT_VALUE);
 
         // Validate the client properties
         assertEquals(true, getConfiguration(client).getProperty(ClientProperties.FOLLOW_REDIRECTS));
@@ -508,7 +507,7 @@ public class RestClientTest
         }
     }
 
-    private javax.ws.rs.core.Configuration getConfiguration(final OrbitRestClient client)
+    private javax.ws.rs.core.Configuration getConfiguration(final RestClient client)
     {
         try
         {

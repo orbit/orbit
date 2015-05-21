@@ -29,9 +29,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
-import com.ea.orbit.actors.test.actors.ISomeActor;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.test.actors.SomeActor;
 
 import org.junit.Test;
 
@@ -51,8 +51,8 @@ public class MinimalTest extends ActorBaseTest
     @Test
     public void singleActorSingleStageTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
+        Stage stage1 = createStage();
+        SomeActor someActor = Actor.getReference(SomeActor.class, "1");
         assertEquals("bla", someActor.sayHello("bla").get());
     }
 
@@ -62,8 +62,8 @@ public class MinimalTest extends ActorBaseTest
     {
         for (int i = 0; i < 2; i++)
         {
-            OrbitStage stage = createStage();
-            ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
+            Stage stage = createStage();
+            SomeActor someActor = Actor.getReference(SomeActor.class, "1");
             assertEquals("bla", someActor.sayHello("bla").get());
         }
     }
@@ -71,8 +71,8 @@ public class MinimalTest extends ActorBaseTest
     @Test
     public void noActor2StageTest() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage1 = createStage();
-        OrbitStage stage2 = createStage();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
     }
 
     @Test
@@ -80,8 +80,8 @@ public class MinimalTest extends ActorBaseTest
     {
         for (int i = 0; i < 10; i++)
         {
-            OrbitStage stage = createStage();
-            ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
+            Stage stage = createStage();
+            SomeActor someActor = Actor.getReference(SomeActor.class, "1");
             assertEquals("bla", someActor.sayHello("bla").get());
         }
     }
@@ -89,7 +89,7 @@ public class MinimalTest extends ActorBaseTest
     @Test
     public void multipleActorsOfTheSameType() throws ExecutionException, InterruptedException
     {
-        List<OrbitStage> stages = new ArrayList<>();
+        List<Stage> stages = new ArrayList<>();
         for (int i = 0; i < 10; i++)
         {
             stages.add(createStage());
@@ -99,7 +99,7 @@ public class MinimalTest extends ActorBaseTest
         for (int i = 0; i < 100; i++)
         {
             stages.get(r.nextInt(stages.size())).bind();
-            ISomeActor actor = IActor.getReference(ISomeActor.class, String.valueOf(i));
+            SomeActor actor = Actor.getReference(SomeActor.class, String.valueOf(i));
             assertEquals("bla", actor.sayHello("bla").join());
         }
     }
@@ -107,12 +107,12 @@ public class MinimalTest extends ActorBaseTest
     @Test
     public void ensureUniqueActivation() throws ExecutionException, InterruptedException
     {
-        OrbitStage stage0 = createStage();
-        UUID uuid = IActor.getReference(ISomeActor.class, "1").getUniqueActivationId().get();
+        Stage stage0 = createStage();
+        UUID uuid = Actor.getReference(SomeActor.class, "1").getUniqueActivationId().get();
         for (int i = 0; i < 10; i++)
         {
-            OrbitStage stage = createStage();
-            ISomeActor someActor = IActor.getReference(ISomeActor.class, "1");
+            Stage stage = createStage();
+            SomeActor someActor = Actor.getReference(SomeActor.class, "1");
             assertEquals("bla", someActor.sayHello("bla").get());
             assertEquals(uuid, someActor.getUniqueActivationId().get());
         }

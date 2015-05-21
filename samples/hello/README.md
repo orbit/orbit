@@ -3,12 +3,12 @@ Hello World Sample
 ===================
 
 ```java
-public interface IHello extends IActor
+public interface Hello extends Actor
 {
     Task<String> sayHello(String greeting);
 }
 
-public class HelloActor extends OrbitActor implements IHello
+public class HelloActor extends AbstractActor implements Hello
 {
     public Task<String> sayHello(String greeting)
     {
@@ -17,7 +17,7 @@ public class HelloActor extends OrbitActor implements IHello
     }
 }
 
-IHello helloActor = IActor.getReference(IHello.class, "0");
+Hello helloActor = Actor.getReference(Hello.class, "0");
 helloActor.sayHello("Hello!").join();
 ```
 

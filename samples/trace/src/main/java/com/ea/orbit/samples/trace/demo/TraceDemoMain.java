@@ -28,8 +28,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.trace.demo;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.OrbitStage;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.samples.trace.messaging.TraceMulticastMessaging;
 import com.ea.orbit.samples.trace.receiver.TraceReceiver;
 import com.ea.orbit.samples.trace.receiver.filter.GlobTraceFilter;
@@ -44,7 +44,7 @@ public class TraceDemoMain
     public static void main(String[] args) throws Exception
     {
         System.setProperty("java.net.preferIPv4Stack", "true");
-        OrbitStage stage = new OrbitStage();
+        Stage stage = new Stage();
         stage.setClusterName("traceCluster" + Math.random());
 
         //MESSAGING
@@ -56,7 +56,7 @@ public class TraceDemoMain
         //SENDER
         TraceSender sender = new TraceSender();
         sender.setMessaging(messaging);
-        stage.addProvider(sender);
+        stage.addExtension(sender);
 
         //RECEIVER
         TraceReceiver receiver = new TraceReceiver();
@@ -70,7 +70,7 @@ public class TraceDemoMain
 
         //start some cluster activity
         stage.start().join();
-        IExampleA first = IActor.getReference(IExampleA.class, "0");
+        ExampleA first = Actor.getReference(ExampleA.class, "0");
         first.someWork().join();
 
     }

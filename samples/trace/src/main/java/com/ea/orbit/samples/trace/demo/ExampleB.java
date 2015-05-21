@@ -28,38 +28,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.samples.trace.demo;
 
-import com.ea.orbit.actors.IActor;
-import com.ea.orbit.actors.runtime.OrbitActor;
-import com.ea.orbit.actors.runtime.Registration;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.concurrent.Task;
 
-import java.util.concurrent.TimeUnit;
-
-public class ExampleB extends OrbitActor implements IExampleB
+public interface ExampleB extends Actor
 {
+    @OneWay
+    Task<Void> callRandomA();
 
-    Registration timer;
+    Task<Integer> someWork();
 
-    @Override
-    public Task activateAsync()
-    {
-        int interval = 100 + ((int) Math.random() * 3000);
-        timer = registerTimer(() -> callRandomA(), interval, interval, TimeUnit.MILLISECONDS);
-        return super.activateAsync();
-    }
-
-    @Override
-    public Task<Void> callRandomA()
-    {
-        if (Math.random() > 0.5d) return Task.done(); //some variance to the calls
-        String id = Integer.toString((int) (Math.random() * 10));
-        IExampleA a = IActor.getReference(IExampleA.class, id);
-        a.someWork().join();
-        return Task.done();
-    }
-
-    public Task<Integer> someWork()
-    {
-        return Task.fromValue(24);
-    }
 }
