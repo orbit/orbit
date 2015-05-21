@@ -36,6 +36,7 @@ import com.ea.orbit.exception.UncheckedException;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.NoResultException;
@@ -63,7 +64,7 @@ public class JpaStorageExtension extends AbstractStorageExtension
         {
             String stateId = getIdentity(reference);
             EntityManager em = emf.createEntityManager();
-            Query query = em.createQuery("delete from " + state.getClass().getSimpleName() + " s where s.stateId=:stateId");
+            Query query = em.createQuery("delete from " + state.getClass().getName() + " s where s.stateId=:stateId");
             query.setParameter("stateId", stateId);
             em.getTransaction().begin();
             query.executeUpdate();
@@ -78,18 +79,31 @@ public class JpaStorageExtension extends AbstractStorageExtension
     }
 
     @Override
-    public synchronized Task<Boolean> readState(final ActorReference<?> reference, final Object state)
+    public synchronized Task<Boolean> readState(final ActorReference<?> reference, Object state)
     {
         try
         {
+            boolean isJpaEntity = state.getClass().isAnnotationPresent(Entity.class);
             String stateId = getIdentity(reference);
             EntityManager em = emf.createEntityManager();
-            Query query = em.createQuery("select s from " + state.getClass().getSimpleName() + " s where s.stateId=:stateId");
+
+            String className = state.getClass().getName();
+
+            if (!isJpaEntity)
+            {
+                className = JpaGenericData.class.getName();
+            }
+
+            Query query = em.createQuery("select s from " + className + " s where s.stateId=:stateId");
             query.setParameter("stateId", stateId);
             Object newState;
             try
             {
                 newState = query.getSingleResult();
+                if (!isJpaEntity)
+                {
+                    newState = mapper.readValue((((JpaGenericData) newState).jsonData), state.getClass());
+                }
                 mapper.readerForUpdating(state).readValue(mapper.writeValueAsString(newState));
                 return Task.fromValue(true);
             }
@@ -109,13 +123,23 @@ public class JpaStorageExtension extends AbstractStorageExtension
     }
 
     @Override
-    public synchronized Task<Void> writeState(final ActorReference<?> reference, final Object state)
+    public synchronized Task<Void> writeState(final ActorReference<?> reference, Object state)
     {
-        String identity = getIdentity(reference);
-        JpaState jpaState = (JpaState) state;
-        jpaState.stateId = identity;
+        boolean isJpaEntity = state.getClass().isAnnotationPresent(Entity.class);
+
         try
         {
+            if (!isJpaEntity)
+            {
+                JpaGenericData tmp = new JpaGenericData();
+                tmp.jsonData = mapper.writeValueAsString(state);
+                state = tmp;
+            }
+
+            String identity = getIdentity(reference);
+            JpaState jpaState = (JpaState) state;
+            jpaState.stateId = identity;
+
             EntityManager em = emf.createEntityManager();
             em.getTransaction().begin();
             em.merge(state);
