@@ -57,28 +57,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>actors-all</module>
     </modules>
 
-
-    <properties>
-        <project.target.jdk>1.8</project.target.jdk>
-        <project.source.jdk>1.8</project.source.jdk>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    </properties>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <target>${project.target.jdk}</target>
-                    <source>${project.source.jdk}</source>
-                </configuration>
-                <version>3.1</version>
-            </plugin>
-        </plugins>
-    </build>
-
     <dependencies>
         <dependency>
             <groupId>com.ea.orbit</groupId>
