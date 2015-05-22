@@ -41,7 +41,7 @@ public interface NodeCapabilities extends ActorObserver
     }
     enum NodeState
     {
-        RUNNING, STOPPING, state, STOPPED
+        RUNNING, STOPPING, STOPPED
     }
 
     int actorSupported_yes = 1;
