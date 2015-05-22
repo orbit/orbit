@@ -35,15 +35,15 @@ import org.junit.Test;
 import java.lang.reflect.InvocationTargetException;
 
 import static com.ea.orbit.async.Await.await;
-import static org.junit.Assert.assertNull;
+import static junit.framework.TestCase.assertNull;
 
 public class SmallestTest extends BaseTest
 {
 
     @Test
-    public void testRepeatedLocalVarsNames() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
+    public void smallTest() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
     {
-        final Task<Void> res = doIt();
+        final Task<?> res = doIt();
         completeFutures();
         assertNull(res.join());
     }
