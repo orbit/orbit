@@ -36,6 +36,7 @@ import org.junit.Test;
 import java.lang.reflect.InvocationTargetException;
 
 import static com.ea.orbit.async.Await.await;
+import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -157,5 +158,46 @@ public class ExceptionTest extends BaseTest
             return Task.fromValue(ex.getMessage());
         }
         return Task.done();
+    }
+
+
+    private Object stackAnalysisProblem(final Exception ex)
+    {
+        Throwable t = ex;
+
+        while (t.getCause() != null && !(t instanceof IllegalAccessException))
+        {
+            t = t.getCause();
+        }
+
+        if (t instanceof IllegalAccessException)
+        {
+            IllegalAccessException wex = (IllegalAccessException) t;
+        }
+
+        return null;
+    }
+
+
+    @Test
+    public void smallTest() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
+    {
+        final Task<?> res = doIt(Task.done());
+        completeFutures();
+        assertNull(res.join());
+    }
+
+
+    public Task<?> doIt(Task<?> t)
+    {
+        try
+        {
+            await(t);
+        }
+        catch (Exception ex)
+        {
+            await(t);
+        }
+        return t;
     }
 }
