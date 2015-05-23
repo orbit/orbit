@@ -35,7 +35,9 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class BaseTest
@@ -95,5 +97,21 @@ public class BaseTest
                 pair.getKey().complete(pair.getValue());
             }
         }
+    }
+
+    /**
+     * Shortcut to create tests with lambda functions
+     */
+    protected <T, V> Task<V> call(T t, Function<T, Task<V>> function)
+    {
+        return function.apply(t);
+    }
+
+    /**
+     * Shortcut to create tests with lambda functions
+     */
+    protected <V> Task<V> call(Callable<Task<V>> function) throws Exception
+    {
+        return function.call();
     }
 }
