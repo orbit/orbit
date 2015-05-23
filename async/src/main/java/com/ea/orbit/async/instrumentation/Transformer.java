@@ -392,8 +392,7 @@ public class Transformer implements ClassFileTransformer
         byte[] bytes = cw.toByteArray();
         {
 //             for development use: new ClassReader(bytes).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
-//             for development use:
-            debugSaveTrace(classNode.name + ".3", classNode);
+//             for development use: debugSaveTrace(classNode.name + ".3", classNode);
 //            {
 //                final ClassWriter cw2 = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
 //                {
