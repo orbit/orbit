@@ -38,6 +38,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FrameNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.Analyzer;
@@ -117,6 +118,14 @@ public class Transformer implements ClassFileTransformer
     private static final String TASK_RET = ")Lcom/ea/orbit/concurrent/Task;";
     private static final String TASK_NAME = "com/ea/orbit/concurrent/Task";
     private static final Type TASK_TYPE = Type.getType("Lcom/ea/orbit/concurrent/Task;");
+
+    private static final int FN_TOP = 0;
+    private static final int FN_INTEGER = 1;
+    private static final int FN_FLOAT = 2;
+    private static final int FN_DOUBLE = 3;
+    private static final int FN_LONG = 4;
+    private static final int FN_NULL = 5;
+    private static final int FN_UNINITIALIZED_THIS = 6;
 
     @Override
     public byte[] transform(final ClassLoader loader, final String className, final Class<?> classBeingRedefined, final ProtectionDomain protectionDomain, final byte[] classfileBuffer) throws IllegalClassFormatException
@@ -234,9 +243,11 @@ public class Transformer implements ClassFileTransformer
             SwitchEntry entryPoint;
             final List<Label> switchLabels = new ArrayList<>();
             {
-                Analyzer analyzer = new Analyzer(new TypeInterpreter());
-                Frame[] frames = analyzer.analyze(classNode.name, original);
-                entryPoint = new SwitchEntry(0, frames[0]);
+//                Analyzer analyzer = new Analyzer(new TypeInterpreter());
+//                Frame[] frames0 = analyzer.analyze(classNode.name, original);
+
+                Frame[] frames = new Frame[original.instructions.size()];
+                entryPoint = new SwitchEntry(0, computeFrame(frames, 0, classNode.name, original));
                 switchLabels.add(entryPoint.resumeLabel);
                 int ii = 0;
                 int count = 0;
@@ -246,7 +257,7 @@ public class Transformer implements ClassFileTransformer
                     Object o = it.next();
                     if ((o instanceof MethodInsnNode && isAwaitCall((MethodInsnNode) o)))
                     {
-                        SwitchEntry se = new SwitchEntry(++count, frames[ii]);
+                        SwitchEntry se = new SwitchEntry(++count, computeFrame(frames, ii, classNode.name, original));
                         switchLabels.add(se.resumeLabel);
                         switchEntries.add(se);
                     }
@@ -368,14 +379,21 @@ public class Transformer implements ClassFileTransformer
             @Override
             protected String getCommonSuperClass(final String type1, final String type2)
             {
-                return "java/lang/Object";
+                // this is only called if COMPUTE_FRAMES is enabled
+
+                // implementing this properly would require loading information
+                // for type1 and type2 from the class path.
+                // that's too expensive and it also creates problems for offline instrumentation.
+                // reusing the old frames and manually creating new ones is a lot cheaper.
+                return type1.equals(type2) ? type1 : "java/lang/Object";
             }
         };
         classNode.accept(cw);
         byte[] bytes = cw.toByteArray();
         {
 //             for development use: new ClassReader(bytes).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
-//             for development use: debugSaveTrace(classNode.name + ".3", classNode);
+//             for development use:
+            debugSaveTrace(classNode.name + ".3", classNode);
 //            {
 //                final ClassWriter cw2 = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
 //                {
@@ -394,6 +412,150 @@ public class Transformer implements ClassFileTransformer
 
         }
         return bytes;
+    }
+
+    /// Cheaper and safer implementation of frame analysis.
+    // It uses the original stack frame information to decrease the costs.
+    private Frame computeFrame(final Frame<BasicValue>[] frames, final int index, String owner, final MethodNode m) throws AnalyzerException
+    {
+        if (frames[index] != null)
+        {
+            // return cached frame
+            return frames[index];
+        }
+
+        // searches for first FULL_FRAME before this instruction
+        int i = index;
+        AbstractInsnNode insnNode = m.instructions.get(index);
+        TypeInterpreter interpreter = TypeInterpreter.instance;
+
+        for (; i > 0 && frames[i] == null; insnNode = insnNode.getPrevious(), i--)
+        {
+            if (insnNode instanceof FrameNode)
+            {
+                FrameNode frameNode = (FrameNode) insnNode;
+                final int frameType = frameNode.type;
+                if (frameType == F_NEW || frameType == F_FULL)
+                {
+                    List<BasicValue> locals = convertFrameNodeTypes(frameNode.local);
+                    List<BasicValue> stack = convertFrameNodeTypes(frameNode.stack);
+                    Frame<BasicValue> frame = new Frame<>(m.maxLocals, m.maxStack);
+                    frames[i] = frame;
+                    int iLocal = 0;
+                    for (; iLocal < locals.size(); iLocal++)
+                    {
+                        frame.setLocal(iLocal, locals.get(iLocal));
+                    }
+                    while (iLocal < m.maxLocals)
+                    {
+                        frame.setLocal(iLocal++, interpreter.newValue(null));
+                    }
+                    for (BasicValue v : stack)
+                    {
+                        frame.push(v);
+                    }
+                    break;
+                }
+            }
+        }
+        if (i == 0 && frames[0] == null)
+        {
+            // create first frame
+            Frame<BasicValue> first = new Frame<>(m.maxLocals, m.maxStack);
+            first.setReturn(interpreter.newValue(Type.getReturnType(m.desc)));
+            Type[] params = Type.getArgumentTypes(m.desc);
+            int iLocal = 0;
+            if ((m.access & ACC_STATIC) == 0)
+            {
+                Type ownerType = Type.getObjectType(owner);
+                first.setLocal(iLocal++, interpreter.newValue(ownerType));
+            }
+            for (int iParam = 0; iParam < params.length; iParam++)
+            {
+                first.setLocal(iLocal++, interpreter.newValue(params[iParam]));
+                if (params[iParam].getSize() == 2)
+                {
+                    first.setLocal(iLocal++, interpreter.newValue(null));
+                }
+            }
+            while (iLocal < m.maxLocals)
+            {
+                first.setLocal(iLocal++, interpreter.newValue(null));
+            }
+            frames[0] = first;
+        }
+        if (frames[index] != null)
+        {
+            return frames[index];
+        }
+        for (; i < index; i++, insnNode = insnNode.getNext())
+        {
+            Frame<BasicValue> nextFrame = new Frame<>(frames[i]);
+            final int insnType = insnNode.getType();
+            if (insnType != AbstractInsnNode.LABEL && insnType != AbstractInsnNode.LINE
+                    && insnType != AbstractInsnNode.FRAME)
+            {
+                nextFrame.execute(insnNode, interpreter);
+            }
+            frames[i + 1] = nextFrame;
+        }
+
+        return frames[index];
+    }
+
+    // converts FrameNode information to the way Frame stores it
+    private List<BasicValue> convertFrameNodeTypes(final List<Object> frameNodeTypes)
+    {
+        final List<BasicValue> frameTypes = new ArrayList<>();
+        if (frameNodeTypes != null && frameNodeTypes.size() > 0)
+        {
+            for (int k = 0, j = 0; k < frameNodeTypes.size(); k++)
+            {
+                final Object v = frameNodeTypes.get(k);
+                if (v instanceof String)
+                {
+                    frameTypes.add(TypeInterpreter.instance.newValue(Type.getObjectType((String) v)));
+                }
+                else if (v instanceof Integer)
+                {
+                    switch ((Integer) v)
+                    {
+                        case FN_TOP:
+                            // TODO: check this
+                            frameTypes.add(BasicValue.REFERENCE_VALUE);
+                            break;
+                        case FN_INTEGER:
+                            frameTypes.add(BasicValue.INT_VALUE);
+                            break;
+                        case FN_FLOAT:
+                            frameTypes.add(BasicValue.FLOAT_VALUE);
+                            break;
+                        case FN_DOUBLE:
+                            frameTypes.add(BasicValue.DOUBLE_VALUE);
+                            frameTypes.add(BasicValue.UNINITIALIZED_VALUE);
+                            break;
+                        case FN_LONG:
+                            frameTypes.add(BasicValue.LONG_VALUE);
+                            frameTypes.add(BasicValue.UNINITIALIZED_VALUE);
+                            break;
+                        case FN_NULL:
+                            // TODO: check this
+                            frameTypes.add(BasicValue.REFERENCE_VALUE);
+                            break;
+                        case FN_UNINITIALIZED_THIS:
+                            frameTypes.add(BasicValue.UNINITIALIZED_VALUE);
+                            break;
+                    }
+                }
+                else if (v instanceof Label)
+                {
+                    // TODO: check this
+                    frameTypes.add(BasicValue.UNINITIALIZED_VALUE);
+                    break;
+                }
+            }
+        }
+        return frameTypes;
     }
 
     private void debugSaveTrace(String name, final byte[] bytes)
@@ -959,6 +1121,8 @@ public class Transformer implements ClassFileTransformer
      */
     private static class TypeInterpreter extends BasicInterpreter
     {
+        static TypeInterpreter instance = new TypeInterpreter();
+
         @Override
         public BasicValue newValue(Type type)
         {
@@ -968,6 +1132,7 @@ public class Transformer implements ClassFileTransformer
             }
             return super.newValue(type);
         }
+
 
         @Override
         public BasicValue merge(BasicValue v, BasicValue w)
