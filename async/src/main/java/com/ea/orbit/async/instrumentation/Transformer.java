@@ -39,8 +39,10 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FrameNode;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.BasicInterpreter;
@@ -503,7 +505,7 @@ public class Transformer implements ClassFileTransformer
     }
 
     // converts FrameNode information to the way Frame stores it
-    private List<BasicValue> convertFrameNodeTypes(final List<Object> frameNodeTypes)
+    private List<BasicValue> convertFrameNodeTypes(final List<Object> frameNodeTypes) throws AnalyzerException
     {
         final List<BasicValue> frameTypes = new ArrayList<>();
         if (frameNodeTypes != null && frameNodeTypes.size() > 0)
@@ -546,11 +548,14 @@ public class Transformer implements ClassFileTransformer
                             break;
                     }
                 }
-                else if (v instanceof Label)
+                else if (v instanceof LabelNode)
                 {
-                    // TODO: check this
-                    frameTypes.add(BasicValue.UNINITIALIZED_VALUE);
-                    break;
+                    AbstractInsnNode node = (AbstractInsnNode) v;
+                    while (node.getOpcode() != NEW)
+                    {
+                        node = node.getNext();
+                    }
+                    frameTypes.add(TypeInterpreter.instance.newOperation(node));
                 }
             }
         }
@@ -1113,6 +1118,13 @@ public class Transformer implements ClassFileTransformer
         return false;
     }
 
+    public static class ExtendedValue extends BasicValue
+    {
+        public ExtendedValue(final Type type)
+        {
+            super(type);
+        }
+    }
 
     /**
      * Used to discover the object types that are currently
@@ -1132,6 +1144,18 @@ public class Transformer implements ClassFileTransformer
             return super.newValue(type);
         }
 
+        @Override
+        public BasicValue newOperation(final AbstractInsnNode insn) throws AnalyzerException
+        {
+            if (insn.getOpcode() == Opcodes.NEW)
+            {
+                final Type type = Type.getObjectType(((TypeInsnNode) insn).desc);
+                final ExtendedValue extendedValue = new ExtendedValue(type);
+                //extendedValue.type = Opcodes.UNINITIALIZED_THIS;
+                return extendedValue;
+            }
+            return super.newOperation(insn);
+        }
 
         @Override
         public BasicValue merge(BasicValue v, BasicValue w)

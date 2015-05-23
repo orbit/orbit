@@ -141,6 +141,33 @@ public class FrameTest extends BaseTest
     }
 
 
+    @Test
+    public void constructorCallTest() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
+    {
+        // this test fails if not handling uninitialized objects
+        final Task<?> res = constructorCall(getBlockedTask(1));
+        completeFutures();
+        assertEquals(1, res.join());
+    }
+
+    private Task<Integer> constructorCall(final Task<Integer> t)
+    {
+        // the inline if inside the constructor forces a frame node creation.
+        new SingleParamConstructor(t.isDone() ? t : "");
+        await(t);
+        return t;
+    }
+
+
+    private static class SingleParamConstructor
+    {
+        SingleParamConstructor(Object o)
+        {
+            // just for testing
+        }
+    }
+
+
 //    @Test
 //    public void uninitializedThisTest() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
 //    {
@@ -153,18 +180,12 @@ public class FrameTest extends BaseTest
 //    private Task<Integer> uninitializedThis(final Task<Integer> t)
 //    {
 //        new SingleParamConstructor(await(t));
+//        //final SingleParamConstructor a = new SingleParamConstructor(t.isDone() ? t : "");
+//        //await(t);
 //        return t;
 //    }
 //
-//    private static class SingleParamConstructor
-//    {
-//        SingleParamConstructor(Object o2)
-//        {
-//
-//        }
-//    }
-
-    //    private Task<Integer> uninitializedThisMulti(final Task<Integer> t)
+//    private Task<Integer> uninitializedThisMulti(final Task<Integer> t)
 //    {
 ////        Number n = 1;
 ////        if (t.isCancelled())
