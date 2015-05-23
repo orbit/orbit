@@ -39,6 +39,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FrameNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -243,6 +244,8 @@ public class Transformer implements ClassFileTransformer
 
             final List<SwitchEntry> switchEntries = new ArrayList<>();
             SwitchEntry entryPoint;
+
+            replaceObjectInitialization(nameUseCount, classNode, original);
             final List<Label> switchLabels = new ArrayList<>();
             {
 //                Analyzer analyzer = new Analyzer(new TypeInterpreter());
@@ -413,6 +416,105 @@ public class Transformer implements ClassFileTransformer
 
         }
         return bytes;
+    }
+
+    private void replaceObjectInitialization(final Map<String, Integer> nameUseCount, ClassNode classNode, final MethodNode methodNode)
+    {
+        // since we can't store uninitialized objects they have to be removed or replaced.
+        // this works for bytecodes where the initialization is implemented like:
+        // NEW T
+        // DUP
+        // ...
+        // T.<init>(..)V
+
+        // and the stack before <init> is: {... T' T' args}
+        // and the stack after <init> is: {... T}
+        // this conforms all cases of java derived bytecode that I'm aware of.
+        // but it might not be always true.
+
+        // TODO: we should replace the initialization of objects that are uninitialized at the moment of an await call.
+
+        // replace frameNodes and constructor calls
+        for (AbstractInsnNode insnNode = methodNode.instructions.getFirst(); insnNode != null; insnNode = insnNode.getNext())
+        {
+            if (insnNode instanceof FrameNode)
+            {
+                FrameNode frameNode = (FrameNode) insnNode;
+                List<Object> stack = frameNode.stack;
+                if (stack != null)
+                {
+                    for (int i = 0, l = stack.size(); i < l; i++)
+                    {
+                        final Object v = stack.get(i);
+                        // replaces unitilized object nodes with the actual type from the stack
+                        if (v instanceof LabelNode)
+                        {
+                            AbstractInsnNode node = (AbstractInsnNode) v;
+                            while (!(node instanceof TypeInsnNode && node.getOpcode() == NEW))
+                            {
+                                node = node.getNext();
+                            }
+                            stack.set(i, Type.getType(((TypeInsnNode) node).desc).getInternalName());
+                        }
+                    }
+                }
+            }
+            else if (insnNode.getOpcode() == INVOKESPECIAL)
+            {
+                MethodInsnNode methodInsnNode = (MethodInsnNode) insnNode;
+                if (methodInsnNode.name.equals("<init>"))
+                {
+                    String oOwner = methodInsnNode.owner;
+                    String oDesc = methodInsnNode.desc;
+                    Type cType = Type.getObjectType(oOwner);
+                    methodInsnNode.setOpcode(INVOKESTATIC);
+                    methodInsnNode.name = "new$async$" + cType.getInternalName().replace('/', '_');
+                    methodInsnNode.owner = classNode.name;
+                    Type[] oldArguments = Type.getArgumentTypes(methodInsnNode.desc);
+                    Type[] argumentTypes = new Type[oldArguments.length + 2];
+                    argumentTypes[0] = OBJECT_TYPE;
+                    argumentTypes[1] = OBJECT_TYPE;
+                    System.arraycopy(oldArguments, 0, argumentTypes, 2, oldArguments.length);
+                    methodInsnNode.desc = Type.getMethodDescriptor(cType, argumentTypes);
+                    final String key = methodInsnNode.name + methodInsnNode.desc;
+
+
+                    if (nameUseCount.get(key) == null)
+                    {
+                        nameUseCount.put(key, 1);
+                        // thankfully the verifier doesn't check for the exceptions.
+                        // nor the generic signature
+                        final MethodVisitor mv = classNode.visitMethod(ACC_PRIVATE | ACC_STATIC, methodInsnNode.name, methodInsnNode.desc, null, null);
+                        mv.visitCode();
+
+                        Label l0 = new Label();
+                        mv.visitTypeInsn(NEW, oOwner);
+                        mv.visitInsn(DUP);
+                        int argSizes = 2;
+                        for (int i = 2; i < argumentTypes.length; i++)
+                        {
+                            mv.visitVarInsn((argumentTypes[i].getOpcode(ILOAD)), i);
+                            argSizes += argumentTypes[i].getSize();
+                        }
+                        mv.visitMethodInsn(INVOKESPECIAL, oOwner, "<init>", oDesc, false);
+                        mv.visitInsn(ARETURN);
+                        mv.visitMaxs(argSizes, argSizes + 1);
+                        mv.visitEnd();
+                    }
+                }
+            }
+        }
+        // replace new calls
+        for (AbstractInsnNode insnNode = methodNode.instructions.getFirst(); insnNode != null; insnNode = insnNode.getNext())
+        {
+            if (insnNode.getOpcode() == NEW)
+            {
+                InsnNode newInsn = new InsnNode(ACONST_NULL);
+                methodNode.instructions.insertBefore(insnNode, newInsn);
+                methodNode.instructions.remove(insnNode);
+                insnNode = newInsn;
+            }
+        }
     }
 
     /// Cheaper and safer implementation of frame analysis.
@@ -737,7 +839,7 @@ public class Transformer implements ClassFileTransformer
             {
                 continue;
             }
-            locals[nLocals++] = toFrameType(type);
+            locals[nLocals++] = toFrameType(value);
         }
         for (int i = 0; i < frame.getStackSize(); i++)
         {
@@ -747,18 +849,19 @@ public class Transformer implements ClassFileTransformer
             {
                 continue;
             }
-            stack[nStack++] = toFrameType(type);
+            stack[nStack++] = toFrameType(value);
         }
         stack = nStack == stack.length ? stack : Arrays.copyOf(stack, nStack);
         locals = nLocals == locals.length ? locals : Arrays.copyOf(locals, nLocals);
         mv.visitFrame(F_FULL, nLocals, locals, nStack, stack);
     }
 
-    private Object toFrameType(final Type type)
+    private Object toFrameType(final BasicValue value)
     {
-        if (type == null)
+        final Type type = value.getType();
+        if (value instanceof ExtendedValue)
         {
-            return Opcodes.NULL;
+
         }
         switch (type.getSort())
         {
@@ -1120,6 +1223,8 @@ public class Transformer implements ClassFileTransformer
 
     public static class ExtendedValue extends BasicValue
     {
+        LabelNode label;
+
         public ExtendedValue(final Type type)
         {
             super(type);
@@ -1151,6 +1256,7 @@ public class Transformer implements ClassFileTransformer
             {
                 final Type type = Type.getObjectType(((TypeInsnNode) insn).desc);
                 final ExtendedValue extendedValue = new ExtendedValue(type);
+
                 //extendedValue.type = Opcodes.UNINITIALIZED_THIS;
                 return extendedValue;
             }

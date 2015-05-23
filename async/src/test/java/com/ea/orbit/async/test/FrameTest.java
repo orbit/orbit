@@ -168,46 +168,113 @@ public class FrameTest extends BaseTest
     }
 
 
-//    @Test
-//    public void uninitializedThisTest() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
-//    {
-//        // this test fails if not handling uninitialized objects
-//        final Task<?> res = uninitializedThis(getBlockedTask(1));
-//        completeFutures();
-//        assertEquals(1, res.join());
-//    }
-//
-//    private Task<Integer> uninitializedThis(final Task<Integer> t)
-//    {
-//        new SingleParamConstructor(await(t));
-//        //final SingleParamConstructor a = new SingleParamConstructor(t.isDone() ? t : "");
-//        //await(t);
-//        return t;
-//    }
-//
-//    private Task<Integer> uninitializedThisMulti(final Task<Integer> t)
-//    {
-////        Number n = 1;
-////        if (t.isCancelled())
-////        {
-////            n = 1.0f;
-////        }
-//        // here the type of n is uncertain Float or Integer
-//        // the original frame will say Number
-//
-//        // this fails if the Transform frame analysis can't get
-//        // the common superclass for Float and Integer
-//        // the best solution is to reuse the information from the original frames.
-//
-//        // the test here is for the uninitialized "this" in the stack
-//        new SingleParamConstructor(await(t));
-//        return t;
-//    }
-//    private static class MultiParamConstructor
-//    {
-//        MultiParamConstructor(Number o1, Object o2)
-//        {
-//
-//        }
-//    }
+    @Test
+    public void uninitializedThisTest() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
+    {
+        // this test fails if not handling uninitialized objects
+        final Task<?> res = uninitializedThis(getBlockedTask(1));
+        completeFutures();
+        assertEquals(1, res.join());
+    }
+
+    private Task<Integer> uninitializedThis(final Task<Integer> t)
+    {
+        new SingleParamConstructor(await(t));
+        //final SingleParamConstructor a = new SingleParamConstructor(t.isDone() ? t : "");
+        //await(t);
+        return t;
+    }
+
+
+    @Test
+    public void uninitializedThisMultipleConstructorsTest() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
+    {
+        // this test fails if not handling uninitialized objects
+        final Task<?> res = uninitializedThisMultipleConstructors(getBlockedTask(1));
+        completeFutures();
+        assertEquals(1, res.join());
+    }
+
+    private Task<Integer> uninitializedThisMultipleConstructors(final Task<Integer> t)
+    {
+        new SingleParamConstructor(await(t));
+        new SingleParamConstructor(await(t));
+        new SingleParamConstructor(await(t));
+        return t;
+    }
+
+    @Test
+    public void uninitializedThisMultipleConstructorsInteractionsTest() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
+    {
+        // this test fails if not handling uninitialized objects
+        final Task<?> res = uninitializedThisMultipleConstructors(getBlockedTask(1));
+        completeFutures();
+        assertEquals(1, res.join());
+    }
+
+    private Task<Integer> uninitializedThisMultipleConstructorsInteractions(final Task<Integer> t)
+    {
+        new SingleParamConstructor(await(t));
+        new SingleParamConstructor(await(t));
+        new SingleParamConstructor(await(t));
+        new SingleParamConstructor(new SingleParamConstructor(await(t)));
+        new SingleParamConstructor(new SingleParamConstructor(await(t)));
+        new SingleParamConstructor(new SingleParamConstructor(new SingleParamConstructor(new SingleParamConstructor(await(t)))));
+        new MultiParamConstructor(1, new SingleParamConstructor(new SingleParamConstructor(new SingleParamConstructor(new SingleParamConstructor(await(t))))));
+        return t;
+    }
+
+
+    private Task<Integer> uninitializedThisMulti(final Task<Integer> t)
+    {
+        Number n = 1;
+        if (t.isCancelled())
+        {
+            n = 1.0f;
+        }
+        // here the type of n is uncertain Float or Integer
+        // the original frame will say Number
+
+        // this fails if the Transform frame analysis can't get
+        // the common superclass for Float and Integer
+        // the best solution is to reuse the information from the original frames.
+
+        // the test here is for the uninitialized "this" in the stack
+        new MultiParamConstructor(1, await(t));
+        return t;
+    }
+
+    private static class MultiParamConstructor
+    {
+        MultiParamConstructor(Number o1, Object o2)
+        {
+
+        }
+    }
+
+    @Test
+    public void constructorWithExceptions() throws Exception
+    {
+        // this test fails if not handling uninitialized objects
+        final Task<?> res = constructorWithExceptions(getBlockedTask(1));
+        completeFutures();
+        assertEquals(1, res.join());
+    }
+
+    private Task<Integer> constructorWithExceptions(final Task<Integer> t) throws Exception
+    {
+        // ensure that replacing a constructor that throws exceptions doesn't cause a verification error
+        // the exceptions are not copied to the replacement initializer;
+        new ConstructorWithExceptions(1, await(t));
+        return t;
+    }
+
+    private static class ConstructorWithExceptions
+    {
+        ConstructorWithExceptions(Number o1, Object o2) throws Exception
+        {
+
+        }
+    }
+
 }
