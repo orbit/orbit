@@ -29,23 +29,12 @@
 package com.ea.orbit.async.test;
 
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.exception.UncheckedException;
-import com.ea.orbit.util.StringUtils;
 
-import org.junit.Ignore;
 import org.junit.Test;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Type;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.function.Consumer;
-
-import static com.ea.orbit.async.Await.await;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.objectweb.asm.Opcodes.*;
 
 // testing scenarios that might have been produced by other bytecode libraries

@@ -34,8 +34,6 @@ import org.junit.Test;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
-import com.sun.org.apache.xml.internal.resolver.helpers.Debug;
-
 import java.util.HashMap;
 import java.util.function.Function;
 
