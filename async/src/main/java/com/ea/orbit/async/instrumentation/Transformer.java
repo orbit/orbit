@@ -50,21 +50,11 @@ import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.BasicValue;
 import org.objectweb.asm.tree.analysis.Frame;
 import org.objectweb.asm.tree.analysis.Value;
-import org.objectweb.asm.util.Textifier;
-import org.objectweb.asm.util.TraceClassVisitor;
-import org.objectweb.asm.util.TraceMethodVisitor;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.reflect.Modifier;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -394,26 +384,10 @@ public class Transformer implements ClassFileTransformer
         };
         classNode.accept(cw);
         byte[] bytes = cw.toByteArray();
-        {
-//             for development use: new ClassReader(bytes).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
-//             for development use: debugSaveTrace(classNode.name + ".3", classNode);
-//            {
-//                final ClassWriter cw2 = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
-//                {
-//                    @Override
-//                    protected String getCommonSuperClass(final String type1, final String type2)
-//                    {
-//                        return "java/lang/Object";
-//                    }
-//                };
-//                classNode.accept(cw2);
-//                byte[] bytes2 = cw2.toByteArray();
-//                debugSaveTrace(classNode.name + ".2", bytes2);
-//            }
-            // for development use: debugSave(classNode, bytes);
-            // for development use: debugSaveTrace(classNode.name + ".1", bytes);
-
-        }
+        // for development use: new ClassReader(bytes).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
+        // for development use: debugSaveTrace(classNode.name + ".3", classNode);
+        // for development use: debugSave(classNode, bytes);
+        // for development use: debugSaveTrace(classNode.name + ".1", bytes);
         return bytes;
     }
 
@@ -448,7 +422,7 @@ public class Transformer implements ClassFileTransformer
                     for (int i = 0, l = stack.size(); i < l; i++)
                     {
                         final Object v = stack.get(i);
-                        // replaces unitilized object nodes with the actual type from the stack
+                        // replaces uninitialized object nodes with the actual type from the stack
                         if (v instanceof LabelNode)
                         {
                             AbstractInsnNode node = (AbstractInsnNode) v;
@@ -483,7 +457,7 @@ public class Transformer implements ClassFileTransformer
                     Frame<BasicValue> frameBefore = frames[index];
                     final Value target = frameBefore.getStack(frameBefore.getStackSize() - (1 + oldArguments.length));
 
-                    // must test with double in the locals:  { Ljava/lang/Object; D Unitialized }
+                    // must test with double in the locals:  { Ljava/lang/Object; D Uninitialized }
                     for (int j = 0; j < frameBefore.getLocals(); )
                     {
                         // replaces all locals that used to reference the old value
@@ -534,59 +508,6 @@ public class Transformer implements ClassFileTransformer
         }
     }
 
-    private void debugSaveTrace(String name, final byte[] bytes)
-    {
-        try
-        {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            new ClassReader(bytes).accept(new TraceClassVisitor(pw), 0);
-            pw.flush();
-
-            Path path = Paths.get("target/classes2/" + name + ".trace");
-            Files.createDirectories(path.getParent());
-            Files.write(path, sw.toString().getBytes(Charset.forName("UTF-8")));
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    private void debugSaveTrace(String name, ClassNode node)
-    {
-        try
-        {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            node.accept(new TraceClassVisitor(pw));
-            pw.flush();
-
-            Path path = Paths.get("target/classes2/" + name + ".trace");
-            Files.createDirectories(path.getParent());
-            Files.write(path, sw.toString().getBytes(Charset.forName("UTF-8")));
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    private void debugSave(final ClassNode classNode, final byte[] bytes)
-    {
-        try
-        {
-
-            Path path = Paths.get("target/classes2/" + classNode.name + ".class");
-            Files.createDirectories(path.getParent());
-            Files.write(path, bytes);
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
     /**
      * Replaces calls to Await.await with returing a promise or with a join().
      *
@@ -626,7 +547,7 @@ public class Transformer implements ClassFileTransformer
         // code:    restoreLocals;
         // code: futureIsDoneLabel:
 
-        // lable to the point to jump if the future is completed (isDone())
+        // label to the point to jump if the future is completed (isDone())
         Label futureIsDoneLabel = isContinued ? switchEntry.futureIsDoneLabel : new Label();
 
         mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "isDone", "()Z", false);
@@ -709,7 +630,6 @@ public class Transformer implements ClassFileTransformer
             if (type == null)
             {
                 locals[nLocals++] = TOP;
-                continue;
             }
             else
             {
@@ -754,7 +674,6 @@ public class Transformer implements ClassFileTransformer
         return type.getInternalName();
     }
 
-
     private boolean isAwaitCall(final MethodInsnNode methodIns)
     {
         return isAwaitCall(methodIns.getOpcode(), methodIns.owner, methodIns.name, methodIns.desc);
@@ -766,72 +685,6 @@ public class Transformer implements ClassFileTransformer
                 && AWAIT_METHOD_NAME.equals(name)
                 && AWAIT_NAME.equals(owner)
                 && AWAIT_METHOD_DESC.equals(desc);
-    }
-
-    private void printMethod(final ClassNode cn, final MethodNode mv)
-    {
-        final PrintWriter pw = new PrintWriter(System.out);
-        pw.println("method " + mv.name + mv.desc);
-        Textifier p = new Textifier();
-        final TraceMethodVisitor tv = new TraceMethodVisitor(p);
-
-        try
-        {
-            Analyzer analyzer2 = new Analyzer(new FrameAnalyzer.TypeInterpreter());
-            Frame[] frames2;
-            try
-            {
-                frames2 = analyzer2.analyze(cn.superName, mv);
-            }
-            catch (AnalyzerException ex)
-            {
-                if (ex.node != null)
-                {
-                    pw.print("Error at: ");
-                    ex.node.accept(tv);
-                }
-                ex.printStackTrace();
-                frames2 = null;
-            }
-            catch (Exception ex)
-            {
-                ex.printStackTrace();
-                frames2 = null;
-            }
-
-            final AbstractInsnNode[] isns2 = mv.instructions.toArray();
-
-            for (int i = 0; i < isns2.length; i++)
-            {
-                Frame frame;
-                if (frames2 != null && (frame = frames2[i]) != null)
-                {
-                    p.getText().add("Locals: [ ");
-                    for (int x = 0; x < frame.getLocals(); x++)
-                    {
-                        p.getText().add(String.valueOf(((BasicValue) frame.getLocal(x)).getType()));
-                        p.getText().add(" ");
-                    }
-                    p.getText().add("]\r\n");
-                    p.getText().add("Stack: [ ");
-                    for (int x = 0; x < frame.getStackSize(); x++)
-                    {
-                        p.getText().add(String.valueOf(((BasicValue) frame.getStack(x)).getType()));
-                        p.getText().add(" ");
-                    }
-                    p.getText().add("]\r\n");
-                }
-                p.getText().add(i + ": ");
-                isns2[i].accept(tv);
-            }
-            p.print(pw);
-            pw.println();
-            pw.flush();
-        }
-        catch (Exception ex)
-        {
-            ex.printStackTrace();
-        }
     }
 
     private int saveLocals(final MethodVisitor mv, final int pos, final Frame frame)
