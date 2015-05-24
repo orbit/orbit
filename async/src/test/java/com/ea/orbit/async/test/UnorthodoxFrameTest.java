@@ -53,152 +53,6 @@ import static org.objectweb.asm.Opcodes.*;
 public class UnorthodoxFrameTest extends BaseTest
 {
 
-    // utility method to create arbitrary classes.
-    public <T> T createClass(Class<T> superClass, Consumer<ClassVisitor> populate)
-    {
-        ClassWriter cw = new ClassWriter(0);
-        String[] interfaces = null;
-        Type superType;
-        if (superClass.isInterface())
-        {
-            superType = Type.getType(Object.class);
-            interfaces = new String[]{ Type.getType(superClass).getInternalName() };
-        }
-        else
-        {
-            superType = Type.getType(superClass);
-        }
-        String superName = superType.getInternalName();
-        StackTraceElement caller = new Exception().getStackTrace()[1];
-        final String name = "Experiment" + StringUtils.capitalize(caller.getMethodName()) + caller.getLineNumber();
-
-        cw.visit(52, ACC_PUBLIC, Type.getType(getClass()).getInternalName() + "$" + name, null, superName, interfaces);
-        populate.accept(cw);
-        MethodVisitor mv;
-        {
-            mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, superName, "<init>", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-        cw.visitEnd();
-        cw.toByteArray();
-        final byte[] bytes = cw.toByteArray();
-        // perhaps we should use the source class ClassLoader as parent.
-        class Loader extends ClassLoader
-        {
-            Loader()
-            {
-                super(superClass.getClassLoader());
-            }
-
-            public Class<?> define(final String o, final byte[] bytes)
-            {
-                return super.defineClass(o, bytes, 0, bytes.length);
-            }
-        }
-        //noinspection unchecked
-        try
-        {
-            return (T) new Loader().define(null, bytes).newInstance();
-        }
-        catch (Exception e)
-        {
-            throw new UncheckedException(e);
-        }
-    }
-
-    // sanity check of the creator
-    @Test
-    public void testCreateClass() throws Exception
-    {
-        assertTrue(createClass(ArrayList.class, cv -> {
-        }) instanceof List);
-        assertEquals("hello", createClass(Callable.class, cv -> {
-            MethodVisitor mv = cv.visitMethod(ACC_PUBLIC, "call", "()Ljava/lang/Object;", null, new String[]{ "java/lang/Exception" });
-            mv.visitCode();
-            mv.visitLdcInsn("hello");
-            mv.visitInsn(ARETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }).call());
-    }
-
-    public interface AsyncCallable<T>
-    {
-        Task<T> call() throws Exception;
-    }
-
-    public interface AsyncFunction<T, V>
-    {
-        Task<T> apply(V v) throws Exception;
-    }
-
-
-    // sanity check of the creator
-    @Test
-    public void simpleAsyncMethod() throws Exception
-    {
-        final Task task = createClass(AsyncCallable.class, cw -> {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "call", "()Lcom/ea/orbit/concurrent/Task;", null, new String[]{ "java/lang/Exception" });
-            mv.visitCode();
-            mv.visitMethodInsn(INVOKESTATIC, "com/ea/orbit/concurrent/Task", "done", "()Lcom/ea/orbit/concurrent/Task;", false);
-            mv.visitMethodInsn(INVOKESTATIC, "com/ea/orbit/async/Await", "await", "(Ljava/util/concurrent/CompletableFuture;)Ljava/lang/Object;", false);
-            mv.visitInsn(POP);
-            mv.visitMethodInsn(INVOKESTATIC, "com/ea/orbit/concurrent/Task", "done", "()Lcom/ea/orbit/concurrent/Task;", false);
-            mv.visitInsn(ARETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }).call();
-        assertTrue(task.isDone());
-    }
-
-
-    // sanity check of the creator
-    @Test
-    @SuppressWarnings("unchecked")
-    public void simpleBlockingAsyncMethod() throws Exception
-    {
-        final Task task = createClass(AsyncFunction.class, cw -> {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "apply", "(Ljava/lang/Object;)Lcom/ea/orbit/concurrent/Task;", null, new String[]{ "java/lang/Exception" });
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, "com/ea/orbit/concurrent/Task");
-            mv.visitMethodInsn(INVOKESTATIC, "com/ea/orbit/async/Await", "await", "(Ljava/util/concurrent/CompletableFuture;)Ljava/lang/Object;", false);
-            mv.visitInsn(POP);
-            mv.visitVarInsn(ALOAD, 1);
-            mv.visitTypeInsn(CHECKCAST, "com/ea/orbit/concurrent/Task");
-            mv.visitInsn(ARETURN);
-            mv.visitMaxs(1, 2);
-            mv.visitEnd();
-        }).apply(getBlockedTask("hello"));
-        assertFalse(task.isDone());
-        completeFutures();
-        assertEquals("hello", task.join());
-    }
-
-
-    public static class Experiment implements AsyncFunction
-    {
-
-        @Override
-        public Task apply(final Object o) throws Exception
-        {
-            new SomeObject(await((Task) o));
-            return (Task) o;
-        }
-    }
-
-    public static class SomeObject
-    {
-        public SomeObject(final Object obj)
-        {
-        }
-    }
-
     // sanity check of the creator
     @Test
     @SuppressWarnings("unchecked")
@@ -420,14 +274,14 @@ public class UnorthodoxFrameTest extends BaseTest
 
     @Test
     @SuppressWarnings("unchecked")
-    @Ignore
-    // TODO implement this
-    public void uninitializedInTheStackWithUnterleavedCopies() throws Exception
+    public void uninitializedInTheStackWithInterleavedCopies() throws Exception
     {
         // check that the constructor replacement is able to replace interleaved elements in the stack
         // obs.: the java compiler doesn't usually produce code like this
-        // regular java compiler will do { new dup dup ... <init> }
-        // this tests what happends if { new dup push_1 swap ... <init> pop }
+        // regular java compiler will do:
+        // -- { new dup dup ... <init> }
+        // this tests what happens if:
+        // -- { new dup push_1 swap ... <init> pop }
         final Task task = createClass(AsyncFunction.class, cw -> {
             MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "apply", "(Ljava/lang/Object;)Lcom/ea/orbit/concurrent/Task;", null, new String[]{ "java/lang/Exception" });
             mv.visitCode();

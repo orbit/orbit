@@ -391,7 +391,7 @@ public class Transformer implements ClassFileTransformer
         return bytes;
     }
 
-    private void replaceObjectInitialization(
+    void replaceObjectInitialization(
             ClassNode classNode, final MethodNode methodNode,
             final Map<String, Integer> nameUseCount, final Frame<BasicValue>[] frames)
     {
@@ -492,33 +492,65 @@ public class Transformer implements ClassFileTransformer
                     }
 
                     // find first stack occurrence that needs to be replaced
-//                    int firstOccurrence = -1;
-//                    for (int j = 0; j < stackSizeAfter; j++)
-//                    {
-//                        // replaces all locals that used to reference the old value
-//                        BasicValue local = frameBefore.getStack(j);
-//                        if (target.equals(local))
-//                        {
-//                            firstOccurrence = j;
-//                            break;
-//                        }
-//                    }
-//                    if (firstOccurrence > 0)
-//                    {
-//                        // replaces it in the stack
-//                        // must test with double and long
-//                        int bufferSpaceNeeded = 1;
-//
-//                        for (int j = stackSizeAfter; --j >= firstOccurrence; )
-//                        {
-//                            BasicValue value = frameBefore.getLocal(j);
-//                            if (target.equals(value))
-//                            {
-//                                break;
-//                            }
-//
-//                        }
-//                    }
+                    int firstOccurrence = -1;
+                    for (int j = 0; j < stackSizeAfter; j++)
+                    {
+                        // replaces all locals that used to reference the old value
+                        BasicValue local = frameBefore.getStack(j);
+                        if (target.equals(local))
+                        {
+                            firstOccurrence = j;
+                            break;
+                        }
+                    }
+                    if (firstOccurrence >= 0)
+                    {
+                        // replaces it in the stack
+                        // must test with double and long
+                        int newMaxLocals = originalLocals;
+
+                        // stores the new object
+                        methodNode.instructions.insert(insnNode, insnNode = new VarInsnNode(ASTORE, newMaxLocals));
+                        newMaxLocals++;
+
+                        // stores everything (but the new refs) in the stack up to firstOccurrence
+                        for (int j = stackSizeAfter; --j >= firstOccurrence; )
+                        {
+                            BasicValue value = frameBefore.getStack(j);
+                            if (!target.equals(value) && value.getType() != null)
+                            {
+                                methodNode.instructions.insert(insnNode, insnNode = new VarInsnNode(value.getType().getOpcode(ISTORE), newMaxLocals));
+                                newMaxLocals += value.getType().getSize();
+                            } else {
+                                methodNode.instructions.insert(insnNode, insnNode = new InsnNode(POP));
+                            }
+                        }
+                        // restores the stack replacing the uninitialized refs
+                        int iLocal = originalLocals + 1;
+                        for (int j = firstOccurrence; j < stackSizeAfter; j++)
+                        {
+                            BasicValue value = frameBefore.getStack(j);
+                            if (target.equals(value))
+                            {
+                                // replaces the old refs
+                                methodNode.instructions.insert(insnNode, insnNode = new VarInsnNode(ALOAD, originalLocals));
+                            }
+                            else
+                            {
+                                if (value.getType() != null)
+                                {
+                                    methodNode.instructions.insert(insnNode, insnNode = new VarInsnNode(value.getType().getOpcode(ILOAD), iLocal));
+                                    iLocal += value.getType().getSize();
+                                }
+                                else
+                                {
+                                    methodNode.instructions.insert(insnNode, insnNode = new InsnNode(ACONST_NULL));
+                                }
+                            }
+                        }
+                        methodNode.instructions.insert(insnNode, insnNode = new VarInsnNode(ALOAD, originalLocals));
+                        methodNode.maxLocals = Math.max(newMaxLocals, methodNode.maxLocals);
+                    }
 
                     if (extraConsumed == 0)
                     {
@@ -764,7 +796,7 @@ public class Transformer implements ClassFileTransformer
             if (value.getType() != null)
             {
                 count++;
-                varInsn(mv, value.getType(), false, i);
+                mv.visitVarInsn(value.getType().getOpcode(ILOAD), i);
 
                 mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "push",
                         Type.getMethodDescriptor(ASYNC_STATE_TYPE, value.isReference() ? OBJECT_TYPE : value.getType()), false);
@@ -861,7 +893,7 @@ public class Transformer implements ClassFileTransformer
                     {
                         mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "get" + local.getType(), Type.getMethodDescriptor(local.getType(), Type.INT_TYPE), false);
                     }
-                    varInsn(mv, local.getType(), true, i);
+                    mv.visitVarInsn(local.getType().getOpcode(ISTORE), i);
                 }
                 else
                 {
@@ -1009,39 +1041,6 @@ public class Transformer implements ClassFileTransformer
         return false;
     }
 
-
-    /**
-     * Emits a var opcode (STORE or LOAD) with the proper operand type.
-     *
-     * @param mv    the method visitor
-     * @param type  the var type
-     * @param store true for store, false for load
-     * @param local the index of the local variable
-     */
-    private void varInsn(final MethodVisitor mv, final Type type, final boolean store, final int local)
-    {
-        switch (type.getSort())
-        {
-            case Type.BOOLEAN:
-            case Type.BYTE:
-            case Type.CHAR:
-            case Type.SHORT:
-            case Type.INT:
-                mv.visitVarInsn(store ? ISTORE : ILOAD, local);
-                break;
-            case Type.FLOAT:
-                mv.visitVarInsn(store ? FSTORE : FLOAD, local);
-                break;
-            case Type.LONG:
-                mv.visitVarInsn(store ? LSTORE : LLOAD, local);
-                break;
-            case Type.DOUBLE:
-                mv.visitVarInsn(store ? DSTORE : DLOAD, local);
-                break;
-            default:
-                mv.visitVarInsn(store ? ASTORE : ALOAD, local);
-        }
-    }
 
     private class MyMethodVisitor extends MethodVisitor
     {
