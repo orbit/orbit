@@ -385,9 +385,9 @@ public class Transformer implements ClassFileTransformer
         classNode.accept(cw);
         byte[] bytes = cw.toByteArray();
         // for development use: new ClassReader(bytes).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.EXPAND_FRAMES);
-        // for development use: debugSaveTrace(classNode.name + ".3", classNode);
-        // for development use: debugSave(classNode, bytes);
-        // for development use: debugSaveTrace(classNode.name + ".1", bytes);
+        // for development use: DevDebug.debugSaveTrace(classNode.name + ".3", classNode);
+        // for development use: DevDebug.debugSave(classNode, bytes);
+        // for development use: DevDebug.debugSaveTrace(classNode.name + ".1", bytes);
         return bytes;
     }
 
@@ -395,6 +395,9 @@ public class Transformer implements ClassFileTransformer
             ClassNode classNode, final MethodNode methodNode,
             final Map<String, Integer> nameUseCount, final Frame<BasicValue>[] frames)
     {
+        int originalLocals = methodNode.maxLocals;
+        int originalStack = methodNode.maxStack;
+
         // since we can't store uninitialized objects they have to be removed or replaced.
         // this works for bytecodes where the initialization is implemented like:
         // NEW T
@@ -447,17 +450,35 @@ public class Transformer implements ClassFileTransformer
                     methodInsnNode.name = "new$async$" + cType.getInternalName().replace('/', '_');
                     methodInsnNode.owner = classNode.name;
                     Type[] oldArguments = Type.getArgumentTypes(methodInsnNode.desc);
-                    Type[] argumentTypes = new Type[oldArguments.length + 2];
-                    argumentTypes[0] = OBJECT_TYPE;
-                    argumentTypes[1] = OBJECT_TYPE;
-                    System.arraycopy(oldArguments, 0, argumentTypes, 2, oldArguments.length);
+
+                    Frame<BasicValue> frameBefore = frames[index];
+                    int targetStackIndex = frameBefore.getStackSize() - (1 + oldArguments.length);
+                    final Value target = frameBefore.getStack(targetStackIndex);
+                    int extraConsumed = 0;
+                    // how many more to remove from the stack (normally exactly 1)
+                    for (int i = targetStackIndex; --i >= 0 && target.equals(frameBefore.getStack(i)); )
+                    {
+                        extraConsumed++;
+                    }
+
+                    // test extraConsumed = 0 and extraConsumed = 2,3,4
+                    // done at #uninitializedInTheStackSingle and #uninitializedInTheStackMultipleExtraCopies
+
+                    Type[] argumentTypes = new Type[oldArguments.length + 1 + extraConsumed];
+                    for (int i = 0; i <= extraConsumed; i++)
+                    {
+                        argumentTypes[i] = OBJECT_TYPE;
+                    }
+                    System.arraycopy(oldArguments, 0, argumentTypes, 1 + extraConsumed, oldArguments.length);
                     methodInsnNode.desc = Type.getMethodDescriptor(cType, argumentTypes);
                     final String key = methodInsnNode.name + methodInsnNode.desc;
 
-                    Frame<BasicValue> frameBefore = frames[index];
-                    final Value target = frameBefore.getStack(frameBefore.getStackSize() - (1 + oldArguments.length));
+                    int stackSizeAfter = targetStackIndex;
+                    // accounting for the extra pops
+                    stackSizeAfter -= extraConsumed;
 
                     // must test with double in the locals:  { Ljava/lang/Object; D Uninitialized }
+                    // done at #uninitializedStoreWithWideVarsAndGaps
                     for (int j = 0; j < frameBefore.getLocals(); )
                     {
                         // replaces all locals that used to reference the old value
@@ -468,6 +489,47 @@ public class Transformer implements ClassFileTransformer
                             methodNode.instructions.insert(insnNode, insnNode = new VarInsnNode(ASTORE, j));
                         }
                         j += local.getSize();
+                    }
+
+                    // find first stack occurrence that needs to be replaced
+//                    int firstOccurrence = -1;
+//                    for (int j = 0; j < stackSizeAfter; j++)
+//                    {
+//                        // replaces all locals that used to reference the old value
+//                        BasicValue local = frameBefore.getStack(j);
+//                        if (target.equals(local))
+//                        {
+//                            firstOccurrence = j;
+//                            break;
+//                        }
+//                    }
+//                    if (firstOccurrence > 0)
+//                    {
+//                        // replaces it in the stack
+//                        // must test with double and long
+//                        int bufferSpaceNeeded = 1;
+//
+//                        for (int j = stackSizeAfter; --j >= firstOccurrence; )
+//                        {
+//                            BasicValue value = frameBefore.getLocal(j);
+//                            if (target.equals(value))
+//                            {
+//                                break;
+//                            }
+//
+//                        }
+//                    }
+
+                    if (extraConsumed == 0)
+                    {
+                        methodNode.instructions.insert(insnNode, insnNode = new InsnNode(POP));
+                    }
+                    else
+                    {
+                        for (int i = 1; i < extraConsumed; i++)
+                        {
+                            methodNode.instructions.insert(insnNode, insnNode = new InsnNode(DUP));
+                        }
                     }
 
                     if (nameUseCount.get(key) == null)
@@ -482,7 +544,7 @@ public class Transformer implements ClassFileTransformer
                         mv.visitInsn(DUP);
                         int argSizes = 2;
                         // must test with long and double
-                        for (int i = 2; i < argumentTypes.length; i++)
+                        for (int i = extraConsumed + 1; i < argumentTypes.length; i++)
                         {
                             mv.visitVarInsn((argumentTypes[i].getOpcode(ILOAD)), i);
                             argSizes += argumentTypes[i].getSize();
