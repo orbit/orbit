@@ -46,7 +46,6 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
-import org.objectweb.asm.tree.analysis.BasicInterpreter;
 import org.objectweb.asm.tree.analysis.BasicValue;
 import org.objectweb.asm.tree.analysis.Frame;
 import org.objectweb.asm.util.Textifier;
@@ -248,11 +247,10 @@ public class Transformer implements ClassFileTransformer
             replaceObjectInitialization(nameUseCount, classNode, original);
             final List<Label> switchLabels = new ArrayList<>();
             {
-//                Analyzer analyzer = new Analyzer(new TypeInterpreter());
-//                Frame[] frames0 = analyzer.analyze(classNode.name, original);
+                Analyzer analyzer = new FrameAnalyzer();
+                Frame[] frames = analyzer.analyze(classNode.name, original);
 
-                Frame[] frames = new Frame[original.instructions.size()];
-                entryPoint = new SwitchEntry(0, computeFrame(frames, 0, classNode.name, original));
+                entryPoint = new SwitchEntry(0, frames[0]);
                 switchLabels.add(entryPoint.resumeLabel);
                 int ii = 0;
                 int count = 0;
@@ -262,7 +260,7 @@ public class Transformer implements ClassFileTransformer
                     Object o = it.next();
                     if ((o instanceof MethodInsnNode && isAwaitCall((MethodInsnNode) o)))
                     {
-                        SwitchEntry se = new SwitchEntry(++count, computeFrame(frames, ii, classNode.name, original));
+                        SwitchEntry se = new SwitchEntry(++count, frames[ii]);
                         switchLabels.add(se.resumeLabel);
                         switchEntries.add(se);
                     }
@@ -432,7 +430,7 @@ public class Transformer implements ClassFileTransformer
         // this conforms all cases of java derived bytecode that I'm aware of.
         // but it might not be always true.
 
-        // TODO: we should replace the initialization of objects that are uninitialized at the moment of an await call.
+        // TODO: we should only replace the initialization of objects that are uninitialized at the moment of an await call.
 
         // replace frameNodes and constructor calls
         for (AbstractInsnNode insnNode = methodNode.instructions.getFirst(); insnNode != null; insnNode = insnNode.getNext())
@@ -515,153 +513,6 @@ public class Transformer implements ClassFileTransformer
                 insnNode = newInsn;
             }
         }
-    }
-
-    /// Cheaper and safer implementation of frame analysis.
-    // It uses the original stack frame information to decrease the costs.
-    private Frame computeFrame(final Frame<BasicValue>[] frames, final int index, String owner, final MethodNode m) throws AnalyzerException
-    {
-        if (frames[index] != null)
-        {
-            // return cached frame
-            return frames[index];
-        }
-
-        // searches for first FULL_FRAME before this instruction
-        int i = index;
-        AbstractInsnNode insnNode = m.instructions.get(index);
-        TypeInterpreter interpreter = TypeInterpreter.instance;
-
-        for (; i > 0 && frames[i] == null; insnNode = insnNode.getPrevious(), i--)
-        {
-            if (insnNode instanceof FrameNode)
-            {
-                FrameNode frameNode = (FrameNode) insnNode;
-                final int frameType = frameNode.type;
-                if (frameType == F_NEW || frameType == F_FULL)
-                {
-                    List<BasicValue> locals = convertFrameNodeTypes(frameNode.local);
-                    List<BasicValue> stack = convertFrameNodeTypes(frameNode.stack);
-                    Frame<BasicValue> frame = new Frame<>(m.maxLocals, m.maxStack);
-                    frames[i] = frame;
-                    int iLocal = 0;
-                    for (; iLocal < locals.size(); iLocal++)
-                    {
-                        frame.setLocal(iLocal, locals.get(iLocal));
-                    }
-                    while (iLocal < m.maxLocals)
-                    {
-                        frame.setLocal(iLocal++, interpreter.newValue(null));
-                    }
-                    for (BasicValue v : stack)
-                    {
-                        frame.push(v);
-                    }
-                    break;
-                }
-            }
-        }
-        if (i == 0 && frames[0] == null)
-        {
-            // create first frame
-            Frame<BasicValue> first = new Frame<>(m.maxLocals, m.maxStack);
-            first.setReturn(interpreter.newValue(Type.getReturnType(m.desc)));
-            Type[] params = Type.getArgumentTypes(m.desc);
-            int iLocal = 0;
-            if ((m.access & ACC_STATIC) == 0)
-            {
-                Type ownerType = Type.getObjectType(owner);
-                first.setLocal(iLocal++, interpreter.newValue(ownerType));
-            }
-            for (int iParam = 0; iParam < params.length; iParam++)
-            {
-                first.setLocal(iLocal++, interpreter.newValue(params[iParam]));
-                if (params[iParam].getSize() == 2)
-                {
-                    first.setLocal(iLocal++, interpreter.newValue(null));
-                }
-            }
-            while (iLocal < m.maxLocals)
-            {
-                first.setLocal(iLocal++, interpreter.newValue(null));
-            }
-            frames[0] = first;
-        }
-        if (frames[index] != null)
-        {
-            return frames[index];
-        }
-        for (; i < index; i++, insnNode = insnNode.getNext())
-        {
-            Frame<BasicValue> nextFrame = new Frame<>(frames[i]);
-            final int insnType = insnNode.getType();
-            if (insnType != AbstractInsnNode.LABEL && insnType != AbstractInsnNode.LINE
-                    && insnType != AbstractInsnNode.FRAME)
-            {
-                nextFrame.execute(insnNode, interpreter);
-            }
-            frames[i + 1] = nextFrame;
-        }
-
-        return frames[index];
-    }
-
-    // converts FrameNode information to the way Frame stores it
-    private List<BasicValue> convertFrameNodeTypes(final List<Object> frameNodeTypes) throws AnalyzerException
-    {
-        final List<BasicValue> frameTypes = new ArrayList<>();
-        if (frameNodeTypes != null && frameNodeTypes.size() > 0)
-        {
-            for (int k = 0, j = 0; k < frameNodeTypes.size(); k++)
-            {
-                final Object v = frameNodeTypes.get(k);
-                if (v instanceof String)
-                {
-                    frameTypes.add(TypeInterpreter.instance.newValue(Type.getObjectType((String) v)));
-                }
-                else if (v instanceof Integer)
-                {
-                    switch ((Integer) v)
-                    {
-                        case FN_TOP:
-                            // TODO: check this
-                            frameTypes.add(BasicValue.REFERENCE_VALUE);
-                            break;
-                        case FN_INTEGER:
-                            frameTypes.add(BasicValue.INT_VALUE);
-                            break;
-                        case FN_FLOAT:
-                            frameTypes.add(BasicValue.FLOAT_VALUE);
-                            break;
-                        case FN_DOUBLE:
-                            frameTypes.add(BasicValue.DOUBLE_VALUE);
-                            frameTypes.add(BasicValue.UNINITIALIZED_VALUE);
-                            break;
-                        case FN_LONG:
-                            frameTypes.add(BasicValue.LONG_VALUE);
-                            frameTypes.add(BasicValue.UNINITIALIZED_VALUE);
-                            break;
-                        case FN_NULL:
-                            // TODO: check this
-                            frameTypes.add(BasicValue.REFERENCE_VALUE);
-                            break;
-                        case FN_UNINITIALIZED_THIS:
-                            frameTypes.add(BasicValue.UNINITIALIZED_VALUE);
-                            break;
-                    }
-                }
-                else if (v instanceof LabelNode)
-                {
-                    AbstractInsnNode node = (AbstractInsnNode) v;
-                    while (node.getOpcode() != NEW)
-                    {
-                        node = node.getNext();
-                    }
-                    frameTypes.add(TypeInterpreter.instance.newOperation(node));
-                }
-            }
-        }
-        return frameTypes;
     }
 
     private void debugSaveTrace(String name, final byte[] bytes)
@@ -840,6 +691,7 @@ public class Transformer implements ClassFileTransformer
                 continue;
             }
             locals[nLocals++] = toFrameType(value);
+            if (value.getSize() == 2) i++;
         }
         for (int i = 0; i < frame.getStackSize(); i++)
         {
@@ -859,10 +711,6 @@ public class Transformer implements ClassFileTransformer
     private Object toFrameType(final BasicValue value)
     {
         final Type type = value.getType();
-        if (value instanceof ExtendedValue)
-        {
-
-        }
         switch (type.getSort())
         {
             case Type.BOOLEAN:
@@ -904,7 +752,7 @@ public class Transformer implements ClassFileTransformer
 
         try
         {
-            Analyzer analyzer2 = new Analyzer(new TypeInterpreter());
+            Analyzer analyzer2 = new Analyzer(new FrameAnalyzer.TypeInterpreter());
             Frame[] frames2;
             try
             {
@@ -1221,68 +1069,6 @@ public class Transformer implements ClassFileTransformer
         return false;
     }
 
-    public static class ExtendedValue extends BasicValue
-    {
-        LabelNode label;
-
-        public ExtendedValue(final Type type)
-        {
-            super(type);
-        }
-    }
-
-    /**
-     * Used to discover the object types that are currently
-     * being stored in the stack and in the locals.
-     */
-    private static class TypeInterpreter extends BasicInterpreter
-    {
-        static TypeInterpreter instance = new TypeInterpreter();
-
-        @Override
-        public BasicValue newValue(Type type)
-        {
-            if (type != null && type.getSort() == Type.OBJECT)
-            {
-                return new BasicValue(type);
-            }
-            return super.newValue(type);
-        }
-
-        @Override
-        public BasicValue newOperation(final AbstractInsnNode insn) throws AnalyzerException
-        {
-            if (insn.getOpcode() == Opcodes.NEW)
-            {
-                final Type type = Type.getObjectType(((TypeInsnNode) insn).desc);
-                final ExtendedValue extendedValue = new ExtendedValue(type);
-
-                //extendedValue.type = Opcodes.UNINITIALIZED_THIS;
-                return extendedValue;
-            }
-            return super.newOperation(insn);
-        }
-
-        @Override
-        public BasicValue merge(BasicValue v, BasicValue w)
-        {
-            if (v != w && v != null && w != null && !v.equals(w))
-            {
-                Type t = ((BasicValue) v).getType();
-                Type u = ((BasicValue) w).getType();
-                if (t != null && u != null
-                        && t.getSort() == Type.OBJECT
-                        && u.getSort() == Type.OBJECT)
-                {
-                    // could find a common super type here, a bit expensive
-                    // TODO: test this with an assignment
-                    //    like: local1 was CompletableFuture <- store Task
-                    return BasicValue.REFERENCE_VALUE;
-                }
-            }
-            return super.merge(v, w);
-        }
-    }
 
     /**
      * Emits a var opcode (STORE or LOAD) with the proper operand type.
