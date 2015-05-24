@@ -44,10 +44,12 @@ import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.BasicValue;
 import org.objectweb.asm.tree.analysis.Frame;
+import org.objectweb.asm.tree.analysis.Value;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
 import org.objectweb.asm.util.TraceMethodVisitor;
@@ -243,8 +245,6 @@ public class Transformer implements ClassFileTransformer
 
             final List<SwitchEntry> switchEntries = new ArrayList<>();
             SwitchEntry entryPoint;
-
-            replaceObjectInitialization(nameUseCount, classNode, original);
             final List<Label> switchLabels = new ArrayList<>();
             {
                 Analyzer analyzer = new FrameAnalyzer();
@@ -265,6 +265,7 @@ public class Transformer implements ClassFileTransformer
                         switchEntries.add(se);
                     }
                 }
+                replaceObjectInitialization(classNode, original, nameUseCount, frames);
             }
 
 
@@ -416,7 +417,9 @@ public class Transformer implements ClassFileTransformer
         return bytes;
     }
 
-    private void replaceObjectInitialization(final Map<String, Integer> nameUseCount, ClassNode classNode, final MethodNode methodNode)
+    private void replaceObjectInitialization(
+            ClassNode classNode, final MethodNode methodNode,
+            final Map<String, Integer> nameUseCount, final Frame<BasicValue>[] frames)
     {
         // since we can't store uninitialized objects they have to be removed or replaced.
         // this works for bytecodes where the initialization is implemented like:
@@ -433,7 +436,8 @@ public class Transformer implements ClassFileTransformer
         // TODO: we should only replace the initialization of objects that are uninitialized at the moment of an await call.
 
         // replace frameNodes and constructor calls
-        for (AbstractInsnNode insnNode = methodNode.instructions.getFirst(); insnNode != null; insnNode = insnNode.getNext())
+        int index = 0;
+        for (AbstractInsnNode insnNode = methodNode.instructions.getFirst(); insnNode != null; index++, insnNode = insnNode.getNext())
         {
             if (insnNode instanceof FrameNode)
             {
@@ -476,6 +480,21 @@ public class Transformer implements ClassFileTransformer
                     methodInsnNode.desc = Type.getMethodDescriptor(cType, argumentTypes);
                     final String key = methodInsnNode.name + methodInsnNode.desc;
 
+                    Frame<BasicValue> frameBefore = frames[index];
+                    final Value target = frameBefore.getStack(frameBefore.getStackSize() - (1 + oldArguments.length));
+
+                    // must test with double in the locals:  { Ljava/lang/Object; D Unitialized }
+                    for (int j = 0; j < frameBefore.getLocals(); )
+                    {
+                        // replaces all locals that used to reference the old value
+                        BasicValue local = frameBefore.getLocal(j);
+                        if (target.equals(local))
+                        {
+                            methodNode.instructions.insert(insnNode, insnNode = new InsnNode(DUP));
+                            methodNode.instructions.insert(insnNode, insnNode = new VarInsnNode(ASTORE, j));
+                        }
+                        j += local.getSize();
+                    }
 
                     if (nameUseCount.get(key) == null)
                     {
@@ -485,10 +504,10 @@ public class Transformer implements ClassFileTransformer
                         final MethodVisitor mv = classNode.visitMethod(ACC_PRIVATE | ACC_STATIC, methodInsnNode.name, methodInsnNode.desc, null, null);
                         mv.visitCode();
 
-                        Label l0 = new Label();
                         mv.visitTypeInsn(NEW, oOwner);
                         mv.visitInsn(DUP);
                         int argSizes = 2;
+                        // must test with long and double
                         for (int i = 2; i < argumentTypes.length; i++)
                         {
                             mv.visitVarInsn((argumentTypes[i].getOpcode(ILOAD)), i);
@@ -682,16 +701,22 @@ public class Transformer implements ClassFileTransformer
         Object[] stack = new Object[frame.getStackSize()];
         int nStack = 0;
         int nLocals = 0;
+        int maxLocal = 0;
         for (int i = 0; i < locals.length; i++)
         {
             BasicValue value = (BasicValue) frame.getLocal(i);
             Type type = value.getType();
             if (type == null)
             {
+                locals[nLocals++] = TOP;
                 continue;
             }
-            locals[nLocals++] = toFrameType(value);
-            if (value.getSize() == 2) i++;
+            else
+            {
+                locals[nLocals++] = toFrameType(value);
+                if (value.getSize() == 2) i++;
+                maxLocal = nLocals;
+            }
         }
         for (int i = 0; i < frame.getStackSize(); i++)
         {
@@ -704,8 +729,8 @@ public class Transformer implements ClassFileTransformer
             stack[nStack++] = toFrameType(value);
         }
         stack = nStack == stack.length ? stack : Arrays.copyOf(stack, nStack);
-        locals = nLocals == locals.length ? locals : Arrays.copyOf(locals, nLocals);
-        mv.visitFrame(F_FULL, nLocals, locals, nStack, stack);
+        locals = nLocals == locals.length ? locals : Arrays.copyOf(locals, maxLocal);
+        mv.visitFrame(F_FULL, maxLocal, locals, nStack, stack);
     }
 
     private Object toFrameType(final BasicValue value)

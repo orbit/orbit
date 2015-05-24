@@ -222,8 +222,6 @@ public class UnorthodoxFrameTest extends BaseTest
 
     @Test
     @SuppressWarnings("unchecked")
-    @Ignore
-    // TODO: create a fix for this condition
     public void uninitializedStore() throws Exception
     {
         // check what happens when the uninitialized object is stored in a local variable
@@ -251,6 +249,48 @@ public class UnorthodoxFrameTest extends BaseTest
 
             mv.visitInsn(ARETURN);
             mv.visitMaxs(4, 3);
+            mv.visitEnd();
+        }).apply(getBlockedTask("101"));
+        assertFalse(task.isDone());
+        completeFutures();
+        assertEquals(101, task.join());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void uninitializedStoreWithWideVarsAndGaps() throws Exception
+    {
+        // check what happens when the uninitialized object is stored in a local variable
+        final Task task = createClass(AsyncFunction.class, cw -> {
+            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "apply", "(Ljava/lang/Object;)Lcom/ea/orbit/concurrent/Task;", null, new String[]{ "java/lang/Exception" });
+            mv.visitCode();
+            mv.visitLdcInsn(2.0);
+            mv.visitVarInsn(DSTORE, 9);
+
+            mv.visitTypeInsn(NEW, "java/lang/Integer");
+            mv.visitInsn(DUP);
+
+            mv.visitLdcInsn(1L);
+            mv.visitVarInsn(LSTORE, 2);
+
+            // this is valid bytecode: storing the uninitialized object
+            mv.visitInsn(DUP);
+            mv.visitVarInsn(ASTORE, 6);
+
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitTypeInsn(CHECKCAST, "com/ea/orbit/concurrent/Task");
+            mv.visitMethodInsn(INVOKESTATIC, "com/ea/orbit/async/Await", "await", "(Ljava/util/concurrent/CompletableFuture;)Ljava/lang/Object;", false);
+            mv.visitTypeInsn(CHECKCAST, "java/lang/String");
+            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(Ljava/lang/String;)V", false);
+
+            // discarding the object and getting the one that was stored (without instrumentation they are the same)
+            mv.visitInsn(POP);
+            mv.visitVarInsn(ALOAD, 6);
+
+            mv.visitMethodInsn(INVOKESTATIC, "com/ea/orbit/concurrent/Task", "fromValue", "(Ljava/lang/Object;)Lcom/ea/orbit/concurrent/Task;", false);
+
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(5, 15);
             mv.visitEnd();
         }).apply(getBlockedTask("101"));
         assertFalse(task.isDone());

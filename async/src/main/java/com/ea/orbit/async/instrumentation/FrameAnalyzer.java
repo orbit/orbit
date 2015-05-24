@@ -60,6 +60,7 @@ public class FrameAnalyzer extends Analyzer
     {
         AbstractInsnNode insnNode;
         boolean uninitialized;
+        public BasicValue[] undecided;
 
         public ExtendedValue(final Type type)
         {
@@ -81,6 +82,12 @@ public class FrameAnalyzer extends Analyzer
                         && ((ExtendedValue) value).insnNode == insnNode;
             }
             return super.equals(value);
+        }
+
+        @Override
+        public String toString()
+        {
+            return undecided != null ? "?" : uninitialized ? "%" + super.toString() : super.toString();
         }
     }
 
@@ -199,7 +206,9 @@ public class FrameAnalyzer extends Analyzer
                     // could find a common super type here, a bit expensive
                     // TODO: test this with an assignment
                     //    like: local1 was CompletableFuture <- store Task
-                    return BasicValue.REFERENCE_VALUE;
+                    ExtendedValue nv = (ExtendedValue) newValue(BasicValue.REFERENCE_VALUE.getType());
+                    nv.undecided = new BasicValue[]{ v, w };
+                    return nv;
                 }
             }
             return super.merge(v, w);
