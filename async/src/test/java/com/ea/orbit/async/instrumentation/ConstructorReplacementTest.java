@@ -84,6 +84,62 @@ public class ConstructorReplacementTest extends BaseTest
             // DevDebug.debugSaveTrace(cn.name, cn);
             assertEquals(101, createClass(Function.class, cn).apply("101"));
         }
+    }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    public void withMultipleInterleavedCopies() throws Exception
+    {
+        // check that the constructor replacement is able to replace interleaved elements in the stack
+        // obs.: the java compiler doesn't usually produce code like this
+        MethodNode mv = new MethodNode(ACC_PUBLIC, "apply", "(Ljava/lang/Object;)Ljava/lang/Object;", null, new String[]{ "java/lang/Exception" });
+        mv.visitTypeInsn(NEW, "java/lang/Integer");
+        mv.visitInsn(DUP);
+        mv.visitVarInsn(ASTORE, 2);
+        // interleaving copies in the stack
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitIntInsn(SIPUSH, 1);
+        mv.visitIntInsn(SIPUSH, 2);
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitLdcInsn(1.0d);
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitLdcInsn(1L);
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitIntInsn(SIPUSH, 2);
+        mv.visitVarInsn(ALOAD, 2);
+        // stack: { uobj, int, uobj }
+        mv.visitVarInsn(ALOAD, 1);
+        mv.visitTypeInsn(CHECKCAST, "java/lang/String");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(Ljava/lang/String;)V", false);
+        // stack: { uobj, int }
+        mv.visitInsn(POP);
+        mv.visitInsn(POP);
+        mv.visitInsn(POP2);
+        mv.visitInsn(POP);
+        mv.visitInsn(POP2);
+        mv.visitInsn(POP);
+        mv.visitInsn(POP);
+        mv.visitInsn(POP);
+        mv.visitInsn(POP);
+        // stack: { uobj }
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(16, 3);
+
+        // without replacement
+        {
+            final ClassNode cn = createClassNode(Function.class, null);
+            mv.accept(cn);
+            assertEquals(101, createClass(Function.class, cn).apply("101"));
+        }
+
+        // with replacement
+        {
+            final ClassNode cn = createClassNode(Function.class, null);
+            new Transformer().replaceObjectInitialization(cn, mv,
+                    new HashMap<>(), new FrameAnalyzer().analyze(cn.name, mv));
+            mv.accept(cn);
+             DevDebug.debugSaveTrace(cn.name, cn);
+            assertEquals(101, createClass(Function.class, cn).apply("101"));
+        }
     }
 }

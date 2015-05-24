@@ -526,7 +526,7 @@ public class Transformer implements ClassFileTransformer
                             }
                         }
                         // restores the stack replacing the uninitialized refs
-                        int iLocal = originalLocals + 1;
+                        int iLocal = newMaxLocals;
                         for (int j = firstOccurrence; j < stackSizeAfter; j++)
                         {
                             BasicValue value = frameBefore.getStack(j);
@@ -539,8 +539,8 @@ public class Transformer implements ClassFileTransformer
                             {
                                 if (value.getType() != null)
                                 {
+                                    iLocal -= value.getType().getSize();
                                     methodNode.instructions.insert(insnNode, insnNode = new VarInsnNode(value.getType().getOpcode(ILOAD), iLocal));
-                                    iLocal += value.getType().getSize();
                                 }
                                 else
                                 {
