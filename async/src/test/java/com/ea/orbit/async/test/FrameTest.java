@@ -35,6 +35,7 @@ import org.junit.Test;
 import java.lang.reflect.InvocationTargetException;
 
 import static com.ea.orbit.async.Await.await;
+import static com.ea.orbit.concurrent.Task.fromValue;
 import static junit.framework.Assert.assertEquals;
 
 public class FrameTest extends BaseTest
@@ -275,6 +276,28 @@ public class FrameTest extends BaseTest
         {
 
         }
+    }
+
+    @Test
+    public void uninitializedInt()
+    {
+        class UninitializedInt
+        {
+            Task doIt(int a)
+            {
+                int x;
+                if (a == 1)
+                {
+                    x = 2;
+                }
+                await(getBlockedTask());
+                x = 3;
+                return fromValue(3);
+            }
+        }
+        final Task res = new UninitializedInt().doIt(0);
+        completeFutures();
+        assertEquals(3, res.join());
     }
 
 }
