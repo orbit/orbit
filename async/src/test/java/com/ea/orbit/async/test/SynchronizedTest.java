@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 import static com.ea.orbit.async.Await.await;
 import static com.ea.orbit.concurrent.Task.fromValue;
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class SynchronizedTest extends BaseTest
@@ -163,6 +164,34 @@ public class SynchronizedTest extends BaseTest
                 .findFirst().orElse(null);
         completeFutures();
         assertEquals(1, res.join());
+
+        // it must be false since the async method is static
+        assertFalse(Modifier.isSynchronized(asyncMethod.getModifiers()));
+        assertTrue(Modifier.isStatic(asyncMethod.getModifiers()));
+    }
+
+    @Test
+    @Ignore
+    // todo fix this
+    public void staticSynchronizedMethod()
+    {
+
+        final Task res = StaticSynchronizedMethod_Experiment.doIt(getBlockedTask(), 1);
+        Method asyncMethod = Stream.of(StaticSynchronizedMethod_Experiment.class.getDeclaredMethods())
+                .filter(m -> m.getName().startsWith("async$"))
+                .findFirst().orElse(null);
+        completeFutures();
+        assertEquals(1, res.join());
+        // this is not strictly necessary
         assertTrue(Modifier.isSynchronized(asyncMethod.getModifiers()));
+    }
+
+    static class StaticSynchronizedMethod_Experiment
+    {
+        static synchronized Task doIt(Task blocker, int a)
+        {
+            await(blocker);
+            return fromValue(a);
+        }
     }
 }
