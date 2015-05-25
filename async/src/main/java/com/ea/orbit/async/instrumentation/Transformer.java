@@ -41,6 +41,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FrameNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
@@ -93,9 +94,6 @@ public class Transformer implements ClassFileTransformer
     public static final String AWAIT_METHOD_DESC = "(Ljava/util/concurrent/CompletableFuture;)Ljava/lang/Object;";
     public static final String AWAIT_METHOD_NAME = "await";
 
-    private static final Type ASYNC_STATE_TYPE = Type.getType("Lcom/ea/orbit/async/runtime/AsyncAwaitState;");
-    private static final String ASYNC_STATE_NAME = ASYNC_STATE_TYPE.getInternalName();
-
     private static final String COMPLETABLE_FUTURE_DESCRIPTOR = "Ljava/util/concurrent/CompletableFuture;";
     private static final Type COMPLETABLE_FUTURE_TYPE = Type.getType(COMPLETABLE_FUTURE_DESCRIPTOR);
     private static final String COMPLETABLE_FUTURE_RET = ")Ljava/util/concurrent/CompletableFuture;";
@@ -106,20 +104,11 @@ public class Transformer implements ClassFileTransformer
 
     private static final Type OBJECT_TYPE = Type.getType(Object.class);
     private static final String _THIS = "_this";
-    private static final String DYN_FUNCTION = "(" + ASYNC_STATE_TYPE.getDescriptor() + ")Ljava/util/function/Function;";
 
     private static final String TASK_DESCRIPTOR = "Lcom/ea/orbit/concurrent/Task;";
     private static final String TASK_RET = ")Lcom/ea/orbit/concurrent/Task;";
     private static final String TASK_NAME = "com/ea/orbit/concurrent/Task";
     private static final Type TASK_TYPE = Type.getType("Lcom/ea/orbit/concurrent/Task;");
-
-    private static final int FN_TOP = 0;
-    private static final int FN_INTEGER = 1;
-    private static final int FN_FLOAT = 2;
-    private static final int FN_DOUBLE = 3;
-    private static final int FN_LONG = 4;
-    private static final int FN_NULL = 5;
-    private static final int FN_UNINITIALIZED_THIS = 6;
 
     @Override
     public byte[] transform(final ClassLoader loader, final String className, final Class<?> classBeingRedefined, final ProtectionDomain protectionDomain, final byte[] classfileBuffer) throws IllegalClassFormatException
@@ -155,15 +144,30 @@ public class Transformer implements ClassFileTransformer
         final Label resumeLabel;
         final Label futureIsDoneLabel;
         final int key;
-        final Frame frame;
+        final Frame<BasicValue> frame;
+        // original instruction index
+        final int index;
+        public int[] stackToNewLocal;
+        public int[] argumentToLocal;
+        public int[] localToiArgument;
 
-        public SwitchEntry(final int key, final Frame frame)
+        public SwitchEntry(final int key, final Frame frame, final int index)
         {
             this.key = key;
             this.frame = frame;
+            this.index = index;
             this.futureIsDoneLabel = new Label();
             this.resumeLabel = new Label();
         }
+    }
+
+    static class Argument
+    {
+        BasicValue value;
+        String name;
+        int iArgumentLocal;
+        // working space
+        int tmpLocalMapping = -1;
     }
 
     public byte[] instrument(InputStream inputStream)
@@ -235,12 +239,13 @@ public class Transformer implements ClassFileTransformer
 
             final List<SwitchEntry> switchEntries = new ArrayList<>();
             SwitchEntry entryPoint;
+            List<Argument> arguments = new ArrayList<>();
             final List<Label> switchLabels = new ArrayList<>();
             {
                 Analyzer analyzer = new FrameAnalyzer();
                 Frame[] frames = analyzer.analyze(classNode.name, original);
 
-                entryPoint = new SwitchEntry(0, frames[0]);
+                entryPoint = new SwitchEntry(0, frames[0], 0);
                 switchLabels.add(entryPoint.resumeLabel);
                 int ii = 0;
                 int count = 0;
@@ -250,14 +255,83 @@ public class Transformer implements ClassFileTransformer
                     Object o = it.next();
                     if ((o instanceof MethodInsnNode && isAwaitCall((MethodInsnNode) o)))
                     {
-                        SwitchEntry se = new SwitchEntry(++count, frames[ii]);
+                        SwitchEntry se = new SwitchEntry(++count, frames[ii], ii);
                         switchLabels.add(se.resumeLabel);
                         switchEntries.add(se);
                     }
                 }
+                // compute variable mapping
+                // map stack->new locals
+                // map (locals + new locals) -> parameters
+                // result:
+                //    stackToNewLocal mapping (stack_index, local_index)
+                //        - original stack to new local
+                //        - as an int array: int[stack_index] = local_index
+                //    localToArgumentMapping (parameter,local_index)
+                //       - in this order, the push order
+                //       - as an int array: int[parameter_index] = local_index
+                int newMaxLocals = 0;
+                for (SwitchEntry se : switchEntries)
+                {
+                    // clear the used state
+                    arguments.forEach(p -> p.tmpLocalMapping = -1);
+                    se.stackToNewLocal = new int[se.frame.getStackSize()];
+                    Arrays.fill(se.stackToNewLocal, -1);
+                    int iNewLocal = original.maxLocals;
+                    for (int j = 0; j < se.frame.getStackSize(); j++)
+                    {
+                        final BasicValue value = se.frame.getStack(j);
+                        if (value != null && !isUninitialized(value))
+                        {
+                            se.stackToNewLocal[j] = iNewLocal;
+                            iNewLocal += valueSize(se.frame.getStack(j));
+                        }
+                        else
+                        {
+                            se.stackToNewLocal[j] = -1;
+                        }
+                    }
+                    newMaxLocals = Math.max(iNewLocal, newMaxLocals);
+                    se.localToiArgument = new int[newMaxLocals];
+                    Arrays.fill(se.localToiArgument, -1);
+                    // maps the locals to arguments
+                    for (int iLocal = 0; iLocal < se.frame.getLocals(); iLocal += valueSize(se.frame.getLocal(iLocal)))
+                    {
+                        final BasicValue value = se.frame.getLocal(iLocal);
+                        if (value != null && !isUninitialized(value) && value.getType() != null)
+                        {
+                            mapLocalToLambdaArgument(original, se, arguments,  iLocal, value);
+                        }
+                    }
+                    // maps the stack locals to arguments
+                    for (int j = 0; j < se.frame.getStackSize(); j++)
+                    {
+                        final int iLocal = se.stackToNewLocal[j];
+                        if (iLocal >= 0) mapLocalToLambdaArgument(original, se, arguments, iLocal, se.frame.getStack(j));
+                    }
+                    // extract local-to-argument mapping
+                    se.argumentToLocal = new int[arguments.size()];
+                    for (int j = 0; j < arguments.size(); j++)
+                    {
+                        se.argumentToLocal[j] = arguments.get(j).tmpLocalMapping;
+                        if (se.argumentToLocal[j] >= 0)
+                        {
+                            se.localToiArgument[se.argumentToLocal[j]] = arguments.get(j).iArgumentLocal;
+                        }
+                    }
+                }
                 replaceObjectInitialization(classNode, original, nameUseCount, frames);
+                original.maxLocals = Math.max(original.maxLocals, newMaxLocals);
             }
 
+            arguments.forEach(p -> p.tmpLocalMapping = -2);
+            final Argument stateArgument = mapLocalToLambdaArgument(original, null, arguments, 0, BasicValue.INT_VALUE);
+            final Argument lambdaArgument = mapLocalToLambdaArgument(original, null, arguments, 0, BasicValue.REFERENCE_VALUE);
+            stateArgument.name = "async$state";
+            lambdaArgument.name = "async$input";
+            final Object[] defaultFrame = arguments.stream().map(a -> toFrameType(a.value)).toArray();
+            final Type[] typeArguments = arguments.stream().map(a -> a.value.getType()).toArray(s -> new Type[s]);
+            final String lambdaDesc = Type.getMethodDescriptor(Type.getType(Function.class), Arrays.copyOf(typeArguments, typeArguments.length - 1));
 
             // adding the switch entries and restore code
             // the local variable restoration has to occur outside
@@ -279,27 +353,26 @@ public class Transformer implements ClassFileTransformer
             nameUseCount.put(continuedName, countUses == null ? 1 : countUses + 1);
 
             continued.name = (countUses == null) ? continuedName : (continuedName + "$" + countUses);
-            continued.desc = Type.getMethodDescriptor(COMPLETABLE_FUTURE_TYPE, ASYNC_STATE_TYPE, OBJECT_TYPE);
+            continued.desc = Type.getMethodDescriptor(COMPLETABLE_FUTURE_TYPE, typeArguments);
             continued.signature = null;
             final Handle handle = new Handle(Opcodes.H_INVOKESTATIC, classNode.name, continued.name, continued.desc);
 
             final boolean isTaskRet = original.desc.endsWith(TASK_RET);
 
-            original.accept(new MyMethodVisitor(replacement, switchEntries, false, isTaskRet, handle));
+            original.accept(new MyMethodVisitor(replacement, switchEntries, lambdaDesc, arguments, false, isTaskRet, handle));
 
             // get pos
-            continued.visitVarInsn(ALOAD, !Modifier.isStatic(continued.access) ? 1 : 0);
-            continued.visitMethodInsn(INVOKEVIRTUAL, ASYNC_STATE_NAME, "getPos", Type.getMethodDescriptor(Type.INT_TYPE), false);
+            continued.visitVarInsn(ILOAD, stateArgument.iArgumentLocal);
 
             final Label defaultLabel = new Label();
             continued.visitTableSwitchInsn(0, switchLabels.size() - 1, defaultLabel, switchLabels.toArray(new Label[switchLabels.size()]));
 
             // original entry point
             continued.visitLabel(entryPoint.resumeLabel);
-            continued.visitFrame(F_FULL, 2, new Object[]{ ASYNC_STATE_NAME, OBJECT_TYPE.getInternalName() }, 0, new Object[0]);
-            restoreStackAndLocals(continued, entryPoint.frame);
+            continued.visitFrame(F_FULL, defaultFrame.length, defaultFrame, 0, new Object[0]);
+            restoreStackAndLocals(continued, entryPoint, arguments);
 
-            original.accept(new MyMethodVisitor(continued, switchEntries, true, isTaskRet, handle));
+            original.accept(new MyMethodVisitor(continued, switchEntries, lambdaDesc, arguments, true, isTaskRet, handle));
 
 
             // add switch entries for the continuation state machine
@@ -308,11 +381,11 @@ public class Transformer implements ClassFileTransformer
             {
                 // code: resumeLabel:
                 continued.visitLabel(se.resumeLabel);
-                continued.visitFrame(F_FULL, 2, new Object[]{ ASYNC_STATE_NAME, OBJECT_TYPE.getInternalName() }, 0, new Object[0]);
+                continued.visitFrame(F_FULL, defaultFrame.length, defaultFrame, 0, new Object[0]);
 
                 // code:    restoreStack;
                 // code:    restoreLocals;
-                restoreStackAndLocals(continued, se.frame);
+                restoreStackAndLocals(continued, se, arguments);
                 if (!Modifier.isStatic(original.access))
                 {
                     if (lastRestorePoint != null)
@@ -327,7 +400,7 @@ public class Transformer implements ClassFileTransformer
 
             // last switch case
             continued.visitLabel(defaultLabel);
-            continued.visitFrame(F_FULL, 2, new Object[]{ ASYNC_STATE_NAME, OBJECT_TYPE.getInternalName() }, 0, new Object[0]);
+            continued.visitFrame(F_FULL, defaultFrame.length, defaultFrame, 0, new Object[0]);
             continued.visitTypeInsn(NEW, "java/lang/IllegalArgumentException");
             continued.visitInsn(DUP);
             continued.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "()V", false);
@@ -389,6 +462,66 @@ public class Transformer implements ClassFileTransformer
         // for development use: DevDebug.debugSave(classNode, bytes);
         // for development use: DevDebug.debugSaveTrace(classNode.name + ".1", bytes);
         return bytes;
+    }
+
+    private Argument mapLocalToLambdaArgument(final MethodNode originalMethod, SwitchEntry se, final List<Argument> arguments, final int local, final BasicValue value)
+    {
+        Argument argument = null;
+        String name = local < originalMethod.maxLocals ? guessName(originalMethod, se, local) : "_stack$" + (local - originalMethod.maxLocals);
+
+        // tries to match by the name and type first.
+        argument = arguments.stream()
+                .filter(x -> x.tmpLocalMapping == -1 && x.value.equals(value) && x.name.equals(name))
+                .findFirst().orElse(null);
+
+        if (argument != null)
+        {
+            argument.tmpLocalMapping = local;
+            return argument;
+        }
+        // no name match, just grab the first available or create a new one.
+        argument = arguments.stream()
+                .filter(x -> x.tmpLocalMapping == -1 && x.value.equals(value))
+                .findFirst().orElseGet(
+                        () -> {
+                            final Argument np = new Argument();
+                            np.iArgumentLocal = arguments.size() == 0 ? 0 :
+                                    arguments.get(arguments.size() - 1).iArgumentLocal + arguments.get(arguments.size() - 1).value.getSize();
+                            np.value = value;
+                            np.name = (name == null) ? name : "_arg$" + np.iArgumentLocal;
+                            arguments.add(np);
+                            return np;
+                        }
+                );
+        argument.tmpLocalMapping = local;
+        return argument;
+    }
+
+    private String guessName(final MethodNode method, final SwitchEntry se, final int local)
+    {
+        if(se !=null)
+        {
+            for (LocalVariableNode node : method.localVariables)
+            {
+                if (node.index == local
+                        && method.instructions.indexOf(node.start) <= se.index
+                        && method.instructions.indexOf(node.end) >= se.index)
+                {
+                    return node.name;
+                }
+            }
+        }
+        return "_local$" + local;
+    }
+
+    private boolean isUninitialized(final Value value)
+    {
+        return value instanceof FrameAnalyzer.ExtendedValue && ((FrameAnalyzer.ExtendedValue) value).isUninitialized();
+    }
+
+    private int valueSize(final Value local)
+    {
+        return local == null ? 1 : local.getSize();
     }
 
     void replaceObjectInitialization(
@@ -521,7 +654,9 @@ public class Transformer implements ClassFileTransformer
                             {
                                 methodNode.instructions.insert(insnNode, insnNode = new VarInsnNode(value.getType().getOpcode(ISTORE), newMaxLocals));
                                 newMaxLocals += value.getType().getSize();
-                            } else {
+                            }
+                            else
+                            {
                                 methodNode.instructions.insert(insnNode, insnNode = new InsnNode(POP));
                             }
                         }
@@ -606,13 +741,15 @@ public class Transformer implements ClassFileTransformer
      * Replaces calls to Await.await with returing a promise or with a join().
      *
      * @param mv          the method node whose instructions are being modified
+     * @param lambdaDesc
      * @param isContinued if this is the continuation method
-     * @param handle
-     * @return a list of switch entries to finish the continuation state machine
+     * @param handle      @return a list of switch entries to finish the continuation state machine
      */
     private void transformAwait(
             final MethodVisitor mv,
             final SwitchEntry switchEntry,
+            final String lambdaDesc,
+            final List<Argument> lambdaArguments,
             final boolean isContinued,
             final boolean isTaskRet,
             final Handle handle)
@@ -628,8 +765,8 @@ public class Transformer implements ClassFileTransformer
         // turns into:
 
         // code: if(!future.isDone()) {
-        // code:    saveLocals to new state
-        // code:    saveStack to new state
+        // code:    saveStack to new locals
+        // code:    push lambda parameters (locals and stack)
         // code:    return future.exceptionally(nop).thenCompose(x -> _func(x, state));
         // code: }
         // code: jump futureIsDoneLabel:
@@ -649,34 +786,31 @@ public class Transformer implements ClassFileTransformer
         mv.visitJumpInsn(IFNE, futureIsDoneLabel);
 
         // code:    saveStack to new state
-        // code:    saveLocals to new state
-        int offset = saveLocals(mv, switchEntry.key, switchEntry.frame);
-        // stack { .. future state }
+        // code:    push the future
+        // code:    push all lambda parameters
+        // code:    create the lambda
 
         // clears the stack and leaves asyncState in the top
-        saveStack(mv, switchEntry.frame);
-        // stack: { state }
-        mv.visitInsn(DUP);
-        // stack: { state state }
-        mv.visitInsn(DUP);
-        mv.visitIntInsn(SIPUSH, offset);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "getObj", Type.getMethodDescriptor(OBJECT_TYPE, Type.INT_TYPE), false);
-        mv.visitTypeInsn(CHECKCAST, COMPLETABLE_FUTURE_NAME);
-
-        // stack: { state future }
+        // stack: { ... future }
+        saveStack(mv, switchEntry);
+        // stack: { }
+        mv.visitVarInsn(ALOAD, switchEntry.stackToNewLocal[switchEntry.frame.getStackSize() - 1]);
+        // stack: { future  }
         mv.visitMethodInsn(INVOKESTATIC, Type.getType(Function.class).getInternalName(), "identity", "()Ljava/util/function/Function;", false);
-        // stack: { state future function }
+        // stack: { future identity_function }
         // this discards any exception. the exception will be thrown by calling join.
         // the other option is not to use thenCompose and use something more complex.
         mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "exceptionally", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", false);
-        // stack: { state new_future }
+        // stack: { new_future }
 
         // code:    return future.exceptionally(x -> x).thenCompose(x -> _func(state));
 
-        mv.visitInsn(SWAP);
-        // stack: { new_future state}
+        pushArguments(mv, switchEntry, lambdaArguments);
+        // stack: { new_future ...arguments-2...  }
+        mv.visitIntInsn(SIPUSH, switchEntry.key);
+        // stack: { new_future ...arguments-2... state  }
 
-        mv.visitInvokeDynamicInsn("apply", DYN_FUNCTION,
+        mv.visitInvokeDynamicInsn("apply", lambdaDesc,
                 new Handle(Opcodes.H_INVOKESTATIC,
                         "java/lang/invoke/LambdaMetafactory",
                         "metafactory",
@@ -781,130 +915,128 @@ public class Transformer implements ClassFileTransformer
                 && AWAIT_METHOD_DESC.equals(desc);
     }
 
-    private int saveLocals(final MethodVisitor mv, final int pos, final Frame frame)
+    private void saveStack(final MethodVisitor mv, final SwitchEntry se)
     {
-        mv.visitTypeInsn(Opcodes.NEW, ASYNC_STATE_NAME);
-        mv.visitInsn(Opcodes.DUP);
-        mv.visitIntInsn(SIPUSH, pos);
-        mv.visitIntInsn(SIPUSH, frame.getLocals());
-        mv.visitIntInsn(SIPUSH, frame.getStackSize());
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, ASYNC_STATE_NAME, "<init>", "(III)V", false);
-        int count = 0;
-        for (int i = 0; i < frame.getLocals(); i++)
+        // stack: { ... }
+        for (int i = se.stackToNewLocal.length; --i >= 0; )
         {
-            final BasicValue value = (BasicValue) frame.getLocal(i);
-            if (value.getType() != null)
+            int iLocal = se.stackToNewLocal[i];
+            if (iLocal >= 0)
             {
-                count++;
-                mv.visitVarInsn(value.getType().getOpcode(ILOAD), i);
-
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "push",
-                        Type.getMethodDescriptor(ASYNC_STATE_TYPE, value.isReference() ? OBJECT_TYPE : value.getType()), false);
+                mv.visitVarInsn(se.frame.getStack(i).getType().getOpcode(ISTORE), iLocal);
+            }
+            else
+            {
+                mv.visitInsn(se.frame.getStack(i).getType().getSize() == 2 ? POP2 : POP);
             }
         }
-        return count;
+        // stack: { } empty
     }
 
-    private void saveStack(final MethodVisitor mv, final Frame frame)
+    private void pushArguments(final MethodVisitor mv, final SwitchEntry switchEntry, final List<Argument> lambdaArguments)
     {
-        // stack: { ... async_state }
-        for (int i = frame.getStackSize(); --i >= 0; )
+        // stack: { ... }
+        for (int i = 0, l = lambdaArguments.size() - 2; i < l; i++)
         {
-            final BasicValue value = (BasicValue) frame.getStack(i);
-            if (value.getType() != null)
+            int iLocal = i < switchEntry.argumentToLocal.length ? switchEntry.argumentToLocal[i] : -1;
+            final BasicValue value = lambdaArguments.get(i).value;
+            if (iLocal >= 0)
             {
-                mv.visitMethodInsn(Opcodes.INVOKESTATIC, ASYNC_STATE_NAME, "push",
-                        Type.getMethodDescriptor(ASYNC_STATE_TYPE, value.isReference() ? OBJECT_TYPE : value.getType(), ASYNC_STATE_TYPE), false);
+                mv.visitVarInsn(value.getType().getOpcode(ILOAD), iLocal);
+            }
+            else
+            {
+                pushDefault(mv, value);
             }
         }
-        // stack: { async_state }
+        // stack: { ... lambdaArguments}
     }
 
-    private void restoreStackAndLocals(final MethodVisitor mv, final Frame frame)
+    private void pushDefault(final MethodVisitor mv, final BasicValue value)
     {
-        // local_0 = async_state
-
-        // count locals+stack
-        int localsPlusStack = 0;
-        final int firstLocal = 0;
-        // counting locals, counts double and long only once (they use two slots)
-        for (int i = firstLocal; i < frame.getLocals(); i++)
+        if (value.getType() == null)
         {
-            BasicValue local = (BasicValue) frame.getLocal(i);
-            if (local != null && local != BasicValue.UNINITIALIZED_VALUE && local.getType() != null)
-            {
-                localsPlusStack++;
-            }
+            mv.visitInsn(ACONST_NULL);
+            return;
         }
-        // counting stack, counts double and long only once (they use two slots)
+        switch (value.getType().getSort())
+        {
+            case Type.VOID:
+                mv.visitInsn(ACONST_NULL);
+                return;
+            case Type.BOOLEAN:
+            case Type.CHAR:
+            case Type.BYTE:
+            case Type.SHORT:
+            case Type.INT:
+                mv.visitInsn(ICONST_0);
+                return;
+            case Type.FLOAT:
+                mv.visitInsn(FCONST_0);
+                return;
+            case Type.LONG:
+                mv.visitInsn(LCONST_0);
+                return;
+            case Type.DOUBLE:
+                mv.visitInsn(DCONST_0);
+                return;
+            case Type.ARRAY:
+            case Type.OBJECT:
+                mv.visitInsn(ACONST_NULL);
+                return;
+            default:
+                throw new Error("Internal error");
+        }
+    }
+
+    private void restoreStackAndLocals(final MethodVisitor mv, SwitchEntry se, List<Argument> lambdaArguments)
+    {
+        // restore the stack: just push in the right order.
+        // restore the locals: push all that changed place then load
+        if (se.argumentToLocal == null)
+        {
+            return;
+        }
+        final Frame<BasicValue> frame = se.frame;
         for (int i = 0; i < frame.getStackSize(); i++)
         {
-            BasicValue local = (BasicValue) frame.getStack(i);
-            if (local != null && local.getType() != null)
+            final BasicValue value = frame.getStack(i);
+            // stack_index -> stackToNewLocal -> argumentToLocal -> arg_index
+            int iLocal = se.stackToNewLocal[i];
+            if (iLocal >= 0 && se.localToiArgument[iLocal] >= 0)
             {
-                localsPlusStack++;
+                mv.visitVarInsn(value.getType().getOpcode(ILOAD), se.localToiArgument[iLocal]);
+            }
+            else
+            {
+                pushDefault(mv, value);
             }
         }
-
-        // local_0 = async_state
-        // restore stack
-        // stack: { }
-        for (int i = 0; i < frame.getStackSize(); i++)
+        // push the arguments that must be copied to locals
+        for (int iLocal = 0; iLocal < frame.getLocals(); iLocal += valueSize(frame.getLocal(iLocal)))
         {
-            BasicValue local = (BasicValue) frame.getStack(i);
-            if (local != null && local.getType() != null)
+            final BasicValue value = frame.getLocal(iLocal);
+            if (se.localToiArgument[iLocal] >= 0)
             {
-                final int idx = --localsPlusStack;
-                mv.visitVarInsn(Opcodes.ALOAD, firstLocal);
-                mv.visitIntInsn(Opcodes.BIPUSH, idx);
-
-                if (local.isReference())
+                if (se.localToiArgument[iLocal] != iLocal)
                 {
-                    mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "getObj", Type.getMethodDescriptor(OBJECT_TYPE, Type.INT_TYPE), false);
-                    mv.visitTypeInsn(CHECKCAST, local.getType().getInternalName());
-                }
-                else
-                {
-                    mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "get" + local.getType(), Type.getMethodDescriptor(local.getType(), Type.INT_TYPE), false);
+                    mv.visitVarInsn(value.getType().getOpcode(ILOAD), se.localToiArgument[iLocal]);
                 }
             }
+            else if (value!=null && value.getType() != null)
+            {
+                pushDefault(mv, value);
+                mv.visitVarInsn(value.getType().getOpcode(ISTORE), iLocal);
+            }
         }
-        // stack: { ... }
-        // local_0 = async_state
-        // restore local vars
-        // from last to first to hold async_state until the very end
-        for (int i = frame.getLocals(); --i >= firstLocal; )
+        // push the arguments that must be copied to locals
+        for (int iLocal = frame.getLocals(); --iLocal >= 0; )
         {
-            BasicValue local = (BasicValue) frame.getLocal(i);
-            if (local != null && local != BasicValue.UNINITIALIZED_VALUE)
+            if (se.localToiArgument[iLocal] >= 0 && se.localToiArgument[iLocal] != iLocal)
             {
-                if (local.getType() != null)
-                {
-                    final int idx = --localsPlusStack;
-                    // dup the state
-                    mv.visitVarInsn(Opcodes.ALOAD, firstLocal);
-                    mv.visitIntInsn(Opcodes.BIPUSH, idx);
-                    if (local.isReference())
-                    {
-                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "getObj", Type.getMethodDescriptor(OBJECT_TYPE, Type.INT_TYPE), false);
-                        mv.visitTypeInsn(CHECKCAST, local.getType().getInternalName());
-                    }
-                    else
-                    {
-                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, ASYNC_STATE_NAME, "get" + local.getType(), Type.getMethodDescriptor(local.getType(), Type.INT_TYPE), false);
-                    }
-                    mv.visitVarInsn(local.getType().getOpcode(ISTORE), i);
-                }
-                else
-                {
-                    throw new RuntimeException();
-                    // TODO: double check this, mv.visitVarInsn(ASTORE, i);
-                }
+                mv.visitVarInsn(frame.getLocal(iLocal).getType().getOpcode(ISTORE), iLocal);
             }
         }
-        // stack: { ... }
-        // locals: { ... }
-        // local_0 = (this or ? if static method)
     }
 
     boolean needsInstrumentation(final ClassReader cr)
@@ -1050,15 +1182,21 @@ public class Transformer implements ClassFileTransformer
         private final Handle handle;
 
         int awaitIndex;
+        private String lambdaDesc;
+        private List<Argument> lambdaArguments;
 
         public MyMethodVisitor(
                 final MethodNode mv,
                 final List<SwitchEntry> switchEntries,
+                final String lambdaDesc,
+                final List<Argument> lambdaArguments,
                 final boolean isContinued, final boolean isTaskRet,
                 final Handle handle)
         {
             super(Opcodes.ASM5, mv);
             this.switchEntries = switchEntries;
+            this.lambdaDesc = lambdaDesc;
+            this.lambdaArguments = lambdaArguments;
             this.isContinued = isContinued;
             this.isTaskRet = isTaskRet;
             this.handle = handle;
@@ -1071,7 +1209,7 @@ public class Transformer implements ClassFileTransformer
             if (isAwaitCall(opcode, owner, name, desc))
             {
                 // passing this here could create problems if the transformAwait starts adding calls to Await.await()
-                transformAwait(this, switchEntries.get(awaitIndex++), isContinued, isTaskRet, handle);
+                transformAwait(this, switchEntries.get(awaitIndex++), lambdaDesc, lambdaArguments, isContinued, isTaskRet, handle);
             }
             else
             {

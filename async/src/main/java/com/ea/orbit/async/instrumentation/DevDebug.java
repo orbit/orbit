@@ -136,7 +136,7 @@ class DevDebug
     }
 
 
-    private void debugSaveTrace(String name, final byte[] bytes)
+    static void debugSaveTrace(String name, final byte[] bytes)
     {
         try
         {

@@ -138,7 +138,7 @@ public class ConstructorReplacementTest extends BaseTest
             new Transformer().replaceObjectInitialization(cn, mv,
                     new HashMap<>(), new FrameAnalyzer().analyze(cn.name, mv));
             mv.accept(cn);
-             DevDebug.debugSaveTrace(cn.name, cn);
+            // DevDebug.debugSaveTrace(cn.name, cn);
             assertEquals(101, createClass(Function.class, cn).apply("101"));
         }
     }

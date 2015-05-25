@@ -135,11 +135,18 @@ public class BaseTest
         return createClass(superClass, cn);
     }
 
+
     protected <T> T createClass(final Class<T> superClass, final ClassNode cn)
     {
         ClassWriter cw = new ClassWriter(0);
         cn.accept(cw);
         final byte[] bytes = cw.toByteArray();
+        return createClass(superClass, bytes);
+
+    }
+
+    protected <T> T createClass(final Class<T> superClass, final byte[] bytes)
+    {
         // perhaps we should use the source class ClassLoader as parent.
         class Loader extends ClassLoader
         {
@@ -202,13 +209,18 @@ public class BaseTest
     }
 
 
-    public interface AsyncCallable<T>
+    public interface AsyncCallable<V>
     {
-        Task<T> call() throws Exception;
+        Task<V> call() throws Exception;
     }
 
-    public interface AsyncFunction<T, V>
+    public interface AsyncFunction<T, R>
     {
-        Task<T> apply(V v) throws Exception;
+        Task<R> apply(T t) throws Exception;
+    }
+
+    public interface AsyncBiFunction<T, U, R>
+    {
+        Task<R> apply(T t, U u) throws Exception;
     }
 }

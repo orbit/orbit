@@ -28,12 +28,9 @@
 
 package com.ea.orbit.async.test;
 
-import com.ea.orbit.async.runtime.AsyncAwaitState;
-
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.assertEquals;
@@ -44,16 +41,16 @@ public class HowItShouldWorkTest
     private static class WhatWillBeWritten
     {
         // @Async
-        public CompletableFuture<Object> doSomething(CompletableFuture<Object> blocker)
+        public CompletableFuture<Object> doSomething(CompletableFuture<String> blocker)
         {
-            String res = (String) await(blocker);
+            String res = await(blocker);
             return CompletableFuture.completedFuture(":" + res);
         }
     }
 
     private static class HowItShouldBehave
     {
-        public CompletableFuture<Object> doSomething(CompletableFuture<Object> blocker)
+        public CompletableFuture<Object> doSomething(CompletableFuture<String> blocker)
         {
             return blocker.thenApply(res -> ":" + res);
         }
@@ -61,35 +58,29 @@ public class HowItShouldWorkTest
 
     private static class HowItShouldBeInstrumented
     {
-        public CompletableFuture<Object> doSomething(CompletableFuture<Object> blocker)
+        public CompletableFuture<Object> doSomething(CompletableFuture<String> blocker)
         {
-            return doSomething$(new AsyncAwaitState(0, 1, 0).push(blocker), null);
+            if (!blocker.isDone())
+            {
+                return blocker.exceptionally(t -> null)
+                        .thenCompose(t -> this.async$doSomething(blocker, 1, t));
+            }
+            String res = (String) blocker.join();
+            return CompletableFuture.completedFuture(":" + res);
         }
 
-        public CompletableFuture<Object> doSomething$(AsyncAwaitState state, Object lastRes)
+        public CompletableFuture<Object> async$doSomething(CompletableFuture<String> blocker, int async$state, Object async$result)
         {
-            CompletableFuture<Object> blocker = null;
-            int pos = state.getPos();
-            switch (pos)
+            String res;
+            switch (async$state)
             {
-                case 0:
-                    blocker = (CompletableFuture<Object>) state.getObj(0);
-                    if (blocker instanceof CompletableFuture && !blocker.isDone())
-                    {
-                        final AsyncAwaitState newState =
-                                new AsyncAwaitState(1, 1, 1).push(blocker);
-
-                        return blocker
-                                .exceptionally(Function.identity())
-                                .thenCompose(x -> doSomething$(newState, x));
-                    }
-                    // goto SKIP
                 case 1:
-                    blocker = (CompletableFuture<Object>) state.getObj(0);
-
-                    // SKIP:
-                    //String res = (String) await(blocker);
-                    String res = (String) blocker.join();
+                    if (!blocker.isDone())
+                    {
+                        return blocker.exceptionally(t -> null)
+                                .thenCompose(t -> this.async$doSomething(blocker, 1, t));
+                    }
+                    res = blocker.join();
                     return CompletableFuture.completedFuture(":" + res);
                 default:
                     throw new IllegalArgumentException();
@@ -100,7 +91,7 @@ public class HowItShouldWorkTest
     @Test
     public void testMockInstrumentation()
     {
-        CompletableFuture<Object> blocker = new CompletableFuture<>();
+        CompletableFuture<String> blocker = new CompletableFuture<>();
         final CompletableFuture<Object> res = new HowItShouldBeInstrumented().doSomething(blocker);
         assertFalse(blocker.isDone());
         assertFalse(res.isDone());
@@ -111,7 +102,7 @@ public class HowItShouldWorkTest
     @Test
     public void testHowItShouldBehave()
     {
-        CompletableFuture<Object> blocker = new CompletableFuture<>();
+        CompletableFuture<String> blocker = new CompletableFuture<>();
         final CompletableFuture<Object> res = new HowItShouldBehave().doSomething(blocker);
         assertFalse(blocker.isDone());
         assertFalse(res.isDone());

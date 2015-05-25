@@ -101,7 +101,7 @@ public class BasicTest extends BaseTest
         assertEquals(":x", res.join());
     }
 
-    @Test
+    @Test(timeout = 2_000)
     public void testBlocking() throws IllegalAccessException, InstantiationException
     {
         final SomethingAsync a = new SomethingAsync();
@@ -112,7 +112,7 @@ public class BasicTest extends BaseTest
     }
 
 
-    @Test
+    @Test(timeout = 2_000)
     public void testBlockingWithStackAndLocal() throws IllegalAccessException, InstantiationException
     {
         final SomethingWithLocalsAndStack a = new SomethingWithLocalsAndStack();
@@ -134,7 +134,7 @@ public class BasicTest extends BaseTest
         assertEquals(":Exception", res.join());
     }
 
-    @Test
+    @Test(timeout = 2_000)
     public void testDataFlow()
     {
         final SomethingWithDataMutation a = new SomethingWithDataMutation();
