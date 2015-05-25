@@ -30,13 +30,26 @@ package com.ea.orbit.async.test;
 
 import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.exception.UncheckedException;
+import com.ea.orbit.util.StringUtils;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.ClassNode;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
+
+import static org.objectweb.asm.Opcodes.*;
+
 
 public class BaseTest
 {
@@ -82,6 +95,7 @@ public class BaseTest
     {
         return getBlockedTask(null);
     }
+
     /**
      * Complete all the blocked futures, even new ones created while executing this method
      */
@@ -95,5 +109,118 @@ public class BaseTest
                 pair.getKey().complete(pair.getValue());
             }
         }
+    }
+
+    /**
+     * Shortcut to create tests with lambda functions
+     */
+    protected <T, V> Task<V> call(T t, Function<T, Task<V>> function)
+    {
+        return function.apply(t);
+    }
+
+    /**
+     * Shortcut to create tests with lambda functions
+     */
+    protected <V> Task<V> call(Callable<Task<V>> function) throws Exception
+    {
+        return function.call();
+    }
+
+
+    // utility method to create arbitrary classes.
+    protected <T> T createClass(Class<T> superClass, Consumer<ClassVisitor> populate)
+    {
+        ClassNode cn = createClassNode(superClass, populate);
+        return createClass(superClass, cn);
+    }
+
+
+    protected <T> T createClass(final Class<T> superClass, final ClassNode cn)
+    {
+        ClassWriter cw = new ClassWriter(0);
+        cn.accept(cw);
+        final byte[] bytes = cw.toByteArray();
+        return createClass(superClass, bytes);
+
+    }
+
+    protected <T> T createClass(final Class<T> superClass, final byte[] bytes)
+    {
+        // perhaps we should use the source class ClassLoader as parent.
+        class Loader extends ClassLoader
+        {
+            Loader()
+            {
+                super(superClass.getClassLoader());
+            }
+
+            public Class<?> define(final String o, final byte[] bytes)
+            {
+                return super.defineClass(o, bytes, 0, bytes.length);
+            }
+        }
+        //noinspection unchecked
+        try
+        {
+            return (T) new Loader().define(null, bytes).newInstance();
+        }
+        catch (Exception e)
+        {
+            throw new UncheckedException(e);
+        }
+    }
+
+    protected <T> ClassNode createClassNode(final Class<T> superClass, final Consumer<ClassVisitor> populate)
+    {
+        ClassNode cn = new ClassNode();
+        String[] interfaces = null;
+        Type superType;
+        if (superClass.isInterface())
+        {
+            superType = Type.getType(Object.class);
+            interfaces = new String[]{ Type.getType(superClass).getInternalName() };
+        }
+        else
+        {
+            superType = Type.getType(superClass);
+        }
+        String superName = superType.getInternalName();
+        StackTraceElement caller = new Exception().getStackTrace()[1];
+        final String name = "Experiment" + StringUtils.capitalize(caller.getMethodName()) + caller.getLineNumber();
+
+        cn.visit(52, ACC_PUBLIC, Type.getType(getClass()).getInternalName() + "$" + name, null, superName, interfaces);
+        if (populate != null)
+        {
+            populate.accept(cn);
+        }
+        MethodVisitor mv;
+        {
+            mv = cn.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+            mv.visitCode();
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitMethodInsn(INVOKESPECIAL, superName, "<init>", "()V", false);
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(1, 1);
+            mv.visitEnd();
+        }
+        cn.visitEnd();
+        return cn;
+    }
+
+
+    public interface AsyncCallable<V>
+    {
+        Task<V> call() throws Exception;
+    }
+
+    public interface AsyncFunction<T, R>
+    {
+        Task<R> apply(T t) throws Exception;
+    }
+
+    public interface AsyncBiFunction<T, U, R>
+    {
+        Task<R> apply(T t, U u) throws Exception;
     }
 }

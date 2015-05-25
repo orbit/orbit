@@ -48,7 +48,6 @@ import org.mongojack.JacksonDBCollection;
 import org.mongojack.internal.MongoJackModule;
 import org.mongojack.internal.object.BsonObjectTraversingParser;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 public class MongoDBStorageExtension implements StorageExtension
@@ -97,23 +96,18 @@ public class MongoDBStorageExtension implements StorageExtension
         mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
+                .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE)
                 .withSetterVisibility(JsonAutoDetect.Visibility.NONE)
                 .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
         MongoJackModule.configure(mapper);
 
-        try
+        final ArrayList<MongoCredential> credentials = new ArrayList<>();
+        if (user != null && password != null)
         {
-            final ArrayList<MongoCredential> credentials = new ArrayList<>();
-            if (user != null && password != null)
-            {
-                credentials.add(MongoCredential.createPlainCredential(user, database, password.toCharArray()));
-            }
-            mongoClient = new MongoClient(new ServerAddress(host, port), credentials);
+            credentials.add(MongoCredential.createPlainCredential(user, database, password.toCharArray()));
         }
-        catch (UnknownHostException e)
-        {
-            throw new UncheckedException(e);
-        }
+        mongoClient = new MongoClient(new ServerAddress(host, port), credentials);
+
         return Task.done();
     }
 
