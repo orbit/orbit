@@ -68,8 +68,6 @@ public class SynchronizedTest extends BaseTest
     }
 
     @Test
-    @Ignore
-    // todo fix this
     public void inThePath()
     {
         class Experiment
@@ -92,8 +90,6 @@ public class SynchronizedTest extends BaseTest
     }
 
     @Test
-    @Ignore
-    // todo fix this
     public void twoMutexes()
     {
         class Experiment
@@ -119,8 +115,6 @@ public class SynchronizedTest extends BaseTest
     }
 
     @Test
-    @Ignore
-    // todo fix this
     public void usingThis()
     {
         class Experiment

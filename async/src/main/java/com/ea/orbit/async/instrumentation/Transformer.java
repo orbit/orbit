@@ -144,14 +144,14 @@ public class Transformer implements ClassFileTransformer
         final Label resumeLabel;
         final Label futureIsDoneLabel;
         final int key;
-        final Frame<BasicValue> frame;
+        final FrameAnalyzer.ExtendedFrame frame;
         // original instruction index
         final int index;
         public int[] stackToNewLocal;
         public int[] argumentToLocal;
         public int[] localToiArgument;
 
-        public SwitchEntry(final int key, final Frame frame, final int index)
+        public SwitchEntry(final int key, final FrameAnalyzer.ExtendedFrame frame, final int index)
         {
             this.key = key;
             this.frame = frame;
@@ -245,7 +245,7 @@ public class Transformer implements ClassFileTransformer
                 Analyzer analyzer = new FrameAnalyzer();
                 Frame[] frames = analyzer.analyze(classNode.name, original);
 
-                entryPoint = new SwitchEntry(0, frames[0], 0);
+                entryPoint = new SwitchEntry(0, (FrameAnalyzer.ExtendedFrame) frames[0], 0);
                 switchLabels.add(entryPoint.resumeLabel);
                 int ii = 0;
                 int count = 0;
@@ -255,7 +255,7 @@ public class Transformer implements ClassFileTransformer
                     Object o = it.next();
                     if ((o instanceof MethodInsnNode && isAwaitCall((MethodInsnNode) o)))
                     {
-                        SwitchEntry se = new SwitchEntry(++count, frames[ii], ii);
+                        SwitchEntry se = new SwitchEntry(++count, (FrameAnalyzer.ExtendedFrame) frames[ii], ii);
                         switchLabels.add(se.resumeLabel);
                         switchEntries.add(se);
                     }
@@ -300,14 +300,17 @@ public class Transformer implements ClassFileTransformer
                         final BasicValue value = se.frame.getLocal(iLocal);
                         if (value != null && !isUninitialized(value) && value.getType() != null)
                         {
-                            mapLocalToLambdaArgument(original, se, arguments,  iLocal, value);
+                            mapLocalToLambdaArgument(original, se, arguments, iLocal, value);
                         }
                     }
                     // maps the stack locals to arguments
                     for (int j = 0; j < se.frame.getStackSize(); j++)
                     {
                         final int iLocal = se.stackToNewLocal[j];
-                        if (iLocal >= 0) mapLocalToLambdaArgument(original, se, arguments, iLocal, se.frame.getStack(j));
+                        if (iLocal >= 0)
+                        {
+                            mapLocalToLambdaArgument(original, se, arguments, iLocal, se.frame.getStack(j));
+                        }
                     }
                     // extract local-to-argument mapping
                     se.argumentToLocal = new int[arguments.size()];
@@ -499,7 +502,7 @@ public class Transformer implements ClassFileTransformer
 
     private String guessName(final MethodNode method, final SwitchEntry se, final int local)
     {
-        if(se !=null)
+        if (se != null)
         {
             for (LocalVariableNode node : method.localVariables)
             {
@@ -835,6 +838,33 @@ public class Transformer implements ClassFileTransformer
                     Type.getMethodDescriptor(TASK_TYPE, COMPLETION_STAGE_TYPE),
                     false);
         }
+        // release monitors
+        if (switchEntry.frame.monitors.length > 0)
+        {
+            for (int i = switchEntry.frame.monitors.length; --i >= 0; )
+            {
+                final BasicValue monitorValue = switchEntry.frame.monitors[i];
+                int monitorLocal = -1;
+                for (int iLocal = 0; iLocal < switchEntry.frame.getLocals(); iLocal += valueSize(switchEntry.frame.getLocal(iLocal)))
+                {
+                    if (switchEntry.frame.getLocal(iLocal) == monitorValue)
+                    {
+                        monitorLocal = iLocal;
+                        // don't break; prefer using the last one
+                    }
+                }
+                // only release if a local variable containing the monitor was found
+                if (monitorLocal != -1)
+                {
+                    mv.visitVarInsn(ALOAD, monitorLocal);
+                    mv.visitInsn(MONITOREXIT);
+                }
+                else
+                {
+                    // TODO: warn or error
+                }
+            }
+        }
         mv.visitInsn(ARETURN);
         // code: futureIsDone:
         mv.visitLabel(futureIsDoneLabel);
@@ -997,7 +1027,7 @@ public class Transformer implements ClassFileTransformer
         {
             return;
         }
-        final Frame<BasicValue> frame = se.frame;
+        final FrameAnalyzer.ExtendedFrame frame = se.frame;
         for (int i = 0; i < frame.getStackSize(); i++)
         {
             final BasicValue value = frame.getStack(i);
@@ -1023,7 +1053,7 @@ public class Transformer implements ClassFileTransformer
                     mv.visitVarInsn(value.getType().getOpcode(ILOAD), se.localToiArgument[iLocal]);
                 }
             }
-            else if (value!=null && value.getType() != null)
+            else if (value != null && value.getType() != null)
             {
                 pushDefault(mv, value);
                 mv.visitVarInsn(value.getType().getOpcode(ISTORE), iLocal);
@@ -1035,6 +1065,30 @@ public class Transformer implements ClassFileTransformer
             if (se.localToiArgument[iLocal] >= 0 && se.localToiArgument[iLocal] != iLocal)
             {
                 mv.visitVarInsn(frame.getLocal(iLocal).getType().getOpcode(ISTORE), iLocal);
+            }
+        }
+        // reacquire monitors
+        for (int i = 0; i < se.frame.monitors.length; i++)
+        {
+            final BasicValue monitorValue = frame.monitors[i];
+            int monitorLocal = -1;
+            for (int iLocal = 0; iLocal < frame.getLocals(); iLocal += valueSize(frame.getLocal(iLocal)))
+            {
+                if (frame.getLocal(iLocal) == monitorValue)
+                {
+                    monitorLocal = iLocal;
+                    // don't break; prefer using the last one
+                }
+            }
+            // only acquire if a local variable containing the monitor was found
+            if (monitorLocal != -1)
+            {
+                mv.visitVarInsn(ALOAD, monitorLocal);
+                mv.visitInsn(MONITORENTER);
+            }
+            else
+            {
+                // TODO: warn or error
             }
         }
     }

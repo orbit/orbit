@@ -43,6 +43,8 @@ import org.objectweb.asm.tree.analysis.BasicValue;
 import org.objectweb.asm.tree.analysis.Frame;
 import org.objectweb.asm.tree.analysis.Interpreter;
 
+import java.util.Arrays;
+
 // uses previous frames
 // consider uninitialized values
 public class FrameAnalyzer extends Analyzer
@@ -93,7 +95,11 @@ public class FrameAnalyzer extends Analyzer
 
     static class ExtendedFrame extends Frame<BasicValue>
     {
+        static final BasicValue[] EMPTY_MONITORS = new BasicValue[0];
+
         boolean force;
+        // treat this array as immutable
+        BasicValue[] monitors = EMPTY_MONITORS;
 
         public ExtendedFrame(final int nLocals, final int nStack)
         {
@@ -103,6 +109,21 @@ public class FrameAnalyzer extends Analyzer
         public ExtendedFrame(final Frame<? extends BasicValue> src)
         {
             super(src);
+            if (src instanceof ExtendedFrame)
+            {
+                this.monitors = ((ExtendedFrame) src).monitors;
+            }
+        }
+
+        @Override
+        public Frame<BasicValue> init(final Frame<? extends BasicValue> src)
+        {
+            final Frame<BasicValue> frame = super.init(src);
+            if (frame instanceof ExtendedFrame && src instanceof ExtendedFrame)
+            {
+                ((ExtendedFrame) frame).monitors = ((ExtendedFrame) src).monitors;
+            }
+            return frame;
         }
 
         @Override
@@ -110,6 +131,37 @@ public class FrameAnalyzer extends Analyzer
         {
             switch (insn.getOpcode())
             {
+                case Opcodes.MONITORENTER:
+                    monitors = Arrays.copyOf(monitors, monitors.length + 1);
+                    monitors[monitors.length - 1] = pop();
+                    return;
+                case Opcodes.MONITOREXIT:
+                {
+                    // tracking the monitors by `Value` identity only works if
+                    // all object values are always unique different even if they have the same type
+                    // if that can't be guaranteed we could store each monitor in a local variable
+
+                    final BasicValue v = pop();
+                    int iv = monitors.length;
+                    for (; --iv >= 0 && monitors[iv] != v; )
+                    {
+                        // find lastIndexOf this monitor in the "monitor stack"
+                    }
+                    // there are usually two or more MONITOREXIT for each monitor
+                    // due to the compiler generated exception handler
+                    // obs.: the application code won't be in the handlers' block
+                    if (iv != -1)
+                    {
+                        final BasicValue[] newMonitors = Arrays.copyOf(monitors, monitors.length - 1);
+                        if (monitors.length - iv > 1)
+                        {
+                            // if not the last element (unlikely)
+                            System.arraycopy(monitors, iv + 1, newMonitors, iv, monitors.length - iv);
+                        }
+                        monitors = newMonitors;
+                    }
+                    return;
+                }
                 case Opcodes.INVOKESPECIAL:
                     MethodInsnNode methodInsnNode = (MethodInsnNode) insn;
                     if (methodInsnNode.name.equals("<init>"))
@@ -144,7 +196,8 @@ public class FrameAnalyzer extends Analyzer
         }
 
         @Override
-        public boolean merge(final Frame<? extends BasicValue> frame, final Interpreter<BasicValue> interpreter) throws AnalyzerException
+        public boolean merge(final Frame<? extends BasicValue> frame,
+                             final Interpreter<BasicValue> interpreter) throws AnalyzerException
         {
             if (force)
             {
