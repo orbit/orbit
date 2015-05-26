@@ -348,7 +348,8 @@ public class Transformer implements ClassFileTransformer
             final MethodNode replacement = new MethodNode(original.access,
                     original.name, original.desc, original.signature, (String[]) original.exceptions.toArray(new String[original.exceptions.size()]));
 
-            final MethodNode continued = new MethodNode(Opcodes.ACC_PRIVATE | ACC_STATIC,
+            final int staticSync = ((original.access & ACC_SYNCHRONIZED) != 0 && (original.access & ACC_STATIC) != 0) ? ACC_SYNCHRONIZED : 0;
+            final MethodNode continued = new MethodNode(Opcodes.ACC_PRIVATE | ACC_STATIC | staticSync,
                     original.name, original.desc, original.signature, (String[]) original.exceptions.toArray(new String[original.exceptions.size()]));
 
             String continuedName = "async$" + original.name;

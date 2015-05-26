@@ -57,6 +57,7 @@ public class SynchronizedTest extends BaseTest
                 synchronized (mutex)
                 {
                     x = 1;
+                    mutex.notify();
                 }
                 await(getBlockedTask());
                 return fromValue(x + a);
@@ -78,8 +79,10 @@ public class SynchronizedTest extends BaseTest
             {
                 synchronized (mutex)
                 {
+                    mutex.notify();
                     x = 1;
                     await(getBlockedTask());
+                    mutex.notify();
                 }
                 return fromValue(x + a);
             }
@@ -100,11 +103,17 @@ public class SynchronizedTest extends BaseTest
             {
                 synchronized (mutex1)
                 {
+                    mutex1.notify();
                     synchronized (mutex2)
                     {
                         x = 1;
+                        mutex1.notify();
+                        mutex2.notify();
                         await(getBlockedTask());
+                        mutex1.notify();
+                        mutex2.notify();
                     }
+                    mutex1.notify();
                 }
                 return fromValue(x + a);
             }
@@ -126,7 +135,9 @@ public class SynchronizedTest extends BaseTest
                 synchronized (this)
                 {
                     x = 1;
+                    this.notify();
                     await(getBlockedTask());
+                    this.notify();
                 }
                 return fromValue(x + a);
             }
@@ -149,6 +160,7 @@ public class SynchronizedTest extends BaseTest
             {
                 x = 1;
                 await(getBlockedTask());
+                this.notify();
                 return fromValue(x);
             }
         }
@@ -165,8 +177,6 @@ public class SynchronizedTest extends BaseTest
     }
 
     @Test
-    @Ignore
-    // todo fix this
     public void staticSynchronizedMethod()
     {
 
@@ -184,7 +194,9 @@ public class SynchronizedTest extends BaseTest
     {
         static synchronized Task doIt(Task blocker, int a)
         {
+            StaticSynchronizedMethod_Experiment.class.notify();
             await(blocker);
+            StaticSynchronizedMethod_Experiment.class.notify();
             return fromValue(a);
         }
     }
