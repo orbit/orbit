@@ -148,24 +148,23 @@ public class SynchronizedTest extends BaseTest
     }
 
     @Test
-    @Ignore
-    // todo fix this
     public void synchronizedMethod()
     {
-        class Experiment
+        class SynchronizedMethodExperiment
         {
             int x;
 
             synchronized Task doIt(int a)
             {
                 x = 1;
+                this.notify();
                 await(getBlockedTask());
                 this.notify();
                 return fromValue(x);
             }
         }
-        final Task res = new Experiment().doIt(0);
-        Method asyncMethod = Stream.of(Experiment.class.getDeclaredMethods())
+        final Task res = new SynchronizedMethodExperiment().doIt(0);
+        Method asyncMethod = Stream.of(SynchronizedMethodExperiment.class.getDeclaredMethods())
                 .filter(m -> m.getName().startsWith("async$"))
                 .findFirst().orElse(null);
         completeFutures();
@@ -175,6 +174,35 @@ public class SynchronizedTest extends BaseTest
         assertFalse(Modifier.isSynchronized(asyncMethod.getModifiers()));
         assertTrue(Modifier.isStatic(asyncMethod.getModifiers()));
     }
+
+    @Test
+    public void synchronizedMethodWithExtraSync()
+    {
+        class SynchronizedMethodWithExtraSyncExperiment
+        {
+            int x;
+
+            synchronized Task doIt(int a)
+            {
+                x = 1;
+                this.notify();
+                await(getBlockedTask());
+                synchronized (this)
+                {
+                    await(getBlockedTask());
+                    this.notify();
+                }
+                this.notify();
+                await(getBlockedTask());
+                this.notify();
+                return fromValue(x);
+            }
+        }
+        final Task res = new SynchronizedMethodWithExtraSyncExperiment().doIt(0);
+        completeFutures();
+        assertEquals(1, res.join());
+    }
+
 
     @Test
     public void staticSynchronizedMethod()
@@ -200,4 +228,56 @@ public class SynchronizedTest extends BaseTest
             return fromValue(a);
         }
     }
+
+    @Test
+    public void mixed()
+    {
+        class MixedExperiment
+        {
+            int x;
+
+            synchronized Task doIt(String mutex1, String mutex2, int a)
+            {
+                String mutex3 = "c";
+                x = 1;
+                this.notify();
+                await(getBlockedTask());
+                this.notify();
+                synchronized (mutex1)
+                {
+                    await(getBlockedTask());
+                    this.notify();
+                    mutex1.notify();
+                }
+                synchronized (mutex2)
+                {
+                    await(getBlockedTask());
+                    this.notify();
+                    mutex2.notify();
+                }
+                synchronized (mutex1)
+                {
+                    synchronized (mutex2)
+                    {
+                        synchronized (mutex3)
+                        {
+                            await(getBlockedTask());
+                            this.notify();
+                            mutex1.notify();
+                            mutex2.notify();
+                            mutex3.notify();
+                        }
+                    }
+                }
+                this.notify();
+                await(getBlockedTask());
+                this.notify();
+                return fromValue(x);
+            }
+        }
+        final Task res = new MixedExperiment().doIt("a", "b", 0);
+        completeFutures();
+        assertEquals(1, res.join());
+    }
+
 }

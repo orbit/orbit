@@ -145,7 +145,7 @@ class DevDebug
             new ClassReader(bytes).accept(new TraceClassVisitor(pw), 0);
             pw.flush();
 
-            Path path = Paths.get("target/classes2/" + name + ".trace");
+            Path path = Paths.get("target/classes2/" + name + ".trace.txt");
             Files.createDirectories(path.getParent());
             Files.write(path, sw.toString().getBytes(Charset.forName("UTF-8")));
         }
@@ -164,7 +164,7 @@ class DevDebug
             node.accept(new TraceClassVisitor(pw));
             pw.flush();
 
-            Path path = Paths.get("target/classes2/" + name + ".trace");
+            Path path = Paths.get("target/classes2/" + name + ".trace.txt");
             Files.createDirectories(path.getParent());
             Files.write(path, sw.toString().getBytes(Charset.forName("UTF-8")));
         }

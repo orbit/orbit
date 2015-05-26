@@ -348,8 +348,9 @@ public class Transformer implements ClassFileTransformer
             final MethodNode replacement = new MethodNode(original.access,
                     original.name, original.desc, original.signature, (String[]) original.exceptions.toArray(new String[original.exceptions.size()]));
 
-            final int staticSync = ((original.access & ACC_SYNCHRONIZED) != 0 && (original.access & ACC_STATIC) != 0) ? ACC_SYNCHRONIZED : 0;
-            final MethodNode continued = new MethodNode(Opcodes.ACC_PRIVATE | ACC_STATIC | staticSync,
+            final boolean staticSynchronized = ((original.access & ACC_SYNCHRONIZED) != 0 && (original.access & ACC_STATIC) != 0);
+            final boolean instanceSynchronized = ((original.access & ACC_SYNCHRONIZED) != 0 && (original.access & ACC_STATIC) == 0);
+            final MethodNode continued = new MethodNode(Opcodes.ACC_PRIVATE | ACC_STATIC | (staticSynchronized ? ACC_SYNCHRONIZED : 0),
                     original.name, original.desc, original.signature, (String[]) original.exceptions.toArray(new String[original.exceptions.size()]));
 
             String continuedName = "async$" + original.name;
@@ -363,7 +364,25 @@ public class Transformer implements ClassFileTransformer
 
             final boolean isTaskRet = original.desc.endsWith(TASK_RET);
 
-            original.accept(new MyMethodVisitor(replacement, switchEntries, lambdaDesc, arguments, false, isTaskRet, handle));
+            original.accept(new MyMethodVisitor(replacement, switchEntries, lambdaDesc, arguments, false, isTaskRet, instanceSynchronized, handle));
+
+
+            // if instanceSynchronized all exit paths must release the lock on "this"
+            // the exception path is easy, a global exception handler can do it.
+            // the return path demands a release before each return
+
+            Label thisMonitorStart = null;
+            Label thisMonitorEnd = null;
+            if (instanceSynchronized)
+            {
+                // "this" must be in the first argument
+                thisMonitorStart = new Label();
+                thisMonitorEnd = new Label();
+                continued.visitVarInsn(ALOAD, 0);
+                continued.visitInsn(MONITORENTER);
+                continued.visitLabel(thisMonitorStart);
+                continued.visitTryCatchBlock(thisMonitorStart, thisMonitorEnd, thisMonitorEnd, null);
+            }
 
             // get pos
             continued.visitVarInsn(ILOAD, stateArgument.iArgumentLocal);
@@ -376,7 +395,7 @@ public class Transformer implements ClassFileTransformer
             continued.visitFrame(F_FULL, defaultFrame.length, defaultFrame, 0, new Object[0]);
             restoreStackAndLocals(continued, entryPoint, arguments);
 
-            original.accept(new MyMethodVisitor(continued, switchEntries, lambdaDesc, arguments, true, isTaskRet, handle));
+            original.accept(new MyMethodVisitor(continued, switchEntries, lambdaDesc, arguments, true, isTaskRet, instanceSynchronized, handle));
 
 
             // add switch entries for the continuation state machine
@@ -417,6 +436,15 @@ public class Transformer implements ClassFileTransformer
                     continued.visitLabel(endLabel);
                     continued.visitLocalVariable(_THIS, "L" + classNode.name + ";", null, lastRestorePoint, endLabel, 0);
                 }
+            }
+            if (instanceSynchronized)
+            {
+                // "this" must be in the first argument
+                continued.visitLabel(thisMonitorEnd);
+                continued.visitFrame(F_FULL, 1, new Object[]{classNode.name}, 1, new Object[]{Type.getType(Throwable.class).getInternalName()});
+                continued.visitVarInsn(ALOAD, 0);
+                continued.visitInsn(MONITOREXIT);
+                continued.visitInsn(ATHROW);
             }
 
             // removing original method
@@ -1234,6 +1262,7 @@ public class Transformer implements ClassFileTransformer
         private final List<SwitchEntry> switchEntries;
         private boolean isContinued;
         private final boolean isTaskRet;
+        private final boolean instanceSynchronized;
         private final Handle handle;
 
         int awaitIndex;
@@ -1246,7 +1275,7 @@ public class Transformer implements ClassFileTransformer
                 final String lambdaDesc,
                 final List<Argument> lambdaArguments,
                 final boolean isContinued, final boolean isTaskRet,
-                final Handle handle)
+                final boolean instanceSynchronized, final Handle handle)
         {
             super(Opcodes.ASM5, mv);
             this.switchEntries = switchEntries;
@@ -1254,6 +1283,7 @@ public class Transformer implements ClassFileTransformer
             this.lambdaArguments = lambdaArguments;
             this.isContinued = isContinued;
             this.isTaskRet = isTaskRet;
+            this.instanceSynchronized = instanceSynchronized;
             this.handle = handle;
             awaitIndex = 0;
         }
@@ -1279,6 +1309,17 @@ public class Transformer implements ClassFileTransformer
             // the use of EXPAND_FRAMES adds F_NEW which creates problems if not removed.
             super.visitFrame((type == F_NEW) ? F_FULL : type,
                     nLocal, local, nStack, stack);
+        }
+
+        @Override
+        public void visitInsn(final int opcode)
+        {
+            if (opcode == ARETURN && isContinued && instanceSynchronized)
+            {
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitInsn(MONITOREXIT);
+            }
+            super.visitInsn(opcode);
         }
     }
 }
