@@ -85,6 +85,8 @@ public class Execution implements Runtime
     private Map<Class<?>, InterfaceDescriptor> descriptorMapByInterface = new HashMap<>();
     private Map<Integer, InterfaceDescriptor> descriptorMapByInterfaceId = new HashMap<>();
     private Map<EntryKey, ReferenceEntry> localActors = new ConcurrentHashMap<>();
+
+
     private Map<EntryKey, ActorObserver> observerInstances = new MapMaker().weakValues().makeMap();
     // from implementation to reference
     private Map<ActorObserver, ActorObserver> observerReferences = new MapMaker().weakKeys().makeMap();
@@ -1189,5 +1191,27 @@ public class Execution implements Runtime
     public NodeCapabilities.NodeState getState()
     {
         return state;
+    }
+
+    public long getLocalActorCount()
+    {
+        return localActors.size();
+    }
+
+    public long getObserverInstanceCount() { return observerInstances.size(); }
+
+    public long getMessagesReceivedCount()
+    {
+        return messagesReceived.get();
+    }
+
+    public long getMessagesHandledCount()
+    {
+        return messagesHandled.get();
+    }
+
+    public long getRefusedExecutionsCount()
+    {
+        return refusedExecutions.get();
     }
 }

@@ -50,7 +50,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
+import java.lang.management.ManagementFactory;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,7 +61,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 @Singleton
-public class Stage implements Startable
+public class Stage implements Startable, StageMetricsMXBean
 {
     private static final Logger logger = LoggerFactory.getLogger(Stage.class);
 
@@ -241,6 +244,19 @@ public class Stage implements Startable
         hosting.start();
         execution.start();
 
+        // register with JMX
+        try
+        {
+            MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+            ObjectName metricsName = new ObjectName("com.ea.orbit:type=Stage,name="+getNodeName());
+            mBeanServer.registerMBean(this, metricsName);
+        }
+        catch (Exception e)
+        {
+            logger.warn("Unable to register JMX Mbean - " + e.getClass().getName() + " - " + e.getMessage());
+        }
+
+
 
         Task<?> future = clusterPeer.join(clusterName, nodeName);
         if (mode == StageMode.HOST)
@@ -406,4 +422,34 @@ public class Stage implements Startable
         return execution.getState();
     }
 
+
+    @Override
+    public long getLocalActorCount()
+    {
+        return execution != null ? execution.getLocalActorCount() : 0;
+    }
+
+    @Override
+    public long getObserverInstanceCount()
+    {
+        return execution != null ? execution.getObserverInstanceCount() : 0;
+    }
+
+    @Override
+    public long getRefusedExecutionCount()
+    {
+        return execution != null ? execution.getRefusedExecutionsCount() : 0;
+    }
+
+    @Override
+    public long getMessagesReceivedCount()
+    {
+        return execution != null ? execution.getMessagesReceivedCount() : 0;
+    }
+
+    @Override
+    public long getMessagesHandledCount()
+    {
+        return execution != null ? execution.getMessagesHandledCount() : 0;
+    }
 }
