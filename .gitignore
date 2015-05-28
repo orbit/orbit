@@ -9,3 +9,4 @@ dependency-reduced-pom.xml
 .factorypath
 .apt_generated
 **/log/**
+.DS_Store
