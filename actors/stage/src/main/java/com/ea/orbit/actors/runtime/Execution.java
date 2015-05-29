@@ -1190,26 +1190,4 @@ public class Execution implements Runtime
     {
         return state;
     }
-
-    public long getLocalActorCount()
-    {
-        return localActors.size();
-    }
-
-    public long getObserverInstanceCount() { return observerInstances.size(); }
-
-    public long getMessagesReceivedCount()
-    {
-        return messagesReceived.get();
-    }
-
-    public long getMessagesHandledCount()
-    {
-        return messagesHandled.get();
-    }
-
-    public long getRefusedExecutionsCount()
-    {
-        return refusedExecutions.get();
-    }
 }
