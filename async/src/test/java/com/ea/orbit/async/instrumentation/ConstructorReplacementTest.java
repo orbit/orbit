@@ -31,17 +31,59 @@ package com.ea.orbit.async.instrumentation;
 import com.ea.orbit.async.test.BaseTest;
 
 import org.junit.Test;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.objectweb.asm.Opcodes.*;
 
 public class ConstructorReplacementTest extends BaseTest
 {
+    @Test
+    @SuppressWarnings("unchecked")
+    public void regularConstructorCall() throws Exception
+    {
+        // check that the constructor replacement is able to replace interleaved elements in the stack
+        // obs.: the java compiler doesn't usually produce code like this
+        // regular java compiler will do:
+        // -- { new dup dup ... <init> }
+        // this tests what happens if:
+        // -- { new dup push_1 swap ... <init> pop }
+        MethodNode mv = new MethodNode(ACC_PUBLIC, "apply", "(Ljava/lang/Object;)Ljava/lang/Object;", null, new String[]{"java/lang/Exception"});
+        mv.visitTypeInsn(NEW, "java/lang/Integer");
+        mv.visitInsn(DUP);
+        mv.visitVarInsn(ALOAD, 1);
+        mv.visitTypeInsn(CHECKCAST, "java/lang/String");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Integer", "<init>", "(Ljava/lang/String;)V", false);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(4, 2);
+
+        // without replacement
+        {
+            final ClassNode cn = createClassNode(Function.class, null);
+            mv.accept(cn);
+            assertEquals(101, createClass(Function.class, cn).apply("101"));
+        }
+
+        // with replacement
+        {
+            final ClassNode cn = createClassNode(Function.class, null);
+            new Transformer().replaceObjectInitialization(mv,
+                    new FrameAnalyzer().analyze(cn.name, mv), findConstructors(mv));
+            mv.accept(cn);
+            // DevDebug.debugSaveTrace(cn.name, cn);
+            assertEquals(101, createClass(Function.class, cn).apply("101"));
+        }
+    }
+
+
     @Test
     @SuppressWarnings("unchecked")
     public void withInterleavedCopies() throws Exception
@@ -52,7 +94,7 @@ public class ConstructorReplacementTest extends BaseTest
         // -- { new dup dup ... <init> }
         // this tests what happens if:
         // -- { new dup push_1 swap ... <init> pop }
-        MethodNode mv = new MethodNode(ACC_PUBLIC, "apply", "(Ljava/lang/Object;)Ljava/lang/Object;", null, new String[]{ "java/lang/Exception" });
+        MethodNode mv = new MethodNode(ACC_PUBLIC, "apply", "(Ljava/lang/Object;)Ljava/lang/Object;", null, new String[]{"java/lang/Exception"});
         mv.visitTypeInsn(NEW, "java/lang/Integer");
         mv.visitInsn(DUP);
         // interleaving copies in the stack
@@ -78,12 +120,19 @@ public class ConstructorReplacementTest extends BaseTest
         // with replacement
         {
             final ClassNode cn = createClassNode(Function.class, null);
-            new Transformer().replaceObjectInitialization(cn, mv,
-                    new HashMap<>(), new FrameAnalyzer().analyze(cn.name, mv));
+            new Transformer().replaceObjectInitialization(mv,
+                    new FrameAnalyzer().analyze(cn.name, mv), findConstructors(mv));
             mv.accept(cn);
             // DevDebug.debugSaveTrace(cn.name, cn);
             assertEquals(101, createClass(Function.class, cn).apply("101"));
         }
+    }
+
+    public Set<AbstractInsnNode> findConstructors(final MethodNode mv)
+    {
+        return Stream.of(mv.instructions.toArray())
+                .filter(i -> i.getOpcode() == NEW)
+                .collect(Collectors.toSet());
     }
 
     @Test
@@ -92,7 +141,7 @@ public class ConstructorReplacementTest extends BaseTest
     {
         // check that the constructor replacement is able to replace interleaved elements in the stack
         // obs.: the java compiler doesn't usually produce code like this
-        MethodNode mv = new MethodNode(ACC_PUBLIC, "apply", "(Ljava/lang/Object;)Ljava/lang/Object;", null, new String[]{ "java/lang/Exception" });
+        MethodNode mv = new MethodNode(ACC_PUBLIC, "apply", "(Ljava/lang/Object;)Ljava/lang/Object;", null, new String[]{"java/lang/Exception"});
         mv.visitTypeInsn(NEW, "java/lang/Integer");
         mv.visitInsn(DUP);
         mv.visitVarInsn(ASTORE, 2);
@@ -135,8 +184,8 @@ public class ConstructorReplacementTest extends BaseTest
         // with replacement
         {
             final ClassNode cn = createClassNode(Function.class, null);
-            new Transformer().replaceObjectInitialization(cn, mv,
-                    new HashMap<>(), new FrameAnalyzer().analyze(cn.name, mv));
+            new Transformer().replaceObjectInitialization(mv,
+                    new FrameAnalyzer().analyze(cn.name, mv), findConstructors(mv));
             mv.accept(cn);
             // DevDebug.debugSaveTrace(cn.name, cn);
             assertEquals(101, createClass(Function.class, cn).apply("101"));
