@@ -29,7 +29,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.ActorObserver;
-import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.concurrent.Task;
 
@@ -55,6 +54,5 @@ public interface NodeCapabilities extends ActorObserver
      */
     Task<Integer> canActivate(String interfaceName, int interfaceId);
 
-    @OneWay
     Task<Void> nodeModeChanged(NodeAddress nodeAddress, NodeState newMode);
 }

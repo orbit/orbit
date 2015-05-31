@@ -161,7 +161,7 @@ public class ExecutionSerializer<T>
         }
     }
 
-    public void shutDown()
+    public void shutdown()
     {
         executorService.shutdown();
     }
