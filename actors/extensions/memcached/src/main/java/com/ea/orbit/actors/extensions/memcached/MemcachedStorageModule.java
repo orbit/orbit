@@ -32,5 +32,4 @@ import com.ea.orbit.container.Module;
 
 public class MemcachedStorageModule extends Module
 {
-
 }

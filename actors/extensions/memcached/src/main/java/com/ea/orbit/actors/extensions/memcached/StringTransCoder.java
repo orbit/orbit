@@ -69,7 +69,7 @@ public class StringTransCoder extends AbstractTransCoder
 
     private void copy(InputStream from, ByteArrayOutputStream to) throws IOException
     {
-        byte[] buffer = new byte[4096]; // 4K
+        byte[] buffer = new byte[4096];
         while (true)
         {
             int r = from.read(buffer);
