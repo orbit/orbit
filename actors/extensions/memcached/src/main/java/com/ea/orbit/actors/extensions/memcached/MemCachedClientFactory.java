@@ -32,11 +32,11 @@ import com.schooner.MemCached.SchoonerSockIOPool;
 import com.whalin.MemCached.MemCachedClient;
 
 /**
- * {@link MemCachedClientFactory} provides a simple Memcached clients (not suitable for production use).
+ * {@link MemcachedClientFactory} provides a simple Memcached clients (not suitable for production use).
  *
  * @author Johno Crawford (johno@sulake.com)
  */
-public abstract class MemCachedClientFactory
+public abstract class MemcachedClientFactory
 {
     public static MemCachedClient getClient()
     {

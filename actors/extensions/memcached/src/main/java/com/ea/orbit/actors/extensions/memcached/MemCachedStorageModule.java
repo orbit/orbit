@@ -30,6 +30,6 @@ package com.ea.orbit.actors.extensions.memcached;
 
 import com.ea.orbit.container.Module;
 
-public class MemCachedStorageModule extends Module
+public class MemcachedStorageModule extends Module
 {
 }
