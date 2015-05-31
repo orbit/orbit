@@ -28,33 +28,8 @@
 
 package com.ea.orbit.actors.extensions.memcached;
 
-import com.schooner.MemCached.SchoonerSockIOPool;
-import com.whalin.MemCached.MemCachedClient;
+import com.ea.orbit.container.Module;
 
-/**
- * {@link MemcachedClientFactory} provides a simple Memcached clients (not suitable for production use).
- *
- * @author Johno Crawford (johno@sulake.com)
- */
-public abstract class MemcachedClientFactory
+public class MemcachedStorageModule extends Module
 {
-    public static MemCachedClient getClient()
-    {
-        MemCachedClient client = new MemCachedClient(true);
-
-        client.setTransCoder(new StringTransCoder());
-
-        SchoonerSockIOPool pool = SchoonerSockIOPool.getInstance();
-        pool.setServers(new String[]{ "localhost:11211" });
-
-        pool.setInitConn(5);
-        pool.setMinConn(5);
-        pool.setMaxConn(10);
-        pool.setMaintSleep(0);
-        pool.setNagle(false);
-
-        pool.initialize();
-
-        return client;
-    }
 }

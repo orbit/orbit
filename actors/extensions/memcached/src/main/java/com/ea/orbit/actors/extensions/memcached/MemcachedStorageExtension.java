@@ -58,7 +58,7 @@ public class MemcachedStorageExtension extends AbstractStorageExtension
 
     private ObjectMapper mapper;
 
-    private MemCachedClient memCachedClient;
+    private MemCachedClient memcachedClient;
 
     private boolean useShortKeys = false;
 
@@ -74,9 +74,9 @@ public class MemcachedStorageExtension extends AbstractStorageExtension
                 .withSetterVisibility(JsonAutoDetect.Visibility.NONE)
                 .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
 
-        if (memCachedClient == null)
+        if (memcachedClient == null)
         {
-            memCachedClient = MemCachedClientFactory.getClient();
+            memcachedClient = MemcachedClientFactory.getClient();
         }
         return Task.done();
     }
@@ -84,7 +84,7 @@ public class MemcachedStorageExtension extends AbstractStorageExtension
     @Override
     public Task<Void> clearState(final ActorReference reference, final Object state)
     {
-        memCachedClient.delete(asKey(reference));
+        memcachedClient.delete(asKey(reference));
         return Task.done();
     }
 
@@ -99,7 +99,7 @@ public class MemcachedStorageExtension extends AbstractStorageExtension
     {
         try
         {
-            Object newState = memCachedClient.get(asKey(reference));
+            Object newState = memcachedClient.get(asKey(reference));
             if (newState != null)
             {
                 mapper.readerForUpdating(state).readValue(String.valueOf(newState));
@@ -108,10 +108,14 @@ public class MemcachedStorageExtension extends AbstractStorageExtension
         }
         catch (RuntimeException | IOException e)
         {
-            logger.warn("Exception during cache value deserialization for key: " + asKey(reference) + " - removing entry");
+            if (logger.isDebugEnabled()) {
+                logger.warn("Exception during cache value deserialization for key: " + asKey(reference) + " - removing entry", e);
+            } else {
+                logger.warn("Exception during cache value deserialization for key: " + asKey(reference) + " - removing entry");
+            }
 
             // Remove the entry upon error deserializing its value..
-            memCachedClient.delete(asKey(reference));
+            memcachedClient.delete(asKey(reference));
         }
         return Task.fromValue(false);
     }
@@ -123,7 +127,7 @@ public class MemcachedStorageExtension extends AbstractStorageExtension
         try
         {
             String serializedState = mapper.writeValueAsString(state);
-            memCachedClient.set(asKey(reference), serializedState);
+            memcachedClient.set(asKey(reference), serializedState);
             return Task.done();
         }
         catch (RuntimeException | IOException e)
@@ -143,9 +147,9 @@ public class MemcachedStorageExtension extends AbstractStorageExtension
         this.useShortKeys = useShortKeys;
     }
 
-    public void setMemCachedClient(final MemCachedClient memCachedClient)
+    public void setMemcachedClient(final MemCachedClient memcachedClient)
     {
-        this.memCachedClient = memCachedClient;
+        this.memcachedClient = memcachedClient;
     }
 
 }
