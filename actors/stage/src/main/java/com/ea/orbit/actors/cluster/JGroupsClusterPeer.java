@@ -148,7 +148,7 @@ public class JGroupsClusterPeer implements ClusterPeer
                             true,
                             ProtocolStack.ABOVE,
                             FRAG2.class);
-                    channel.connect(clusterName + "." + UUID.randomUUID());
+                    channel.connect(clusterName);
 
                     channel.setReceiver(new ReceiverAdapter()
                     {
@@ -169,7 +169,7 @@ public class JGroupsClusterPeer implements ClusterPeer
 
                     final GlobalConfigurationBuilder globalConfigurationBuilder = GlobalConfigurationBuilder.defaultClusteredBuilder();
                     globalConfigurationBuilder.globalJmxStatistics().allowDuplicateDomains(true);
-                    globalConfigurationBuilder.transport().nodeName(nodeName).transport(new JGroupsTransport(baseChannel));
+                    globalConfigurationBuilder.transport().clusterName(clusterName).nodeName(nodeName).transport(new JGroupsTransport(baseChannel));
 
                     ConfigurationBuilder builder = new ConfigurationBuilder();
                     builder.clustering().cacheMode(CacheMode.DIST_ASYNC);
