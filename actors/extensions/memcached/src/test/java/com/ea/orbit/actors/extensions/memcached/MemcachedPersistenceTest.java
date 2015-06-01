@@ -40,12 +40,12 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.whalin.MemCached.MemCachedClient;
 
-public class MemCachedPersistenceTest extends StorageBaseTest
+public class MemcachedPersistenceTest extends StorageBaseTest
 {
 
     private ObjectMapper mapper;
 
-    private MemCachedClient memCachedClient;
+    private MemCachedClient memcachedClient;
 
     @Override
     public Class<? extends StorageTest> getActorInterfaceClass()
@@ -73,7 +73,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
                 .withSetterVisibility(JsonAutoDetect.Visibility.NONE)
                 .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
 
-        memCachedClient = MemCachedClientFactory.getClient();
+        memcachedClient = MemcachedClientFactory.getClient();
         closeStorage();
     }
 
@@ -82,7 +82,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     {
         for (int i = 0; i < heavyTestSize(); i++)
         {
-            memCachedClient.delete(asKey(getActorInterfaceClass(), String.valueOf(i)));
+            memcachedClient.delete(asKey(getActorInterfaceClass(), String.valueOf(i)));
         }
     }
 
@@ -91,7 +91,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
         int count = 0;
         for (int i = 0; i < heavyTestSize(); i++)
         {
-            if (memCachedClient.get(asKey(actorInterface, String.valueOf(i))) != null)
+            if (memcachedClient.get(asKey(actorInterface, String.valueOf(i))) != null)
             {
                 count++;
             }
@@ -107,7 +107,7 @@ public class MemCachedPersistenceTest extends StorageBaseTest
     @Override
     public StorageTestState readState(final String identity)
     {
-        Object data = memCachedClient.get(asKey(Hello.class, identity));
+        Object data = memcachedClient.get(asKey(Hello.class, identity));
         if (data != null)
         {
             try

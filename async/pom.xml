@@ -33,7 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <parent>
         <groupId>com.ea.orbit</groupId>
         <artifactId>orbit-parent</artifactId>
-        <version>0.3.1-SNAPSHOT</version>
+        <version>0.3.2-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>orbit-async</artifactId>
@@ -77,6 +77,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                         <configuration>
                             <artifactSet>
                                 <includes>
+                                    <include>com.ea.orbit:orbit-agent-loader</include>
                                     <include>org.ow2.asm:asm-debug-all</include>
                                 </includes>
                             </artifactSet>

@@ -32,6 +32,7 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.annotation.NoIdentity;
 import com.ea.orbit.actors.cluster.NodeAddressImpl;
+import com.ea.orbit.instrumentation.ClassPathUtils;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,7 +73,7 @@ public class ReferenceFactory implements RefFactory
                 {
                     factoryClazz = factoryClazz.substring(1); // remove leading 'I'
                 }
-                factory = (ActorFactory<T>) Class.forName(iClass.getPackage().getName() + "." + factoryClazz).newInstance();
+                factory = (ActorFactory<T>) Class.forName(ClassPathUtils.getNullSafePackageName(iClass) + "." + factoryClazz).newInstance();
             }
             catch (Exception e)
             {

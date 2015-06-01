@@ -478,7 +478,7 @@ public class Execution implements Runtime
     {
         // * refuse new actor activations
         state = NodeCapabilities.NodeState.STOPPING;
-        hosting.notifyStateChange();
+        hosting.notifyStateChange().join();
 
         // * deactivate all actors
         activationCleanup().join();
@@ -489,10 +489,10 @@ public class Execution implements Runtime
         // * stop processing new received messages (responses still work)
         // * notify rest of the cluster (no more observer messages)
         state = NodeCapabilities.NodeState.STOPPED;
-        hosting.notifyStateChange();
+        hosting.notifyStateChange().join();
 
         // * wait pending tasks execution
-        executionSerializer.shutDown();
+        executionSerializer.shutdown();
 
         // ** stop all extensions
         Task.allOf(extensions.stream().map(v -> v.stop())).join();
@@ -1189,27 +1189,5 @@ public class Execution implements Runtime
     public NodeCapabilities.NodeState getState()
     {
         return state;
-    }
-
-    public long getLocalActorCount()
-    {
-        return localActors.size();
-    }
-
-    public long getObserverInstanceCount() { return observerInstances.size(); }
-
-    public long getMessagesReceivedCount()
-    {
-        return messagesReceived.get();
-    }
-
-    public long getMessagesHandledCount()
-    {
-        return messagesHandled.get();
-    }
-
-    public long getRefusedExecutionsCount()
-    {
-        return refusedExecutions.get();
     }
 }

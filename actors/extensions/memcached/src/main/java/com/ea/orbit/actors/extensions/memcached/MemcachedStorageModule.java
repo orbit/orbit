@@ -26,19 +26,10 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors;
+package com.ea.orbit.actors.extensions.memcached;
 
-/**
- * Created by jefftheriault on 15-05-27.
- */
-public interface StageMetricsMXBean
+import com.ea.orbit.container.Module;
+
+public class MemcachedStorageModule extends Module
 {
-    long getLocalActorCount();
-
-    long getObserverInstanceCount();
-
-    long getRefusedExecutionCount();
-
-    long getMessagesReceivedCount();
-    long getMessagesHandledCount();
 }

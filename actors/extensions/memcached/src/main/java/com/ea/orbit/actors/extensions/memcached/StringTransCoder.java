@@ -28,31 +28,56 @@
 
 package com.ea.orbit.actors.extensions.memcached;
 
-import com.schooner.MemCached.SchoonerSockIOPool;
-import com.whalin.MemCached.MemCachedClient;
+import com.schooner.MemCached.AbstractTransCoder;
+import com.schooner.MemCached.TransCoder;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
 
 /**
- * {@link MemCachedClientFactory} provides a simple Memcached clients (not suitable for production use).
+ * {@link TransCoder} which writes and reads strings directly as bytes.
+ * The MySQL memcached plugin strips the string length bytes for some reason..
+ *
+ * java.io.StreamCorruptedException: invalid stream header: 7B226F62
+ * at java.io.ObjectInputStream.readStreamHeader(ObjectInputStream.java:806)
+ * at java.io.ObjectInputStream.<init>(ObjectInputStream.java:299)
+ * at com.schooner.MemCached.ObjectTransCoder.decode(Unknown Source)
  *
  * @author Johno Crawford (johno@sulake.com)
  */
-public abstract class MemCachedClientFactory
+public class StringTransCoder extends AbstractTransCoder
 {
-    public static MemCachedClient getClient()
+
+    private final Charset UTF8 = Charset.forName("UTF-8");
+
+    @Override
+    public void encode(OutputStream outputStream, Object object) throws IOException
     {
-        MemCachedClient memCachedClient = new MemCachedClient(true);
+        outputStream.write(String.valueOf(object).getBytes(UTF8));
+    }
 
-        SchoonerSockIOPool pool = SchoonerSockIOPool.getInstance();
-        pool.setServers(new String[]{ "localhost:11211" });
+    @Override
+    public Object decode(InputStream inputStream) throws IOException
+    {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        copy(inputStream, outputStream);
+        return new String(outputStream.toByteArray(), UTF8);
+    }
 
-        pool.setInitConn(5);
-        pool.setMinConn(5);
-        pool.setMaxConn(10);
-        pool.setMaintSleep(0);
-        pool.setNagle(false);
-
-        pool.initialize();
-
-        return memCachedClient;
+    private void copy(InputStream from, ByteArrayOutputStream to) throws IOException
+    {
+        byte[] buffer = new byte[4096];
+        while (true)
+        {
+            int r = from.read(buffer);
+            if (r == -1)
+            {
+                break;
+            }
+            to.write(buffer, 0, r);
+        }
     }
 }

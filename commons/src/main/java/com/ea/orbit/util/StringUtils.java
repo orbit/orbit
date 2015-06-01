@@ -113,4 +113,9 @@ public class StringUtils
         }
         return str1.equalsIgnoreCase(str2);
     }
+
+    public static String defaultIfBlank(final String str, final String def)
+    {
+        return isBlank(str) ? def : str;
+    }
 }
