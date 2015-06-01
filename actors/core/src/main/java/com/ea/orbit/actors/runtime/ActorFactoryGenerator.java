@@ -3,11 +3,20 @@ package com.ea.orbit.actors.runtime;
 import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
+import com.ea.orbit.instrumentation.ClassPathUtils;
 
-import javassist.*;
+import javassist.CannotCompileException;
+import javassist.ClassClassPath;
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.CtField;
+import javassist.CtMethod;
+import javassist.CtNewConstructor;
+import javassist.CtNewMethod;
+import javassist.CtPrimitiveType;
+import javassist.NotFoundException;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -71,7 +80,7 @@ public class ActorFactoryGenerator
     public <T> ActorFactory<T> getFactoryFor(final Class<T> aInterface)
     {
         final String interfaceFullName = aInterface.getName().replace('$', '.');
-        final String packageName = aInterface.getPackage().getName();
+        final String packageName = ClassPathUtils.getNullSafePackageName(aInterface);
         String baseName = aInterface.getSimpleName();
         if (baseName.charAt(0) == 'I')
         {

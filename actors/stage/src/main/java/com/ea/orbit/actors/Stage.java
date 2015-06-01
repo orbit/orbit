@@ -241,7 +241,6 @@ public class Stage implements Startable
         hosting.start();
         execution.start();
 
-
         Task<?> future = clusterPeer.join(clusterName, nodeName);
         if (mode == StageMode.HOST)
         {
@@ -405,5 +404,4 @@ public class Stage implements Startable
     {
         return execution.getState();
     }
-
 }

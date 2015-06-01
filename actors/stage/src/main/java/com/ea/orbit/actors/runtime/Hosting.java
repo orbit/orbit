@@ -109,12 +109,10 @@ public class Hosting implements NodeCapabilities, Startable
         return Collections.unmodifiableList(set);
     }
 
-    public void notifyStateChange()
+    public Task<?> notifyStateChange()
     {
-        for (NodeInfo info : activeNodes.values())
-        {
-            info.nodeCapabilities.nodeModeChanged(clusterPeer.localAddress(), execution.getState());
-        }
+        return Task.allOf(activeNodes.values().stream().map(info ->
+                info.nodeCapabilities.nodeModeChanged(clusterPeer.localAddress(), execution.getState())));
     }
 
     private static class NodeInfo
