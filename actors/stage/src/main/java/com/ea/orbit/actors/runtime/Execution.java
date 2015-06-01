@@ -498,7 +498,7 @@ public class Execution implements Runtime
         Task.allOf(extensions.stream().map(v -> v.stop())).join();
 
         // * cancel all pending messages, and prevents sending new ones
-        //messaging.stop();
+        messaging.stop();
 
         return Task.done();
     }

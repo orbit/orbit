@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -164,5 +165,13 @@ public class ExecutionSerializer<T>
     public void shutdown()
     {
         executorService.shutdown();
+        try
+        {
+            executorService.awaitTermination(60, TimeUnit.SECONDS);
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+        }
     }
 }
