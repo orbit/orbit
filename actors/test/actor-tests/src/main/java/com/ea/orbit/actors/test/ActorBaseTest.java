@@ -28,10 +28,11 @@
 
 package com.ea.orbit.actors.test;
 
-
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.Execution;
+import com.ea.orbit.actors.runtime.ExecutionSerializer;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -64,6 +65,13 @@ public class ActorBaseTest
         protected ExecutorService delegate()
         {
             return delegate;
+        }
+
+        @Override
+        public boolean awaitTermination(final long timeout, final TimeUnit unit) throws InterruptedException
+        {
+            // return immediately.
+            return true;
         }
 
         @Override
@@ -159,9 +167,9 @@ public class ActorBaseTest
         fail("Was expecting some exception");
     }
 
-    private Object getField(Object target, String name) throws IllegalAccessException, NoSuchFieldException
+    private Object getField(Object target, Class<?> clazz, String name) throws IllegalAccessException, NoSuchFieldException
     {
-        final Field f = target.getClass().getDeclaredField(name);
+        final Field f = clazz.getDeclaredField(name);
         f.setAccessible(true);
         return f.get(target);
     }
@@ -198,7 +206,8 @@ public class ActorBaseTest
         {
             // this is very ad hoc, but should work for our tests, until execution changes.
             // for starters access to this map should be synchronized.
-            Map running = (Map) getField(getField(getField(stage, "execution"), "executionSerializer"), "running");
+            Map running = (Map) getField(getField(getField(stage, Stage.class, "execution"), Execution.class,
+                    "executionSerializer"), ExecutionSerializer.class, "running");
 
             return running.size() == 0;
         }

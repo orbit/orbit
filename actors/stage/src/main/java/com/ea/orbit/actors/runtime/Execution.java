@@ -494,11 +494,11 @@ public class Execution implements Runtime
         // * wait pending tasks execution
         executionSerializer.shutdown();
 
+        // * cancel all pending messages, and prevents sending new ones
+        messaging.stop();
+
         // ** stop all extensions
         Task.allOf(extensions.stream().map(v -> v.stop())).join();
-
-        // * cancel all pending messages, and prevents sending new ones
-        //messaging.stop();
 
         return Task.done();
     }
