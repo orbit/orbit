@@ -487,7 +487,7 @@ public class Execution implements Runtime
         // * finalize all timers
         timer.cancel();
 
-        // * give extensions chance to send a message
+        // * give extensions a chance to send a message
         Task.allOf(extensions.stream().map(StageLifecycleListener::onPreStop)).join();
 
         // * stop processing new received messages (responses still work)
