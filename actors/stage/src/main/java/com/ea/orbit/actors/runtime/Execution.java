@@ -40,6 +40,7 @@ import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.InvocationContext;
+import com.ea.orbit.actors.metrics.annotations.ExportMetric;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -1199,4 +1200,7 @@ public class Execution implements Runtime
     {
         return state;
     }
+
+    @ExportMetric(name="localActorCount")
+    public long getLocalActorCount() { return localActors.size(); }
 }
