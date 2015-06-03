@@ -40,6 +40,7 @@ import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.InvocationContext;
+import com.ea.orbit.actors.metrics.annotations.ExportMetric;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -96,9 +97,16 @@ public class Execution implements Runtime
     private Timer timer = new Timer("Orbit stage timer");
     private Clock clock = Clock.systemUTC();
     private long cleanupIntervalMillis = TimeUnit.MINUTES.toMillis(5);
+
+    @ExportMetric(name="messagesReceived")
     private AtomicLong messagesReceived = new AtomicLong();
+
+    @ExportMetric(name="messagesHandled")
     private AtomicLong messagesHandled = new AtomicLong();
+
+    @ExportMetric(name="refusedExecutions")
     private AtomicLong refusedExecutions = new AtomicLong();
+
     private ExecutorService executor;
     private ActorFactoryGenerator dynamicReferenceFactory = new ActorFactoryGenerator();
 
@@ -1190,4 +1198,7 @@ public class Execution implements Runtime
     {
         return state;
     }
+
+    @ExportMetric(name="localActorCount")
+    public long getLocalActorCount() { return localActors.size(); }
 }

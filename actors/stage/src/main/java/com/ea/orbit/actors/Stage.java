@@ -34,6 +34,7 @@ import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
+import com.ea.orbit.actors.metrics.MetricsManager;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Hosting;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
@@ -49,6 +50,7 @@ import com.ea.orbit.container.Startable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.time.Clock;
@@ -76,6 +78,9 @@ public class Stage implements Startable
 
     @Wired
     Container container;
+
+    @Inject
+    MetricsManager metricsManager;
 
     public enum StageMode
     {
@@ -240,6 +245,9 @@ public class Stage implements Startable
         messaging.start();
         hosting.start();
         execution.start();
+
+        if (metricsManager != null)
+            metricsManager.registerExportedMetrics(execution);
 
         Task<?> future = clusterPeer.join(clusterName, nodeName);
         if (mode == StageMode.HOST)
