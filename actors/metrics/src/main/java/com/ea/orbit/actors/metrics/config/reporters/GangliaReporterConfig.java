@@ -28,34 +28,61 @@
 
 package com.ea.orbit.actors.metrics.config.reporters;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Slf4jReporter;
+import com.codahale.metrics.ganglia.GangliaReporter;
+import com.codahale.metrics.graphite.Graphite;
+import com.codahale.metrics.graphite.GraphiteReporter;
 
-public class Slf4jReporterConfig extends ReporterConfig
+import info.ganglia.gmetric4j.gmetric.GMetric;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
+public class GangliaReporterConfig extends ReporterConfig
 {
-    private String loggerName;
+    private static final Logger logger = LoggerFactory.getLogger(GangliaReporterConfig.class);
+    private String host;
+    private int port;
 
-    public String getLoggerName()
+    public String getHost()
     {
-        return loggerName;
+        return host;
     }
 
-    public void setLoggerName(final String loggerName)
+    public void setHost(final String host)
     {
-        this.loggerName = loggerName;
+        this.host = host;
+    }
+
+    public int getPort()
+    {
+        return port;
+    }
+
+    public void setPort(final int port)
+    {
+        this.port = port;
     }
 
     @Override
     public void enableReporter(MetricRegistry registry)
     {
+        try
+        {
+            final GMetric ganglia = new GMetric(host, port, GMetric.UDPAddressingMode.MULTICAST,1);
+            final GangliaReporter reporter = GangliaReporter.forRegistry(registry)
+                    .convertRatesTo(getRateTimeUnit())
+                    .convertDurationsTo(getDurationTimeUnit())
+                    .build(ganglia);
 
-        final Slf4jReporter reporter = Slf4jReporter.forRegistry(registry)
-                        .convertRatesTo(getRateTimeUnit())
-                .convertDurationsTo(getDurationTimeUnit())
-                .build();
-
-        reporter.start(getPeriod(), getPeriodTimeUnit());
+            reporter.start(getPeriod(), getPeriodTimeUnit());
+        }
+        catch(IOException iex)
+        {
+            logger.warn("Unable to enable Ganglia Reporter: " + iex.getMessage());
+        }
     }
-
-
 }

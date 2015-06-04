@@ -29,33 +29,46 @@
 package com.ea.orbit.actors.metrics.config.reporters;
 
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Slf4jReporter;
+import com.codahale.metrics.graphite.Graphite;
+import com.codahale.metrics.graphite.GraphiteReporter;
 
-public class Slf4jReporterConfig extends ReporterConfig
+import java.net.InetSocketAddress;
+
+public class GraphiteReporterConfig extends ReporterConfig
 {
-    private String loggerName;
 
-    public String getLoggerName()
+    private String host;
+    private int port;
+
+    public String getHost()
     {
-        return loggerName;
+        return host;
     }
 
-    public void setLoggerName(final String loggerName)
+    public void setHost(final String host)
     {
-        this.loggerName = loggerName;
+        this.host = host;
+    }
+
+    public int getPort()
+    {
+        return port;
+    }
+
+    public void setPort(final int port)
+    {
+        this.port = port;
     }
 
     @Override
     public void enableReporter(MetricRegistry registry)
     {
-
-        final Slf4jReporter reporter = Slf4jReporter.forRegistry(registry)
-                        .convertRatesTo(getRateTimeUnit())
+        final Graphite graphite = new Graphite(new InetSocketAddress(host, port));
+        final GraphiteReporter reporter = GraphiteReporter.forRegistry(registry)
+                .convertRatesTo(getRateTimeUnit())
                 .convertDurationsTo(getDurationTimeUnit())
-                .build();
+                .build(graphite);
 
         reporter.start(getPeriod(), getPeriodTimeUnit());
     }
-
-
 }
