@@ -247,7 +247,10 @@ public class Stage implements Startable
         execution.start();
 
         if (metricsManager != null)
+        {
+            metricsManager.initializeMetrics(runtimeIdentity());
             metricsManager.registerExportedMetrics(execution);
+        }
 
         Task<?> future = clusterPeer.join(clusterName, nodeName);
         if (mode == StageMode.HOST)

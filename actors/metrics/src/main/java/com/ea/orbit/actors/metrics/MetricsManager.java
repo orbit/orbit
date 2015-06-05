@@ -31,14 +31,11 @@ package com.ea.orbit.actors.metrics;
 import com.ea.orbit.actors.metrics.annotations.ExportMetric;
 import com.ea.orbit.actors.metrics.config.reporters.ReporterConfig;
 import com.ea.orbit.annotation.Config;
-import com.ea.orbit.container.Container;
 import com.ea.orbit.exception.UncheckedException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import com.codahale.metrics.Gauge;
@@ -56,21 +53,22 @@ public class MetricsManager
 {
     static final MetricRegistry registry = new MetricRegistry();
     private static final Logger logger = LoggerFactory.getLogger(MetricsManager.class);
+    private boolean isInitialized = false;
 
     @Config("orbit.metrics.reporters")
     private List<ReporterConfig> reporterConfigs;
 
-    @Inject
-    Container container;
 
-    @PostConstruct
-    protected void initializeMetrics()
+    public synchronized void initializeMetrics(String uniqueId)
     {
-        for (ReporterConfig reporterConfig : reporterConfigs)
+        if (!isInitialized)
         {
-            reporterConfig.enableReporter(registry);
+            for (ReporterConfig reporterConfig : reporterConfigs)
+            {
+                reporterConfig.enableReporter(registry, uniqueId);
+            }
+            isInitialized = true;
         }
-        logger.warn(Integer.toString(reporterConfigs.size()));
     }
 
     public <T> void registerMetric(Class clazz, String name, Supplier<T> value)

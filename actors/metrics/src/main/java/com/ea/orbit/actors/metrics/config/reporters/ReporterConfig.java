@@ -29,7 +29,6 @@
 package com.ea.orbit.actors.metrics.config.reporters;
 
 import com.codahale.metrics.MetricRegistry;
-
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -41,6 +40,18 @@ public abstract class ReporterConfig
     private String periodUnit = "SECONDS";
     private String rateUnit = "SECONDS";
     private String durationUnit = "MILLISECONDS";
+
+    private String prefix = "";
+
+    public String getPrefix()
+    {
+        return prefix;
+    }
+
+    public void setPrefix(final String prefix)
+    {
+        this.prefix = prefix;
+    }
 
     public int getPeriod()
     {
@@ -97,5 +108,5 @@ public abstract class ReporterConfig
         return TimeUnit.valueOf(getRateUnit());
     }
 
-    public void enableReporter(MetricRegistry registry) {};
+    public void enableReporter(MetricRegistry registry, String uniqueId) {};
 }

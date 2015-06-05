@@ -68,14 +68,20 @@ public class GangliaReporterConfig extends ReporterConfig
     }
 
     @Override
-    public void enableReporter(MetricRegistry registry)
+    public void enableReporter(MetricRegistry registry, String uniqueId)
     {
+        if (getPrefix() == null || getPrefix().isEmpty())
+        {
+            setPrefix(uniqueId);
+        }
+
         try
         {
             final GMetric ganglia = new GMetric(host, port, GMetric.UDPAddressingMode.MULTICAST,1);
             final GangliaReporter reporter = GangliaReporter.forRegistry(registry)
                     .convertRatesTo(getRateTimeUnit())
                     .convertDurationsTo(getDurationTimeUnit())
+                    .prefixedWith(getPrefix())
                     .build(ganglia);
 
             reporter.start(getPeriod(), getPeriodTimeUnit());
