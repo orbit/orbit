@@ -61,12 +61,18 @@ public class GraphiteReporterConfig extends ReporterConfig
     }
 
     @Override
-    public void enableReporter(MetricRegistry registry)
+    public void enableReporter(MetricRegistry registry, String uniqueId)
     {
+        if (getPrefix() == null || getPrefix().isEmpty())
+        {
+            setPrefix(uniqueId);
+        }
+
         final Graphite graphite = new Graphite(new InetSocketAddress(host, port));
         final GraphiteReporter reporter = GraphiteReporter.forRegistry(registry)
                 .convertRatesTo(getRateTimeUnit())
                 .convertDurationsTo(getDurationTimeUnit())
+                .prefixedWith(getPrefix())
                 .build(graphite);
 
         reporter.start(getPeriod(), getPeriodTimeUnit());
