@@ -41,7 +41,11 @@ orbit.components:
   - com.ea.orbit.actors.server.ServerModule
 
 orbit.metrics.reporters:
+  - !!com.ea.orbit.actors.metrics.config.reporters.GraphiteReporterConfig
+    period: 1
+    periodUnit: 'SECONDS'
+    host: graphite-int.fieldflux.ca
+    port: 2003
   - !!com.ea.orbit.actors.metrics.config.reporters.Slf4jReporterConfig
     period: 1
     periodUnit: 'SECONDS'
-    loggerName: metrics

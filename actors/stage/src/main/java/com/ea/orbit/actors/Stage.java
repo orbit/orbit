@@ -248,7 +248,10 @@ public class Stage implements Startable
 
         if (metricsManager != null)
         {
-            metricsManager.initializeMetrics(runtimeIdentity());
+            String cleanRuntimeId = runtimeIdentity().replaceAll("[\\[\\]\\.\\\\/]", ""); //strip illegal characters
+            cleanRuntimeId = cleanRuntimeId.replace("Orbit","");
+            cleanRuntimeId = getClusterName() + "." + getNodeName() + "." + cleanRuntimeId;
+            metricsManager.initializeMetrics(cleanRuntimeId);
             metricsManager.registerExportedMetrics(execution);
         }
 

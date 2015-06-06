@@ -61,7 +61,7 @@ public class MetricsManager
 
     public synchronized void initializeMetrics(String uniqueId)
     {
-        if (!isInitialized)
+        if (!isInitialized && reporterConfigs != null)
         {
             for (ReporterConfig reporterConfig : reporterConfigs)
             {

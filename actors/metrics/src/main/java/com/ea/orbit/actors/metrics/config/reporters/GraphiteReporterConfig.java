@@ -28,6 +28,9 @@
 
 package com.ea.orbit.actors.metrics.config.reporters;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
@@ -36,7 +39,7 @@ import java.net.InetSocketAddress;
 
 public class GraphiteReporterConfig extends ReporterConfig
 {
-
+    private static final Logger logger = LoggerFactory.getLogger(GraphiteReporterConfig.class);
     private String host;
     private int port;
 
@@ -61,18 +64,15 @@ public class GraphiteReporterConfig extends ReporterConfig
     }
 
     @Override
-    public void enableReporter(MetricRegistry registry, String uniqueId)
+    public void enableReporter(MetricRegistry registry, String runtimeId)
     {
-        if (getPrefix() == null || getPrefix().isEmpty())
-        {
-            setPrefix(uniqueId);
-        }
-
+        String uniquePrefix = buildUniquePrefix(runtimeId);
+        logger.info("Registering with Graphite under prefix: " + uniquePrefix);
         final Graphite graphite = new Graphite(new InetSocketAddress(host, port));
         final GraphiteReporter reporter = GraphiteReporter.forRegistry(registry)
                 .convertRatesTo(getRateTimeUnit())
                 .convertDurationsTo(getDurationTimeUnit())
-                .prefixedWith(getPrefix())
+                .prefixedWith(uniquePrefix)
                 .build(graphite);
 
         reporter.start(getPeriod(), getPeriodTimeUnit());
