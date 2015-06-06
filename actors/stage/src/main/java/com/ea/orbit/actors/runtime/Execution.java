@@ -1202,5 +1202,26 @@ public class Execution implements Runtime
     }
 
     @ExportMetric(name="localActorCount")
-    public long getLocalActorCount() { return localActors.size(); }
+    public long getLocalActorCount()
+    {
+        return localActors.size();
+    }
+
+    @ExportMetric(name="messagesReceived")
+    public long getMessagesReceived()
+    {
+        return messagesReceived.get();
+    }
+
+    @ExportMetric(name="messagesHandled")
+    public long getMessagesHandled()
+    {
+        return messagesHandled.get();
+    }
+
+    @ExportMetric(name="refusedExecutions")
+    public long getRefusedExecutions()
+    {
+        return refusedExecutions.get();
+    }
 }
