@@ -105,7 +105,7 @@ public abstract class ReporterConfig
 
     protected TimeUnit getPeriodTimeUnit()
     {
-        return TimeUnit.valueOf(getRateUnit());
+        return TimeUnit.valueOf(getPeriodUnit());
     }
 
     public void enableReporter(MetricRegistry registry, String runtimeId) {};
