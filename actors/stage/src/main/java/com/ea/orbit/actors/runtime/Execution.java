@@ -97,14 +97,8 @@ public class Execution implements Runtime
     private Timer timer = new Timer("Orbit stage timer");
     private Clock clock = Clock.systemUTC();
     private long cleanupIntervalMillis = TimeUnit.MINUTES.toMillis(5);
-
-    @ExportMetric(name="messagesReceived")
     private AtomicLong messagesReceived = new AtomicLong();
-
-    @ExportMetric(name="messagesHandled")
     private AtomicLong messagesHandled = new AtomicLong();
-
-    @ExportMetric(name="refusedExecutions")
     private AtomicLong refusedExecutions = new AtomicLong();
 
     private ExecutorService executor;
@@ -1200,5 +1194,26 @@ public class Execution implements Runtime
     }
 
     @ExportMetric(name="localActorCount")
-    public long getLocalActorCount() { return localActors.size(); }
+    public long getLocalActorCount()
+    {
+        return localActors.size();
+    }
+
+    @ExportMetric(name="messagesReceived")
+    public long getMessagesReceived()
+    {
+        return messagesReceived.get();
+    }
+
+    @ExportMetric(name="messagesHandled")
+    public long getMessagesHandled()
+    {
+        return messagesHandled.get();
+    }
+
+    @ExportMetric(name="refusedExecutions")
+    public long getRefusedExecutions()
+    {
+        return refusedExecutions.get();
+    }
 }

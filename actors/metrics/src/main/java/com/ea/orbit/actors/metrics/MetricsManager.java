@@ -87,10 +87,10 @@ public class MetricsManager
         {
             if (field.isAnnotationPresent(ExportMetric.class))
             {
-                //check to see if we need to make the field accessible.
-                if (!field.isAccessible() && (!Modifier.isPublic(field.getModifiers()) || !Modifier.isPublic(field.getDeclaringClass().getModifiers()) || Modifier.isFinal(field.getModifiers())))
+                //check to see if the field is accessible.
+                if (!field.isAccessible())
                 {
-                    field.setAccessible(true);
+                    continue;
                 }
                 final ExportMetric annotation = field.getAnnotation(ExportMetric.class);
                 final String gaugeName = MetricRegistry.name(obj.getClass(), annotation.name());
