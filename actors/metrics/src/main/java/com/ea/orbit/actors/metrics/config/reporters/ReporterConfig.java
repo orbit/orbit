@@ -108,5 +108,18 @@ public abstract class ReporterConfig
         return TimeUnit.valueOf(getRateUnit());
     }
 
-    public void enableReporter(MetricRegistry registry, String uniqueId) {};
+    public void enableReporter(MetricRegistry registry, String runtimeId) {};
+
+    protected String buildUniquePrefix(String runtimeId)
+    {
+        StringBuilder uniquePrefix = new StringBuilder();
+        if (getPrefix() != null && !getPrefix().isEmpty())
+        {
+            uniquePrefix.append(getPrefix());
+            uniquePrefix.append(".");
+        }
+        uniquePrefix.append(runtimeId);
+
+        return uniquePrefix.toString();
+    }
 }

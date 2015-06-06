@@ -46,13 +46,8 @@ public class Slf4jReporterConfig extends ReporterConfig
     }
 
     @Override
-    public void enableReporter(MetricRegistry registry, String uniqueId)
+    public void enableReporter(MetricRegistry registry, String runtimeId)
     {
-        if (getPrefix() == null || getPrefix().isEmpty())
-        {
-            setPrefix(uniqueId);
-        }
-
         final Slf4jReporter reporter = Slf4jReporter.forRegistry(registry)
                         .convertRatesTo(getRateTimeUnit())
                 .convertDurationsTo(getDurationTimeUnit())
