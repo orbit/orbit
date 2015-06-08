@@ -28,11 +28,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.extensions;
 
+import com.ea.orbit.actors.runtime.StageLifecycleListener;
 import com.ea.orbit.container.Startable;
 
 /**
  * Base interface for actor extensions.
  */
-public interface ActorExtension extends Startable
+public interface ActorExtension extends Startable, StageLifecycleListener
 {
 }

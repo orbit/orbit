@@ -42,6 +42,7 @@ import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
 
 import org.slf4j.Logger;
@@ -486,6 +487,9 @@ public class Execution implements Runtime
         // * finalize all timers
         timer.cancel();
 
+        // * give extensions a chance to send a message
+        Task.allOf(extensions.stream().map(StageLifecycleListener::onPreStop)).join();
+
         // * stop processing new received messages (responses still work)
         // * notify rest of the cluster (no more observer messages)
         state = NodeCapabilities.NodeState.STOPPED;
@@ -494,11 +498,11 @@ public class Execution implements Runtime
         // * wait pending tasks execution
         executionSerializer.shutdown();
 
-        // ** stop all extensions
-        Task.allOf(extensions.stream().map(v -> v.stop())).join();
-
         // * cancel all pending messages, and prevents sending new ones
-        //messaging.stop();
+        messaging.stop();
+
+        // ** stop all extensions
+        Task.allOf(extensions.stream().map(Startable::stop)).join();
 
         return Task.done();
     }
