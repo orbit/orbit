@@ -44,7 +44,7 @@ import com.codahale.metrics.MetricRegistry;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -56,7 +56,12 @@ public class MetricsManager
     private boolean isInitialized = false;
 
     @Config("orbit.metrics.reporters")
-    private List<ReporterConfig> reporterConfigs;
+    private List<ReporterConfig> reporterConfigs = new ArrayList<ReporterConfig>();
+
+    public static String sanitizeMetricName(String name)
+    {
+        return name.replaceAll("[\\[\\]\\.\\\\/]", ""); //strip illegal characters
+    }
 
 
     public synchronized void initializeMetrics(String uniqueId)
@@ -87,15 +92,14 @@ public class MetricsManager
         {
             if (field.isAnnotationPresent(ExportMetric.class))
             {
+                final ExportMetric annotation = field.getAnnotation(ExportMetric.class);
                 //check to see if the field is accessible.
                 if (!field.isAccessible())
                 {
-                    continue;
+                    throw new IllegalStateException("Field " + field.getName() + " in object " + obj.getClass().getName() + " is marked for Metrics Export but the field is not accessible");
                 }
-                final ExportMetric annotation = field.getAnnotation(ExportMetric.class);
-                final String gaugeName = MetricRegistry.name(obj.getClass(), annotation.name());
 
-                registry.register(gaugeName, (Gauge<Object>) () -> {
+                registerGauge(annotation, obj, () -> {
                     try
                     {
                         Object value = field.get(obj);
@@ -106,8 +110,6 @@ public class MetricsManager
                         throw new IllegalStateException("Field " + field.getName() + " was inaccessible: " + iae.getMessage());
                     }
                 });
-
-                logger.debug("Registered new metric for field " + field.getName() + " in class " + obj.getClass());
             }
         }
 
@@ -118,14 +120,12 @@ public class MetricsManager
                 //methods declared as metrics must not accept parameters.
                 if (method.getParameterCount() > 0)
                 {
-                    continue;
+                    throw new IllegalArgumentException("Method " + method.getName() + " in object " + obj.getClass().getName() + " is marked for Metrics Export but the method definition contains parameters.");
                 }
 
                 final ExportMetric annotation = method.getAnnotation(ExportMetric.class);
-                final String gaugeName = MetricRegistry.name(obj.getClass(), annotation.name());
 
-                registry.register(gaugeName, (Gauge<Object>) () -> {
-
+                registerGauge(annotation, obj, () -> {
                     try
                     {
                         Object value = method.invoke(obj, new Object[0]);
@@ -140,9 +140,23 @@ public class MetricsManager
                         throw new UncheckedException("Invocation of method " + method.getName() + " failed", ite.getTargetException());
                     }
                 });
-
-                logger.debug("Registered new metric for method " + method.getName() + " in class " + obj.getClass());
             }
+        }
+    }
+
+    private void registerGauge(ExportMetric annotation, Object obj, Supplier<Object> metricSupplier)
+    {
+        final String gaugeName = MetricRegistry.name(obj.getClass(), annotation.name());
+
+        registry.register(gaugeName, (Gauge<Object>) () -> {
+
+            Object value = metricSupplier.get();
+            return value;
+        });
+
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("Registered new metric " + annotation.name());
         }
     }
 }
