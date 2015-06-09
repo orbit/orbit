@@ -44,12 +44,18 @@ import org.yaml.snakeyaml.Yaml;
 import javax.annotation.PostConstruct;
 import javax.inject.Singleton;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +64,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Container
 {
@@ -188,7 +195,7 @@ public class Container
         this.properties.putAll(properties);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     protected void injectConfig(Object o, java.lang.reflect.Field f) throws IllegalAccessException
     {
         final Config config = f.getAnnotation(Config.class);
@@ -309,17 +316,20 @@ public class Container
         {
             if (properties == null)
             {
-                URL res = getClass().getResource("/conf/orbit.yaml");
+                final Set<String> activeProfiles = Stream.of(System.getProperty("orbit.profiles", "").split(",")).collect(Collectors.toSet());
+                final URL res = getClass().getResource("/conf/orbit.yaml");
                 if (res != null)
                 {
-
-                    Yaml yaml = new Yaml();
-                    final Iterable<Object> iter = yaml.loadAll(res.openStream());
-                    setProperties((Map<String, Object>) iter.iterator().next());
+                    readConfig(activeProfiles, res.openStream());
                 }
                 else
                 {
                     setProperties(Collections.emptyMap());
+                }
+                if (System.getProperty("orbit.configuration.overload") != null)
+                {
+                    final String props = System.getProperty("orbit.configuration.overload");
+                    readConfig(activeProfiles, new FileInputStream(props));
                 }
             }
             addInstance(this);
@@ -331,7 +341,7 @@ public class Container
             {
                 for (final Object service : components)
                 {
-                    if(logger.isDebugEnabled())
+                    if (logger.isDebugEnabled())
                     {
                         logger.debug("Adding Component: {0}", service.toString());
                     }
@@ -405,6 +415,24 @@ public class Container
             state = ContainerState.FAILED;
             throw new UncheckedException(ex);
         }
+    }
+
+    private void readConfig(final Set<String> activeProfiles, final InputStream in) throws UnsupportedEncodingException
+    {
+        final Reader reader = new InputStreamReader(in, "UTF-8");
+        Yaml yaml = new Yaml();
+        final Iterable<Object> iter = yaml.loadAll(reader);
+        final Map<String, Object> newProperties = new LinkedHashMap<>();
+        iter.forEach(item -> {
+            final Map<String, Object> section = (Map<String, Object>) item;
+            final Object sectionProfile = section.get("orbit.profile");
+            if (sectionProfile == null || activeProfiles.contains(sectionProfile))
+            {
+                // if no profile or if the profile is in the current list of profiles.
+                newProperties.putAll(section);
+            }
+        });
+        setProperties(newProperties);
     }
 
     public void stop()
