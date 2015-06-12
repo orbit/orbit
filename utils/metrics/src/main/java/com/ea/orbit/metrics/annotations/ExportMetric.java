@@ -26,35 +26,16 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.metrics.config.reporters;
+package com.ea.orbit.metrics.annotations;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Slf4jReporter;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public class Slf4jReporterConfig extends ReporterConfig
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.FIELD, ElementType.METHOD})
+public @interface ExportMetric
 {
-    private String loggerName;
-
-    public String getLoggerName()
-    {
-        return loggerName;
-    }
-
-    public void setLoggerName(final String loggerName)
-    {
-        this.loggerName = loggerName;
-    }
-
-    @Override
-    public void enableReporter(MetricRegistry registry, String runtimeId)
-    {
-        final Slf4jReporter reporter = Slf4jReporter.forRegistry(registry)
-                        .convertRatesTo(getRateTimeUnit())
-                .convertDurationsTo(getDurationTimeUnit())
-                .build();
-
-        reporter.start(getPeriod(), getPeriodTimeUnit());
-    }
-
-
+    String name() default "";
 }

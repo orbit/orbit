@@ -73,7 +73,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
         <dependency>
             <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-actors-metrics</artifactId>
+            <artifactId>orbit-metrics</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

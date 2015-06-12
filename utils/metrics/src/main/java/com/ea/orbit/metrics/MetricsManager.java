@@ -26,37 +26,49 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.metrics;
+package com.ea.orbit.metrics;
 
-import com.ea.orbit.actors.metrics.annotations.ExportMetric;
-import com.ea.orbit.actors.metrics.config.reporters.ReporterConfig;
-import com.ea.orbit.annotation.Config;
+import com.ea.orbit.metrics.annotations.ExportMetric;
+import com.ea.orbit.metrics.config.ReporterConfig;
 import com.ea.orbit.exception.UncheckedException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Singleton;
-
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.ScheduledReporter;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
-@Singleton
 public class MetricsManager
 {
-    static final MetricRegistry registry = new MetricRegistry();
+    private static MetricsManager instance = new MetricsManager();
+    private static final MetricRegistry registry = new MetricRegistry();
     private static final Logger logger = LoggerFactory.getLogger(MetricsManager.class);
+    private Map<ReporterConfig, ScheduledReporter> reporters = new HashMap<>();
     private boolean isInitialized = false;
 
-    @Config("orbit.metrics.reporters")
-    private List<ReporterConfig> reporterConfigs = new ArrayList<ReporterConfig>();
+    protected MetricsManager()
+    {
+
+    }
+
+    public static synchronized MetricsManager getInstance()
+    {
+        if (instance == null)
+        {
+            instance = new MetricsManager();
+        }
+        return instance;
+    }
 
     public static String sanitizeMetricName(String name)
     {
@@ -64,15 +76,27 @@ public class MetricsManager
     }
 
 
-    public synchronized void initializeMetrics(String uniqueId)
+    public synchronized void initializeMetrics(String uniqueId, List<ReporterConfig> reporterConfigs)
     {
-        if (!isInitialized && reporterConfigs != null)
+        if (!isInitialized)
         {
             for (ReporterConfig reporterConfig : reporterConfigs)
             {
-                reporterConfig.enableReporter(registry, uniqueId);
+                ScheduledReporter reporter = reporterConfig.enableReporter(registry, uniqueId);
+                if (reporter != null)
+                {
+                    reporters.put(reporterConfig, reporter);
+                }
+                else
+                {
+                    logger.warn("Failed to enable reporter " + reporterConfig.getClass().getName());
+                }
             }
             isInitialized = true;
+        }
+        else
+        {
+            logger.warn("Attempting to initialize the Metrics Manager when it is already initialized!");
         }
     }
 
