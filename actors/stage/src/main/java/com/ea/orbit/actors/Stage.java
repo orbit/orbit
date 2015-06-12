@@ -51,7 +51,6 @@ import com.ea.orbit.container.Startable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.lang.reflect.Method;
