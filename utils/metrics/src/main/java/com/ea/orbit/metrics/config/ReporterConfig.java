@@ -26,9 +26,11 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.metrics.config.reporters;
+package com.ea.orbit.metrics.config;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.ScheduledReporter;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -40,8 +42,8 @@ public abstract class ReporterConfig
     private String periodUnit = "SECONDS";
     private String rateUnit = "SECONDS";
     private String durationUnit = "MILLISECONDS";
-
     private String prefix = "";
+
 
     public String getPrefix()
     {
@@ -108,7 +110,7 @@ public abstract class ReporterConfig
         return TimeUnit.valueOf(getPeriodUnit());
     }
 
-    public void enableReporter(MetricRegistry registry, String runtimeId) {};
+    public synchronized ScheduledReporter enableReporter(MetricRegistry registry, String runtimeId) {return null;}
 
     protected String buildUniquePrefix(String runtimeId)
     {

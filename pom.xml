@@ -49,6 +49,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>samples</module>
         <module>packaging/all-docs</module>
         <module>utils/agent-loader</module>
+        <module>utils/metrics</module>
         <module>utils/rest-client</module>
     </modules>
 

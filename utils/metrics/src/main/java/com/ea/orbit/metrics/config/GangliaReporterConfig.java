@@ -26,20 +26,24 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.metrics.config.reporters;
+package com.ea.orbit.metrics.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.ScheduledReporter;
+import com.codahale.metrics.ganglia.GangliaReporter;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 
-import java.net.InetSocketAddress;
+import info.ganglia.gmetric4j.gmetric.GMetric;
 
-public class GraphiteReporterConfig extends ReporterConfig
+import java.io.IOException;
+
+public class GangliaReporterConfig extends ReporterConfig
 {
-    private static final Logger logger = LoggerFactory.getLogger(GraphiteReporterConfig.class);
+    private static final Logger logger = LoggerFactory.getLogger(GangliaReporterConfig.class);
     private String host;
     private int port;
 
@@ -64,17 +68,26 @@ public class GraphiteReporterConfig extends ReporterConfig
     }
 
     @Override
-    public void enableReporter(MetricRegistry registry, String runtimeId)
+    public synchronized ScheduledReporter enableReporter(MetricRegistry registry, String runtimeId)
     {
-        String uniquePrefix = buildUniquePrefix(runtimeId);
-        logger.info("Registering with Graphite under prefix: " + uniquePrefix);
-        final Graphite graphite = new Graphite(new InetSocketAddress(host, port));
-        final GraphiteReporter reporter = GraphiteReporter.forRegistry(registry)
-                .convertRatesTo(getRateTimeUnit())
-                .convertDurationsTo(getDurationTimeUnit())
-                .prefixedWith(uniquePrefix)
-                .build(graphite);
+        try
+        {
+            final GMetric ganglia = new GMetric(host, port, GMetric.UDPAddressingMode.MULTICAST,1);
+            final GangliaReporter reporter = GangliaReporter.forRegistry(registry)
+                    .convertRatesTo(getRateTimeUnit())
+                    .convertDurationsTo(getDurationTimeUnit())
+                    .prefixedWith(buildUniquePrefix(runtimeId))
+                    .build(ganglia);
 
-        reporter.start(getPeriod(), getPeriodTimeUnit());
+            reporter.start(getPeriod(), getPeriodTimeUnit());
+
+            return reporter;
+        }
+        catch(IOException iex)
+        {
+            logger.warn("Unable to enable Ganglia Reporter: " + iex.getMessage());
+        }
+
+        return null;
     }
 }

@@ -26,21 +26,64 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.ea.orbit</groupId>
         <artifactId>orbit-parent</artifactId>
         <version>0.3.2-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
-    <name>Orbit Commons</name>
+    <artifactId>orbit-metrics</artifactId>
+    <name>Orbit Metrics</name>
 
-    <artifactId>orbit-commons</artifactId>
+    <properties>
+        <metrics.version>3.1.2</metrics.version>
+    </properties>
 
-    <dependencies>
-    </dependencies>
+   <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+       <dependency>
+           <groupId>io.dropwizard.metrics</groupId>
+           <artifactId>metrics-core</artifactId>
+           <version>${metrics.version}</version>
+       </dependency>
+
+       <dependency>
+           <groupId>io.dropwizard.metrics</groupId>
+           <artifactId>metrics-ganglia</artifactId>
+           <version>${metrics.version}</version>
+           <optional>true</optional>
+       </dependency>
+
+       <dependency>
+           <groupId>io.dropwizard.metrics</groupId>
+           <artifactId>metrics-graphite</artifactId>
+           <version>${metrics.version}</version>
+       </dependency>
+
+       <dependency>
+           <groupId>io.dropwizard.metrics</groupId>
+           <artifactId>metrics-healthchecks</artifactId>
+           <version>${metrics.version}</version>
+       </dependency>
+       <dependency>
+           <groupId>com.ea.orbit</groupId>
+           <artifactId>orbit-commons</artifactId>
+           <version>${project.version}</version>
+       </dependency>
+
+   </dependencies>
+
 </project>
