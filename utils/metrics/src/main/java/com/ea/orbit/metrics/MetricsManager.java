@@ -107,65 +107,83 @@ public class MetricsManager
             return;
         }
 
-        for (Field field : obj.getClass().getDeclaredFields())
+        for (Field field : findFieldsForMetricExport(obj))
         {
-            if (field.isAnnotationPresent(ExportMetric.class))
+            final ExportMetric annotation = field.getAnnotation(ExportMetric.class);
+            //check to see if the field is accessible.
+            if (!field.isAccessible())
             {
-                final ExportMetric annotation = field.getAnnotation(ExportMetric.class);
-                //check to see if the field is accessible.
-                if (!field.isAccessible())
-                {
-                    throw new IllegalStateException("Field " + field.getName() + " in object " + obj.getClass().getName() + " is marked for Metrics Export but the field is not accessible");
-                }
-
-                registerGauge(annotation, obj, () -> {
-                    try
-                    {
-                        Object value = field.get(obj);
-                        return value;
-                    }
-                    catch (IllegalAccessException iae) //convert to an unchecked exception.
-                    {
-                        throw new IllegalStateException("Field " + field.getName() + " was inaccessible: " + iae.getMessage());
-                    }
-                });
+                throw new IllegalStateException("Field " + field.getName() + " in object " + obj.getClass().getName() + " is marked for Metrics Export but the field is not accessible");
             }
+
+            registerGauge(annotation, obj, () -> {
+                try
+                {
+                    Object value = field.get(obj);
+                    return value;
+                }
+                catch (IllegalAccessException iae) //convert to an unchecked exception.
+                {
+                    throw new IllegalStateException("Field " + field.getName() + " was inaccessible: " + iae.getMessage());
+                }
+            });
         }
 
-        for (Method method : obj.getClass().getDeclaredMethods())
+        for (Method method : findMethodsForMetricExport(obj))
         {
-            if (method.isAnnotationPresent(ExportMetric.class))
+            //methods declared as metrics must not accept parameters.
+            if (method.getParameterCount() > 0)
             {
-                //methods declared as metrics must not accept parameters.
-                if (method.getParameterCount() > 0)
-                {
-                    throw new IllegalArgumentException("Method " + method.getName() + " in object " + obj.getClass().getName() + " is marked for Metrics Export but the method definition contains parameters.");
-                }
-
-                final ExportMetric annotation = method.getAnnotation(ExportMetric.class);
-
-                registerGauge(annotation, obj, () -> {
-                    try
-                    {
-                        Object value = method.invoke(obj, new Object[0]);
-                        return value;
-                    }
-                    catch (IllegalAccessException iae) //convert to an unchecked exception.
-                    {
-                        throw new IllegalStateException("Method " + method.getName() + " was inaccessible: " + iae.getMessage());
-                    }
-                    catch (InvocationTargetException ite)
-                    {
-                        throw new UncheckedException("Invocation of method " + method.getName() + " failed", ite.getTargetException());
-                    }
-                });
+                throw new IllegalArgumentException("Method " + method.getName() + " in object " + obj.getClass().getName() + " is marked for Metrics Export but the method definition contains parameters.");
             }
+
+            final ExportMetric annotation = method.getAnnotation(ExportMetric.class);
+
+            registerGauge(annotation, obj, () -> {
+                try
+                {
+                    Object value = method.invoke(obj, new Object[0]);
+                    return value;
+                }
+                catch (IllegalAccessException iae) //convert to an unchecked exception.
+                {
+                    throw new IllegalStateException("Method " + method.getName() + " was inaccessible: " + iae.getMessage());
+                }
+                catch (InvocationTargetException ite)
+                {
+                    throw new UncheckedException("Invocation of method " + method.getName() + " failed", ite.getTargetException());
+                }
+            });
+        }
+    }
+
+    public void unregisterExportedMetrics(Object obj)
+    {
+        if (obj == null)
+        {
+            return;
+        }
+
+        for (Field field : findFieldsForMetricExport(obj))
+        {
+            final ExportMetric annotation = field.getAnnotation(ExportMetric.class);
+
+            String metricName = buildMetricName(obj, annotation);
+            registry.remove(metricName);
+        }
+
+        for (Method method : findMethodsForMetricExport(obj))
+        {
+            final ExportMetric annotation = method.getAnnotation(ExportMetric.class);
+
+            String metricName = buildMetricName(obj, annotation);
+            registry.remove(metricName);
         }
     }
 
     private void registerGauge(ExportMetric annotation, Object obj, Supplier<Object> metricSupplier)
     {
-        final String gaugeName = MetricRegistry.name(obj.getClass(), annotation.name());
+        final String gaugeName = buildMetricName(obj.getClass(), annotation);
 
         registry.register(gaugeName, (Gauge<Object>) () -> {
 
@@ -177,5 +195,46 @@ public class MetricsManager
         {
             logger.debug("Registered new metric " + annotation.name());
         }
+    }
+
+    private List<Field> findFieldsForMetricExport(Object obj)
+    {
+        List<Field> exportedFields = new ArrayList<>();
+
+        if (obj != null)
+        {
+            for (Field field : obj.getClass().getDeclaredFields())
+            {
+                if (field.isAnnotationPresent(ExportMetric.class))
+                {
+                    exportedFields.add(field);
+                }
+            }
+        }
+
+        return exportedFields;
+    }
+
+    private List<Method> findMethodsForMetricExport(Object obj)
+    {
+        List<Method> exportedMethods = new ArrayList<>();
+
+        if (obj != null)
+        {
+            for (Method method : obj.getClass().getDeclaredMethods())
+            {
+                if (method.isAnnotationPresent(ExportMetric.class))
+                {
+                    exportedMethods.add(method);
+                }
+            }
+        }
+
+        return exportedMethods;
+    }
+
+    private String buildMetricName(Object obj, ExportMetric annotation)
+    {
+        return MetricRegistry.name(obj.getClass(), annotation.name());
     }
 }
