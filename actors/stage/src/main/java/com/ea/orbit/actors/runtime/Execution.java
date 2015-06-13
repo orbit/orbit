@@ -40,6 +40,7 @@ import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.InvocationContext;
+import com.ea.orbit.metrics.annotations.ExportMetric;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -100,6 +101,7 @@ public class Execution implements Runtime
     private AtomicLong messagesReceived = new AtomicLong();
     private AtomicLong messagesHandled = new AtomicLong();
     private AtomicLong refusedExecutions = new AtomicLong();
+
     private ExecutorService executor;
     private ActorFactoryGenerator dynamicReferenceFactory = new ActorFactoryGenerator();
 
@@ -1193,5 +1195,29 @@ public class Execution implements Runtime
     public NodeCapabilities.NodeState getState()
     {
         return state;
+    }
+
+    @ExportMetric(name="localActorCount")
+    public long getLocalActorCount()
+    {
+        return localActors.size();
+    }
+
+    @ExportMetric(name="messagesReceived")
+    public long getMessagesReceived()
+    {
+        return messagesReceived.get();
+    }
+
+    @ExportMetric(name="messagesHandled")
+    public long getMessagesHandled()
+    {
+        return messagesHandled.get();
+    }
+
+    @ExportMetric(name="refusedExecutions")
+    public long getRefusedExecutions()
+    {
+        return refusedExecutions.get();
     }
 }

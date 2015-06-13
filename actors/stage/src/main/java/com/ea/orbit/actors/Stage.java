@@ -34,6 +34,8 @@ import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
+import com.ea.orbit.metrics.MetricsManager;
+import com.ea.orbit.metrics.config.ReporterConfig;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Hosting;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
@@ -51,6 +53,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
 
+import java.lang.reflect.Method;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -73,6 +76,9 @@ public class Stage implements Startable
 
     @Config("orbit.actors.extensions")
     private List<ActorExtension> extensions = new ArrayList<>();
+
+    @Config("orbit.metrics.reporters")
+    private List<ReporterConfig> metricsConfig = new ArrayList<>();
 
     @Wired
     Container container;
@@ -240,6 +246,20 @@ public class Stage implements Startable
         messaging.start();
         hosting.start();
         execution.start();
+
+        try
+        {
+            Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
+
+            String cleanRuntimeId = runtimeIdentity().replace("Orbit", "");
+            cleanRuntimeId = MetricsManager.sanitizeMetricName(getClusterName()) + "." + MetricsManager.sanitizeMetricName(getNodeName()) + "." + MetricsManager.sanitizeMetricName(cleanRuntimeId);
+            MetricsManager.getInstance().initializeMetrics(cleanRuntimeId, metricsConfig);
+            MetricsManager.getInstance().registerExportedMetrics(execution);
+        }
+        catch(Exception ex)
+        {
+            logger.info("Skipping Orbit Metrics initialization because it was not found in the classpath.");
+        }
 
         Task<?> future = clusterPeer.join(clusterName, nodeName);
         if (mode == StageMode.HOST)

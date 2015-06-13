@@ -39,3 +39,8 @@ orbit.chat.maxMessages: 500
 
 orbit.components:
   - com.ea.orbit.actors.server.ServerModule
+
+orbit.metrics.reporters:
+  - !!com.ea.orbit.metrics.config.Slf4jReporterConfig
+    period: 1
+    periodUnit: 'MINUTES'

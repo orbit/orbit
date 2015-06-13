@@ -29,52 +29,67 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.ea.orbit</groupId>
-        <artifactId>orbit-actors-parent</artifactId>
+        <artifactId>orbit-parent</artifactId>
         <version>0.3.2-SNAPSHOT</version>
-        <relativePath>..</relativePath>
+        <relativePath>../..</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
+    <artifactId>orbit-metrics</artifactId>
+    <name>Orbit Metrics</name>
 
-    <name>Orbit Actors Stage</name>
-    <artifactId>orbit-actors-stage</artifactId>
+    <properties>
+        <metrics.version>3.1.2</metrics.version>
+    </properties>
 
-    <dependencies>
+   <dependencies>
         <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-container</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-async</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+       <dependency>
+           <groupId>io.dropwizard.metrics</groupId>
+           <artifactId>metrics-core</artifactId>
+           <version>${metrics.version}</version>
+       </dependency>
 
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-embedded</artifactId>
-            <version>7.2.2.Final</version>
-        </dependency>
+       <dependency>
+           <groupId>io.dropwizard.metrics</groupId>
+           <artifactId>metrics-ganglia</artifactId>
+           <version>${metrics.version}</version>
+           <optional>true</optional>
+       </dependency>
 
-        <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-actors-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+       <dependency>
+           <groupId>io.dropwizard.metrics</groupId>
+           <artifactId>metrics-graphite</artifactId>
+           <version>${metrics.version}</version>
+       </dependency>
 
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>18.0</version>
-        </dependency>
+       <dependency>
+           <groupId>io.dropwizard.metrics</groupId>
+           <artifactId>metrics-healthchecks</artifactId>
+           <version>${metrics.version}</version>
+       </dependency>
+       <dependency>
+           <groupId>com.ea.orbit</groupId>
+           <artifactId>orbit-commons</artifactId>
+           <version>${project.version}</version>
+       </dependency>
 
-        <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-metrics</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
+       <dependency>
+           <groupId>com.ea.orbit</groupId>
+           <artifactId>orbit-container</artifactId>
+           <version>${project.version}</version>
+       </dependency>
+
+   </dependencies>
+
 </project>
