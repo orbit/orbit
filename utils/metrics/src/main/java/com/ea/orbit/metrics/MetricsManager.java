@@ -96,13 +96,8 @@ public class MetricsManager
         }
         else
         {
-            logger.warn("Attempting to initialize the Metrics Manager when it is already initialized!");
+            logger.info("Attempting to initialize the Metrics Manager when it is already initialized!");
         }
-    }
-
-    public <T> void registerMetric(Class clazz, String name, Supplier<T> value)
-    {
-        registry.register(MetricRegistry.name(clazz, name), (Gauge<T>) () -> value.get());
     }
 
     public void registerExportedMetrics(Object obj)

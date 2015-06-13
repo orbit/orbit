@@ -249,9 +249,7 @@ public class Stage implements Startable
 
         try
         {
-            Class mmClass = Class.forName("com.ea.orbit.metrics.MetricsManager");
-            Method factoryMethod = mmClass.getDeclaredMethod("getInstance");
-            factoryMethod.invoke(null, null);
+            Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
 
             String cleanRuntimeId = runtimeIdentity().replace("Orbit", "");
             cleanRuntimeId = MetricsManager.sanitizeMetricName(getClusterName()) + "." + MetricsManager.sanitizeMetricName(getNodeName()) + "." + MetricsManager.sanitizeMetricName(cleanRuntimeId);
@@ -260,7 +258,7 @@ public class Stage implements Startable
         }
         catch(Exception ex)
         {
-
+            logger.info("Skipping Orbit Metrics initialization because it was not found in the classpath.");
         }
 
         Task<?> future = clusterPeer.join(clusterName, nodeName);

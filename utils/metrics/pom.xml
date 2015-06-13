@@ -84,6 +84,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
            <version>${project.version}</version>
        </dependency>
 
+       <dependency>
+           <groupId>com.ea.orbit</groupId>
+           <artifactId>orbit-container</artifactId>
+           <version>${project.version}</version>
+       </dependency>
+
    </dependencies>
 
 </project>
