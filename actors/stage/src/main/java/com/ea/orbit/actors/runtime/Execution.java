@@ -74,6 +74,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -97,9 +98,9 @@ public class Execution implements Runtime
     private Timer timer = new Timer("Orbit stage timer");
     private Clock clock = Clock.systemUTC();
     private long cleanupIntervalMillis = TimeUnit.MINUTES.toMillis(5);
-    private AtomicLong messagesReceived = new AtomicLong();
-    private AtomicLong messagesHandled = new AtomicLong();
-    private AtomicLong refusedExecutions = new AtomicLong();
+    private final LongAdder messagesReceived = new LongAdder();
+    private final LongAdder messagesHandled = new LongAdder();
+    private final LongAdder refusedExecutions = new LongAdder();
     private ExecutorService executor;
     private ActorFactoryGenerator dynamicReferenceFactory = new ActorFactoryGenerator();
 
@@ -790,11 +791,11 @@ public class Execution implements Runtime
         {
             logger.debug("onMessageReceived for: " + entryKey);
         }
-        messagesReceived.incrementAndGet();
+        messagesReceived.increment();
         if (!executionSerializer.offerJob(entryKey,
                 () -> handleOnMessageReceived(entryKey, from, oneway, messageId, interfaceId, methodId, key, params), maxQueueSize))
         {
-            refusedExecutions.incrementAndGet();
+            refusedExecutions.increment();
             if (logger.isErrorEnabled())
             {
                 logger.error("Execution refused: " + key + ":" + interfaceId + ":" + methodId + ":" + messageId);
@@ -812,7 +813,7 @@ public class Execution implements Runtime
                                             final int methodId, final Object key,
                                             final Object[] params)
     {
-        messagesHandled.incrementAndGet();
+        messagesHandled.increment();
         final InterfaceDescriptor descriptor = getDescriptor(interfaceId);
         if (descriptor.isObserver)
         {
@@ -872,7 +873,7 @@ public class Execution implements Runtime
                     () -> executeMessage(theEntry, oneway, descriptor, methodId, params, from, messageId),
                     maxQueueSize))
             {
-                refusedExecutions.incrementAndGet();
+                refusedExecutions.increment();
                 if (logger.isErrorEnabled())
                 {
                     logger.info("Execution refused: " + key + ":" + interfaceId + ":" + methodId + ":" + messageId);
@@ -900,7 +901,7 @@ public class Execution implements Runtime
 
         public MessageContext(final ReferenceEntry theEntry, final int methodId, final NodeAddress from)
         {
-            traceId = counter.incrementAndGet();
+            this.traceId = counter.incrementAndGet();
             this.theEntry = theEntry;
             this.methodId = methodId;
             this.from = from;
