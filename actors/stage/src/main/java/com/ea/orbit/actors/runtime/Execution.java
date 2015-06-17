@@ -961,6 +961,10 @@ public class Execution implements Runtime
         {
             sendResponseAndLogError(oneway, from, messageId, null, ex);
         }
+        finally
+        {
+            currentMessage.remove();
+        }
         return Task.done();
     }
 
