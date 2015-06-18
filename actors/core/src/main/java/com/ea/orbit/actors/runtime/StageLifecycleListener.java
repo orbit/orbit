@@ -31,10 +31,19 @@ package com.ea.orbit.actors.runtime;
 import com.ea.orbit.concurrent.Task;
 
 /**
+ * Interface which allows Extensions to hook into the stage lifecycle.
+ *
  * @author Johno Crawford (johno@sulake.com)
  */
 public interface StageLifecycleListener
 {
+
+    /**
+     * Invoked before the node state is set to STOPPED and Execution / Messaging are shut down. Suitable for cleanup
+     * or sending message(s) before the node is taken offline.
+     *
+     * @return a future of when this method is complete.
+     */
     default Task<?> onPreStop()
     {
         return Task.done();

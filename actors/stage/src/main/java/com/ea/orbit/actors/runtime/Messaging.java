@@ -56,7 +56,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 public class Messaging implements Startable
 {
@@ -68,14 +68,14 @@ public class Messaging implements Startable
 
     private ClusterPeer clusterPeer;
     private Execution execution;
-    private AtomicInteger messageIdGen = new AtomicInteger();
+    private final AtomicInteger messageIdGen = new AtomicInteger();
     private Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
     private PriorityBlockingQueue<PendingResponse> pendingResponsesQueue = new PriorityBlockingQueue<>();
     private Clock clock = Clock.systemUTC();
     private long responseTimeoutMillis = 30_000;
-    private AtomicLong networkMessagesReceived = new AtomicLong();
-    private AtomicLong objectMessagesReceived = new AtomicLong();
-    private AtomicLong responsesReceived = new AtomicLong();
+    private final LongAdder networkMessagesReceived = new LongAdder();
+    private final LongAdder objectMessagesReceived = new LongAdder();
+    private final LongAdder responsesReceived = new LongAdder();
     private ExecutorService executor;
 
     public void setExecution(final Execution execution)
@@ -165,7 +165,7 @@ public class Messaging implements Startable
         // deserialize and send to runtime
         try
         {
-            networkMessagesReceived.incrementAndGet();
+            networkMessagesReceived.increment();
             ObjectInput in = createObjectInput(buff);
             byte messageType = in.readByte();
             int messageId = in.readInt();
@@ -174,7 +174,7 @@ public class Messaging implements Startable
                 case MessageDefinitions.NORMAL_MESSAGE:
                 case MessageDefinitions.ONEWAY_MESSAGE:
                     boolean oneway = (messageType == MessageDefinitions.ONEWAY_MESSAGE);
-                    objectMessagesReceived.incrementAndGet();
+                    objectMessagesReceived.increment();
                     int interfaceId = in.readInt();
                     int methodId = in.readInt();
                     Object key = in.readObject();
@@ -185,7 +185,7 @@ public class Messaging implements Startable
                 case MessageDefinitions.EXCEPTION_RESPONSE:
                 case MessageDefinitions.ERROR_RESPONSE:
                 {
-                    responsesReceived.incrementAndGet();
+                    responsesReceived.increment();
                     PendingResponse pendingResponse = pendingResponseMap.remove(messageId);
                     if (pendingResponse != null)
                     {
