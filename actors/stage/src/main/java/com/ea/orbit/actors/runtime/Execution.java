@@ -1210,18 +1210,18 @@ public class Execution implements Runtime
     @ExportMetric(name="messagesReceived")
     public long getMessagesReceived()
     {
-        return messagesReceived.get();
+        return messagesReceived.longValue();
     }
 
     @ExportMetric(name="messagesHandled")
     public long getMessagesHandled()
     {
-        return messagesHandled.get();
+        return messagesHandled.longValue();
     }
 
     @ExportMetric(name="refusedExecutions")
     public long getRefusedExecutions()
     {
-        return refusedExecutions.get();
+        return refusedExecutions.longValue();
     }
 }
