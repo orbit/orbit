@@ -184,17 +184,23 @@ public class MetricsManager
     private void registerGauge(ExportMetric annotation, Object obj, Supplier<Object> metricSupplier)
     {
         final String gaugeName = buildMetricName(obj.getClass(), annotation);
-
-        registry.register(gaugeName, (Gauge<Object>) () -> {
-
-            Object value = metricSupplier.get();
-            return value;
-        });
-
-        if (logger.isDebugEnabled())
+        try
         {
-            logger.debug("Registered new metric " + annotation.name());
+            registry.register(gaugeName, (Gauge<Object>) () -> {
+
+                Object value = metricSupplier.get();
+                return value;
+            });
+
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("Registered new metric " + annotation.name());
+            }
         }
+       catch (IllegalArgumentException iae)
+       {
+           logger.warn("Unable to register metric " + annotation.name() + " because a metric already has been registered with the id: " + gaugeName);
+       }
     }
 
     private List<Field> findFieldsForMetricExport(Object obj)
