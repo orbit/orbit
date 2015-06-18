@@ -47,11 +47,12 @@ public class Slf4jReporterConfig extends ReporterConfig
     }
 
     @Override
-    public synchronized ScheduledReporter enableReporter(MetricRegistry registry, String runtimeId)
+    public synchronized ScheduledReporter enableReporter(MetricRegistry registry)
     {
         final Slf4jReporter reporter = Slf4jReporter.forRegistry(registry)
                         .convertRatesTo(getRateTimeUnit())
                 .convertDurationsTo(getDurationTimeUnit())
+                .prefixedWith(getPrefix())
                 .build();
 
         reporter.start(getPeriod(), getPeriodTimeUnit());

@@ -76,13 +76,13 @@ public class MetricsManager
     }
 
 
-    public synchronized void initializeMetrics(String uniqueId, List<ReporterConfig> reporterConfigs)
+    public synchronized void initializeMetrics(List<ReporterConfig> reporterConfigs)
     {
         if (!isInitialized)
         {
             for (ReporterConfig reporterConfig : reporterConfigs)
             {
-                ScheduledReporter reporter = reporterConfig.enableReporter(registry, uniqueId);
+                ScheduledReporter reporter = reporterConfig.enableReporter(registry);
                 if (reporter != null)
                 {
                     reporters.put(reporterConfig, reporter);

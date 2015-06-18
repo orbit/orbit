@@ -68,7 +68,7 @@ public class GangliaReporterConfig extends ReporterConfig
     }
 
     @Override
-    public synchronized ScheduledReporter enableReporter(MetricRegistry registry, String runtimeId)
+    public synchronized ScheduledReporter enableReporter(MetricRegistry registry)
     {
         try
         {
@@ -76,7 +76,7 @@ public class GangliaReporterConfig extends ReporterConfig
             final GangliaReporter reporter = GangliaReporter.forRegistry(registry)
                     .convertRatesTo(getRateTimeUnit())
                     .convertDurationsTo(getDurationTimeUnit())
-                    .prefixedWith(buildUniquePrefix(runtimeId))
+                    .prefixedWith(getPrefix())
                     .build(ganglia);
 
             reporter.start(getPeriod(), getPeriodTimeUnit());

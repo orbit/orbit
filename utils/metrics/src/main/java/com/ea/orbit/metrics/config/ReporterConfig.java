@@ -110,18 +110,5 @@ public abstract class ReporterConfig
         return TimeUnit.valueOf(getPeriodUnit());
     }
 
-    public synchronized ScheduledReporter enableReporter(MetricRegistry registry, String runtimeId) {return null;}
-
-    protected String buildUniquePrefix(String runtimeId)
-    {
-        StringBuilder uniquePrefix = new StringBuilder();
-        if (getPrefix() != null && !getPrefix().isEmpty())
-        {
-            uniquePrefix.append(getPrefix());
-            uniquePrefix.append(".");
-        }
-        uniquePrefix.append(runtimeId);
-
-        return uniquePrefix.toString();
-    }
+    public synchronized ScheduledReporter enableReporter(MetricRegistry registry) {return null;}
 }

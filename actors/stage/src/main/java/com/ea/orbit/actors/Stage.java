@@ -251,9 +251,7 @@ public class Stage implements Startable
         {
             Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
 
-            String cleanRuntimeId = runtimeIdentity().replace("Orbit", "");
-            cleanRuntimeId = MetricsManager.sanitizeMetricName(getClusterName()) + "." + MetricsManager.sanitizeMetricName(getNodeName()) + "." + MetricsManager.sanitizeMetricName(cleanRuntimeId);
-            MetricsManager.getInstance().initializeMetrics(cleanRuntimeId, metricsConfig);
+            MetricsManager.getInstance().initializeMetrics(metricsConfig);
             MetricsManager.getInstance().registerExportedMetrics(execution);
         }
         catch(Exception ex)

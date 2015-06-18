@@ -44,9 +44,6 @@ public class MetricsComponent implements Startable
 {
     private static final Logger logger = LoggerFactory.getLogger(MetricsComponent.class);
 
-    @Config("orbit.metrics.runtimeIdentifier")
-    private String runtimeIdentifier = "";
-
     @Config("orbit.metrics.reporters")
     private List<ReporterConfig> metricsConfig = new ArrayList<>();
 
@@ -56,8 +53,7 @@ public class MetricsComponent implements Startable
         try
         {
             Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the class is in the classpath.
-            String cleanRuntimeId = MetricsManager.sanitizeMetricName(runtimeIdentifier);
-            MetricsManager.getInstance().initializeMetrics(cleanRuntimeId, metricsConfig);
+            MetricsManager.getInstance().initializeMetrics(metricsConfig);
         }
         catch(Exception ex)
         {
