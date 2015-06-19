@@ -26,18 +26,12 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.metrics.annotations;
+package com.ea.orbit.metrics;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.METHOD})
-public @interface ExportMetric
+/**
+ * Created by Jeff on 6/18/2015.
+ */
+public interface InstanceMetricSender
 {
-    String name() default "";
-
-    boolean isInstanceMetric() default false;
+    String getMetricInstanceId();
 }

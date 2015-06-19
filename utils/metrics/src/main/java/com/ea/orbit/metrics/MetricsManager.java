@@ -168,7 +168,7 @@ public class MetricsManager
         {
             final ExportMetric annotation = field.getAnnotation(ExportMetric.class);
 
-            String metricName = buildMetricName(field.getDeclaringClass(), annotation);
+            String metricName = buildMetricName(field.getDeclaringClass(), annotation, obj);
             registry.remove(metricName);
         }
 
@@ -176,14 +176,14 @@ public class MetricsManager
         {
             final ExportMetric annotation = method.getAnnotation(ExportMetric.class);
 
-            String metricName = buildMetricName(method.getDeclaringClass(), annotation);
+            String metricName = buildMetricName(method.getDeclaringClass(), annotation, obj);
             registry.remove(metricName);
         }
     }
 
-    private void registerGauge(ExportMetric annotation, Class clazz, Object obj, Supplier<Object> metricSupplier)
+     private void registerGauge(ExportMetric annotation, Class clazz, Object obj, Supplier<Object> metricSupplier)
     {
-        final String gaugeName = buildMetricName(clazz, annotation);
+        final String gaugeName = buildMetricName(clazz, annotation, obj);
         try
         {
             registry.register(gaugeName, (Gauge<Object>) () -> {
@@ -239,8 +239,23 @@ public class MetricsManager
         return exportedMethods;
     }
 
-    private String buildMetricName(Class clazz, ExportMetric annotation)
+    private String buildMetricName(Class clazz, ExportMetric annotation, Object obj)
     {
-        return MetricRegistry.name(clazz.getName(), annotation.name());
+        if (!annotation.isInstanceMetric())
+        {
+            return MetricRegistry.name(clazz.getName(), annotation.name());
+        }
+        else
+        {
+            //make sure the class implements the required methods.
+            if (obj instanceof InstanceMetricSender)
+            {
+                return MetricRegistry.name(clazz.getName(), ((InstanceMetricSender) obj).getMetricInstanceId(), annotation.name());
+            }
+            else
+            {
+                throw new IllegalArgumentException("Class '" + clazz.getName() + "' defines an instance Metric but does not implement the InstanceMetricSender interface!");
+            }
+        }
     }
 }

@@ -314,6 +314,17 @@ public class Stage implements Startable
 
     public Task<?> stop()
     {
+        //Shutdown metrics
+        try
+        {
+            Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
+            MetricsManager.getInstance().unregisterExportedMetrics(execution);
+        }
+        catch(ClassNotFoundException ex)
+        {
+            //OK. Just means that metrics isn't being used.
+        }
+
         // * refuse new actor activations
         // first notify other nodes
 
