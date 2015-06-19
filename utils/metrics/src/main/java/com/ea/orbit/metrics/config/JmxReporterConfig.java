@@ -28,87 +28,30 @@
 
 package com.ea.orbit.metrics.config;
 
+import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Reporter;
 
-import java.util.concurrent.TimeUnit;
-
-/**
- * Created by Jeff on 6/3/2015.
- */
-public abstract class ReporterConfig
+public class JmxReporterConfig extends ReporterConfig
 {
-    private int period;
-    private String periodUnit = "SECONDS";
-    private String rateUnit = "SECONDS";
-    private String durationUnit = "MILLISECONDS";
-    private String prefix = "";
 
-
-    public String getPrefix()
+    public JmxReporterConfig()
     {
-        return prefix;
+
     }
 
-    public void setPrefix(final String prefix)
+    @Override
+    public synchronized Reporter enableReporter(MetricRegistry registry)
     {
-        this.prefix = prefix;
+        final JmxReporter reporter = JmxReporter.forRegistry(registry)
+                        .convertRatesTo(getRateTimeUnit())
+                        .convertDurationsTo(getDurationTimeUnit())
+                        .build();
+
+        reporter.start();
+
+        return reporter;
     }
 
-    public int getPeriod()
-    {
-        return period;
-    }
 
-    public void setPeriod(int period)
-    {
-        this.period = period;
-    }
-
-    public String getPeriodUnit()
-    {
-        return periodUnit;
-    }
-
-    public void setPeriodUnit(final String periodUnit)
-    {
-        this.periodUnit = periodUnit;
-    }
-
-    public String getRateUnit()
-    {
-        return rateUnit;
-    }
-
-    public void setRateUnit(final String rateUnit)
-    {
-        this.rateUnit = rateUnit;
-    }
-
-    public String getDurationUnit()
-    {
-        return durationUnit;
-    }
-
-    public void setDurationUnit(final String durationUnit)
-    {
-        this.durationUnit = durationUnit;
-    }
-
-    protected TimeUnit getRateTimeUnit()
-    {
-        return TimeUnit.valueOf(getRateUnit());
-    }
-
-    protected TimeUnit getDurationTimeUnit()
-    {
-        return TimeUnit.valueOf(getDurationUnit());
-    }
-
-    protected TimeUnit getPeriodTimeUnit()
-    {
-        return TimeUnit.valueOf(getPeriodUnit());
-    }
-
-    public synchronized Reporter enableReporter(MetricRegistry registry) {return null;}
 }

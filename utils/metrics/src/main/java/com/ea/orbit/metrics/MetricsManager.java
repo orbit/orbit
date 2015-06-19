@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.ScheduledReporter;
+import com.codahale.metrics.Reporter;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -53,7 +53,7 @@ public class MetricsManager
     private static MetricsManager instance = new MetricsManager();
     private static final MetricRegistry registry = new MetricRegistry();
     private static final Logger logger = LoggerFactory.getLogger(MetricsManager.class);
-    private Map<ReporterConfig, ScheduledReporter> reporters = new HashMap<>();
+    private Map<ReporterConfig, Reporter> reporters = new HashMap<>();
     private boolean isInitialized = false;
 
     protected MetricsManager()
@@ -61,12 +61,8 @@ public class MetricsManager
 
     }
 
-    public static synchronized MetricsManager getInstance()
+    public static MetricsManager getInstance()
     {
-        if (instance == null)
-        {
-            instance = new MetricsManager();
-        }
         return instance;
     }
 
@@ -82,7 +78,7 @@ public class MetricsManager
         {
             for (ReporterConfig reporterConfig : reporterConfigs)
             {
-                ScheduledReporter reporter = reporterConfig.enableReporter(registry);
+                Reporter reporter = reporterConfig.enableReporter(registry);
                 if (reporter != null)
                 {
                     reporters.put(reporterConfig, reporter);
