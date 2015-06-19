@@ -30,14 +30,11 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.extensions.OnlyIfActivatedExtension;
 import com.ea.orbit.actors.test.actors.OnlyIfActivated;
 import com.ea.orbit.actors.test.actors.OnlyIfActivatedActor;
 import com.ea.orbit.exception.UncheckedException;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 
@@ -69,7 +66,7 @@ public class OnlyIfActivatedTest extends ActorBaseTest
     {
         try
         {
-            stage = createStage(Arrays.asList(new OnlyIfActivatedExtension()));
+            stage = createStage();
         }
         catch (Exception e)
         {

@@ -40,6 +40,7 @@ import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.InvocationContext;
+import com.ea.orbit.annotation.OnlyIfActivated;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -1092,6 +1093,8 @@ public class Execution implements Runtime
 
     public Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
     {
+        if (!verifyActivated(toReference, m)) return Task.done();
+
         if (hookExtensions.size() == 0)
         {
             // no hooks
@@ -1198,5 +1201,24 @@ public class Execution implements Runtime
     public NodeCapabilities.NodeState getState()
     {
         return state;
+    }
+
+    /**
+     * Checks if the method passes an Activated check.
+     * Verify passes on either of:
+     * - method can run only if activated, and the actor is active
+     * - the method is not marked with OnlyIfActivated.
+     */
+    private boolean verifyActivated(Addressable toReference, Method method)
+    {
+        if (method.isAnnotationPresent(OnlyIfActivated.class))
+        {
+            NodeAddress actorAddress = locateActor(toReference, false).join();
+            if (actorAddress == null)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }
