@@ -26,29 +26,16 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.samples.annotation.examples;
+package com.ea.orbit.annotation;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.concurrent.Task;
-
-@SuppressWarnings("rawtypes")
-public class OnlyExampleActor extends AbstractActor implements OnlyExample
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface OnlyIfActivated
 {
-    public static int accessCount = 0;
 
-    @Override
-    public Task<Void> doSomethingSpecial(final String greeting)
-    {
-        accessCount++;
-        return Task.done();
-    }
-
-    @Override
-    public Task<Void> makeActiveNow()
-    {
-        //does really nothing, but allows the actor to be activated
-        return Task.done();
-    }
 }
-

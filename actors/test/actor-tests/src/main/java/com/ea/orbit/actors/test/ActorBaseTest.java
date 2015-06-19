@@ -29,6 +29,7 @@
 package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Execution;
@@ -41,6 +42,9 @@ import com.ea.orbit.injection.DependencyRegistry;
 import com.google.common.util.concurrent.ForwardingExecutorService;
 
 import java.lang.reflect.Field;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -117,6 +121,12 @@ public class ActorBaseTest
 
     public Stage createStage() throws ExecutionException, InterruptedException
     {
+        List<ActorExtension> noExtensions = Collections.<ActorExtension>emptyList();
+        return createStage(noExtensions);
+    }
+
+    public Stage createStage(Collection<ActorExtension> extensionsToAdd) throws ExecutionException, InterruptedException
+    {
         Stage stage = new Stage();
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
@@ -133,6 +143,12 @@ public class ActorBaseTest
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
         stage.addExtension(new FakeStorageExtension(fakeDatabase));
+
+        for (ActorExtension extension : extensionsToAdd)
+        {
+            stage.addExtension(extension);
+        }
+
         stage.setClock(clock);
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());

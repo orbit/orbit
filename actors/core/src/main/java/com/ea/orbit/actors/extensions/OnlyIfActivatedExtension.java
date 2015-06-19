@@ -26,18 +26,16 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.samples.annotation.onlyifactivated;
+package com.ea.orbit.actors.extensions;
 
 import com.ea.orbit.actors.Addressable;
-import com.ea.orbit.actors.extensions.InvokeHookExtension;
-import com.ea.orbit.actors.extensions.InvocationContext;
+import com.ea.orbit.annotation.OnlyIfActivated;
 import com.ea.orbit.concurrent.Task;
 
 import java.lang.reflect.Method;
 
 public class OnlyIfActivatedExtension implements InvokeHookExtension
 {
-
     public Task<?> invoke(InvocationContext context, Addressable toReference, Method method, int methodId, Object[] params)
     {
         if (method.isAnnotationPresent(OnlyIfActivated.class))
@@ -53,5 +51,4 @@ public class OnlyIfActivatedExtension implements InvokeHookExtension
 
         return context.invokeNext(toReference, method, methodId, params);
     }
-
 }

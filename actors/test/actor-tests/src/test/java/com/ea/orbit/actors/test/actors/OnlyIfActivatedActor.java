@@ -26,19 +26,29 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.samples.annotation.examples;
+package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.Actor;
+
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.samples.annotation.onlyifactivated.OnlyIfActivated;
 
-public interface OnlyExample extends Actor
+@SuppressWarnings("rawtypes")
+public class OnlyIfActivatedActor extends AbstractActor implements OnlyIfActivated
 {
+    public static int accessCount = 0;
 
-    @OnlyIfActivated
-    Task<Void> doSomethingSpecial(String greeting);
+    @Override
+    public Task<Void> doSomethingSpecial(final String greeting)
+    {
+        accessCount++;
+        return Task.done();
+    }
 
-    Task<Void> makeActiveNow();
-
+    @Override
+    public Task<Void> makeActiveNow()
+    {
+        //does really nothing, but allows the actor to be activated
+        return Task.done();
+    }
 }
 
