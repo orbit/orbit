@@ -241,6 +241,6 @@ public class MetricsManager
 
     private String buildMetricName(Class clazz, ExportMetric annotation)
     {
-        return MetricRegistry.name(runtimePrefix, clazz.getName(), annotation.name());
+        return MetricRegistry.name(clazz.getName(), annotation.name());
     }
 }
