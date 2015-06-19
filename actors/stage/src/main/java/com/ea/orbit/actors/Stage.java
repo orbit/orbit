@@ -256,7 +256,7 @@ public class Stage implements Startable
             MetricsManager.getInstance().initializeMetrics(cleanRuntimeId, metricsConfig);
             MetricsManager.getInstance().registerExportedMetrics(execution);
         }
-        catch(Exception ex)
+        catch(ClassNotFoundException ex)
         {
             logger.info("Skipping Orbit Metrics initialization because it was not found in the classpath.");
         }

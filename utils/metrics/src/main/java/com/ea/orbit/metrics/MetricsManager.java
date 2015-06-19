@@ -55,6 +55,7 @@ public class MetricsManager
     private static final Logger logger = LoggerFactory.getLogger(MetricsManager.class);
     private Map<ReporterConfig, ScheduledReporter> reporters = new HashMap<>();
     private boolean isInitialized = false;
+    private String runtimePrefix = "";
 
     protected MetricsManager()
     {
@@ -80,6 +81,7 @@ public class MetricsManager
     {
         if (!isInitialized)
         {
+            runtimePrefix = uniqueId;
             for (ReporterConfig reporterConfig : reporterConfigs)
             {
                 ScheduledReporter reporter = reporterConfig.enableReporter(registry, uniqueId);
@@ -113,10 +115,10 @@ public class MetricsManager
             //check to see if the field is accessible.
             if (!field.isAccessible())
             {
-                throw new IllegalStateException("Field " + field.getName() + " in object " + obj.getClass().getName() + " is marked for Metrics Export but the field is not accessible");
+                throw new IllegalStateException("Field " + field.getName() + " in object " + field.getDeclaringClass().getName() + " is marked for Metrics Export but the field is not accessible");
             }
 
-            registerGauge(annotation, obj, () -> {
+            registerGauge(annotation, field.getDeclaringClass(), obj, () -> {
                 try
                 {
                     Object value = field.get(obj);
@@ -134,12 +136,12 @@ public class MetricsManager
             //methods declared as metrics must not accept parameters.
             if (method.getParameterCount() > 0)
             {
-                throw new IllegalArgumentException("Method " + method.getName() + " in object " + obj.getClass().getName() + " is marked for Metrics Export but the method definition contains parameters.");
+                throw new IllegalArgumentException("Method " + method.getName() + " in object " + method.getDeclaringClass().getName() + " is marked for Metrics Export but the method definition contains parameters.");
             }
 
             final ExportMetric annotation = method.getAnnotation(ExportMetric.class);
 
-            registerGauge(annotation, obj, () -> {
+            registerGauge(annotation, method.getDeclaringClass(), obj, () -> {
                 try
                 {
                     Object value = method.invoke(obj, new Object[0]);
@@ -168,7 +170,7 @@ public class MetricsManager
         {
             final ExportMetric annotation = field.getAnnotation(ExportMetric.class);
 
-            String metricName = buildMetricName(obj, annotation);
+            String metricName = buildMetricName(field.getDeclaringClass(), annotation);
             registry.remove(metricName);
         }
 
@@ -176,14 +178,14 @@ public class MetricsManager
         {
             final ExportMetric annotation = method.getAnnotation(ExportMetric.class);
 
-            String metricName = buildMetricName(obj, annotation);
+            String metricName = buildMetricName(method.getDeclaringClass(), annotation);
             registry.remove(metricName);
         }
     }
 
-    private void registerGauge(ExportMetric annotation, Object obj, Supplier<Object> metricSupplier)
+    private void registerGauge(ExportMetric annotation, Class clazz, Object obj, Supplier<Object> metricSupplier)
     {
-        final String gaugeName = buildMetricName(obj.getClass(), annotation);
+        final String gaugeName = buildMetricName(clazz, annotation);
 
         registry.register(gaugeName, (Gauge<Object>) () -> {
 
@@ -233,8 +235,8 @@ public class MetricsManager
         return exportedMethods;
     }
 
-    private String buildMetricName(Object obj, ExportMetric annotation)
+    private String buildMetricName(Class clazz, ExportMetric annotation)
     {
-        return MetricRegistry.name(obj.getClass(), annotation.name());
+        return MetricRegistry.name(runtimePrefix, clazz.getName(), annotation.name());
     }
 }
