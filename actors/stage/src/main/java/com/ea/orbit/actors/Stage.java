@@ -314,17 +314,6 @@ public class Stage implements Startable
 
     public Task<?> stop()
     {
-        //Shutdown metrics
-        try
-        {
-            Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
-            MetricsManager.getInstance().unregisterExportedMetrics(execution);
-        }
-        catch(ClassNotFoundException ex)
-        {
-            //OK. Just means that metrics isn't being used.
-        }
-
         // * refuse new actor activations
         // first notify other nodes
 
@@ -335,7 +324,7 @@ public class Stage implements Startable
         // * wait pending tasks execution
         // * stop the network
         return execution.stop()
-                .thenRun(clusterPeer::leave);
+                .thenRun(clusterPeer::leave).thenRun(() -> {unregisterMetrics();});
     }
 
     /**
@@ -432,5 +421,18 @@ public class Stage implements Startable
     public NodeCapabilities.NodeState getState()
     {
         return execution.getState();
+    }
+
+    private void unregisterMetrics()
+    {
+        try
+        {
+            Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
+            MetricsManager.getInstance().unregisterExportedMetrics(execution);
+        }
+        catch(ClassNotFoundException ex)
+        {
+            //OK. Just means that metrics isn't being used.
+        }
     }
 }
