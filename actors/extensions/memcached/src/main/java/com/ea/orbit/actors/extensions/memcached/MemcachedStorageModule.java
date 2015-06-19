@@ -26,39 +26,10 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.metrics.config;
+package com.ea.orbit.actors.extensions.memcached;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.ScheduledReporter;
-import com.codahale.metrics.Slf4jReporter;
+import com.ea.orbit.container.Module;
 
-public class Slf4jReporterConfig extends ReporterConfig
+public class MemcachedStorageModule extends Module
 {
-    private String loggerName;
-
-    public String getLoggerName()
-    {
-        return loggerName;
-    }
-
-    public void setLoggerName(final String loggerName)
-    {
-        this.loggerName = loggerName;
-    }
-
-    @Override
-    public synchronized ScheduledReporter enableReporter(MetricRegistry registry)
-    {
-        final Slf4jReporter reporter = Slf4jReporter.forRegistry(registry)
-                        .convertRatesTo(getRateTimeUnit())
-                .convertDurationsTo(getDurationTimeUnit())
-                .prefixedWith(getPrefix())
-                .build();
-
-        reporter.start(getPeriod(), getPeriodTimeUnit());
-
-        return reporter;
-    }
-
-
 }

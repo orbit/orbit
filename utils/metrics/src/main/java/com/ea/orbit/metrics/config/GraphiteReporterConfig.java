@@ -65,15 +65,13 @@ public class GraphiteReporterConfig extends ReporterConfig
     }
 
     @Override
-    public synchronized ScheduledReporter enableReporter(MetricRegistry registry, String runtimeId)
+    public synchronized ScheduledReporter enableReporter(MetricRegistry registry)
     {
-        String uniquePrefix = buildUniquePrefix(runtimeId);
-        logger.info("Registering with Graphite under prefix: " + uniquePrefix);
         final Graphite graphite = new Graphite(new InetSocketAddress(host, port));
         final GraphiteReporter reporter = GraphiteReporter.forRegistry(registry)
                 .convertRatesTo(getRateTimeUnit())
                 .convertDurationsTo(getDurationTimeUnit())
-                .prefixedWith(uniquePrefix)
+                .prefixedWith(getPrefix())
                 .build(graphite);
 
         reporter.start(getPeriod(), getPeriodTimeUnit());

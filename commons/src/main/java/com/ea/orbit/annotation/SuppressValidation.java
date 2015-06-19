@@ -25,11 +25,24 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package com.ea.orbit.annotation;
 
-package com.ea.orbit.actors.extensions.memcached;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import com.ea.orbit.container.Module;
-
-public class MemCachedStorageModule extends Module
+@Target({ ElementType.TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.CONSTRUCTOR,
+        ElementType.LOCAL_VARIABLE, ElementType.PACKAGE })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface SuppressValidation
 {
+    /**
+     * The set of errors that are to be suppressed by the validation in the
+     * annotated element.
+     */
+    String[] value() default {};
+
+    String justification() default "";
+
 }

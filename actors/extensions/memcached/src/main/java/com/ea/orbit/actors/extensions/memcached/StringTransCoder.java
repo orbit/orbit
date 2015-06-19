@@ -26,68 +26,58 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.metrics.config;
+package com.ea.orbit.actors.extensions.memcached;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.schooner.MemCached.AbstractTransCoder;
+import com.schooner.MemCached.TransCoder;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.ScheduledReporter;
-import com.codahale.metrics.ganglia.GangliaReporter;
-import com.codahale.metrics.graphite.Graphite;
-import com.codahale.metrics.graphite.GraphiteReporter;
-
-import info.ganglia.gmetric4j.gmetric.GMetric;
-
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
 
-public class GangliaReporterConfig extends ReporterConfig
+/**
+ * {@link TransCoder} which writes and reads strings directly as bytes.
+ * The MySQL memcached plugin strips the string length bytes for some reason..
+ *
+ * java.io.StreamCorruptedException: invalid stream header: 7B226F62
+ * at java.io.ObjectInputStream.readStreamHeader(ObjectInputStream.java:806)
+ * at java.io.ObjectInputStream.<init>(ObjectInputStream.java:299)
+ * at com.schooner.MemCached.ObjectTransCoder.decode(Unknown Source)
+ *
+ * @author Johno Crawford (johno@sulake.com)
+ */
+public class StringTransCoder extends AbstractTransCoder
 {
-    private static final Logger logger = LoggerFactory.getLogger(GangliaReporterConfig.class);
-    private String host;
-    private int port;
 
-    public String getHost()
-    {
-        return host;
-    }
+    private final Charset UTF8 = Charset.forName("UTF-8");
 
-    public void setHost(final String host)
+    @Override
+    public void encode(OutputStream outputStream, Object object) throws IOException
     {
-        this.host = host;
-    }
-
-    public int getPort()
-    {
-        return port;
-    }
-
-    public void setPort(final int port)
-    {
-        this.port = port;
+        outputStream.write(String.valueOf(object).getBytes(UTF8));
     }
 
     @Override
-    public synchronized ScheduledReporter enableReporter(MetricRegistry registry)
+    public Object decode(InputStream inputStream) throws IOException
     {
-        try
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        copy(inputStream, outputStream);
+        return new String(outputStream.toByteArray(), UTF8);
+    }
+
+    private void copy(InputStream from, ByteArrayOutputStream to) throws IOException
+    {
+        byte[] buffer = new byte[4096];
+        while (true)
         {
-            final GMetric ganglia = new GMetric(host, port, GMetric.UDPAddressingMode.MULTICAST,1);
-            final GangliaReporter reporter = GangliaReporter.forRegistry(registry)
-                    .convertRatesTo(getRateTimeUnit())
-                    .convertDurationsTo(getDurationTimeUnit())
-                    .prefixedWith(getPrefix())
-                    .build(ganglia);
-
-            reporter.start(getPeriod(), getPeriodTimeUnit());
-
-            return reporter;
+            int r = from.read(buffer);
+            if (r == -1)
+            {
+                break;
+            }
+            to.write(buffer, 0, r);
         }
-        catch(IOException iex)
-        {
-            logger.warn("Unable to enable Ganglia Reporter: " + iex.getMessage());
-        }
-
-        return null;
     }
 }

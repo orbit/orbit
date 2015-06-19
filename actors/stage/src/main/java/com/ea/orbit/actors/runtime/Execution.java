@@ -43,6 +43,7 @@ import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.metrics.annotations.ExportMetric;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
 
 import org.slf4j.Logger;
@@ -74,6 +75,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -97,10 +99,9 @@ public class Execution implements Runtime
     private Timer timer = new Timer("Orbit stage timer");
     private Clock clock = Clock.systemUTC();
     private long cleanupIntervalMillis = TimeUnit.MINUTES.toMillis(5);
-    private AtomicLong messagesReceived = new AtomicLong();
-    private AtomicLong messagesHandled = new AtomicLong();
-    private AtomicLong refusedExecutions = new AtomicLong();
-
+    private final LongAdder messagesReceived = new LongAdder();
+    private final LongAdder messagesHandled = new LongAdder();
+    private final LongAdder refusedExecutions = new LongAdder();
     private ExecutorService executor;
     private ActorFactoryGenerator dynamicReferenceFactory = new ActorFactoryGenerator();
 
@@ -480,7 +481,7 @@ public class Execution implements Runtime
     {
         // * refuse new actor activations
         state = NodeCapabilities.NodeState.STOPPING;
-        hosting.notifyStateChange();
+        hosting.notifyStateChange().join();
 
         // * deactivate all actors
         activationCleanup().join();
@@ -488,19 +489,22 @@ public class Execution implements Runtime
         // * finalize all timers
         timer.cancel();
 
+        // * give extensions a chance to send a message
+        Task.allOf(extensions.stream().map(StageLifecycleListener::onPreStop)).join();
+
         // * stop processing new received messages (responses still work)
         // * notify rest of the cluster (no more observer messages)
         state = NodeCapabilities.NodeState.STOPPED;
-        hosting.notifyStateChange();
+        hosting.notifyStateChange().join();
 
         // * wait pending tasks execution
-        executionSerializer.shutDown();
-
-        // ** stop all extensions
-        Task.allOf(extensions.stream().map(v -> v.stop())).join();
+        executionSerializer.shutdown();
 
         // * cancel all pending messages, and prevents sending new ones
-        //messaging.stop();
+        messaging.stop();
+
+        // ** stop all extensions
+        Task.allOf(extensions.stream().map(Startable::stop)).join();
 
         return Task.done();
     }
@@ -788,11 +792,11 @@ public class Execution implements Runtime
         {
             logger.debug("onMessageReceived for: " + entryKey);
         }
-        messagesReceived.incrementAndGet();
+        messagesReceived.increment();
         if (!executionSerializer.offerJob(entryKey,
                 () -> handleOnMessageReceived(entryKey, from, oneway, messageId, interfaceId, methodId, key, params), maxQueueSize))
         {
-            refusedExecutions.incrementAndGet();
+            refusedExecutions.increment();
             if (logger.isErrorEnabled())
             {
                 logger.error("Execution refused: " + key + ":" + interfaceId + ":" + methodId + ":" + messageId);
@@ -810,7 +814,7 @@ public class Execution implements Runtime
                                             final int methodId, final Object key,
                                             final Object[] params)
     {
-        messagesHandled.incrementAndGet();
+        messagesHandled.increment();
         final InterfaceDescriptor descriptor = getDescriptor(interfaceId);
         if (descriptor.isObserver)
         {
@@ -870,7 +874,7 @@ public class Execution implements Runtime
                     () -> executeMessage(theEntry, oneway, descriptor, methodId, params, from, messageId),
                     maxQueueSize))
             {
-                refusedExecutions.incrementAndGet();
+                refusedExecutions.increment();
                 if (logger.isErrorEnabled())
                 {
                     logger.info("Execution refused: " + key + ":" + interfaceId + ":" + methodId + ":" + messageId);
@@ -898,7 +902,7 @@ public class Execution implements Runtime
 
         public MessageContext(final ReferenceEntry theEntry, final int methodId, final NodeAddress from)
         {
-            traceId = counter.incrementAndGet();
+            this.traceId = counter.incrementAndGet();
             this.theEntry = theEntry;
             this.methodId = methodId;
             this.from = from;
@@ -958,6 +962,10 @@ public class Execution implements Runtime
         catch (Exception ex)
         {
             sendResponseAndLogError(oneway, from, messageId, null, ex);
+        }
+        finally
+        {
+            currentMessage.remove();
         }
         return Task.done();
     }
@@ -1202,18 +1210,18 @@ public class Execution implements Runtime
     @ExportMetric(name="messagesReceived")
     public long getMessagesReceived()
     {
-        return messagesReceived.get();
+        return messagesReceived.longValue();
     }
 
     @ExportMetric(name="messagesHandled")
     public long getMessagesHandled()
     {
-        return messagesHandled.get();
+        return messagesHandled.longValue();
     }
 
     @ExportMetric(name="refusedExecutions")
     public long getRefusedExecutions()
     {
-        return refusedExecutions.get();
+        return refusedExecutions.longValue();
     }
 }

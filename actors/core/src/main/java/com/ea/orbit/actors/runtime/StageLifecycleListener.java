@@ -26,39 +26,26 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.metrics.config;
+package com.ea.orbit.actors.runtime;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.ScheduledReporter;
-import com.codahale.metrics.Slf4jReporter;
+import com.ea.orbit.concurrent.Task;
 
-public class Slf4jReporterConfig extends ReporterConfig
+/**
+ * Interface which allows Extensions to hook into the stage lifecycle.
+ *
+ * @author Johno Crawford (johno@sulake.com)
+ */
+public interface StageLifecycleListener
 {
-    private String loggerName;
 
-    public String getLoggerName()
+    /**
+     * Invoked before the node state is set to STOPPED and Execution / Messaging are shut down. Suitable for cleanup
+     * or sending message(s) before the node is taken offline.
+     *
+     * @return a future of when this method is complete.
+     */
+    default Task<?> onPreStop()
     {
-        return loggerName;
+        return Task.done();
     }
-
-    public void setLoggerName(final String loggerName)
-    {
-        this.loggerName = loggerName;
-    }
-
-    @Override
-    public synchronized ScheduledReporter enableReporter(MetricRegistry registry)
-    {
-        final Slf4jReporter reporter = Slf4jReporter.forRegistry(registry)
-                        .convertRatesTo(getRateTimeUnit())
-                .convertDurationsTo(getDurationTimeUnit())
-                .prefixedWith(getPrefix())
-                .build();
-
-        reporter.start(getPeriod(), getPeriodTimeUnit());
-
-        return reporter;
-    }
-
-
 }
