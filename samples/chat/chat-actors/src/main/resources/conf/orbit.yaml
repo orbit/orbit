@@ -34,6 +34,7 @@ orbit.actors.extensions:
     host: localhost
     port: 27017
     database: chat
+  - !!com.ea.orbit.actors.extensions.metrics.MetricsLifetimeExtension {}
 
 orbit.chat.maxMessages: 500
 
@@ -45,3 +46,4 @@ orbit.metrics.reporters:
     period: 1
     periodUnit: 'MINUTES'
     prefix: 'chat.chat-backend'
+  - !!com.ea.orbit.metrics.config.JmxReporterConfig {}

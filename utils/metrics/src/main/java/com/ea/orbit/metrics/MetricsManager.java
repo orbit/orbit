@@ -98,6 +98,11 @@ public class MetricsManager
 
     public void registerExportedMetrics(Object obj)
     {
+        registerExportedMetrics(obj, "");
+    }
+
+    public void registerExportedMetrics(Object obj, String instanceId)
+    {
         if (obj == null)
         {
             return;
@@ -112,7 +117,7 @@ public class MetricsManager
                 throw new IllegalStateException("Field " + field.getName() + " in object " + field.getDeclaringClass().getName() + " is marked for Metrics Export but the field is not accessible");
             }
 
-            registerGauge(annotation, field.getDeclaringClass(), obj, () -> {
+            registerGauge(annotation, field.getDeclaringClass(), instanceId, () -> {
                 try
                 {
                     Object value = field.get(obj);
@@ -135,7 +140,7 @@ public class MetricsManager
 
             final ExportMetric annotation = method.getAnnotation(ExportMetric.class);
 
-            registerGauge(annotation, method.getDeclaringClass(), obj, () -> {
+            registerGauge(annotation, method.getDeclaringClass(), instanceId, () -> {
                 try
                 {
                     Object value = method.invoke(obj, new Object[0]);
@@ -155,6 +160,11 @@ public class MetricsManager
 
     public void unregisterExportedMetrics(Object obj)
     {
+        unregisterExportedMetrics(obj, "");
+    }
+
+    public void unregisterExportedMetrics(Object obj, String instanceId)
+    {
         if (obj == null)
         {
             return;
@@ -164,7 +174,7 @@ public class MetricsManager
         {
             final ExportMetric annotation = field.getAnnotation(ExportMetric.class);
 
-            String metricName = buildMetricName(field.getDeclaringClass(), annotation, obj);
+            String metricName = buildMetricName(field.getDeclaringClass(), annotation, instanceId);
             registry.remove(metricName);
         }
 
@@ -172,14 +182,14 @@ public class MetricsManager
         {
             final ExportMetric annotation = method.getAnnotation(ExportMetric.class);
 
-            String metricName = buildMetricName(method.getDeclaringClass(), annotation, obj);
+            String metricName = buildMetricName(method.getDeclaringClass(), annotation, instanceId);
             registry.remove(metricName);
         }
     }
 
-     private void registerGauge(ExportMetric annotation, Class clazz, Object obj, Supplier<Object> metricSupplier)
+     private void registerGauge(ExportMetric annotation, Class clazz, String instanceId, Supplier<Object> metricSupplier)
     {
-        final String gaugeName = buildMetricName(clazz, annotation, obj);
+        final String gaugeName = buildMetricName(clazz, annotation, instanceId);
         try
         {
             registry.register(gaugeName, (Gauge<Object>) () -> {
@@ -235,7 +245,7 @@ public class MetricsManager
         return exportedMethods;
     }
 
-    private String buildMetricName(Class clazz, ExportMetric annotation, Object obj)
+    private String buildMetricName(Class clazz, ExportMetric annotation, String instanceId)
     {
         if (!annotation.isInstanceMetric())
         {
@@ -243,14 +253,13 @@ public class MetricsManager
         }
         else
         {
-            //make sure the class implements the required methods.
-            if (obj instanceof InstanceMetricSender)
+            if (!instanceId.isEmpty())
             {
-                return MetricRegistry.name(clazz.getName(), ((InstanceMetricSender) obj).getMetricInstanceId(), annotation.name());
+                return MetricRegistry.name(clazz.getName(), instanceId, annotation.name());
             }
             else
             {
-                throw new IllegalArgumentException("Class '" + clazz.getName() + "' defines an instance Metric but does not implement the InstanceMetricSender interface!");
+                throw new IllegalArgumentException("Class '" + clazz.getName() + "' defines an instance Metric '" + annotation.name() + "' but an Instance ID was not provided!");
             }
         }
     }

@@ -252,7 +252,7 @@ public class Stage implements Startable
             Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
 
             MetricsManager.getInstance().initializeMetrics(metricsConfig);
-            MetricsManager.getInstance().registerExportedMetrics(execution);
+            MetricsManager.getInstance().registerExportedMetrics(execution, execution.runtimeIdentity());
         }
         catch(ClassNotFoundException ex)
         {
@@ -428,7 +428,7 @@ public class Stage implements Startable
         try
         {
             Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
-            MetricsManager.getInstance().unregisterExportedMetrics(execution);
+            MetricsManager.getInstance().unregisterExportedMetrics(execution, MetricsManager.sanitizeMetricName(execution.runtimeIdentity()));
         }
         catch(ClassNotFoundException ex)
         {

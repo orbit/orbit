@@ -1201,25 +1201,25 @@ public class Execution implements Runtime
         return state;
     }
 
-    @ExportMetric(name="localActorCount")
+    @ExportMetric(name="localActorCount", isInstanceMetric=true)
     public long getLocalActorCount()
     {
         return localActors.size();
     }
 
-    @ExportMetric(name="messagesReceived")
+    @ExportMetric(name="messagesReceived", isInstanceMetric=true)
     public long getMessagesReceived()
     {
         return messagesReceived.longValue();
     }
 
-    @ExportMetric(name="messagesHandled")
+    @ExportMetric(name="messagesHandled", isInstanceMetric=true)
     public long getMessagesHandled()
     {
         return messagesHandled.longValue();
     }
 
-    @ExportMetric(name="refusedExecutions")
+    @ExportMetric(name="refusedExecutions", isInstanceMetric=true)
     public long getRefusedExecutions()
     {
         return refusedExecutions.longValue();

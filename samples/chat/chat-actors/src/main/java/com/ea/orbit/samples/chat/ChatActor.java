@@ -32,6 +32,7 @@ import com.ea.orbit.actors.ObserverManager;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.metrics.annotations.ExportMetric;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -121,5 +122,11 @@ public class ChatActor extends AbstractActor<ChatActor.State> implements Chat
     public Task<?> deactivateAsync()
     {
         return writeState().thenCompose(() -> super.deactivateAsync());
+    }
+
+    @ExportMetric(name="historySize", isInstanceMetric=true)
+    public long historySize()
+    {
+        return state().history.size();
     }
 }
