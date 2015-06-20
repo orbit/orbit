@@ -255,7 +255,7 @@ public class MetricsManager
         {
             if (!instanceId.isEmpty())
             {
-                return MetricRegistry.name(clazz.getName(), instanceId, annotation.name());
+                return MetricRegistry.name(clazz.getName(), sanitizeMetricName(instanceId), annotation.name());
             }
             else
             {

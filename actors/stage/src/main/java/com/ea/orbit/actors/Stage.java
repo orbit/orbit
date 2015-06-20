@@ -428,7 +428,7 @@ public class Stage implements Startable
         try
         {
             Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
-            MetricsManager.getInstance().unregisterExportedMetrics(execution, MetricsManager.sanitizeMetricName(execution.runtimeIdentity()));
+            MetricsManager.getInstance().unregisterExportedMetrics(execution, execution.runtimeIdentity());
         }
         catch(ClassNotFoundException ex)
         {
