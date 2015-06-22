@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 public class MetricsManager
 {
@@ -55,6 +56,7 @@ public class MetricsManager
     private static final Logger logger = LoggerFactory.getLogger(MetricsManager.class);
     private Map<ReporterConfig, Reporter> reporters = new HashMap<>();
     private boolean isInitialized = false;
+    private static Pattern nameSanitizationRegex = Pattern.compile("[\\[\\]\\.\\\\/]");
 
     protected MetricsManager()
     {
@@ -68,7 +70,7 @@ public class MetricsManager
 
     public static String sanitizeMetricName(String name)
     {
-        return name.replaceAll("[\\[\\]\\.\\\\/]", ""); //strip illegal characters
+        return nameSanitizationRegex.matcher(name).replaceAll(""); //strip illegal characters
     }
 
 
@@ -89,6 +91,7 @@ public class MetricsManager
                 }
             }
             isInitialized = true;
+            logger.info("Orbit Metrics Initialized.");
         }
         else
         {
