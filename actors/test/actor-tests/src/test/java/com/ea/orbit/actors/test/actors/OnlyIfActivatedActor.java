@@ -26,32 +26,29 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.samples.annotation.onlyifactivated;
+package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.Addressable;
-import com.ea.orbit.actors.extensions.InvokeHookExtension;
-import com.ea.orbit.actors.extensions.InvocationContext;
+
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
-import java.lang.reflect.Method;
-
-public class OnlyIfActivatedExtension implements InvokeHookExtension
+@SuppressWarnings("rawtypes")
+public class OnlyIfActivatedActor extends AbstractActor implements OnlyIfActivated
 {
+    public static int accessCount = 0;
 
-    public Task<?> invoke(InvocationContext context, Addressable toReference, Method method, int methodId, Object[] params)
+    @Override
+    public Task<Void> doSomethingSpecial(final String greeting)
     {
-        if (method.isAnnotationPresent(OnlyIfActivated.class))
-        {
-            return context.getRuntime().locateActor(toReference, false).thenCompose(address -> {
-                if (address == null)
-                {
-                    return (Task) Task.done();
-                }
-                return context.invokeNext(toReference, method, methodId, params);
-            });
-        }
-
-        return context.invokeNext(toReference, method, methodId, params);
+        accessCount++;
+        return Task.done();
     }
 
+    @Override
+    public Task<Void> makeActiveNow()
+    {
+        //does really nothing, but allows the actor to be activated
+        return Task.done();
+    }
 }
+

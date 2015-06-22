@@ -34,11 +34,8 @@ import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.actors.test.FakeClusterPeer;
 import com.ea.orbit.actors.test.FakeStorageExtension;
 import com.ea.orbit.samples.annotation.examples.MemoizeExample;
-import com.ea.orbit.samples.annotation.examples.OnlyExample;
 import com.ea.orbit.samples.annotation.examples.MemoizeExampleActor;
-import com.ea.orbit.samples.annotation.examples.OnlyExampleActor;
 import com.ea.orbit.samples.annotation.memoize.MemoizeExtension;
-import com.ea.orbit.samples.annotation.onlyifactivated.OnlyIfActivatedExtension;
 
 import org.junit.Test;
 
@@ -47,27 +44,6 @@ import static org.junit.Assert.assertTrue;
 
 public class AnnotationTest extends ActorBaseTest
 {
-
-    @Test
-    public void onlyIfActivatedTest()
-    {
-        Stage stage = initStage();
-
-        OnlyExample only = Actor.getReference(OnlyExample.class, "234");
-        only.doSomethingSpecial("A").join();
-        only.doSomethingSpecial("A").join();
-        only.doSomethingSpecial("A").join();
-        only.doSomethingSpecial("A").join();
-        only.doSomethingSpecial("A").join();
-        assertEquals(0, OnlyExampleActor.accessCount);
-        only.makeActiveNow().join();
-        only.doSomethingSpecial("A").join();
-        only.doSomethingSpecial("A").join();
-        only.doSomethingSpecial("A").join();
-        only.doSomethingSpecial("A").join();
-        only.doSomethingSpecial("A").join();
-        assertEquals(5, OnlyExampleActor.accessCount);
-    }
 
     @Test
     public void memoizeTest()
@@ -123,7 +99,6 @@ public class AnnotationTest extends ActorBaseTest
 
 
         stage.addExtension(new MemoizeExtension());
-        stage.addExtension(new OnlyIfActivatedExtension());
 
         stage.addExtension(new FakeStorageExtension(fakeDatabase));
 
