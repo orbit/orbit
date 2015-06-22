@@ -61,7 +61,8 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
 @Singleton
-public class Stage implements Startable {
+public class Stage implements Startable
+{
     private static final Logger logger = LoggerFactory.getLogger(Stage.class);
 
     @Config("orbit.actors.clusterName")
@@ -82,7 +83,8 @@ public class Stage implements Startable {
     @Wired
     Container container;
 
-    public enum StageMode {
+    public enum StageMode
+    {
         FRONT_END, // no activations
         HOST // allows activations
     }
@@ -97,100 +99,129 @@ public class Stage implements Startable {
     private ExecutorService executionPool;
     private ExecutorService messagingPool;
 
-    static {
+    static
+    {
         // Initializes orbit async, but only if the application uses it.
-        try {
+        try
+        {
             Class.forName("com.ea.orbit.async.Async");
-            try {
+            try
+            {
                 // async is present in the classpath, let's make sure await is initialized
                 Class.forName("com.ea.orbit.async.Await");
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 // this might be a problem, logging.
                 logger.error("Error initializing orbit-async", ex);
             }
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             // no problem, application doesn't use orbit async.
         }
     }
 
-    public void setClock(final Clock clock) {
+    public void setClock(final Clock clock)
+    {
         this.clock = clock;
     }
 
-    public void setExecutionPool(final ExecutorService executionPool) {
+    public void setExecutionPool(final ExecutorService executionPool)
+    {
         this.executionPool = executionPool;
     }
 
-    public ExecutorService getExecutionPool() {
+    public ExecutorService getExecutionPool()
+    {
         return executionPool;
     }
 
-    public void setMessagingPool(final ExecutorService messagingPool) {
+    public void setMessagingPool(final ExecutorService messagingPool)
+    {
         this.messagingPool = messagingPool;
     }
 
-    public ExecutorService getMessagingPool() {
+    public ExecutorService getMessagingPool()
+    {
         return messagingPool;
     }
 
-    public String runtimeIdentity() {
-        if (execution == null) {
+    public String runtimeIdentity()
+    {
+        if (execution == null)
+        {
             throw new IllegalStateException("Can only be called after the startup");
         }
         return execution.runtimeIdentity();
     }
 
-    public String getClusterName() {
+    public String getClusterName()
+    {
         return clusterName;
     }
 
-    public void setClusterName(final String clusterName) {
+    public void setClusterName(final String clusterName)
+    {
         this.clusterName = clusterName;
     }
 
-    public String getNodeName() {
+    public String getNodeName()
+    {
         return nodeName;
     }
 
-    public void setNodeName(final String nodeName) {
+    public void setNodeName(final String nodeName)
+    {
         this.nodeName = nodeName;
     }
 
-    public StageMode getMode() {
+    public StageMode getMode()
+    {
         return mode;
     }
 
-    public void setMode(final StageMode mode) {
-        if (startCalled) {
+    public void setMode(final StageMode mode)
+    {
+        if (startCalled)
+        {
             throw new IllegalStateException("Stage mode cannot be changed after startup.");
         }
         this.mode = mode;
     }
 
-    public Task<?> start() {
+    public Task<?> start()
+    {
         startCalled = true;
 
-        if (clusterName == null || clusterName.isEmpty()) {
+        if (clusterName == null || clusterName.isEmpty())
+        {
             setClusterName("orbit-cluster");
         }
 
-        if (nodeName == null || nodeName.isEmpty()) {
+        if (nodeName == null || nodeName.isEmpty())
+        {
             setNodeName(getClusterName());
         }
 
-        if (hosting == null) {
+        if (hosting == null)
+        {
             hosting = new Hosting();
         }
-        if (messaging == null) {
+        if (messaging == null)
+        {
             messaging = new Messaging();
         }
-        if (execution == null) {
+        if (execution == null)
+        {
             execution = new Execution();
         }
-        if (clusterPeer == null) {
+        if (clusterPeer == null)
+        {
             clusterPeer = new JGroupsClusterPeer();
         }
-        if (clock == null) {
+        if (clock == null)
+        {
             clock = Clock.systemUTC();
         }
 
@@ -219,7 +250,8 @@ public class Stage implements Startable {
         startMetrics();
 
         Task<?> future = clusterPeer.join(clusterName, nodeName);
-        if (mode == StageMode.HOST) {
+        if (mode == StageMode.HOST)
+        {
             future = future.thenRun(() -> Actor.getReference(ReminderController.class, "0").ensureStart());
         }
         startFuture = future;
@@ -230,13 +262,17 @@ public class Stage implements Startable {
         return startFuture;
     }
 
-    private void configureOrbitContainer() {
+    private void configureOrbitContainer()
+    {
         // orbitContainer will be null if the application is not using it
-        if (container != null) {
+        if (container != null)
+        {
             // Create a lifetime provider for actor DI
-            LifetimeExtension containerLifetime = new LifetimeExtension() {
+            LifetimeExtension containerLifetime = new LifetimeExtension()
+            {
                 @Override
-                public Task<?> preActivation(AbstractActor<?> actor) {
+                public Task<?> preActivation(AbstractActor<?> actor)
+                {
                     container.inject(actor);
                     return Task.done();
                 }
@@ -246,7 +282,8 @@ public class Stage implements Startable {
         }
     }
 
-    public void setClusterPeer(final ClusterPeer clusterPeer) {
+    public void setClusterPeer(final ClusterPeer clusterPeer)
+    {
         this.clusterPeer = clusterPeer;
     }
 
@@ -260,11 +297,13 @@ public class Stage implements Startable {
      *
      * @param extension Actor Extensions instance.
      */
-    public void addExtension(final ActorExtension extension) {
+    public void addExtension(final ActorExtension extension)
+    {
         this.extensions.add(extension);
     }
 
-    public Task<?> stop() {
+    public Task<?> stop()
+    {
         // * refuse new actor activations
         // first notify other nodes
 
@@ -284,7 +323,8 @@ public class Stage implements Startable {
      * @deprecated Use #registerObserver instead
      */
     @Deprecated
-    public <T extends ActorObserver> T getObserverReference(Class<T> iClass, final T observer) {
+    public <T extends ActorObserver> T getObserverReference(Class<T> iClass, final T observer)
+    {
         return registerObserver(iClass, observer);
 
     }
@@ -293,31 +333,40 @@ public class Stage implements Startable {
      * @deprecated Use #registerObserver instead
      */
     @Deprecated
-    public <T extends ActorObserver> T getObserverReference(final T observer) {
+    public <T extends ActorObserver> T getObserverReference(final T observer)
+    {
         return registerObserver(null, observer);
     }
 
-    public <T extends ActorObserver> T registerObserver(Class<T> iClass, final T observer) {
+    public <T extends ActorObserver> T registerObserver(Class<T> iClass, final T observer)
+    {
         return execution.getObjectReference(iClass, observer);
     }
 
-    public <T extends ActorObserver> T registerObserver(Class<T> iClass, String id, final T observer) {
+    public <T extends ActorObserver> T registerObserver(Class<T> iClass, String id, final T observer)
+    {
         return execution.getObserverReference(iClass, observer, id);
     }
 
 
-    public Hosting getHosting() {
+    public Hosting getHosting()
+    {
         return hosting;
     }
 
-    public ClusterPeer getClusterPeer() {
+    public ClusterPeer getClusterPeer()
+    {
         return clusterPeer != null ? clusterPeer : (clusterPeer = new JGroupsClusterPeer());
     }
 
-    public void cleanup(boolean block) {
-        if (block) {
+    public void cleanup(boolean block)
+    {
+        if (block)
+        {
             execution.activationCleanup().join();
-        } else {
+        }
+        else
+        {
             execution.activationCleanup();
         }
         messaging.timeoutCleanup();
@@ -338,25 +387,31 @@ public class Stage implements Startable {
      * This method writes a weak reference to the runtime in a thread local.
      * No cleanup is necessary, so none is available.
      */
-    public void bind() {
+    public void bind()
+    {
         execution.bind();
     }
 
-    public List<NodeAddress> getAllNodes() {
-        if (hosting == null) {
+    public List<NodeAddress> getAllNodes()
+    {
+        if (hosting == null)
+        {
             return Collections.emptyList();
         }
         return hosting.getAllNodes();
     }
 
-    public List<NodeAddress> getServerNodes() {
-        if (hosting == null) {
+    public List<NodeAddress> getServerNodes()
+    {
+        if (hosting == null)
+        {
             return Collections.emptyList();
         }
         return hosting.getServerNodes();
     }
 
-    public NodeCapabilities.NodeState getState() {
+    public NodeCapabilities.NodeState getState()
+    {
         return execution.getState();
     }
 
@@ -373,7 +428,7 @@ public class Stage implements Startable {
             initializeMetricsMethod.invoke(managerObject, metricsConfig);
             registerExportedMetricsMethod.invoke(managerObject, execution, execution.runtimeIdentity());
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             //OK. Just means that metrics isn't being used.
         }
@@ -390,7 +445,7 @@ public class Stage implements Startable {
             Object managerObject = getInstanceMethod.invoke(null, null);
             unregisterExportedMetricsMethod.invoke(managerObject, execution, execution.runtimeIdentity());
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             //OK. Just means that metrics isn't being used.
         }
