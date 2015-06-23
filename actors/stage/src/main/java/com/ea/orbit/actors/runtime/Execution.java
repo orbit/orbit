@@ -40,6 +40,7 @@ import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.InvocationContext;
+import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.annotation.OnlyIfActivated;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
@@ -78,6 +79,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Execution implements Runtime
 {
@@ -112,6 +114,8 @@ public class Execution implements Runtime
     private List<InvokeHookExtension> hookExtensions;
 
     private NodeCapabilities.NodeState state = NodeCapabilities.NodeState.RUNNING;
+
+    private ExecutionCacheManager cacheManager = new ExecutionCacheManager();
 
     public Execution()
     {
@@ -163,6 +167,11 @@ public class Execution implements Runtime
     public void registerFactory(ActorFactory<?> factory)
     {
         // TODO: will enable caching the reference factory
+    }
+
+    public ExecutionCacheManager getCacheManager()
+    {
+        return cacheManager;
     }
 
     private static class InterfaceDescriptor
@@ -1095,6 +1104,34 @@ public class Execution implements Runtime
     {
         if (!verifyActivated(toReference, m)) return Task.done();
 
+        if (m.isAnnotationPresent(CacheResponse.class))
+        {
+            return cacheResponseInvoke(toReference, m, oneWay, methodId, params);
+        }
+
+        return invokeInternal(toReference, m, oneWay, methodId, params);
+    }
+
+    private Task<?> cacheResponseInvoke(Addressable toReference, Method method, boolean oneWay, int methodId, Object[] params)
+    {
+        ActorReference<?> actorReference = (ActorReference<?>) toReference;
+        String key = actorReference.id.toString()
+                + "_" + Stream.of(params).map(p -> Integer.toString(p.hashCode())).collect(Collectors.joining("_"));
+
+        Task cached = cacheManager.get(toReference, method, key);
+        if (cached == null)
+        {
+            return invokeInternal(toReference, method, oneWay, methodId, params).thenApply((Object r) -> {
+                cacheManager.put(toReference, method, key, Task.fromValue(r));
+                return r;
+            });
+        }
+
+        return cached;
+    }
+
+    private Task<?> invokeInternal(Addressable toReference, Method m, final boolean oneWay, int methodId, Object[] params)
+    {
         if (hookExtensions.size() == 0)
         {
             // no hooks
@@ -1125,7 +1162,6 @@ public class Execution implements Runtime
         };
 
         return ctx.invokeNext(toReference, m, methodId, params);
-
     }
 
     public Task<?> activationCleanup()

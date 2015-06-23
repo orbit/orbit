@@ -26,21 +26,30 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.samples.annotation.examples;
-
+package com.ea.orbit.actors.test.actors;
 
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @SuppressWarnings("rawtypes")
-public class MemoizeExampleActor extends AbstractActor implements MemoizeExample
+public class CacheResponseActor extends AbstractActor implements CacheResponse
 {
     public static int accessCount = 0;
+    Map<Integer, Long> indexTally = new HashMap<>();
 
     public Task<Long> getNow(String greeting)
     {
         accessCount++;
         return Task.fromValue(System.currentTimeMillis());
     }
-}
 
+    public Task<Long> getIndexTally(int id)
+    {
+        long tally = indexTally.getOrDefault(id, (long) 0) + 1;
+        indexTally.put(id, tally);
+        return Task.fromValue(tally);
+    }
+}

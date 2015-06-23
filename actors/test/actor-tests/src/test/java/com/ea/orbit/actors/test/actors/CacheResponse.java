@@ -26,19 +26,25 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.samples.annotation.examples;
+package com.ea.orbit.actors.test.actors;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.samples.annotation.memoize.Memoize;
 
 import java.util.concurrent.TimeUnit;
 
-public interface MemoizeExample extends Actor
+public interface CacheResponse extends Actor
 {
+    static public final int INDEX_TALLY_DURATION_MILLIS = 100;
 
-    @Memoize(time = 5, unit = TimeUnit.SECONDS)
+    @com.ea.orbit.annotation.CacheResponse(maxEntries = 100, ttlDuration = 5, ttlUnit = TimeUnit.SECONDS)
     Task<Long> getNow(String greeting);
 
+    /**
+     * Used to test CacheResponse Time to Live.
+     * Returns a count of the number of times an id was accessed.
+     */
+    @com.ea.orbit.annotation.CacheResponse(maxEntries = 1000, ttlDuration = INDEX_TALLY_DURATION_MILLIS, ttlUnit = TimeUnit.MILLISECONDS)
+    Task<Long> getIndexTally(int id);
 }
 
