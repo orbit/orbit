@@ -428,9 +428,13 @@ public class Stage implements Startable
             initializeMetricsMethod.invoke(managerObject, metricsConfig);
             registerExportedMetricsMethod.invoke(managerObject, execution, execution.runtimeIdentity());
         }
-        catch (Exception ex)
+        catch (ClassNotFoundException ex)
         {
             //OK. Just means that metrics isn't being used.
+        }
+        catch (Exception ex)
+        {
+            logger.error("Unexpected error while initializing Orbit Metrics: " + ex.getMessage());
         }
     }
 
@@ -445,9 +449,13 @@ public class Stage implements Startable
             Object managerObject = getInstanceMethod.invoke(null, null);
             unregisterExportedMetricsMethod.invoke(managerObject, execution, execution.runtimeIdentity());
         }
-        catch (Exception ex)
+        catch (ClassNotFoundException ex)
         {
             //OK. Just means that metrics isn't being used.
+        }
+        catch (Exception ex)
+        {
+            logger.error("Unexpected error while unregistering execution metrics: " + ex.getMessage());
         }
     }
 }

@@ -34,24 +34,27 @@ import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.metrics.MetricsManager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * {@link MetricsLifetimeExtension} allows for automatic registration and deregistration of annotated Orbit Metrics
  *
  */
 public class MetricsLifetimeExtension implements LifetimeExtension
 {
+    private static final Logger logger = LoggerFactory.getLogger(MetricsLifetimeExtension.class);
     @Override
     public Task preActivation(AbstractActor actor)
     {
         try
         {
-            Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
             String actorId = ActorReference.getId(ActorReference.from(actor)).toString();
             MetricsManager.getInstance().registerExportedMetrics(actor, actorId);
         }
-        catch(ClassNotFoundException ex)
+        catch(Exception ex)
         {
-            //This is OK. This means that Orbit Metrics isn't being used by the application.
+           logger.error("Unexpected error while registering Actor Metrics for " + actor.getClass().getName() + ": " + ex.getMessage());
         }
         finally
         {
@@ -64,13 +67,12 @@ public class MetricsLifetimeExtension implements LifetimeExtension
     {
         try
         {
-            Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
             String actorId = ActorReference.getId(ActorReference.from(actor)).toString();
             MetricsManager.getInstance().unregisterExportedMetrics(actor, actorId);
         }
-        catch(ClassNotFoundException ex)
+        catch(Exception ex)
         {
-            //This is OK. This means that Orbit Metrics isn't being used by the application.
+            logger.error("Unexpected error while unregistering Actor Metrics for " + actor.getClass().getName() + ": " + ex.getMessage());
         }
         finally
         {

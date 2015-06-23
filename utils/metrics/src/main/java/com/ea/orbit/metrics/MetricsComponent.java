@@ -50,16 +50,7 @@ public class MetricsComponent implements Startable
     @Override
     public Task<?> start()
     {
-        try
-        {
-            Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the class is in the classpath.
-            MetricsManager.getInstance().initializeMetrics(metricsConfig);
-        }
-        catch(Exception ex)
-        {
-            logger.info("Skipping Orbit Metrics initialization because it was not found in the classpath.");
-        }
-
+        MetricsManager.getInstance().initializeMetrics(metricsConfig);
         return Task.done();
     }
 
