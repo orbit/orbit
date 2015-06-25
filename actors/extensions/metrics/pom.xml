@@ -33,49 +33,24 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <groupId>com.ea.orbit</groupId>
         <artifactId>orbit-actors-parent</artifactId>
         <version>0.3.2-SNAPSHOT</version>
-        <relativePath>..</relativePath>
+        <relativePath>../..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Orbit Actors Stage</name>
-    <artifactId>orbit-actors-stage</artifactId>
+    <name>Orbit Actors Extension: Metrics Support</name>
+    <artifactId>orbit-actors-metrics</artifactId>
 
     <dependencies>
-        <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-container</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-async</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-embedded</artifactId>
-            <version>7.2.2.Final</version>
-        </dependency>
-
         <dependency>
             <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-actors-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>18.0</version>
-        </dependency>
-
         <dependency>
             <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-metrics</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
+
 </project>

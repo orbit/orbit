@@ -49,6 +49,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.time.Clock;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -69,8 +70,8 @@ public class Messaging implements Startable
     private ClusterPeer clusterPeer;
     private Execution execution;
     private final AtomicInteger messageIdGen = new AtomicInteger();
-    private Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
-    private PriorityBlockingQueue<PendingResponse> pendingResponsesQueue = new PriorityBlockingQueue<>();
+    private final Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
+    private final PriorityBlockingQueue<PendingResponse> pendingResponsesQueue = new PriorityBlockingQueue<>(50, new PendingResponseComparator());
     private Clock clock = Clock.systemUTC();
     private long responseTimeoutMillis = 30_000;
     private final LongAdder networkMessagesReceived = new LongAdder();
@@ -88,32 +89,49 @@ public class Messaging implements Startable
         this.clusterPeer = clusterPeer;
     }
 
+    public void setResponseTimeoutMillis(final long responseTimeoutMillis)
+    {
+        this.responseTimeoutMillis = responseTimeoutMillis;
+    }
+
     public NodeAddress getNodeAddress()
     {
         return clusterPeer.localAddress();
     }
 
-    private static class PendingResponse extends Task<Object> implements Comparable<PendingResponse>
+    /**
+     * The messageId is used only to break a tie between messages that timeout at the same ms.
+     */
+    static class PendingResponseComparator implements Comparator<PendingResponse>
     {
-        long timeoutAt;
-        public int messageId;
-
         @Override
-        public int compareTo(final PendingResponse o)
+        public int compare(final PendingResponse o1, final PendingResponse o2)
         {
-            int cmp = Long.compare(timeoutAt, o.timeoutAt);
+            int cmp = Long.compare(o1.timeoutAt, o2.timeoutAt);
             if (cmp == 0)
             {
-                return messageId - o.messageId;
+                return o1.messageId - o2.messageId;
             }
             return cmp;
         }
+    }
 
-        @Override
-        public boolean equals(final Object o)
+    /**
+     * The case of the messageId cycling back was considered during design. It should not be a problem
+     * as long as it doesn't happen in less time than the message timeout.
+     *
+     * Let's assume a very high number of messages per node: 1.000.000 msg/s => messageId cycles in ~4200 seconds (~70 minutes).
+     * (if the message timeout remains in the order of 30s to a few minutes, that should not be a problem).
+     */
+    static class PendingResponse extends Task<Object>
+    {
+        final int messageId;
+        final long timeoutAt;
+
+        public PendingResponse(final int messageId, final long timeoutAt)
         {
-            // adding equals implementation to silence FindBugs
-            return (this == o);
+            this.messageId = messageId;
+            this.timeoutAt = timeoutAt;
         }
 
         @Override
@@ -210,23 +228,23 @@ public class Messaging implements Startable
                                 pendingResponse.internalCompleteExceptionally((Throwable) res);
                                 return;
                             case MessageDefinitions.ERROR_RESPONSE:
-                                pendingResponse.internalCompleteExceptionally(new UncheckedException("Error invoking but no exception provided. Res: " + res));
+                                pendingResponse.internalCompleteExceptionally(new UncheckedException("Error invoking but no exception provided. Response: " + res));
                                 return;
                             default:
                                 // should be impossible
-                                logger.error("Illegal protocol, invalid response message type: {}", messageId);
+                                logger.error("Illegal protocol, invalid response message type: {}", messageType);
                                 return;
                         }
                     }
                     else
                     {
                         // missing counterpart
-                        logger.warn("Missing counterpart (pending message) for message {}.", messageId);
+                        logger.warn("Missing counterpart (pending message) for message with id: {} and type: {}.", messageId, messageType);
                     }
                     break;
                 }
                 default:
-                    logger.error("Illegal protocol, invalid message type: {}", messageId);
+                    logger.error("Illegal protocol, invalid message type: {}", messageType);
                     return;
             }
         }
@@ -240,7 +258,6 @@ public class Messaging implements Startable
     {
         // could be used to decrease the timeout of messages sent to failed nodes.
     }
-
 
     public void sendResponse(NodeAddress to, int messageType, int messageId, Object res)
     {
@@ -344,9 +361,7 @@ public class Messaging implements Startable
     public Task<?> sendMessage(NodeAddress to, boolean oneWay, int interfaceId, int methodId, Object key, Object[] params)
     {
         int messageId = messageIdGen.incrementAndGet();
-        PendingResponse pendingResponse = new PendingResponse();
-        pendingResponse.messageId = messageId;
-        pendingResponse.timeoutAt = clock.millis() + responseTimeoutMillis;
+        PendingResponse pendingResponse = new PendingResponse(messageId, clock.millis() + responseTimeoutMillis);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try
         {

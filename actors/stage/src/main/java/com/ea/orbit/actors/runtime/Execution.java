@@ -41,6 +41,8 @@ import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.annotation.OnlyIfActivated;
+import com.ea.orbit.metrics.annotations.ExportMetric;
+import com.ea.orbit.metrics.annotations.MetricScope;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -1220,5 +1222,29 @@ public class Execution implements Runtime
             }
         }
         return true;
+	}
+
+    @ExportMetric(name="localActorCount", scope=MetricScope.PROTOTYPE)
+    public long getLocalActorCount()
+    {
+        return localActors.size();
+    }
+
+    @ExportMetric(name="messagesReceived", scope=MetricScope.PROTOTYPE)
+    public long getMessagesReceived()
+    {
+        return messagesReceived.longValue();
+    }
+
+    @ExportMetric(name="messagesHandled", scope=MetricScope.PROTOTYPE)
+    public long getMessagesHandled()
+    {
+        return messagesHandled.longValue();
+    }
+
+    @ExportMetric(name="refusedExecutions",scope=MetricScope.PROTOTYPE)
+    public long getRefusedExecutions()
+    {
+        return refusedExecutions.longValue();
     }
 }
