@@ -89,6 +89,11 @@ public class Messaging implements Startable
         this.clusterPeer = clusterPeer;
     }
 
+    public void setResponseTimeoutMillis(final long responseTimeoutMillis)
+    {
+        this.responseTimeoutMillis = responseTimeoutMillis;
+    }
+
     public NodeAddress getNodeAddress()
     {
         return clusterPeer.localAddress();
