@@ -53,6 +53,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>extensions/postgresql</module>
         <module>extensions/spring</module>
         <module>extensions/memcached</module>
+        <module>extensions/metrics</module>
         <module>test/actor-tests</module>
         <module>actors-all</module>
     </modules>
