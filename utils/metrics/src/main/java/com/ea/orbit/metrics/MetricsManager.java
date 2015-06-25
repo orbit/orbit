@@ -29,6 +29,7 @@
 package com.ea.orbit.metrics;
 
 import com.ea.orbit.metrics.annotations.ExportMetric;
+import com.ea.orbit.metrics.annotations.MetricScope;
 import com.ea.orbit.metrics.config.ReporterConfig;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -250,11 +251,7 @@ public class MetricsManager
 
     private String buildMetricName(Class clazz, ExportMetric annotation, String instanceId)
     {
-        if (!annotation.isInstanceMetric())
-        {
-            return MetricRegistry.name(clazz.getName(), annotation.name());
-        }
-        else
+        if (annotation.scope() == MetricScope.PROTOTYPE)
         {
             if (!instanceId.isEmpty())
             {
@@ -264,6 +261,10 @@ public class MetricsManager
             {
                 throw new IllegalArgumentException("Class '" + clazz.getName() + "' defines an instance Metric '" + annotation.name() + "' but an Instance ID was not provided!");
             }
+        }
+        else
+        {
+            return MetricRegistry.name(clazz.getName(), annotation.name());
         }
     }
 }

@@ -39,5 +39,5 @@ public @interface ExportMetric
 {
     String name() default "";
 
-    boolean isInstanceMetric() default false;
+    MetricScope scope() default MetricScope.SINGLETON;
 }

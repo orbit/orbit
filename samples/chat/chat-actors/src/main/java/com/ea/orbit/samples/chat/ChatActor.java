@@ -33,6 +33,7 @@ import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.metrics.annotations.ExportMetric;
+import com.ea.orbit.metrics.annotations.MetricScope;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -124,7 +125,7 @@ public class ChatActor extends AbstractActor<ChatActor.State> implements Chat
         return writeState().thenCompose(() -> super.deactivateAsync());
     }
 
-    @ExportMetric(name="historySize", isInstanceMetric=true)
+    @ExportMetric(name="historySize", scope= MetricScope.PROTOTYPE)
     public long historySize()
     {
         return state().history.size();
