@@ -210,23 +210,23 @@ public class Messaging implements Startable
                                 pendingResponse.internalCompleteExceptionally((Throwable) res);
                                 return;
                             case MessageDefinitions.ERROR_RESPONSE:
-                                pendingResponse.internalCompleteExceptionally(new UncheckedException("Error invoking but no exception provided. Res: " + res));
+                                pendingResponse.internalCompleteExceptionally(new UncheckedException("Error invoking but no exception provided. Response: " + res));
                                 return;
                             default:
                                 // should be impossible
-                                logger.error("Illegal protocol, invalid response message type: {}", messageId);
+                                logger.error("Illegal protocol, invalid response message type: {}", messageType);
                                 return;
                         }
                     }
                     else
                     {
                         // missing counterpart
-                        logger.warn("Missing counterpart (pending message) for message {}.", messageId);
+                        logger.warn("Missing counterpart (pending message) for message with id: {} and type: {}.", messageId, messageType);
                     }
                     break;
                 }
                 default:
-                    logger.error("Illegal protocol, invalid message type: {}", messageId);
+                    logger.error("Illegal protocol, invalid message type: {}", messageType);
                     return;
             }
         }
