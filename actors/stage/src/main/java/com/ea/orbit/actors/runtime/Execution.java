@@ -52,6 +52,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.MapMaker;
 
+import javax.xml.bind.DatatypeConverter;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -1115,8 +1119,7 @@ public class Execution implements Runtime
     private Task<?> cacheResponseInvoke(Addressable toReference, Method method, boolean oneWay, int methodId, Object[] params)
     {
         ActorReference<?> actorReference = (ActorReference<?>) toReference;
-        String key = actorReference.id.toString()
-                + "_" + Stream.of(params).map(p -> Integer.toString(p.hashCode())).collect(Collectors.joining("_"));
+        String key = generateCacheManagerKey(actorReference, params);
 
         Task cached = cacheManager.get(toReference, method, key);
         if (cached == null)
@@ -1128,6 +1131,28 @@ public class Execution implements Runtime
         }
 
         return cached;
+    }
+
+    private String generateCacheManagerKey(ActorReference<?> actorReference, Object[] params)
+    {
+        try
+        {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(bos);
+
+            out.writeObject(actorReference.id);
+            for(Object param : params)
+            {
+                out.writeObject(param);
+            }
+
+            out.close();
+
+            return DatatypeConverter.printHexBinary(bos.toByteArray());
+        } catch (IOException e)
+        {
+            throw new UncheckedException("Unable to make CacheManager key", e);
+        }
     }
 
     private Task<?> invokeInternal(Addressable toReference, Method m, final boolean oneWay, int methodId, Object[] params)
