@@ -47,7 +47,6 @@ import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
-import com.ea.orbit.util.AnnotationUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1096,10 +1095,7 @@ public class Execution implements Runtime
 
     public Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
     {
-        if (!verifyActivated(toReference, m))
-        {
-            return Task.done();
-        }
+        if (!verifyActivated(toReference, m)) return Task.done();
 
         if (hookExtensions.size() == 0)
         {
@@ -1217,7 +1213,7 @@ public class Execution implements Runtime
      */
     private boolean verifyActivated(Addressable toReference, Method method)
     {
-        if (AnnotationUtils.isAnnotationPresent(method, OnlyIfActivated.class))
+        if (method.isAnnotationPresent(OnlyIfActivated.class))
         {
             NodeAddress actorAddress = locateActor(toReference, false).join();
             if (actorAddress == null)
