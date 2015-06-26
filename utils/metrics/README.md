@@ -12,14 +12,14 @@ Currently, the following Dropwizard reporters are supported:
  - Graphite
  - Ganglia
  - SLF4J
+
+
+Metric Scopes
+---------------
+
+Orbit Metrics supports two scopes: Singleton and Prototype (instance). Singleton Metrics are unique per JVM and are generally intended for cases where there exists only one instance of an object that produces that metric. Prototype or Instance Metrics are intended to be used when more than one instance of an object can produce a particular metric.
  
- 
- Metric Scopes
- ---------------
- 
- Orbit Metrics supports two scopes: Singleton and Prototype (instance). Singleton Metrics are unique per JVM and are generally intended for cases where there exists only one instance of an object that produces that metric. Prototype or Instance Metrics are intended to be used when more than one instance of an object can produce a particular metric.
- 
- In order to register objects that export prototype metrics, a unique runtime id must be provided at the time of registration. 
+In order to register objects that export prototype metrics, a unique runtime id must be provided at the time of registration. 
 
 Example
 ========
