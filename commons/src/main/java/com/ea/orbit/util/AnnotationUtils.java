@@ -45,8 +45,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AnnotationUtils
 {
 
-    private static Map<Class, Annotation> clazzAnnotationCache = new ConcurrentHashMap<>();
-    private static Set<Class> clazzAnnotationMissCache = new ConcurrentHashSet<>();
+    private static Map<Class<?>, Annotation> clazzAnnotationCache = new ConcurrentHashMap<>();
+    private static Set<Class<?>> clazzAnnotationMissCache = new ConcurrentHashSet<>();
 
     private static Map<Method, Annotation> methodAnnotationCache = new ConcurrentHashMap<>();
     private static Set<Method> methodAnnotationMissCache = new ConcurrentHashSet<>();
@@ -63,7 +63,7 @@ public class AnnotationUtils
      * @param annotationClass the annotation.
      * @return the annotation or null if not present.
      */
-    public static Annotation getAnnotation(final Class clazz, final Class<? extends Annotation> annotationClass)
+    public static Annotation getAnnotation(final Class<?> clazz, final Class<? extends Annotation> annotationClass)
     {
         if (clazz == null || annotationClass == null)
         {
@@ -163,7 +163,7 @@ public class AnnotationUtils
      * @param annotationClass the annotation.
      * @return if the annotation is present.
      */
-    public static boolean isAnnotationPresent(final Class clazz, final Class<? extends Annotation> annotationClass)
+    public static boolean isAnnotationPresent(final Class<?> clazz, final Class<? extends Annotation> annotationClass)
     {
         return getAnnotation(clazz, annotationClass) != null;
     }
