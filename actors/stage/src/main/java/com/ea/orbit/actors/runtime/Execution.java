@@ -1096,7 +1096,10 @@ public class Execution implements Runtime
 
     public Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
     {
-        if (!verifyActivated(toReference, m)) return Task.done();
+        if (!verifyActivated(toReference, m))
+        {
+            return Task.done();
+        }
 
         if (hookExtensions.size() == 0)
         {
