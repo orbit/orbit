@@ -13,6 +13,7 @@ Currently, the following Dropwizard reporters are supported:
  - Ganglia
  - SLF4J
  
+ 
  Metric Scopes
  ---------------
  
