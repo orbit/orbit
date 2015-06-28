@@ -314,9 +314,7 @@ public class Stage implements Startable
         // * wait pending tasks execution
         // * stop the network
         return execution.stop()
-                .thenRun(clusterPeer::leave).thenRun(() -> {
-                    unregisterMetrics();
-                });
+                .thenRun(clusterPeer::leave).thenRun(this::unregisterMetrics);
     }
 
     /**
@@ -415,6 +413,7 @@ public class Stage implements Startable
         return execution.getState();
     }
 
+    @SuppressWarnings("unchecked")
     private void startMetrics()
     {
         try
@@ -424,7 +423,7 @@ public class Stage implements Startable
             Method initializeMetricsMethod = mmClazz.getDeclaredMethod("initializeMetrics", List.class);
             Method registerExportedMetricsMethod = mmClazz.getDeclaredMethod("registerExportedMetrics", Object.class, String.class);
 
-            Object managerObject = getInstanceMethod.invoke(null, null);
+            Object managerObject = getInstanceMethod.invoke(null);
             initializeMetricsMethod.invoke(managerObject, metricsConfig);
             registerExportedMetricsMethod.invoke(managerObject, execution, execution.runtimeIdentity());
         }
@@ -438,6 +437,7 @@ public class Stage implements Startable
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void unregisterMetrics()
     {
         try
@@ -446,7 +446,7 @@ public class Stage implements Startable
             Method getInstanceMethod = mmClazz.getDeclaredMethod("getInstance");
             Method unregisterExportedMetricsMethod = mmClazz.getDeclaredMethod("unregisterExportedMetrics", Object.class, String.class);
 
-            Object managerObject = getInstanceMethod.invoke(null, null);
+            Object managerObject = getInstanceMethod.invoke(null);
             unregisterExportedMetricsMethod.invoke(managerObject, execution, execution.runtimeIdentity());
         }
         catch (ClassNotFoundException ex)
