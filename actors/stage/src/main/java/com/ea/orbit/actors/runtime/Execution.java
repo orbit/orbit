@@ -689,7 +689,7 @@ public class Execution implements Runtime
 
         if (executor == null)
         {
-            executor = ExecutorUtils.newScalingThreadPool(1000);
+            executor = ExecutorUtils.newScalingThreadPool(64);
         }
         executionSerializer = new ExecutionSerializer<>(executor);
 

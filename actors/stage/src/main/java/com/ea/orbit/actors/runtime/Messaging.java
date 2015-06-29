@@ -156,7 +156,7 @@ public class Messaging implements Startable
     {
         if (executor == null)
         {
-            executor = ExecutorUtils.newScalingThreadPool(1000);
+            executor = ExecutorUtils.newScalingThreadPool(64);
         }
         clusterPeer.registerMessageReceiver((from, buff) -> executor.execute(() -> onMessageReceived(from, buff)));
         //timeoutCleanup()

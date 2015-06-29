@@ -34,6 +34,7 @@ import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
+import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.metrics.config.ReporterConfig;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Hosting;
@@ -73,6 +74,9 @@ public class Stage implements Startable
 
     @Config("orbit.actors.stageMode")
     private StageMode mode = StageMode.HOST;
+
+    @Config("orbit.actors.defaultPoolSize")
+    private int defaultPoolSize = 128;
 
     @Config("orbit.actors.extensions")
     private List<ActorExtension> extensions = new ArrayList<>();
@@ -147,6 +151,16 @@ public class Stage implements Startable
         return messagingPool;
     }
 
+    public int getDefaultPoolSize()
+    {
+        return defaultPoolSize;
+    }
+
+    public void setDefaultPoolSize(int defaultPoolSize)
+    {
+        this.defaultPoolSize = defaultPoolSize;
+    }
+
     public String runtimeIdentity()
     {
         if (execution == null)
@@ -202,6 +216,21 @@ public class Stage implements Startable
         if (nodeName == null || nodeName.isEmpty())
         {
             setNodeName(getClusterName());
+        }
+
+        if(executionPool == null || messagingPool == null)
+        {
+            final ExecutorService newService = ExecutorUtils.newScalingThreadPool(defaultPoolSize);
+
+            if(executionPool == null)
+            {
+                executionPool = newService;
+            }
+
+            if(messagingPool == null)
+            {
+                messagingPool = newService;
+            }
         }
 
         if (hosting == null)
