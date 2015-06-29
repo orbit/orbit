@@ -75,8 +75,8 @@ public class Stage implements Startable
     @Config("orbit.actors.stageMode")
     private StageMode mode = StageMode.HOST;
 
-    @Config("orbit.actors.defaultPoolSize")
-    private int defaultPoolSize = 128;
+    @Config("orbit.actors.executionPoolSize")
+    private int executionPoolSize = 128;
 
     @Config("orbit.actors.extensions")
     private List<ActorExtension> extensions = new ArrayList<>();
@@ -151,14 +151,14 @@ public class Stage implements Startable
         return messagingPool;
     }
 
-    public int getDefaultPoolSize()
+    public int getExecutionPoolSize()
     {
-        return defaultPoolSize;
+        return executionPoolSize;
     }
 
-    public void setDefaultPoolSize(int defaultPoolSize)
+    public void setExecutionPoolSize(int defaultPoolSize)
     {
-        this.defaultPoolSize = defaultPoolSize;
+        this.executionPoolSize = defaultPoolSize;
     }
 
     public String runtimeIdentity()
@@ -220,7 +220,7 @@ public class Stage implements Startable
 
         if(executionPool == null || messagingPool == null)
         {
-            final ExecutorService newService = ExecutorUtils.newScalingThreadPool(defaultPoolSize);
+            final ExecutorService newService = ExecutorUtils.newScalingThreadPool(executionPoolSize);
 
             if(executionPool == null)
             {
