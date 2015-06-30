@@ -26,19 +26,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.samples.annotation.examples;
+package com.ea.orbit.actors.runtime.cloner;
 
-import com.ea.orbit.actors.Actor;
-import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.samples.annotation.memoize.Memoize;
-
-import java.util.concurrent.TimeUnit;
-
-public interface MemoizeExample extends Actor
+/**
+ * Used by Execution to clone objects
+ */
+public interface ExecutionObjectCloner
 {
-
-    @Memoize(time = 5, unit = TimeUnit.SECONDS)
-    Task<Long> getNow(String greeting);
-
+    <T> T clone(final T obj);
 }
-

@@ -40,6 +40,8 @@ import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.InvocationContext;
+import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
+import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.annotation.OnlyIfActivated;
 import com.ea.orbit.metrics.annotations.ExportMetric;
 import com.ea.orbit.metrics.annotations.MetricScope;
@@ -53,21 +55,15 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.MapMaker;
 
+import javax.xml.bind.DatatypeConverter;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -114,6 +110,9 @@ public class Execution implements Runtime
     private List<InvokeHookExtension> hookExtensions;
 
     private NodeCapabilities.NodeState state = NodeCapabilities.NodeState.RUNNING;
+
+    private ExecutionCacheManager cacheManager = new ExecutionCacheManager();
+    private ExecutionObjectCloner objectCloner;
 
     public Execution()
     {
@@ -165,6 +164,16 @@ public class Execution implements Runtime
     public void registerFactory(ActorFactory<?> factory)
     {
         // TODO: will enable caching the reference factory
+    }
+
+    public ExecutionCacheManager getCacheManager()
+    {
+        return cacheManager;
+    }
+
+    public void setObjectCloner(ExecutionObjectCloner objectCloner)
+    {
+        this.objectCloner = objectCloner;
     }
 
     private static class InterfaceDescriptor
@@ -1097,6 +1106,55 @@ public class Execution implements Runtime
     {
         if (!verifyActivated(toReference, m)) return Task.done();
 
+        if (m.isAnnotationPresent(CacheResponse.class))
+        {
+            return cacheResponseInvoke(toReference, m, oneWay, methodId, params);
+        }
+
+        return invokeInternal(toReference, m, oneWay, methodId, params);
+    }
+
+    private Task<?> cacheResponseInvoke(Addressable toReference, Method method, boolean oneWay, int methodId, Object[] params)
+    {
+        ActorReference<?> actorReference = (ActorReference<?>) toReference;
+        String key = generateCacheManagerKey(actorReference, params);
+
+        Task cached = cacheManager.get(toReference, method, key);
+        if (cached == null
+                || cached.isCompletedExceptionally()
+                || cached.isCancelled())
+        {
+            cached = invokeInternal(toReference, method, oneWay, methodId, params);
+            cacheManager.put(toReference, method, key, cached);
+        }
+
+        return cached.thenApply(value -> objectCloner.clone(value));
+    }
+
+    private String generateCacheManagerKey(ActorReference<?> actorReference, Object[] params)
+    {
+        try
+        {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(bos);
+
+            out.writeObject(actorReference.id);
+            for(Object param : params)
+            {
+                out.writeObject(param);
+            }
+
+            out.close();
+
+            return DatatypeConverter.printHexBinary(bos.toByteArray());
+        } catch (IOException e)
+        {
+            throw new UncheckedException("Unable to make CacheManager key", e);
+        }
+    }
+
+    private Task<?> invokeInternal(Addressable toReference, Method m, final boolean oneWay, int methodId, Object[] params)
+    {
         if (hookExtensions.size() == 0)
         {
             // no hooks
@@ -1127,7 +1185,6 @@ public class Execution implements Runtime
         };
 
         return ctx.invokeNext(toReference, m, methodId, params);
-
     }
 
     public Task<?> activationCleanup()

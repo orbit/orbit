@@ -40,6 +40,47 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <name>Orbit Actors Stage</name>
     <artifactId>orbit-actors-stage</artifactId>
 
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.esotericsoftware:*</include>
+                                    <include>org.objenesis:*</include>
+                                    <include>org.ow2.asm:asm</include>
+                                </includes>
+                            </artifactSet>
+                            <keepDependenciesWithProvidedScope>true</keepDependenciesWithProvidedScope>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.esotericsoftware.</pattern>
+                                    <shadedPattern>com.ea.orbit.actors.stage.shaded.com.esotericsoftware.</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.objenesis.</pattern>
+                                    <shadedPattern>com.ea.orbit.actors.stage.shaded.org.objenesis.</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.objectweb.</pattern>
+                                    <shadedPattern>com.ea.orbit.actors.stage.shaded.org.objectweb.</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
     <dependencies>
         <dependency>
             <groupId>com.ea.orbit</groupId>
@@ -76,6 +117,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <artifactId>orbit-metrics</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>3.0.2</version>
         </dependency>
     </dependencies>
 </project>

@@ -42,6 +42,8 @@ import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.cloner.KryoCloner;
+import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
@@ -102,6 +104,7 @@ public class Stage implements Startable
     private Clock clock;
     private ExecutorService executionPool;
     private ExecutorService messagingPool;
+    private ExecutionObjectCloner objectCloner;
 
     static
     {
@@ -159,6 +162,16 @@ public class Stage implements Startable
     public void setExecutionPoolSize(int defaultPoolSize)
     {
         this.executionPoolSize = defaultPoolSize;
+    }
+
+    public ExecutionObjectCloner getObjectCloner()
+    {
+        return objectCloner;
+    }
+
+    public void setObjectCloner(ExecutionObjectCloner objectCloner)
+    {
+        this.objectCloner = objectCloner;
     }
 
     public String runtimeIdentity()
@@ -253,6 +266,10 @@ public class Stage implements Startable
         {
             clock = Clock.systemUTC();
         }
+        if (objectCloner == null)
+        {
+            objectCloner = new KryoCloner();
+        }
 
         this.configureOrbitContainer();
 
@@ -261,6 +278,7 @@ public class Stage implements Startable
         execution.setHosting(hosting);
         execution.setMessaging(messaging);
         execution.setExecutor(executionPool);
+        execution.setObjectCloner(objectCloner);
 
         messaging.setExecution(execution);
         messaging.setClock(clock);

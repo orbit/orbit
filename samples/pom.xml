@@ -46,8 +46,7 @@
         <module>chat</module>
         <module>hello</module>
         <module>async</module>
-		<module>annotation</module>
-		<module>trace</module>
+        <module>trace</module>
     </modules>
 
     <profiles>
