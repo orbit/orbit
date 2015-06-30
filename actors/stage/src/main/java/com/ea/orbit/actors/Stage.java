@@ -97,7 +97,6 @@ public class Stage implements Startable
     }
 
     private ClusterPeer clusterPeer;
-    private Task<?> startFuture;
     private Messaging messaging;
     private Execution execution = new Execution();
     private Hosting hosting;
@@ -159,7 +158,7 @@ public class Stage implements Startable
         return executionPoolSize;
     }
 
-    public void setExecutionPoolSize(int defaultPoolSize)
+    public void setExecutionPoolSize(final int defaultPoolSize)
     {
         this.executionPoolSize = defaultPoolSize;
     }
@@ -169,7 +168,7 @@ public class Stage implements Startable
         return messagingPoolSize;
     }
 
-    public void setMessagingPoolSize(int messagingPoolSize)
+    public void setMessagingPoolSize(final int messagingPoolSize)
     {
         this.messagingPoolSize = messagingPoolSize;
     }
@@ -291,12 +290,11 @@ public class Stage implements Startable
         {
             future = future.thenRun(() -> Actor.getReference(ReminderController.class, "0").ensureStart());
         }
-        startFuture = future;
 
-        startFuture.join();
+        future.join();
         bind();
 
-        return startFuture;
+        return future;
     }
 
     private void configureOrbitContainer()
