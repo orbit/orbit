@@ -33,7 +33,7 @@ import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-public class ImmutableObjectSerializer<T> extends Serializer
+class ImmutableObjectSerializer<T> extends Serializer
 {
     public ImmutableObjectSerializer()
     {
