@@ -29,46 +29,27 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.ea.orbit</groupId>
-        <artifactId>orbit-parent</artifactId>
+        <artifactId>orbit-actors-parent</artifactId>
         <version>0.3.2-SNAPSHOT</version>
-        <relativePath>..</relativePath>
+        <relativePath>../..</relativePath>
     </parent>
-    <artifactId>orbit-actors-parent</artifactId>
-    <packaging>pom</packaging>
-    <name>Orbit Actors</name>
+    <modelVersion>4.0.0</modelVersion>
 
-    <modules>
-        <module>core</module>
-        <module>stage</module>
-        <module>client</module>
-        <module>server</module>
-        <module>extensions/jpa</module>
-        <module>extensions/json</module>
-        <module>extensions/mongodb</module>
-        <module>extensions/redis</module>
-		<module>extensions/ldap</module>
-        <module>extensions/postgresql</module>
-        <module>extensions/spring</module>
-        <module>extensions/memcached</module>
-        <module>extensions/metrics</module>
-        <module>test/actor-tests</module>
-        <module>actors-all</module>
-    </modules>
+    <name>Orbit Actors Extension: Metrics Support</name>
+    <artifactId>orbit-actors-metrics</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-commons</artifactId>
+            <artifactId>orbit-actors-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-container</artifactId>
+            <artifactId>orbit-metrics</artifactId>
             <version>${project.version}</version>
-            <optional>true</optional>
         </dependency>
     </dependencies>
 

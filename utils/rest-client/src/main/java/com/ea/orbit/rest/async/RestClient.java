@@ -63,6 +63,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -135,7 +136,10 @@ public class RestClient
     public <T extends RestClient> T setHeaders(MultivaluedMap<String, Object> headers)
     {
         final MultivaluedHashMap<String, Object> newHeaders = new MultivaluedHashMap<>();
-        newHeaders.putAll(headers);
+        for (Map.Entry<String, List<Object>> e : headers.entrySet())
+        {
+            newHeaders.put(e.getKey(), new ArrayList<>(e.getValue()));
+        }
         return newClient(target, newHeaders);
     }
 
@@ -195,15 +199,17 @@ public class RestClient
 
     /**
      * Allows Rest Clients to filter exceptions that may arises from invoked calls.
-     * @param throwable The exception that was encountered
+     *
+     * @param throwable    The exception that was encountered
      * @param <TThrowable> The Throwable type that will be returned
-     * @param <TResult> The actual type returned
+     * @param <TResult>    The actual type returned
      * @return The filtered exception
      * @throws TThrowable
      */
     @SuppressWarnings("unchecked")
-    protected static <TThrowable extends Throwable, TResult> TResult reThrow(Throwable throwable) throws TThrowable {
-        throw (TThrowable)throwable;
+    protected static <TThrowable extends Throwable, TResult> TResult reThrow(Throwable throwable) throws TThrowable
+    {
+        throw (TThrowable) throwable;
     }
 
     protected Object handleInvokeException(Throwable e)
@@ -219,12 +225,12 @@ public class RestClient
 
             if (invokeResult instanceof CompletionStage)
             {
-                return ((CompletionStage)invokeResult).exceptionally(e -> handleInvokeException((Throwable)e));
+                return ((CompletionStage) invokeResult).exceptionally(e -> handleInvokeException((Throwable) e));
             }
 
             return invokeResult;
         }
-        catch (Exception | Error e)
+        catch (Throwable e)
         {
             return handleInvokeException(e);
         }
@@ -243,7 +249,10 @@ public class RestClient
         }
 
         MultivaluedHashMap<String, Object> localHeaders = new MultivaluedHashMap<>();
-        localHeaders.putAll(this.headers);
+        for (Map.Entry<String, List<Object>> e : headers.entrySet())
+        {
+            localHeaders.put(e.getKey(), new ArrayList<>(e.getValue()));
+        }
         localTarget = addPath(localTarget, method);
 
         Object entity = null;
@@ -544,15 +553,16 @@ public class RestClient
 
     /**
      * Builds a new Rest Client with a WebTarget that applies the specified property.
-     * @param propertyName Property to set a value on
+     *
+     * @param propertyName  Property to set a value on
      * @param propertyValue Value to apply
-     * @param <T> Rest Client
+     * @param <T>           Rest Client
      * @return new Rest Client with applied change
      */
     public <T extends RestClient> T property(String propertyName, Object propertyValue)
     {
         return newClient(
-            target.path("").property(propertyName, propertyValue),
-            this.headers);
+                target.path("").property(propertyName, propertyValue),
+                this.headers);
     }
 }

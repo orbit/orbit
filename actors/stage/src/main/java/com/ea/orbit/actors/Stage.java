@@ -34,6 +34,8 @@ import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
+import com.ea.orbit.concurrent.ExecutorUtils;
+import com.ea.orbit.metrics.config.ReporterConfig;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Hosting;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
@@ -53,10 +55,12 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
 
+import java.lang.reflect.Method;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
 @Singleton
@@ -73,8 +77,14 @@ public class Stage implements Startable
     @Config("orbit.actors.stageMode")
     private StageMode mode = StageMode.HOST;
 
+    @Config("orbit.actors.executionPoolSize")
+    private int executionPoolSize = 128;
+
     @Config("orbit.actors.extensions")
     private List<ActorExtension> extensions = new ArrayList<>();
+
+    @Config("orbit.metrics.reporters")
+    private List<ReporterConfig> metricsConfig = new ArrayList<>();
 
     @Wired
     Container container;
@@ -144,6 +154,16 @@ public class Stage implements Startable
         return messagingPool;
     }
 
+    public int getExecutionPoolSize()
+    {
+        return executionPoolSize;
+    }
+
+    public void setExecutionPoolSize(int defaultPoolSize)
+    {
+        this.executionPoolSize = defaultPoolSize;
+    }
+
     public ExecutionObjectCloner getObjectCloner()
     {
         return objectCloner;
@@ -211,6 +231,21 @@ public class Stage implements Startable
             setNodeName(getClusterName());
         }
 
+        if(executionPool == null || messagingPool == null)
+        {
+            final ExecutorService newService = ExecutorUtils.newScalingThreadPool(executionPoolSize);
+
+            if(executionPool == null)
+            {
+                executionPool = newService;
+            }
+
+            if(messagingPool == null)
+            {
+                messagingPool = newService;
+            }
+        }
+
         if (hosting == null)
         {
             hosting = new Hosting();
@@ -259,6 +294,8 @@ public class Stage implements Startable
         hosting.start();
         execution.start();
 
+        startMetrics();
+
         Task<?> future = clusterPeer.join(clusterName, nodeName);
         if (mode == StageMode.HOST)
         {
@@ -299,7 +336,7 @@ public class Stage implements Startable
 
     /**
      * Installs extensions to the stage.
-     * <p/>
+     * <p>
      * Example:
      * <pre>
      * stage.addExtension(new MongoDbProvider(...));
@@ -324,7 +361,7 @@ public class Stage implements Startable
         // * wait pending tasks execution
         // * stop the network
         return execution.stop()
-                .thenRun(clusterPeer::leave);
+                .thenRun(clusterPeer::leave).thenRun(this::unregisterMetrics);
     }
 
     /**
@@ -383,15 +420,15 @@ public class Stage implements Startable
     /**
      * Binds this stage to the current thread.
      * This tells ungrounded references to use this stage to call remote methods.
-     * <p/>
+     * <p>
      * An ungrounded reference is a reference created with {@code Actor.getReference} and used outside of an actor method.
-     * <p/>
+     * <p>
      * This is only necessary when there are <i>two or more</i> OrbitStages active in the same virtual machine and
      * remote calls need to be issued from outside an actor.
      * This method was created to help with test cases.
-     * <p/>
+     * <p>
      * A normal application will have a single stage and should have no reason to call this method.
-     * <p/>
+     * <p>
      * This method writes a weak reference to the runtime in a thread local.
      * No cleanup is necessary, so none is available.
      */
@@ -421,5 +458,51 @@ public class Stage implements Startable
     public NodeCapabilities.NodeState getState()
     {
         return execution.getState();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void startMetrics()
+    {
+        try
+        {
+            Class mmClazz = Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
+            Method getInstanceMethod = mmClazz.getDeclaredMethod("getInstance");
+            Method initializeMetricsMethod = mmClazz.getDeclaredMethod("initializeMetrics", List.class);
+            Method registerExportedMetricsMethod = mmClazz.getDeclaredMethod("registerExportedMetrics", Object.class, String.class);
+
+            Object managerObject = getInstanceMethod.invoke(null);
+            initializeMetricsMethod.invoke(managerObject, metricsConfig);
+            registerExportedMetricsMethod.invoke(managerObject, execution, execution.runtimeIdentity());
+        }
+        catch (ClassNotFoundException ex)
+        {
+            //OK. Just means that metrics isn't being used.
+        }
+        catch (Exception ex)
+        {
+            logger.error("Unexpected error while initializing Orbit Metrics: " + ex.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void unregisterMetrics()
+    {
+        try
+        {
+            Class mmClazz = Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
+            Method getInstanceMethod = mmClazz.getDeclaredMethod("getInstance");
+            Method unregisterExportedMetricsMethod = mmClazz.getDeclaredMethod("unregisterExportedMetrics", Object.class, String.class);
+
+            Object managerObject = getInstanceMethod.invoke(null);
+            unregisterExportedMetricsMethod.invoke(managerObject, execution, execution.runtimeIdentity());
+        }
+        catch (ClassNotFoundException ex)
+        {
+            //OK. Just means that metrics isn't being used.
+        }
+        catch (Exception ex)
+        {
+            logger.error("Unexpected error while unregistering execution metrics: " + ex.getMessage());
+        }
     }
 }
