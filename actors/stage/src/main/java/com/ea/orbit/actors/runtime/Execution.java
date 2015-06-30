@@ -40,6 +40,7 @@ import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.InvocationContext;
+import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.annotation.OnlyIfActivated;
 import com.ea.orbit.concurrent.ExecutorUtils;
@@ -60,17 +61,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,7 +74,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Execution implements Runtime
 {
@@ -120,6 +110,7 @@ public class Execution implements Runtime
     private NodeCapabilities.NodeState state = NodeCapabilities.NodeState.RUNNING;
 
     private ExecutionCacheManager cacheManager = new ExecutionCacheManager();
+    private ExecutionObjectCloner objectCloner;
 
     public Execution()
     {
@@ -176,6 +167,11 @@ public class Execution implements Runtime
     public ExecutionCacheManager getCacheManager()
     {
         return cacheManager;
+    }
+
+    public void setObjectCloner(ExecutionObjectCloner objectCloner)
+    {
+        this.objectCloner = objectCloner;
     }
 
     private static class InterfaceDescriptor
@@ -1122,15 +1118,15 @@ public class Execution implements Runtime
         String key = generateCacheManagerKey(actorReference, params);
 
         Task cached = cacheManager.get(toReference, method, key);
-        if (cached == null)
+        if (cached == null
+                || cached.isCompletedExceptionally()
+                || cached.isCancelled())
         {
-            return invokeInternal(toReference, method, oneWay, methodId, params).thenApply((Object r) -> {
-                cacheManager.put(toReference, method, key, Task.fromValue(r));
-                return r;
-            });
+            cached = invokeInternal(toReference, method, oneWay, methodId, params);
+            cacheManager.put(toReference, method, key, cached);
         }
 
-        return cached;
+        return cached.thenApply(value -> objectCloner.clone(value));
     }
 
     private String generateCacheManagerKey(ActorReference<?> actorReference, Object[] params)

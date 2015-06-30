@@ -26,31 +26,65 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.test.actors;
+package com.ea.orbit.actors.test.dto;
 
-import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.test.dto.TestDto1;
-import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.actors.test.actors.CacheResponse;
 
-import java.util.concurrent.TimeUnit;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
-public interface CacheResponse extends Actor
+public class TestDto1 implements Serializable
 {
-    static public final int INDEX_TALLY_DURATION_MILLIS = 100;
+    private TestDto2 dto2;
+    private int sampleInt;
+    private UUID id;
+    private CacheResponse sampleActor;
+    private List<Integer> sampleIntList = new ArrayList<>();
 
-    @com.ea.orbit.annotation.CacheResponse(maxEntries = 100, ttlDuration = 5, ttlUnit = TimeUnit.SECONDS)
-    Task<Long> getNow(String greeting);
+    public TestDto1()
+    {
+        id = UUID.randomUUID();
+    }
 
-    /**
-     * Used to test CacheResponse Time to Live.
-     * Returns a count of the number of times an id was accessed.
-     */
-    @com.ea.orbit.annotation.CacheResponse(maxEntries = 1000, ttlDuration = INDEX_TALLY_DURATION_MILLIS, ttlUnit = TimeUnit.MILLISECONDS)
-    Task<Long> getIndexTally(int id);
+    public TestDto2 getDto2()
+    {
+        return dto2;
+    }
 
-    Task<Void> setDto1(TestDto1 dto1);
+    public void setDto2(TestDto2 dto2)
+    {
+        this.dto2 = dto2;
+    }
 
-    @com.ea.orbit.annotation.CacheResponse(maxEntries = 100, ttlDuration = 5, ttlUnit = TimeUnit.SECONDS)
-    Task<TestDto1> getDto1();
+    public int getSampleInt()
+    {
+        return sampleInt;
+    }
+
+    public void setSampleInt(int sampleInt)
+    {
+        this.sampleInt = sampleInt;
+    }
+
+    public UUID getId()
+    {
+        return id;
+    }
+
+    public CacheResponse getSampleActor()
+    {
+        return sampleActor;
+    }
+
+    public void setSampleActor(CacheResponse sampleActor)
+    {
+        this.sampleActor = sampleActor;
+    }
+
+    public List<Integer> getSampleIntList()
+    {
+        return sampleIntList;
+    }
 }
-

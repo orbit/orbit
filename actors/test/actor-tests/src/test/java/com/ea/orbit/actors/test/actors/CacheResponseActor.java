@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test.actors;
 
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.test.dto.TestDto1;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.HashMap;
@@ -38,7 +39,8 @@ import java.util.Map;
 public class CacheResponseActor extends AbstractActor implements CacheResponse
 {
     public static int accessCount = 0;
-    Map<Integer, Long> indexTally = new HashMap<>();
+    private Map<Integer, Long> indexTally = new HashMap<>();
+    private TestDto1 m_dto1;
 
     public Task<Long> getNow(String greeting)
     {
@@ -52,4 +54,16 @@ public class CacheResponseActor extends AbstractActor implements CacheResponse
         indexTally.put(id, tally);
         return Task.fromValue(tally);
     }
+
+    public Task<Void> setDto1(TestDto1 dto1)
+    {
+        m_dto1 = dto1;
+        return Task.done();
+    }
+
+    public Task<TestDto1> getDto1()
+    {
+        return Task.fromValue(m_dto1);
+    }
+
 }

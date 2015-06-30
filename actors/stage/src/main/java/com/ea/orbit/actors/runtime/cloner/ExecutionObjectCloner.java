@@ -26,31 +26,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.test.actors;
+package com.ea.orbit.actors.runtime.cloner;
 
-import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.test.dto.TestDto1;
-import com.ea.orbit.concurrent.Task;
-
-import java.util.concurrent.TimeUnit;
-
-public interface CacheResponse extends Actor
+/**
+ * Used by Execution to clone objects
+ */
+public interface ExecutionObjectCloner
 {
-    static public final int INDEX_TALLY_DURATION_MILLIS = 100;
-
-    @com.ea.orbit.annotation.CacheResponse(maxEntries = 100, ttlDuration = 5, ttlUnit = TimeUnit.SECONDS)
-    Task<Long> getNow(String greeting);
-
-    /**
-     * Used to test CacheResponse Time to Live.
-     * Returns a count of the number of times an id was accessed.
-     */
-    @com.ea.orbit.annotation.CacheResponse(maxEntries = 1000, ttlDuration = INDEX_TALLY_DURATION_MILLIS, ttlUnit = TimeUnit.MILLISECONDS)
-    Task<Long> getIndexTally(int id);
-
-    Task<Void> setDto1(TestDto1 dto1);
-
-    @com.ea.orbit.annotation.CacheResponse(maxEntries = 100, ttlDuration = 5, ttlUnit = TimeUnit.SECONDS)
-    Task<TestDto1> getDto1();
+    <T> T clone(final T obj);
 }
-
