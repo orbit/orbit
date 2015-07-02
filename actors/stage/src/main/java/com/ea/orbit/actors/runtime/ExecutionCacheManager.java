@@ -114,8 +114,11 @@ public class ExecutionCacheManager implements ExecutionCacheFlushObserver
     public Task<Void> flush(Actor actor)
     {
         ActorReference actorReference = (ActorReference) actor;
+        Class interfaceClass = ActorReference.getInterfaceClass(actorReference);
 
-        masterCache.asMap().values().stream()
+        masterCache.asMap().entrySet().stream()
+                .filter(e -> interfaceClass.equals(e.getKey().getDeclaringClass()))
+                .map(e -> e.getValue())
                 .forEach(cache -> {
                     List<Pair<Addressable, String>> keys = cache.asMap().keySet().stream()
                             .filter(cacheKey -> cacheKey.getLeft().equals(actorReference))
