@@ -28,24 +28,32 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.tuples.Pair;
 import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import java.lang.reflect.Method;
+import java.util.List;
+import java.util.stream.Collectors;
 
-public class ExecutionCacheManager
+public class ExecutionCacheManager implements ExecutionCacheFlushObserver
 {
     static private Ticker DefaultCacheTicker = null;
 
     /**
      * masterCache is a mapping of caches for each CacheResponse annotated method.
      * The individual caches are defined with a maximum item size and TTL based on the annotation.
+     * Key: The method being called (actor agnostic)
+     * Value: a cache
+     *      Key: Pairing of the Actor address, and a hash of the parameters being passed into the method
+     *      Value: The method result corresponding with the actor's call to the method with provided parameters
      */
-    private Cache<String, Cache<String, Task>> masterCache = CacheBuilder.newBuilder().build();
+    private Cache<Method, Cache<Pair<Addressable, String>, Task>> masterCache = CacheBuilder.newBuilder().build();
 
     public static void setDefaultCacheTicker(Ticker defaultCacheTicker)
     {
@@ -60,18 +68,18 @@ public class ExecutionCacheManager
      * Retrieves a cached value for an actor's method.
      * Returns null if there is no cached value.
      */
-    public Task<?> get(Addressable toReference, Method method, String key)
+    public Task<?> get(Method method, Pair<Addressable, String> key)
     {
-        Cache<String, Task> cache = getCache(toReference, method);
+        Cache<Pair<Addressable, String>, Task> cache = getCache(method);
         return cache.getIfPresent(key);
     }
 
     /**
      * Caches a value for an actor's method.
      */
-    public void put(Addressable toReference, Method method, String key, Task<?> value)
+    public void put(Method method, Pair<Addressable, String> key, Task<?> value)
     {
-        Cache<String, Task> cache = getCache(toReference, method);
+        Cache<Pair<Addressable, String>, Task> cache = getCache(method);
         cache.put(key, value);
     }
 
@@ -79,7 +87,7 @@ public class ExecutionCacheManager
      * Retrieves the cache for a CacheResponse-annotated method.
      * One is created if necessary.
      */
-    private Cache<String, Task> getCache(Addressable toReference, Method method)
+    private Cache<Pair<Addressable, String>, Task> getCache(Method method)
     {
         CacheResponse cacheResponse = method.getAnnotation(CacheResponse.class);
         if (cacheResponse == null)
@@ -87,9 +95,7 @@ public class ExecutionCacheManager
             throw new IllegalArgumentException("Passed non-CacheResponse method.");
         }
 
-        String cacheKey = getMasterCacheKey(toReference, method);
-
-        Cache<String, Task> cache = masterCache.getIfPresent(cacheKey);
+        Cache<Pair<Addressable, String>, Task> cache = masterCache.getIfPresent(method);
         if (cache == null)
         {
             cache = CacheBuilder.newBuilder()
@@ -98,14 +104,32 @@ public class ExecutionCacheManager
                     .expireAfterWrite(cacheResponse.ttlDuration(), cacheResponse.ttlUnit())
                     .build();
 
-            masterCache.put(cacheKey, cache);
+            masterCache.put(method, cache);
         }
 
         return cache;
     }
 
-    private String getMasterCacheKey(Addressable toReference, Method method)
+    @Override
+    public Task<Void> flush(Actor actor)
     {
-        return String.format("%s_%s", toReference.getClass().getCanonicalName(), method.getName());
+        ActorReference actorReference = (ActorReference) actor;
+
+        masterCache.asMap().values().stream()
+                .forEach(cache -> {
+                    List<Pair<Addressable, String>> keys = cache.asMap().keySet().stream()
+                            .filter(cacheKey -> cacheKey.getLeft().equals(actorReference))
+                            .collect(Collectors.toList());
+
+                    cache.invalidateAll(keys);
+                });
+
+        return Task.done();
+    }
+
+    @Override
+    public Task<Void> flushWithoutWaiting(Actor actor)
+    {
+        return flush(actor);
     }
 }

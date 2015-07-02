@@ -52,5 +52,7 @@ public interface CacheResponse extends Actor
 
     @com.ea.orbit.annotation.CacheResponse(maxEntries = 100, ttlDuration = 5, ttlUnit = TimeUnit.SECONDS)
     Task<TestDto1> getDto1();
+
+    Task<Void> flush();
 }
 

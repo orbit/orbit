@@ -48,6 +48,7 @@ import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 
 public class CacheResponseTest extends ActorBaseTest
 {
@@ -137,6 +138,68 @@ public class CacheResponseTest extends ActorBaseTest
 
             responses.add(response);
         });
+    }
+
+    @Test
+    public void testCacheFlush()
+    {
+        CacheResponseTestTicker ticker = new CacheResponseTestTicker();
+        ExecutionCacheManager.setDefaultCacheTicker(ticker);
+
+        CacheResponse actor = Actor.getReference(CacheResponse.class, UUID.randomUUID().toString());
+
+        assertEquals((long) 1, (long) actor.getIndexTally(1).join()); // New access
+        assertEquals((long) 1, (long) actor.getIndexTally(1).join()); // Cached access
+
+        actor.flush().join();
+        assertEquals((long) 2, (long) actor.getIndexTally(1).join()); // Not a cached access
+    }
+
+    @Test
+    public void testCacheFlushWithMultipleActors()
+    {
+        CacheResponse actor1 = Actor.getReference(CacheResponse.class, UUID.randomUUID().toString());
+        CacheResponse actor2 = Actor.getReference(CacheResponse.class, UUID.randomUUID().toString());
+        final String greetingValue = "hi";
+
+        // Setup: get two actors, caching a different value for the same input
+        Long a1Time1 = actor1.getNow(greetingValue).join();
+        sleep(10);
+        Long a2Time1 = actor2.getNow(greetingValue).join();
+
+        assertNotEquals(a1Time1, a2Time1);
+
+        // Test: flush one actor, verify that flushed actor is not cached, and non-flushed actor is cached
+        actor1.flush().join();
+        Long a1Time2 = actor1.getNow(greetingValue).join();
+        Long a2Time1Cached = actor2.getNow(greetingValue).join();
+
+        assertNotEquals(a1Time1, a1Time2); // flushed actor is not cached
+        assertEquals(a2Time1, a2Time1Cached); // nonflushed actor is still cached
+    }
+
+    @Test
+    public void testCacheFlushWithMultipleInputs()
+    {
+        CacheResponse actor1 = Actor.getReference(CacheResponse.class, UUID.randomUUID().toString());
+        final String greetingValue1 = "hi1";
+        final String greetingValue2 = "hi2";
+
+        // Setup: cache values for two different inputs
+        Long input1Time1 = actor1.getNow(greetingValue1).join();
+        sleep(10);
+        Long input2Time1 = actor1.getNow(greetingValue2).join();
+
+        assertNotEquals(input1Time1, input2Time1);
+
+        // Test: flush the actor, verify that neither input was cached
+        actor1.flush().join();
+        Long input1Time2 = actor1.getNow(greetingValue1).join();
+        sleep(10);
+        Long input2Time2 = actor1.getNow(greetingValue2).join();
+
+        assertNotEquals(input1Time1, input1Time2);
+        assertNotEquals(input2Time1, input2Time2);
     }
 
     public static void sleep(long millis)

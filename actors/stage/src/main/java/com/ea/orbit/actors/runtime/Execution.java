@@ -49,19 +49,20 @@ import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
+import com.ea.orbit.tuples.Pair;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.MapMaker;
 
-import javax.xml.bind.DatatypeConverter;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
 import java.time.Clock;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -174,6 +175,14 @@ public class Execution implements Runtime
     public void setObjectCloner(ExecutionObjectCloner objectCloner)
     {
         this.objectCloner = objectCloner;
+    }
+
+    private static class NullOutputStream extends OutputStream
+    {
+        @Override
+        public void write(int b) throws IOException
+        {
+        }
     }
 
     private static class InterfaceDescriptor
@@ -704,6 +713,8 @@ public class Execution implements Runtime
 
         hookExtensions = getAllExtensions(InvokeHookExtension.class);
 
+        getObserverReference(ExecutionCacheFlushObserver.class, cacheManager, "");
+
         extensions.forEach(v -> v.start());
         // schedules the cleanup
         timer.schedule(new TimerTask()
@@ -1116,29 +1127,29 @@ public class Execution implements Runtime
 
     private Task<?> cacheResponseInvoke(Addressable toReference, Method method, boolean oneWay, int methodId, Object[] params)
     {
-        ActorReference<?> actorReference = (ActorReference<?>) toReference;
-        String key = generateCacheManagerKey(actorReference, params);
+        String parameterHash = generateParameterHash(params);
+        Pair<Addressable, String> key = Pair.of(toReference, parameterHash);
 
-        Task cached = cacheManager.get(toReference, method, key);
+        Task cached = cacheManager.get(method, key);
         if (cached == null
                 || cached.isCompletedExceptionally()
                 || cached.isCancelled())
         {
             cached = invokeInternal(toReference, method, oneWay, methodId, params);
-            cacheManager.put(toReference, method, key, cached);
+            cacheManager.put(method, key, cached);
         }
 
         return cached.thenApply(value -> objectCloner.clone(value));
     }
 
-    private String generateCacheManagerKey(ActorReference<?> actorReference, Object[] params)
+    private String generateParameterHash(Object[] params)
     {
         try
         {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutputStream out = new ObjectOutputStream(bos);
+            final MessageDigest md = MessageDigest.getInstance("SHA-256");
+            DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
+            ObjectOutput out = messaging.createObjectOutput(d);
 
-            out.writeObject(actorReference.id);
             for(Object param : params)
             {
                 out.writeObject(param);
@@ -1146,10 +1157,10 @@ public class Execution implements Runtime
 
             out.close();
 
-            return DatatypeConverter.printHexBinary(bos.toByteArray());
-        } catch (IOException e)
+            return String.format("%032X", new BigInteger(1, md.digest()));
+        } catch (Exception e)
         {
-            throw new UncheckedException("Unable to make CacheManager key", e);
+            throw new UncheckedException("Unable to make parameter hash", e);
         }
     }
 
