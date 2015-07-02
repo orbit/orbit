@@ -120,6 +120,7 @@ public class ActorBaseTest
         Stage stage = new Stage();
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
+        dr.addSingleton(Stage.class, stage);
         stage.addExtension(new LifetimeExtension()
         {
             @Override

@@ -26,55 +26,16 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.test.actors;
+package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.actors.runtime.ExecutionCacheFlushController;
-import com.ea.orbit.actors.test.dto.TestDto1;
+import com.ea.orbit.actors.*;
+import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.concurrent.Task;
 
-import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
-
-@SuppressWarnings("rawtypes")
-public class CacheResponseActor extends AbstractActor implements CacheResponse
+public interface ExecutionCacheFlushObserver extends com.ea.orbit.actors.ActorObserver
 {
-    @Inject
-    private ExecutionCacheFlushController executionCacheFlusher;
+    Task<Void> flush(Actor actor);
 
-    public static int accessCount = 0;
-    private Map<Integer, Long> indexTally = new HashMap<>();
-    private TestDto1 m_dto1;
-
-    public Task<Long> getNow(String greeting)
-    {
-        accessCount++;
-        return Task.fromValue(System.currentTimeMillis());
-    }
-
-    public Task<Long> getIndexTally(int id)
-    {
-        long tally = indexTally.getOrDefault(id, (long) 0) + 1;
-        indexTally.put(id, tally);
-        return Task.fromValue(tally);
-    }
-
-    public Task<Void> setDto1(TestDto1 dto1)
-    {
-        m_dto1 = dto1;
-        return Task.done();
-    }
-
-    public Task<TestDto1> getDto1()
-    {
-        return Task.fromValue(m_dto1);
-    }
-
-    public Task<Void> flush()
-    {
-        executionCacheFlusher.globalClear(this).join();
-
-        return Task.done();
-    }
+    @OneWay
+    Task<Void> flushWithoutWaiting(Actor actor);
 }

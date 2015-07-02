@@ -286,7 +286,7 @@ public class Messaging implements Startable
         NodeAddress address;
     }
 
-    private ObjectOutput createObjectOutput(final OutputStream outputStream) throws IOException
+    ObjectOutput createObjectOutput(final OutputStream outputStream) throws IOException
     {
         // TODO: move message serialization to a provider (IMessageSerializationProvider)
         // Message(messageId, type, reference, params) and Message(messageId, type, object)
