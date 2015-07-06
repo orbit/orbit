@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 
 public class ExecutionCacheManager implements ExecutionCacheFlushObserver
 {
-    static private Ticker DefaultCacheTicker = null;
+    private static Ticker defaultCacheTicker = null;
 
     /**
      * masterCache is a mapping of caches for each CacheResponse annotated method.
@@ -57,7 +57,7 @@ public class ExecutionCacheManager implements ExecutionCacheFlushObserver
 
     public static void setDefaultCacheTicker(Ticker defaultCacheTicker)
     {
-        DefaultCacheTicker = defaultCacheTicker;
+        ExecutionCacheManager.defaultCacheTicker = defaultCacheTicker;
     }
 
     public ExecutionCacheManager()
@@ -70,8 +70,8 @@ public class ExecutionCacheManager implements ExecutionCacheFlushObserver
      */
     public Task<?> get(Method method, Pair<Addressable, String> key)
     {
-        Cache<Pair<Addressable, String>, Task> cache = getCache(method);
-        return cache.getIfPresent(key);
+        Cache<Pair<Addressable, String>, Task> cache = getIfPresent(method);
+        return cache != null ? cache.getIfPresent(key) : null;
     }
 
     /**
@@ -81,6 +81,17 @@ public class ExecutionCacheManager implements ExecutionCacheFlushObserver
     {
         Cache<Pair<Addressable, String>, Task> cache = getCache(method);
         cache.put(key, value);
+    }
+
+    private Cache<Pair<Addressable, String>, Task> getIfPresent(Method method)
+    {
+        CacheResponse cacheResponse = method.getAnnotation(CacheResponse.class);
+        if (cacheResponse == null)
+        {
+            throw new IllegalArgumentException("Passed non-CacheResponse method.");
+        }
+
+        return masterCache.getIfPresent(method);
     }
 
     /**
@@ -99,7 +110,7 @@ public class ExecutionCacheManager implements ExecutionCacheFlushObserver
         if (cache == null)
         {
             cache = CacheBuilder.newBuilder()
-                    .ticker(DefaultCacheTicker == null ? Ticker.systemTicker() : DefaultCacheTicker)
+                    .ticker(defaultCacheTicker == null ? Ticker.systemTicker() : defaultCacheTicker)
                     .maximumSize(cacheResponse.maxEntries())
                     .expireAfterWrite(cacheResponse.ttlDuration(), cacheResponse.ttlUnit())
                     .build();
