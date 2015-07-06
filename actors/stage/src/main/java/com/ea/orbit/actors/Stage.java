@@ -502,7 +502,7 @@ public class Stage implements Startable
         }
         catch (Exception ex)
         {
-            logger.error("Unexpected error while unregistering execution metrics: " + ex.getMessage());
+            logger.error("Unexpected error while un-registering execution metrics: " + ex.getMessage());
         }
     }
 }
