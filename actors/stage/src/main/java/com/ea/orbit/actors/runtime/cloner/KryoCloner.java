@@ -36,11 +36,12 @@ import com.esotericsoftware.kryo.serializers.MapSerializer;
 import java.util.*;
 
 /**
- * Kyro based object cloning implementation
+ * Kyro based object cloning implementation.
  */
 public class KryoCloner implements ExecutionObjectCloner
 {
-    private Kryo kryo;
+    // Kryo is not thread-safe.
+    private final Kryo kryo;
 
     public KryoCloner()
     {
@@ -56,18 +57,17 @@ public class KryoCloner implements ExecutionObjectCloner
         // exception.
         kryo.addDefaultSerializer(Collection.class, new CollectionSerializer()
         {
-            final List uList = Collections.unmodifiableList(new ArrayList());
-            final Set uSet = Collections.unmodifiableSet(new HashSet());
-            final List aList = Arrays.asList("");
+            final List unmodifiableList = Collections.unmodifiableList(new ArrayList());
+            final Set unmodifiableSet = Collections.unmodifiableSet(new HashSet());
 
             @Override
             protected Collection createCopy(Kryo kryo, Collection original)
             {
-                if (original.getClass() == uList.getClass() || original.getClass() == aList.getClass())
+                if (original.getClass() == unmodifiableList.getClass() || original.getClass() == ArrayList.class)
                 {
                     return new ArrayList();
                 }
-                if (original.getClass() == uSet.getClass())
+                if (original.getClass() == unmodifiableSet.getClass())
                 {
                     return new LinkedHashSet();
                 }
@@ -76,12 +76,12 @@ public class KryoCloner implements ExecutionObjectCloner
         });
         kryo.addDefaultSerializer(Map.class, new MapSerializer()
         {
-            final Map uMap = Collections.unmodifiableMap(new HashMap());
+            final Map unmodifiableMap = Collections.unmodifiableMap(new HashMap());
 
             @Override
             protected Map createCopy(Kryo kryo, Map original)
             {
-                if (original.getClass() == uMap.getClass())
+                if (original.getClass() == unmodifiableMap.getClass())
                 {
                     return new LinkedHashMap<>();
                 }
@@ -98,12 +98,15 @@ public class KryoCloner implements ExecutionObjectCloner
     {
         if (obj != null)
         {
-            try
+            synchronized (kryo)
             {
-                return kryo.copy(obj);
-            } finally
-            {
-                kryo.reset();
+                try
+                {
+                    return kryo.copy(obj);
+                } finally
+                {
+                    kryo.reset();
+                }
             }
         }
         return null;
