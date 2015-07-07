@@ -33,7 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <parent>
         <groupId>com.ea.orbit</groupId>
         <artifactId>orbit-parent</artifactId>
-        <version>0.4.1</version>
+        <version>0.4.2-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>orbit-async</artifactId>
