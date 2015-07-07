@@ -36,19 +36,19 @@ import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.annotation.StorageExtension;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.ActorClassFinder;
-import com.ea.orbit.actors.extensions.InvokeHookExtension;
-import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.InvocationContext;
+import com.ea.orbit.actors.extensions.InvokeHookExtension;
+import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.annotation.OnlyIfActivated;
-import com.ea.orbit.metrics.annotations.ExportMetric;
-import com.ea.orbit.metrics.annotations.MetricScope;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
+import com.ea.orbit.metrics.annotations.ExportMetric;
+import com.ea.orbit.metrics.annotations.MetricScope;
 import com.ea.orbit.tuples.Pair;
 
 import org.slf4j.Logger;
@@ -56,7 +56,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.MapMaker;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectOutput;
+import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
@@ -64,7 +66,17 @@ import java.nio.ByteBuffer;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.time.Clock;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -120,10 +132,14 @@ public class Execution implements Runtime
         // the last runtime created will be the default.
         ActorRuntime.runtimeCreated(cachedRef);
 
+        runtimeIdentity = generateRuntimeIdentity();
+    }
+
+    private String generateRuntimeIdentity() {
         final UUID uuid = UUID.randomUUID();
         final String encoded = Base64.getEncoder().encodeToString(
                 ByteBuffer.allocate(16).putLong(uuid.getMostSignificantBits()).putLong(uuid.getLeastSignificantBits()).array());
-        runtimeIdentity = "Orbit[" + encoded.substring(0, encoded.length() - 2) + "]";
+        return "Orbit[" + encoded.substring(0, encoded.length() - 2) + "]";
     }
 
     public void setClock(final Clock clock)
@@ -652,7 +668,7 @@ public class Execution implements Runtime
             }
         };
         timer.schedule(timerTask, timeUnit.toMillis(dueTime), timeUnit.toMillis(period));
-        return () -> timerTask.cancel();
+        return timerTask::cancel;
     }
 
     public void bind()
@@ -715,7 +731,7 @@ public class Execution implements Runtime
 
         getObserverReference(ExecutionCacheFlushObserver.class, cacheManager, "");
 
-        extensions.forEach(v -> v.start());
+        extensions.forEach(Startable::start);
         // schedules the cleanup
         timer.schedule(new TimerTask()
         {
@@ -1115,7 +1131,10 @@ public class Execution implements Runtime
 
     public Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
     {
-        if (!verifyActivated(toReference, m)) return Task.done();
+        if (!verifyActivated(toReference, m))
+        {
+            return Task.done();
+        }
 
         if (m.isAnnotationPresent(CacheResponse.class))
         {
@@ -1130,7 +1149,7 @@ public class Execution implements Runtime
         String parameterHash = generateParameterHash(params);
         Pair<Addressable, String> key = Pair.of(toReference, parameterHash);
 
-        Task cached = cacheManager.get(method, key);
+        Task<?> cached = cacheManager.get(method, key);
         if (cached == null
                 || cached.isCompletedExceptionally()
                 || cached.isCancelled())
@@ -1139,7 +1158,7 @@ public class Execution implements Runtime
             cacheManager.put(method, key, cached);
         }
 
-        return cached.thenApply(value -> objectCloner.clone(value));
+        return cached.thenApply(objectCloner::clone);
     }
 
     private String generateParameterHash(Object[] params)

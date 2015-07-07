@@ -45,35 +45,35 @@ public class CacheResponseActor extends AbstractActor implements CacheResponse
 
     public static int accessCount = 0;
     private Map<Integer, Long> indexTally = new HashMap<>();
-    private TestDto1 m_dto1;
+    private TestDto1 testDto1;
 
     public Task<Long> getNow(String greeting)
     {
         accessCount++;
-        return Task.fromValue(System.currentTimeMillis());
+        return Task.fromValue(System.nanoTime());
     }
 
     public Task<Long> getIndexTally(int id)
     {
-        long tally = indexTally.getOrDefault(id, (long) 0) + 1;
-        indexTally.put(id, tally);
+        long tally = indexTally.getOrDefault(id, (long) 0);
+        indexTally.put(id, ++tally);
         return Task.fromValue(tally);
     }
 
     public Task<Void> setDto1(TestDto1 dto1)
     {
-        m_dto1 = dto1;
+        testDto1 = dto1;
         return Task.done();
     }
 
     public Task<TestDto1> getDto1()
     {
-        return Task.fromValue(m_dto1);
+        return Task.fromValue(testDto1);
     }
 
     public Task<Void> flush()
     {
-        executionCacheFlusher.globalClear(this).join();
+        executionCacheFlusher.flushAll(this).join();
 
         return Task.done();
     }

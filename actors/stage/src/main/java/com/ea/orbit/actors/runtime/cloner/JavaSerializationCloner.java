@@ -31,7 +31,7 @@ package com.ea.orbit.actors.runtime.cloner;
 import java.io.*;
 
 /**
- * Java Serialization based object cloning implementation
+ * Java serialization based object cloning implementation.
  */
 public class JavaSerializationCloner implements ExecutionObjectCloner
 {
@@ -50,10 +50,7 @@ public class JavaSerializationCloner implements ExecutionObjectCloner
             ObjectInputStream inputStream = new ObjectInputStream(byteArrayInputStream);
 
             return (T) inputStream.readObject();
-        } catch (IOException e)
-        {
-            throw new IllegalArgumentException(e);
-        } catch (ClassNotFoundException e)
+        } catch (IOException | ClassNotFoundException e)
         {
             throw new IllegalArgumentException(e);
         }

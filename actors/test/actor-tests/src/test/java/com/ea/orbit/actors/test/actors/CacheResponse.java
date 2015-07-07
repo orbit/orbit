@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 public interface CacheResponse extends Actor
 {
-    static public final int INDEX_TALLY_DURATION_MILLIS = 100;
+    int INDEX_TALLY_DURATION_MILLIS = 100;
 
     @com.ea.orbit.annotation.CacheResponse(maxEntries = 100, ttlDuration = 5, ttlUnit = TimeUnit.SECONDS)
     Task<Long> getNow(String greeting);
