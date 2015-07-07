@@ -129,6 +129,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <url>http://www.ea.com</url>
         </developer>
     </developers>
+	
+    <organization>
+        <name>Electronic Arts Inc</name>
+        <url>http://www.ea.com</url>
+    </organization>
 
     <scm>
         <url>https://github.com/electronicarts/orbit</url>
