@@ -35,8 +35,8 @@ import com.ea.orbit.concurrent.Task;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.List;
-import java.util.stream.Stream;
 
 @Singleton
 public class ExecutionCacheFlushController
@@ -44,7 +44,7 @@ public class ExecutionCacheFlushController
     @Inject
     private Stage stage;
 
-    public Task<List<Task<Void>>> globalClear(Actor actor)
+    public Task<List<Task<Void>>> flushAll(Actor actor)
     {
         final List<NodeAddress> nodes = stage.getAllNodes();
 

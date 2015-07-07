@@ -53,7 +53,7 @@ import static org.junit.Assert.assertNotEquals;
 public class CacheResponseTest extends ActorBaseTest
 {
     /**
-     * A Ticker that does not progress time unless called with advanceMillis
+     * A Ticker which does not progress time unless called with advanceMillis
      */
     private class CacheResponseTestTicker extends Ticker
     {
@@ -112,7 +112,6 @@ public class CacheResponseTest extends ActorBaseTest
         // Test -- verify that actors do not cache each other
         Set<Long> responses = new HashSet<>();
         actors.forEach(actor -> {
-            sleep(10);
             long response = actor.getNow("greeting").join();
 
             assertEquals(responses.size() + 1, CacheResponseActor.accessCount);
@@ -130,7 +129,6 @@ public class CacheResponseTest extends ActorBaseTest
         // Verify that different inputs are separately cached
         Set<Long> responses = new HashSet<>();
         IntStream.range(0, 10).forEach(i -> {
-            sleep(10);
             long response = actor.getNow(String.valueOf(i)).join();
 
             assertEquals(i + 1, CacheResponseActor.accessCount);
@@ -164,7 +162,6 @@ public class CacheResponseTest extends ActorBaseTest
 
         // Setup: get two actors, caching a different value for the same input
         Long a1Time1 = actor1.getNow(greetingValue).join();
-        sleep(10);
         Long a2Time1 = actor2.getNow(greetingValue).join();
 
         assertNotEquals(a1Time1, a2Time1);
@@ -187,7 +184,6 @@ public class CacheResponseTest extends ActorBaseTest
 
         // Setup: cache values for two different inputs
         Long input1Time1 = actor1.getNow(greetingValue1).join();
-        sleep(10);
         Long input2Time1 = actor1.getNow(greetingValue2).join();
 
         assertNotEquals(input1Time1, input2Time1);
@@ -195,22 +191,10 @@ public class CacheResponseTest extends ActorBaseTest
         // Test: flush the actor, verify that neither input was cached
         actor1.flush().join();
         Long input1Time2 = actor1.getNow(greetingValue1).join();
-        sleep(10);
         Long input2Time2 = actor1.getNow(greetingValue2).join();
 
         assertNotEquals(input1Time1, input1Time2);
         assertNotEquals(input2Time1, input2Time2);
-    }
-
-    public static void sleep(long millis)
-    {
-        try
-        {
-            Thread.sleep(millis);
-        } catch (Exception e)
-        {
-            e.printStackTrace();
-        }
     }
 
     @Before
