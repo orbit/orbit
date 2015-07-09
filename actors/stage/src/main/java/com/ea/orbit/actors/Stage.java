@@ -28,27 +28,26 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors;
 
-
-import com.ea.orbit.actors.cluster.JGroupsClusterPeer;
 import com.ea.orbit.actors.cluster.ClusterPeer;
+import com.ea.orbit.actors.cluster.JGroupsClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
-import com.ea.orbit.concurrent.ExecutorUtils;
-import com.ea.orbit.metrics.config.ReporterConfig;
+import com.ea.orbit.actors.extensions.LifetimeExtension;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Hosting;
+import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.ReminderController;
-import com.ea.orbit.actors.runtime.Messaging;
-import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
+import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
+import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
+import com.ea.orbit.metrics.config.ReporterConfig;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +59,6 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
 @Singleton
@@ -132,6 +130,11 @@ public class Stage implements Startable
     public void setClock(final Clock clock)
     {
         this.clock = clock;
+    }
+
+    public void setMessaging(final Messaging messaging)
+    {
+        this.messaging = messaging;
     }
 
     public void setExecutionPool(final ExecutorService executionPool)
