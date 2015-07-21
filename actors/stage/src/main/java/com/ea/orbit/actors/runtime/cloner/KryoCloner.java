@@ -57,17 +57,18 @@ public class KryoCloner implements ExecutionObjectCloner
         // exception.
         kryo.addDefaultSerializer(Collection.class, new CollectionSerializer()
         {
-            final List unmodifiableList = Collections.unmodifiableList(new ArrayList());
-            final Set unmodifiableSet = Collections.unmodifiableSet(new HashSet());
+            final Class<?> unmodifiableCollectionClazz = Collections.unmodifiableCollection(new ArrayList()).getClass();
+            final Class<?> unmodifiableListClazz = Collections.unmodifiableList(new ArrayList()).getClass();
+            final Class<?> unmodifiableSetClazz = Collections.unmodifiableSet(new HashSet()).getClass();
 
             @Override
             protected Collection createCopy(Kryo kryo, Collection original)
             {
-                if (original.getClass() == unmodifiableList.getClass() || original.getClass() == ArrayList.class)
+                if (original.getClass() == unmodifiableListClazz || original.getClass() == unmodifiableCollectionClazz)
                 {
                     return new ArrayList();
                 }
-                if (original.getClass() == unmodifiableSet.getClass())
+                if (original.getClass() == unmodifiableSetClazz)
                 {
                     return new LinkedHashSet();
                 }
@@ -76,12 +77,12 @@ public class KryoCloner implements ExecutionObjectCloner
         });
         kryo.addDefaultSerializer(Map.class, new MapSerializer()
         {
-            final Map unmodifiableMap = Collections.unmodifiableMap(new HashMap());
+            final Class<?> unmodifiableMapClazz = Collections.unmodifiableMap(new HashMap()).getClass();
 
             @Override
             protected Map createCopy(Kryo kryo, Map original)
             {
-                if (original.getClass() == unmodifiableMap.getClass())
+                if (original.getClass() == unmodifiableMapClazz)
                 {
                     return new LinkedHashMap<>();
                 }
