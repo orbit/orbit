@@ -112,7 +112,16 @@ public class KryoCloner implements ExecutionObjectCloner
     {
         if (object != null)
         {
-            return kryoPool.run(kryo -> kryo.copy(object));
+            return kryoPool.run(kryo -> {
+                try
+                {
+                    return kryo.copy(object);
+                }
+                finally
+                {
+                    kryo.reset();
+                }
+            });
         }
         return null;
     }
