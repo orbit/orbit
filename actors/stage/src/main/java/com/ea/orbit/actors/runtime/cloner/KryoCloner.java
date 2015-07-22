@@ -29,7 +29,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.runtime.cloner;
 
 import com.ea.orbit.actors.Actor;
+
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.pool.KryoFactory;
+import com.esotericsoftware.kryo.pool.KryoPool;
 import com.esotericsoftware.kryo.serializers.CollectionSerializer;
 import com.esotericsoftware.kryo.serializers.MapSerializer;
 
@@ -40,75 +43,76 @@ import java.util.*;
  */
 public class KryoCloner implements ExecutionObjectCloner
 {
-    // Kryo is not thread-safe.
-    private final Kryo kryo;
+    private final KryoPool kryoPool;
 
     public KryoCloner()
     {
-        kryo = new Kryo();
-
-        // Adding support to clone unmodifiable collections as modifiable
-        // collections.
-
-        // It has to be noted that this might not be the expected behavior
-        // in some cases.
-
-        // Without this the unmodifiable collections cause kryo to throw an
-        // exception.
-        kryo.addDefaultSerializer(Collection.class, new CollectionSerializer()
+        KryoFactory factory = new KryoFactory()
         {
-            final Class<?> unmodifiableCollectionClazz = Collections.unmodifiableCollection(new ArrayList()).getClass();
-            final Class<?> unmodifiableListClazz = Collections.unmodifiableList(new ArrayList()).getClass();
-            final Class<?> unmodifiableSetClazz = Collections.unmodifiableSet(new HashSet()).getClass();
-
-            @Override
-            protected Collection createCopy(Kryo kryo, Collection original)
+            public Kryo create()
             {
-                if (original.getClass() == unmodifiableListClazz || original.getClass() == unmodifiableCollectionClazz)
-                {
-                    return new ArrayList();
-                }
-                if (original.getClass() == unmodifiableSetClazz)
-                {
-                    return new LinkedHashSet();
-                }
-                return super.createCopy(kryo, original);
-            }
-        });
-        kryo.addDefaultSerializer(Map.class, new MapSerializer()
-        {
-            final Class<?> unmodifiableMapClazz = Collections.unmodifiableMap(new HashMap()).getClass();
+                Kryo kryo = new Kryo();
 
-            @Override
-            protected Map createCopy(Kryo kryo, Map original)
-            {
-                if (original.getClass() == unmodifiableMapClazz)
-                {
-                    return new LinkedHashMap<>();
-                }
-                return super.createCopy(kryo, original);
-            }
-        });
+                // Adding support to clone unmodifiable collections as modifiable
+                // collections.
 
-        kryo.addDefaultSerializer(Actor.class, new ImmutableObjectSerializer<Actor>(true, true));
-        kryo.addDefaultSerializer(UUID.class, new ImmutableObjectSerializer<UUID>(true, true));
+                // It has to be noted that this might not be the expected behavior
+                // in some cases.
+
+                // Without this the unmodifiable collections cause kryo to throw an
+                // exception.. Class cannot be created (missing no-arg constructor).
+
+                kryo.addDefaultSerializer(Collection.class, new CollectionSerializer()
+                {
+                    final Class<?> unmodifiableCollectionClazz = Collections.unmodifiableCollection(new ArrayList()).getClass();
+                    final Class<?> unmodifiableListClazz = Collections.unmodifiableList(new ArrayList()).getClass();
+                    final Class<?> unmodifiableSetClazz = Collections.unmodifiableSet(new HashSet()).getClass();
+
+                    @Override
+                    protected Collection createCopy(Kryo kryo, Collection original)
+                    {
+                        if (original.getClass() == unmodifiableListClazz || original.getClass() == unmodifiableCollectionClazz)
+                        {
+                            return new ArrayList();
+                        }
+                        if (original.getClass() == unmodifiableSetClazz)
+                        {
+                            return new LinkedHashSet();
+                        }
+                        return super.createCopy(kryo, original);
+                    }
+                });
+                kryo.addDefaultSerializer(Map.class, new MapSerializer()
+                {
+                    final Class<?> unmodifiableMapClazz = Collections.unmodifiableMap(new HashMap()).getClass();
+
+                    @Override
+                    protected Map createCopy(Kryo kryo, Map original)
+                    {
+                        if (original.getClass() == unmodifiableMapClazz)
+                        {
+                            return new LinkedHashMap<>();
+                        }
+                        return super.createCopy(kryo, original);
+                    }
+                });
+
+                kryo.addDefaultSerializer(Actor.class, new ImmutableObjectSerializer<Actor>(true, true));
+                kryo.addDefaultSerializer(UUID.class, new ImmutableObjectSerializer<UUID>(true, true));
+
+                return kryo;
+            }
+        };
+
+        kryoPool = new KryoPool.Builder(factory).softReferences().build();
     }
 
     @Override
-    public <T> T clone(final T obj)
+    public <T> T clone(final T object)
     {
-        if (obj != null)
+        if (object != null)
         {
-            synchronized (kryo)
-            {
-                try
-                {
-                    return kryo.copy(obj);
-                } finally
-                {
-                    kryo.reset();
-                }
-            }
+            return kryoPool.run(kryo -> kryo.copy(object));
         }
         return null;
     }
