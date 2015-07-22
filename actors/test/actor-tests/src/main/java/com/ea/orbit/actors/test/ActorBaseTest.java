@@ -33,6 +33,8 @@ import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.ExecutionSerializer;
+import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
+import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -133,6 +135,7 @@ public class ActorBaseTest
         stage.setMode(Stage.StageMode.HOST);
         stage.setExecutionPool(commonPool);
         stage.setMessagingPool(commonPool);
+        stage.setObjectCloner(getExecutionObjectCloner());
         stage.addExtension(new FakeStorageExtension(fakeDatabase));
         stage.setClock(clock);
         stage.setClusterName(clusterName);
@@ -140,6 +143,10 @@ public class ActorBaseTest
         stage.start().join();
         stage.bind();
         return stage;
+    }
+
+    protected ExecutionObjectCloner getExecutionObjectCloner() {
+        return new KryoCloner();
     }
 
     @FunctionalInterface

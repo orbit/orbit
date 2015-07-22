@@ -32,6 +32,8 @@ import com.ea.orbit.actors.test.actors.CacheResponse;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -42,6 +44,7 @@ public class TestDto1 implements Serializable
     private UUID id;
     private CacheResponse sampleActor;
     private List<Integer> sampleIntList = new ArrayList<>();
+    private List<Integer> sampleIntList2 = Collections.unmodifiableList(Arrays.asList(1, 3, 3, 7));
 
     public TestDto1()
     {
@@ -86,5 +89,10 @@ public class TestDto1 implements Serializable
     public List<Integer> getSampleIntList()
     {
         return sampleIntList;
+    }
+
+    public List<Integer> getSampleIntList2()
+    {
+        return sampleIntList2;
     }
 }

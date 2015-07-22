@@ -28,7 +28,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime.cloner;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 /**
  * Java serialization based object cloning implementation.
@@ -36,13 +40,13 @@ import java.io.*;
 public class JavaSerializationCloner implements ExecutionObjectCloner
 {
     @Override
-    public <T> T clone(T obj)
+    public <T> T clone(T object)
     {
         try
         {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             ObjectOutputStream outputStream = new ObjectOutputStream(byteArrayOutputStream);
-            outputStream.writeObject(obj);
+            outputStream.writeObject(object);
 
             byte[] bytes = byteArrayOutputStream.toByteArray();
 

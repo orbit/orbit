@@ -33,5 +33,5 @@ package com.ea.orbit.actors.runtime.cloner;
  */
 public interface ExecutionObjectCloner
 {
-    <T> T clone(final T obj);
+    <T> T clone(final T object);
 }

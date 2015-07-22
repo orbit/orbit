@@ -39,6 +39,7 @@ import com.ea.orbit.actors.test.actors.CacheResponse;
 import com.ea.orbit.actors.test.dto.TestDto1;
 import com.ea.orbit.actors.test.dto.TestDto2;
 import com.ea.orbit.exception.UncheckedException;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,8 +66,9 @@ public class CacheResponseCloneTest extends ActorBaseTest
     public static Collection<ExecutionObjectCloner> data()
     {
         return Arrays.asList(
-                new KryoCloner(),
-                new JavaSerializationCloner()
+               new KryoCloner(),
+               new JavaSerializationCloner()
+               //new NoOpCloner()
         );
     }
 
@@ -151,11 +153,16 @@ public class CacheResponseCloneTest extends ActorBaseTest
         try
         {
             stage = createStage();
-            stage.setObjectCloner(this.objectCloner);
         } catch (Exception e)
         {
             throw new UncheckedException(e);
         }
+    }
+
+    @Override
+    protected ExecutionObjectCloner getExecutionObjectCloner()
+    {
+        return objectCloner;
     }
 
     @Before
