@@ -70,7 +70,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +80,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
@@ -96,8 +96,8 @@ public class Execution implements Runtime
     private static final Logger logger = LoggerFactory.getLogger(Execution.class);
     private final String runtimeIdentity;
     private ActorClassFinder finder;
-    private Map<Class<?>, InterfaceDescriptor> descriptorMapByInterface = new HashMap<>();
-    private Map<Integer, InterfaceDescriptor> descriptorMapByInterfaceId = new HashMap<>();
+    private ConcurrentMap<Class<?>, InterfaceDescriptor> descriptorMapByInterface = new ConcurrentHashMap<>();
+    private ConcurrentMap<Integer, InterfaceDescriptor> descriptorMapByInterfaceId = new ConcurrentHashMap<>();
     private Map<EntryKey, ReferenceEntry> localActors = new ConcurrentHashMap<>();
     private Map<EntryKey, ActorObserver> observerInstances = new MapMaker().weakValues().makeMap();
     // from implementation to reference
@@ -157,7 +157,7 @@ public class Execution implements Runtime
         return executor;
     }
 
-    public boolean canActivateActor(String interfaceName, int interfaceId)
+    public boolean canActivateActor(String interfaceName)
     {
         if (state != NodeCapabilities.NodeState.RUNNING)
         {
@@ -810,7 +810,14 @@ public class Execution implements Runtime
             interfaceDescriptor.isObserver = ActorObserver.class.isAssignableFrom(aInterface);
             interfaceDescriptor.factory = dynamicReferenceFactory.getFactoryFor(aInterface);
             interfaceDescriptor.invoker = (ActorInvoker<Object>) interfaceDescriptor.factory.getInvoker();
-            descriptorMapByInterface.put(aInterface, interfaceDescriptor);
+
+            InterfaceDescriptor concurrentInterfaceDescriptor = descriptorMapByInterface.putIfAbsent(aInterface, interfaceDescriptor);
+            if (concurrentInterfaceDescriptor != null)
+            {
+                descriptorMapByInterfaceId.put(interfaceDescriptor.factory.getInterfaceId(), concurrentInterfaceDescriptor);
+                return concurrentInterfaceDescriptor;
+            }
+
             descriptorMapByInterfaceId.put(interfaceDescriptor.factory.getInterfaceId(), interfaceDescriptor);
         }
         return interfaceDescriptor;

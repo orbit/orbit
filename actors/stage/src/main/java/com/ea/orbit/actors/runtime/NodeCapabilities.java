@@ -52,7 +52,7 @@ public interface NodeCapabilities extends ActorObserver
      *
      * @return #actorSupported_yes, #actorSupported_no, or #actorSupported_noneSupported
      */
-    Task<Integer> canActivate(String interfaceName, int interfaceId);
+    Task<Integer> canActivate(String interfaceName);
 
     Task<Void> nodeModeChanged(NodeAddress nodeAddress, NodeState newMode);
 }
