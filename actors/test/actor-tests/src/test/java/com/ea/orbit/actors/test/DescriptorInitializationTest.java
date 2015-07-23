@@ -41,7 +41,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class ConcurrentDescriptorInitialization extends ActorBaseTest
+public class DescriptorInitializationTest extends ActorBaseTest
 {
 
     @StatelessWorker
