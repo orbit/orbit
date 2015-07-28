@@ -26,33 +26,33 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.runtime;
+package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.ActorObserver;
-import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.test.dto.TestDto1;
 import com.ea.orbit.concurrent.Task;
 
-public interface NodeCapabilities extends ActorObserver
-{
-    enum NodeTypeEnum
-    {
-        SERVER, CLIENT
-    }
-    enum NodeState
-    {
-        RUNNING, STOPPING, STOPPED
-    }
+import java.util.concurrent.TimeUnit;
 
-    int actorSupported_yes = 1;
-    int actorSupported_no = 0;
-    int actorSupported_noneSupported = 2;
+public interface CacheResponse extends Actor
+{
+    int INDEX_TALLY_DURATION_MILLIS = 100;
+
+    @com.ea.orbit.annotation.CacheResponse(maxEntries = 100, ttlDuration = 5, ttlUnit = TimeUnit.SECONDS)
+    Task<Long> getNow(String greeting);
 
     /**
-     * Asked a single time or infrequently to find out if this node knows and is able to serve this kind of actor.
-     *
-     * @return #actorSupported_yes, #actorSupported_no, or #actorSupported_noneSupported
+     * Used to test CacheResponse Time to Live.
+     * Returns a count of the number of times an id was accessed.
      */
-    Task<Integer> canActivate(String interfaceName);
+    @com.ea.orbit.annotation.CacheResponse(maxEntries = 1000, ttlDuration = INDEX_TALLY_DURATION_MILLIS, ttlUnit = TimeUnit.MILLISECONDS)
+    Task<Long> getIndexTally(int id);
 
-    Task<Void> nodeModeChanged(NodeAddress nodeAddress, NodeState newMode);
+    Task<Void> setDto1(TestDto1 dto1);
+
+    @com.ea.orbit.annotation.CacheResponse(maxEntries = 100, ttlDuration = 5, ttlUnit = TimeUnit.SECONDS)
+    Task<TestDto1> getDto1();
+
+    Task<Void> flush();
 }
+

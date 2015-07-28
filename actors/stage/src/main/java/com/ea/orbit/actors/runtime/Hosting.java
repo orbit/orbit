@@ -131,13 +131,13 @@ public class Hosting implements NodeCapabilities, Startable
     }
 
     @Override
-    public Task<Integer> canActivate(String interfaceName, int interfaceId)
+    public Task<Integer> canActivate(String interfaceName)
     {
         if (nodeType == NodeTypeEnum.CLIENT || execution.getState() != NodeState.RUNNING)
         {
             return Task.fromValue(actorSupported_noneSupported);
         }
-        return Task.fromValue(execution.canActivateActor(interfaceName, interfaceId) ? actorSupported_yes
+        return Task.fromValue(execution.canActivateActor(interfaceName) ? actorSupported_yes
                 : actorSupported_no);
     }
 
@@ -241,7 +241,7 @@ public class Hosting implements NodeCapabilities, Startable
         final String interfaceClassName = interfaceClass.getName();
         if (interfaceClass.isAnnotationPresent(StatelessWorker.class))
         {
-            if (nodeType == NodeTypeEnum.SERVER && execution.canActivateActor(interfaceClassName, -1))
+            if (nodeType == NodeTypeEnum.SERVER && execution.canActivateActor(interfaceClassName))
             {
                 // TODO: consider always using local instance if this node is a server
                 // ~90% chance of making a local call
@@ -354,7 +354,7 @@ public class Hosting implements NodeCapabilities, Startable
                     // ask if the node can activate this type of actor.
                     try
                     {
-                        canActivate = nodeInfo.nodeCapabilities.canActivate(interfaceClassName, -1).join();
+                        canActivate = nodeInfo.nodeCapabilities.canActivate(interfaceClassName).join();
                         if (canActivate == actorSupported_noneSupported)
                         {
                             nodeInfo.cannotHostActors = true;

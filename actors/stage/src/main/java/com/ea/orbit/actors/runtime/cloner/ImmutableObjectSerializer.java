@@ -26,19 +26,32 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.samples.annotation.examples;
+package com.ea.orbit.actors.runtime.cloner;
 
-import com.ea.orbit.actors.Actor;
-import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.samples.annotation.memoize.Memoize;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 
-import java.util.concurrent.TimeUnit;
-
-public interface MemoizeExample extends Actor
+class ImmutableObjectSerializer<T> extends Serializer
 {
+    public ImmutableObjectSerializer()
+    {
+    }
 
-    @Memoize(time = 5, unit = TimeUnit.SECONDS)
-    Task<Long> getNow(String greeting);
+    public ImmutableObjectSerializer(boolean acceptsNull, boolean immutable)
+    {
+        super(acceptsNull, immutable);
+    }
 
+    @Override
+    public void write(Kryo kryo, Output output, Object object)
+    {
+    }
+
+    @Override
+    public Object read(Kryo kryo, Input input, Class type)
+    {
+        return null;
+    }
 }
-

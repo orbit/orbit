@@ -28,31 +28,27 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.ActorObserver;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.concurrent.Task;
 
-public interface NodeCapabilities extends ActorObserver
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import java.util.List;
+
+@Singleton
+public class ExecutionCacheFlushController
 {
-    enum NodeTypeEnum
+    @Inject
+    private Stage stage;
+
+    public Task<List<Task<Void>>> flushAll(Actor actor)
     {
-        SERVER, CLIENT
+        final List<NodeAddress> nodes = stage.getAllNodes();
+
+        return Task.allOf(nodes.stream()
+                .map(nodeAddress -> ReferenceFactory.observerRef(nodeAddress.asUUID(), ExecutionCacheFlushObserver.class, "").flush(actor)));
     }
-    enum NodeState
-    {
-        RUNNING, STOPPING, STOPPED
-    }
-
-    int actorSupported_yes = 1;
-    int actorSupported_no = 0;
-    int actorSupported_noneSupported = 2;
-
-    /**
-     * Asked a single time or infrequently to find out if this node knows and is able to serve this kind of actor.
-     *
-     * @return #actorSupported_yes, #actorSupported_no, or #actorSupported_noneSupported
-     */
-    Task<Integer> canActivate(String interfaceName);
-
-    Task<Void> nodeModeChanged(NodeAddress nodeAddress, NodeState newMode);
 }

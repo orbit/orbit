@@ -28,24 +28,26 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors;
 
-
-import com.ea.orbit.actors.cluster.JGroupsClusterPeer;
 import com.ea.orbit.actors.cluster.ClusterPeer;
+import com.ea.orbit.actors.cluster.JGroupsClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
-import com.ea.orbit.metrics.config.ReporterConfig;
+import com.ea.orbit.actors.extensions.LifetimeExtension;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Hosting;
+import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.ReminderController;
-import com.ea.orbit.actors.runtime.Messaging;
-import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
+import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
+import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
+import com.ea.orbit.metrics.config.ReporterConfig;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +59,6 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
 @Singleton
@@ -73,6 +74,9 @@ public class Stage implements Startable
 
     @Config("orbit.actors.stageMode")
     private StageMode mode = StageMode.HOST;
+
+    @Config("orbit.actors.executionPoolSize")
+    private int executionPoolSize = 128;
 
     @Config("orbit.actors.extensions")
     private List<ActorExtension> extensions = new ArrayList<>();
@@ -98,6 +102,7 @@ public class Stage implements Startable
     private Clock clock;
     private ExecutorService executionPool;
     private ExecutorService messagingPool;
+    private ExecutionObjectCloner objectCloner;
 
     static
     {
@@ -127,6 +132,11 @@ public class Stage implements Startable
         this.clock = clock;
     }
 
+    public void setMessaging(final Messaging messaging)
+    {
+        this.messaging = messaging;
+    }
+
     public void setExecutionPool(final ExecutorService executionPool)
     {
         this.executionPool = executionPool;
@@ -145,6 +155,26 @@ public class Stage implements Startable
     public ExecutorService getMessagingPool()
     {
         return messagingPool;
+    }
+
+    public int getExecutionPoolSize()
+    {
+        return executionPoolSize;
+    }
+
+    public void setExecutionPoolSize(int defaultPoolSize)
+    {
+        this.executionPoolSize = defaultPoolSize;
+    }
+
+    public ExecutionObjectCloner getObjectCloner()
+    {
+        return objectCloner;
+    }
+
+    public void setObjectCloner(ExecutionObjectCloner objectCloner)
+    {
+        this.objectCloner = objectCloner;
     }
 
     public String runtimeIdentity()
@@ -204,6 +234,21 @@ public class Stage implements Startable
             setNodeName(getClusterName());
         }
 
+        if(executionPool == null || messagingPool == null)
+        {
+            final ExecutorService newService = ExecutorUtils.newScalingThreadPool(executionPoolSize);
+
+            if(executionPool == null)
+            {
+                executionPool = newService;
+            }
+
+            if(messagingPool == null)
+            {
+                messagingPool = newService;
+            }
+        }
+
         if (hosting == null)
         {
             hosting = new Hosting();
@@ -224,6 +269,10 @@ public class Stage implements Startable
         {
             clock = Clock.systemUTC();
         }
+        if (objectCloner == null)
+        {
+            objectCloner = new KryoCloner();
+        }
 
         this.configureOrbitContainer();
 
@@ -232,6 +281,7 @@ public class Stage implements Startable
         execution.setHosting(hosting);
         execution.setMessaging(messaging);
         execution.setExecutor(executionPool);
+        execution.setObjectCloner(objectCloner);
 
         messaging.setExecution(execution);
         messaging.setClock(clock);
@@ -314,9 +364,7 @@ public class Stage implements Startable
         // * wait pending tasks execution
         // * stop the network
         return execution.stop()
-                .thenRun(clusterPeer::leave).thenRun(() -> {
-                    unregisterMetrics();
-                });
+                .thenRun(clusterPeer::leave).thenRun(this::unregisterMetrics);
     }
 
     /**
@@ -415,6 +463,7 @@ public class Stage implements Startable
         return execution.getState();
     }
 
+    @SuppressWarnings("unchecked")
     private void startMetrics()
     {
         try
@@ -424,7 +473,7 @@ public class Stage implements Startable
             Method initializeMetricsMethod = mmClazz.getDeclaredMethod("initializeMetrics", List.class);
             Method registerExportedMetricsMethod = mmClazz.getDeclaredMethod("registerExportedMetrics", Object.class, String.class);
 
-            Object managerObject = getInstanceMethod.invoke(null, null);
+            Object managerObject = getInstanceMethod.invoke(null);
             initializeMetricsMethod.invoke(managerObject, metricsConfig);
             registerExportedMetricsMethod.invoke(managerObject, execution, execution.runtimeIdentity());
         }
@@ -438,6 +487,7 @@ public class Stage implements Startable
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void unregisterMetrics()
     {
         try
@@ -446,7 +496,7 @@ public class Stage implements Startable
             Method getInstanceMethod = mmClazz.getDeclaredMethod("getInstance");
             Method unregisterExportedMetricsMethod = mmClazz.getDeclaredMethod("unregisterExportedMetrics", Object.class, String.class);
 
-            Object managerObject = getInstanceMethod.invoke(null, null);
+            Object managerObject = getInstanceMethod.invoke(null);
             unregisterExportedMetricsMethod.invoke(managerObject, execution, execution.runtimeIdentity());
         }
         catch (ClassNotFoundException ex)
@@ -455,7 +505,7 @@ public class Stage implements Startable
         }
         catch (Exception ex)
         {
-            logger.error("Unexpected error while unregistering execution metrics: " + ex.getMessage());
+            logger.error("Unexpected error while un-registering execution metrics: " + ex.getMessage());
         }
     }
 }

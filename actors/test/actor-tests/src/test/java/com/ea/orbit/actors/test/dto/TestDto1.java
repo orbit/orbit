@@ -26,21 +26,73 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.samples.annotation.examples;
+package com.ea.orbit.actors.test.dto;
 
+import com.ea.orbit.actors.test.actors.CacheResponse;
 
-import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.concurrent.Task;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
-@SuppressWarnings("rawtypes")
-public class MemoizeExampleActor extends AbstractActor implements MemoizeExample
+public class TestDto1 implements Serializable
 {
-    public static int accessCount = 0;
+    private TestDto2 dto2;
+    private int sampleInt;
+    private UUID id;
+    private CacheResponse sampleActor;
+    private List<Integer> sampleIntList = new ArrayList<>();
+    private List<Integer> sampleIntList2 = Collections.unmodifiableList(Arrays.asList(1, 3, 3, 7));
 
-    public Task<Long> getNow(String greeting)
+    public TestDto1()
     {
-        accessCount++;
-        return Task.fromValue(System.currentTimeMillis());
+        id = UUID.randomUUID();
+    }
+
+    public TestDto2 getDto2()
+    {
+        return dto2;
+    }
+
+    public void setDto2(TestDto2 dto2)
+    {
+        this.dto2 = dto2;
+    }
+
+    public int getSampleInt()
+    {
+        return sampleInt;
+    }
+
+    public void setSampleInt(int sampleInt)
+    {
+        this.sampleInt = sampleInt;
+    }
+
+    public UUID getId()
+    {
+        return id;
+    }
+
+    public CacheResponse getSampleActor()
+    {
+        return sampleActor;
+    }
+
+    public void setSampleActor(CacheResponse sampleActor)
+    {
+        this.sampleActor = sampleActor;
+    }
+
+    public List<Integer> getSampleIntList()
+    {
+        return sampleIntList;
+    }
+
+    public List<Integer> getSampleIntList2()
+    {
+        return sampleIntList2;
     }
 }
-

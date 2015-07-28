@@ -26,33 +26,25 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.runtime;
+package com.ea.orbit.annotation;
 
-import com.ea.orbit.actors.ActorObserver;
-import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.concurrent.Task;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.concurrent.TimeUnit;
 
-public interface NodeCapabilities extends ActorObserver
+/**
+ * Caches responses from annotated Actor methods.
+ * Annotation defines the cache's maximum size and time to live.
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface CacheResponse
 {
-    enum NodeTypeEnum
-    {
-        SERVER, CLIENT
-    }
-    enum NodeState
-    {
-        RUNNING, STOPPING, STOPPED
-    }
+    long maxEntries();
 
-    int actorSupported_yes = 1;
-    int actorSupported_no = 0;
-    int actorSupported_noneSupported = 2;
+    int ttlDuration();
 
-    /**
-     * Asked a single time or infrequently to find out if this node knows and is able to serve this kind of actor.
-     *
-     * @return #actorSupported_yes, #actorSupported_no, or #actorSupported_noneSupported
-     */
-    Task<Integer> canActivate(String interfaceName);
-
-    Task<Void> nodeModeChanged(NodeAddress nodeAddress, NodeState newMode);
+    TimeUnit ttlUnit();
 }

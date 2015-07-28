@@ -56,6 +56,7 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -349,7 +350,29 @@ public class RestClient
             if (CompletableFuture.class.isAssignableFrom(method.getReturnType()))
             {
                 CompletableFuture<Object> future = createFuture(method);
-                builder.async().method(httpMethod, Entity.entity(entity, contentType), createAsyncInvocationCallback(genericReturnType).future(future));
+                if (genericReturnType == Void.class)
+                {
+                    builder.async().method(httpMethod,
+                            Entity.entity(entity, contentType),
+                            new InvocationCallback<Response>()
+                            {
+                                @Override
+                                public void completed(final Response response)
+                                {
+                                    future.complete(null);
+                                }
+
+                                @Override
+                                public void failed(final Throwable throwable)
+                                {
+                                    future.completeExceptionally(throwable);
+                                }
+                            });
+                }
+                else
+                {
+                    builder.async().method(httpMethod, Entity.entity(entity, contentType), createAsyncInvocationCallback(genericReturnType).future(future));
+                }
                 return future;
             }
             else

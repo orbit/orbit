@@ -54,7 +54,7 @@ public class ExecutionSerializer<T>
 
     public ExecutionSerializer()
     {
-        executorService = ExecutorUtils.newScalingThreadPool(1000);
+        executorService = ExecutorUtils.newScalingThreadPool(64);
     }
 
     public ExecutionSerializer(final ExecutorService executor)

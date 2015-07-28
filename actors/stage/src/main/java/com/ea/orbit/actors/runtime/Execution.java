@@ -36,32 +36,40 @@ import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.annotation.StorageExtension;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.ActorClassFinder;
-import com.ea.orbit.actors.extensions.InvokeHookExtension;
-import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.InvocationContext;
+import com.ea.orbit.actors.extensions.InvokeHookExtension;
+import com.ea.orbit.actors.extensions.LifetimeExtension;
+import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
+import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.annotation.OnlyIfActivated;
-import com.ea.orbit.metrics.annotations.ExportMetric;
-import com.ea.orbit.metrics.annotations.MetricScope;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
+import com.ea.orbit.metrics.annotations.ExportMetric;
+import com.ea.orbit.metrics.annotations.MetricScope;
+import com.ea.orbit.tuples.Pair;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.MapMaker;
 
+import java.io.IOException;
+import java.io.ObjectOutput;
+import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +80,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
@@ -87,8 +96,8 @@ public class Execution implements Runtime
     private static final Logger logger = LoggerFactory.getLogger(Execution.class);
     private final String runtimeIdentity;
     private ActorClassFinder finder;
-    private Map<Class<?>, InterfaceDescriptor> descriptorMapByInterface = new HashMap<>();
-    private Map<Integer, InterfaceDescriptor> descriptorMapByInterfaceId = new HashMap<>();
+    private ConcurrentMap<Class<?>, InterfaceDescriptor> descriptorMapByInterface = new ConcurrentHashMap<>();
+    private ConcurrentMap<Integer, InterfaceDescriptor> descriptorMapByInterfaceId = new ConcurrentHashMap<>();
     private Map<EntryKey, ReferenceEntry> localActors = new ConcurrentHashMap<>();
     private Map<EntryKey, ActorObserver> observerInstances = new MapMaker().weakValues().makeMap();
     // from implementation to reference
@@ -115,15 +124,22 @@ public class Execution implements Runtime
 
     private NodeCapabilities.NodeState state = NodeCapabilities.NodeState.RUNNING;
 
+    private ExecutionCacheManager cacheManager = new ExecutionCacheManager();
+    private ExecutionObjectCloner objectCloner;
+
     public Execution()
     {
         // the last runtime created will be the default.
         ActorRuntime.runtimeCreated(cachedRef);
 
+        runtimeIdentity = generateRuntimeIdentity();
+    }
+
+    private String generateRuntimeIdentity() {
         final UUID uuid = UUID.randomUUID();
         final String encoded = Base64.getEncoder().encodeToString(
                 ByteBuffer.allocate(16).putLong(uuid.getMostSignificantBits()).putLong(uuid.getLeastSignificantBits()).array());
-        runtimeIdentity = "Orbit[" + encoded.substring(0, encoded.length() - 2) + "]";
+        return "Orbit[" + encoded.substring(0, encoded.length() - 2) + "]";
     }
 
     public void setClock(final Clock clock)
@@ -141,7 +157,7 @@ public class Execution implements Runtime
         return executor;
     }
 
-    public boolean canActivateActor(String interfaceName, int interfaceId)
+    public boolean canActivateActor(String interfaceName)
     {
         if (state != NodeCapabilities.NodeState.RUNNING)
         {
@@ -165,6 +181,24 @@ public class Execution implements Runtime
     public void registerFactory(ActorFactory<?> factory)
     {
         // TODO: will enable caching the reference factory
+    }
+
+    public ExecutionCacheManager getCacheManager()
+    {
+        return cacheManager;
+    }
+
+    public void setObjectCloner(ExecutionObjectCloner objectCloner)
+    {
+        this.objectCloner = objectCloner;
+    }
+
+    private static class NullOutputStream extends OutputStream
+    {
+        @Override
+        public void write(int b) throws IOException
+        {
+        }
     }
 
     private static class InterfaceDescriptor
@@ -634,7 +668,7 @@ public class Execution implements Runtime
             }
         };
         timer.schedule(timerTask, timeUnit.toMillis(dueTime), timeUnit.toMillis(period));
-        return () -> timerTask.cancel();
+        return timerTask::cancel;
     }
 
     public void bind()
@@ -689,13 +723,15 @@ public class Execution implements Runtime
 
         if (executor == null)
         {
-            executor = ExecutorUtils.newScalingThreadPool(1000);
+            executor = ExecutorUtils.newScalingThreadPool(64);
         }
         executionSerializer = new ExecutionSerializer<>(executor);
 
         hookExtensions = getAllExtensions(InvokeHookExtension.class);
 
-        extensions.forEach(v -> v.start());
+        getObserverReference(ExecutionCacheFlushObserver.class, cacheManager, "");
+
+        extensions.forEach(Startable::start);
         // schedules the cleanup
         timer.schedule(new TimerTask()
         {
@@ -774,7 +810,14 @@ public class Execution implements Runtime
             interfaceDescriptor.isObserver = ActorObserver.class.isAssignableFrom(aInterface);
             interfaceDescriptor.factory = dynamicReferenceFactory.getFactoryFor(aInterface);
             interfaceDescriptor.invoker = (ActorInvoker<Object>) interfaceDescriptor.factory.getInvoker();
-            descriptorMapByInterface.put(aInterface, interfaceDescriptor);
+
+            InterfaceDescriptor concurrentInterfaceDescriptor = descriptorMapByInterface.putIfAbsent(aInterface, interfaceDescriptor);
+            if (concurrentInterfaceDescriptor != null)
+            {
+                descriptorMapByInterfaceId.put(interfaceDescriptor.factory.getInterfaceId(), concurrentInterfaceDescriptor);
+                return concurrentInterfaceDescriptor;
+            }
+
             descriptorMapByInterfaceId.put(interfaceDescriptor.factory.getInterfaceId(), interfaceDescriptor);
         }
         return interfaceDescriptor;
@@ -1095,8 +1138,60 @@ public class Execution implements Runtime
 
     public Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
     {
-        if (!verifyActivated(toReference, m)) return Task.done();
+        if (!verifyActivated(toReference, m))
+        {
+            return Task.done();
+        }
 
+        if (m.isAnnotationPresent(CacheResponse.class))
+        {
+            return cacheResponseInvoke(toReference, m, oneWay, methodId, params);
+        }
+
+        return invokeInternal(toReference, m, oneWay, methodId, params);
+    }
+
+    private Task<?> cacheResponseInvoke(Addressable toReference, Method method, boolean oneWay, int methodId, Object[] params)
+    {
+        String parameterHash = generateParameterHash(params);
+        Pair<Addressable, String> key = Pair.of(toReference, parameterHash);
+
+        Task<?> cached = cacheManager.get(method, key);
+        if (cached == null
+                || cached.isCompletedExceptionally()
+                || cached.isCancelled())
+        {
+            cached = invokeInternal(toReference, method, oneWay, methodId, params);
+            cacheManager.put(method, key, cached);
+        }
+
+        return cached.thenApply(objectCloner::clone);
+    }
+
+    private String generateParameterHash(Object[] params)
+    {
+        try
+        {
+            final MessageDigest md = MessageDigest.getInstance("SHA-256");
+            DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
+            ObjectOutput out = messaging.createObjectOutput(d);
+
+            for(Object param : params)
+            {
+                out.writeObject(param);
+            }
+
+            out.close();
+
+            return String.format("%032X", new BigInteger(1, md.digest()));
+        } catch (Exception e)
+        {
+            throw new UncheckedException("Unable to make parameter hash", e);
+        }
+    }
+
+    private Task<?> invokeInternal(Addressable toReference, Method m, final boolean oneWay, int methodId, Object[] params)
+    {
         if (hookExtensions.size() == 0)
         {
             // no hooks
@@ -1127,7 +1222,6 @@ public class Execution implements Runtime
         };
 
         return ctx.invokeNext(toReference, m, methodId, params);
-
     }
 
     public Task<?> activationCleanup()

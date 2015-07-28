@@ -25,34 +25,56 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+package com.ea.orbit.actors.test;
 
-package com.ea.orbit.actors.runtime;
-
-import com.ea.orbit.actors.ActorObserver;
-import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.annotation.StatelessWorker;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
-public interface NodeCapabilities extends ActorObserver
+import org.junit.Test;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+public class DescriptorInitializationTest extends ActorBaseTest
 {
-    enum NodeTypeEnum
+
+    @StatelessWorker
+    public interface MyActor extends Actor
     {
-        SERVER, CLIENT
-    }
-    enum NodeState
-    {
-        RUNNING, STOPPING, STOPPED
+        Task<Void> ping();
     }
 
-    int actorSupported_yes = 1;
-    int actorSupported_no = 0;
-    int actorSupported_noneSupported = 2;
+    public static class MyActorImpl extends AbstractActor implements MyActor
+    {
+        @Override
+        public Task<Void> ping()
+        {
+            return Task.done();
+        }
+    }
 
-    /**
-     * Asked a single time or infrequently to find out if this node knows and is able to serve this kind of actor.
-     *
-     * @return #actorSupported_yes, #actorSupported_no, or #actorSupported_noneSupported
-     */
-    Task<Integer> canActivate(String interfaceName);
-
-    Task<Void> nodeModeChanged(NodeAddress nodeAddress, NodeState newMode);
+    @Test
+    public void testConcurrentDescriptorInitialization() throws ExecutionException, InterruptedException
+    {
+        // this test forces the state to create actor descriptors concurrently.
+        // using this test problems were detected with ClassPathSearch
+        for (int j = 0; j < 100; j++)
+        {
+            // using a different cluster to test the stage initialization
+            clusterName = UUID.randomUUID().toString();
+            Stage stage = createStage();
+            MyActor ref = Actor.getReference(MyActor.class, clusterName);
+            List<Task<Void>> list = IntStream.range(1, 10)
+                    .parallel()
+                    .mapToObj(i -> ref.ping())
+                    .collect(Collectors.toList());
+            Task.allOf(list).join();
+        }
+    }
 }

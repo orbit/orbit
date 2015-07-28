@@ -156,7 +156,7 @@ public class Messaging implements Startable
     {
         if (executor == null)
         {
-            executor = ExecutorUtils.newScalingThreadPool(1000);
+            executor = ExecutorUtils.newScalingThreadPool(64);
         }
         clusterPeer.registerMessageReceiver((from, buff) -> executor.execute(() -> onMessageReceived(from, buff)));
         //timeoutCleanup()
@@ -286,7 +286,7 @@ public class Messaging implements Startable
         NodeAddress address;
     }
 
-    private ObjectOutput createObjectOutput(final OutputStream outputStream) throws IOException
+    ObjectOutput createObjectOutput(final OutputStream outputStream) throws IOException
     {
         // TODO: move message serialization to a provider (IMessageSerializationProvider)
         // Message(messageId, type, reference, params) and Message(messageId, type, object)

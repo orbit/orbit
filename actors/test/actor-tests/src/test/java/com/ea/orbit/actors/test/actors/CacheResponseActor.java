@@ -26,33 +26,55 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.runtime;
+package com.ea.orbit.actors.test.actors;
 
-import com.ea.orbit.actors.ActorObserver;
-import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ExecutionCacheFlushController;
+import com.ea.orbit.actors.test.dto.TestDto1;
 import com.ea.orbit.concurrent.Task;
 
-public interface NodeCapabilities extends ActorObserver
+import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
+
+@SuppressWarnings("rawtypes")
+public class CacheResponseActor extends AbstractActor implements CacheResponse
 {
-    enum NodeTypeEnum
+    @Inject
+    private ExecutionCacheFlushController executionCacheFlusher;
+
+    public static int accessCount = 0;
+    private Map<Integer, Long> indexTally = new HashMap<>();
+    private TestDto1 testDto1;
+
+    public Task<Long> getNow(String greeting)
     {
-        SERVER, CLIENT
+        accessCount++;
+        return Task.fromValue(System.nanoTime());
     }
-    enum NodeState
+
+    public Task<Long> getIndexTally(int id)
     {
-        RUNNING, STOPPING, STOPPED
+        long tally = indexTally.getOrDefault(id, (long) 0);
+        indexTally.put(id, ++tally);
+        return Task.fromValue(tally);
     }
 
-    int actorSupported_yes = 1;
-    int actorSupported_no = 0;
-    int actorSupported_noneSupported = 2;
+    public Task<Void> setDto1(TestDto1 dto1)
+    {
+        testDto1 = dto1;
+        return Task.done();
+    }
 
-    /**
-     * Asked a single time or infrequently to find out if this node knows and is able to serve this kind of actor.
-     *
-     * @return #actorSupported_yes, #actorSupported_no, or #actorSupported_noneSupported
-     */
-    Task<Integer> canActivate(String interfaceName);
+    public Task<TestDto1> getDto1()
+    {
+        return Task.fromValue(testDto1);
+    }
 
-    Task<Void> nodeModeChanged(NodeAddress nodeAddress, NodeState newMode);
+    public Task<Void> flush()
+    {
+        executionCacheFlusher.flushAll(this).join();
+
+        return Task.done();
+    }
 }

@@ -26,33 +26,38 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.runtime;
+package com.ea.orbit.actors.runtime.cloner;
 
-import com.ea.orbit.actors.ActorObserver;
-import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.concurrent.Task;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
-public interface NodeCapabilities extends ActorObserver
+/**
+ * Java serialization based object cloning implementation.
+ */
+public class JavaSerializationCloner implements ExecutionObjectCloner
 {
-    enum NodeTypeEnum
+    @Override
+    public <T> T clone(T object)
     {
-        SERVER, CLIENT
+        try
+        {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream outputStream = new ObjectOutputStream(byteArrayOutputStream);
+            outputStream.writeObject(object);
+
+            byte[] bytes = byteArrayOutputStream.toByteArray();
+
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+            ObjectInputStream inputStream = new ObjectInputStream(byteArrayInputStream);
+
+            return (T) inputStream.readObject();
+        } catch (IOException | ClassNotFoundException e)
+        {
+            throw new IllegalArgumentException(e);
+        }
     }
-    enum NodeState
-    {
-        RUNNING, STOPPING, STOPPED
-    }
-
-    int actorSupported_yes = 1;
-    int actorSupported_no = 0;
-    int actorSupported_noneSupported = 2;
-
-    /**
-     * Asked a single time or infrequently to find out if this node knows and is able to serve this kind of actor.
-     *
-     * @return #actorSupported_yes, #actorSupported_no, or #actorSupported_noneSupported
-     */
-    Task<Integer> canActivate(String interfaceName);
-
-    Task<Void> nodeModeChanged(NodeAddress nodeAddress, NodeState newMode);
 }
+
