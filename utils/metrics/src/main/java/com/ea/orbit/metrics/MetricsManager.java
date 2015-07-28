@@ -74,6 +74,10 @@ public class MetricsManager
         return nameSanitizationRegex.matcher(name).replaceAll(""); //strip illegal characters
     }
 
+    public MetricRegistry getRegistry()
+    {
+        return registry;
+    }
 
     public synchronized void initializeMetrics(List<ReporterConfig> reporterConfigs)
     {

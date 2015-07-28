@@ -60,6 +60,7 @@ import javax.inject.Singleton;
 import javax.websocket.server.ServerContainer;
 import javax.websocket.server.ServerEndpoint;
 
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
@@ -158,7 +159,14 @@ public class EmbeddedHttpServer implements Startable
         resourceContext.setHandler(resourceHandler);
         resourceContext.setInitParameter("useFileMappedBuffer", "false");
         final ContextHandlerCollection contexts = new ContextHandlerCollection();
-        contexts.setHandlers(new Handler[]{ resourceContext, webAppContext });
+
+        boolean handlersWrappedByMetrics = false;
+
+
+        if (!handlersWrappedByMetrics)
+        {
+            contexts.setHandlers(new Handler[]{ resourceContext, webAppContext });
+        }
 
         server = new Server(port);
         server.setHandler(contexts);
@@ -241,5 +249,24 @@ public class EmbeddedHttpServer implements Startable
     public void setPort(final int port)
     {
         this.port = port;
+    }
+
+    private Handler wrapHandlerWithMetrics(Handler handlerToWrap)
+    {
+        try
+        {
+            Class metricsFactoryClass = Class.forName("com.ea.orbit.metrics.JettyMetricsHandlerFactory");
+            Method getInstanceMethod = metricsFactoryClass.getDeclaredMethod("wrapHandler", Handler.class);
+            Handler wrappedHandler = (Handler) getInstanceMethod.invoke(handlerToWrap);
+
+            return wrappedHandler;
+        }
+        catch (Exception ex)
+        {
+            //OK. Orbit Metrics not being used.
+        }
+
+        //If we get here, Orbit Metrics isn't being used so just return the handler as-is.
+        return handlerToWrap;
     }
 }
