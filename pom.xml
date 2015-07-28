@@ -50,7 +50,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>packaging/all-docs</module>
         <module>utils/agent-loader</module>
         <module>utils/metrics</module>
-        <module>utils/metrics-web</module>
         <module>utils/rest-client</module>
     </modules>
 

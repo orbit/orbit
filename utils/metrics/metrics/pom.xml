@@ -32,35 +32,57 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.ea.orbit</groupId>
-        <artifactId>orbit-parent</artifactId>
+        <artifactId>orbit-metrics-parent</artifactId>
         <version>0.3.2-SNAPSHOT</version>
         <relativePath>../..</relativePath>
     </parent>
-    <artifactId>orbit-metrics-web</artifactId>
-    <name>Orbit Metrics Integration for Jetty and Jersey</name>
+    <artifactId>orbit-metrics</artifactId>
+    <name>Orbit Metrics</name>
 
     <properties>
         <metrics.version>3.1.2</metrics.version>
-        <jetty.version>9.2.10.v20150310</jetty.version>
     </properties>
 
    <dependencies>
-       <dependency>
-           <groupId>com.ea.orbit</groupId>
-           <artifactId>orbit-metrics</artifactId>
-           <version>${project.version}</version>
-       </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <scope>test</scope>
+        </dependency>
 
        <dependency>
            <groupId>io.dropwizard.metrics</groupId>
-           <artifactId>metrics-jetty9</artifactId>
+           <artifactId>metrics-core</artifactId>
            <version>${metrics.version}</version>
        </dependency>
 
        <dependency>
-           <groupId>org.eclipse.jetty</groupId>
-           <artifactId>jetty-server</artifactId>
-           <version>${jetty.version}</version>
+           <groupId>io.dropwizard.metrics</groupId>
+           <artifactId>metrics-ganglia</artifactId>
+           <version>${metrics.version}</version>
+           <optional>true</optional>
+       </dependency>
+
+       <dependency>
+           <groupId>io.dropwizard.metrics</groupId>
+           <artifactId>metrics-graphite</artifactId>
+           <version>${metrics.version}</version>
+       </dependency>
+
+       <dependency>
+           <groupId>com.ea.orbit</groupId>
+           <artifactId>orbit-commons</artifactId>
+           <version>${project.version}</version>
+       </dependency>
+
+       <dependency>
+           <groupId>com.ea.orbit</groupId>
+           <artifactId>orbit-container</artifactId>
+           <version>${project.version}</version>
        </dependency>
 
    </dependencies>
