@@ -33,7 +33,7 @@ import org.eclipse.jetty.server.Handler;
 
 import com.codahale.metrics.jetty9.InstrumentedHandler;
 
-public class JettyMetricsHandlerFactory
+public class JettyMetricsHandlerWrapper
 {
     public static HandlerWrapper wrapHandler(Handler handlerToWrap)
     {
