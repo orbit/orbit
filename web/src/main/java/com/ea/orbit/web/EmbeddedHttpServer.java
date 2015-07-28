@@ -161,7 +161,7 @@ public class EmbeddedHttpServer implements Startable
         resourceContext.setInitParameter("useFileMappedBuffer", "false");
         final ContextHandlerCollection contexts = new ContextHandlerCollection();
 
-        contexts.setHandlers(new Handler[]{ wrapHandlerWithMetrics(resourceContext), wrapHandlerWithMetrics(webAppContext) });
+        contexts.setHandlers(new Handler[]{ wrapHandlerWithMetrics(resourceContext, "resourceContext"), wrapHandlerWithMetrics(webAppContext, "webAppContext") });
 
         server = new Server(port);
         server.setHandler(contexts);
@@ -246,18 +246,19 @@ public class EmbeddedHttpServer implements Startable
         this.port = port;
     }
 
-    private Handler wrapHandlerWithMetrics(Handler handlerToWrap)
+    private Handler wrapHandlerWithMetrics(Handler handlerToWrap, String handlerName)
     {
         try
         {
             Class metricsWrapperClass = Class.forName("com.ea.orbit.metrics.JettyMetricsHandlerWrapper");
-            Method wrapperMethod = metricsWrapperClass.getDeclaredMethod("wrapHandler", Handler.class);
-            Handler wrappedHandler = (Handler) wrapperMethod.invoke(null, handlerToWrap);
+            Method wrapperMethod = metricsWrapperClass.getDeclaredMethod("wrapHandler", Handler.class, String.class);
+            Handler wrappedHandler = (Handler) wrapperMethod.invoke(null, handlerToWrap, handlerName);
 
             return wrappedHandler;
         }
         catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException ex)
         {
+            logger.info("Skipping Orbit Web Metrics integration because Orbit Metrics is not available.");
             //OK. Orbit Metrics not being used.
         }
 

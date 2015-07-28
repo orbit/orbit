@@ -35,9 +35,9 @@ import com.codahale.metrics.jetty9.InstrumentedHandler;
 
 public class JettyMetricsHandlerWrapper
 {
-    public static HandlerWrapper wrapHandler(Handler handlerToWrap)
+    public static HandlerWrapper wrapHandler(Handler handlerToWrap, String handlerName)
     {
-        InstrumentedHandler ih = new InstrumentedHandler(MetricsManager.getInstance().getRegistry());
+        InstrumentedHandler ih = new InstrumentedHandler(MetricsManager.getInstance().getRegistry(), handlerName);
         ih.setHandler(handlerToWrap);
         return ih;
     }
