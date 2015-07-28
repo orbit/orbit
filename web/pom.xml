@@ -111,6 +111,7 @@
         <dependency>
             <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-metrics-web</artifactId>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
