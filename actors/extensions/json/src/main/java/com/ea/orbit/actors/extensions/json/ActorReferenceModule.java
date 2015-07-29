@@ -34,6 +34,7 @@ import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.RefFactory;
 import com.ea.orbit.exception.UncheckedException;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.Version;
@@ -98,7 +99,7 @@ public class ActorReferenceModule extends Module
             final ActorReference<?> reference = (ActorReference<?>) value;
             final String text = String.valueOf(ActorReference.getId(reference));
             final Class<?> interfaceClass = ActorReference.getInterfaceClass(reference);
-            if (rawClass == null || interfaceClass == rawClass)
+            if (interfaceClass != null && (interfaceClass == rawClass))
             {
                 // escape starting '!'
                 if (!text.startsWith("!!"))
@@ -111,6 +112,10 @@ public class ActorReferenceModule extends Module
                 }
 
             }
+            else if (interfaceClass != null && rawClass == null)
+            {
+                throw new IOException("Illegal json serialization of actor reference " + interfaceClass + ":" + text + " won't be able to deserialize later");
+            }
             else
             {
                 jgen.writeString("!!" + interfaceClass.getName() + " " + text);
@@ -121,12 +126,16 @@ public class ActorReferenceModule extends Module
         public JsonSerializer<?> createContextual(final SerializerProvider prov, final BeanProperty property) throws JsonMappingException
         {
             //return property.get;
-            if(property!=null)
+            if (property != null)
             {
                 final JavaType type = property.getType();
                 if (type != null)
                 {
                     final Class<?> clazz = type.getRawClass();
+                    if (type.isCollectionLikeType())
+                    {
+                        return new RefSerializer(type.getContentType().getRawClass());
+                    }
                     if (clazz != null)
                     {
                         return new RefSerializer(clazz);
@@ -160,17 +169,17 @@ public class ActorReferenceModule extends Module
             this.factory = factory;
         }
 
-        @SuppressWarnings({ "unchecked", "rawtypes" })
-		@Override
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        @Override
         public Object deserialize(final JsonParser jsonParser, final DeserializationContext ctxt) throws IOException
         {
             final String text = jsonParser.getText();
-            if (text!=null && text.startsWith("!!"))
+            if (text != null && text.startsWith("!!"))
             {
                 if (text.startsWith("!!!"))
                 {
-                	// three "!!!" is the escape when the id starts with "!!"
-                    return factory.getReference((Class)iClass, text.substring(1));
+                    // three "!!!" is the escape when the id starts with "!!"
+                    return factory.getReference((Class) iClass, text.substring(1));
                 }
                 int idx = text.indexOf(' ');
                 String className = text.substring(2, idx);
@@ -185,7 +194,7 @@ public class ActorReferenceModule extends Module
                     throw new UncheckedException("Can't find class: " + e);
                 }
             }
-            return factory.getReference((Class)iClass, text);
+            return factory.getReference((Class) iClass, text);
         }
     }
 
@@ -201,15 +210,15 @@ public class ActorReferenceModule extends Module
             this.factory = factory;
         }
 
-        @SuppressWarnings({ "rawtypes", "unchecked" })
-		@Override
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        @Override
         public Object deserialize(final JsonParser jsonParser, final DeserializationContext ctxt) throws IOException
         {
             final String text = jsonParser.getText();
             final int idx = text.indexOf('/');
 
             final UUID uuid = UUID.fromString(text.substring(0, idx));
-            return factory.getObserverReference(uuid, (Class)iClass, text.substring(idx + 1));
+            return factory.getObserverReference(uuid, (Class) iClass, text.substring(idx + 1));
         }
     }
 
