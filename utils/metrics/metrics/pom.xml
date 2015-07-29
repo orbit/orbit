@@ -32,20 +32,47 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.ea.orbit</groupId>
-        <artifactId>orbit-parent</artifactId>
+        <artifactId>orbit-metrics-parent</artifactId>
         <version>0.4.3-SNAPSHOT</version>
-        <relativePath>../..</relativePath>
+        <relativePath>..</relativePath>
     </parent>
-    <artifactId>orbit-metrics-parent</artifactId>
-	<packaging>pom</packaging>
-    <name>Orbit Metrics Parent</name>
-	
-	<modules>
-		<module>metrics</module>
-		<module>metrics-web</module>
-	</modules>
+    <artifactId>orbit-metrics</artifactId>
+    <name>Orbit Metrics</name>
+
+    <properties>
+        <metrics.version>3.1.2</metrics.version>
+    </properties>
 
    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+       <dependency>
+           <groupId>io.dropwizard.metrics</groupId>
+           <artifactId>metrics-core</artifactId>
+           <version>${metrics.version}</version>
+       </dependency>
+
+       <dependency>
+           <groupId>io.dropwizard.metrics</groupId>
+           <artifactId>metrics-ganglia</artifactId>
+           <version>${metrics.version}</version>
+           <optional>true</optional>
+       </dependency>
+
+       <dependency>
+           <groupId>io.dropwizard.metrics</groupId>
+           <artifactId>metrics-graphite</artifactId>
+           <version>${metrics.version}</version>
+       </dependency>
+
        <dependency>
            <groupId>com.ea.orbit</groupId>
            <artifactId>orbit-commons</artifactId>
