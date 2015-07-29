@@ -39,6 +39,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <artifactId>orbit-metrics-parent</artifactId>
 	<packaging>pom</packaging>
     <name>Orbit Metrics Parent</name>
+
+    <properties>
+        <metrics.version>3.1.2</metrics.version>
+    </properties>
 	
 	<modules>
 		<module>metrics</module>

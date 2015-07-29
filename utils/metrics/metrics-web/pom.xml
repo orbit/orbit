@@ -39,11 +39,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <artifactId>orbit-metrics-web</artifactId>
     <name>Orbit Metrics Integration for Jetty and Jersey</name>
 
-    <properties>
-        <metrics.version>3.1.2</metrics.version>
-        <jetty.version>9.2.10.v20150310</jetty.version>
-    </properties>
-
    <dependencies>
        <dependency>
            <groupId>com.ea.orbit</groupId>

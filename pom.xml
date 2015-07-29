@@ -83,7 +83,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>3.19.0-GA</version>
+                <version>3.20.0-GA</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -147,8 +147,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <asm.version>5.0.4</asm.version>
-        <jackson.version>2.5.3</jackson.version>
+        <jackson.version>2.6.0</jackson.version>
         <jersey.version>2.19</jersey.version>
+        <jetty.version>9.2.10.v20150310</jetty.version>
     </properties>
 
     <build>
@@ -183,7 +184,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-                <version>3.4</version>
+                <version>3.5</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -238,7 +239,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.10.2</version>
+                        <version>2.10.3</version>
                         <configuration>
                             <failOnError>false</failOnError>
                             <additionalparam>-Xdoclint:none</additionalparam>

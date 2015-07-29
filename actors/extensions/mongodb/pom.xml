@@ -57,7 +57,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-            <version>3.0.1</version>
+            <version>3.0.3</version>
         </dependency>
         <dependency>
             <groupId>com.ea.orbit</groupId>

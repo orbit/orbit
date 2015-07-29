@@ -39,10 +39,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <artifactId>orbit-metrics</artifactId>
     <name>Orbit Metrics</name>
 
-    <properties>
-        <metrics.version>3.1.2</metrics.version>
-    </properties>
-
    <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>
