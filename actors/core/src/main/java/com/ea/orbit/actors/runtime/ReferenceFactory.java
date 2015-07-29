@@ -66,6 +66,10 @@ public class ReferenceFactory implements RefFactory
         ActorFactory<T> factory = (ActorFactory<T>) factories.get(iClass);
         if (factory == null)
         {
+            if (!iClass.isInterface())
+            {
+                throw new IllegalArgumentException("Expecting an interface, but got: " + iClass.getName());
+            }
             try
             {
                 String factoryClazz = iClass.getSimpleName() + "Factory";
