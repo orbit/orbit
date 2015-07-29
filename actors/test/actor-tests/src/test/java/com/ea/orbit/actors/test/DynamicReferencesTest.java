@@ -43,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 public class DynamicReferencesTest extends ActorBaseTest
 {
 
-    public static interface AptUnfriendly extends Actor
+    public interface AptUnfriendly extends Actor
     {
         Task<String> hello();
     }
@@ -67,6 +67,11 @@ public class DynamicReferencesTest extends ActorBaseTest
         // this won't the your run of the mill apt generated class
         AptUnfriendly ref = Actor.getReference(AptUnfriendly.class, "0");
         assertEquals("hello", ref.hello().join());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIllegalRef() {
+        AptUnfriendly ref = Actor.getReference(AptUnfriendlyActor.class, "0");
     }
 
 }
