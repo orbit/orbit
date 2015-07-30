@@ -44,8 +44,6 @@ import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.eclipse.jetty.websocket.jsr356.server.BasicServerEndpointConfig;
-import org.eclipse.jetty.websocket.jsr356.server.BasicServerEndpointConfigurator;
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 import org.glassfish.hk2.api.DynamicConfiguration;
 import org.glassfish.hk2.api.DynamicConfigurationService;
@@ -59,6 +57,7 @@ import org.glassfish.jersey.servlet.ServletProperties;
 import javax.inject.Singleton;
 import javax.websocket.server.ServerContainer;
 import javax.websocket.server.ServerEndpoint;
+import javax.websocket.server.ServerEndpointConfig;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -175,22 +174,17 @@ public class EmbeddedHttpServer implements Startable
                 if (c.isAnnotationPresent(ServerEndpoint.class))
                 {
                     final ServerEndpoint annotation = (ServerEndpoint) c.getAnnotation(ServerEndpoint.class);
-                    serverContainer.addEndpoint(new BasicServerEndpointConfig(c, annotation.value())
-                    {
 
+                    final ServerEndpointConfig serverEndpointConfig = ServerEndpointConfig.Builder.create(c, annotation.value()).configurator(new ServerEndpointConfig.Configurator()
+                    {
                         @Override
-                        public Configurator getConfigurator()
+                        public <T> T getEndpointInstance(final Class<T> endpointClass) throws InstantiationException
                         {
-                            return new BasicServerEndpointConfigurator()
-                            {
-                                @Override
-                                public <T> T getEndpointInstance(final Class<T> endpointClass) throws InstantiationException
-                                {
-                                    return container.get(endpointClass);
-                                }
-                            };
+                            return container.get(endpointClass);
                         }
-                    });
+                    }).build();
+
+                    serverContainer.addEndpoint(serverEndpointConfig);
                 }
             }
         }
