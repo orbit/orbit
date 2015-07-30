@@ -65,7 +65,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     <target>${project.target.jdk}</target>
                     <source>${project.source.jdk}</source>
                 </configuration>
-                <version>3.1</version>
             </plugin>
         </plugins>
     </build>
