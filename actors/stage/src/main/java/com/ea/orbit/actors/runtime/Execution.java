@@ -43,6 +43,7 @@ import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.annotation.OnlyIfActivated;
+import com.ea.orbit.concurrent.ExecutionContext;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -135,7 +136,8 @@ public class Execution implements Runtime
         runtimeIdentity = generateRuntimeIdentity();
     }
 
-    private String generateRuntimeIdentity() {
+    private String generateRuntimeIdentity()
+    {
         final UUID uuid = UUID.randomUUID();
         final String encoded = Base64.getEncoder().encodeToString(
                 ByteBuffer.allocate(16).putLong(uuid.getMostSignificantBits()).putLong(uuid.getLeastSignificantBits()).array());
@@ -830,7 +832,7 @@ public class Execution implements Runtime
 
     public void onMessageReceived(final NodeAddress from,
                                   final boolean oneway, final int messageId, final int interfaceId, final int methodId,
-                                  final Object key, final Object[] params)
+                                  final Object key, Object headers, final Object[] params)
     {
         EntryKey entryKey = new EntryKey(interfaceId, key);
         if (logger.isDebugEnabled())
@@ -839,7 +841,7 @@ public class Execution implements Runtime
         }
         messagesReceived.increment();
         if (!executionSerializer.offerJob(entryKey,
-                () -> handleOnMessageReceived(entryKey, from, oneway, messageId, interfaceId, methodId, key, params), maxQueueSize))
+                () -> handleOnMessageReceived(entryKey, from, oneway, messageId, interfaceId, methodId, key, headers, params), maxQueueSize))
         {
             refusedExecutions.increment();
             if (logger.isErrorEnabled())
@@ -856,7 +858,7 @@ public class Execution implements Runtime
     // this method is executed serially by entryKey
     private Task<?> handleOnMessageReceived(final EntryKey entryKey, final NodeAddress from,
                                             final boolean oneway, final int messageId, final int interfaceId,
-                                            final int methodId, final Object key,
+                                            final int methodId, final Object key, final Object headers,
                                             final Object[] params)
     {
         messagesHandled.increment();
@@ -911,12 +913,12 @@ public class Execution implements Runtime
         final ReferenceEntry theEntry = entry;
         if (!entry.statelessWorker)
         {
-            return executeMessage(theEntry, oneway, descriptor, methodId, params, from, messageId);
+            return executeMessage(theEntry, oneway, descriptor, methodId, headers, params, from, messageId);
         }
         else
         {
             if (!executionSerializer.offerJob(null,
-                    () -> executeMessage(theEntry, oneway, descriptor, methodId, params, from, messageId),
+                    () -> executeMessage(theEntry, oneway, descriptor, methodId, headers, params, from, messageId),
                     maxQueueSize))
             {
                 refusedExecutions.increment();
@@ -935,7 +937,7 @@ public class Execution implements Runtime
     }
 
 
-    ThreadLocal<MessageContext> currentMessage = new ThreadLocal<>();
+    //ThreadLocal<MessageContext> currentMessage = new ThreadLocal<>();
 
     static class MessageContext
     {
@@ -954,9 +956,25 @@ public class Execution implements Runtime
         }
     }
 
+    private MessageContext getMessageContext()
+    {
+        final ExecutionContext current = ExecutionContext.current();
+        if (current == null)
+        {
+            return null;
+        }
+        final Object property = current.getProperty(MessageContext.class.getName());
+        if (!(property instanceof MessageContext))
+        {
+            return null;
+        }
+        return ((MessageContext) property);
+    }
+
+
     public ActorReference getCurrentActivation()
     {
-        MessageContext current = currentMessage.get();
+        final MessageContext current = getMessageContext();
         if (current == null)
         {
             return null;
@@ -966,7 +984,7 @@ public class Execution implements Runtime
 
     public long getCurrentTraceId()
     {
-        MessageContext current = currentMessage.get();
+        final MessageContext current = getMessageContext();
         if (current == null)
         {
             return 0;
@@ -979,21 +997,24 @@ public class Execution implements Runtime
             final boolean oneway,
             final InterfaceDescriptor descriptor,
             final int methodId,
+            final Object headers,
             final Object[] params,
             final NodeAddress from,
             final int messageId)
     {
+        final ExecutionContext context = ExecutionContext.pushNew();
+        context.setProperty(Runtime.class.getName(), this);
         try
         {
-
-            currentMessage.set(new MessageContext(theEntry, methodId, from));
+            final MessageContext messageContext = new MessageContext(theEntry, methodId, from);
+            context.setProperty(MessageContext.class.getName(), messageContext);
             Activation activation = theEntry.popActivation();
             activation.lastAccess = clock.millis();
-            Task<?> future;
+            context.setProperty(Messaging.ORBIT_MESSAGE_HEADERS, headers);
             try
             {
                 bind();
-                future = descriptor.invoker.safeInvoke(activation.getOrCreateInstance(), methodId, params);
+                Task<?> future = descriptor.invoker.safeInvoke(activation.getOrCreateInstance(), methodId, params);
                 return future.whenComplete((r, e) -> {
                     sendResponseAndLogError(oneway, from, messageId, r, e);
                 });
@@ -1010,7 +1031,7 @@ public class Execution implements Runtime
         }
         finally
         {
-            currentMessage.remove();
+            context.pop();
         }
         return Task.done();
     }
@@ -1065,7 +1086,7 @@ public class Execution implements Runtime
     }
 
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({"unchecked"})
     <T> T createReference(final NodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
@@ -1176,7 +1197,7 @@ public class Execution implements Runtime
             DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
             ObjectOutput out = messaging.createObjectOutput(d);
 
-            for(Object param : params)
+            for (Object param : params)
             {
                 out.writeObject(param);
             }
@@ -1184,7 +1205,8 @@ public class Execution implements Runtime
             out.close();
 
             return String.format("%032X", new BigInteger(1, md.digest()));
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new UncheckedException("Unable to make parameter hash", e);
         }
@@ -1316,27 +1338,27 @@ public class Execution implements Runtime
             }
         }
         return true;
-	}
+    }
 
-    @ExportMetric(name="localActorCount", scope=MetricScope.PROTOTYPE)
+    @ExportMetric(name = "localActorCount", scope = MetricScope.PROTOTYPE)
     public long getLocalActorCount()
     {
         return localActors.size();
     }
 
-    @ExportMetric(name="messagesReceived", scope=MetricScope.PROTOTYPE)
+    @ExportMetric(name = "messagesReceived", scope = MetricScope.PROTOTYPE)
     public long getMessagesReceived()
     {
         return messagesReceived.longValue();
     }
 
-    @ExportMetric(name="messagesHandled", scope=MetricScope.PROTOTYPE)
+    @ExportMetric(name = "messagesHandled", scope = MetricScope.PROTOTYPE)
     public long getMessagesHandled()
     {
         return messagesHandled.longValue();
     }
 
-    @ExportMetric(name="refusedExecutions",scope=MetricScope.PROTOTYPE)
+    @ExportMetric(name = "refusedExecutions", scope = MetricScope.PROTOTYPE)
     public long getRefusedExecutions()
     {
         return refusedExecutions.longValue();

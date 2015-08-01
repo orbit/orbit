@@ -31,6 +31,7 @@ package com.ea.orbit.actors.runtime;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.concurrent.ExecutionContext;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -61,6 +62,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 public class Messaging implements Startable
 {
+    public static final String ORBIT_MESSAGE_HEADERS = "orbit.messageHeaders";
     private static Object NIL = null;
     private static final Logger logger = LoggerFactory.getLogger(Messaging.class);
     // consults with Hosting to determine the target server to send the message to.
@@ -196,8 +198,9 @@ public class Messaging implements Startable
                     int interfaceId = in.readInt();
                     int methodId = in.readInt();
                     Object key = in.readObject();
+                    Object headers = in.readObject();
                     Object[] params = (Object[]) in.readObject();
-                    execution.onMessageReceived(from, oneway, messageId, interfaceId, methodId, key, params);
+                    execution.onMessageReceived(from, oneway, messageId, interfaceId, methodId, key, headers, params);
                     break;
                 case MessageDefinitions.NORMAL_RESPONSE:
                 case MessageDefinitions.EXCEPTION_RESPONSE:
@@ -270,8 +273,17 @@ public class Messaging implements Startable
             objectOutput.writeObject(res);
             objectOutput.flush();
         }
-        catch (IOException e)
+        catch (Exception e)
         {
+            if (res instanceof Throwable)
+            {
+                final UncheckedException e1 = new UncheckedException(((Throwable) res).getMessage());
+                e1.setStackTrace(((Throwable) res).getStackTrace());
+
+                final UncheckedException e2 = new UncheckedException(e.getMessage(), e1);
+                e2.setStackTrace(e.getStackTrace());
+                throw e2;
+            }
             throw new UncheckedException(e);
         }
         clusterPeer.sendMessage(to, byteArrayOutputStream.toByteArray());
@@ -280,8 +292,8 @@ public class Messaging implements Startable
     private static class ReferenceReplacement implements Serializable
     {
         private static final long serialVersionUID = 1L;
-        
-		Class<?> interfaceClass;
+
+        Class<?> interfaceClass;
         Object id;
         NodeAddress address;
     }
@@ -338,8 +350,8 @@ public class Messaging implements Startable
                 enableResolveObject(true);
             }
 
-            @SuppressWarnings({ "unchecked", "rawtypes" })
-			@Override
+            @SuppressWarnings({"unchecked", "rawtypes"})
+            @Override
             protected Object resolveObject(Object obj) throws IOException
             {
                 if (obj instanceof ReferenceReplacement)
@@ -347,9 +359,9 @@ public class Messaging implements Startable
                     ReferenceReplacement replacement = (ReferenceReplacement) obj;
                     if (replacement.address != null)
                     {
-                        return execution.getRemoteObserverReference(replacement.address, (Class)replacement.interfaceClass, replacement.id);
+                        return execution.getRemoteObserverReference(replacement.address, (Class) replacement.interfaceClass, replacement.id);
                     }
-                    return execution.getReference((Class)replacement.interfaceClass, replacement.id);
+                    return execution.getReference((Class) replacement.interfaceClass, replacement.id);
 
                 }
                 return super.resolveObject(obj);
@@ -371,6 +383,9 @@ public class Messaging implements Startable
             objectOutput.writeInt(interfaceId);
             objectOutput.writeInt(methodId);
             objectOutput.writeObject(key);
+            final ExecutionContext context = ExecutionContext.current();
+            final Object headers = context != null ? context.getProperty(ORBIT_MESSAGE_HEADERS) : null;
+            objectOutput.writeObject(headers);
             objectOutput.writeObject(params);
             objectOutput.flush();
         }
