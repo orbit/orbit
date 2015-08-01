@@ -27,11 +27,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package com.ea.orbit.actors.test.transactions;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.concurrent.Task;
 
-public class TransactionalState
+public interface TransactionalActor extends Actor
 {
-    protected List<TransactionEvent> events = new ArrayList<>();
-    //protected T snapshot;
+    Task<Void> cancelTransaction(String transactionId);
 }
