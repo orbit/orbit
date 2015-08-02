@@ -9,9 +9,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class ExecutionContext
+public class TaskContext
 {
-    private static ThreadLocal<LinkedList<ExecutionContext>> contextStacks = new ThreadLocal<>();
+    // TODO: replace the linked list with a compressed stack (i.e. repeated object == a counter)
+    private static ThreadLocal<LinkedList<TaskContext>> contextStacks = new ThreadLocal<>();
     private static AtomicLong nextId = new AtomicLong(1);
     private long id = nextId.getAndIncrement();
 
@@ -22,7 +23,7 @@ public class ExecutionContext
      */
     public void push()
     {
-        LinkedList<ExecutionContext> stack = contextStacks.get();
+        LinkedList<TaskContext> stack = contextStacks.get();
         if (stack == null)
         {
             stack = new LinkedList<>();
@@ -32,24 +33,12 @@ public class ExecutionContext
     }
 
     /**
-     * Creates a new execution context and pushes it to the current thread context stack.
-     *
-     * @return the new execution context
-     */
-    public static ExecutionContext pushNew()
-    {
-        final ExecutionContext context = new ExecutionContext();
-        context.push();
-        return context;
-    }
-
-    /**
      * Removes the this execution context from the context stack for the current thread.
      * This will fail with IllegalStateException if the current context is not at the top of the stack.
      */
     public void pop()
     {
-        LinkedList<ExecutionContext> stack = contextStacks.get();
+        LinkedList<TaskContext> stack = contextStacks.get();
         if (stack == null || stack.size() == 0 || stack.getLast() != this)
         {
             throw new IllegalStateException("Invalid execution context stack state: " + stack);
@@ -60,7 +49,7 @@ public class ExecutionContext
     @Override
     public String toString()
     {
-        return "ExecutionContext:" + id;
+        return getClass().getSimpleName() + ":" + id;
     }
 
     /**
@@ -68,9 +57,9 @@ public class ExecutionContext
      *
      * @return the current context or null if there is none.
      */
-    public static ExecutionContext current()
+    public static TaskContext current()
     {
-        final LinkedList<ExecutionContext> stack = contextStacks.get();
+        final LinkedList<TaskContext> stack = contextStacks.get();
         if (stack == null || stack.size() == 0)
         {
             return null;
@@ -86,7 +75,7 @@ public class ExecutionContext
      */
     public static Runnable wrap(Runnable w)
     {
-        ExecutionContext c = current();
+        TaskContext c = current();
         if (c != null)
         {
             return () -> {
@@ -112,7 +101,7 @@ public class ExecutionContext
      */
     public static <T, U> BiConsumer<T, U> wrap(BiConsumer<T, U> w)
     {
-        ExecutionContext c = current();
+        TaskContext c = current();
         if (c != null)
         {
             return (t, u) -> {
@@ -138,7 +127,7 @@ public class ExecutionContext
      */
     public static <T> Consumer<T> wrap(Consumer<T> w)
     {
-        ExecutionContext c = current();
+        TaskContext c = current();
         if (c != null)
         {
             return (t) -> {
@@ -164,7 +153,7 @@ public class ExecutionContext
      */
     public static <T, R> Function<T, R> wrap(Function<T, R> w)
     {
-        ExecutionContext c = current();
+        TaskContext c = current();
         if (c != null)
         {
             return (t) -> {
@@ -191,7 +180,7 @@ public class ExecutionContext
      */
     public static <T, U, R> BiFunction<T, U, R> wrap(BiFunction<T, U, R> w)
     {
-        ExecutionContext c = current();
+        TaskContext c = current();
         if (c != null)
         {
             return (t, u) -> {
@@ -217,7 +206,7 @@ public class ExecutionContext
      */
     public static <T> Supplier<T> wrap(Supplier<T> w)
     {
-        ExecutionContext c = current();
+        TaskContext c = current();
         if (c != null)
         {
             return () -> {

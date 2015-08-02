@@ -29,7 +29,7 @@ package com.ea.orbit.actors.test.transactions;
 
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Messaging;
-import com.ea.orbit.concurrent.ExecutionContext;
+import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -50,7 +50,7 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
 
     static String currentTransactionId()
     {
-        final ExecutionContext context = ExecutionContext.current();
+        final TaskContext context = TaskContext.current();
         if (context == null)
         {
             return null;
@@ -71,7 +71,7 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
     protected <R> Task<R> transaction(Function<String, Task<R>> function)
     {
         String transactionId = UUID.randomUUID().toString();
-        final ExecutionContext context = ExecutionContext.current();
+        final TaskContext context = TaskContext.current();
         final Object parentTransactionId = context.getProperty(ORBIT_TRANSACTION_ID);
         context.setProperty(ORBIT_TRANSACTION_ID, transactionId);
         final Object headers = context.getProperty(Messaging.ORBIT_MESSAGE_HEADERS);

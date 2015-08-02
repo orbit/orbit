@@ -31,7 +31,7 @@ package com.ea.orbit.actors.runtime;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.concurrent.ExecutionContext;
+import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -383,7 +383,7 @@ public class Messaging implements Startable
             objectOutput.writeInt(interfaceId);
             objectOutput.writeInt(methodId);
             objectOutput.writeObject(key);
-            final ExecutionContext context = ExecutionContext.current();
+            final TaskContext context = TaskContext.current();
             final Object headers = context != null ? context.getProperty(ORBIT_MESSAGE_HEADERS) : null;
             objectOutput.writeObject(headers);
             objectOutput.writeObject(params);

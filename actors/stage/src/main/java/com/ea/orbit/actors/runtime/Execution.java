@@ -43,9 +43,9 @@ import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.annotation.OnlyIfActivated;
-import com.ea.orbit.concurrent.ExecutionContext;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.metrics.annotations.ExportMetric;
@@ -435,6 +435,7 @@ public class Execution implements Runtime
                 if (newInstance instanceof AbstractActor)
                 {
                     final AbstractActor<?> actor = (AbstractActor<?>) newInstance;
+                    ActorTaskContext.current().setActor(actor);
                     actor.reference = entry.reference;
 
                     actor.stateExtension = getStorageExtensionFor(actor);
@@ -958,7 +959,7 @@ public class Execution implements Runtime
 
     private MessageContext getMessageContext()
     {
-        final ExecutionContext current = ExecutionContext.current();
+        final TaskContext current = TaskContext.current();
         if (current == null)
         {
             return null;
@@ -1002,7 +1003,7 @@ public class Execution implements Runtime
             final NodeAddress from,
             final int messageId)
     {
-        final ExecutionContext context = ExecutionContext.pushNew();
+        final ActorTaskContext context = ActorTaskContext.pushNew();
         context.setProperty(Runtime.class.getName(), this);
         try
         {
@@ -1014,7 +1015,10 @@ public class Execution implements Runtime
             try
             {
                 bind();
-                Task<?> future = descriptor.invoker.safeInvoke(activation.getOrCreateInstance(), methodId, params);
+                final Object actor = activation.getOrCreateInstance();
+                context.setActor((AbstractActor<?>) actor);
+
+                Task<?> future = descriptor.invoker.safeInvoke(actor, methodId, params);
                 return future.whenComplete((r, e) -> {
                     sendResponseAndLogError(oneway, from, messageId, r, e);
                 });
@@ -1086,7 +1090,7 @@ public class Execution implements Runtime
     }
 
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "unchecked" })
     <T> T createReference(final NodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);

@@ -295,19 +295,20 @@ public class Task<T> extends CompletableFuture<T>
     @Override
     public <U> Task<U> thenApply(final Function<? super T, ? extends U> fn)
     {
-        return from(super.thenApply(ExecutionContext.wrap(fn)));
+        final Function<? super T, ? extends U> wrap = TaskContext.wrap(fn);
+        return from(super.thenApply(wrap));
     }
 
     @Override
     public Task<Void> thenAccept(final Consumer<? super T> action)
     {
-        return from(super.thenAccept(ExecutionContext.wrap(action)));
+        return from(super.thenAccept(TaskContext.wrap(action)));
     }
 
     @Override
     public Task<T> whenComplete(final BiConsumer<? super T, ? super Throwable> action)
     {
-        return from(super.whenComplete(ExecutionContext.wrap(action)));
+        return from(super.whenComplete(TaskContext.wrap(action)));
     }
 
     /**
@@ -325,241 +326,251 @@ public class Task<T> extends CompletableFuture<T>
     public <U> Task<U> thenReturn(final Supplier<U> supplier)
     {
         // must be separated otherwise the execution of the wrap could happen in another thread
-        final Supplier<U> wrap = ExecutionContext.wrap(supplier);
+        final Supplier<U> wrap = TaskContext.wrap(supplier);
         return from(super.thenApply(x -> wrap.get()));
     }
 
     public <U> Task<U> thenCompose(Function<? super T, ? extends CompletionStage<U>> fn)
     {
-        final Function<? super T, ? extends CompletionStage<U>> wrap = ExecutionContext.wrap(fn);
+        final Function<? super T, ? extends CompletionStage<U>> wrap = TaskContext.wrap(fn);
         return Task.from(super.thenCompose(wrap));
     }
 
     public <U> Task<U> thenCompose(Supplier<? extends CompletionStage<U>> fn)
     {
         // must be separated otherwise the execution of the wrap could happen in another thread
-        final Supplier<? extends CompletionStage<U>> wrap = ExecutionContext.wrap(fn);
+        final Supplier<? extends CompletionStage<U>> wrap = TaskContext.wrap(fn);
         return Task.from(super.thenCompose((T x) -> wrap.get()));
     }
 
     @Override
     public <U> Task<U> handle(final BiFunction<? super T, Throwable, ? extends U> fn)
     {
-        return from(super.handle(ExecutionContext.wrap(fn)));
+        final BiFunction<? super T, Throwable, ? extends U> wrap = TaskContext.wrap(fn);
+        return from(super.handle(wrap));
     }
 
     @Override
     public Task<T> exceptionally(final Function<Throwable, ? extends T> fn)
     {
-        return from(super.exceptionally(ExecutionContext.wrap(fn)));
+        return from(super.exceptionally(TaskContext.wrap(fn)));
     }
 
     @Override
     public Task<Void> thenRun(final Runnable action)
     {
-        return from(super.thenRun(ExecutionContext.wrap(action)));
+        return from(super.thenRun(TaskContext.wrap(action)));
     }
 
     @Override
     public Task<java.lang.Void> acceptEither(CompletionStage<? extends T> completionStage, Consumer<? super T> consumer)
     {
-        return Task.from(super.acceptEither(completionStage, ExecutionContext.wrap(consumer)));
+        final Consumer<? super T> wrap = TaskContext.wrap(consumer);
+        return Task.from(super.acceptEither(completionStage, wrap));
     }
 
     @Override
     public Task<java.lang.Void> acceptEitherAsync(CompletionStage<? extends T> completionStage, Consumer<? super T> consumer)
     {
-        return Task.from(super.acceptEitherAsync(completionStage, ExecutionContext.wrap(consumer)));
+        final Consumer<? super T> wrap = TaskContext.wrap(consumer);
+        return Task.from(super.acceptEitherAsync(completionStage, wrap));
     }
 
     @Override
     public Task<java.lang.Void> acceptEitherAsync(CompletionStage<? extends T> completionStage, Consumer<? super T> consumer, Executor executor)
     {
-        return Task.from(super.acceptEitherAsync(completionStage, ExecutionContext.wrap(consumer), executor));
+        return Task.from(super.acceptEitherAsync(completionStage, TaskContext.wrap(consumer), executor));
     }
 
     @Override
     public <U> Task<U> applyToEither(CompletionStage<? extends T> completionStage, Function<? super T, U> function)
     {
-        return Task.from(super.applyToEither(completionStage, ExecutionContext.wrap(function)));
+        return Task.from(super.applyToEither(completionStage, TaskContext.wrap(function)));
     }
 
     @Override
     public <U> Task<U> applyToEitherAsync(CompletionStage<? extends T> completionStage, Function<? super T, U> function, Executor executor)
     {
-        return Task.from(super.applyToEitherAsync(completionStage, ExecutionContext.wrap(function), executor));
+        return Task.from(super.applyToEitherAsync(completionStage, TaskContext.wrap(function), executor));
     }
 
     @Override
     public <U> Task<U> applyToEitherAsync(CompletionStage<? extends T> completionStage, Function<? super T, U> function)
     {
-        return Task.from(super.applyToEitherAsync(completionStage, ExecutionContext.wrap(function)));
+        return Task.from(super.applyToEitherAsync(completionStage, TaskContext.wrap(function)));
     }
 
     @Override
     public <U> Task<U> handleAsync(BiFunction<? super T, java.lang.Throwable, ? extends U> biFunction, Executor executor)
     {
-        return Task.from(super.handleAsync(ExecutionContext.wrap(biFunction), executor));
+        final BiFunction<? super T, Throwable, ? extends U> wrap = TaskContext.wrap(biFunction);
+        return Task.from(super.handleAsync(wrap, executor));
     }
 
     @Override
     public <U> Task<U> handleAsync(BiFunction<? super T, java.lang.Throwable, ? extends U> biFunction)
     {
-        return Task.from(super.handleAsync(ExecutionContext.wrap(biFunction)));
+        final BiFunction<? super T, Throwable, ? extends U> wrap = TaskContext.wrap(biFunction);
+        return Task.from(super.handleAsync(wrap));
     }
 
     @Override
     public Task<java.lang.Void> runAfterBoth(CompletionStage<?> completionStage, Runnable runnable)
     {
-        return Task.from(super.runAfterBoth(completionStage, ExecutionContext.wrap(runnable)));
+        return Task.from(super.runAfterBoth(completionStage, TaskContext.wrap(runnable)));
     }
 
     @Override
     public Task<java.lang.Void> runAfterBothAsync(CompletionStage<?> completionStage, Runnable runnable)
     {
-        return Task.from(super.runAfterBothAsync(completionStage, ExecutionContext.wrap(runnable)));
+        return Task.from(super.runAfterBothAsync(completionStage, TaskContext.wrap(runnable)));
     }
 
     @Override
     public Task<java.lang.Void> runAfterBothAsync(CompletionStage<?> completionStage, Runnable runnable, Executor executor)
     {
-        return Task.from(super.runAfterBothAsync(completionStage, ExecutionContext.wrap(runnable), executor));
+        return Task.from(super.runAfterBothAsync(completionStage, TaskContext.wrap(runnable), executor));
     }
 
     @Override
     public Task<java.lang.Void> runAfterEither(CompletionStage<?> completionStage, Runnable runnable)
     {
-        return Task.from(super.runAfterEither(completionStage, ExecutionContext.wrap(runnable)));
+        return Task.from(super.runAfterEither(completionStage, TaskContext.wrap(runnable)));
     }
 
     @Override
     public Task<java.lang.Void> runAfterEitherAsync(CompletionStage<?> completionStage, Runnable runnable)
     {
-        return Task.from(super.runAfterEitherAsync(completionStage, ExecutionContext.wrap(runnable)));
+        return Task.from(super.runAfterEitherAsync(completionStage, TaskContext.wrap(runnable)));
     }
 
     @Override
     public Task<java.lang.Void> runAfterEitherAsync(CompletionStage<?> completionStage, Runnable runnable, Executor executor)
     {
-        return Task.from(super.runAfterEitherAsync(completionStage, ExecutionContext.wrap(runnable), executor));
+        return Task.from(super.runAfterEitherAsync(completionStage, TaskContext.wrap(runnable), executor));
     }
 
     public static Task<java.lang.Void> runAsync(Runnable runnable)
     {
-        return Task.from(CompletableFuture.runAsync(ExecutionContext.wrap(runnable)));
+        return Task.from(CompletableFuture.runAsync(TaskContext.wrap(runnable)));
     }
 
     public static Task<java.lang.Void> runAsync(Runnable runnable, Executor executor)
     {
-        return Task.from(CompletableFuture.runAsync(ExecutionContext.wrap(runnable), executor));
+        return Task.from(CompletableFuture.runAsync(TaskContext.wrap(runnable), executor));
     }
 
     public static <U> Task<U> supplyAsync(Supplier<U> supplier)
     {
-        return Task.from(CompletableFuture.supplyAsync(ExecutionContext.wrap(supplier)));
+        return Task.from(CompletableFuture.supplyAsync(TaskContext.wrap(supplier)));
     }
 
     public static <U> Task<U> supplyAsync(Supplier<U> supplier, Executor executor)
     {
-        return Task.from(CompletableFuture.supplyAsync(ExecutionContext.wrap(supplier), executor));
+        return Task.from(CompletableFuture.supplyAsync(TaskContext.wrap(supplier), executor));
     }
 
     @Override
     public Task<java.lang.Void> thenAcceptAsync(Consumer<? super T> consumer, Executor executor)
     {
-        return Task.from(super.thenAcceptAsync(ExecutionContext.wrap(consumer), executor));
+        return Task.from(super.thenAcceptAsync(TaskContext.wrap(consumer), executor));
     }
 
     @Override
     public Task<java.lang.Void> thenAcceptAsync(Consumer<? super T> consumer)
     {
-        return Task.from(super.thenAcceptAsync(ExecutionContext.wrap(consumer)));
+        return Task.from(super.thenAcceptAsync(TaskContext.wrap(consumer)));
     }
 
     @Override
     public <U> Task<java.lang.Void> thenAcceptBoth(CompletionStage<? extends U> completionStage, BiConsumer<? super T, ? super U> biConsumer)
     {
-        return Task.from(super.thenAcceptBoth(completionStage, ExecutionContext.wrap(biConsumer)));
+        return Task.from(super.thenAcceptBoth(completionStage, TaskContext.wrap(biConsumer)));
     }
 
     @Override
     public <U> Task<java.lang.Void> thenAcceptBothAsync(CompletionStage<? extends U> completionStage, BiConsumer<? super T, ? super U> biConsumer, Executor executor)
     {
-        return Task.from(super.thenAcceptBothAsync(completionStage, ExecutionContext.wrap(biConsumer), executor));
+        return Task.from(super.thenAcceptBothAsync(completionStage, TaskContext.wrap(biConsumer), executor));
     }
 
     @Override
     public <U> Task<java.lang.Void> thenAcceptBothAsync(CompletionStage<? extends U> completionStage, BiConsumer<? super T, ? super U> biConsumer)
     {
-        return Task.from(super.thenAcceptBothAsync(completionStage, ExecutionContext.wrap(biConsumer)));
+        return Task.from(super.thenAcceptBothAsync(completionStage, TaskContext.wrap(biConsumer)));
     }
 
     @Override
     public <U> Task<U> thenApplyAsync(Function<? super T, ? extends U> function, Executor executor)
     {
-        return Task.from(super.thenApplyAsync(ExecutionContext.wrap(function), executor));
+        final Function<? super T, ? extends U> wrap = TaskContext.wrap(function);
+        return Task.from(super.thenApplyAsync(wrap, executor));
     }
 
     @Override
     public <U> Task<U> thenApplyAsync(Function<? super T, ? extends U> function)
     {
-        return Task.from(super.thenApplyAsync(ExecutionContext.wrap(function)));
+        final Function<? super T, ? extends U> wrap = TaskContext.wrap(function);
+        return Task.from(super.thenApplyAsync(wrap));
     }
 
     @Override
     public <U, V> Task<V> thenCombine(CompletionStage<? extends U> completionStage, BiFunction<? super T, ? super U, ? extends V> biFunction)
     {
-        return Task.from(super.thenCombine(completionStage, ExecutionContext.wrap(biFunction)));
+        final BiFunction<? super T, ? super U, ? extends V> wrap = TaskContext.wrap(biFunction);
+        return Task.from(super.thenCombine(completionStage, wrap));
     }
 
     @Override
     public <U, V> Task<V> thenCombineAsync(CompletionStage<? extends U> completionStage, BiFunction<? super T, ? super U, ? extends V> biFunction, Executor executor)
     {
-        return Task.from(super.thenCombineAsync(completionStage, ExecutionContext.wrap(biFunction), executor));
+        final BiFunction<? super T, ? super U, ? extends V> wrap = TaskContext.wrap(biFunction);
+        return Task.from(super.thenCombineAsync(completionStage, wrap, executor));
     }
 
     @Override
     public <U, V> Task<V> thenCombineAsync(CompletionStage<? extends U> completionStage, BiFunction<? super T, ? super U, ? extends V> biFunction)
     {
-        return Task.from(super.thenCombineAsync(completionStage, ExecutionContext.wrap(biFunction)));
+        final BiFunction<? super T, ? super U, ? extends V> wrap = TaskContext.wrap(biFunction);
+        return Task.from(super.thenCombineAsync(completionStage, wrap));
     }
 
     @Override
     public <U> Task<U> thenComposeAsync(Function<? super T, ? extends java.util.concurrent.CompletionStage<U>> function, Executor executor)
     {
-        final Function<? super T, ? extends CompletionStage<U>> wrap = ExecutionContext.wrap(function);
+        final Function<? super T, ? extends CompletionStage<U>> wrap = TaskContext.wrap(function);
         return Task.from(super.thenComposeAsync(wrap, executor));
     }
 
     @Override
     public <U> Task<U> thenComposeAsync(Function<? super T, ? extends java.util.concurrent.CompletionStage<U>> function)
     {
-        final Function<? super T, ? extends CompletionStage<U>> wrap = ExecutionContext.wrap(function);
+        final Function<? super T, ? extends CompletionStage<U>> wrap = TaskContext.wrap(function);
         return Task.from(super.thenComposeAsync(wrap));
     }
 
     @Override
     public Task<java.lang.Void> thenRunAsync(Runnable runnable)
     {
-        return Task.from(super.thenRunAsync(ExecutionContext.wrap(runnable)));
+        return Task.from(super.thenRunAsync(TaskContext.wrap(runnable)));
     }
 
     @Override
     public Task<java.lang.Void> thenRunAsync(Runnable runnable, Executor executor)
     {
-        return Task.from(super.thenRunAsync(ExecutionContext.wrap(runnable), executor));
+        return Task.from(super.thenRunAsync(TaskContext.wrap(runnable), executor));
     }
 
     @Override
     public Task<T> whenCompleteAsync(BiConsumer<? super T, ? super java.lang.Throwable> biConsumer)
     {
-        return Task.from(super.whenCompleteAsync(ExecutionContext.wrap(biConsumer)));
+        return Task.from(super.whenCompleteAsync(TaskContext.wrap(biConsumer)));
     }
 
     @Override
     public Task<T> whenCompleteAsync(BiConsumer<? super T, ? super java.lang.Throwable> biConsumer, Executor executor)
     {
-        return Task.from(super.whenCompleteAsync(ExecutionContext.wrap(biConsumer), executor));
+        return Task.from(super.whenCompleteAsync(TaskContext.wrap(biConsumer), executor));
     }
 
 

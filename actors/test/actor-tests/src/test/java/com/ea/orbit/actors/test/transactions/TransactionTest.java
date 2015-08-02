@@ -117,10 +117,10 @@ public class TransactionTest extends ActorBaseTest
         String t2 = jimmy.wave(60).join();
         String t3 = jimmy.wave(600).join();
 
-        jimmy.cancelTransaction(t2);
+        jimmy.cancelTransaction(t2).join();
         assertEquals(606, (int) jimmy.getBalance().join());
 
-        jimmy.cancelTransaction(t1);
+        jimmy.cancelTransaction(t1).join();
         assertEquals(600, (int) jimmy.getBalance().join());
     }
 
