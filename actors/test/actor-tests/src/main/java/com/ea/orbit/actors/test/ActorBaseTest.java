@@ -28,7 +28,10 @@
 
 package com.ea.orbit.actors.test;
 
+import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.extensions.InvocationContext;
+import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Execution;
@@ -40,15 +43,24 @@ import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.injection.DependencyRegistry;
 
+import org.apache.commons.logging.impl.SimpleLog;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
+
 import com.google.common.util.concurrent.ForwardingExecutorService;
 
+import java.io.PrintStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 import static org.junit.Assert.fail;
@@ -92,11 +104,47 @@ public class ActorBaseTest
     };
     protected FakeSync fakeSync = new FakeSync();
 
+    protected final StringBuilder hiddenLogData = new StringBuilder();
+    protected final SimpleLog hiddenLog = new SimpleLog("orbit")
+    {
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        protected synchronized void write(final StringBuffer buffer)
+        {
+            // truncating the log
+            if (hiddenLogData.length() > 250e6)
+            {
+                hiddenLogData.setLength(64000);
+                hiddenLogData.append("The log was truncated!").append("\r\n");
+            }
+            hiddenLogData.append(buffer).append("\r\n");
+        }
+    };
+    @Rule
+    public TestRule dumpLogs = new TestWatcher()
+    {
+        @Override
+        protected void failed(final Throwable e, final Description description)
+        {
+            final PrintStream out = System.out;
+            out.println(">>>>>>>>> Start");
+            out.println(">>>>>>>>> Test Dump for " + description);
+            out.println(">>>>>>>>> Error: " + e);
+            out.println(hiddenLogData.toString());
+            out.println(">>>>>>>>> Test Dump for " + description);
+            out.print(">>>>>>>>> Error: ");
+            e.printStackTrace(out);
+            out.println(">>>>>>>>> End");
+        }
+    };
+
     public Stage createClient() throws ExecutionException, InterruptedException
     {
         Stage client = new Stage();
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
+        addLogging(client);
         client.addExtension(new LifetimeExtension()
         {
             @Override
@@ -123,6 +171,7 @@ public class ActorBaseTest
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
         dr.addSingleton(Stage.class, stage);
+        addLogging(stage);
         stage.addExtension(new LifetimeExtension()
         {
             @Override
@@ -145,7 +194,26 @@ public class ActorBaseTest
         return stage;
     }
 
-    protected ExecutionObjectCloner getExecutionObjectCloner() {
+    private AtomicLong invocationId = new AtomicLong();
+
+    private void addLogging(final Stage stage)
+    {
+        stage.addExtension(new InvokeHookExtension()
+        {
+            @Override
+            public Task<?> invoke(final InvocationContext context, final Addressable toReference, final Method method, final int methodId, final Object[] params)
+            {
+                long id = invocationId.incrementAndGet();
+                hiddenLog.info(id + " invoking: " + method.getDeclaringClass().getSimpleName() + "." + method.getName());
+                return context.invokeNext(toReference, method, methodId, params).whenComplete(
+                        (r, e) -> hiddenLog.info(id + " done invoking: " + method.getDeclaringClass().getSimpleName() + "." + method.getName())
+                );
+            }
+        });
+    }
+
+    protected ExecutionObjectCloner getExecutionObjectCloner()
+    {
         return new KryoCloner();
     }
 
