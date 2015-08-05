@@ -1,7 +1,7 @@
 language: java		
 jdk: oraclejdk8
 
-sudo: required
+# sudo: required
 
 install: true
 
@@ -17,9 +17,9 @@ before_script:
   - psql -c 'create database orbit;' -U postgres
 
 script:
-  - sudo apt-get update && sudo apt-get install oracle-java8-installer
-  - java -version
-  - mvn install -P withMongoTests,withPostgresTests,withRedisTests,withMemcachedTests,withScala,withLDAPTests
+#  - sudo apt-get update && sudo apt-get install oracle-java8-installer
+#  - java -version
+  - mvn test install -P withMongoTests,withPostgresTests,withRedisTests,withMemcachedTests,withScala,withLDAPTests
 
 notifications:
   webhooks:
