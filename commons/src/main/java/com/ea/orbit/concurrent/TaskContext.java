@@ -43,7 +43,7 @@ public class TaskContext
         {
             throw new IllegalStateException("Invalid execution context stack state: " + stack);
         }
-        stack.add(this);
+        stack.pop();
     }
 
     @Override

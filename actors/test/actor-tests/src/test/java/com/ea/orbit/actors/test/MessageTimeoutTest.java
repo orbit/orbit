@@ -49,6 +49,7 @@ public class MessageTimeoutTest extends ActorBaseTest
     @Test
     public void timeoutTest() throws ExecutionException, InterruptedException
     {
+        clock.stop();
         Stage stage1 = createStage();
         Stage client = createClient();
 
@@ -66,6 +67,7 @@ public class MessageTimeoutTest extends ActorBaseTest
     @Test
     public void timeoutWithTwoMessagesTest() throws ExecutionException, InterruptedException
     {
+        clock.stop();
         Stage stage1 = createStage();
         Stage client = createClient();
 

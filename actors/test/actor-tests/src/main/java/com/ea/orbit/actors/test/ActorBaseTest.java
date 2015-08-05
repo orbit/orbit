@@ -30,10 +30,13 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.ExecutionSerializer;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
@@ -51,9 +54,18 @@ import org.junit.runner.Description;
 
 import com.google.common.util.concurrent.ForwardingExecutorService;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -62,6 +74,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.fail;
 
@@ -105,6 +119,7 @@ public class ActorBaseTest
     protected FakeSync fakeSync = new FakeSync();
 
     protected final StringBuilder hiddenLogData = new StringBuilder();
+    protected final List<String> messageSequence = new ArrayList<>();
     protected final SimpleLog hiddenLog = new SimpleLog("orbit")
     {
         private static final long serialVersionUID = 1L;
@@ -136,6 +151,28 @@ public class ActorBaseTest
             out.print(">>>>>>>>> Error: ");
             e.printStackTrace(out);
             out.println(">>>>>>>>> End");
+            if (messageSequence.size() > 0)
+            {
+                final Path seqUml = Paths.get("target/surefire-reports/" + ActorBaseTest.this.getClass().getName() + ".messages.puml");
+                try
+                {
+                    Files.createDirectories(seqUml.getParent());
+
+                    Files.write(seqUml,
+                            Stream.concat(Stream.concat(
+                                            Stream.of("@startuml"),
+                                            messageSequence.stream()),
+                                    Stream.of("@enduml")
+                            ).collect(Collectors.toList()));
+                    out.println("Message sequence diagram written to:");
+                    out.println(seqUml.toUri());
+                }
+                catch (Exception ex)
+                {
+                    new IOException("error dumping messages: " + ex.getMessage(), ex).printStackTrace();
+                }
+
+            }
         }
     };
 
@@ -200,14 +237,102 @@ public class ActorBaseTest
     {
         stage.addExtension(new InvokeHookExtension()
         {
+            String toString(Object obj)
+            {
+                if (obj instanceof String)
+                {
+                    return (String) obj;
+                }
+                if (obj instanceof AbstractActor)
+                {
+                    final ActorReference ref = ActorReference.from((AbstractActor) obj);
+                    return ActorReference.getInterfaceClass(ref).getSimpleName() + ":" +
+                            ActorReference.getId(ref);
+                }
+                if (obj instanceof ActorReference)
+                {
+                    return ActorReference.getInterfaceClass((ActorReference<?>) obj).getSimpleName() + ":" +
+                            ActorReference.getId((ActorReference<?>) obj);
+                }
+                return String.valueOf(obj);
+            }
+
             @Override
-            public Task<?> invoke(final InvocationContext context, final Addressable toReference, final Method method, final int methodId, final Object[] params)
+            public Task<?> invoke(final InvocationContext icontext, final Addressable toReference, final Method method, final int methodId, final Object[] params)
             {
                 long id = invocationId.incrementAndGet();
-                hiddenLog.info(id + " invoking: " + method.getDeclaringClass().getSimpleName() + "." + method.getName());
-                return context.invokeNext(toReference, method, methodId, params).whenComplete(
-                        (r, e) -> hiddenLog.info(id + " done invoking: " + method.getDeclaringClass().getSimpleName() + "." + method.getName())
-                );
+                final ActorTaskContext context = ActorTaskContext.current();
+                String from;
+                if (context != null && context.getActor() != null)
+                {
+                    final ActorReference reference = ActorReference.from(context.getActor());
+                    from = ActorReference.getInterfaceClass(reference).getSimpleName()
+                            + ":"
+                            + ActorReference.getId(reference);
+                }
+                else
+                {
+                    from = "Thread:" + Thread.currentThread().getId();
+                }
+                String to = ActorReference.getInterfaceClass((ActorReference) toReference).getSimpleName()
+                        + ":"
+                        + ActorReference.getId((ActorReference) toReference);
+
+                String strParams;
+                if (params != null && params.length > 0)
+                {
+                    try
+                    {
+                        strParams = Arrays.asList(params).stream().map(a -> toString(a)).collect(Collectors.joining(", ", "(", ")"));
+                    }
+                    catch (Exception ex)
+                    {
+                        strParams = "(can't show parameters)";
+                    }
+                }
+                else
+                {
+                    strParams = "";
+                }
+                if (!method.isAnnotationPresent(OneWay.class))
+                {
+                    final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams
+                            + "\r\n"
+                            + "activate \"" + to + "\"";
+                    messageSequence.add(msg);
+                    hiddenLog.info(msg);
+                    final long start = System.nanoTime();
+                    return icontext.invokeNext(toReference, method, methodId, params)
+                            .whenComplete((r, e) -> {
+                                        final long timeUS = TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - start);
+                                        final String timeStr = NumberFormat.getNumberInstance(Locale.US).format(timeUS);
+                                        if (e == null)
+                                        {
+                                            final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id + ", "
+                                                    + timeStr + "us] (response to " + method.getName() + "): " + toString(r)
+                                                    + "\r\n"
+                                                    + "deactivate \"" + to + "\"";
+                                            messageSequence.add(resp);
+                                            hiddenLog.info(resp);
+                                        }
+                                        else
+                                        {
+                                            final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id
+                                                    + "; " + timeStr + "us] (exception at " + method.getName() + "): " + e
+                                                    + "\r\n"
+                                                    + "deactivate \"" + to + "\"";
+                                            messageSequence.add(resp);
+                                            hiddenLog.info(resp);
+                                        }
+                                    }
+                            );
+
+                }
+                else
+                {
+                    hiddenLog.info('"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams);
+                    return icontext.invokeNext(toReference, method, methodId, params);
+                }
             }
         });
     }

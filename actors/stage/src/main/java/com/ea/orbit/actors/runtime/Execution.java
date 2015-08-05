@@ -857,10 +857,11 @@ public class Execution implements Runtime
     }
 
     // this method is executed serially by entryKey
-    private Task<?> handleOnMessageReceived(final EntryKey entryKey, final NodeAddress from,
-                                            final boolean oneway, final int messageId, final int interfaceId,
-                                            final int methodId, final Object key, final Object headers,
-                                            final Object[] params)
+    private Task<?> handleOnMessageReceived(
+            final EntryKey entryKey, final NodeAddress from,
+            final boolean oneway, final int messageId, final int interfaceId,
+            final int methodId, final Object key, final Object headers,
+            final Object[] params)
     {
         messagesHandled.increment();
         final InterfaceDescriptor descriptor = getDescriptor(interfaceId);
@@ -1004,9 +1005,9 @@ public class Execution implements Runtime
             final int messageId)
     {
         final ActorTaskContext context = ActorTaskContext.pushNew();
-        context.setProperty(Runtime.class.getName(), this);
         try
         {
+            context.setProperty(Runtime.class.getName(), this);
             final MessageContext messageContext = new MessageContext(theEntry, methodId, from);
             context.setProperty(MessageContext.class.getName(), messageContext);
             Activation activation = theEntry.popActivation();
@@ -1090,7 +1091,7 @@ public class Execution implements Runtime
     }
 
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({"unchecked"})
     <T> T createReference(final NodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);

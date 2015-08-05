@@ -37,6 +37,7 @@ public class FakeClock extends Clock
 {
     private AtomicLong millis = new AtomicLong(System.currentTimeMillis());
     private ZoneId zoneId = Clock.systemUTC().getZone();
+    private boolean stopped;
 
     @Override
     public ZoneId getZone()
@@ -62,7 +63,14 @@ public class FakeClock extends Clock
     @Override
     public long millis()
     {
-        return millis.incrementAndGet();
+        if (stopped)
+        {
+            return millis.incrementAndGet();
+        }
+        else
+        {
+            return System.currentTimeMillis();
+        }
     }
 
     public long incrementTimeMillis(long offsetMillis)
@@ -71,4 +79,14 @@ public class FakeClock extends Clock
     }
 
 
+    /**
+     * Detaches the FakeClock from the system clock.
+     * However, when stooped, every call to millis() will always increment the clock by 1 ms
+     */
+    public void stop()
+    {
+        stopped = true;
+        // ensure monotonic (https://en.wikipedia.org/wiki/Monotonic_function)
+        millis.set(Math.max(System.currentTimeMillis(), millis.get()));
+    }
 }

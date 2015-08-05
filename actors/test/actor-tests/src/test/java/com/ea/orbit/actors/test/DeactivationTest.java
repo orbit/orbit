@@ -55,6 +55,7 @@ public class DeactivationTest extends ClientTest
     @Test
     public void cleanupTest() throws ExecutionException, InterruptedException
     {
+        clock.stop();
         Stage stage = createStage();
         Stage client = createClient();
 
@@ -86,6 +87,7 @@ public class DeactivationTest extends ClientTest
     @Test
     public void statelessWorkerDeactivationTest() throws ExecutionException, InterruptedException, TimeoutException
     {
+        clock.stop();
         Stage stage1 = createStage();
         Stage client = createClient();
 

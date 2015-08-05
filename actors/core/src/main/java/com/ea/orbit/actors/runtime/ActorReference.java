@@ -49,9 +49,9 @@ import java.lang.reflect.Method;
  */
 public abstract class ActorReference<T> implements Serializable, Addressable
 {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	NodeAddress address;
+    NodeAddress address;
     Object id;
     transient Runtime runtime;
 
@@ -102,7 +102,7 @@ public abstract class ActorReference<T> implements Serializable, Addressable
     }
 
     @Override
-	public boolean equals(final Object o)
+    public boolean equals(final Object o)
     {
         ActorReference<?> that;
         return (this == o) || ((o instanceof ActorReference)
@@ -193,4 +193,9 @@ public abstract class ActorReference<T> implements Serializable, Addressable
         return actor.reference;
     }
 
+    @Override
+    public String toString()
+    {
+        return id != null ? _interfaceClass().getName() + ":" + id : _interfaceClass().getName();
+    }
 }

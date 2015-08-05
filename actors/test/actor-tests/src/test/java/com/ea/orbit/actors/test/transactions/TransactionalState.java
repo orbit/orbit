@@ -27,11 +27,26 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 package com.ea.orbit.actors.test.transactions;
 
+import com.ea.orbit.actors.Actor;
+
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 public class TransactionalState
 {
     protected List<TransactionEvent> events = new ArrayList<>();
+
+
+
+    protected List<TransactionInfo> transactions = new ArrayList<>();
+
     //protected T snapshot;
+    public static class TransactionInfo
+    {
+        String transactionId;
+        Date transactionDate;
+        Set<Actor> messagedActors;
+    }
 }

@@ -55,6 +55,11 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
         {
             return null;
         }
+        return currentTransactionId(context);
+    }
+
+    static String currentTransactionId(final TaskContext context)
+    {
         String tid = (String) context.getProperty(ORBIT_TRANSACTION_ID);
         if (tid != null)
         {

@@ -42,11 +42,11 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 import static com.ea.orbit.async.Await.await;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -156,6 +156,10 @@ public class TransactionTest extends ActorBaseTest
         @Override
         public Task<Integer> decrement(int amount)
         {
+            if (state().balance < amount)
+            {
+                throw new IllegalArgumentException("amount too high: " + amount);
+            }
             state().events.add(new TransactionEvent(currentTransactionId(), "decrementBalance", amount));
             state().decrementBalance(amount);
             return getBalance();
@@ -187,6 +191,10 @@ public class TransactionTest extends ActorBaseTest
             extends AbstractTransactionalActor<InventoryActor.State>
             implements Inventory
     {
+        // test synchronization
+        @Inject
+        FakeSync fakeSync;
+
         public static class State extends TransactionalState
         {
             List<String> items = new ArrayList<>();
@@ -201,6 +209,11 @@ public class TransactionTest extends ActorBaseTest
         @Override
         public Task<String> giveItem(String itemName)
         {
+            if (!"ok".equals(fakeSync.get("proceed").join()))
+            {
+                throw new IllegalArgumentException("Something went wrong: " + itemName);
+            }
+
             String item = itemName + ":" + UUID.randomUUID().toString();
             state().events.add(new TransactionEvent(currentTransactionId(), "addItem", item));
             state().addItem(item);
@@ -225,10 +238,6 @@ public class TransactionTest extends ActorBaseTest
             extends AbstractTransactionalActor<StoreActor.State>
             implements Store
     {
-        // test synchronization
-        @Inject
-        FakeSync fakeSync;
-
         public static class State extends TransactionalState
         {
 
@@ -238,9 +247,10 @@ public class TransactionTest extends ActorBaseTest
         public Task<String> buyItem(Bank bank, Inventory inventory, String itemName, int price)
         {
             return transaction(t -> {
-                await(bank.decrement(price));
-                fakeSync.get("proceed").join();
-                return inventory.giveItem(itemName);
+                final Task<Integer> decrement = bank.decrement(price);
+                final Task<String> stringTask = inventory.giveItem(itemName);
+                await(decrement);
+                return stringTask;
             }).handle((r, e) ->
             {
                 if (e != null)
@@ -248,7 +258,7 @@ public class TransactionTest extends ActorBaseTest
                     final String transactionId = currentTransactionId();
                     await(Task.allOf(bank.cancelTransaction(transactionId),
                             inventory.cancelTransaction(transactionId)));
-                    throw new UncheckedException(e);
+                    throw e instanceof RuntimeException ? (RuntimeException)e : new UncheckedException(e);
                 }
                 return r;
             });
@@ -265,7 +275,7 @@ public class TransactionTest extends ActorBaseTest
         bank.increment(15).join();
 
         // this allows the store to proceed without blocking
-        fakeSync.put("proceed", true);
+        fakeSync.put("proceed", "ok");
         store.buyItem(bank, inventory, "candy", 10).join();
         // got the item
         assertTrue(inventory.getItems().join().get(0).startsWith("candy:"));
@@ -282,7 +292,7 @@ public class TransactionTest extends ActorBaseTest
         Store store = Actor.getReference(Store.class, "all");
         bank.increment(15).join();
 
-        fakeSync.putException("proceed", new UncheckedException("intentionally failing"));
+        fakeSync.put("proceed", "fail");
 
         // this item is invalid but the bank balance is decreased first.
         expectException(() -> store.buyItem(bank, inventory, "ice cream", 10).join());
@@ -293,5 +303,40 @@ public class TransactionTest extends ActorBaseTest
         assertEquals(0, inventory.getItems().join().size());
     }
 
+    @Test
+    public void failedTransaction2() throws ExecutionException, InterruptedException
+    {
+        Stage stage = createStage();
+        Bank bank = Actor.getReference(Bank.class, "jimmy");
+        Inventory inventory = Actor.getReference(Inventory.class, "jimmy");
+        Store store = Actor.getReference(Store.class, "all");
+        bank.increment(15).join();
+
+        fakeSync.put("proceed", "ok");
+
+        // this item is invalid but the bank balance is decreased first.
+        store.buyItem(bank, inventory, "candy", 10).join();
+        store.buyItem(bank, inventory, "chocolate", 1).join();
+        //fakeSync.reset("proceed");
+        //fakeSync.put("proceed", "fail");
+        //store.buyItem(bank, inventory, "ice cream", 5).join();
+        try
+        {
+            store.buyItem(bank, inventory, "ice cream", 50).join();
+            fail("expecting an exception");
+        }
+        catch (CompletionException ex)
+        {
+            System.out.println(ex.getCause().getMessage());
+        }
+
+        // the bank credits must be restored.
+        assertEquals((Integer) 4, bank.getBalance().join());
+        // no items were given
+        assertEquals(2, inventory.getItems().join().size());
+//        fail("");
+    }
+
 
 }
+
