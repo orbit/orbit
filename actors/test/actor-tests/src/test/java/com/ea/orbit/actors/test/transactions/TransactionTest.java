@@ -33,7 +33,6 @@ import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.actors.test.FakeSync;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.exception.UncheckedException;
 
 import org.junit.Test;
 
@@ -77,15 +76,15 @@ public class TransactionTest extends ActorBaseTest
         public Task<String> wave(int amount)
         {
             // Start Transaction
-            Task<String> res = transaction(t -> {
+            return transaction(() ->
+            {
                 // call method
                 // register call
                 state().events.add(new TransactionEvent(currentTransactionId(), "incrementBalance", amount));
                 state().incrementBalance(amount);
-                return Task.fromValue(t);
+                return Task.fromValue(currentTransactionId());
             });
             // End Transaction
-            return res;
         }
 
         @Override
@@ -246,21 +245,12 @@ public class TransactionTest extends ActorBaseTest
         @Override
         public Task<String> buyItem(Bank bank, Inventory inventory, String itemName, int price)
         {
-            return transaction(t -> {
+            return transaction(() ->
+            {
                 final Task<Integer> decrement = bank.decrement(price);
                 final Task<String> stringTask = inventory.giveItem(itemName);
                 await(decrement);
                 return stringTask;
-            }).handle((r, e) ->
-            {
-                if (e != null)
-                {
-                    final String transactionId = currentTransactionId();
-                    await(Task.allOf(bank.cancelTransaction(transactionId),
-                            inventory.cancelTransaction(transactionId)));
-                    throw e instanceof RuntimeException ? (RuntimeException) e : new UncheckedException(e);
-                }
-                return r;
             });
         }
     }
@@ -331,7 +321,6 @@ public class TransactionTest extends ActorBaseTest
         assertEquals((Integer) 4, bank.getBalance().join());
         // no items were given
         assertEquals(2, inventory.getItems().join().size());
-        fail("");
     }
 
 

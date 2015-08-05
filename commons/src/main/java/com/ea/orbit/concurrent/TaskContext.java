@@ -30,7 +30,7 @@ public class TaskContext
             stack = new LinkedList<>();
             contextStacks.set(stack);
         }
-        stack.add(this);
+        stack.addLast(this);
     }
 
     /**
@@ -42,9 +42,9 @@ public class TaskContext
         LinkedList<TaskContext> stack = contextStacks.get();
         if (stack == null || stack.size() == 0 || stack.getLast() != this)
         {
-            throw new IllegalStateException("Invalid execution context stack state: " + stack);
+            throw new IllegalStateException("Invalid execution context stack state: " + stack + " trying to remove: " + this);
         }
-        stack.pop();
+        stack.removeLast();
     }
 
     @Override
