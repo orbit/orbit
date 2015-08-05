@@ -84,6 +84,9 @@ public class Stage implements Startable
     @Config("orbit.metrics.reporters")
     private List<ReporterConfig> metricsConfig = new ArrayList<>();
 
+    @Config("orbit.metrics.globalPrefix")
+    private String globalMetricsPrefix = new String();
+
     @Wired
     Container container;
 
@@ -471,9 +474,11 @@ public class Stage implements Startable
             Class mmClazz = Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
             Method getInstanceMethod = mmClazz.getDeclaredMethod("getInstance");
             Method initializeMetricsMethod = mmClazz.getDeclaredMethod("initializeMetrics", List.class);
+            Method setGlobalPrefixMethod = mmClazz.getDeclaredMethod("setGlobalPrefix", String.class);
             Method registerExportedMetricsMethod = mmClazz.getDeclaredMethod("registerExportedMetrics", Object.class, String.class);
 
             Object managerObject = getInstanceMethod.invoke(null);
+            setGlobalPrefixMethod.invoke(managerObject, globalMetricsPrefix);
             initializeMetricsMethod.invoke(managerObject, metricsConfig);
             registerExportedMetricsMethod.invoke(managerObject, execution, execution.runtimeIdentity());
         }

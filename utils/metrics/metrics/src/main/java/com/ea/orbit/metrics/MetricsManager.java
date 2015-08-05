@@ -59,6 +59,8 @@ public class MetricsManager
     private boolean isInitialized = false;
     private static Pattern nameSanitizationRegex = Pattern.compile("[\\[\\]\\.\\\\/]");
 
+    private String globalPrefix = new String();
+
     protected MetricsManager()
     {
 
@@ -72,6 +74,17 @@ public class MetricsManager
     public static String sanitizeMetricName(String name)
     {
         return nameSanitizationRegex.matcher(name).replaceAll(""); //strip illegal characters
+    }
+
+    public String getGlobalPrefix()
+    {
+        return globalPrefix;
+    }
+
+    public void setGlobalPrefix(final String globalPrefix)
+    {
+        logger.info("Setting Global Prefix to: " + globalPrefix);
+        this.globalPrefix = globalPrefix;
     }
 
     protected MetricRegistry getRegistry()
@@ -195,26 +208,30 @@ public class MetricsManager
         }
     }
 
-     private void registerGauge(ExportMetric annotation, Class clazz, String instanceId, Supplier<Object> metricSupplier)
+    public void registerCounterMetric(String name, Supplier<Object> supplier)
     {
-        final String gaugeName = buildMetricName(clazz, annotation, instanceId);
         try
         {
-            registry.register(gaugeName, (Gauge<Object>) () -> {
-
-                Object value = metricSupplier.get();
+            registry.register(name, (Gauge<Object>) () -> {
+                Object value = supplier.get();
                 return value;
             });
 
             if (logger.isDebugEnabled())
             {
-                logger.debug("Registered new metric " + annotation.name());
+                logger.debug("Registered new metric " + name);
             }
         }
-       catch (IllegalArgumentException iae)
-       {
-           logger.warn("Unable to register metric " + annotation.name() + " because a metric already has been registered with the id: " + gaugeName);
-       }
+        catch (IllegalArgumentException iae)
+        {
+            logger.warn("Unable to register metric " + name + " because a metric already has been registered with the same name");
+        }
+    }
+
+    private void registerGauge(ExportMetric annotation, Class clazz, String instanceId, Supplier<Object> metricSupplier)
+    {
+        final String gaugeName = buildMetricName(clazz, annotation, instanceId);
+        registerCounterMetric(gaugeName, metricSupplier);
     }
 
     private List<Field> findFieldsForMetricExport(Object obj)

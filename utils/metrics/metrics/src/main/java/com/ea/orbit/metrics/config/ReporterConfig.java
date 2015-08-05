@@ -28,6 +28,8 @@
 
 package com.ea.orbit.metrics.config;
 
+import com.ea.orbit.metrics.MetricsManager;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Reporter;
 
@@ -47,7 +49,14 @@ public abstract class ReporterConfig
 
     public String getPrefix()
     {
-        return prefix;
+        if (!MetricsManager.getInstance().getGlobalPrefix().isEmpty())
+        {
+            return MetricsManager.getInstance().getGlobalPrefix() + prefix;
+        }
+        else
+        {
+            return prefix;
+        }
     }
 
     public void setPrefix(final String prefix)

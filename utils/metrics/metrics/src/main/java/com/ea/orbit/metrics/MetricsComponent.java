@@ -47,9 +47,13 @@ public class MetricsComponent implements Startable
     @Config("orbit.metrics.reporters")
     private List<ReporterConfig> metricsConfig = new ArrayList<>();
 
+    @Config("orbit.metrics.globalPrefix")
+    private String globalPrefix = new String();
+
     @Override
     public Task<?> start()
     {
+        MetricsManager.getInstance().setGlobalPrefix(globalPrefix);
         MetricsManager.getInstance().initializeMetrics(metricsConfig);
         return Task.done();
     }
