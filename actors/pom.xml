@@ -72,4 +72,27 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.ea.orbit</groupId>
+                <artifactId>orbit-async-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <!-- instuments main classes -->
+                            <goal>instrument</goal>
+                            <!-- instuments test classes -->
+                            <goal>instrument-test</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <verbose>true</verbose>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>
