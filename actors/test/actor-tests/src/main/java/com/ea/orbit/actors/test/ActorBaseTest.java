@@ -62,8 +62,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -85,6 +86,7 @@ public class ActorBaseTest
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
     protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
+
     protected static final ExecutorService commonPool = new ForwardingExecutorService()
     {
         ExecutorService delegate = ExecutorUtils.newScalingThreadPool(200);
@@ -116,10 +118,12 @@ public class ActorBaseTest
             }
         }
     };
-    protected FakeSync fakeSync = new FakeSync();
 
+    protected FakeSync fakeSync = new FakeSync();
+    private AtomicLong invocationId = new AtomicLong();
     protected final StringBuilder hiddenLogData = new StringBuilder();
-    protected final List<String> messageSequence = new ArrayList<>();
+    protected final List<String> messageSequence = Collections.synchronizedList(new LinkedList<>());
+
     protected final SimpleLog hiddenLog = new SimpleLog("orbit")
     {
         private static final long serialVersionUID = 1L;
@@ -139,6 +143,17 @@ public class ActorBaseTest
     @Rule
     public TestRule dumpLogs = new TestWatcher()
     {
+
+        /**
+         * Invoked when a test succeeds
+         */
+        protected void succeeded(Description description)
+        {
+            messageSequence.clear();
+            hiddenLogData.setLength(0);
+            fakeDatabase.clear();
+        }
+
         @Override
         protected void failed(final Throwable e, final Description description)
         {
@@ -178,6 +193,7 @@ public class ActorBaseTest
 
     public Stage createClient() throws ExecutionException, InterruptedException
     {
+        hiddenLog.info("Create Client");
         Stage client = new Stage();
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
@@ -204,6 +220,7 @@ public class ActorBaseTest
 
     public Stage createStage() throws ExecutionException, InterruptedException
     {
+        hiddenLog.info("Create Stage");
         Stage stage = new Stage();
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
@@ -230,8 +247,6 @@ public class ActorBaseTest
         stage.bind();
         return stage;
     }
-
-    private AtomicLong invocationId = new AtomicLong();
 
     private void addLogging(final Stage stage)
     {
@@ -300,6 +315,10 @@ public class ActorBaseTest
                             + "\r\n"
                             + "activate \"" + to + "\"";
                     messageSequence.add(msg);
+                    while (messageSequence.size() > 100)
+                    {
+                        messageSequence.remove(0);
+                    }
                     hiddenLog.info(msg);
                     final long start = System.nanoTime();
                     return icontext.invokeNext(toReference, method, methodId, params)
