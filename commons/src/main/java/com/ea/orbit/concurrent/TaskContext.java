@@ -1,6 +1,7 @@
 package com.ea.orbit.concurrent;
 
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
@@ -270,5 +271,9 @@ public class TaskContext
         }
     }
 
+    protected Map<String, Object> properties()
+    {
+        return properties;
+    }
 
 }

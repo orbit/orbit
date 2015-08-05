@@ -158,7 +158,7 @@ public class TransactionTest extends ActorBaseTest
         {
             if (state().balance < amount)
             {
-                throw new IllegalArgumentException("amount too high: " + amount);
+                throw new IllegalArgumentException("not enough funds: " + amount + " > " + state().balance);
             }
             state().events.add(new TransactionEvent(currentTransactionId(), "decrementBalance", amount));
             state().decrementBalance(amount);
@@ -258,7 +258,7 @@ public class TransactionTest extends ActorBaseTest
                     final String transactionId = currentTransactionId();
                     await(Task.allOf(bank.cancelTransaction(transactionId),
                             inventory.cancelTransaction(transactionId)));
-                    throw e instanceof RuntimeException ? (RuntimeException)e : new UncheckedException(e);
+                    throw e instanceof RuntimeException ? (RuntimeException) e : new UncheckedException(e);
                 }
                 return r;
             });
@@ -317,9 +317,6 @@ public class TransactionTest extends ActorBaseTest
         // this item is invalid but the bank balance is decreased first.
         store.buyItem(bank, inventory, "candy", 10).join();
         store.buyItem(bank, inventory, "chocolate", 1).join();
-        //fakeSync.reset("proceed");
-        //fakeSync.put("proceed", "fail");
-        //store.buyItem(bank, inventory, "ice cream", 5).join();
         try
         {
             store.buyItem(bank, inventory, "ice cream", 50).join();
@@ -334,7 +331,7 @@ public class TransactionTest extends ActorBaseTest
         assertEquals((Integer) 4, bank.getBalance().join());
         // no items were given
         assertEquals(2, inventory.getItems().join().size());
-//        fail("");
+        fail("");
     }
 
 

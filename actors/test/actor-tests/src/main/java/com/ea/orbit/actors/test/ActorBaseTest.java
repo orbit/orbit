@@ -39,6 +39,7 @@ import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.ExecutionSerializer;
+import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.concurrent.ExecutorUtils;
@@ -287,7 +288,15 @@ public class ActorBaseTest
                 }
                 else
                 {
-                    from = "Thread:" + Thread.currentThread().getId();
+                    if (ActorReference.getInterfaceClass((ActorReference) toReference) == NodeCapabilities.class
+                            && method.getName().equals("canActivate"))
+                    {
+                        from = "Stage";
+                    }
+                    else
+                    {
+                        from = "Thread:" + Thread.currentThread().getId();
+                    }
                 }
                 String to = ActorReference.getInterfaceClass((ActorReference) toReference).getSimpleName()
                         + ":"
@@ -322,12 +331,13 @@ public class ActorBaseTest
                     hiddenLog.info(msg);
                     final long start = System.nanoTime();
                     return icontext.invokeNext(toReference, method, methodId, params)
-                            .whenComplete((r, e) -> {
+                            .whenComplete((r, e) ->
+                                    {
                                         final long timeUS = TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - start);
                                         final String timeStr = NumberFormat.getNumberInstance(Locale.US).format(timeUS);
                                         if (e == null)
                                         {
-                                            final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id + ", "
+                                            final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id + "; "
                                                     + timeStr + "us] (response to " + method.getName() + "): " + toString(r)
                                                     + "\r\n"
                                                     + "deactivate \"" + to + "\"";

@@ -28,9 +28,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test.transactions;
 
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.Messaging;
-import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.exception.UncheckedException;
 
 import java.lang.reflect.InvocationTargetException;
@@ -42,6 +43,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
+
+import static com.ea.orbit.async.Await.await;
 
 public class AbstractTransactionalActor<T extends TransactionalState> extends AbstractActor<T> implements TransactionalActor
 {
@@ -75,31 +78,63 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
 
     protected <R> Task<R> transaction(Function<String, Task<R>> function)
     {
-        String transactionId = UUID.randomUUID().toString();
-        final TaskContext context = TaskContext.current();
-        final Object parentTransactionId = context.getProperty(ORBIT_TRANSACTION_ID);
+        final String parentTransactionId = currentTransactionId();
+
+        final ActorTaskContext oldContext = ActorTaskContext.current();
+        final ActorTaskContext context = oldContext.cloneContext();
+
+        final String transactionId = UUID.randomUUID().toString();
+
         context.setProperty(ORBIT_TRANSACTION_ID, transactionId);
+        if (parentTransactionId != null)
+        {
+            final TransactionInfo parentTransaction = getOrAdTransactionInfo(parentTransactionId);
+            parentTransaction.subTransactions.add(transactionId);
+        }
+        final TransactionInfo transaction = getOrAdTransactionInfo(transactionId);
         final Object headers = context.getProperty(Messaging.ORBIT_MESSAGE_HEADERS);
         final Map<String, Object> newHeaders = (headers instanceof Map) ? new LinkedHashMap<>((Map) headers) : new LinkedHashMap<>();
         newHeaders.put(ORBIT_TRANSACTION_ID, transactionId);
         context.setProperty(Messaging.ORBIT_MESSAGE_HEADERS, newHeaders);
+        context.push();
         try
         {
             final Task<R> apply;
-            try
+            apply = function.apply(transactionId);
+            if (apply != null)
             {
-                apply = function.apply(transactionId);
-            }
-            catch (Exception ex)
-            {
-                return Task.fromException(ex);
+                return apply.whenComplete((r, e) ->
+                {
+                    if (e != null)
+                    {
+                        cancelTransaction(transactionId);
+                    }
+                });
             }
             return apply;
         }
+        catch (Exception ex)
+        {
+            await(cancelTransaction(transactionId));
+            return Task.fromException(ex);
+        }
         finally
         {
-            context.setProperty(ORBIT_TRANSACTION_ID, parentTransactionId);
+            context.pop();
         }
+    }
+
+    private TransactionInfo getOrAdTransactionInfo(String transactionId)
+    {
+        final TransactionInfo info = state().transactions
+                .stream().filter(t -> t.transactionId.equals(transactionId)).findFirst().orElse(null);
+        if (info != null)
+        {
+            final TransactionInfo newInfo = new TransactionInfo();
+            newInfo.transactionId = transactionId;
+            state().transactions.add(newInfo);
+        }
+        return info;
     }
 
     public Task<Void> cancelTransaction(String transactionId)

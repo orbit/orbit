@@ -76,4 +76,13 @@ public class ActorTaskContext extends TaskContext
     {
         return runtime;
     }
+
+    public ActorTaskContext cloneContext()
+    {
+        ActorTaskContext tc = new ActorTaskContext();
+        tc.actor = actor;
+        tc.runtime = runtime;
+        tc.properties().putAll(properties());
+        return tc;
+    }
 }
