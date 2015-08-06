@@ -138,7 +138,8 @@ public class MetricsManager
                 throw new IllegalStateException("Field " + field.getName() + " in object " + field.getDeclaringClass().getName() + " is marked for Metrics Export but the field is not accessible");
             }
 
-            registerGauge(annotation, field.getDeclaringClass(), instanceId, () -> {
+            final String counterName = buildMetricName(field.getDeclaringClass(), annotation, instanceId);
+            registerCounterMetric(counterName, () -> {
                 try
                 {
                     Object value = field.get(obj);
@@ -161,7 +162,8 @@ public class MetricsManager
 
             final ExportMetric annotation = method.getAnnotation(ExportMetric.class);
 
-            registerGauge(annotation, method.getDeclaringClass(), instanceId, () -> {
+            final String counterName = buildMetricName(method.getDeclaringClass(), annotation, instanceId);
+            registerCounterMetric(counterName, () -> {
                 try
                 {
                     Object value = method.invoke(obj, new Object[0]);
@@ -226,12 +228,6 @@ public class MetricsManager
         {
             logger.warn("Unable to register metric " + name + " because a metric already has been registered with the same name");
         }
-    }
-
-    private void registerGauge(ExportMetric annotation, Class clazz, String instanceId, Supplier<Object> metricSupplier)
-    {
-        final String gaugeName = buildMetricName(clazz, annotation, instanceId);
-        registerCounterMetric(gaugeName, metricSupplier);
     }
 
     private List<Field> findFieldsForMetricExport(Object obj)
