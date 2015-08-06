@@ -1,6 +1,7 @@
 package com.ea.orbit.concurrent;
 
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
@@ -29,7 +30,7 @@ public class TaskContext
             stack = new LinkedList<>();
             contextStacks.set(stack);
         }
-        stack.add(this);
+        stack.addLast(this);
     }
 
     /**
@@ -41,9 +42,9 @@ public class TaskContext
         LinkedList<TaskContext> stack = contextStacks.get();
         if (stack == null || stack.size() == 0 || stack.getLast() != this)
         {
-            throw new IllegalStateException("Invalid execution context stack state: " + stack);
+            throw new IllegalStateException("Invalid execution context stack state: " + stack + " trying to remove: " + this);
         }
-        stack.pop();
+        stack.removeLast();
     }
 
     @Override
@@ -270,5 +271,9 @@ public class TaskContext
         }
     }
 
+    protected Map<String, Object> properties()
+    {
+        return properties;
+    }
 
 }

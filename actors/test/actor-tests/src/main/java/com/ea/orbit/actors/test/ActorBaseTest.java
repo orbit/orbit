@@ -39,8 +39,10 @@ import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.ExecutionSerializer;
+import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
+import com.ea.orbit.actors.test.transactions.TransactionInvokeHook;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -62,8 +64,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -85,6 +88,7 @@ public class ActorBaseTest
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
     protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
+
     protected static final ExecutorService commonPool = new ForwardingExecutorService()
     {
         ExecutorService delegate = ExecutorUtils.newScalingThreadPool(200);
@@ -116,10 +120,12 @@ public class ActorBaseTest
             }
         }
     };
-    protected FakeSync fakeSync = new FakeSync();
 
+    protected FakeSync fakeSync = new FakeSync();
+    private AtomicLong invocationId = new AtomicLong();
     protected final StringBuilder hiddenLogData = new StringBuilder();
-    protected final List<String> messageSequence = new ArrayList<>();
+    protected final List<String> messageSequence = Collections.synchronizedList(new LinkedList<>());
+
     protected final SimpleLog hiddenLog = new SimpleLog("orbit")
     {
         private static final long serialVersionUID = 1L;
@@ -139,6 +145,17 @@ public class ActorBaseTest
     @Rule
     public TestRule dumpLogs = new TestWatcher()
     {
+
+        /**
+         * Invoked when a test succeeds
+         */
+        protected void succeeded(Description description)
+        {
+            messageSequence.clear();
+            hiddenLogData.setLength(0);
+            fakeDatabase.clear();
+        }
+
         @Override
         protected void failed(final Throwable e, final Description description)
         {
@@ -151,33 +168,46 @@ public class ActorBaseTest
             out.print(">>>>>>>>> Error: ");
             e.printStackTrace(out);
             out.println(">>>>>>>>> End");
-            if (messageSequence.size() > 0)
-            {
-                final Path seqUml = Paths.get("target/surefire-reports/" + ActorBaseTest.this.getClass().getName() + ".messages.puml");
-                try
-                {
-                    Files.createDirectories(seqUml.getParent());
-
-                    Files.write(seqUml,
-                            Stream.concat(Stream.concat(
-                                            Stream.of("@startuml"),
-                                            messageSequence.stream()),
-                                    Stream.of("@enduml")
-                            ).collect(Collectors.toList()));
-                    out.println("Message sequence diagram written to:");
-                    out.println(seqUml.toUri());
-                }
-                catch (Exception ex)
-                {
-                    new IOException("error dumping messages: " + ex.getMessage(), ex).printStackTrace();
-                }
-
-            }
+            dumpMessages();
+            messageSequence.clear();
+            hiddenLogData.setLength(0);
+            fakeDatabase.clear();
         }
     };
 
+    protected void dumpMessages()
+    {
+        final PrintStream out = System.out;
+        if (messageSequence.size() > 0)
+        {
+            final Path seqUml = Paths.get("target/surefire-reports/" + ActorBaseTest.this.getClass().getName() + ".messages.puml");
+            try
+            {
+                Files.createDirectories(seqUml.getParent());
+
+                Files.write(seqUml,
+                        Stream.concat(Stream.concat(
+                                        Stream.of("@startuml"),
+                                        messageSequence.stream()),
+                                Stream.of("@enduml")
+                        ).collect(Collectors.toList()));
+                out.println("Message sequence diagram written to:");
+                out.println(seqUml.toUri());
+            }
+            catch (Exception ex)
+            {
+                new IOException("error dumping messages: " + ex.getMessage(), ex).printStackTrace();
+            }
+        }
+        else
+        {
+            out.println("No messages to dump");
+        }
+    }
+
     public Stage createClient() throws ExecutionException, InterruptedException
     {
+        hiddenLog.info("Create Client");
         Stage client = new Stage();
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
@@ -204,11 +234,20 @@ public class ActorBaseTest
 
     public Stage createStage() throws ExecutionException, InterruptedException
     {
+        hiddenLog.info("Create Stage");
         Stage stage = new Stage();
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
         dr.addSingleton(Stage.class, stage);
         addLogging(stage);
+        stage.addExtension(new TransactionInvokeHook()
+        {
+            @Override
+            public Task<?> invoke(final InvocationContext icontext, final Addressable toReference, final Method method, final int methodId, final Object[] params)
+            {
+                return super.invoke(icontext, toReference, method, methodId, params);
+            }
+        });
         stage.addExtension(new LifetimeExtension()
         {
             @Override
@@ -230,8 +269,6 @@ public class ActorBaseTest
         stage.bind();
         return stage;
     }
-
-    private AtomicLong invocationId = new AtomicLong();
 
     private void addLogging(final Stage stage)
     {
@@ -272,7 +309,15 @@ public class ActorBaseTest
                 }
                 else
                 {
-                    from = "Thread:" + Thread.currentThread().getId();
+                    if (ActorReference.getInterfaceClass((ActorReference) toReference) == NodeCapabilities.class
+                            && method.getName().equals("canActivate"))
+                    {
+                        from = "Stage";
+                    }
+                    else
+                    {
+                        from = "Thread:" + Thread.currentThread().getId();
+                    }
                 }
                 String to = ActorReference.getInterfaceClass((ActorReference) toReference).getSimpleName()
                         + ":"
@@ -300,15 +345,20 @@ public class ActorBaseTest
                             + "\r\n"
                             + "activate \"" + to + "\"";
                     messageSequence.add(msg);
+                    while (messageSequence.size() > 100)
+                    {
+                        messageSequence.remove(0);
+                    }
                     hiddenLog.info(msg);
                     final long start = System.nanoTime();
                     return icontext.invokeNext(toReference, method, methodId, params)
-                            .whenComplete((r, e) -> {
+                            .whenComplete((r, e) ->
+                                    {
                                         final long timeUS = TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - start);
                                         final String timeStr = NumberFormat.getNumberInstance(Locale.US).format(timeUS);
                                         if (e == null)
                                         {
-                                            final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id + ", "
+                                            final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id + "; "
                                                     + timeStr + "us] (response to " + method.getName() + "): " + toString(r)
                                                     + "\r\n"
                                                     + "deactivate \"" + to + "\"";

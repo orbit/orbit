@@ -50,11 +50,16 @@
 			<artifactId>scala-library</artifactId>
 			<version>${scala.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>com.ea.orbit</groupId>
-			<artifactId>orbit-actors-all</artifactId>
-			<version>${project.version}</version>
-		</dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-server</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 	</dependencies>
 
 	<build>

@@ -196,6 +196,11 @@
             <artifactId>orbit-actors-client</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-server</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
 </project>

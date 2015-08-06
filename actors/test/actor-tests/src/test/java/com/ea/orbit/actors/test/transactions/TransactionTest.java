@@ -33,7 +33,6 @@ import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.actors.test.FakeSync;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.exception.UncheckedException;
 
 import org.junit.Test;
 
@@ -77,14 +76,14 @@ public class TransactionTest extends ActorBaseTest
         public Task<String> wave(int amount)
         {
             // Start Transaction
-            Task<String> res = transaction(t -> {
+            return transaction(() ->
+            {
                 // call method
                 // register call
                 state().incrementBalance(amount);
-                return Task.fromValue(t);
+                return Task.fromValue(currentTransactionId());
             });
             // End Transaction
-            return res;
         }
 
         @Override
@@ -157,7 +156,7 @@ public class TransactionTest extends ActorBaseTest
         {
             if (state().balance < amount)
             {
-                throw new IllegalArgumentException("amount too high: " + amount);
+                throw new IllegalArgumentException("not enough funds: " + amount + " > " + state().balance);
             }
             state().decrementBalance(amount);
             return getBalance();
@@ -242,21 +241,12 @@ public class TransactionTest extends ActorBaseTest
         @Override
         public Task<String> buyItem(Bank bank, Inventory inventory, String itemName, int price)
         {
-            return transaction(t -> {
+            return transaction(() ->
+            {
                 final Task<Integer> decrement = bank.decrement(price);
                 final Task<String> stringTask = inventory.giveItem(itemName);
                 await(decrement);
                 return stringTask;
-            }).handle((r, e) ->
-            {
-                if (e != null)
-                {
-                    final String transactionId = currentTransactionId();
-                    await(Task.allOf(bank.cancelTransaction(transactionId),
-                            inventory.cancelTransaction(transactionId)));
-                    throw e instanceof RuntimeException ? (RuntimeException) e : new UncheckedException(e);
-                }
-                return r;
             });
         }
     }
@@ -313,9 +303,6 @@ public class TransactionTest extends ActorBaseTest
         // this item is invalid but the bank balance is decreased first.
         store.buyItem(bank, inventory, "candy", 10).join();
         store.buyItem(bank, inventory, "chocolate", 1).join();
-        //fakeSync.reset("proceed");
-        //fakeSync.put("proceed", "fail");
-        //store.buyItem(bank, inventory, "ice cream", 5).join();
         try
         {
             store.buyItem(bank, inventory, "ice cream", 50).join();
@@ -330,9 +317,91 @@ public class TransactionTest extends ActorBaseTest
         assertEquals((Integer) 4, bank.getBalance().join());
         // no items were given
         assertEquals(2, inventory.getItems().join().size());
-//        fail("");
     }
 
+
+    public interface TransactionTree extends TransactionalActor
+    {
+        Task<Integer> treeInc(int count);
+
+        Task<Integer> treeTransaction(int count);
+
+        Task<Integer> currentValue();
+    }
+
+    public static class TransactionTreeActor
+            extends AbstractTransactionalActor<TransactionTreeActor.State>
+            implements TransactionTree
+    {
+        public static class State extends TransactionalState
+        {
+            int current;
+
+            @TransactionalEvent
+            int incAngGet(int count)
+            {
+                return current += count;
+            }
+        }
+
+        @Override
+        public Task<Integer> treeTransaction(int count)
+        {
+            return transaction(() ->
+                    treeInc(count));
+        }
+
+        @Override
+        public Task<Integer> currentValue()
+        {
+            return Task.fromValue(state().current);
+        }
+
+        @Override
+        public Task<Integer> treeInc(int count)
+        {
+            final String id = actorIdentity();
+            if (id.length() == 1)
+            {
+                if (id.equals("x"))
+                {
+                    throw new RuntimeException("Expected exception");
+                }
+                return Task.fromValue(state().incAngGet(count));
+            }
+            final int mid = id.length() / 2;
+            final TransactionTree left = Actor.getReference(TransactionTree.class, id.substring(0, mid));
+            final TransactionTree right = Actor.getReference(TransactionTree.class, id.substring(mid));
+            final Task<Integer> ltask = left.treeInc(count);
+            final Task<Integer> rtask = right.treeInc(count);
+            return Task.fromValue(await(ltask) + await(rtask));
+        }
+    }
+
+
+    @Test
+    public void treeSuccess() throws ExecutionException, InterruptedException
+    {
+        Stage stage = createStage();
+        TransactionTree tree = Actor.getReference(TransactionTree.class, "abc");
+        assertEquals((Integer) 3, tree.treeTransaction(1).join());
+        assertEquals((Integer) 1, Actor.getReference(TransactionTree.class, "a").currentValue().join());
+        assertEquals((Integer) 1, Actor.getReference(TransactionTree.class, "b").currentValue().join());
+        assertEquals((Integer) 1, Actor.getReference(TransactionTree.class, "c").currentValue().join());
+    }
+
+
+    @Test
+    public void treeCancellation() throws ExecutionException, InterruptedException
+    {
+        Stage stage = createStage();
+        TransactionTree tree2 = Actor.getReference(TransactionTree.class, "abcx");
+        TransactionTree aleaf = Actor.getReference(TransactionTree.class, "a");
+        expectException(() -> tree2.treeTransaction(1).join());
+        assertEquals((Integer) 0, Actor.getReference(TransactionTree.class, "a").currentValue().join());
+        assertEquals((Integer) 0, Actor.getReference(TransactionTree.class, "b").currentValue().join());
+        assertEquals((Integer) 0, Actor.getReference(TransactionTree.class, "c").currentValue().join());
+    }
 
 }
 

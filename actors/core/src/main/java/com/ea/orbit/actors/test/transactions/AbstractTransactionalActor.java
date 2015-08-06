@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test.transactions;
 
 import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.actors.runtime.Messaging;
+import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.exception.UncheckedException;
@@ -40,13 +40,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class AbstractTransactionalActor<T extends TransactionalState> extends AbstractActor<T> implements TransactionalActor
 {
 
     public static final String ORBIT_TRANSACTION_ID = "orbit.transactionId";
+    private static String ORBIT_MESSAGE_HEADERS = "orbit.messageHeaders";
 
     static String currentTransactionId()
     {
@@ -86,7 +88,7 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
         {
             return tid;
         }
-        final Object headers = context.getProperty(Messaging.ORBIT_MESSAGE_HEADERS);
+        final Object headers = context.getProperty(ORBIT_MESSAGE_HEADERS);
         if (!(headers instanceof Map))
         {
             return null;
@@ -94,42 +96,78 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
         return (String) ((Map) headers).get(ORBIT_TRANSACTION_ID);
     }
 
-    protected <R> Task<R> transaction(Function<String, Task<R>> function)
+    protected <R> Task<R> transaction(Supplier<Task<R>> function)
     {
-        String transactionId = UUID.randomUUID().toString();
-        final TaskContext context = TaskContext.current();
-        final Object parentTransactionId = context.getProperty(ORBIT_TRANSACTION_ID);
+        final String parentTransactionId = currentTransactionId();
+
+        final ActorTaskContext oldContext = ActorTaskContext.current();
+        final ActorTaskContext context = oldContext.cloneContext();
+
+        final String transactionId = UUID.randomUUID().toString();
+
         context.setProperty(ORBIT_TRANSACTION_ID, transactionId);
-        final Object headers = context.getProperty(Messaging.ORBIT_MESSAGE_HEADERS);
+        if (parentTransactionId != null)
+        {
+            final TransactionInfo parentTransaction = getOrAdTransactionInfo(parentTransactionId);
+            parentTransaction.subTransactions.add(transactionId);
+        }
+        final TransactionInfo transaction = getOrAdTransactionInfo(transactionId);
+        final Object headers = context.getProperty(ORBIT_MESSAGE_HEADERS);
         final Map<String, Object> newHeaders = (headers instanceof Map) ? new LinkedHashMap<>((Map) headers) : new LinkedHashMap<>();
         newHeaders.put(ORBIT_TRANSACTION_ID, transactionId);
-        context.setProperty(Messaging.ORBIT_MESSAGE_HEADERS, newHeaders);
+        context.setProperty(ORBIT_MESSAGE_HEADERS, newHeaders);
+        context.push();
         try
         {
             final Task<R> apply;
-            try
+            apply = function.get();
+            if (apply != null)
             {
-                apply = function.apply(transactionId);
-            }
-            catch (Exception ex)
-            {
-                return Task.fromException(ex);
+                return apply.whenComplete((r, e) ->
+                {
+                    if (e != null)
+                    {
+                        cancelTransaction(transactionId);
+                    }
+                });
             }
             return apply;
         }
+        catch (Exception ex)
+        {
+            return cancelTransaction(transactionId)
+                    .thenCompose(() -> Task.fromException(ex));
+        }
         finally
         {
-            context.setProperty(ORBIT_TRANSACTION_ID, parentTransactionId);
+            context.pop();
         }
+    }
+
+    TransactionInfo getOrAdTransactionInfo(String transactionId)
+    {
+        final TransactionInfo info = state().transactions
+                .stream().filter(t -> t.transactionId.equals(transactionId)).findFirst().orElse(null);
+        if (info == null)
+        {
+            final TransactionInfo newInfo = new TransactionInfo();
+            newInfo.transactionId = transactionId;
+            state().transactions.add(newInfo);
+            return newInfo;
+        }
+        return info;
     }
 
     public Task<Void> cancelTransaction(String transactionId)
     {
         List<TransactionEvent> newList = new ArrayList<>();
 
+
         // reset state
 
         List<TransactionEvent> events = state().events;
+        List<TransactionInfo> transactions = state().transactions;
+        final TransactionInfo transactionInfo = getOrAdTransactionInfo(transactionId);
         createDefaultState();
 
         final Method[] declaredMethods = state().getClass().getDeclaredMethods();
@@ -155,9 +193,14 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
             }
         }
 
+        transactions.remove(transactionInfo);
         state().events = newList;
+        state().transactions = transactions;
 
-        return Task.done();
+        return Task.allOf(transactionInfo.messagedActors.stream()
+                .filter(a -> a instanceof TransactionalActor)
+                .map(a -> ((TransactionalActor) a).cancelTransaction(transactionId))
+                .toArray(s -> new CompletableFuture[s]));
     }
 
 

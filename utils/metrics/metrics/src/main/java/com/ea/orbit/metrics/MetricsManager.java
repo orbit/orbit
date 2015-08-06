@@ -74,7 +74,7 @@ public class MetricsManager
         return nameSanitizationRegex.matcher(name).replaceAll(""); //strip illegal characters
     }
 
-    public MetricRegistry getRegistry()
+    protected MetricRegistry getRegistry()
     {
         return registry;
     }
