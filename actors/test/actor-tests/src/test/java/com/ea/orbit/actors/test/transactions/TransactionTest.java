@@ -324,5 +324,88 @@ public class TransactionTest extends ActorBaseTest
     }
 
 
+    public interface TransactionTree extends TransactionalActor
+    {
+        Task<Integer> treeInc(int count);
+
+        Task<Integer> treeTransaction(int count);
+
+        Task<Integer> currentValue();
+    }
+
+    public static class TransactionTreeActor
+            extends AbstractTransactionalActor<TransactionTreeActor.State>
+            implements TransactionTree
+    {
+        public static class State extends TransactionalState
+        {
+            int current;
+
+            @TransactionSafeEvent
+            int incAngGet(int count)
+            {
+                return current += count;
+            }
+        }
+
+        @Override
+        public Task<Integer> treeTransaction(int count)
+        {
+            return transaction(() ->
+                    treeInc(count));
+        }
+
+        @Override
+        public Task<Integer> currentValue()
+        {
+            return Task.fromValue(state().current);
+        }
+
+        @Override
+        public Task<Integer> treeInc(int count)
+        {
+            final String id = actorIdentity();
+            if (id.length() == 1)
+            {
+                if (id.equals("x"))
+                {
+                    throw new RuntimeException("Expected exception");
+                }
+                return Task.fromValue(state().incAngGet(count));
+            }
+            final int mid = id.length() / 2;
+            final TransactionTree left = Actor.getReference(TransactionTree.class, id.substring(0, mid));
+            final TransactionTree right = Actor.getReference(TransactionTree.class, id.substring(mid));
+            final Task<Integer> ltask = left.treeInc(count);
+            final Task<Integer> rtask = right.treeInc(count);
+            return Task.fromValue(await(ltask) + await(rtask));
+        }
+    }
+
+
+    @Test
+    public void treeSuccess() throws ExecutionException, InterruptedException
+    {
+        Stage stage = createStage();
+        TransactionTree tree = Actor.getReference(TransactionTree.class, "abc");
+        assertEquals((Integer) 3, tree.treeTransaction(1).join());
+        assertEquals((Integer) 1, Actor.getReference(TransactionTree.class, "a").currentValue().join());
+        assertEquals((Integer) 1, Actor.getReference(TransactionTree.class, "b").currentValue().join());
+        assertEquals((Integer) 1, Actor.getReference(TransactionTree.class, "c").currentValue().join());
+    }
+
+
+    @Test
+    public void treeCancellation() throws ExecutionException, InterruptedException
+    {
+        Stage stage = createStage();
+        TransactionTree tree2 = Actor.getReference(TransactionTree.class, "abcx");
+        TransactionTree aleaf = Actor.getReference(TransactionTree.class, "a");
+        expectException(() -> tree2.treeTransaction(1).join());
+        assertEquals((Integer) 0, Actor.getReference(TransactionTree.class, "a").currentValue().join());
+        assertEquals((Integer) 0, Actor.getReference(TransactionTree.class, "b").currentValue().join());
+        assertEquals((Integer) 0, Actor.getReference(TransactionTree.class, "c").currentValue().join());
+    }
+
 }
 

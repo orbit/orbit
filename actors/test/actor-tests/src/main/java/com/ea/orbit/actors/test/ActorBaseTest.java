@@ -168,30 +168,42 @@ public class ActorBaseTest
             out.print(">>>>>>>>> Error: ");
             e.printStackTrace(out);
             out.println(">>>>>>>>> End");
-            if (messageSequence.size() > 0)
-            {
-                final Path seqUml = Paths.get("target/surefire-reports/" + ActorBaseTest.this.getClass().getName() + ".messages.puml");
-                try
-                {
-                    Files.createDirectories(seqUml.getParent());
-
-                    Files.write(seqUml,
-                            Stream.concat(Stream.concat(
-                                            Stream.of("@startuml"),
-                                            messageSequence.stream()),
-                                    Stream.of("@enduml")
-                            ).collect(Collectors.toList()));
-                    out.println("Message sequence diagram written to:");
-                    out.println(seqUml.toUri());
-                }
-                catch (Exception ex)
-                {
-                    new IOException("error dumping messages: " + ex.getMessage(), ex).printStackTrace();
-                }
-
-            }
+            dumpMessages();
+            messageSequence.clear();
+            hiddenLogData.setLength(0);
+            fakeDatabase.clear();
         }
     };
+
+    protected void dumpMessages()
+    {
+        final PrintStream out = System.out;
+        if (messageSequence.size() > 0)
+        {
+            final Path seqUml = Paths.get("target/surefire-reports/" + ActorBaseTest.this.getClass().getName() + ".messages.puml");
+            try
+            {
+                Files.createDirectories(seqUml.getParent());
+
+                Files.write(seqUml,
+                        Stream.concat(Stream.concat(
+                                        Stream.of("@startuml"),
+                                        messageSequence.stream()),
+                                Stream.of("@enduml")
+                        ).collect(Collectors.toList()));
+                out.println("Message sequence diagram written to:");
+                out.println(seqUml.toUri());
+            }
+            catch (Exception ex)
+            {
+                new IOException("error dumping messages: " + ex.getMessage(), ex).printStackTrace();
+            }
+        }
+        else
+        {
+            out.println("No messages to dump");
+        }
+    }
 
     public Stage createClient() throws ExecutionException, InterruptedException
     {
@@ -228,7 +240,8 @@ public class ActorBaseTest
         dr.addSingleton(FakeSync.class, fakeSync);
         dr.addSingleton(Stage.class, stage);
         addLogging(stage);
-        stage.addExtension(new TransactionInvokeHook() {
+        stage.addExtension(new TransactionInvokeHook()
+        {
             @Override
             public Task<?> invoke(final InvocationContext icontext, final Addressable toReference, final Method method, final int methodId, final Object[] params)
             {
