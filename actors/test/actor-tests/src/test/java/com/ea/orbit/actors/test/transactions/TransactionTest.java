@@ -66,7 +66,7 @@ public class TransactionTest extends ActorBaseTest
         {
             int balance;
 
-            @TransactionSafeEvent
+            @TransactionalEvent
             void incrementBalance(int amount)
             {
                 balance += amount;
@@ -80,7 +80,6 @@ public class TransactionTest extends ActorBaseTest
             Task<String> res = transaction(t -> {
                 // call method
                 // register call
-                state().events.add(new TransactionEvent(currentTransactionId(), "incrementBalance", amount));
                 state().incrementBalance(amount);
                 return Task.fromValue(t);
             });
@@ -140,13 +139,13 @@ public class TransactionTest extends ActorBaseTest
         {
             int balance;
 
-            @TransactionSafeEvent
+            @TransactionalEvent
             void decrementBalance(int amount)
             {
                 balance -= amount;
             }
 
-            @TransactionSafeEvent
+            @TransactionalEvent
             void incrementBalance(int amount)
             {
                 balance += amount;
@@ -160,7 +159,6 @@ public class TransactionTest extends ActorBaseTest
             {
                 throw new IllegalArgumentException("amount too high: " + amount);
             }
-            state().events.add(new TransactionEvent(currentTransactionId(), "decrementBalance", amount));
             state().decrementBalance(amount);
             return getBalance();
         }
@@ -168,7 +166,6 @@ public class TransactionTest extends ActorBaseTest
         @Override
         public Task<Integer> increment(int amount)
         {
-            state().events.add(new TransactionEvent(currentTransactionId(), "incrementBalance", amount));
             state().incrementBalance(amount);
             return getBalance();
         }
@@ -199,7 +196,7 @@ public class TransactionTest extends ActorBaseTest
         {
             List<String> items = new ArrayList<>();
 
-            @TransactionSafeEvent
+            @TransactionalEvent
             void addItem(String item)
             {
                 items.add(item);
@@ -215,7 +212,6 @@ public class TransactionTest extends ActorBaseTest
             }
 
             String item = itemName + ":" + UUID.randomUUID().toString();
-            state().events.add(new TransactionEvent(currentTransactionId(), "addItem", item));
             state().addItem(item);
             return Task.fromValue(item);
         }
@@ -258,7 +254,7 @@ public class TransactionTest extends ActorBaseTest
                     final String transactionId = currentTransactionId();
                     await(Task.allOf(bank.cancelTransaction(transactionId),
                             inventory.cancelTransaction(transactionId)));
-                    throw e instanceof RuntimeException ? (RuntimeException)e : new UncheckedException(e);
+                    throw e instanceof RuntimeException ? (RuntimeException) e : new UncheckedException(e);
                 }
                 return r;
             });

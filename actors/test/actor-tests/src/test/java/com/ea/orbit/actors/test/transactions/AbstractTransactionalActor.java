@@ -29,8 +29,8 @@ package com.ea.orbit.actors.test.transactions;
 
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Messaging;
-import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.exception.UncheckedException;
 
 import java.lang.reflect.InvocationTargetException;
@@ -56,6 +56,27 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
             return null;
         }
         return currentTransactionId(context);
+    }
+
+    @Override
+    protected void createDefaultState()
+    {
+        super.createDefaultState();
+    }
+
+    @Override
+    protected Object interceptStateMethod(
+            final Object self,
+            final Method method,
+            final Method proceed,
+            final Object[] args)
+            throws IllegalAccessException, InvocationTargetException
+    {
+        if (method.isAnnotationPresent(TransactionalEvent.class))
+        {
+            state().events.add(new TransactionEvent(currentTransactionId(), proceed.getName(), args));
+        }
+        return super.interceptStateMethod(self, method, proceed, args);
     }
 
     static String currentTransactionId(final TaskContext context)

@@ -42,6 +42,10 @@ import org.slf4j.LoggerFactory;
 
 import com.googlecode.gentyref.GenericTypeReflector;
 
+import javassist.util.proxy.ProxyFactory;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
@@ -93,44 +97,69 @@ public abstract class AbstractActor<T>
     /**
      * Creates a default state representation for this actor
      */
-    @SuppressWarnings({"PMD.LooseCoupling", "unchecked"})
+    @SuppressWarnings({ "PMD.LooseCoupling", "unchecked" })
     protected void createDefaultState()
     {
-        final Type stateType = GenericTypeReflector.getTypeParameter(getClass(),
-                AbstractActor.class.getTypeParameters()[0]);
-
-
-        Class<?> c;
-        if (stateType instanceof Class)
-        {
-            c = (Class<?>) stateType;
-        }
-        else if (stateType instanceof ParameterizedType)
-        {
-            c = stateClasses.get(stateType);
-            if (c == null)
-            {
-                c = createSubclass((ParameterizedType) stateType);
-                stateClasses.putIfAbsent(stateType, c);
-                c = stateClasses.get(stateType);
-            }
-        }
-        else if (stateType == null)
-        {
-            c = LinkedHashMap.class;
-        }
-        else
-        {
-            throw new IllegalArgumentException("Don't know how to handler state type: " + stateType);
-        }
+        Class<?> c = getStateClass();
         try
         {
-            state = (T) c.newInstance();
+            Object newState = (T) c.newInstance();
+            if (newState instanceof javassist.util.proxy.Proxy)
+            {
+                ((javassist.util.proxy.Proxy) newState).setHandler(
+                        (self, m, proceed, args) -> interceptStateMethod(self, m, proceed, args));
+            }
+            this.state = (T) newState;
         }
         catch (Exception e)
         {
             throw new UncheckedException(e);
         }
+    }
+
+    protected Object interceptStateMethod(
+            final Object self,
+            final Method method,
+            final Method proceed,
+            final Object[] args)
+            throws IllegalAccessException, InvocationTargetException
+    {
+        return proceed.invoke(self, args);
+    }
+
+    protected Class<?> getStateClass()
+    {
+        final Type stateType = GenericTypeReflector.getTypeParameter(getClass(),
+                AbstractActor.class.getTypeParameters()[0]);
+
+        if (stateType == null)
+        {
+            return LinkedHashMap.class;
+        }
+
+        Class<?> c = stateClasses.get(stateType);
+        if (c == null)
+        {
+            if (stateType instanceof Class)
+            {
+                c = (Class<?>) stateType;
+            }
+            else if (stateType instanceof ParameterizedType)
+            {
+                c = createSubclass((ParameterizedType) stateType);
+            }
+            else
+            {
+                throw new IllegalArgumentException("Don't know how to handler state type: " + stateType);
+            }
+            final ProxyFactory pf = new ProxyFactory();
+            pf.setSuperclass(c);
+            c = pf.createClass();
+            final Class<?> old = stateClasses.putIfAbsent(stateType, c);
+
+            if (old != null) c = old;
+        }
+        return c;
     }
 
     private Class createSubclass(ParameterizedType type)
