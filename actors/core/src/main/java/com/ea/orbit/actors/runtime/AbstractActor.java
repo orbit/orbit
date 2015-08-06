@@ -30,6 +30,7 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.extensions.StorageExtension;
+import com.ea.orbit.actors.test.transactions.TransactionalState;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -152,9 +153,13 @@ public abstract class AbstractActor<T>
             {
                 throw new IllegalArgumentException("Don't know how to handler state type: " + stateType);
             }
-            final ProxyFactory pf = new ProxyFactory();
-            pf.setSuperclass(c);
-            c = pf.createClass();
+            if(TransactionalState.class.isAssignableFrom(c))
+            {
+                // this is injecting fields that will cause problems with the serializers.
+                final ProxyFactory pf = new ProxyFactory();
+                pf.setSuperclass(c);
+                c = pf.createClass();
+            }
             final Class<?> old = stateClasses.putIfAbsent(stateType, c);
 
             if (old != null) c = old;
