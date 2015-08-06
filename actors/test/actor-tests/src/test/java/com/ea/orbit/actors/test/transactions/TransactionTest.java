@@ -397,8 +397,9 @@ public class TransactionTest extends ActorBaseTest
         Stage stage = createStage();
         TransactionTree tree2 = Actor.getReference(TransactionTree.class, "abcx");
         TransactionTree aleaf = Actor.getReference(TransactionTree.class, "a");
+        assertEquals((Integer) 5, Actor.getReference(TransactionTree.class, "a").treeInc(5).join());
         expectException(() -> tree2.treeTransaction(1).join());
-        assertEquals((Integer) 0, Actor.getReference(TransactionTree.class, "a").currentValue().join());
+        assertEquals((Integer) 5, Actor.getReference(TransactionTree.class, "a").currentValue().join());
         assertEquals((Integer) 0, Actor.getReference(TransactionTree.class, "b").currentValue().join());
         assertEquals((Integer) 0, Actor.getReference(TransactionTree.class, "c").currentValue().join());
     }

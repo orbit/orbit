@@ -44,6 +44,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static com.ea.orbit.async.Await.await;
+
 public class AbstractTransactionalActor<T extends TransactionalState> extends AbstractActor<T> implements TransactionalActor
 {
 
@@ -94,6 +96,17 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
             return null;
         }
         return (String) ((Map) headers).get(ORBIT_TRANSACTION_ID);
+    }
+
+
+    // this is error prone since the programmer might use awaits
+    @Deprecated
+    private <R> Task<R> transaction(Runnable runnable)
+    {
+        return transaction(() -> {
+            runnable.run();
+            return null;
+        });
     }
 
     protected <R> Task<R> transaction(Supplier<Task<R>> function)
@@ -162,12 +175,17 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
     {
         List<TransactionEvent> newList = new ArrayList<>();
 
+        // cancel nested first
+
+        final TransactionInfo transactionInfo = getOrAdTransactionInfo(transactionId);
+        for (String s : transactionInfo.subTransactions)
+        {
+            await(cancelTransaction(s));
+        }
 
         // reset state
-
         List<TransactionEvent> events = state().events;
         List<TransactionInfo> transactions = state().transactions;
-        final TransactionInfo transactionInfo = getOrAdTransactionInfo(transactionId);
         createDefaultState();
 
         final Method[] declaredMethods = state().getClass().getDeclaredMethods();
