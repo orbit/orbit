@@ -60,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 @Singleton
 public class Stage implements Startable
@@ -272,6 +273,12 @@ public class Stage implements Startable
         if (objectCloner == null)
         {
             objectCloner = new KryoCloner();
+        }
+
+        if(container!=null)
+        {
+            extensions.addAll(container.getClasses().stream().filter(c -> ActorExtension.class.isAssignableFrom(c))
+                    .map(c -> (ActorExtension) container.get(c)).collect(Collectors.toList()));
         }
 
         this.configureOrbitContainer();
