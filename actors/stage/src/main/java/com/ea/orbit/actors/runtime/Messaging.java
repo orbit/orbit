@@ -63,6 +63,7 @@ import java.util.concurrent.atomic.LongAdder;
 public class Messaging implements Startable
 {
     public static final String ORBIT_MESSAGE_HEADERS = "orbit.messageHeaders";
+    public static final String ORBIT_MESSAGE_ORIGINATOR = "orbit.originator";
     private static Object NIL = null;
     private static final Logger logger = LoggerFactory.getLogger(Messaging.class);
     // consults with Hosting to determine the target server to send the message to.

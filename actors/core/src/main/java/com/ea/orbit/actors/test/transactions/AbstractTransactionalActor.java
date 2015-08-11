@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -52,7 +53,7 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
     public static final String ORBIT_TRANSACTION_ID = "orbit.transactionId";
     private static String ORBIT_MESSAGE_HEADERS = "orbit.messageHeaders";
 
-    static String currentTransactionId()
+    public static String currentTransactionId()
     {
         final TaskContext context = TaskContext.current();
         if (context == null)
@@ -132,29 +133,46 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
         context.push();
         try
         {
-            final Task<R> apply;
+            return invokeTransaction(function, transactionId);
+        }
+        finally
+        {
+            context.pop();
+        }
+    }
+
+    private <R> Task<R> invokeTransaction(final Supplier<Task<R>> function, final String transactionId)
+    {
+        Task<R> apply = null;
+        try
+        {
             apply = function.get();
-            if (apply != null)
-            {
-                return apply.whenComplete((r, e) ->
-                {
-                    if (e != null)
-                    {
-                        cancelTransaction(transactionId);
-                    }
-                });
-            }
-            return apply;
         }
         catch (Exception ex)
         {
             return cancelTransaction(transactionId)
                     .thenCompose(() -> Task.fromException(ex));
         }
-        finally
+        if (apply != null && !(apply.isDone() && !apply.isCompletedExceptionally()))
         {
-            context.pop();
+            if (apply.isCompletedExceptionally())
+            {
+                return apply;
+            }
+            try
+            {
+                // to catch the exception without CompletableFuture-FU contortions
+                await(apply);
+                return apply;
+            }
+            catch (Exception ex)
+            {
+                final Throwable aex = (ex instanceof CompletionException) ? ex.getCause() : ex;
+                return cancelTransaction(transactionId)
+                        .thenCompose(() -> Task.fromException(aex));
+            }
         }
+        return apply;
     }
 
     TransactionInfo getOrAdTransactionInfo(String transactionId)
@@ -183,6 +201,7 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
             await(cancelTransaction(s));
         }
 
+
         // reset state
         List<TransactionEvent> events = state().events;
         List<TransactionInfo> transactions = state().transactions;
@@ -200,7 +219,7 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
                             .filter(method -> method.getName().equals(event.getMethodName()))
                             .findFirst()
                             .get()
-                            .invoke(state(), event.getParams());
+                            .invoke(state(), event.params());
                 }
                 catch (IllegalAccessException | InvocationTargetException e)
                 {
@@ -209,6 +228,15 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
 
                 newList.add(event);
             }
+        }
+
+        try
+        {
+            Thread.sleep(200);
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
         }
 
         transactions.remove(transactionInfo);

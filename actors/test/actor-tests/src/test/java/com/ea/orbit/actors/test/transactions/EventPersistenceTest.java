@@ -50,7 +50,7 @@ import static org.junit.Assert.*;
 /**
  *
  */
-public class TransactionTest extends ActorBaseTest
+public class EventPersistenceTest extends ActorBaseTest
 {
     public interface Jimmy extends TransactionalActor
     {

@@ -42,4 +42,9 @@ public class TransactionalState
 
     protected List<TransactionInfo> transactions = new ArrayList<>();
 
+    @TransactionalEvent
+    void snapshot(TransactionalState snapshot) {
+
+    }
+
 }
