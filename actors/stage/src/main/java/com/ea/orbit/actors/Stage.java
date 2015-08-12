@@ -235,18 +235,25 @@ public class Stage implements Startable
             setNodeName(getClusterName());
         }
 
-        if(executionPool == null || messagingPool == null)
+        if (executionPool == null || messagingPool == null)
         {
             final ExecutorService newService = ExecutorUtils.newScalingThreadPool(executionPoolSize);
 
-            if(executionPool == null)
+            if (executionPool == null)
             {
                 executionPool = newService;
             }
 
-            if(messagingPool == null)
+            if (messagingPool == null)
             {
                 messagingPool = newService;
+            }
+        }
+        if (container != null)
+        {
+            if (clusterPeer == null && !container.getClasses().stream().filter(ClusterPeer.class::isAssignableFrom).findAny().isPresent())
+            {
+                container.add(JGroupsClusterPeer.class);
             }
         }
 
@@ -264,7 +271,7 @@ public class Stage implements Startable
         }
         if (clusterPeer == null)
         {
-            clusterPeer = new JGroupsClusterPeer();
+            clusterPeer = container == null ? new JGroupsClusterPeer() : container.get(ClusterPeer.class);
         }
         if (clock == null)
         {
@@ -275,7 +282,7 @@ public class Stage implements Startable
             objectCloner = new KryoCloner();
         }
 
-        if(container!=null)
+        if (container != null)
         {
             extensions.addAll(container.getClasses().stream().filter(c -> ActorExtension.class.isAssignableFrom(c))
                     .map(c -> (ActorExtension) container.get(c)).collect(Collectors.toList()));

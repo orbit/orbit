@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.cluster;
 
 
+import com.ea.orbit.annotation.Config;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -80,6 +81,7 @@ public class JGroupsClusterPeer implements ClusterPeer
     private ViewListener viewListener;
     private MessageListener messageListener;
 
+    @Config("orbit.actors.jgroupsConfig")
     private String jgroupsConfig = "classpath:/conf/jgroups.xml";
 
     private boolean nameBasedUpdPort = true;
