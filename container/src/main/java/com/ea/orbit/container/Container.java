@@ -58,6 +58,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.LongSummaryStatistics;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -216,6 +217,10 @@ public class Container
             {
                 f.set(o, properties.getAsBoolean(config.value(), (Boolean) f.get(o)));
             }
+            else if (f.getType() == Long.TYPE || f.getType() == Long.class)
+            {
+                f.set(o, properties.getAsLong(config.value(), (Long) f.get(o)));
+            }
             else if (f.getType() == String.class)
             {
                 f.set(o, properties.getAsString(config.value(), (String) f.get(o)));
@@ -233,11 +238,6 @@ public class Container
                     f.set(o, Enum.valueOf((Class<Enum>) f.getType(), enumValue));
                 }
             }
-            else if (properties.getAll().get(config.value()) != null)
-            {
-                final Object val = properties.getAll().get(config.value());
-                f.set(o, val);
-            }
             else if (List.class.isAssignableFrom(f.getType()))
             {
                 if ((properties.getAll().get(config.value()) != null))
@@ -245,6 +245,26 @@ public class Container
                     final Object val = properties.getAll().get(config.value());
                     f.set(o, val);
                 }
+            }
+            else if (Set.class.isAssignableFrom(f.getType()))
+            {
+                if ((properties.getAll().get(config.value()) != null))
+                {
+                    final Object val = properties.getAll().get(config.value());
+                    if (val instanceof List)
+                    {
+                        f.set(o, new LinkedHashSet((List) val));
+                    }
+                    else
+                    {
+                        f.set(o, val);
+                    }
+                }
+            }
+            else if (properties.getAll().get(config.value()) != null)
+            {
+                final Object val = properties.getAll().get(config.value());
+                f.set(o, val);
             }
             else
             {

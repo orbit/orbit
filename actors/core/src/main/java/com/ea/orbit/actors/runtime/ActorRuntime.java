@@ -58,6 +58,15 @@ public class ActorRuntime
      */
     public static Runtime getRuntime()
     {
+        final ActorTaskContext context = ActorTaskContext.current();
+        if (context != null)
+        {
+            final Runtime runtime = context.getRuntime();
+            if (runtime != null)
+            {
+                return runtime;
+            }
+        }
         final WeakReference<Runtime> runtimeRef = currentRuntime.get();
         Runtime runtime;
 
@@ -82,6 +91,11 @@ public class ActorRuntime
      */
     static void setRuntime(final WeakReference<Runtime> runtimeRef)
     {
+        final ActorTaskContext context = ActorTaskContext.current();
+        if (context != null)
+        {
+            context.setRuntime(runtimeRef.get());
+        }
         currentRuntime.set(runtimeRef);
         if (lastRuntime == null || lastRuntime.get() == null)
         {

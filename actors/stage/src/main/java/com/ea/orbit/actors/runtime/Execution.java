@@ -42,9 +42,11 @@ import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.annotation.CacheResponse;
+import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.OnlyIfActivated;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.metrics.annotations.ExportMetric;
@@ -57,7 +59,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.MapMaker;
 
 import java.io.IOException;
-import java.io.ObjectOutput;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
@@ -67,12 +68,16 @@ import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -127,6 +132,16 @@ public class Execution implements Runtime
     private ExecutionCacheManager cacheManager = new ExecutionCacheManager();
     private ExecutionObjectCloner objectCloner;
 
+    /**
+     * RPC message headers that are copied from and to the TaskContext.
+     * <p>
+     * These fields are copied from the TaskContext to the message headers when sending messagess.
+     * And from the message header to the TaskContext when receiving them.ø
+     * </p>
+     */
+    @Config("orbit.actors.stickyHeaders")
+    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList("orbit.transactionId","orbit.traceId"));
+
     public Execution()
     {
         // the last runtime created will be the default.
@@ -135,7 +150,8 @@ public class Execution implements Runtime
         runtimeIdentity = generateRuntimeIdentity();
     }
 
-    private String generateRuntimeIdentity() {
+    private String generateRuntimeIdentity()
+    {
         final UUID uuid = UUID.randomUUID();
         final String encoded = Base64.getEncoder().encodeToString(
                 ByteBuffer.allocate(16).putLong(uuid.getMostSignificantBits()).putLong(uuid.getLeastSignificantBits()).array());
@@ -433,6 +449,7 @@ public class Execution implements Runtime
                 if (newInstance instanceof AbstractActor)
                 {
                     final AbstractActor<?> actor = (AbstractActor<?>) newInstance;
+                    ActorTaskContext.current().setActor(actor);
                     actor.reference = entry.reference;
 
                     actor.stateExtension = getStorageExtensionFor(actor);
@@ -545,16 +562,6 @@ public class Execution implements Runtime
         return Task.done();
     }
 
-    /**
-     * Installs this observer into this node.
-     * Can called several times the object is registered only once.
-     *
-     * @param iClass   hint to the framework about which ActorObserver interface this object represents.
-     *                 Can be null if there are no ambiguities.
-     * @param observer the object to install
-     * @param <T>      The type of reference class returned.
-     * @return a remote reference that can be sent to actors.
-     */
     public <T extends ActorObserver> T getObjectReference(final Class<T> iClass, final T observer)
     {
         return getObserverReference(iClass, observer, null);
@@ -828,10 +835,12 @@ public class Execution implements Runtime
         return descriptorMapByInterfaceId.get(interfaceId);
     }
 
-    public void onMessageReceived(final NodeAddress from,
-                                  final boolean oneway, final int messageId, final int interfaceId, final int methodId,
-                                  final Object key, final Object[] params)
+    public void onMessageReceived(Message message)
     {
+        int interfaceId = (int) message.getHeader(MessageDefinitions.INTERFACE_ID);
+        int methodId = (int) message.getHeader(MessageDefinitions.METHOD_ID);
+        Object key = message.getHeader(MessageDefinitions.OBJECT_ID);
+
         EntryKey entryKey = new EntryKey(interfaceId, key);
         if (logger.isDebugEnabled())
         {
@@ -839,16 +848,25 @@ public class Execution implements Runtime
         }
         messagesReceived.increment();
         if (!executionSerializer.offerJob(entryKey,
-                () -> handleOnMessageReceived(entryKey, from, oneway, messageId, interfaceId, methodId, key, params), maxQueueSize))
+                () -> handleOnMessageReceived(
+                        entryKey,
+                        message.getFromNode(),
+                        message.isOneWay(),
+                        message.getMessageId(),
+                        interfaceId, methodId, key,
+                        message.getHeaders(),
+                        (Object[]) message.getPayload()
+                ),
+                maxQueueSize))
         {
             refusedExecutions.increment();
             if (logger.isErrorEnabled())
             {
-                logger.error("Execution refused: " + key + ":" + interfaceId + ":" + methodId + ":" + messageId);
+                logger.error("Execution refused: " + key + ":" + interfaceId + ":" + methodId + ":" + message.getMessageId());
             }
-            if (!oneway)
+            if (!message.isOneWay())
             {
-                messaging.sendResponse(from, MessageDefinitions.ERROR_RESPONSE, messageId, "Execution refused");
+                messaging.sendResponse(message.getFromNode(), MessageDefinitions.ERROR_RESPONSE, message.getMessageId(), "Execution refused");
             }
         }
     }
@@ -857,6 +875,7 @@ public class Execution implements Runtime
     private Task<?> handleOnMessageReceived(final EntryKey entryKey, final NodeAddress from,
                                             final boolean oneway, final int messageId, final int interfaceId,
                                             final int methodId, final Object key,
+                                            final Object headers,
                                             final Object[] params)
     {
         messagesHandled.increment();
@@ -911,12 +930,12 @@ public class Execution implements Runtime
         final ReferenceEntry theEntry = entry;
         if (!entry.statelessWorker)
         {
-            return executeMessage(theEntry, oneway, descriptor, methodId, params, from, messageId);
+            return executeMessage(theEntry, oneway, descriptor, methodId, headers, params, from, messageId);
         }
         else
         {
             if (!executionSerializer.offerJob(null,
-                    () -> executeMessage(theEntry, oneway, descriptor, methodId, params, from, messageId),
+                    () -> executeMessage(theEntry, oneway, descriptor, methodId, headers, params, from, messageId),
                     maxQueueSize))
             {
                 refusedExecutions.increment();
@@ -954,9 +973,25 @@ public class Execution implements Runtime
         }
     }
 
+    private MessageContext getMessageContext()
+    {
+        final TaskContext current = TaskContext.current();
+        if (current == null)
+        {
+            return null;
+        }
+        final Object property = current.getProperty(MessageContext.class.getName());
+        if (!(property instanceof MessageContext))
+        {
+            return null;
+        }
+        return ((MessageContext) property);
+    }
+
+
     public ActorReference getCurrentActivation()
     {
-        MessageContext current = currentMessage.get();
+        final MessageContext current = getMessageContext();
         if (current == null)
         {
             return null;
@@ -966,7 +1001,7 @@ public class Execution implements Runtime
 
     public long getCurrentTraceId()
     {
-        MessageContext current = currentMessage.get();
+        final MessageContext current = getMessageContext();
         if (current == null)
         {
             return 0;
@@ -979,21 +1014,38 @@ public class Execution implements Runtime
             final boolean oneway,
             final InterfaceDescriptor descriptor,
             final int methodId,
+            final Object headers,
             final Object[] params,
             final NodeAddress from,
             final int messageId)
     {
+        final ActorTaskContext context = ActorTaskContext.pushNew();
         try
         {
-
-            currentMessage.set(new MessageContext(theEntry, methodId, from));
+            context.setProperty(Runtime.class.getName(), this);
+            final MessageContext messageContext = new MessageContext(theEntry, methodId, from);
+            context.setProperty(MessageContext.class.getName(), messageContext);
             Activation activation = theEntry.popActivation();
             activation.lastAccess = clock.millis();
-            Task<?> future;
+            if (headers instanceof Map)
+            {
+                @SuppressWarnings("unchecked")
+                final Map<Object, Object> headersMap = (Map) headers;
+                for (Map.Entry<Object, Object> e : headersMap.entrySet())
+                {
+                    if (stickyHeaders.contains(e.getKey()))
+                    {
+                        context.setProperty((String) e.getKey(), e.getValue());
+                    }
+                }
+            }
             try
             {
                 bind();
-                future = descriptor.invoker.safeInvoke(activation.getOrCreateInstance(), methodId, params);
+                final Object actor = activation.getOrCreateInstance();
+                context.setActor((AbstractActor<?>) actor);
+
+                Task<?> future = descriptor.invoker.safeInvoke(actor, methodId, params);
                 return future.whenComplete((r, e) -> {
                     sendResponseAndLogError(oneway, from, messageId, r, e);
                 });
@@ -1010,7 +1062,7 @@ public class Execution implements Runtime
         }
         finally
         {
-            currentMessage.remove();
+            context.pop();
         }
         return Task.done();
     }
@@ -1065,7 +1117,7 @@ public class Execution implements Runtime
     }
 
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({"unchecked"})
     <T> T createReference(final NodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
@@ -1086,23 +1138,8 @@ public class Execution implements Runtime
         return (T) reference;
     }
 
-
-    /**
-     * Returns an observer reference to an observer in another node.
-     * <p/>
-     * Should only be used if the application knows for sure that an observer with the given id
-     * indeed exists on that other node.
-     * <p/>
-     * This is a low level use of orbit-actors, recommended only for ActorExtensions.
-     *
-     * @param address the other node address.
-     * @param iClass  the IObserverClass
-     * @param id      the id, must not be null
-     * @param <T>     the ActorObserver sub interface
-     * @return a remote reference to the observer
-     */
     @SuppressWarnings("unchecked")
-    public <T extends ActorObserver> T getRemoteObserverReference(NodeAddress address, final Class<T> iClass, final Object id)
+    public <T extends ActorObserver> T getRemoteObjectReference(NodeAddress address, final Class<T> iClass, final Object id)
     {
         if (id == null)
         {
@@ -1119,7 +1156,7 @@ public class Execution implements Runtime
         return (T) reference;
     }
 
-    public Task<?> sendMessage(Addressable toReference, boolean oneWay, final int methodId, final Object[] params)
+    public Task<?> sendMessage(Addressable toReference, boolean oneWay, final int methodId, final Map<Object, Object> headers, final Object[] params)
     {
         if (logger.isDebugEnabled())
         {
@@ -1127,13 +1164,43 @@ public class Execution implements Runtime
         }
         ActorReference<?> actorReference = (ActorReference<?>) toReference;
         NodeAddress toNode = actorReference.address;
+
+        final LinkedHashMap<Object, Object> actualHeaders = new LinkedHashMap<>();
+        if (headers != null)
+        {
+            actualHeaders.putAll(headers);
+        }
+        final TaskContext context = TaskContext.current();
+
+        // copy stick context valued to the message headers headers
+        if (context != null)
+        {
+            for (String key : stickyHeaders)
+            {
+                final Object value = context.getProperty(key);
+                if (value != null)
+                {
+                    actualHeaders.put(key, value);
+                }
+            }
+        }
+
+        final Message message = new Message()
+                .withMessageType(MessageDefinitions.NORMAL_MESSAGE)
+                .withHeaders(actualHeaders)
+                .withHeader(MessageDefinitions.INTERFACE_ID, actorReference._interfaceId())
+                .withHeader(MessageDefinitions.METHOD_ID, methodId)
+                .withHeader(MessageDefinitions.OBJECT_ID, ActorReference.getId(actorReference))
+                .withPayload(params);
+
+
         if (toNode == null)
         {
             // TODO: Ensure that both paths encode exception the same way.
             return hosting.locateActor(actorReference, true)
-                    .thenCompose(x -> messaging.sendMessage(x, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params));
+                    .thenCompose(x -> messaging.sendMessage(message.withToNode(x)));
         }
-        return messaging.sendMessage(toNode, oneWay, actorReference._interfaceId(), methodId, actorReference.id, params);
+        return messaging.sendMessage(message.withToNode(toNode));
     }
 
     public Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
@@ -1170,21 +1237,19 @@ public class Execution implements Runtime
 
     private String generateParameterHash(Object[] params)
     {
+        if (params == null || params.length == 0)
+        {
+            return "";
+        }
         try
         {
             final MessageDigest md = MessageDigest.getInstance("SHA-256");
             DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
-            ObjectOutput out = messaging.createObjectOutput(d);
-
-            for(Object param : params)
-            {
-                out.writeObject(param);
-            }
-
-            out.close();
-
+            messaging.messageSerializer.serializeMessage(this, d, new Message().withPayload(params));
+            d.close();
             return String.format("%032X", new BigInteger(1, md.digest()));
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new UncheckedException("Unable to make parameter hash", e);
         }
@@ -1195,7 +1260,7 @@ public class Execution implements Runtime
         if (hookExtensions.size() == 0)
         {
             // no hooks
-            return sendMessage(toReference, oneWay, methodId, params);
+            return sendMessage(toReference, oneWay, methodId, null, params);
         }
 
         Iterator<InvokeHookExtension> it = hookExtensions.iterator();
@@ -1217,7 +1282,7 @@ public class Execution implements Runtime
                 {
                     return it.next().invoke(this, toReference, method, methodId, params);
                 }
-                return sendMessage(toReference, oneWay, methodId, params);
+                return sendMessage(toReference, oneWay, methodId, null, params);
             }
         };
 
@@ -1316,27 +1381,27 @@ public class Execution implements Runtime
             }
         }
         return true;
-	}
+    }
 
-    @ExportMetric(name="localActorCount", scope=MetricScope.PROTOTYPE)
+    @ExportMetric(name = "localActorCount", scope = MetricScope.PROTOTYPE)
     public long getLocalActorCount()
     {
         return localActors.size();
     }
 
-    @ExportMetric(name="messagesReceived", scope=MetricScope.PROTOTYPE)
+    @ExportMetric(name = "messagesReceived", scope = MetricScope.PROTOTYPE)
     public long getMessagesReceived()
     {
         return messagesReceived.longValue();
     }
 
-    @ExportMetric(name="messagesHandled", scope=MetricScope.PROTOTYPE)
+    @ExportMetric(name = "messagesHandled", scope = MetricScope.PROTOTYPE)
     public long getMessagesHandled()
     {
         return messagesHandled.longValue();
     }
 
-    @ExportMetric(name="refusedExecutions",scope=MetricScope.PROTOTYPE)
+    @ExportMetric(name = "refusedExecutions", scope = MetricScope.PROTOTYPE)
     public long getRefusedExecutions()
     {
         return refusedExecutions.longValue();
