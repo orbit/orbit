@@ -140,7 +140,7 @@ public class ExceptionalTest extends ActorBaseTest
     @Test
     public void checkingNonSerializable() throws ExecutionException, InterruptedException
     {
-        // checks with exceptions with stuff that's not serializable get their stacktrace sent back to the caller.
+        // checks if exceptions with stuff that's not serializable get their stacktrace sent back to the caller.
         Stage stage1 = createStage();
         final ExceptionalThing ref = Actor.getReference(ExceptionalThing.class, "0");
 
