@@ -86,7 +86,7 @@ public class Stage implements Startable
     private List<ReporterConfig> metricsConfig = new ArrayList<>();
 
     @Wired
-    Container container;
+    private Container container;
 
     public enum StageMode
     {
@@ -96,8 +96,11 @@ public class Stage implements Startable
 
     private ClusterPeer clusterPeer;
     private Task<?> startFuture;
+    @Wired
     private Messaging messaging;
-    private Execution execution = new Execution();
+    @Wired
+    private Execution execution;
+    @Wired
     private Hosting hosting;
     private boolean startCalled;
     private Clock clock;
@@ -249,29 +252,36 @@ public class Stage implements Startable
                 messagingPool = newService;
             }
         }
-        if (container != null)
-        {
-            if (clusterPeer == null && !container.getClasses().stream().filter(ClusterPeer.class::isAssignableFrom).findAny().isPresent())
-            {
-                container.add(JGroupsClusterPeer.class);
-            }
-        }
 
         if (hosting == null)
         {
-            hosting = new Hosting();
+            hosting = container == null ? new Hosting() : container.get(Hosting.class);
         }
         if (messaging == null)
         {
-            messaging = new Messaging();
+            messaging = container == null ? new Messaging() : container.get(Messaging.class);
         }
         if (execution == null)
         {
-            execution = new Execution();
+            execution = container == null ? new Execution() : container.get(Execution.class);
         }
         if (clusterPeer == null)
         {
-            clusterPeer = container == null ? new JGroupsClusterPeer() : container.get(ClusterPeer.class);
+            if (container != null)
+            {
+                if (clusterPeer == null && !container.getClasses().stream().filter(ClusterPeer.class::isAssignableFrom).findAny().isPresent())
+                {
+                    clusterPeer = container.get(JGroupsClusterPeer.class);
+                }
+                else
+                {
+                    clusterPeer = container.get(ClusterPeer.class);
+                }
+            }
+            else
+            {
+                clusterPeer = new JGroupsClusterPeer();
+            }
         }
         if (clock == null)
         {

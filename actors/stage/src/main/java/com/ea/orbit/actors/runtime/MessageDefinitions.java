@@ -30,10 +30,14 @@ package com.ea.orbit.actors.runtime;
 
 public class MessageDefinitions
 {
-    public static final byte NORMAL_MESSAGE = 0;
-    public static final byte NORMAL_RESPONSE = 1;
-    public static final byte EXCEPTION_RESPONSE = 2;
-    public static final byte ERROR_RESPONSE = 3;
+    public static final byte NORMAL_MESSAGE = 1;
+    public static final byte NORMAL_RESPONSE = 2;
+    public static final byte EXCEPTION_RESPONSE = 3;
+    public static final byte ERROR_RESPONSE = 4;
     public static final byte ONEWAY_MESSAGE = 8;
 
+    // COMMON HEADERS
+    public static final Byte INTERFACE_ID = 0;
+    public static final Byte METHOD_ID = 1;
+    public static final Byte OBJECT_ID = 2;
 }

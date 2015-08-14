@@ -122,6 +122,29 @@ public class ContainerConfigImpl extends Properties implements ContainerConfig
     }
 
     @Override
+    public Long getAsLong(final String key)
+    {
+        Long value = null;
+        final String string = this.getAsString(key);
+        if (string != null)
+        {
+            value = Long.valueOf(string);
+        }
+        return value;
+    }
+
+    @Override
+    public Long getAsLong(final String key, final Long defaultValue)
+    {
+        Long value = getAsLong(key);
+        if (null == value)
+        {
+            value = defaultValue;
+        }
+        return value;
+    }
+
+    @Override
     public Boolean getAsBoolean(final String key)
     {
         Boolean value = null;
