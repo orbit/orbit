@@ -140,7 +140,7 @@ public class Execution implements Runtime
      * </p>
      */
     @Config("orbit.actors.stickyHeaders")
-    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList("orbit.transactionId","orbit.traceId"));
+    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList("orbit.transactionId", "orbit.traceId"));
 
     public Execution()
     {
@@ -1095,7 +1095,14 @@ public class Execution implements Runtime
                 }
                 try
                 {
-                    messaging.sendResponse(from, MessageDefinitions.EXCEPTION_RESPONSE, messageId, ex2);
+                    if (exception != null)
+                    {
+                        messaging.sendResponse(from, MessageDefinitions.EXCEPTION_RESPONSE, messageId, toSerializationSafeException(exception, ex2));
+                    }
+                    else
+                    {
+                        messaging.sendResponse(from, MessageDefinitions.EXCEPTION_RESPONSE, messageId, ex2);
+                    }
                 }
                 catch (Exception ex3)
                 {
@@ -1114,6 +1121,21 @@ public class Execution implements Runtime
                 }
             }
         }
+    }
+
+    private Throwable toSerializationSafeException(final Throwable notSerializable, final Throwable secondaryException)
+    {
+        final UncheckedException runtimeException = new UncheckedException(secondaryException.getMessage(), secondaryException, true, true);
+        for (Throwable t = notSerializable; t != null; t = t.getCause())
+        {
+            final RuntimeException newEx = new RuntimeException(
+                    t.getMessage() == null
+                            ? t.getClass().getName()
+                            : (t.getClass().getName() + ": " + t.getMessage()));
+            newEx.setStackTrace(t.getStackTrace());
+            runtimeException.addSuppressed(newEx);
+        }
+        return runtimeException;
     }
 
 

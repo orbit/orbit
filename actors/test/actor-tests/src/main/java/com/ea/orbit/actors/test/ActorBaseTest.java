@@ -225,7 +225,7 @@ public class ActorBaseTest
     }
 
     @SuppressWarnings("PMD.AvoidCatchingThrowable")
-    public void expectException(Exceptional callable)
+    public Throwable expectException(Exceptional callable)
     {
         try
         {
@@ -238,9 +238,10 @@ public class ActorBaseTest
         catch (Throwable ex)
         {
             // ok
-            return;
+            return ex;
         }
         fail("Was expecting some exception");
+        return null;
     }
 
     private Object getField(Object target, Class<?> clazz, String name) throws IllegalAccessException, NoSuchFieldException
