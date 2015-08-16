@@ -460,7 +460,7 @@ public class Execution implements Runtime
                     {
                         try
                         {
-                            actor.readState();
+                            actor.readState().join();
                         }
                         catch (Exception ex)
                         {
