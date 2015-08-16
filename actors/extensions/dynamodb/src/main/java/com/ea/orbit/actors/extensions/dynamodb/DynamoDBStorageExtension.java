@@ -101,20 +101,22 @@ public class DynamoDBStorageExtension implements StorageExtension
                 .withSetterVisibility(JsonAutoDetect.Visibility.NONE)
                 .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
 
+
         switch(credentialType)
         {
             case BASIC_CREDENTIALS:
-                dynamoClient = new AmazonDynamoDBAsyncClient(new BasicAWSCredentials(getAccessKey(), getSecretKey()));
+                dynamoClient = new AmazonDynamoDBAsyncClient(new BasicAWSCredentials(accessKey, secretKey));
 
             case BASIC_SESSION_CREDENTIALS:
-                dynamoClient = new AmazonDynamoDBAsyncClient(new BasicSessionCredentials(getAccessKey(), getSecretKey(), getSessionToken()));
+                dynamoClient = new AmazonDynamoDBAsyncClient(new BasicSessionCredentials(accessKey, secretKey, sessionToken));
 
             case DEFAULT_PROVIDER_CHAIN:
             default:
                 dynamoClient = new AmazonDynamoDBAsyncClient(new DefaultAWSCredentialsProviderChain());
         }
 
-        dynamoClient.setEndpoint(getEndpoint());
+        dynamoClient.setEndpoint(endpoint);
+
         dynamoDB = new DynamoDB(dynamoClient);
 
         return Task.done();
