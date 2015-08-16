@@ -106,13 +106,16 @@ public class DynamoDBStorageExtension implements StorageExtension
         {
             case BASIC_CREDENTIALS:
                 dynamoClient = new AmazonDynamoDBAsyncClient(new BasicAWSCredentials(accessKey, secretKey));
+                break;
 
             case BASIC_SESSION_CREDENTIALS:
                 dynamoClient = new AmazonDynamoDBAsyncClient(new BasicSessionCredentials(accessKey, secretKey, sessionToken));
+                break;
 
             case DEFAULT_PROVIDER_CHAIN:
             default:
                 dynamoClient = new AmazonDynamoDBAsyncClient(new DefaultAWSCredentialsProviderChain());
+                break;
         }
 
         dynamoClient.setEndpoint(endpoint);
