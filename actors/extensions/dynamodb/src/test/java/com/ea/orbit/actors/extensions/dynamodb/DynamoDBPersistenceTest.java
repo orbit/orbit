@@ -73,7 +73,7 @@ public class DynamoDBPersistenceTest extends StorageBaseTest
         extension.setCredentialType(DynamoDBStorageExtension.AmazonCredentialType.BASIC_CREDENTIALS);
         extension.setAccessKey("dummy");
         extension.setSecretKey("dummy");
-        return new DynamoDBStorageExtension();
+        return extension;
     }
 
     @Override
