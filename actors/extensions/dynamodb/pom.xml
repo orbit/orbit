@@ -29,47 +29,56 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.ea.orbit</groupId>
-        <artifactId>orbit-parent</artifactId>
+        <artifactId>orbit-actors-parent</artifactId>
         <version>0.4.4-SNAPSHOT</version>
-        <relativePath>..</relativePath>
+        <relativePath>../..</relativePath>
     </parent>
-    <artifactId>orbit-actors-parent</artifactId>
-    <packaging>pom</packaging>
-    <name>Orbit Actors</name>
+    <modelVersion>4.0.0</modelVersion>
 
-    <modules>
-        <module>core</module>
-        <module>stage</module>
-        <module>client</module>
-        <module>server</module>
-        <module>extensions/jpa</module>
-        <module>extensions/json</module>
-        <module>extensions/mongodb</module>
-        <module>extensions/dynamodb</module>
-        <module>extensions/redis</module>
-		<module>extensions/ldap</module>
-        <module>extensions/postgresql</module>
-        <module>extensions/spring</module>
-        <module>extensions/memcached</module>
-        <module>extensions/metrics</module>
-        <module>test/actor-tests</module>
-        <module>actors-all</module>
-    </modules>
+    <name>Orbit Actors Extension: DynamoDB Storage</name>
+    <artifactId>orbit-actors-dynamodb</artifactId>
+	
+	<properties>
+		<maven.test.skip>true</maven.test.skip>
+	</properties>
+	
+	<profiles>
+		<profile>
+			<id>withDynamoDBTests</id>
+			<properties>
+				<maven.test.skip>false</maven.test.skip>
+			</properties>
+		</profile>
+	</profiles>
 
     <dependencies>
         <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-dynamodb</artifactId>
+            <version>1.10.11</version>
+        </dependency>
+        <dependency>
             <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-commons</artifactId>
+            <artifactId>orbit-actors-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-container</artifactId>
+            <artifactId>orbit-actors-json</artifactId>
             <version>${project.version}</version>
-            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.mongojack</groupId>
+            <artifactId>mongojack</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-tests</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
