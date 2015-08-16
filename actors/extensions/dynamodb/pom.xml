@@ -70,11 +70,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.mongojack</groupId>
-            <artifactId>mongojack</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-        <dependency>
             <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-actors-tests</artifactId>
             <version>${project.version}</version>
