@@ -36,6 +36,7 @@ import com.ea.orbit.actors.test.StorageTest;
 import com.ea.orbit.actors.test.StorageTestState;
 import com.ea.orbit.exception.UncheckedException;
 
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
@@ -68,6 +69,10 @@ public class DynamoDBPersistenceTest extends StorageBaseTest
     @Override
     public ActorExtension getStorageExtension()
     {
+        DynamoDBStorageExtension extension = new DynamoDBStorageExtension();
+        extension.setCredentialType(DynamoDBStorageExtension.AmazonCredentialType.BASIC_CREDENTIALS);
+        extension.setAccessKey("dummy");
+        extension.setSecretKey("dummy");
         return new DynamoDBStorageExtension();
     }
 
@@ -83,7 +88,7 @@ public class DynamoDBPersistenceTest extends StorageBaseTest
                 .withSetterVisibility(JsonAutoDetect.Visibility.NONE)
                 .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
 
-        dynamoClient = new AmazonDynamoDBClient(new DefaultAWSCredentialsProviderChain());
+        dynamoClient = new AmazonDynamoDBClient(new BasicAWSCredentials("dummy", "dummy"));
         dynamoClient.setEndpoint("http://localhost:8000");
         dynamoDB = new DynamoDB(dynamoClient);
 

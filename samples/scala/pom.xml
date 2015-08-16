@@ -52,7 +52,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.ea.orbit</groupId>
-			<artifactId>orbit-actors-all</artifactId>
+			<artifactId>orbit-actors-server</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 	</dependencies>

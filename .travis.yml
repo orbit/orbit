@@ -3,8 +3,6 @@ jdk: oraclejdk8
 
 install:
   - mkdir /tmp/dynamodb
-  - export AWS_ACCESS_KEY_ID=dummy
-  - export AWS_SECRET_ACCESS_KEY=dummy
   - wget -O - http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_latest | tar xz --directory /tmp/dynamodb
 
 services:
