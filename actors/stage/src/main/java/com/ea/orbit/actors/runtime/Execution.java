@@ -59,7 +59,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.MapMaker;
 
 import java.io.IOException;
-import java.io.ObjectOutput;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;

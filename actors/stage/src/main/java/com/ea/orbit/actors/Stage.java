@@ -32,7 +32,6 @@ import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.JGroupsClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.ActorExtension;
-import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Execution;

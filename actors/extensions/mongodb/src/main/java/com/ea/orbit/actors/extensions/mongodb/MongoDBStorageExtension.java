@@ -34,6 +34,11 @@ import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
+
+import org.mongojack.JacksonDBCollection;
+import org.mongojack.internal.MongoJackModule;
+import org.mongojack.internal.object.BsonObjectTraversingParser;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.BasicDBObject;
@@ -43,10 +48,6 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
-
-import org.mongojack.JacksonDBCollection;
-import org.mongojack.internal.MongoJackModule;
-import org.mongojack.internal.object.BsonObjectTraversingParser;
 
 import java.util.ArrayList;
 

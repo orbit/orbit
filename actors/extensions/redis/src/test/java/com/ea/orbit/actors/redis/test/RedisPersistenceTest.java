@@ -32,9 +32,9 @@ import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
 import com.ea.orbit.actors.extensions.redis.RedisStorageExtension;
 import com.ea.orbit.actors.runtime.ReferenceFactory;
+import com.ea.orbit.actors.test.StorageBaseTest;
 import com.ea.orbit.actors.test.StorageTest;
 import com.ea.orbit.actors.test.StorageTestState;
-import com.ea.orbit.actors.test.StorageBaseTest;
 import com.ea.orbit.exception.UncheckedException;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
