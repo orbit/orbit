@@ -225,7 +225,7 @@ public class JsonReferenceSerializationTest
     private ObjectMapper createMapper()
     {
         ObjectMapper mapper = new ObjectMapper();
-        mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
+        mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
                 .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE)
