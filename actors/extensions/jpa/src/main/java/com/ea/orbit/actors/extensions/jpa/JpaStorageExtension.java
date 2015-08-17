@@ -159,7 +159,7 @@ public class JpaStorageExtension extends AbstractStorageExtension
     {
         emf = Persistence.createEntityManagerFactory(persistenceUnitName);
         mapper = new ObjectMapper();
-        mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
+        mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
                 .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE)

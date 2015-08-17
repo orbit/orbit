@@ -196,6 +196,10 @@ public abstract class ActorReference<T> implements Serializable, Addressable
     @Override
     public String toString()
     {
-        return id != null ? _interfaceClass().getName() + ":" + id : _interfaceClass().getName();
+        if(address == null)
+        {
+            return id != null ? _interfaceClass().getName() + ":" + id : _interfaceClass().getName();
+        }
+        return id != null ? _interfaceClass().getName() + ":" + id : _interfaceClass().getName() + ":" + address;
     }
 }

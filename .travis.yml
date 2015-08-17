@@ -1,9 +1,9 @@
 language: java		
 jdk: oraclejdk8
 
-# sudo: required
-
-install: true
+install:
+  - mkdir /tmp/dynamodb
+  - wget -O - http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_latest | tar xz --directory /tmp/dynamodb
 
 services:
   - mongodb
@@ -15,11 +15,9 @@ addons:
 
 before_script:
   - psql -c 'create database orbit;' -U postgres
+  - java -Djava.library.path=/tmp/dynamodb/DynamoDBLocal_lib -jar /tmp/dynamodb/DynamoDBLocal.jar -inMemory &
 
-script:
-#  - sudo apt-get update && sudo apt-get install oracle-java8-installer
-#  - java -version
-  - mvn test -P withMongoTests,withPostgresTests,withRedisTests,withMemcachedTests,withScala,withLDAPTests
+script: "mvn test -P withMongoTests,withDynamoDBTests,withPostgresTests,withRedisTests,withMemcachedTests,withScala,withLDAPTests"
 
 notifications:
   webhooks:
@@ -28,4 +26,3 @@ notifications:
     on_success: always
     on_failure: always  
     on_start: false  
-

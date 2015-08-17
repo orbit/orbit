@@ -28,10 +28,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.concurrent.TaskContext;
+import com.ea.orbit.actors.extensions.MessageSerializer;
+import com.ea.orbit.annotation.Config;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -62,8 +62,6 @@ import java.util.concurrent.atomic.LongAdder;
 
 public class Messaging implements Startable
 {
-    public static final String ORBIT_MESSAGE_HEADERS = "orbit.messageHeaders";
-    public static final String ORBIT_MESSAGE_ORIGINATOR = "orbit.originator";
     private static Object NIL = null;
     private static final Logger logger = LoggerFactory.getLogger(Messaging.class);
     // consults with Hosting to determine the target server to send the message to.
@@ -76,11 +74,15 @@ public class Messaging implements Startable
     private final Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
     private final PriorityBlockingQueue<PendingResponse> pendingResponsesQueue = new PriorityBlockingQueue<>(50, new PendingResponseComparator());
     private Clock clock = Clock.systemUTC();
+
+    @Config("orbit.actors.defaultMessageTimeout")
     private long responseTimeoutMillis = 30_000;
+
     private final LongAdder networkMessagesReceived = new LongAdder();
     private final LongAdder objectMessagesReceived = new LongAdder();
     private final LongAdder responsesReceived = new LongAdder();
     private ExecutorService executor;
+    protected MessageSerializer messageSerializer = new JavaMessageSerializer();
 
     public void setExecution(final Execution execution)
     {
@@ -187,35 +189,28 @@ public class Messaging implements Startable
         try
         {
             networkMessagesReceived.increment();
-            ObjectInput in = createObjectInput(buff);
-            byte messageType = in.readByte();
-            int messageId = in.readInt();
-            switch (messageType)
+            Message message = messageSerializer.deserializeMessage(execution, new ByteArrayInputStream(buff));
+            message.withFromNode(from);
+            switch (message.getMessageType())
             {
                 case MessageDefinitions.NORMAL_MESSAGE:
                 case MessageDefinitions.ONEWAY_MESSAGE:
-                    boolean oneway = (messageType == MessageDefinitions.ONEWAY_MESSAGE);
-                    objectMessagesReceived.increment();
-                    int interfaceId = in.readInt();
-                    int methodId = in.readInt();
-                    Object key = in.readObject();
-                    Object headers = in.readObject();
-                    Object[] params = (Object[]) in.readObject();
-                    execution.onMessageReceived(from, oneway, messageId, interfaceId, methodId, key, headers, params);
-                    break;
+                    execution.onMessageReceived(message);
+                    return;
+
                 case MessageDefinitions.NORMAL_RESPONSE:
                 case MessageDefinitions.EXCEPTION_RESPONSE:
                 case MessageDefinitions.ERROR_RESPONSE:
                 {
                     responsesReceived.increment();
-                    PendingResponse pendingResponse = pendingResponseMap.remove(messageId);
+                    PendingResponse pendingResponse = pendingResponseMap.remove(message.getMessageId());
                     if (pendingResponse != null)
                     {
                         pendingResponsesQueue.remove(pendingResponse);
                         Object res;
                         try
                         {
-                            res = in.readObject();
+                            res = message.getPayload();
                         }
                         catch (Exception ex)
                         {
@@ -223,7 +218,7 @@ public class Messaging implements Startable
                             pendingResponse.internalCompleteExceptionally(new UncheckedException("Error deserializing response", ex));
                             return;
                         }
-                        switch (messageType)
+                        switch (message.getMessageType())
                         {
                             case MessageDefinitions.NORMAL_RESPONSE:
                                 pendingResponse.internalComplete(res);
@@ -232,23 +227,26 @@ public class Messaging implements Startable
                                 pendingResponse.internalCompleteExceptionally((Throwable) res);
                                 return;
                             case MessageDefinitions.ERROR_RESPONSE:
-                                pendingResponse.internalCompleteExceptionally(new UncheckedException("Error invoking but no exception provided. Response: " + res));
+                                pendingResponse.internalCompleteExceptionally(
+                                        new UncheckedException("Error invoking but no exception provided. Response: " + res));
                                 return;
                             default:
                                 // should be impossible
-                                logger.error("Illegal protocol, invalid response message type: {}", messageType);
+                                logger.error("Illegal protocol, invalid response message type: {}",
+                                        message.getMessageType());
                                 return;
                         }
                     }
                     else
                     {
                         // missing counterpart
-                        logger.warn("Missing counterpart (pending message) for message with id: {} and type: {}.", messageId, messageType);
+                        logger.warn("Missing counterpart (pending message) for message with id: {} and type: {}.",
+                                message.getMessageId(), message.getMessageType());
                     }
                     break;
                 }
                 default:
-                    logger.error("Illegal protocol, invalid message type: {}", messageType);
+                    logger.error("Illegal protocol, invalid message type: {}", message.getMessageType());
                     return;
             }
         }
@@ -268,144 +266,47 @@ public class Messaging implements Startable
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try
         {
-            ObjectOutput objectOutput = createObjectOutput(byteArrayOutputStream);
-            objectOutput.writeByte(messageType);
-            objectOutput.writeInt(messageId);
-            objectOutput.writeObject(res);
-            objectOutput.flush();
+            messageSerializer.serializeMessage(execution, byteArrayOutputStream,
+                    new Message()
+                            .withMessageId(messageId)
+                            .withMessageType(messageType)
+                            .withPayload(res));
         }
         catch (Exception e)
         {
-            if (res instanceof Throwable)
-            {
-                final UncheckedException e1 = new UncheckedException(((Throwable) res).getMessage());
-                e1.setStackTrace(((Throwable) res).getStackTrace());
-
-                final UncheckedException e2 = new UncheckedException(e.getMessage(), e1);
-                e2.setStackTrace(e.getStackTrace());
-                throw e2;
-            }
             throw new UncheckedException(e);
         }
         clusterPeer.sendMessage(to, byteArrayOutputStream.toByteArray());
     }
 
-    private static class ReferenceReplacement implements Serializable
-    {
-        private static final long serialVersionUID = 1L;
-
-        Class<?> interfaceClass;
-        Object id;
-        NodeAddress address;
-    }
-
-    ObjectOutput createObjectOutput(final OutputStream outputStream) throws IOException
-    {
-        // TODO: move message serialization to a provider (IMessageSerializationProvider)
-        // Message(messageId, type, reference, params) and Message(messageId, type, object)
-        return new ObjectOutputStream(outputStream)
-        {
-            {
-                enableReplaceObject(true);
-            }
-
-            @SuppressWarnings("rawtypes")
-            @Override
-            protected Object replaceObject(final Object obj) throws IOException
-            {
-                final ActorReference reference;
-                if (!(obj instanceof ActorReference))
-                {
-                    if (obj instanceof AbstractActor)
-                    {
-                        reference = ((AbstractActor) obj).reference;
-                    }
-                    else if (obj instanceof ActorObserver)
-                    {
-                        ActorObserver objectReference = execution.getObjectReference(null, (ActorObserver) obj);
-                        reference = (ActorReference) objectReference;
-                    }
-                    else
-                    {
-                        return super.replaceObject(obj);
-                    }
-                }
-                else
-                {
-                    reference = (ActorReference) obj;
-                }
-                ReferenceReplacement replacement = new ReferenceReplacement();
-                replacement.address = reference.address;
-                replacement.interfaceClass = reference._interfaceClass();
-                replacement.id = reference.id;
-                return replacement;
-            }
-        };
-    }
-
-    private ObjectInputStream createObjectInput(byte[] buff) throws IOException
-    {
-        return new ObjectInputStream(new ByteArrayInputStream(buff))
-        {
-            {
-                enableResolveObject(true);
-            }
-
-            @SuppressWarnings({"unchecked", "rawtypes"})
-            @Override
-            protected Object resolveObject(Object obj) throws IOException
-            {
-                if (obj instanceof ReferenceReplacement)
-                {
-                    ReferenceReplacement replacement = (ReferenceReplacement) obj;
-                    if (replacement.address != null)
-                    {
-                        return execution.getRemoteObserverReference(replacement.address, (Class) replacement.interfaceClass, replacement.id);
-                    }
-                    return execution.getReference((Class) replacement.interfaceClass, replacement.id);
-
-                }
-                return super.resolveObject(obj);
-            }
-        };
-    }
-
-
-    public Task<?> sendMessage(NodeAddress to, boolean oneWay, int interfaceId, int methodId, Object key, Object[] params)
+    public Task<?> sendMessage(Message message)
     {
         int messageId = messageIdGen.incrementAndGet();
+        message.setMessageId(messageId);
         PendingResponse pendingResponse = new PendingResponse(messageId, clock.millis() + responseTimeoutMillis);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try
         {
-            ObjectOutput objectOutput = createObjectOutput(byteArrayOutputStream);
-            objectOutput.writeByte(oneWay ? MessageDefinitions.ONEWAY_MESSAGE : MessageDefinitions.NORMAL_MESSAGE);
-            objectOutput.writeInt(messageId);
-            objectOutput.writeInt(interfaceId);
-            objectOutput.writeInt(methodId);
-            objectOutput.writeObject(key);
-            final TaskContext context = TaskContext.current();
-            final Object headers = context != null ? context.getProperty(ORBIT_MESSAGE_HEADERS) : null;
-            objectOutput.writeObject(headers);
-            objectOutput.writeObject(params);
-            objectOutput.flush();
+            messageSerializer.serializeMessage(execution, byteArrayOutputStream, message);
         }
         catch (Exception | Error e)
         {
             if (logger.isErrorEnabled())
             {
-                logger.error("Error sending message to object key " + key, e);
+                logger.error("Error sending message", e);
             }
-            throw new UncheckedException(e);
+            return Task.fromException(new UncheckedException(e));
         }
+        final boolean oneWay = message.isOneWay();
         if (!oneWay)
         {
+
             pendingResponseMap.put(messageId, pendingResponse);
             pendingResponsesQueue.add(pendingResponse);
         }
         try
         {
-            clusterPeer.sendMessage(to, byteArrayOutputStream.toByteArray());
+            clusterPeer.sendMessage(message.getToNode(), byteArrayOutputStream.toByteArray());
             if (oneWay)
             {
                 pendingResponse.internalComplete(NIL);
@@ -446,6 +347,5 @@ public class Messaging implements Startable
     {
         this.executor = pool;
     }
-
 
 }

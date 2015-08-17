@@ -44,7 +44,7 @@ import static org.junit.Assert.assertEquals;
 @SuppressWarnings("unused")
 public class GenericActorState extends ActorBaseTest
 {
-    public interface MyGenericActor extends Actor
+    public interface GenActor extends Actor
     {
         Task<Point> getPoint();
 
@@ -61,7 +61,7 @@ public class GenericActorState extends ActorBaseTest
         int x, y;
     }
 
-    public static class MyGenericActorImpl extends AbstractActor<ParametrizedState<Point>> implements MyGenericActor
+    public static class MyActorImpl extends AbstractActor<ParametrizedState<Point>> implements GenActor
     {
         public Task<Point> getPoint()
         {
@@ -86,12 +86,12 @@ public class GenericActorState extends ActorBaseTest
         final Point p1 = new Point();
         p1.x = 1;
         p1.y = 2;
-        Actor.getReference(MyGenericActor.class, "300").setPoint(p1).join();
+        Actor.getReference(GenActor.class, "300").setPoint(p1).join();
 
         stage1.stop().join();
 
         Stage stage2 = createStage();
-        Point p2 = Actor.getReference(MyGenericActor.class, "300").getPoint().join();
+        Point p2 = Actor.getReference(GenActor.class, "300").getPoint().join();
         assertEquals(1, p2.x);
         assertEquals(2, p2.y);
 
