@@ -37,7 +37,6 @@ import com.ea.orbit.actors.test.StorageTestState;
 import com.ea.orbit.exception.UncheckedException;
 
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
@@ -51,7 +50,7 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.Arrays;
+import java.util.Collections;
 
 public class DynamoDBPersistenceTest extends StorageBaseTest
 {
@@ -69,7 +68,7 @@ public class DynamoDBPersistenceTest extends StorageBaseTest
     @Override
     public ActorExtension getStorageExtension()
     {
-        DynamoDBStorageExtension extension = new DynamoDBStorageExtension();
+        final DynamoDBStorageExtension extension = new DynamoDBStorageExtension();
         extension.setCredentialType(DynamoDBStorageExtension.AmazonCredentialType.BASIC_CREDENTIALS);
         extension.setAccessKey("dummy");
         extension.setSecretKey("dummy");
@@ -81,7 +80,7 @@ public class DynamoDBPersistenceTest extends StorageBaseTest
     {
         mapper = new ObjectMapper();
         mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
-        mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
+        mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
                 .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE)
@@ -109,16 +108,15 @@ public class DynamoDBPersistenceTest extends StorageBaseTest
         }
 
         dynamoDB.createTable(getActorInterfaceClass().getSimpleName(),
-                Arrays.asList(
+                Collections.singletonList(
                         new KeySchemaElement("_id", KeyType.HASH)),
-                Arrays.asList(
-                        new AttributeDefinition("_id", ScalarAttributeType.S)),
+                Collections.singletonList(
+                       new AttributeDefinition("_id", ScalarAttributeType.S)),
                 new ProvisionedThroughput(10L, 10L));
     }
 
     public long count(Class<? extends StorageTest> actorInterface)
     {
-        //System.out.println(dynamoClient.describeTable(actorInterface.getSimpleName()).getTable().getItemCount());
         return dynamoClient.describeTable(actorInterface.getSimpleName()).getTable().getItemCount();
     }
 
@@ -132,7 +130,7 @@ public class DynamoDBPersistenceTest extends StorageBaseTest
         {
             try
             {
-                StorageTestState testState = new HelloState();
+                final StorageTestState testState = new HelloState();
                 mapper.readerForUpdating(testState).readValue(item.getJSON("_state"));
                 return testState;
             }

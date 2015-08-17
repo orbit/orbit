@@ -55,7 +55,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DynamoDBStorageExtension implements StorageExtension
@@ -94,7 +94,7 @@ public class DynamoDBStorageExtension implements StorageExtension
         tableHashMap = new ConcurrentHashMap<>();
         mapper = new ObjectMapper();
         mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
-        mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
+        mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
                 .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE)
@@ -135,10 +135,7 @@ public class DynamoDBStorageExtension implements StorageExtension
     public Task<Void> clearState(final ActorReference<?> reference, final Object state)
     {
         return getOrCreateTable(ActorReference.getInterfaceClass(reference).getSimpleName())
-                .thenAccept(table ->
-                {
-                    table.deleteItem("_id", String.valueOf(ActorReference.getId(reference)));
-                });
+                .thenAccept(table -> table.deleteItem("_id", String.valueOf(ActorReference.getId(reference))));
     }
 
     @Override
@@ -153,10 +150,8 @@ public class DynamoDBStorageExtension implements StorageExtension
     {
 
         return getOrCreateTable(ActorReference.getInterfaceClass(reference).getSimpleName())
-                .thenApply(table ->
-                {
-                    return table.getItem("_id", String.valueOf(ActorReference.getId(reference)));
-                }).thenApply(item ->
+                .thenApply(table -> table.getItem("_id", String.valueOf(ActorReference.getId(reference))))
+                .thenApply(item ->
                 {
                     if (item != null)
                     {
@@ -183,13 +178,10 @@ public class DynamoDBStorageExtension implements StorageExtension
     {
         try
         {
-            String serializedState = mapper.writeValueAsString(state);
+            final String serializedState = mapper.writeValueAsString(state);
 
             return getOrCreateTable(ActorReference.getInterfaceClass(reference).getSimpleName())
-                    .thenAccept(table ->
-                    {
-                        table.putItem(new Item().withPrimaryKey("_id", String.valueOf(ActorReference.getId(reference))).withJSON("_state", serializedState));
-                    }).thenAccept(item -> Task.done());
+                    .thenAccept(table -> table.putItem(new Item().withPrimaryKey("_id", String.valueOf(ActorReference.getId(reference))).withJSON("_state", serializedState)));
         }
         catch (JsonProcessingException e)
         {
@@ -197,43 +189,43 @@ public class DynamoDBStorageExtension implements StorageExtension
         }
     }
 
+    private Task<Table> getOrCreateTable(final String tableName)
+    {
+        final Table table = tableHashMap.get(tableName);
+        if (table != null)
+        {
+            return Task.fromValue(table);
+        }
+        else
+        {
+            return Task.fromFuture(dynamoClient.describeTableAsync(tableName))
+                    .thenApply(DescribeTableResult::getTable)
+                    .thenApply(descriptor -> dynamoDB.getTable(descriptor.getTableName()))
+                    .exceptionally(e ->
+                    {
+                        if (shouldCreateTables && ExceptionUtils.isCauseInChain(ResourceNotFoundException.class, e))
+                        {
+                            final Table newTable = dynamoDB.createTable(tableName,
+                                    Collections.singletonList(
+                                            new KeySchemaElement("_id", KeyType.HASH)),
+                                    Collections.singletonList(
+                                            new AttributeDefinition("_id", ScalarAttributeType.S)),
+                                    new ProvisionedThroughput(10L, 10L));
+                            tableHashMap.putIfAbsent(tableName, newTable);
+                            return newTable;
+                        }
+                        else
+                        {
+                            throw new UncheckedException(e);
+                        }
+                    });
+        }
+    }
+
     public void setName(final String name)
     {
         this.name = name;
     }
-
-    Task<Table> getOrCreateTable(final String tableName)
-    {
-            final Table table = tableHashMap.get(tableName);
-            if (table != null)
-            {
-                return Task.fromValue(table);
-            }
-            else
-            {
-                return Task.fromFuture(dynamoClient.describeTableAsync(tableName))
-                        .thenApply(DescribeTableResult::getTable)
-                        .thenApply(descriptor -> dynamoDB.getTable(descriptor.getTableName()))
-                        .exceptionally(e ->
-                        {
-                            if (shouldCreateTables && ExceptionUtils.isCauseInChain(ResourceNotFoundException.class, e))
-                            {
-                                Table newTable = dynamoDB.createTable(tableName,
-                                        Arrays.asList(
-                                                new KeySchemaElement("_id", KeyType.HASH)),
-                                        Arrays.asList(
-                                                new AttributeDefinition("_id", ScalarAttributeType.S)),
-                                        new ProvisionedThroughput(10L, 10L));
-                                tableHashMap.putIfAbsent(tableName, newTable);
-                                return newTable;
-                            }
-                            else
-                            {
-                                throw new UncheckedException(e);
-                            }
-                        });
-            }
-        }
 
     public String getEndpoint()
     {

@@ -30,9 +30,13 @@ package com.ea.orbit.util;
 
 public class ExceptionUtils
 {
+    private ExceptionUtils()
+    {
+    }
+
     public static boolean isCauseInChain(Class<?> cause, Throwable chain)
     {
-        for(Throwable ex =chain; ex != null; ex = ex.getCause())
+        for(Throwable ex = chain; ex != null; ex = ex.getCause())
         {
             if(cause.isInstance(ex))
             {
