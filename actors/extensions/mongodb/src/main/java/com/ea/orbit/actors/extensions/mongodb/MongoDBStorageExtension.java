@@ -93,7 +93,7 @@ public class MongoDBStorageExtension implements StorageExtension
     {
         mapper = new ObjectMapper();
         mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
-        mapper.setVisibilityChecker(mapper.getSerializationConfig().getDefaultVisibilityChecker()
+        mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
                 .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE)
