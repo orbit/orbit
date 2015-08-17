@@ -35,6 +35,7 @@ The Orbit Team
 * [Chris Christou](https://github.com/BioChristou)
 * [Owen Borstad](https://github.com/OwenBorstad)
 * [Jerome Lee](https://github.com/JLeeChan)
+* [Jeff Theriault](https://github.com/fieldflux)
 
 Simple Examples
 =======
