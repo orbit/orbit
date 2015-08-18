@@ -71,7 +71,7 @@ public class MongodbPersistenceTest
             SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
             SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
             someMatch.addPlayer(somePlayer).get();
-            stage1.stop();
+            stage1.stop().join();
         }
         assertEquals(1, database.getCollection("SomeMatch").count());
         {

@@ -30,6 +30,7 @@ package com.ea.orbit.container;
 
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Order;
+import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.configuration.ContainerConfig;
 import com.ea.orbit.configuration.ContainerConfigImpl;
@@ -81,24 +82,14 @@ public class Container
 
     static
     {
-        // Initializes orbit async, but only if the application uses it.
         try
         {
-            Class.forName("com.ea.orbit.async.Async");
-            try
-            {
-                // async is present in the classpath, let's make sure await is initialized
-                Class.forName("com.ea.orbit.async.Await");
-            }
-            catch (Exception ex)
-            {
-                // this might be a problem, logging.
-                logger.error("Error initializing orbit-async", ex);
-            }
+            Await.init();
         }
         catch (Exception ex)
         {
-            // no problem, application doesn't use orbit async.
+            // this might be a problem, logging.
+            logger.error("Error initializing orbit-async", ex);
         }
     }
 

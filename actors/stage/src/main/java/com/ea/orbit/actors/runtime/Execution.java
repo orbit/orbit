@@ -95,6 +95,8 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.ea.orbit.async.Await.await;
+
 public class Execution implements Runtime
 {
 
@@ -441,44 +443,53 @@ public class Execution implements Runtime
         }
 
         // gets or creates the instance
-        public Object getOrCreateInstance() throws IllegalAccessException, InstantiationException, ExecutionException, InterruptedException
+        // gets or creates the instance
+        public Task<Object> getOrCreateInstance()
         {
-            if (instance == null)
+            try
             {
-                Object newInstance = classForName(entry.descriptor.concreteClassName).newInstance();
-                if (newInstance instanceof AbstractActor)
+                if (instance == null)
                 {
-                    final AbstractActor<?> actor = (AbstractActor<?>) newInstance;
-                    ActorTaskContext.current().setActor(actor);
-                    actor.reference = entry.reference;
-
-                    actor.stateExtension = getStorageExtensionFor(actor);
-
-                    Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preActivation(actor))).join();
-
-                    if (actor.stateExtension != null)
+                    Object newInstance = classForName(entry.descriptor.concreteClassName).newInstance();
+                    if (newInstance instanceof AbstractActor)
                     {
-                        try
-                        {
-                            actor.readState().join();
-                        }
-                        catch (Exception ex)
-                        {
-                            if (logger.isErrorEnabled())
-                            {
-                                logger.error("Error reading actor state for: " + entry.reference, ex);
-                            }
-                            throw ex;
-                        }
-                    }
-                    instance = newInstance;
+                        final AbstractActor<?> actor = (AbstractActor<?>) newInstance;
+                        ActorTaskContext.current().setActor(actor);
+                        actor.reference = entry.reference;
 
-                    actor.activateAsync().join();
-                    Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postActivation(actor))).join();
+                        actor.stateExtension = getStorageExtensionFor(actor);
+
+                        await(Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preActivation(actor))));
+
+                        if (actor.stateExtension != null)
+                        {
+                            try
+                            {
+                                await(actor.readState());
+                            }
+                            catch (Exception ex)
+                            {
+                                if (logger.isErrorEnabled())
+                                {
+                                    logger.error("Error reading actor state for: " + entry.reference, ex);
+                                }
+                                throw ex;
+                            }
+                        }
+                        instance = newInstance;
+
+                        await(actor.activateAsync());
+                        await(Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postActivation(actor))));
+                    }
+
                 }
 
+                return Task.fromValue(instance);
             }
-            return instance;
+            catch(Exception e)
+            {
+                throw new UncheckedException(e);
+            }
         }
     }
 
@@ -534,30 +545,30 @@ public class Execution implements Runtime
     {
         // * refuse new actor activations
         state = NodeCapabilities.NodeState.STOPPING;
-        hosting.notifyStateChange().join();
+        await(hosting.notifyStateChange());
 
         // * deactivate all actors
-        activationCleanup().join();
+        await(activationCleanup());
 
         // * finalize all timers
         timer.cancel();
 
         // * give extensions a chance to send a message
-        Task.allOf(extensions.stream().map(StageLifecycleListener::onPreStop)).join();
+        await(Task.allOf(extensions.stream().map(StageLifecycleListener::onPreStop)));
 
         // * stop processing new received messages (responses still work)
         // * notify rest of the cluster (no more observer messages)
         state = NodeCapabilities.NodeState.STOPPED;
-        hosting.notifyStateChange().join();
+        await(hosting.notifyStateChange());
 
         // * wait pending tasks execution
         executionSerializer.shutdown();
 
         // * cancel all pending messages, and prevents sending new ones
-        messaging.stop();
+        await(messaging.stop());
 
         // ** stop all extensions
-        Task.allOf(extensions.stream().map(Startable::stop)).join();
+        await(Task.allOf(extensions.stream().map(Startable::stop)));
 
         return Task.done();
     }
@@ -1042,7 +1053,7 @@ public class Execution implements Runtime
             try
             {
                 bind();
-                final Object actor = activation.getOrCreateInstance();
+                final Object actor = await(activation.getOrCreateInstance());
                 context.setActor((AbstractActor<?>) actor);
 
                 Task<?> future = descriptor.invoker.safeInvoke(actor, methodId, params);
