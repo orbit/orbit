@@ -203,4 +203,56 @@ public class ArrayVarsTest extends BaseTest
         assertEquals("x", task.join());
     }
 
+
+    @Test
+    public void arraysWithAwait03()
+    {
+        class Experiment
+        {
+            Task doIt(Object params[])
+            {
+                Object arr[][];
+                if (params != null)
+                {
+                    arr = new Object[][]{params};
+                    await(getBlockedFuture());
+                }
+                else
+                {
+                    arr = new Object[][]{params, null};
+                    await(getBlockedFuture());
+                }
+                return fromValue(arr[0][0]);
+            }
+        }
+        final Task task = new Experiment().doIt(new Object[]{"x"});
+        completeFutures();
+        assertEquals("x", task.join());
+    }
+
+    @Test
+    public void arraysAndIfs()
+    {
+        class Experiment
+        {
+            Task doIt(int x)
+            {
+                Object[][] arr = new Object[][]{{x}};
+                if (x == 11)
+                {
+                    arr = null;
+                }
+                // this forces a stack frame map to be created
+                else
+                {
+
+                    await(getBlockedFuture());
+                }
+                return fromValue(arr[0][0]);
+            }
+        }
+        final Task task = new Experiment().doIt(10);
+        completeFutures();
+        assertEquals(10, task.join());
+    }
 }
