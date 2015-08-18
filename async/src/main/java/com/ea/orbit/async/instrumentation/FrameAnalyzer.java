@@ -224,7 +224,8 @@ public class FrameAnalyzer extends Analyzer
         @Override
         public BasicValue newValue(Type type)
         {
-            if (type != null && type.getSort() == Type.OBJECT)
+            if (type != null
+                    && (type.getSort() == Type.OBJECT || type.getSort() == Type.ARRAY))
             {
                 return new ExtendedValue(type);
             }
@@ -260,12 +261,13 @@ public class FrameAnalyzer extends Analyzer
                     // TODO: test this with an assignment
                     //    like: local1 was CompletableFuture <- store Task
                     ExtendedValue nv = (ExtendedValue) newValue(BasicValue.REFERENCE_VALUE.getType());
-                    nv.undecided = new BasicValue[]{ v, w };
+                    nv.undecided = new BasicValue[]{v, w};
                     return nv;
                 }
             }
             return super.merge(v, w);
         }
+
     }
 
     public FrameAnalyzer()
