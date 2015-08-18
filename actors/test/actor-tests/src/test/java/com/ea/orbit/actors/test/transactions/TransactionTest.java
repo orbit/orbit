@@ -52,14 +52,14 @@ import static org.junit.Assert.*;
  */
 public class TransactionTest extends ActorBaseTest
 {
-    public interface Jimmy extends TransactionalActor
+    public interface TtJimmy extends TransactionalActor
     {
         Task<String> wave(int amount);
 
         Task<Integer> getBalance();
     }
 
-    public static class JimmyActor extends AbstractTransactionalActor<JimmyActor.State> implements Jimmy
+    public static class JimmyActor extends AbstractTransactionalActor<JimmyActor.State> implements TtJimmy
     {
         public static class State extends TransactionalState
         {
@@ -98,7 +98,7 @@ public class TransactionTest extends ActorBaseTest
     {
         Stage stage = createStage();
 
-        Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
+        TtJimmy jimmy = Actor.getReference(TtJimmy.class, "1");
         jimmy.wave(6).join();
     }
 
@@ -107,7 +107,7 @@ public class TransactionTest extends ActorBaseTest
     {
         Stage stage = createStage();
 
-        Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
+        TtJimmy jimmy = Actor.getReference(TtJimmy.class, "1");
         String t1 = jimmy.wave(6).join();
 
         assertEquals(6, (int) jimmy.getBalance().join());
@@ -123,7 +123,7 @@ public class TransactionTest extends ActorBaseTest
     }
 
 
-    public interface Bank extends TransactionalActor
+    public interface TtBank extends TransactionalActor
     {
         Task<Integer> decrement(int amount);
 
@@ -132,7 +132,7 @@ public class TransactionTest extends ActorBaseTest
         Task<Integer> increment(int amount);
     }
 
-    public static class BankActor extends AbstractTransactionalActor<BankActor.State> implements Bank
+    public static class BankActor extends AbstractTransactionalActor<BankActor.State> implements TtBank
     {
         public static class State extends TransactionalState
         {
@@ -176,16 +176,16 @@ public class TransactionTest extends ActorBaseTest
         }
     }
 
-    public interface Inventory extends TransactionalActor
+    public interface TtInventory extends TransactionalActor
     {
         Task<String> giveItem(String itemName);
 
         Task<List<String>> getItems();
     }
 
-    public static class InventoryActor
-            extends AbstractTransactionalActor<InventoryActor.State>
-            implements Inventory
+    public static class TtInventoryActor
+            extends AbstractTransactionalActor<TtInventoryActor.State>
+            implements TtInventory
     {
         // test synchronization
         @Inject
@@ -224,14 +224,14 @@ public class TransactionTest extends ActorBaseTest
     }
 
 
-    public interface Store extends TransactionalActor
+    public interface TtStore extends TransactionalActor
     {
-        Task<String> buyItem(Bank bank, Inventory inventory, String itemName, int price);
+        Task<String> buyItem(TtBank bank, TtInventory inventory, String itemName, int price);
     }
 
     public static class StoreActor
             extends AbstractTransactionalActor<StoreActor.State>
-            implements Store
+            implements TtStore
     {
         public static class State extends TransactionalState
         {
@@ -239,7 +239,7 @@ public class TransactionTest extends ActorBaseTest
         }
 
         @Override
-        public Task<String> buyItem(Bank bank, Inventory inventory, String itemName, int price)
+        public Task<String> buyItem(TtBank bank, TtInventory inventory, String itemName, int price)
         {
             return transaction(() ->
             {
@@ -255,9 +255,9 @@ public class TransactionTest extends ActorBaseTest
     public void successfulTransaction() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
-        Bank bank = Actor.getReference(Bank.class, "jimmy");
-        Inventory inventory = Actor.getReference(Inventory.class, "jimmy");
-        Store store = Actor.getReference(Store.class, "all");
+        TtBank bank = Actor.getReference(TtBank.class, "jimmy");
+        TtInventory inventory = Actor.getReference(TtInventory.class, "jimmy");
+        TtStore store = Actor.getReference(TtStore.class, "all");
         bank.increment(15).join();
 
         // this allows the store to proceed without blocking
@@ -273,9 +273,9 @@ public class TransactionTest extends ActorBaseTest
     public void failedTransaction() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
-        Bank bank = Actor.getReference(Bank.class, "jimmy");
-        Inventory inventory = Actor.getReference(Inventory.class, "jimmy");
-        Store store = Actor.getReference(Store.class, "all");
+        TtBank bank = Actor.getReference(TtBank.class, "jimmy");
+        TtInventory inventory = Actor.getReference(TtInventory.class, "jimmy");
+        TtStore store = Actor.getReference(TtStore.class, "all");
         bank.increment(15).join();
 
         fakeSync.put("proceed", "fail");
@@ -294,9 +294,9 @@ public class TransactionTest extends ActorBaseTest
     public void failedTransaction2() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
-        Bank bank = Actor.getReference(Bank.class, "jimmy");
-        Inventory inventory = Actor.getReference(Inventory.class, "jimmy");
-        Store store = Actor.getReference(Store.class, "all");
+        TtBank bank = Actor.getReference(TtBank.class, "jimmy");
+        TtInventory inventory = Actor.getReference(TtInventory.class, "jimmy");
+        TtStore store = Actor.getReference(TtStore.class, "all");
         bank.increment(15).join();
 
         fakeSync.put("proceed", "ok");
@@ -321,7 +321,7 @@ public class TransactionTest extends ActorBaseTest
     }
 
 
-    public interface TransactionTree extends TransactionalActor
+    public interface TtTransactionTree extends TransactionalActor
     {
         Task<Integer> treeInc(int count);
 
@@ -332,7 +332,7 @@ public class TransactionTest extends ActorBaseTest
 
     public static class TransactionTreeActor
             extends AbstractTransactionalActor<TransactionTreeActor.State>
-            implements TransactionTree
+            implements TtTransactionTree
     {
         public static class State extends TransactionalState
         {
@@ -371,8 +371,8 @@ public class TransactionTest extends ActorBaseTest
                 return Task.fromValue(state().incAngGet(count));
             }
             final int mid = id.length() / 2;
-            final TransactionTree left = Actor.getReference(TransactionTree.class, id.substring(0, mid));
-            final TransactionTree right = Actor.getReference(TransactionTree.class, id.substring(mid));
+            final TtTransactionTree left = Actor.getReference(TtTransactionTree.class, id.substring(0, mid));
+            final TtTransactionTree right = Actor.getReference(TtTransactionTree.class, id.substring(mid));
             final Task<Integer> ltask = left.treeInc(count);
             final Task<Integer> rtask = right.treeInc(count);
             return Task.fromValue(await(ltask) + await(rtask));
@@ -384,11 +384,11 @@ public class TransactionTest extends ActorBaseTest
     public void treeSuccess() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
-        TransactionTree tree = Actor.getReference(TransactionTree.class, "abc");
+        TtTransactionTree tree = Actor.getReference(TtTransactionTree.class, "abc");
         assertEquals((Integer) 3, tree.treeTransaction(1).join());
-        assertEquals((Integer) 1, Actor.getReference(TransactionTree.class, "a").currentValue().join());
-        assertEquals((Integer) 1, Actor.getReference(TransactionTree.class, "b").currentValue().join());
-        assertEquals((Integer) 1, Actor.getReference(TransactionTree.class, "c").currentValue().join());
+        assertEquals((Integer) 1, Actor.getReference(TtTransactionTree.class, "a").currentValue().join());
+        assertEquals((Integer) 1, Actor.getReference(TtTransactionTree.class, "b").currentValue().join());
+        assertEquals((Integer) 1, Actor.getReference(TtTransactionTree.class, "c").currentValue().join());
     }
 
 
@@ -396,13 +396,13 @@ public class TransactionTest extends ActorBaseTest
     public void treeCancellation() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
-        TransactionTree tree2 = Actor.getReference(TransactionTree.class, "abcx");
-        TransactionTree aleaf = Actor.getReference(TransactionTree.class, "a");
-        assertEquals((Integer) 5, Actor.getReference(TransactionTree.class, "a").treeInc(5).join());
+        TtTransactionTree tree2 = Actor.getReference(TtTransactionTree.class, "abcx");
+        TtTransactionTree aleaf = Actor.getReference(TtTransactionTree.class, "a");
+        assertEquals((Integer) 5, Actor.getReference(TtTransactionTree.class, "a").treeInc(5).join());
         expectException(() -> tree2.treeTransaction(1).join());
-        assertEquals((Integer) 5, Actor.getReference(TransactionTree.class, "a").currentValue().join());
-        assertEquals((Integer) 0, Actor.getReference(TransactionTree.class, "b").currentValue().join());
-        assertEquals((Integer) 0, Actor.getReference(TransactionTree.class, "c").currentValue().join());
+        assertEquals((Integer) 5, Actor.getReference(TtTransactionTree.class, "a").currentValue().join());
+        assertEquals((Integer) 0, Actor.getReference(TtTransactionTree.class, "b").currentValue().join());
+        assertEquals((Integer) 0, Actor.getReference(TtTransactionTree.class, "c").currentValue().join());
         dumpMessages();
     }
 

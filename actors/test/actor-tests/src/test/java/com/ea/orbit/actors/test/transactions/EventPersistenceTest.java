@@ -52,14 +52,14 @@ import static org.junit.Assert.*;
  */
 public class EventPersistenceTest extends ActorBaseTest
 {
-    public interface Jimmy extends TransactionalActor
+    public interface EpJimmy extends TransactionalActor
     {
         Task<String> wave(int amount);
 
         Task<Integer> getBalance();
     }
 
-    public static class JimmyActor extends AbstractTransactionalActor<JimmyActor.State> implements Jimmy
+    public static class JimmyActor extends AbstractTransactionalActor<JimmyActor.State> implements EpJimmy
     {
         public static class State extends TransactionalState
         {
@@ -98,7 +98,7 @@ public class EventPersistenceTest extends ActorBaseTest
     {
         Stage stage = createStage();
 
-        Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
+        EpJimmy jimmy = Actor.getReference(EpJimmy.class, "1");
         jimmy.wave(6).join();
     }
 
@@ -107,7 +107,7 @@ public class EventPersistenceTest extends ActorBaseTest
     {
         Stage stage = createStage();
 
-        Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
+        EpJimmy jimmy = Actor.getReference(EpJimmy.class, "1");
         String t1 = jimmy.wave(6).join();
 
         assertEquals(6, (int) jimmy.getBalance().join());
@@ -321,7 +321,7 @@ public class EventPersistenceTest extends ActorBaseTest
     }
 
 
-    public interface TransactionTree extends TransactionalActor
+    public interface EpTransactionTree extends TransactionalActor
     {
         Task<Integer> treeInc(int count);
 
@@ -332,7 +332,7 @@ public class EventPersistenceTest extends ActorBaseTest
 
     public static class TransactionTreeActor
             extends AbstractTransactionalActor<TransactionTreeActor.State>
-            implements TransactionTree
+            implements EpTransactionTree
     {
         public static class State extends TransactionalState
         {
@@ -371,8 +371,8 @@ public class EventPersistenceTest extends ActorBaseTest
                 return Task.fromValue(state().incAngGet(count));
             }
             final int mid = id.length() / 2;
-            final TransactionTree left = Actor.getReference(TransactionTree.class, id.substring(0, mid));
-            final TransactionTree right = Actor.getReference(TransactionTree.class, id.substring(mid));
+            final EpTransactionTree left = Actor.getReference(EpTransactionTree.class, id.substring(0, mid));
+            final EpTransactionTree right = Actor.getReference(EpTransactionTree.class, id.substring(mid));
             final Task<Integer> ltask = left.treeInc(count);
             final Task<Integer> rtask = right.treeInc(count);
             return Task.fromValue(await(ltask) + await(rtask));
@@ -384,11 +384,11 @@ public class EventPersistenceTest extends ActorBaseTest
     public void treeSuccess() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
-        TransactionTree tree = Actor.getReference(TransactionTree.class, "abc");
+        EpTransactionTree tree = Actor.getReference(EpTransactionTree.class, "abc");
         assertEquals((Integer) 3, tree.treeTransaction(1).join());
-        assertEquals((Integer) 1, Actor.getReference(TransactionTree.class, "a").currentValue().join());
-        assertEquals((Integer) 1, Actor.getReference(TransactionTree.class, "b").currentValue().join());
-        assertEquals((Integer) 1, Actor.getReference(TransactionTree.class, "c").currentValue().join());
+        assertEquals((Integer) 1, Actor.getReference(EpTransactionTree.class, "a").currentValue().join());
+        assertEquals((Integer) 1, Actor.getReference(EpTransactionTree.class, "b").currentValue().join());
+        assertEquals((Integer) 1, Actor.getReference(EpTransactionTree.class, "c").currentValue().join());
     }
 
 
@@ -396,13 +396,13 @@ public class EventPersistenceTest extends ActorBaseTest
     public void treeCancellation() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
-        TransactionTree tree2 = Actor.getReference(TransactionTree.class, "abcx");
-        TransactionTree aleaf = Actor.getReference(TransactionTree.class, "a");
-        assertEquals((Integer) 5, Actor.getReference(TransactionTree.class, "a").treeInc(5).join());
+        EpTransactionTree tree2 = Actor.getReference(EpTransactionTree.class, "abcx");
+        EpTransactionTree aleaf = Actor.getReference(EpTransactionTree.class, "a");
+        assertEquals((Integer) 5, Actor.getReference(EpTransactionTree.class, "a").treeInc(5).join());
         expectException(() -> tree2.treeTransaction(1).join());
-        assertEquals((Integer) 5, Actor.getReference(TransactionTree.class, "a").currentValue().join());
-        assertEquals((Integer) 0, Actor.getReference(TransactionTree.class, "b").currentValue().join());
-        assertEquals((Integer) 0, Actor.getReference(TransactionTree.class, "c").currentValue().join());
+        assertEquals((Integer) 5, Actor.getReference(EpTransactionTree.class, "a").currentValue().join());
+        assertEquals((Integer) 0, Actor.getReference(EpTransactionTree.class, "b").currentValue().join());
+        assertEquals((Integer) 0, Actor.getReference(EpTransactionTree.class, "c").currentValue().join());
         dumpMessages();
     }
 
