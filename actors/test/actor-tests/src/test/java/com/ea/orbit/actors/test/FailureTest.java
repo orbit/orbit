@@ -64,8 +64,8 @@ public class FailureTest extends ActorBaseTest
         stage3.bind();
         assertEquals(uuid, someActor_r3.getUniqueActivationId().join());
 
-        stage1.stop();
-        stage2.stop();
+        stage1.stop().join();
+        stage2.stop().join();
 
         // a new Activation must have been created since the initial nodes where stopped.
         stage3.bind();
@@ -75,8 +75,8 @@ public class FailureTest extends ActorBaseTest
         stage3.bind();
         assertEquals(secondUUID, someActor_r4.getUniqueActivationId().join());
         // BTW, timing issues will sometimes make this fail by timeout with the real network.
-        stage3.stop();
-        stage4.stop();
+        stage3.stop().join();
+        stage4.stop().join();
 
     }
 
