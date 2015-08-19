@@ -63,6 +63,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
+import static com.ea.orbit.async.Await.await;
+
 @Singleton
 public class Stage implements Startable
 {
@@ -96,7 +98,6 @@ public class Stage implements Startable
     }
 
     private ClusterPeer clusterPeer;
-    private Task<?> startFuture;
     @Wired
     private Messaging messaging;
     @Wired
@@ -329,12 +330,10 @@ public class Stage implements Startable
         {
             future = future.thenRun(() -> Actor.getReference(ReminderController.class, "0").ensureStart());
         }
-        startFuture = future;
-
-        startFuture.join();
+        await(future);
         bind();
 
-        return startFuture;
+        return future;
     }
 
     private void configureOrbitContainer()
