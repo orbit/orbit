@@ -81,27 +81,26 @@ public class Container
 
     static
     {
-        // Initializes orbit async, but only if the application uses it.
         try
         {
             Class.forName("com.ea.orbit.async.Async");
             try
             {
                 // async is present in the classpath, let's make sure await is initialized
-                Class.forName("com.ea.orbit.async.Await");
+                Class.forName("com.ea.orbit.async.Await").getMethod("init").invoke(null);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 // this might be a problem, logging.
                 logger.error("Error initializing orbit-async", ex);
             }
+
         }
         catch (Exception ex)
         {
             // no problem, application doesn't use orbit async.
         }
     }
-
     private final DependencyRegistry registry = new DependencyRegistry()
     {
         @Override
