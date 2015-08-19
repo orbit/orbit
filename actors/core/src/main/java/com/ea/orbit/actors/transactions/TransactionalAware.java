@@ -25,15 +25,14 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package com.ea.orbit.actors.test.transactions;
+package com.ea.orbit.actors.transactions;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import com.ea.orbit.concurrent.Task;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface TransactionalEvent
+/**
+ * Optional interface that the actor implementation can implement if it wants to be able to cancel transactions.
+ */
+public interface TransactionalAware
 {
+    Task<Void> cancelTransaction(String transactionId);
 }

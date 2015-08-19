@@ -25,48 +25,21 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package com.ea.orbit.actors.test.transactions;
+package com.ea.orbit.actors.transactions;
 
-public class TransactionEvent
+import java.util.ArrayList;
+import java.util.List;
+
+public class TransactionalState
 {
-    // only used for merging split clusters
-    // should be locally (node) monotonic
-    private long timestamp;
+    protected List<TransactionEvent> events = new ArrayList<>();
 
-    private String transactionId;
-    private final String methodName;
-    private final Object[] params;
-    private byte[] serializedParams;
 
-    public String getTransactionId()
-    {
-        return transactionId;
+    protected List<TransactionInfo> transactions = new ArrayList<>();
+
+    @TransactionalEvent
+    void snapshot(TransactionalState snapshot) {
+
     }
 
-    public String getMethodName()
-    {
-        return methodName;
-    }
-
-    public Object[] params()
-    {
-        return params;
-    }
-
-    public byte[] getSerializedParams()
-    {
-        return serializedParams;
-    }
-
-    public void setSerializedParams(final byte[] serializedParams)
-    {
-        this.serializedParams = serializedParams;
-    }
-
-    public TransactionEvent(String transactionId, String methodName, Object... params)
-    {
-        this.transactionId = transactionId;
-        this.methodName = methodName;
-        this.params = params;
-    }
 }

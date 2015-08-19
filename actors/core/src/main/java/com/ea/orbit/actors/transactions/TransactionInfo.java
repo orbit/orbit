@@ -1,4 +1,4 @@
-package com.ea.orbit.actors.test.transactions;
+package com.ea.orbit.actors.transactions;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.concurrent.ConcurrentHashSet;

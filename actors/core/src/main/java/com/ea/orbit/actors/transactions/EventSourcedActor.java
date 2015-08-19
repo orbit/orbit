@@ -25,8 +25,9 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package com.ea.orbit.actors.test.transactions;
+package com.ea.orbit.actors.transactions;
 
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.concurrent.Task;
@@ -36,22 +37,19 @@ import com.ea.orbit.exception.UncheckedException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Base64;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+import java.util.Random;
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.ea.orbit.async.Await.await;
 
-public class AbstractTransactionalActor<T extends TransactionalState> extends AbstractActor<T> implements TransactionalActor
+public class EventSourcedActor<T extends TransactionalState> extends AbstractActor<T> implements TransactionalAware, Actor
 {
 
     public static final String ORBIT_TRANSACTION_ID = "orbit.transactionId";
-    private static String ORBIT_MESSAGE_HEADERS = "orbit.messageHeaders";
 
     public static String currentTransactionId()
     {
@@ -79,7 +77,12 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
     {
         if (method.isAnnotationPresent(TransactionalEvent.class))
         {
-            state().events.add(new TransactionEvent(currentTransactionId(), proceed.getName(), args));
+            final String transactionId = currentTransactionId();
+            if (transactionId != null)
+            {
+                Actor.getReference(Transaction.class, transactionId).registerActorInvolvement(EventSourcedActor.this);
+            }
+            state().events.add(new TransactionEvent(transactionId, proceed.getName(), args));
         }
         return super.interceptStateMethod(self, method, proceed, args);
     }
@@ -91,12 +94,7 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
         {
             return tid;
         }
-        final Object headers = context.getProperty(ORBIT_MESSAGE_HEADERS);
-        if (!(headers instanceof Map))
-        {
-            return null;
-        }
-        return (String) ((Map) headers).get(ORBIT_TRANSACTION_ID);
+        return null;
     }
 
 
@@ -112,12 +110,16 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
 
     protected <R> Task<R> transaction(Supplier<Task<R>> function)
     {
+
+
         final String parentTransactionId = currentTransactionId();
 
         final ActorTaskContext oldContext = ActorTaskContext.current();
         final ActorTaskContext context = oldContext.cloneContext();
 
-        final String transactionId = UUID.randomUUID().toString();
+        final byte[] buf = new byte[12];
+        new Random().nextBytes(buf);
+        final String transactionId = Base64.getUrlEncoder().encodeToString(buf);
 
         context.setProperty(ORBIT_TRANSACTION_ID, transactionId);
         if (parentTransactionId != null)
@@ -126,10 +128,10 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
             parentTransaction.subTransactions.add(transactionId);
         }
         final TransactionInfo transaction = getOrAdTransactionInfo(transactionId);
-        final Object headers = context.getProperty(ORBIT_MESSAGE_HEADERS);
-        final Map<String, Object> newHeaders = (headers instanceof Map) ? new LinkedHashMap<>((Map) headers) : new LinkedHashMap<>();
-        newHeaders.put(ORBIT_TRANSACTION_ID, transactionId);
-        context.setProperty(ORBIT_MESSAGE_HEADERS, newHeaders);
+        final Transaction transactionActor = Actor.getReference(Transaction.class, transactionId);
+        await(transactionActor.initTransaction(parentTransactionId, this));
+
+        // mus not use await in this method after the push, since push and pop must be in the same thread.
         context.push();
         try
         {
@@ -150,7 +152,9 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
         }
         catch (Exception ex)
         {
-            return cancelTransaction(transactionId)
+            final Throwable aex = (ex instanceof CompletionException) ? ex.getCause() : ex;
+            cancelTransaction(transactionId);
+            return Actor.getReference(Transaction.class, transactionId).cancelTransaction((Actor) this)
                     .thenCompose(() -> Task.fromException(ex));
         }
         if (apply != null && !(apply.isDone() && !apply.isCompletedExceptionally()))
@@ -168,7 +172,8 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
             catch (Exception ex)
             {
                 final Throwable aex = (ex instanceof CompletionException) ? ex.getCause() : ex;
-                return cancelTransaction(transactionId)
+                cancelTransaction(transactionId);
+                return Actor.getReference(Transaction.class, transactionId).cancelTransaction(this)
                         .thenCompose(() -> Task.fromException(aex));
             }
         }
@@ -243,10 +248,11 @@ public class AbstractTransactionalActor<T extends TransactionalState> extends Ab
         state().events = newList;
         state().transactions = transactions;
 
-        return Task.allOf(transactionInfo.messagedActors.stream()
-                .filter(a -> a instanceof TransactionalActor)
-                .map(a -> ((TransactionalActor) a).cancelTransaction(transactionId))
-                .toArray(s -> new CompletableFuture[s]));
+//        return Task.allOf(transactionInfo.messagedActors.stream()
+//                .filter(a -> a instanceof TransactionalAware)
+//                .map(a -> ((TransactionalAware) a).cancelTransaction(transactionId))
+//                .toArray(s -> new CompletableFuture[s]));
+        return Task.done();
     }
 
 

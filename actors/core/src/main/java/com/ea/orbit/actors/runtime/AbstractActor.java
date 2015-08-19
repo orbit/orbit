@@ -30,7 +30,7 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.extensions.StorageExtension;
-import com.ea.orbit.actors.test.transactions.TransactionalState;
+import com.ea.orbit.actors.transactions.TransactionalState;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 

@@ -1,4 +1,4 @@
-package com.ea.orbit.actors.test.transactions;
+package com.ea.orbit.actors.transactions;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Addressable;
@@ -18,12 +18,12 @@ public class TransactionInvokeHook implements InvokeHookExtension
         if (context != null)
         {
             final AbstractActor<?> actor = context.getActor();
-            if (actor instanceof AbstractTransactionalActor && toReference instanceof Actor)
+            if (actor instanceof EventSourcedActor && toReference instanceof Actor)
             {
-                String tid = AbstractTransactionalActor.currentTransactionId(context);
+                String tid = EventSourcedActor.currentTransactionId(context);
                 if (tid != null)
                 {
-                    final AbstractTransactionalActor transactionalActor = (AbstractTransactionalActor) actor;
+                    final EventSourcedActor transactionalActor = (EventSourcedActor) actor;
                     final TransactionInfo info = transactionalActor.getOrAdTransactionInfo(tid);
                     info.messagedActors.add((Actor) toReference);
                 }

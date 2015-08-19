@@ -30,10 +30,13 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
+import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.annotation.NoIdentity;
+import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.actors.cluster.NodeAddressImpl;
 import com.ea.orbit.instrumentation.ClassPathUtils;
 
+import java.lang.reflect.Proxy;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -116,4 +119,17 @@ public class ReferenceFactory implements RefFactory
         return instance.getObserverReference(nodeId, actorObserverInterface, id);
     }
 
+
+    @SuppressWarnings("unchecked")
+    public static <T> T cast(Class<T> remoteInterface, Actor actor)
+    {
+        return (T) Proxy.newProxyInstance(ReferenceFactory.class.getClassLoader(), new Class[]{remoteInterface},
+                (proxy, method, args) -> {
+                    // TODO: throw proper exceptions for the expected error scenarios (non task return),
+                    final int methodId = instance.dynamicReferenceFactory.getMethodId(method);
+                    return ActorRuntime.getRuntime()
+                            .invoke((Addressable) actor, method, method.isAnnotationPresent(OneWay.class), methodId, args);
+                });
+
+    }
 }

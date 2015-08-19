@@ -38,4 +38,5 @@ public interface RefFactory
     <T extends Actor> T getReference(Class<T> iClass, Object id);
 
     <T extends ActorObserver> T getObserverReference(UUID nodeId, Class<T> iClass, Object id);
+
 }

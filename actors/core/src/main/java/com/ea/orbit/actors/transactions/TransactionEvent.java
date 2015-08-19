@@ -25,12 +25,48 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package com.ea.orbit.actors.test.transactions;
+package com.ea.orbit.actors.transactions;
 
-import com.ea.orbit.actors.Actor;
-import com.ea.orbit.concurrent.Task;
-
-public interface TransactionalActor extends Actor
+public class TransactionEvent
 {
-    Task<Void> cancelTransaction(String transactionId);
+    // only used for merging split clusters
+    // should be locally (node) monotonic
+    private long timestamp;
+
+    private String transactionId;
+    private final String methodName;
+    private final Object[] params;
+    private byte[] serializedParams;
+
+    public String getTransactionId()
+    {
+        return transactionId;
+    }
+
+    public String getMethodName()
+    {
+        return methodName;
+    }
+
+    public Object[] params()
+    {
+        return params;
+    }
+
+    public byte[] getSerializedParams()
+    {
+        return serializedParams;
+    }
+
+    public void setSerializedParams(final byte[] serializedParams)
+    {
+        this.serializedParams = serializedParams;
+    }
+
+    public TransactionEvent(String transactionId, String methodName, Object... params)
+    {
+        this.transactionId = transactionId;
+        this.methodName = methodName;
+        this.params = params;
+    }
 }
