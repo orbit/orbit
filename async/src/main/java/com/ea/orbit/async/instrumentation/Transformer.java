@@ -66,7 +66,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -235,7 +239,14 @@ public class Transformer implements ClassFileTransformer
                 continue;
             }
             if (!taskReturn && !original.name.contains("$") && (original.visibleAnnotations == null
-                    || !original.visibleAnnotations.stream().anyMatch(a -> ((AnnotationNode) a).desc.equals(ASYNC_DESCRIPTOR))))
+                    || !original.visibleAnnotations.stream().anyMatch(new Predicate<AnnotationNode>()
+            {
+                @Override
+                public boolean test(final AnnotationNode a)
+                {
+                    return ((AnnotationNode) a).desc.equals(ASYNC_DESCRIPTOR);
+                }
+            })))
             {
                 continue;
             }
@@ -278,7 +289,14 @@ public class Transformer implements ClassFileTransformer
             for (SwitchEntry se : switchEntries)
             {
                 // clear the used state
-                arguments.forEach(p -> p.tmpLocalMapping = -1);
+                arguments.forEach(new Consumer<Argument>()
+                {
+                    @Override
+                    public void accept(final Argument p)
+                    {
+                        p.tmpLocalMapping = -1;
+                    }
+                });
                 se.stackToNewLocal = new int[se.frame.getStackSize()];
                 Arrays.fill(se.stackToNewLocal, -1);
                 int iNewLocal = original.maxLocals;
@@ -346,13 +364,41 @@ public class Transformer implements ClassFileTransformer
             }
             original.maxLocals = Math.max(original.maxLocals, newMaxLocals);
 
-            arguments.forEach(p -> p.tmpLocalMapping = -2);
+            arguments.forEach(new Consumer<Argument>()
+            {
+                @Override
+                public void accept(final Argument p)
+                {
+                    p.tmpLocalMapping = -2;
+                }
+            });
             final Argument stateArgument = mapLocalToLambdaArgument(original, null, arguments, 0, BasicValue.INT_VALUE);
             final Argument lambdaArgument = mapLocalToLambdaArgument(original, null, arguments, 0, BasicValue.REFERENCE_VALUE);
             stateArgument.name = "async$state";
             lambdaArgument.name = "async$input";
-            final Object[] defaultFrame = arguments.stream().map(a -> toFrameType(a.value)).toArray();
-            final Type[] typeArguments = arguments.stream().map(a -> a.value.getType()).toArray(s -> new Type[s]);
+            final Object[] defaultFrame = arguments.stream().map(new Function<Argument, Object>()
+            {
+                @Override
+                public Object apply(final Argument a)
+                {
+                    return Transformer.this.toFrameType(a.value);
+                }
+            }).toArray();
+            final Type[] typeArguments = arguments.stream().map(new Function<Argument, Type>()
+            {
+                @Override
+                public Type apply(final Argument a)
+                {
+                    return a.value.getType();
+                }
+            }).toArray(new IntFunction<Type[]>()
+            {
+                @Override
+                public Type[] apply(final int s)
+                {
+                    return new Type[s];
+                }
+            });
             final String lambdaDesc = Type.getMethodDescriptor(Type.getType(Function.class), Arrays.copyOf(typeArguments, typeArguments.length - 1));
 
             // adding the switch entries and restore code
@@ -564,7 +610,14 @@ public class Transformer implements ClassFileTransformer
 
         // tries to match by the name and type first.
         argument = arguments.stream()
-                .filter(x -> x.tmpLocalMapping == -1 && x.value.equals(value) && x.name.equals(name))
+                .filter(new Predicate<Argument>()
+                {
+                    @Override
+                    public boolean test(final Argument x)
+                    {
+                        return x.tmpLocalMapping == -1 && x.value.equals(value) && x.name.equals(name);
+                    }
+                })
                 .findFirst().orElse(null);
 
         if (argument != null)
@@ -574,16 +627,28 @@ public class Transformer implements ClassFileTransformer
         }
         // no name match, just grab the first available or create a new one.
         argument = arguments.stream()
-                .filter(x -> x.tmpLocalMapping == -1 && x.value.equals(value))
+                .filter(new Predicate<Argument>()
+                {
+                    @Override
+                    public boolean test(final Argument x)
+                    {
+                        return x.tmpLocalMapping == -1 && x.value.equals(value);
+                    }
+                })
                 .findFirst().orElseGet(
-                        () -> {
-                            final Argument np = new Argument();
-                            np.iArgumentLocal = arguments.size() == 0 ? 0 :
-                                    arguments.get(arguments.size() - 1).iArgumentLocal + arguments.get(arguments.size() - 1).value.getSize();
-                            np.value = value;
-                            np.name = (name == null) ? name : "_arg$" + np.iArgumentLocal;
-                            arguments.add(np);
-                            return np;
+                        new Supplier<Argument>()
+                        {
+                            @Override
+                            public Argument get()
+                            {
+                                final Argument np = new Argument();
+                                np.iArgumentLocal = arguments.size() == 0 ? 0 :
+                                        arguments.get(arguments.size() - 1).iArgumentLocal + arguments.get(arguments.size() - 1).value.getSize();
+                                np.value = value;
+                                np.name = (name == null) ? name : "_arg$" + np.iArgumentLocal;
+                                arguments.add(np);
+                                return np;
+                            }
                         }
                 );
         argument.tmpLocalMapping = local;
@@ -627,7 +692,14 @@ public class Transformer implements ClassFileTransformer
         final Set<AbstractInsnNode> uninitializedObjects = objectCreationNodes != null
                 ? objectCreationNodes
                 : Stream.of(methodNode.instructions.toArray())
-                .filter(i -> i.getOpcode() == NEW)
+                .filter(new Predicate<AbstractInsnNode>()
+                {
+                    @Override
+                    public boolean test(final AbstractInsnNode i)
+                    {
+                        return i.getOpcode() == NEW;
+                    }
+                })
                 .collect(Collectors.toSet());
 
         // since we can't store uninitialized objects they have to be removed or replaced.
