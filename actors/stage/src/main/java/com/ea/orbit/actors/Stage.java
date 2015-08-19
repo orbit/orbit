@@ -43,7 +43,6 @@ import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
-import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
@@ -62,8 +61,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
-
-import static com.ea.orbit.async.Await.await;
 
 @Singleton
 public class Stage implements Startable
@@ -330,8 +327,8 @@ public class Stage implements Startable
         {
             future = future.thenRun(() -> Actor.getReference(ReminderController.class, "0").ensureStart());
         }
-        await(future);
-        bind();
+
+        future = future.thenRun(() ->  bind());
 
         return future;
     }

@@ -30,7 +30,6 @@ package com.ea.orbit.container;
 
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Order;
-import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.configuration.ContainerConfig;
 import com.ea.orbit.configuration.ContainerConfigImpl;
