@@ -115,7 +115,7 @@ public class Stage implements Startable
             try
             {
                 // async is present in the classpath, let's make sure await is initialized
-                Class.forName("com.ea.orbit.async.Await");
+                Class.forName("com.ea.orbit.async.Await").getMethod("init").invoke(null);;
             }
             catch(Exception ex)
             {
