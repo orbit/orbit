@@ -190,6 +190,10 @@ public class Execution implements Runtime
             final Class<?> concreteClass = finder.findActorImplementation(aInterface);
             descriptor.cannotActivate = concreteClass == null;
             descriptor.concreteClassName = concreteClass != null ? concreteClass.getName() : null;
+            if (concreteClass != null)
+            {
+                descriptor.invoker = dynamicReferenceFactory.getInvokerFor(concreteClass);
+            }
         }
         return !descriptor.cannotActivate;
     }
@@ -825,6 +829,7 @@ public class Execution implements Runtime
                 return concurrentInterfaceDescriptor;
             }
 
+
             descriptorMapByInterfaceId.put(interfaceDescriptor.factory.getInterfaceId(), interfaceDescriptor);
         }
         return interfaceDescriptor;
@@ -890,6 +895,10 @@ public class Execution implements Runtime
                     messaging.sendResponse(from, MessageDefinitions.ERROR_RESPONSE, messageId, "Observer no longer present");
                 }
                 return Task.done();
+            }
+            if (descriptor.invoker == null)
+            {
+                descriptor.invoker = dynamicReferenceFactory.getInvokerFor(observer.getClass());
             }
             final Task<?> task = descriptor.invoker.safeInvoke(observer, methodId, params);
             return task.whenComplete((r, e) ->
@@ -1369,7 +1378,7 @@ public class Execution implements Runtime
                 }
             }
         }
-        Task<List<CompletableFuture<?>>> listTask = Task.allOf(futures);
+        Task<Void> listTask = Task.allOf(futures);
         return listTask;
     }
 

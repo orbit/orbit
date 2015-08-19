@@ -587,22 +587,21 @@ public class Task<T> extends CompletableFuture<T>
      * @throws NullPointerException if the collection or any of its elements are
      *                              {@code null}
      */
-    public static <F extends CompletableFuture<?>, C extends Collection<F>> Task<C> allOf(C cfs)
+    public static <F extends CompletableFuture<?>, C extends Collection<F>> Task<Void> allOf(C cfs)
     {
-        return from(CompletableFuture.allOf(cfs.toArray(new CompletableFuture[cfs.size()]))
-                .thenApply(x -> cfs));
+        return from(CompletableFuture.allOf(cfs.toArray(new CompletableFuture[cfs.size()])));
     }
 
     /**
      * @throws NullPointerException if the stream or any of its elements are
      *                              {@code null}
      */
-    public static <F extends CompletableFuture<?>> Task<List<F>> allOf(Stream<F> cfs)
+    public static <F extends CompletableFuture<?>> Task<Void> allOf(Stream<F> cfs)
     {
         final List<F> futureList = cfs.collect(Collectors.toList());
         @SuppressWarnings("rawtypes")
         final CompletableFuture[] futureArray = futureList.toArray(new CompletableFuture[futureList.size()]);
-        return from(CompletableFuture.allOf(futureArray).thenApply(x -> futureList));
+        return from(CompletableFuture.allOf(futureArray));
     }
 
     /**

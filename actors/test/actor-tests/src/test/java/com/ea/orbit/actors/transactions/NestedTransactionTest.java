@@ -26,7 +26,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.test.transactions;
+package com.ea.orbit.actors.transactions;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class NestedTransactionTest extends ActorBaseTest
 {
-    public interface Parent extends TransactionalActor
+    public interface Parent extends Actor
     {
         Task<Integer> localNesting(int i1, int i2);
 
@@ -56,7 +56,7 @@ public class NestedTransactionTest extends ActorBaseTest
         Task<Integer> remoteNested(int i1, Parent other, int i2);
     }
 
-    public static class ParentActor extends AbstractTransactionalActor<ParentActor.State> implements Parent
+    public static class ParentActor extends EventSourcedActor<ParentActor.State> implements Parent
     {
         public static class State extends TransactionalState
         {

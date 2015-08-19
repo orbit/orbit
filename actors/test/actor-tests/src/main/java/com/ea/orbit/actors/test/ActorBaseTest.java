@@ -40,9 +40,10 @@ import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.ExecutionSerializer;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
+import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
-import com.ea.orbit.actors.test.transactions.TransactionInvokeHook;
+import com.ea.orbit.actors.transactions.TransactionInvokeHook;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -70,6 +71,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -159,6 +161,7 @@ public class ActorBaseTest
         @Override
         protected void failed(final Throwable e, final Description description)
         {
+
             final PrintStream out = System.out;
             out.println(">>>>>>>>> Start");
             out.println(">>>>>>>>> Test Dump for " + description);
@@ -168,19 +171,31 @@ public class ActorBaseTest
             out.print(">>>>>>>>> Error: ");
             e.printStackTrace(out);
             out.println(">>>>>>>>> End");
-            dumpMessages();
+            dumpMessages(description);
             messageSequence.clear();
             hiddenLogData.setLength(0);
             fakeDatabase.clear();
         }
     };
 
+
     protected void dumpMessages()
+    {
+        dumpMessages(null);
+    }
+
+    protected void dumpMessages(Description description)
     {
         final PrintStream out = System.out;
         if (messageSequence.size() > 0)
         {
-            final Path seqUml = Paths.get("target/surefire-reports/" + ActorBaseTest.this.getClass().getName() + ".messages.puml");
+            String name = ActorBaseTest.this.getClass().getName();
+            if (description != null)
+            {
+                name += "-" + description.getMethodName();
+            }
+
+            final Path seqUml = Paths.get("target/surefire-reports/" + name + ".messages.puml");
             try
             {
                 Files.createDirectories(seqUml.getParent());
@@ -298,6 +313,14 @@ public class ActorBaseTest
             public Task<?> invoke(final InvocationContext icontext, final Addressable toReference, final Method method, final int methodId, final Object[] params)
             {
                 long id = invocationId.incrementAndGet();
+                if (toReference instanceof NodeCapabilities)
+                {
+                    return icontext.invokeNext(toReference, method, methodId, params);
+                }
+                if (toReference instanceof ReminderController && "ensureStart".equals(method.getName()))
+                {
+                    return icontext.invokeNext(toReference, method, methodId, params);
+                }
                 final ActorTaskContext context = ActorTaskContext.current();
                 String from;
                 if (context != null && context.getActor() != null)
@@ -368,7 +391,7 @@ public class ActorBaseTest
                                         else
                                         {
                                             final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id
-                                                    + "; " + timeStr + "us] (exception at " + method.getName() + "): " + e
+                                                    + "; " + timeStr + "us] (exception at " + method.getName() + "): " + unwrapException(e)
                                                     + "\r\n"
                                                     + "deactivate \"" + to + "\"";
                                             messageSequence.add(resp);
@@ -383,6 +406,16 @@ public class ActorBaseTest
                     hiddenLog.info('"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams);
                     return icontext.invokeNext(toReference, method, methodId, params);
                 }
+            }
+
+            private Throwable unwrapException(final Throwable e)
+            {
+                Throwable ex = e;
+                while (ex.getCause() != null && (ex instanceof CompletionException))
+                {
+                    ex = ex.getCause();
+                }
+                return ex;
             }
         });
     }

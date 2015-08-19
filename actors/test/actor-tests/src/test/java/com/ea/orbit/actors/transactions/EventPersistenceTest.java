@@ -26,7 +26,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.test.transactions;
+package com.ea.orbit.actors.transactions;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
@@ -52,14 +52,14 @@ import static org.junit.Assert.*;
  */
 public class EventPersistenceTest extends ActorBaseTest
 {
-    public interface EpJimmy extends TransactionalActor
+    public interface EpJimmy extends Actor
     {
         Task<String> wave(int amount);
 
         Task<Integer> getBalance();
     }
 
-    public static class JimmyActor extends AbstractTransactionalActor<JimmyActor.State> implements EpJimmy
+    public static class JimmyActor extends EventSourcedActor<JimmyActor.State> implements EpJimmy
     {
         public static class State extends TransactionalState
         {
@@ -115,15 +115,15 @@ public class EventPersistenceTest extends ActorBaseTest
         String t2 = jimmy.wave(60).join();
         String t3 = jimmy.wave(600).join();
 
-        jimmy.cancelTransaction(t2).join();
+        Actor.cast(TransactionalAware.class, jimmy).cancelTransaction(t2).join();
         assertEquals(606, (int) jimmy.getBalance().join());
 
-        jimmy.cancelTransaction(t1).join();
+        Actor.cast(TransactionalAware.class, jimmy).cancelTransaction(t1).join();
         assertEquals(600, (int) jimmy.getBalance().join());
     }
 
 
-    public interface Bank extends TransactionalActor
+    public interface Bank extends Actor
     {
         Task<Integer> decrement(int amount);
 
@@ -132,7 +132,7 @@ public class EventPersistenceTest extends ActorBaseTest
         Task<Integer> increment(int amount);
     }
 
-    public static class BankActor extends AbstractTransactionalActor<BankActor.State> implements Bank
+    public static class BankActor extends EventSourcedActor<BankActor.State> implements Bank
     {
         public static class State extends TransactionalState
         {
@@ -176,7 +176,7 @@ public class EventPersistenceTest extends ActorBaseTest
         }
     }
 
-    public interface Inventory extends TransactionalActor
+    public interface Inventory extends Actor
     {
         Task<String> giveItem(String itemName);
 
@@ -184,7 +184,7 @@ public class EventPersistenceTest extends ActorBaseTest
     }
 
     public static class InventoryActor
-            extends AbstractTransactionalActor<InventoryActor.State>
+            extends EventSourcedActor<InventoryActor.State>
             implements Inventory
     {
         // test synchronization
@@ -224,13 +224,13 @@ public class EventPersistenceTest extends ActorBaseTest
     }
 
 
-    public interface Store extends TransactionalActor
+    public interface Store extends Actor
     {
         Task<String> buyItem(Bank bank, Inventory inventory, String itemName, int price);
     }
 
     public static class StoreActor
-            extends AbstractTransactionalActor<StoreActor.State>
+            extends EventSourcedActor<StoreActor.State>
             implements Store
     {
         public static class State extends TransactionalState
@@ -321,7 +321,7 @@ public class EventPersistenceTest extends ActorBaseTest
     }
 
 
-    public interface EpTransactionTree extends TransactionalActor
+    public interface EpTransactionTree extends Actor
     {
         Task<Integer> treeInc(int count);
 
@@ -331,7 +331,7 @@ public class EventPersistenceTest extends ActorBaseTest
     }
 
     public static class TransactionTreeActor
-            extends AbstractTransactionalActor<TransactionTreeActor.State>
+            extends EventSourcedActor<TransactionTreeActor.State>
             implements EpTransactionTree
     {
         public static class State extends TransactionalState

@@ -26,7 +26,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.test.transactions;
+package com.ea.orbit.actors.transactions;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class DisjunctTransactionTest extends ActorBaseTest
 {
-    public interface Disjunct extends TransactionalActor
+    public interface Disjunct extends Actor
     {
         Task<Integer> local(int i1, int i2);
 
@@ -56,7 +56,7 @@ public class DisjunctTransactionTest extends ActorBaseTest
         Task<Integer> remote(int i1, Disjunct other, int i2);
     }
 
-    public static class DisjunctActor extends AbstractTransactionalActor<DisjunctActor.State> implements Disjunct
+    public static class DisjunctActor extends EventSourcedActor<DisjunctActor.State> implements Disjunct
     {
         public static class State extends TransactionalState
         {
@@ -153,12 +153,12 @@ public class DisjunctTransactionTest extends ActorBaseTest
         Stage stage = createStage();
 
         Disjunct jimmy = Actor.getReference(Disjunct.class, "1");
-        assertEquals(3, (int) jimmy.local(1, 2).join());
+        assertEquals(6, (int) jimmy.local(1, 5).join());
 
-        assertEquals("i2: -2", expectException(() -> jimmy.local(1, -2).join()).getCause().getMessage());
+        assertEquals("i2: -20", expectException(() -> jimmy.local(10, -20).join()).getCause().getMessage());
 
         // the first transaction is not cancelled
-        assertEquals(4, (int) jimmy.getBalance().join());
+        assertEquals(16, (int) jimmy.getBalance().join());
     }
 
     @Test
