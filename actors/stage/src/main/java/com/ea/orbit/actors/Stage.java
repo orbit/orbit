@@ -113,12 +113,22 @@ public class Stage implements Startable
     {
         try
         {
-            Await.init();
+            Class.forName("com.ea.orbit.async.Async");
+            try
+            {
+                // async is present in the classpath, let's make sure await is initialized
+                Class.forName("com.ea.orbit.async.Await");
+            }
+            catch(Exception ex)
+            {
+                // this might be a problem, logging.
+                logger.error("Error initializing orbit-async", ex);
+            }
+
         }
         catch (Exception ex)
         {
-            // this might be a problem, logging.
-            logger.error("Error initializing orbit-async", ex);
+            // no problem, application doesn't use orbit async.
         }
     }
 
