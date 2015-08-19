@@ -100,7 +100,10 @@ public class MetricsManager
         }
         else
         {
-            logger.info("Attempting to initialize the Metrics Manager when it is already initialized!");
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("Attempting to initialize the Metrics Manager when it is already initialized!");
+            }
         }
     }
 
