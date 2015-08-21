@@ -219,7 +219,7 @@ public class DisjunctTransactionTest extends ActorBaseTest
         // the failure
         assertEquals("i1: -1", expectException(() -> jimmy.remote(-1, other, 2).join()).getCause().getMessage());
 
-        assertEquals(1, (int) jimmy.getBalance().join());
+        eventually(() -> assertEquals(1, (int) jimmy.getBalance().join()));
         assertEquals(2, (int) other.getBalance().join());
         dumpMessages();
     }
