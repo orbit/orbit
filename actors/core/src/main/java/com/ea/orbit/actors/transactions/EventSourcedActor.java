@@ -46,7 +46,7 @@ import java.util.stream.Stream;
 
 import static com.ea.orbit.async.Await.await;
 
-public class EventSourcedActor<T extends TransactionalState> extends AbstractActor<T> implements TransactionalAware, Actor
+public class EventSourcedActor<T extends TransactionalState> extends AbstractActor<T> implements Transactional, Actor
 {
 
     public static final String ORBIT_TRANSACTION_ID = "orbit.transactionId";
@@ -118,6 +118,7 @@ public class EventSourcedActor<T extends TransactionalState> extends AbstractAct
         final ActorTaskContext context = oldContext.cloneContext();
 
         final byte[] buf = new byte[12];
+        // TODO, use secure random or some better id generator, btw, this is here just to ease debugging.
         new Random().nextBytes(buf);
         final String transactionId = Base64.getUrlEncoder().encodeToString(buf);
 

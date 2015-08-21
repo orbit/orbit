@@ -32,7 +32,7 @@ import com.ea.orbit.concurrent.Task;
 /**
  * Optional interface that the actor implementation can implement if it wants to be able to cancel transactions.
  */
-public interface TransactionalAware
+public interface Transactional
 {
     Task<Void> cancelTransaction(String transactionId);
 }
