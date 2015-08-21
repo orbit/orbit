@@ -1087,9 +1087,9 @@ public class Execution implements Runtime
 
     protected void sendResponseAndLogError(boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
     {
-        if (exception != null && logger.isErrorEnabled())
+        if (exception != null && logger.isDebugEnabled())
         {
-            logger.error("Unknown application error. ", exception);
+            logger.debug("Unknown application error. ", exception);
         }
 
         if (!oneway)
@@ -1107,9 +1107,9 @@ public class Execution implements Runtime
             }
             catch (Exception ex2)
             {
-                if (logger.isErrorEnabled())
+                if (logger.isDebugEnabled())
                 {
-                    logger.error("Error sending method result", ex2);
+                    logger.debug("Error sending method result", ex2);
                 }
                 try
                 {
@@ -1124,9 +1124,9 @@ public class Execution implements Runtime
                 }
                 catch (Exception ex3)
                 {
-                    if (logger.isErrorEnabled())
+                    if (logger.isDebugEnabled())
                     {
-                        logger.error("Failed twice sending result. ", ex2);
+                        logger.debug("Failed twice sending result. ", ex2);
                     }
                     try
                     {

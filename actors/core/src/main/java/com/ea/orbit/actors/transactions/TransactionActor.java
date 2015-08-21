@@ -2,6 +2,7 @@ package com.ea.orbit.actors.transactions;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.LinkedHashSet;
@@ -40,12 +41,14 @@ public class TransactionActor extends AbstractActor<TransactionActor.Transaction
     {
         if (!state().canceled)
         {
-            await(Task.allOf(state().actors.stream()
+            final Task<Void> members = Task.allOf(state().actors.stream()
                     .filter(actor -> !actor.equals(caller))
-                    .map(a -> Actor.cast(TransactionalAware.class, a).cancelTransaction(this.actorIdentity()))));
+                    .map(a -> Actor.cast(TransactionalAware.class, a).cancelTransaction(this.actorIdentity())));
 
-            await(Task.allOf(state().children.stream()
-                    .map(a -> a.cancelTransaction(caller))));
+            final Task<Void> subs = Task.allOf(state().children.stream()
+                    .map(a -> a.cancelTransaction(caller)));
+
+            await(Task.allOf(members, subs));
         }
         return Task.done();
     }
@@ -67,6 +70,6 @@ public class TransactionActor extends AbstractActor<TransactionActor.Transaction
         Set<Transaction> children = new LinkedHashSet<>();
         String parentTransactionId;
         boolean canceled;
-        long startTime;
+        long startTime = ActorRuntime.getRuntime().clock().millis();
     }
 }

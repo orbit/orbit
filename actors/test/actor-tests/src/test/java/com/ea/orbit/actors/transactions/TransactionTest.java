@@ -100,6 +100,7 @@ public class TransactionTest extends ActorBaseTest
 
         TtJimmy jimmy = Actor.getReference(TtJimmy.class, "1");
         jimmy.wave(6).join();
+        dumpMessages();
     }
 
     @Test
@@ -318,6 +319,7 @@ public class TransactionTest extends ActorBaseTest
         assertEquals((Integer) 4, bank.getBalance().join());
         // no items were given
         assertEquals(2, inventory.getItems().join().size());
+        dumpMessages();
     }
 
 

@@ -43,7 +43,6 @@ import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
-import com.ea.orbit.actors.transactions.TransactionInvokeHook;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -255,14 +254,6 @@ public class ActorBaseTest
         dr.addSingleton(FakeSync.class, fakeSync);
         dr.addSingleton(Stage.class, stage);
         addLogging(stage);
-        stage.addExtension(new TransactionInvokeHook()
-        {
-            @Override
-            public Task<?> invoke(final InvocationContext icontext, final Addressable toReference, final Method method, final int methodId, final Object[] params)
-            {
-                return super.invoke(icontext, toReference, method, methodId, params);
-            }
-        });
         stage.addExtension(new LifetimeExtension()
         {
             @Override
