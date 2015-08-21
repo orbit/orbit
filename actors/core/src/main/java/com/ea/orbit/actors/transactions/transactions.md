@@ -99,3 +99,10 @@ The cancellation process is fully asynchronous meaning that eventually all the i
 be notified of the cancellation but there is no object (Task, future, promise) 
 to check when the cancellation is done.   
 
+
+Examples
+--------
+
+![Successful Transaction](successfulTransactionDemo.png)
+
+![Failed Transaction](failedTransaction.png)

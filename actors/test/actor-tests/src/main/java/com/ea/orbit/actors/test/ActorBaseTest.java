@@ -28,6 +28,7 @@
 
 package com.ea.orbit.actors.test;
 
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.annotation.OneWay;
@@ -35,6 +36,7 @@ import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ActorFactoryGenerator;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.Execution;
@@ -61,6 +63,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -145,7 +148,7 @@ public class ActorBaseTest
         }
     };
 
-    private String TEST_NAME_PROP = ActorBaseTest.class.getName() + ".testName";
+    private static final String TEST_NAME_PROP = ActorBaseTest.class.getName() + ".testName";
 
     @Rule
     public TestRule dumpLogs = new TestWatcher()
@@ -155,8 +158,8 @@ public class ActorBaseTest
         protected void starting(Description description)
         {
             taskContext.push();
-            TEST_NAME_PROP = ActorBaseTest.class.getName() + ".testName";
             taskContext.setProperty(TEST_NAME_PROP, description.getMethodName());
+            taskContext.setProperty(ActorBaseTest.class.getName(), description);
         }
 
         /**
@@ -208,7 +211,9 @@ public class ActorBaseTest
 
     protected void dumpMessages()
     {
-        dumpMessages(null);
+        final TaskContext taskContext = TaskContext.current();
+
+        dumpMessages(taskContext != null ? (Description) taskContext.getProperty(ActorBaseTest.class.getName()) : null);
     }
 
     protected void dumpMessages(Description description)
@@ -278,6 +283,8 @@ public class ActorBaseTest
     {
         hiddenLog.info("Create Stage");
         Stage stage = new Stage();
+
+
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
         dr.addSingleton(Stage.class, stage);
@@ -300,6 +307,21 @@ public class ActorBaseTest
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().join();
+
+        // warm up
+        ActorFactoryGenerator afg = new ActorFactoryGenerator();
+        Stream.of(getClass().getClasses())
+                .forEach(c -> {
+                    if (Actor.class.isAssignableFrom(c) && c.isInterface())
+                    {
+                        afg.getFactoryFor(c);
+                        stage.getHosting().canActivate(c.getName()).join();
+                    }
+                    if (AbstractActor.class.isAssignableFrom(c) && !Modifier.isAbstract(c.getModifiers()))
+                    {
+                        afg.getInvokerFor(c);
+                    }
+                });
         stage.bind();
         return stage;
     }
@@ -417,8 +439,11 @@ public class ActorBaseTest
                                         }
                                         else
                                         {
+                                            final Throwable throwable = unwrapException(e);
                                             final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id
-                                                    + "; " + timeStr + "us] (exception at " + method.getName() + "): " + unwrapException(e)
+                                                    + "; " + timeStr + "us] (exception at " + method.getName() + "):\\n"
+                                                    + throwable.getClass().getName()
+                                                    + (throwable.getMessage() != null ? ": \\n" + throwable.getMessage() : "")
                                                     + "\r\n"
                                                     + "deactivate \"" + to + "\"";
                                             messageSequence.add(resp);

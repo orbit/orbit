@@ -140,7 +140,7 @@ public class TransactionTest extends ActorBaseTest
                 throw new IllegalArgumentException("Something went wrong: " + itemName);
             }
 
-            String item = itemName + ":" + UUID.randomUUID().toString();
+            String item = itemName + ":" + IdUtils.urlSafeString(128);
             state().addItem(item);
             return Task.fromValue(item);
         }
@@ -154,14 +154,14 @@ public class TransactionTest extends ActorBaseTest
     }
 
 
-    public interface TtStore extends Actor
+    public interface Store extends Actor
     {
         Task<String> buyItem(Bank bank, Inventory inventory, String itemName, int price);
     }
 
     public static class StoreActor
             extends EventSourcedActor<StoreActor.State>
-            implements TtStore
+            implements Store
     {
         public static class State extends TransactionalState
         {
@@ -187,16 +187,16 @@ public class TransactionTest extends ActorBaseTest
         Stage stage = createStage();
         Bank bank = Actor.getReference(Bank.class, "jimmy");
         Inventory inventory = Actor.getReference(Inventory.class, "jimmy");
-        TtStore store = Actor.getReference(TtStore.class, "all");
+        Store store = Actor.getReference(Store.class, "all");
         bank.increment(15).join();
 
         // this allows the store to proceed without blocking
         fakeSync.put("proceed", "ok");
         store.buyItem(bank, inventory, "candy", 10).join();
-        // got the item
-        assertTrue(inventory.getItems().join().get(0).startsWith("candy:"));
         // the balance was decreased
         assertEquals((Integer) 5, bank.getBalance().join());
+        // got the item
+        assertTrue(inventory.getItems().join().get(0).startsWith("candy:"));
         Thread.sleep(1000);
         dumpMessages();
     }
@@ -207,7 +207,7 @@ public class TransactionTest extends ActorBaseTest
         Stage stage = createStage();
         Bank bank = Actor.getReference(Bank.class, "jimmy");
         Inventory inventory = Actor.getReference(Inventory.class, "jimmy");
-        TtStore store = Actor.getReference(TtStore.class, "all");
+        Store store = Actor.getReference(Store.class, "all");
         bank.increment(15).join();
 
         fakeSync.put("proceed", "fail");
@@ -228,7 +228,7 @@ public class TransactionTest extends ActorBaseTest
         Stage stage = createStage();
         Bank bank = Actor.getReference(Bank.class, "jimmy");
         Inventory inventory = Actor.getReference(Inventory.class, "jimmy");
-        TtStore store = Actor.getReference(TtStore.class, "all");
+        Store store = Actor.getReference(Store.class, "all");
         bank.increment(15).join();
 
         fakeSync.put("proceed", "ok");
