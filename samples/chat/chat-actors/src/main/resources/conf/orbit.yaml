@@ -40,6 +40,7 @@ orbit.chat.maxMessages: 500
 
 orbit.components:
   - com.ea.orbit.actors.server.ServerModule
+  - com.ea.orbit.metrics.MetricsComponent
 
 orbit.metrics.reporters:
   - !!com.ea.orbit.metrics.config.Slf4jReporterConfig
