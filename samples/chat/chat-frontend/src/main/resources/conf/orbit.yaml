@@ -35,6 +35,7 @@ orbit.components:
   - com.ea.orbit.samples.chat.ChatWebModule
   - com.ea.orbit.web.WebModule
   - com.ea.orbit.actors.client.ClientModule
+  - com.ea.orbit.metrics.MetricsComponent
   
 orbit.metrics.reporters:
   - !!com.ea.orbit.metrics.config.Slf4jReporterConfig
