@@ -37,6 +37,7 @@ import org.junit.Test;
 
 import java.util.concurrent.ExecutionException;
 
+import static com.ea.orbit.actors.transactions.TransactionUtils.transaction;
 import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.assertEquals;
 
@@ -158,7 +159,7 @@ public class DisjunctTransactionTest extends ActorBaseTest
         assertEquals("i2: -20", expectException(() -> jimmy.local(10, -20).join()).getCause().getMessage());
 
         // the first transaction is not cancelled
-        assertEquals(16, (int) jimmy.getBalance().join());
+        eventually(() -> assertEquals(16, (int) jimmy.getBalance().join()));
     }
 
     @Test
@@ -171,7 +172,7 @@ public class DisjunctTransactionTest extends ActorBaseTest
 
         assertEquals("i1: -1", expectException(() -> jimmy.local(-1, 2).join()).getCause().getMessage());
         // the second transaction never happens
-        assertEquals(3, (int) jimmy.getBalance().join());
+        eventually(() -> assertEquals(3, (int) jimmy.getBalance().join()));
     }
 
     @Test

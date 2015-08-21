@@ -44,6 +44,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
+import static com.ea.orbit.actors.transactions.TransactionUtils.transaction;
 import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.*;
 
@@ -52,79 +53,7 @@ import static org.junit.Assert.*;
  */
 public class TransactionTest extends ActorBaseTest
 {
-    public interface TtJimmy extends Actor
-    {
-        Task<String> wave(int amount);
-
-        Task<Integer> getBalance();
-    }
-
-    public static class JimmyActor extends EventSourcedActor<JimmyActor.State> implements TtJimmy
-    {
-        public static class State extends TransactionalState
-        {
-            int balance;
-
-            @TransactionalEvent
-            void incrementBalance(int amount)
-            {
-                balance += amount;
-            }
-        }
-
-        @Override
-        public Task<String> wave(int amount)
-        {
-            // Start Transaction
-            return transaction(() ->
-            {
-                // call method
-                // register call
-                state().incrementBalance(amount);
-                return Task.fromValue(currentTransactionId());
-            });
-            // End Transaction
-        }
-
-        @Override
-        public Task<Integer> getBalance()
-        {
-            return Task.fromValue(state().balance);
-        }
-    }
-
-    @Test
-    public void simpleTransaction() throws ExecutionException, InterruptedException
-    {
-        Stage stage = createStage();
-
-        TtJimmy jimmy = Actor.getReference(TtJimmy.class, "1");
-        jimmy.wave(6).join();
-        dumpMessages();
-    }
-
-    @Test
-    public void transactionRollback() throws ExecutionException, InterruptedException
-    {
-        Stage stage = createStage();
-
-        TtJimmy jimmy = Actor.getReference(TtJimmy.class, "1");
-        String t1 = jimmy.wave(6).join();
-
-        assertEquals(6, (int) jimmy.getBalance().join());
-
-        String t2 = jimmy.wave(60).join();
-        String t3 = jimmy.wave(600).join();
-
-        Actor.cast(Transactional.class, jimmy).cancelTransaction(t2).join();
-        assertEquals(606, (int) jimmy.getBalance().join());
-
-        Actor.cast(Transactional.class, jimmy).cancelTransaction(t1).join();
-        assertEquals(600, (int) jimmy.getBalance().join());
-    }
-
-
-    public interface TtBank extends Actor
+    public interface Bank extends Actor
     {
         Task<Integer> decrement(int amount);
 
@@ -133,7 +62,7 @@ public class TransactionTest extends ActorBaseTest
         Task<Integer> increment(int amount);
     }
 
-    public static class BankActor extends EventSourcedActor<BankActor.State> implements TtBank
+    public static class BankActor extends EventSourcedActor<BankActor.State> implements Bank
     {
         public static class State extends TransactionalState
         {
@@ -177,16 +106,16 @@ public class TransactionTest extends ActorBaseTest
         }
     }
 
-    public interface TtInventory extends Actor
+    public interface Inventory extends Actor
     {
         Task<String> giveItem(String itemName);
 
         Task<List<String>> getItems();
     }
 
-    public static class TtInventoryActor
-            extends EventSourcedActor<TtInventoryActor.State>
-            implements TtInventory
+    public static class InventoryActor
+            extends EventSourcedActor<InventoryActor.State>
+            implements Inventory
     {
         // test synchronization
         @Inject
@@ -227,7 +156,7 @@ public class TransactionTest extends ActorBaseTest
 
     public interface TtStore extends Actor
     {
-        Task<String> buyItem(TtBank bank, TtInventory inventory, String itemName, int price);
+        Task<String> buyItem(Bank bank, Inventory inventory, String itemName, int price);
     }
 
     public static class StoreActor
@@ -240,7 +169,7 @@ public class TransactionTest extends ActorBaseTest
         }
 
         @Override
-        public Task<String> buyItem(TtBank bank, TtInventory inventory, String itemName, int price)
+        public Task<String> buyItem(Bank bank, Inventory inventory, String itemName, int price)
         {
             return transaction(() ->
             {
@@ -256,8 +185,8 @@ public class TransactionTest extends ActorBaseTest
     public void successfulTransaction() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
-        TtBank bank = Actor.getReference(TtBank.class, "jimmy");
-        TtInventory inventory = Actor.getReference(TtInventory.class, "jimmy");
+        Bank bank = Actor.getReference(Bank.class, "jimmy");
+        Inventory inventory = Actor.getReference(Inventory.class, "jimmy");
         TtStore store = Actor.getReference(TtStore.class, "all");
         bank.increment(15).join();
 
@@ -268,14 +197,16 @@ public class TransactionTest extends ActorBaseTest
         assertTrue(inventory.getItems().join().get(0).startsWith("candy:"));
         // the balance was decreased
         assertEquals((Integer) 5, bank.getBalance().join());
+        Thread.sleep(1000);
+        dumpMessages();
     }
 
     @Test
     public void failedTransaction() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
-        TtBank bank = Actor.getReference(TtBank.class, "jimmy");
-        TtInventory inventory = Actor.getReference(TtInventory.class, "jimmy");
+        Bank bank = Actor.getReference(Bank.class, "jimmy");
+        Inventory inventory = Actor.getReference(Inventory.class, "jimmy");
         TtStore store = Actor.getReference(TtStore.class, "all");
         bank.increment(15).join();
 
@@ -285,7 +216,7 @@ public class TransactionTest extends ActorBaseTest
         expectException(() -> store.buyItem(bank, inventory, "ice cream", 10).join());
 
         // the bank credits must be restored.
-        assertEquals((Integer) 15, bank.getBalance().join());
+        eventually(() -> assertEquals((Integer) 15, bank.getBalance().join()));
         // no items were given
         assertEquals(0, inventory.getItems().join().size());
         dumpMessages();
@@ -295,8 +226,8 @@ public class TransactionTest extends ActorBaseTest
     public void failedTransaction2() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
-        TtBank bank = Actor.getReference(TtBank.class, "jimmy");
-        TtInventory inventory = Actor.getReference(TtInventory.class, "jimmy");
+        Bank bank = Actor.getReference(Bank.class, "jimmy");
+        Inventory inventory = Actor.getReference(Inventory.class, "jimmy");
         TtStore store = Actor.getReference(TtStore.class, "all");
         bank.increment(15).join();
 
@@ -316,97 +247,12 @@ public class TransactionTest extends ActorBaseTest
         }
 
         // the bank credits must be restored.
-        assertEquals((Integer) 4, bank.getBalance().join());
+        eventually(() -> assertEquals((Integer) 4, bank.getBalance().join()));
         // no items were given
-        assertEquals(2, inventory.getItems().join().size());
+        eventually(() -> assertEquals(2, inventory.getItems().join().size()));
         dumpMessages();
     }
 
-
-    public interface TtTransactionTree extends Actor
-    {
-        Task<Integer> treeInc(int count);
-
-        Task<Integer> treeTransaction(int count);
-
-        Task<Integer> currentValue();
-    }
-
-    public static class TransactionTreeActor
-            extends EventSourcedActor<TransactionTreeActor.State>
-            implements TtTransactionTree
-    {
-        public static class State extends TransactionalState
-        {
-            int current;
-
-            @TransactionalEvent
-            int incAngGet(int count)
-            {
-                return current += count;
-            }
-        }
-
-        @Override
-        public Task<Integer> treeTransaction(int count)
-        {
-            return transaction(() ->
-                    treeInc(count));
-        }
-
-        @Override
-        public Task<Integer> currentValue()
-        {
-            return Task.fromValue(state().current);
-        }
-
-        @Override
-        public Task<Integer> treeInc(int count)
-        {
-            final String id = actorIdentity();
-            if (id.length() == 1)
-            {
-                if (id.equals("x"))
-                {
-                    throw new RuntimeException("Expected exception");
-                }
-                return Task.fromValue(state().incAngGet(count));
-            }
-            final int mid = id.length() / 2;
-            final TtTransactionTree left = Actor.getReference(TtTransactionTree.class, id.substring(0, mid));
-            final TtTransactionTree right = Actor.getReference(TtTransactionTree.class, id.substring(mid));
-            final Task<Integer> ltask = left.treeInc(count);
-            final Task<Integer> rtask = right.treeInc(count);
-            return Task.fromValue(await(ltask) + await(rtask));
-        }
-    }
-
-
-    @Test
-    public void treeSuccess() throws ExecutionException, InterruptedException
-    {
-        Stage stage = createStage();
-        TtTransactionTree tree = Actor.getReference(TtTransactionTree.class, "abc");
-        assertEquals((Integer) 3, tree.treeTransaction(1).join());
-        assertEquals((Integer) 1, Actor.getReference(TtTransactionTree.class, "a").currentValue().join());
-        assertEquals((Integer) 1, Actor.getReference(TtTransactionTree.class, "b").currentValue().join());
-        assertEquals((Integer) 1, Actor.getReference(TtTransactionTree.class, "c").currentValue().join());
-    }
-
-
-    @Test
-    public void treeCancellation() throws ExecutionException, InterruptedException
-    {
-        Stage stage = createStage();
-        TtTransactionTree tree2 = Actor.getReference(TtTransactionTree.class, "abcx");
-        TtTransactionTree aleaf = Actor.getReference(TtTransactionTree.class, "a");
-        assertEquals((Integer) 5, Actor.getReference(TtTransactionTree.class, "a").treeInc(5).join());
-        expectException(() -> tree2.treeTransaction(1).join());
-        assertEquals((Integer) 5, Actor.getReference(TtTransactionTree.class, "a").currentValue().join());
-        assertEquals((Integer) 0, Actor.getReference(TtTransactionTree.class, "b").currentValue().join());
-        assertEquals((Integer) 0, Actor.getReference(TtTransactionTree.class, "c").currentValue().join());
-        dumpMessages();
-    }
 
 }
 

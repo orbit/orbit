@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors;
 
 import com.ea.orbit.actors.runtime.ReferenceFactory;
+import com.ea.orbit.actors.transactions.Transaction;
 
 /**
  * Interface marker for orbit actors.
@@ -90,4 +91,5 @@ public interface Actor
     {
         return ReferenceFactory.cast(remoteInterface, actor);
     }
+
 }

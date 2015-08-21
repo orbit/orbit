@@ -5,20 +5,20 @@ The standard orbit transaction offers a way to asynchronously cancel transaction
 
 The transaction initiator creates a new `Transaction` actor.
 All actors involved in the transaction notify the `Transaction` actor.
-If transaction failed the `Transaction` actor sends a `cancelTransaction` message to all participants.
+If the transaction fails the `Transaction` actor sends the `cancelTransaction` message to all participants.
 
 ![Successful Transaction](successfulTransaction.png)
 
 Event source transactions
 -------------------------
 
-Orbit comes with the EventSourcedActor, one optional actor implementation that can revert transactions using event sourcing.
-The use of EventSourcedActor is not mandatory. The application is free to implement it's own transaction cancellation logic. 
+Orbit comes with the `EventSourceActor`, one optional actor implementation that can revert transactions using event sourcing.
+The use of `EventSourceActor` is not mandatory. The application is free to implement it's own transaction cancellation logic. 
 
 Event sourced actors should perform state modifications only through replayable events defined in the state class.
 
 ```java
-public class BankActor extends EventSourcedActor<BankActor.BankState> implements Bank 
+public class BankActor extends EventSourceActor<BankActor.BankState> implements Bank 
 {
 	public static class BankState extends EventSourceState 
 	{
@@ -66,7 +66,7 @@ public Task buyItem(Item item, long cost) {
 Inner workings
 --------------
 
-When a transaction starts, a new `Transaction' actor is notified of the transaction start.
+When a transaction starts, a new `Transaction` actor is notified of the transaction start.
 
 The transaction reference is added to the current TaskContext making it visible to all 
 asynchronous processes happening inside its context.
@@ -92,21 +92,10 @@ The parent transaction records it's immediate child transactions. If the parent 
 the cancellation method in the sub transactions.
 
 
-Sync and Async transactions
+Asynchronous transactions
 ----------------------------
 
-With async transactions the cancellation process is fully asynchronous meaning that 
-eventually all the involved actors will be notified of the cancellation but there is no object (Task, future, promise) 
-to check when the cancellation is done. Async transactions are the default and the recommended.  
-
-
-### Synchronous transaction
-
-Synchronous transactions won't necessarily block the running Threads but they will force the execution 
-sequence to await the return of the Transaction messages.
-
-They must be used with care since cyclical calls graphs can lead to deadlocks . 
-
-
-
+The cancellation process is fully asynchronous meaning that eventually all the involved actors will 
+be notified of the cancellation but there is no object (Task, future, promise) 
+to check when the cancellation is done.   
 

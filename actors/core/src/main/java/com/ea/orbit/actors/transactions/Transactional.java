@@ -35,4 +35,5 @@ import com.ea.orbit.concurrent.Task;
 public interface Transactional
 {
     Task<Void> cancelTransaction(String transactionId);
+
 }

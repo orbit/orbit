@@ -44,6 +44,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
+import static com.ea.orbit.actors.transactions.TransactionUtils.transaction;
 import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.*;
 
@@ -81,7 +82,7 @@ public class EventPersistenceTest extends ActorBaseTest
                 // call method
                 // register call
                 state().incrementBalance(amount);
-                return Task.fromValue(currentTransactionId());
+                return Task.fromValue(TransactionUtils.currentTransactionId());
             });
             // End Transaction
         }
@@ -116,10 +117,10 @@ public class EventPersistenceTest extends ActorBaseTest
         String t3 = jimmy.wave(600).join();
 
         Actor.cast(Transactional.class, jimmy).cancelTransaction(t2).join();
-        assertEquals(606, (int) jimmy.getBalance().join());
+        eventually(() -> assertEquals(606, (int) jimmy.getBalance().join()));
 
         Actor.cast(Transactional.class, jimmy).cancelTransaction(t1).join();
-        assertEquals(600, (int) jimmy.getBalance().join());
+        eventually(() -> assertEquals(600, (int) jimmy.getBalance().join()));
     }
 
 
@@ -400,9 +401,9 @@ public class EventPersistenceTest extends ActorBaseTest
         EpTransactionTree aleaf = Actor.getReference(EpTransactionTree.class, "a");
         assertEquals((Integer) 5, Actor.getReference(EpTransactionTree.class, "a").treeInc(5).join());
         expectException(() -> tree2.treeTransaction(1).join());
-        assertEquals((Integer) 5, Actor.getReference(EpTransactionTree.class, "a").currentValue().join());
-        assertEquals((Integer) 0, Actor.getReference(EpTransactionTree.class, "b").currentValue().join());
-        assertEquals((Integer) 0, Actor.getReference(EpTransactionTree.class, "c").currentValue().join());
+        eventually(() -> assertEquals((Integer) 5, Actor.getReference(EpTransactionTree.class, "a").currentValue().join()));
+        eventually(() -> assertEquals((Integer) 0, Actor.getReference(EpTransactionTree.class, "b").currentValue().join()));
+        eventually(() -> assertEquals((Integer) 0, Actor.getReference(EpTransactionTree.class, "c").currentValue().join()));
         dumpMessages();
     }
 

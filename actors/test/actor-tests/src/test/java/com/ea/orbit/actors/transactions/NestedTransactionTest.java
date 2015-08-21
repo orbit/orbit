@@ -37,6 +37,7 @@ import org.junit.Test;
 
 import java.util.concurrent.ExecutionException;
 
+import static com.ea.orbit.actors.transactions.TransactionUtils.transaction;
 import static com.ea.orbit.async.Await.await;
 import static org.junit.Assert.assertEquals;
 
@@ -136,6 +137,12 @@ public class NestedTransactionTest extends ActorBaseTest
         {
             return Task.fromValue(state().balance);
         }
+
+        @Override
+        public Task<Void> cancelTransaction(final String transactionId)
+        {
+            return super.cancelTransaction(transactionId);
+        }
     }
 
     @Test
@@ -155,7 +162,7 @@ public class NestedTransactionTest extends ActorBaseTest
         Parent jimmy = Actor.getReference(Parent.class, "1");
         assertEquals(3, (int) jimmy.localNesting(1, 2).join());
         assertEquals("i2: -2", expectException(() -> jimmy.localNesting(1, -2).join()).getCause().getMessage());
-        assertEquals(3, (int) jimmy.getBalance().join());
+        eventually(() -> assertEquals(3, (int) jimmy.getBalance().join()));
     }
 
     @Test
@@ -166,7 +173,8 @@ public class NestedTransactionTest extends ActorBaseTest
         Parent jimmy = Actor.getReference(Parent.class, "1");
         assertEquals(3, (int) jimmy.localNesting(1, 2).join());
         assertEquals("i1: -1", expectException(() -> jimmy.localNesting(-1, 2).join()).getCause().getMessage());
-        assertEquals(3, (int) jimmy.getBalance().join());
+        eventually(() -> assertEquals(3, (int) jimmy.getBalance().join()));
+        dumpMessages();
     }
 
     @Test

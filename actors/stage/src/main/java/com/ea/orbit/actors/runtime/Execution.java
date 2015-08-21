@@ -41,6 +41,7 @@ import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
+import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.OnlyIfActivated;
@@ -86,7 +87,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
@@ -142,7 +142,7 @@ public class Execution implements Runtime
      * </p>
      */
     @Config("orbit.actors.stickyHeaders")
-    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList("orbit.transactionId", "orbit.traceId"));
+    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
 
     public Execution()
     {
@@ -490,7 +490,7 @@ public class Execution implements Runtime
 
                 return Task.fromValue(instance);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 throw new UncheckedException(e);
             }

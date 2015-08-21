@@ -45,6 +45,7 @@ import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.injection.DependencyRegistry;
 
@@ -143,9 +144,36 @@ public class ActorBaseTest
             hiddenLogData.append(buffer).append("\r\n");
         }
     };
+
+    private String TEST_NAME_PROP = ActorBaseTest.class.getName() + ".testName";
+
     @Rule
     public TestRule dumpLogs = new TestWatcher()
     {
+        final ActorTaskContext taskContext = new ActorTaskContext();
+
+        protected void starting(Description description)
+        {
+            taskContext.push();
+            TEST_NAME_PROP = ActorBaseTest.class.getName() + ".testName";
+            taskContext.setProperty(TEST_NAME_PROP, description.getMethodName());
+        }
+
+        /**
+         * Invoked when a test method finishes (whether passing or failing)
+         */
+        protected void finished(Description description)
+        {
+            try
+            {
+                taskContext.push();
+            }
+            catch (Exception ex)
+            {
+                // ignore
+            }
+        }
+
 
         /**
          * Invoked when a test succeeds
@@ -330,7 +358,15 @@ public class ActorBaseTest
                     }
                     else
                     {
-                        from = "Thread:" + Thread.currentThread().getId();
+                        final TaskContext current = TaskContext.current();
+                        if (current != null && current.getProperty(TEST_NAME_PROP) != null)
+                        {
+                            from = String.valueOf(current.getProperty(TEST_NAME_PROP));
+                        }
+                        else
+                        {
+                            from = "Thread:" + Thread.currentThread().getId();
+                        }
                     }
                 }
                 String to = ActorReference.getInterfaceClass((ActorReference) toReference).getSimpleName()
@@ -394,6 +430,8 @@ public class ActorBaseTest
                 }
                 else
                 {
+                    final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams;
+                    messageSequence.add(msg);
                     hiddenLog.info('"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams);
                     return icontext.invokeNext(toReference, method, methodId, params);
                 }
@@ -494,4 +532,35 @@ public class ActorBaseTest
         }
     }
 
+    protected void eventually(final Runnable runnable)
+    {
+        final long start = System.currentTimeMillis();
+        do
+        {
+            try
+            {
+                runnable.run();
+                return;
+            }
+            catch (RuntimeException | Error ex)
+            {
+                if (System.currentTimeMillis() - start > 60_000)
+                {
+                    // weird that this compiles...
+                    throw ex;
+                }
+                try
+                {
+                    Thread.sleep(Math.max(200, (System.currentTimeMillis() - start) / 4));
+                }
+                catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        } while (true);
+
+    }
+
 }
+
