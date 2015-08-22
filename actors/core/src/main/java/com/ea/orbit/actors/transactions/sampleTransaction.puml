@@ -1,5 +1,11 @@
 @startuml
 
+participant "example"
+participant "Player:1"
+participant "Transaction:0001"
+participant "Transaction:0002"
+
+
 group successful case
 "example" -> "Transaction:0001" : [6] initTransaction(null, null)
 "example" -> "Player:1" : [8] incrementXp(5)
