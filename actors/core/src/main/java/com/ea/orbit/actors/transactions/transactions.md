@@ -7,7 +7,11 @@ The transaction initiator creates a new `Transaction` actor.
 All actors involved in the transaction notify the `Transaction` actor.
 If the transaction fails the `Transaction` actor sends the `cancelTransaction` message to all participants.
 
-![Successful Transaction](successfulTransaction.png)
+Sample transaction flow:
+
+
+![Transaction](sampleTransaction.png)
+
 
 Event source transactions
 -------------------------
@@ -103,6 +107,11 @@ to check when the cancellation is done.
 Examples
 --------
 
+Transaction involving 3 actors: store, bank, and inventory.
+
 ![Successful Transaction](successfulTransactionDemo.png)
+
+Failed transaction involving the same 3 actors.
+The asynchronous canceling eventually restores the original actor state.
 
 ![Failed Transaction](failedTransaction.png)

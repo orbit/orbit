@@ -1,0 +1,57 @@
+@startuml
+
+group successful case
+"example" -> "Transaction:0001" : [6] initTransaction(null, null)
+"example" -> "Player:1" : [8] incrementXp(5)
+activate "Player:1"
+"Player:1" -> "Transaction:0001" : [9] registerActor(Player:1)
+"Player:1" --> "example" : [8; 757us] (response to incrementXp): null
+deactivate "Player:1"
+"example" -> "Transaction:0001" : [11] transactionSuccessful
+end
+
+
+"example" -> "Player:1" : [12] getXp
+activate "Player:1"
+"Player:1" --> "example" : [12; 664us] (response to getXp): 15
+deactivate "Player:1"
+
+
+group failure case
+"example" -> "Transaction:0002" : [5] initTransaction(null, null)
+"example" -> "Player:1" : [7] incrementXp(-6)
+activate "Player:1"
+"Player:1" -> "Transaction:0002" : [8] registerActor(Player:1)
+"Player:1" --> "example" : [7; 7,091us] (exception at incrementXp):\njava.lang.IllegalStateException: \nCan't decrease player level
+deactivate "Player:1"
+"example" -> "Transaction:0002" : [10] cancelTransaction(null)
+end
+
+
+"example" -> "Player:1" : [12] getXp
+note left of  "example"
+  reading value
+  before rollback
+end note
+activate "Player:1"
+"Player:1" --> "example" : [12; 981us] (response to getXp): 4
+deactivate "Player:1"
+
+group eventual (asynchronous) cancellation
+"Transaction:0002" -> "Player:1" : [13] cancelTransaction(ltNl9wpAoTc9paMQ)
+activate "Player:1"
+"Player:1" --> "Transaction:0002" : [13; 2,838us] (response to cancelTransaction): null
+deactivate "Player:1"
+end
+
+"example" -> "Player:1" : [14] getXp
+note left of  "example"
+  reading value
+  after rollback
+end note
+activate "Player:1"
+"Player:1" --> "example" : [14; 1,367us] (response to getXp): 10
+deactivate "Player:1"
+
+@enduml
+
