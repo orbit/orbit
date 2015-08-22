@@ -285,9 +285,9 @@ public class EventPersistenceTest extends ActorBaseTest
         expectException(() -> store.buyItem(bank, inventory, "ice cream", 10).join());
 
         // the bank credits must be restored.
-        assertEquals((Integer) 15, bank.getBalance().join());
+        eventually(() -> assertEquals((Integer) 15, bank.getBalance().join()));
         // no items were given
-        assertEquals(0, inventory.getItems().join().size());
+        eventually(() -> assertEquals(0, inventory.getItems().join().size()));
         dumpMessages();
     }
 
@@ -408,4 +408,3 @@ public class EventPersistenceTest extends ActorBaseTest
     }
 
 }
-
