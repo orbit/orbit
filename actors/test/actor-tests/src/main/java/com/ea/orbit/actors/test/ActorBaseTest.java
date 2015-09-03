@@ -168,8 +168,7 @@ public class ActorBaseTest
     public Stage createStage() throws ExecutionException, InterruptedException
     {
         Stage stage = new Stage();
-        DependencyRegistry dr = new DependencyRegistry();
-        dr.addSingleton(FakeSync.class, fakeSync);
+        DependencyRegistry dr = initDependencyRegistry();
         dr.addSingleton(Stage.class, stage);
         addLogging(stage);
         stage.addExtension(new LifetimeExtension()
@@ -192,6 +191,13 @@ public class ActorBaseTest
         stage.start().join();
         stage.bind();
         return stage;
+    }
+
+    protected DependencyRegistry initDependencyRegistry()
+    {
+        DependencyRegistry dr = new DependencyRegistry();
+        dr.addSingleton(FakeSync.class, fakeSync);
+        return dr;
     }
 
     private AtomicLong invocationId = new AtomicLong();
