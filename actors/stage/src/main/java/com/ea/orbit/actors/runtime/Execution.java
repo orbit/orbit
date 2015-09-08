@@ -689,7 +689,16 @@ public class Execution implements Runtime
                 return super.cancel();
             }
         };
-        timer.schedule(timerTask, timeUnit.toMillis(dueTime), timeUnit.toMillis(period));
+
+        if(period > 0)
+        {
+            timer.schedule(timerTask, timeUnit.toMillis(dueTime), timeUnit.toMillis(period));
+        }
+        else
+        {
+            timer.schedule(timerTask, timeUnit.toMillis(dueTime));
+        }
+
         return timerTask::cancel;
     }
 

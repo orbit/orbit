@@ -1,2 +1,5 @@
-Thank you for your interest in Electronic Arts Inc. ("EA") open source projects. In order to clarify the intellectual property license granted for contributions to EA open source projects, EA must have a Contributor License Agreement ("CLA") on file that has been signed by each contributor. This license is for your protection as a contributor as well as for the protection of EA and users of EA's open source projects. The CLA does not change your rights to use your own contributions for any other purpose.
-<br /><br />You can electronically sign the CLA <a href="https://ea.tap.thinksmart.com/prod/Portal/ShowWorkFlow/AnonymousEmbed/26adfdf8-b74e-4212-bb4a-3e756b722c32">here</a>.
+Thanks for your interest!
+
+In order to clarify the intellectual property license granted for contributions to EA open source projects you must sign the [Contributor License Agreement (CLA)](https://ea.tap.thinksmart.com/prod/Portal/ShowWorkFlow/AnonymousEmbed/26adfdf8-b74e-4212-bb4a-3e756b722c32).
+
+You can also check out our [policies](http://orbit.bioware.com/orbit-policies.html) to find out more about how we evaluate contributions.

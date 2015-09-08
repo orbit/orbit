@@ -33,6 +33,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 public final class DateTimeUtils
 {
@@ -74,7 +75,7 @@ public final class DateTimeUtils
      * Takes a date in string format and a date format string and returns
      * a Date
      *
-     * @param dateString - the date in a string representation
+     * @param dateString       - the date in a string representation
      * @param dateFormatString - the format of how the date is represented in the
      *                         dateString argument
      * @return Date - returns a date object as specified by the dateString argument
@@ -88,7 +89,7 @@ public final class DateTimeUtils
         catch (final ParseException e)
         {
             throw new RuntimeException("Date could not be parsed in the specified format: "
-                    + dateFormatString +	" - " + e.getMessage());
+                    + dateFormatString + " - " + e.getMessage());
         }
     }
 
@@ -102,6 +103,12 @@ public final class DateTimeUtils
         return !((startDate != null && dateToCheck.before(startDate)) || (endDate != null && dateToCheck.after(endDate)));
     }
 
-
+    /**
+     * Builds and returns a date that is a specified amount of time away from now (earlier or later).
+     */
+    public static Date getDateRelativeToNow(TimeUnit timeUnit, long amount)
+    {
+        return new Date(new Date().getTime() + timeUnit.toMillis(amount));
+    }
 
 }

@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.concurrent.Task;
@@ -193,10 +194,17 @@ public abstract class ActorReference<T> implements Serializable, Addressable
         return actor.reference;
     }
 
+    static ActorReference from(Actor actor)
+    {
+        return actor instanceof AbstractActor ? ((AbstractActor) actor).reference
+                : actor instanceof ActorReference ? (ActorReference) actor
+                : null;
+    }
+
     @Override
     public String toString()
     {
-        if(address == null)
+        if (address == null)
         {
             return id != null ? _interfaceClass().getName() + ":" + id : _interfaceClass().getName();
         }

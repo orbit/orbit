@@ -71,7 +71,7 @@ public interface Runtime
     Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params);
 
     /**
-     * Registers a timer to for the orbit actor
+     * Registers a timer for the orbit actor
      *
      * @param actor        the actor requesting the timer.
      * @param taskCallable a callable that must return a task.
