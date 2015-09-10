@@ -209,6 +209,11 @@ public class ActorBaseTest
     };
 
 
+    protected void clearMessages()
+    {
+        messageSequence.clear();
+    }
+
     protected void dumpMessages()
     {
         final TaskContext taskContext = TaskContext.current();

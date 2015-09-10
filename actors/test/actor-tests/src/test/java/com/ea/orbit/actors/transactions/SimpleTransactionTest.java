@@ -31,48 +31,40 @@ package com.ea.orbit.actors.transactions;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.ActorBaseTest;
-import com.ea.orbit.actors.test.FakeSync;
 import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
 
-import javax.inject.Inject;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 import static com.ea.orbit.actors.transactions.TransactionUtils.currentTransactionId;
 import static com.ea.orbit.actors.transactions.TransactionUtils.transaction;
-import static com.ea.orbit.async.Await.await;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  *
  */
 public class SimpleTransactionTest extends ActorBaseTest
 {
-    public interface Jimmy extends Actor
+    public interface Player extends Actor
     {
         Task<String> wave(int amount);
 
-        Task<Integer> getBalance();
+        Task<Integer> getXp();
 
-        Task<Void> changePresets(int number);
+        Task<Void> incrementXp(int number);
     }
 
-    public static class JimmyActor extends EventSourcedActor<JimmyActor.State> implements Jimmy
+    public static class PlayerActor extends EventSourcedActor<PlayerActor.State> implements Player
     {
         public static class State extends TransactionalState
         {
-            int balance;
+            int zp;
 
             @TransactionalEvent
-            void incrementBalance(int amount)
+            void incrementXp(int amount)
             {
-                balance += amount;
+                zp += amount;
             }
         }
 
@@ -84,22 +76,26 @@ public class SimpleTransactionTest extends ActorBaseTest
             {
                 // call method
                 // register call
-                state().incrementBalance(amount);
+                state().incrementXp(amount);
                 return Task.fromValue(currentTransactionId());
             });
             // End Transaction
         }
 
         @Override
-        public Task<Integer> getBalance()
+        public Task<Integer> getXp()
         {
-            return Task.fromValue(state().balance);
+            return Task.fromValue(state().zp);
         }
 
         @Override
-        public Task<Void> changePresets(final int number)
+        public Task<Void> incrementXp(final int inc)
         {
-            state().incrementBalance(1);
+            state().incrementXp(inc);
+            if (inc <= 0)
+            {
+                throw new IllegalArgumentException("Invalid xp amount: " + inc);
+            }
             return Task.done();
         }
     }
@@ -109,16 +105,30 @@ public class SimpleTransactionTest extends ActorBaseTest
     {
         Stage stage = createStage();
 
+        Player jimmy = Actor.getReference(Player.class, "1");
+        clearMessages();
         transaction(() -> {
-            Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
-            return jimmy.changePresets(5);
+            return jimmy.incrementXp(10);
         }).join();
-
-        Thread.sleep(1000);
+        assertEquals(10, (int) jimmy.getXp().join());
 
         dumpMessages();
+    }
 
 
+    @Test
+    public void simpleTransactionFailure() throws ExecutionException, InterruptedException
+    {
+        Stage stage = createStage();
+        Player jimmy = Actor.getReference(Player.class, "1");
+        jimmy.incrementXp(10).join();
+        clearMessages();
+        expectException(() -> transaction(() -> {
+            return jimmy.incrementXp(-6);
+        }).join());
+        eventually(() -> assertEquals(10, (int)jimmy.getXp().join()));
+
+        dumpMessages();
     }
 
     @Test
@@ -126,19 +136,19 @@ public class SimpleTransactionTest extends ActorBaseTest
     {
         Stage stage = createStage();
 
-        Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
+        Player jimmy = Actor.getReference(Player.class, "1");
         String t1 = jimmy.wave(6).join();
 
-        assertEquals(6, (int) jimmy.getBalance().join());
+        assertEquals(6, (int) jimmy.getXp().join());
 
         String t2 = jimmy.wave(60).join();
         String t3 = jimmy.wave(600).join();
 
         Actor.cast(Transactional.class, jimmy).cancelTransaction(t2).join();
-        assertEquals(606, (int) jimmy.getBalance().join());
+        assertEquals(606, (int) jimmy.getXp().join());
 
         Actor.cast(Transactional.class, jimmy).cancelTransaction(t1).join();
-        assertEquals(600, (int) jimmy.getBalance().join());
+        assertEquals(600, (int) jimmy.getXp().join());
     }
 
 }
