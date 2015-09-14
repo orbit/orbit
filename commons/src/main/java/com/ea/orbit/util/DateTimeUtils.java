@@ -108,7 +108,7 @@ public final class DateTimeUtils
      */
     public static Date getDateRelativeToNow(TimeUnit timeUnit, long amount)
     {
-        return new Date(new Date().getTime() + timeUnit.toMillis(amount));
+        return new Date(System.currentTimeMillis() + timeUnit.toMillis(amount));
     }
 
 }

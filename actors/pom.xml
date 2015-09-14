@@ -50,7 +50,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>extensions/mongodb</module>
         <module>extensions/dynamodb</module>
         <module>extensions/redis</module>
-		<module>extensions/ldap</module>
+        <module>extensions/ldap</module>
         <module>extensions/postgresql</module>
         <module>extensions/spring</module>
         <module>extensions/memcached</module>
@@ -77,14 +77,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <plugins>
             <plugin>
                 <groupId>com.ea.orbit</groupId>
+                <!-- this version is to avoid mvn clean failures -->
+                <version>0.4.5</version>
                 <artifactId>orbit-async-maven-plugin</artifactId>
-                <version>${project.version}</version>
                 <executions>
                     <execution>
                         <goals>
-                            <!-- instuments main classes -->
+                            <!-- instruments main classes -->
                             <goal>instrument</goal>
-                            <!-- instuments test classes -->
+                            <!-- instruments test classes -->
                             <goal>instrument-test</goal>
                         </goals>
                     </execution>
