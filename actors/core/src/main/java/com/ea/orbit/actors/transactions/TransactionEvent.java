@@ -29,14 +29,25 @@ package com.ea.orbit.actors.transactions;
 
 public class TransactionEvent
 {
-    // only used for merging split clusters
+    // to be used to merge split clusters
     // should be locally (node) monotonic
     private long timestamp;
 
     private String transactionId;
-    private final String methodName;
-    private final Object[] params;
-    private byte[] serializedParams;
+    private String methodName;
+    private Object[] params;
+
+    public TransactionEvent(final long timestamp, final String transactionId, final String methodName, final Object[] params)
+    {
+        this.timestamp = timestamp;
+        this.transactionId = transactionId;
+        this.methodName = methodName;
+        this.params = params;
+    }
+
+    public TransactionEvent()
+    {
+    }
 
     public String getTransactionId()
     {
@@ -48,25 +59,33 @@ public class TransactionEvent
         return methodName;
     }
 
-    public Object[] params()
+    public Object[] getParams()
     {
         return params;
     }
 
-    public byte[] getSerializedParams()
+    public long getTimestamp()
     {
-        return serializedParams;
+        return timestamp;
     }
 
-    public void setSerializedParams(final byte[] serializedParams)
+    public void setTimestamp(final long timestamp)
     {
-        this.serializedParams = serializedParams;
+        this.timestamp = timestamp;
     }
 
-    public TransactionEvent(String transactionId, String methodName, Object... params)
+    public void setTransactionId(final String transactionId)
     {
         this.transactionId = transactionId;
+    }
+
+    public void setMethodName(final String methodName)
+    {
         this.methodName = methodName;
+    }
+
+    public void setParams(final Object[] params)
+    {
         this.params = params;
     }
 }

@@ -53,14 +53,18 @@ import static org.junit.Assert.*;
  */
 public class EventPersistenceTest extends ActorBaseTest
 {
-    public interface EpJimmy extends Actor
+    public interface Jimmy extends Actor
     {
         Task<String> wave(int amount);
+
+        Task<String> wave(float amount);
+
+        Task<String> wave(double amount);
 
         Task<Integer> getBalance();
     }
 
-    public static class JimmyActor extends EventSourcedActor<JimmyActor.State> implements EpJimmy
+    public static class JimmyActor extends EventSourcedActor<JimmyActor.State> implements Jimmy
     {
         public static class State extends TransactionalState
         {
@@ -71,21 +75,77 @@ public class EventPersistenceTest extends ActorBaseTest
             {
                 balance += amount;
             }
+
+            @TransactionalEvent
+            void incrementBalanceWithFloat(float amount)
+            {
+                balance += amount;
+            }
+
+            @TransactionalEvent
+            void incrementBalanceWithDouble(double amount)
+            {
+                balance += amount;
+            }
         }
 
         @Override
         public Task<String> wave(int amount)
         {
             // Start Transaction
-            return transaction(() ->
+            final Task<String> ret = transaction(() ->
             {
                 // call method
                 // register call
                 state().incrementBalance(amount);
+                if (amount < 0)
+                {
+                    throw new IllegalArgumentException("Illegal value: " + amount);
+                }
+                return Task.fromValue(TransactionUtils.currentTransactionId());
+            });
+            await(ret);
+            // End Transaction
+//            await(writeState());
+            return ret;
+        }
+
+        @Override
+        public Task<String> wave(float amount)
+        {
+            // Start Transaction
+            return transaction(() ->
+            {
+                // call method
+                // register call
+                state().incrementBalanceWithFloat(amount);
+                if (amount < 0)
+                {
+                    throw new IllegalArgumentException("Illegal value: " + amount);
+                }
                 return Task.fromValue(TransactionUtils.currentTransactionId());
             });
             // End Transaction
         }
+
+        @Override
+        public Task<String> wave(double amount)
+        {
+            // Start Transaction
+            return transaction(() ->
+            {
+                // call method
+                // register call
+                state().incrementBalanceWithDouble(amount);
+                if (amount < 0)
+                {
+                    throw new IllegalArgumentException("Illegal value: " + amount);
+                }
+                return Task.fromValue(TransactionUtils.currentTransactionId());
+            });
+            // End Transaction
+        }
+
 
         @Override
         public Task<Integer> getBalance()
@@ -99,8 +159,33 @@ public class EventPersistenceTest extends ActorBaseTest
     {
         Stage stage = createStage();
 
-        EpJimmy jimmy = Actor.getReference(EpJimmy.class, "1");
+        Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
         jimmy.wave(6).join();
+        stage.stop().join();
+        Stage stage2 = createStage();
+        jimmy.wave(6).join();
+        //assertEquals(12, (int) jimmy.getBalance().join());
+
+
+    }
+
+    @Test
+    public void simpleFloatTransaction() throws ExecutionException, InterruptedException
+    {
+        Stage stage = createStage();
+
+        Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
+        jimmy.wave(6.1f).join();
+    }
+
+
+    @Test
+    public void simpleDoubleTransaction() throws ExecutionException, InterruptedException
+    {
+        Stage stage = createStage();
+
+        Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
+        jimmy.wave(6.2d).join();
     }
 
     @Test
@@ -108,7 +193,7 @@ public class EventPersistenceTest extends ActorBaseTest
     {
         Stage stage = createStage();
 
-        EpJimmy jimmy = Actor.getReference(EpJimmy.class, "1");
+        Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
         String t1 = jimmy.wave(6).join();
 
         assertEquals(6, (int) jimmy.getBalance().join());

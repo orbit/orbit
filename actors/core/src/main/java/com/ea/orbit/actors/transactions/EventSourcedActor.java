@@ -29,6 +29,7 @@ package com.ea.orbit.actors.transactions;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -36,9 +37,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
-
-import static com.ea.orbit.async.Await.await;
 
 public class EventSourcedActor<T extends TransactionalState> extends AbstractActor<T> implements Transactional, Actor
 {
@@ -59,29 +59,47 @@ public class EventSourcedActor<T extends TransactionalState> extends AbstractAct
         if (method.isAnnotationPresent(TransactionalEvent.class))
         {
             final String transactionId = TransactionUtils.currentTransactionId();
-            if (transactionId != null)
+            if (transactionId != null
+                    // and there is no previous transaction
+                    && (state().events.size() == 0
+                    // or is not the last transaction
+                    || !transactionId.equals(state().events.get(state().events.size() - 1).getTransactionId())))
             {
-                Actor.getReference(Transaction.class, transactionId).registerActor(EventSourcedActor.this);
+                final Task<Void> notificationTask = Actor.getReference(Transaction.class, transactionId).registerActor(EventSourcedActor.this);
+
+                // when the TransactionalEvent returns CompletableFuture
+                // it's assumed that the application wants to ensure that the transaction was notified.
+                if (CompletableFuture.class.isAssignableFrom(method.getReturnType()))
+                {
+                    return notificationTask.thenCompose(() ->
+                    {
+                        state().events.add(
+                                new TransactionEvent(
+                                        ActorRuntime.getRuntime().clock().millis(),
+                                        transactionId, proceed.getName(), args));
+                        try
+                        {
+                            return (CompletableFuture) super.interceptStateMethod(self, method, proceed, args);
+                        }
+                        catch (IllegalAccessException e)
+                        {
+                            throw new UncheckedException(e);
+                        }
+                        catch (InvocationTargetException e)
+                        {
+                            throw new UncheckedException(e);
+                        }
+                    });
+                }
             }
-            state().events.add(new TransactionEvent(transactionId, proceed.getName(), args));
+            state().events.add(
+                    new TransactionEvent(
+                            ActorRuntime.getRuntime().clock().millis(),
+                            transactionId, proceed.getName(), args));
         }
         return super.interceptStateMethod(self, method, proceed, args);
     }
 
-
-    TransactionInfo getOrAdTransactionInfo(String transactionId)
-    {
-        final TransactionInfo info = state().transactions
-                .stream().filter(t -> t.transactionId.equals(transactionId)).findFirst().orElse(null);
-        if (info == null)
-        {
-            final TransactionInfo newInfo = new TransactionInfo();
-            newInfo.transactionId = transactionId;
-            state().transactions.add(newInfo);
-            return newInfo;
-        }
-        return info;
-    }
 
     public Task<Void> cancelTransaction(String transactionId)
     {
@@ -89,16 +107,9 @@ public class EventSourcedActor<T extends TransactionalState> extends AbstractAct
 
         // cancel nested first
 
-        final TransactionInfo transactionInfo = getOrAdTransactionInfo(transactionId);
-        for (String s : transactionInfo.subTransactions)
-        {
-            await(cancelTransaction(s));
-        }
-
 
         // reset state
         List<TransactionEvent> events = state().events;
-        List<TransactionInfo> transactions = state().transactions;
         createDefaultState();
 
         final Method[] declaredMethods = state().getClass().getDeclaredMethods();
@@ -113,7 +124,7 @@ public class EventSourcedActor<T extends TransactionalState> extends AbstractAct
                             .filter(method -> method.getName().equals(event.getMethodName()))
                             .findFirst()
                             .get()
-                            .invoke(state(), event.params());
+                            .invoke(state(), event.getParams());
                 }
                 catch (IllegalAccessException | InvocationTargetException e)
                 {
@@ -124,9 +135,7 @@ public class EventSourcedActor<T extends TransactionalState> extends AbstractAct
             }
         }
 
-        transactions.remove(transactionInfo);
         state().events = newList;
-        state().transactions = transactions;
 
         return Task.done();
     }
