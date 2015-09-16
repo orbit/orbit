@@ -33,8 +33,11 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
@@ -61,6 +64,10 @@ import java.util.stream.Stream;
 public class Task<T> extends CompletableFuture<T>
 {
     private static Void NIL = null;
+
+    private static Executor commonPool = ExecutorUtils.newScalingThreadPool(100);
+    private static final ScheduledExecutorService schedulerExecutor =
+            Executors.newScheduledThreadPool(10);
 
     // TODO: make all callbacks async by default and using the current executor
     // what "current executor' means will have to be defined.
@@ -201,7 +208,50 @@ public class Task<T> extends CompletableFuture<T>
         return t;
     }
 
-    private static Executor commonPool = ExecutorUtils.newScalingThreadPool(100);
+
+    /**
+     * Returns a new task that will fail if the original is not completed withing the given timeout.
+     * This doesn't modify the original task in any way.
+     *
+     * @param timeout  the time from now
+     * @param timeUnit the time unit of the timeout parameter
+     * @return a new task
+     */
+    public Task<T> failAfter(final long timeout, final TimeUnit timeUnit)
+    {
+        final Task<T> t = new Task<>();
+
+        // TODO: find a way to inject time for testing
+        // also consider letting the application override this with the TaskContext
+        final ScheduledFuture<?> rr = schedulerExecutor.schedule(
+                () -> {
+                    // using t.isDone insteadof this.isDone
+                    // because the propagation of this.isDone can be delayed by slow listeners.
+                    if (!t.isDone())
+                    {
+                        t.internalCompleteExceptionally(new TimeoutException());
+                    }
+                }, timeout, timeUnit);
+
+        this.handle((T v, Throwable ex) -> {
+            // removing the scheduled timeout to clear some memory
+            rr.cancel(false);
+            if (!t.isDone())
+            {
+                if (ex != null)
+                {
+                    t.internalCompleteExceptionally(ex);
+                }
+                else
+                {
+                    t.internalComplete(v);
+                }
+            }
+            return null;
+        });
+
+        return t;
+    }
 
     static class TaskFutureAdapter<T> implements Runnable
     {
