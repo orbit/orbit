@@ -570,6 +570,11 @@ public class ActorBaseTest
 
     protected void eventually(final Runnable runnable)
     {
+        eventually(60_000, runnable);
+    }
+
+    protected void eventually(long timeoutMillis, final Runnable runnable)
+    {
         final long start = System.currentTimeMillis();
         do
         {
@@ -580,7 +585,7 @@ public class ActorBaseTest
             }
             catch (RuntimeException | Error ex)
             {
-                if (System.currentTimeMillis() - start > 60_000)
+                if (System.currentTimeMillis() - start > timeoutMillis)
                 {
                     // weird that this compiles...
                     throw ex;

@@ -50,6 +50,8 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.Deserializers;
+import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
+import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.ser.ContextualSerializer;
 import com.fasterxml.jackson.databind.ser.Serializers;
 
@@ -123,6 +125,12 @@ public class ActorReferenceModule extends Module
         }
 
         @Override
+        public void serializeWithType(final Object value, final JsonGenerator gen, final SerializerProvider serializers, final TypeSerializer typeSer) throws IOException
+        {
+            serialize(value, gen, serializers);
+        }
+
+        @Override
         public JsonSerializer<?> createContextual(final SerializerProvider prov, final BeanProperty property) throws JsonMappingException
         {
             //return property.get;
@@ -154,6 +162,12 @@ public class ActorReferenceModule extends Module
             final NodeAddress address = ActorReference.getAddress((ActorReference<?>) value);
             final Object actorId = ActorReference.getId((ActorReference<?>) value);
             jgen.writeString(address.asUUID() + "/" + actorId);
+        }
+
+        @Override
+        public void serializeWithType(final Object value, final JsonGenerator gen, final SerializerProvider serializers, final TypeSerializer typeSer) throws IOException
+        {
+            serialize(value, gen, serializers);
         }
     }
 
@@ -196,6 +210,12 @@ public class ActorReferenceModule extends Module
             }
             return factory.getReference((Class) iClass, text);
         }
+
+        @Override
+        public Object deserializeWithType(final JsonParser p, final DeserializationContext ctxt, final TypeDeserializer typeDeserializer) throws IOException
+        {
+            return deserialize(p, ctxt);
+        }
     }
 
     private static class ObserverRefDeserializer extends JsonDeserializer<Object>
@@ -219,6 +239,12 @@ public class ActorReferenceModule extends Module
 
             final UUID uuid = UUID.fromString(text.substring(0, idx));
             return factory.getObserverReference(uuid, (Class) iClass, text.substring(idx + 1));
+        }
+
+        @Override
+        public Object deserializeWithType(final JsonParser p, final DeserializationContext ctxt, final TypeDeserializer typeDeserializer) throws IOException
+        {
+            return deserialize(p, ctxt);
         }
     }
 

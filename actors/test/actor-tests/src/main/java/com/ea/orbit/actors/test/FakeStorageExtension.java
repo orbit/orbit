@@ -63,7 +63,7 @@ public class FakeStorageExtension implements StorageExtension
         this.name = name;
         this.database = database;
         mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
-
+        mapper.enableDefaultTyping();
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)

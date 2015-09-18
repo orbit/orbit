@@ -1,14 +1,10 @@
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.annotation.OneWay;
+import com.ea.orbit.actors.transactions.TransactionalEvent;
 import com.ea.orbit.actors.transactions.TransactionalState;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
-
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 import com.googlecode.gentyref.GenericTypeReflector;
 
@@ -16,17 +12,16 @@ import javassist.CannotCompileException;
 import javassist.ClassClassPath;
 import javassist.ClassPool;
 import javassist.CtClass;
+import javassist.CtConstructor;
 import javassist.CtField;
 import javassist.CtMethod;
 import javassist.CtNewConstructor;
 import javassist.CtNewMethod;
 import javassist.CtPrimitiveType;
 import javassist.NotFoundException;
-import javassist.util.proxy.ProxyFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -239,23 +234,7 @@ public class ActorFactoryGenerator
                         .collect(Collectors.joining(",")) + ")";
                 final int methodId = methodSignature.hashCode();
                 sb.append("case " + methodId + ": return ((" + actorClass.getName() + ")target)." + m.getName() + "(");
-
-                for (int i = 0; i < parameterTypes.length; i++)
-                {
-
-
-                    sb.append(i > 0 ? ",(" : "(");
-                    if (parameterTypes[i].isPrimitive())
-                    {
-                        final CtPrimitiveType pt = (CtPrimitiveType) parameterTypes[i];
-                        sb.append('(').append(pt.getWrapperName()).append(")params[").append(i).append("]).");
-                        sb.append(pt.getGetMethodName()).append("()");
-                    }
-                    else
-                    {
-                        sb.append(parameterTypes[i].getName()).append(")params[").append(i).append("]");
-                    }
-                }
+                unwrapParams(sb, parameterTypes, "params");
                 sb.append("); ");
             }
             sb.append("default: ");
@@ -276,88 +255,131 @@ public class ActorFactoryGenerator
         }
 
         Class<?> c = stateClasses.get(stateType);
-        if (c == null)
+        if (c != null)
         {
-            if (stateType instanceof Class)
+            return c;
+        }
+        synchronized (stateClasses)
+        {
+            c = stateClasses.get(stateType);
+            if (c != null)
             {
-                c = (Class<?>) stateType;
+                return c;
             }
-            else if (stateType instanceof ParameterizedType)
+            try
             {
-                c = createSubclass(actorClass, (ParameterizedType) stateType);
+                final Class<?> erased = GenericTypeReflector.erase(stateType);
+                Class<?> baseClass = erased.isInterface() ? Object.class : erased;
+                final String genericSignature = GenericUtils.toGenericSignature(stateType);
+
+                final ClassPool pool = classPool;
+                final CtClass cc = pool.makeClass(actorClass.getName() + "$ActorState");
+                cc.setGenericSignature(genericSignature);
+                final CtClass baseStateClass = pool.get(baseClass.getName());
+                cc.setSuperclass(baseStateClass);
+
+                final CtConstructor cons = CtNewConstructor.make(null, new CtClass[0], cc);
+                cc.addConstructor(cons);
+
+                cc.addInterface(pool.get(ActorState.class.getName()));
+
+
+                if (TransactionalState.class.isAssignableFrom(erased))
+                {
+                    StringBuilder invokerBody = new StringBuilder();
+                    invokerBody.append("{ switch($1.hashCode()) {");
+                    int count = 0;
+                    for (CtMethod m : baseStateClass.getMethods())
+                    {
+                        if (m.hasAnnotation(TransactionalEvent.class))
+                        {
+                            count++;
+                            final String methodName = m.getName();
+                            final CtClass[] parameterTypes = m.getParameterTypes();
+                            final boolean isVoid = CtClass.voidType.equals(m.getReturnType());
+
+                            //
+                            // part of the invoker switch case:
+                            // equivalent to:
+                            //   case "methodName" : return super.methodName(args);
+                            //
+                            invokerBody.append("case ").append(m.getName().hashCode()).append(": "
+                                    + "if($1.equals(\"" + m.getName() + "\")) { "
+                                    + (isVoid ? " " : " return ($w)") + "super." + methodName + "(");
+                            unwrapParams(invokerBody, parameterTypes, "$2");
+                            invokerBody.append(");");
+                            if (isVoid)
+                            {
+                                invokerBody.append("return null;");
+                            }
+                            invokerBody.append("} break;");
+
+                            //
+                            // replacement method, intercepts the event call and forwards it to the actor.
+                            //
+                            final String methodReferenceField = methodName + "_" + count;
+                            cc.addField(CtField.make("private static java.lang.reflect.Method " + methodReferenceField + " = null;", cc));
+
+                            final String lazyMethodReferenceInit = "(" + methodReferenceField + "!=null) ? " + methodReferenceField + " : ( "
+                                    + methodReferenceField + "=" + baseStateClass.getName() + ".class.getDeclaredMethod(\"" + methodName + "\",$sig) )";
+
+
+                            final CtMethod newMethod = CtNewMethod.make(
+                                    m.getReturnType(), methodName, parameterTypes, m.getExceptionTypes(),
+                                    "{ " + ActorTaskContext.class.getName() + " taskContext = " + ActorTaskContext.class.getName() + ".current();"
+                                            + "if(taskContext !=null) {"
+                                            + AbstractActor.class.getName() + " actor = taskContext.getActor();"
+                                            + "if(actor != null) { "
+                                            + " return ($r) actor.interceptStateMethod("
+                                            + lazyMethodReferenceInit + ", \"" + methodName + "\", $args); "
+                                            + "}}"
+                                            + "throw new java.lang.IllegalStateException(\"Actor state is not ready\");"
+                                            + "}",
+                                    cc);
+                            cc.addMethod(newMethod);
+                        }
+                    }
+                    invokerBody.append("} return ((" + ActorState.class.getName() + ")super).invokeEvent($1, $2); }");
+                    final CtMethod invoker = CtNewMethod.make(
+                            pool.get(Object.class.getName()), "invokeEvent",
+                            new CtClass[]{pool.get(String.class.getName()), pool.get(Object[].class.getName())},
+                            new CtClass[0],
+                            invokerBody.toString(), cc);
+
+                    cc.addMethod(invoker);
+                }
+                c = cc.toClass();
+                final Class<?> old = stateClasses.putIfAbsent(stateType, c);
+
+                return (old != null) ? old : c;
+            }
+            catch (Exception ex)
+            {
+                throw new UncheckedException("Don't know how to handle state: " + stateType.getTypeName(), ex);
+            }
+        }
+    }
+
+    private static void unwrapParams(final StringBuilder invoker, final CtClass[] parameterTypes, final String paramsVar)
+    {
+        for (int i = 0; i < parameterTypes.length; i++)
+        {
+            invoker.append(i > 0 ? ",(" : "(");
+            final CtClass parameterType = parameterTypes[i];
+            if (parameterType.isPrimitive())
+            {
+                final CtPrimitiveType pt = (CtPrimitiveType) parameterType;
+                invoker.append('(').append(pt.getWrapperName()).append(")")
+                        .append(paramsVar).append("[").append(i).append("]).");
+                invoker.append(pt.getGetMethodName()).append("()");
             }
             else
             {
-                throw new IllegalArgumentException("Don't know how to handler state type: " + stateType);
+                invoker.append(parameterType.getName()).append(")")
+                        .append(paramsVar).append("[").append(i).append("]");
             }
-            if(TransactionalState.class.isAssignableFrom(c))
-            {
-                // this is injecting fields that will cause problems with the serializers.
-                final ProxyFactory pf = new ProxyFactory();
-                pf.setSuperclass(c);
-                c = pf.createClass();
-            }
-            final Class<?> old = stateClasses.putIfAbsent(stateType, c);
-
-            if (old != null) c = old;
         }
-        return c;
     }
-
-    private static Class createSubclass(Class<? extends AbstractActor> actorClass, Type type)
-    {
-        final Class<?> erased = GenericTypeReflector.erase(type);
-        Class<?> baseClass = erased.isInterface() ? Object.class : erased;
-        final String genericSignature = GenericUtils.toGenericSignature(type);
-
-        org.objectweb.asm.Type superType = org.objectweb.asm.Type.getType(baseClass);
-        ClassWriter cw = new ClassWriter(0);
-        MethodVisitor mv;
-
-        final String actorSig = actorClass.getName().replace('.', '/');
-        final String simpleName = "State" + (genericSignature.hashCode() & 0xffff);
-        String name = actorSig + "$" + simpleName;
-
-
-        String superName = superType.getInternalName();
-        cw.visit(Opcodes.V1_8, Opcodes.ACC_SUPER | Opcodes.ACC_PUBLIC, name, genericSignature, superName, null);
-
-
-        cw.visitInnerClass(superName, actorSig, simpleName, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC);
-        {
-            mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            Label lbStart = new Label();
-            mv.visitLabel(lbStart);
-            mv.visitVarInsn(Opcodes.ALOAD, 0);
-            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, superName, "<init>", "()V", false);
-            mv.visitInsn(Opcodes.RETURN);
-            Label lbEnd = new Label();
-            mv.visitLabel(lbEnd);
-            mv.visitLocalVariable("this", "L" + name + ";", null, lbStart, lbEnd, 0);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-        cw.visitEnd();
-
-
-        final byte[] bytes = cw.toByteArray();
-        // perhaps we should use the source class ClassLoader as parent.
-        class Loader extends ClassLoader
-        {
-            Loader()
-            {
-                super(actorClass.getClassLoader());
-            }
-
-            public Class<?> define(final String o, final byte[] bytes)
-            {
-                return super.defineClass(o, bytes, 0, bytes.length);
-            }
-        }
-        return new Loader().define(null, bytes);
-    }
-
 
     private Class lookup(String className)
     {

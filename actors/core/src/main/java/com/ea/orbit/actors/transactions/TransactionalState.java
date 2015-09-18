@@ -34,9 +34,7 @@ public class TransactionalState
 {
     protected List<TransactionEvent> events = new ArrayList<>();
 
-    @TransactionalEvent
-    void snapshot(TransactionalState snapshot) {
-
+    public void snapshot()
+    {
     }
-
 }

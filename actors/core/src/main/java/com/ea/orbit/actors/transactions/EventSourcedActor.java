@@ -30,15 +30,15 @@ package com.ea.orbit.actors.transactions;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorRuntime;
+import com.ea.orbit.actors.runtime.ActorState;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.exception.UncheckedException;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
+
+import static com.ea.orbit.async.Await.await;
 
 public class EventSourcedActor<T extends TransactionalState> extends AbstractActor<T> implements Transactional, Actor
 {
@@ -49,12 +49,9 @@ public class EventSourcedActor<T extends TransactionalState> extends AbstractAct
     }
 
     @Override
-    protected Object interceptStateMethod(
-            final Object self,
+    public Object interceptStateMethod(
             final Method method,
-            final Method proceed,
-            final Object[] args)
-            throws IllegalAccessException, InvocationTargetException
+            final String event, final Object[] args)
     {
         if (method.isAnnotationPresent(TransactionalEvent.class))
         {
@@ -76,61 +73,37 @@ public class EventSourcedActor<T extends TransactionalState> extends AbstractAct
                         state().events.add(
                                 new TransactionEvent(
                                         ActorRuntime.getRuntime().clock().millis(),
-                                        transactionId, proceed.getName(), args));
-                        try
-                        {
-                            return (CompletableFuture) super.interceptStateMethod(self, method, proceed, args);
-                        }
-                        catch (IllegalAccessException e)
-                        {
-                            throw new UncheckedException(e);
-                        }
-                        catch (InvocationTargetException e)
-                        {
-                            throw new UncheckedException(e);
-                        }
+                                        transactionId, event, args));
+                        return (CompletableFuture) super.interceptStateMethod(method, event, args);
                     });
                 }
             }
             state().events.add(
                     new TransactionEvent(
                             ActorRuntime.getRuntime().clock().millis(),
-                            transactionId, proceed.getName(), args));
+                            transactionId, event, args));
         }
-        return super.interceptStateMethod(self, method, proceed, args);
+        return super.interceptStateMethod(method, event, args);
     }
-
 
     public Task<Void> cancelTransaction(String transactionId)
     {
         List<TransactionEvent> newList = new ArrayList<>();
 
-        // cancel nested first
-
-
         // reset state
         List<TransactionEvent> events = state().events;
         createDefaultState();
-
-        final Method[] declaredMethods = state().getClass().getDeclaredMethods();
 
         for (TransactionEvent event : events)
         {
             if (event.getTransactionId() == null || !event.getTransactionId().equals(transactionId))
             {
-                try
+                ActorState state = (ActorState) state();
+                final Object ret = state.invokeEvent(event.getMethodName(), event.getParams());
+                if (ret instanceof CompletableFuture)
                 {
-                    Stream.of(declaredMethods)
-                            .filter(method -> method.getName().equals(event.getMethodName()))
-                            .findFirst()
-                            .get()
-                            .invoke(state(), event.getParams());
+                    await((CompletableFuture) ret);
                 }
-                catch (IllegalAccessException | InvocationTargetException e)
-                {
-                    throw new UncheckedException(e);
-                }
-
                 newList.add(event);
             }
         }
@@ -139,6 +112,5 @@ public class EventSourcedActor<T extends TransactionalState> extends AbstractAct
 
         return Task.done();
     }
-
 
 }

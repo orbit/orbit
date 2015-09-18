@@ -35,4 +35,16 @@ public interface ActorState
      * @param value null means remove the property
      */
     void setExtendedProperty(String key, Object value);
+
+    /**
+     * Invoke state event used for event sourced states
+     *
+     * @param eventName the event method name (they must be unique)
+     * @param args      the event arguments
+     * @return the event method return type (usually Task or void)
+     */
+    default Object invokeEvent(String eventName, Object[] args)
+    {
+        throw new IllegalArgumentException("Invalid event: " + eventName);
+    }
 }

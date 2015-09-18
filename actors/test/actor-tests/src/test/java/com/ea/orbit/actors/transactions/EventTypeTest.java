@@ -44,15 +44,11 @@ import static org.junit.Assert.assertEquals;
 /**
  *
  */
-public class EventPersistenceTest extends ActorBaseTest
+public class EventTypeTest extends ActorBaseTest
 {
     public interface Jimmy extends Actor
     {
         Task<String> wave(int amount);
-
-        Task<String> wave(float amount);
-
-        Task<String> wave(double amount);
 
         Task<Integer> getBalance();
     }
@@ -76,9 +72,39 @@ public class EventPersistenceTest extends ActorBaseTest
             }
 
             @TransactionalEvent
-            void incrementBalanceWithDouble(double amount)
+            int returnInt()
             {
-                balance += amount;
+                return balance;
+            }
+
+            @TransactionalEvent
+            double returnDouble()
+            {
+                return balance;
+            }
+
+            @TransactionalEvent
+            long returnLong()
+            {
+                return balance;
+            }
+
+            @TransactionalEvent
+            Long returnWLong()
+            {
+                return new Long(balance);
+            }
+
+            @TransactionalEvent
+            Object returnObject()
+            {
+                return new Long(balance);
+            }
+
+            @TransactionalEvent
+            Task returnTask()
+            {
+                return Task.fromValue(balance);
             }
         }
 
@@ -88,9 +114,14 @@ public class EventPersistenceTest extends ActorBaseTest
             // Start Transaction
             final Task<String> ret = transaction(() ->
             {
-                // call method
-                // register call
                 state().incrementBalance(amount);
+                state().incrementBalanceWithFloat(amount);
+                state().returnInt();
+                state().returnDouble();
+                state().returnLong();
+                state().returnWLong();
+                state().returnObject();
+                await(state().returnTask());
                 if (amount < 0)
                 {
                     throw new IllegalArgumentException("Illegal value: " + amount);
@@ -104,43 +135,6 @@ public class EventPersistenceTest extends ActorBaseTest
         }
 
         @Override
-        public Task<String> wave(float amount)
-        {
-            // Start Transaction
-            return transaction(() ->
-            {
-                // call method
-                // register call
-                state().incrementBalanceWithFloat(amount);
-                if (amount < 0)
-                {
-                    throw new IllegalArgumentException("Illegal value: " + amount);
-                }
-                return Task.fromValue(TransactionUtils.currentTransactionId());
-            });
-            // End Transaction
-        }
-
-        @Override
-        public Task<String> wave(double amount)
-        {
-            // Start Transaction
-            return transaction(() ->
-            {
-                // call method
-                // register call
-                state().incrementBalanceWithDouble(amount);
-                if (amount < 0)
-                {
-                    throw new IllegalArgumentException("Illegal value: " + amount);
-                }
-                return Task.fromValue(TransactionUtils.currentTransactionId());
-            });
-            // End Transaction
-        }
-
-
-        @Override
         public Task<Integer> getBalance()
         {
             return Task.fromValue(state().balance);
@@ -148,55 +142,41 @@ public class EventPersistenceTest extends ActorBaseTest
     }
 
     @Test
-    public void simpleTransaction() throws ExecutionException, InterruptedException
+    public void exercise() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
 
         Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
-        jimmy.wave(6).join();
-        stage.stop().join();
-        Stage stage2 = createStage();
-        jimmy.wave(6).join();
-        assertEquals(12, (int) jimmy.getBalance().join());
-    }
-
-    @Test
-    public void simpleFloatTransaction() throws ExecutionException, InterruptedException
-    {
-        Stage stage = createStage();
-
-        Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
-        jimmy.wave(6.1f).join();
-    }
-
-
-    @Test
-    public void simpleDoubleTransaction() throws ExecutionException, InterruptedException
-    {
-        Stage stage = createStage();
-
-        Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
-        jimmy.wave(6.2d).join();
-    }
-
-    @Test
-    public void transactionRollback() throws ExecutionException, InterruptedException
-    {
-        Stage stage = createStage();
-
-        Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
-        String t1 = jimmy.wave(6).join();
-
+        jimmy.wave(3).join();
         assertEquals(6, (int) jimmy.getBalance().join());
-
-        String t2 = jimmy.wave(60).join();
-        String t3 = jimmy.wave(600).join();
-
-        Actor.cast(Transactional.class, jimmy).cancelTransaction(t2).join();
-        eventually(() -> assertEquals(606, (int) jimmy.getBalance().join()));
-
-        Actor.cast(Transactional.class, jimmy).cancelTransaction(t1).join();
-        eventually(() -> assertEquals(600, (int) jimmy.getBalance().join()));
+        final String tid = jimmy.wave(5).join();
+        assertEquals(16, (int) jimmy.getBalance().join());
+        jimmy.wave(7).join();
+        assertEquals(30, (int) jimmy.getBalance().join());
+        Actor.cast(Transactional.class, jimmy).cancelTransaction(tid).join();
+        eventually(500, () -> assertEquals(20, (int) jimmy.getBalance().join()));
     }
+
+
+    @Test
+    public void exerciseWithPersistence() throws ExecutionException, InterruptedException
+    {
+        Stage stage = createStage();
+
+        Jimmy jimmy = Actor.getReference(Jimmy.class, "1");
+        jimmy.wave(3).join();
+        assertEquals(6, (int) jimmy.getBalance().join());
+        final String tid = jimmy.wave(5).join();
+        assertEquals(16, (int) jimmy.getBalance().join());
+        stage.stop().join();
+
+        Stage stage2 = createStage();
+        jimmy.wave(7).join();
+        assertEquals(30, (int) jimmy.getBalance().join());
+        System.out.println(fakeDatabase);
+        Actor.cast(Transactional.class, jimmy).cancelTransaction(tid).join();
+        eventually(500, () -> assertEquals(20, (int) jimmy.getBalance().join()));
+    }
+
 
 }

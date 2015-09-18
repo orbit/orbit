@@ -200,8 +200,9 @@ public class NestedTransactionTest extends ActorBaseTest
 
         assertEquals("i: -2", expectException(() -> jimmy.remoteNested(1, other, -2).join()).getCause().getMessage());
 
-        assertEquals(1, (int) jimmy.getBalance().join());
-        assertEquals(2, (int) other.getBalance().join());
+        eventually(() -> assertEquals(1, (int) jimmy.getBalance().join()));
+        eventually(() -> assertEquals(2, (int) other.getBalance().join()));
+        dumpMessages();
     }
 
     @Test
@@ -213,14 +214,16 @@ public class NestedTransactionTest extends ActorBaseTest
         Parent other = Actor.getReference(Parent.class, "other");
         // a successful transaction
         assertEquals(3, (int) jimmy.remoteNested(1, other, 2).join());
+        assertEquals(1, (int) jimmy.getBalance().join());
+        assertEquals(2, (int) other.getBalance().join());
 
         // the failure
         // the outer transaction will fail after the nested was completed
         // this will cause the nested to be cancelled.
         assertEquals("i1: -1", expectException(() -> jimmy.remoteNested(-1, other, 2).join()).getCause().getMessage());
 
-        assertEquals(1, (int) jimmy.getBalance().join());
-        assertEquals(2, (int) other.getBalance().join());
+        eventually(() -> assertEquals(1, (int) jimmy.getBalance().join()));
+        eventually(() -> assertEquals(2, (int) other.getBalance().join()));
         dumpMessages();
     }
 

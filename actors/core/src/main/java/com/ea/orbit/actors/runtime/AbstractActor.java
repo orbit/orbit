@@ -36,7 +36,6 @@ import com.ea.orbit.exception.UncheckedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -83,18 +82,13 @@ public abstract class AbstractActor<T>
     /**
      * Creates a default state representation for this actor
      */
-    @SuppressWarnings({ "PMD.LooseCoupling", "unchecked" })
+    @SuppressWarnings({"PMD.LooseCoupling", "unchecked"})
     protected void createDefaultState()
     {
         Class<?> c = getStateClass();
         try
         {
             Object newState = (T) c.newInstance();
-            if (newState instanceof javassist.util.proxy.Proxy)
-            {
-                ((javassist.util.proxy.Proxy) newState).setHandler(
-                        (self, m, proceed, args) -> interceptStateMethod(self, m, proceed, args));
-            }
             this.state = (T) newState;
         }
         catch (Exception e)
@@ -103,14 +97,12 @@ public abstract class AbstractActor<T>
         }
     }
 
-    protected Object interceptStateMethod(
-            final Object self,
+    public Object interceptStateMethod(
             final Method method,
-            final Method proceed,
+            final String event,
             final Object[] args)
-            throws IllegalAccessException, InvocationTargetException
     {
-        return proceed.invoke(self, args);
+        return ((ActorState) state()).invokeEvent(event, args);
     }
 
     protected Class<?> getStateClass()

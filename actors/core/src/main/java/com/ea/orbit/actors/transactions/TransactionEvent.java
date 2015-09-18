@@ -37,7 +37,11 @@ public class TransactionEvent
     private String methodName;
     private Object[] params;
 
-    public TransactionEvent(final long timestamp, final String transactionId, final String methodName, final Object[] params)
+    public TransactionEvent(
+            final long timestamp,
+            final String transactionId,
+            final String methodName,
+            final Object[] params)
     {
         this.timestamp = timestamp;
         this.transactionId = transactionId;
@@ -88,4 +92,5 @@ public class TransactionEvent
     {
         this.params = params;
     }
+
 }
