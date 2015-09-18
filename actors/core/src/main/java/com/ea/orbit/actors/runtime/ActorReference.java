@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.concurrent.Task;
@@ -49,9 +50,9 @@ import java.lang.reflect.Method;
  */
 public abstract class ActorReference<T> implements Serializable, Addressable
 {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	NodeAddress address;
+    NodeAddress address;
     Object id;
     transient Runtime runtime;
 
@@ -102,7 +103,7 @@ public abstract class ActorReference<T> implements Serializable, Addressable
     }
 
     @Override
-	public boolean equals(final Object o)
+    public boolean equals(final Object o)
     {
         ActorReference<?> that;
         return (this == o) || ((o instanceof ActorReference)
@@ -193,4 +194,20 @@ public abstract class ActorReference<T> implements Serializable, Addressable
         return actor.reference;
     }
 
+    static ActorReference from(Actor actor)
+    {
+        return actor instanceof AbstractActor ? ((AbstractActor) actor).reference
+                : actor instanceof ActorReference ? (ActorReference) actor
+                : null;
+    }
+
+    @Override
+    public String toString()
+    {
+        if (address == null)
+        {
+            return id != null ? _interfaceClass().getName() + ":" + id : _interfaceClass().getName();
+        }
+        return id != null ? _interfaceClass().getName() + ":" + id : _interfaceClass().getName() + ":" + address;
+    }
 }

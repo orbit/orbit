@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.container;
 
 import com.ea.orbit.annotation.Config;
+import com.ea.orbit.annotation.Order;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.configuration.ContainerConfig;
 import com.ea.orbit.configuration.ContainerConfigImpl;
@@ -80,27 +81,26 @@ public class Container
 
     static
     {
-        // Initializes orbit async, but only if the application uses it.
         try
         {
             Class.forName("com.ea.orbit.async.Async");
             try
             {
                 // async is present in the classpath, let's make sure await is initialized
-                Class.forName("com.ea.orbit.async.Await");
+                Class.forName("com.ea.orbit.async.Await").getMethod("init").invoke(null);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 // this might be a problem, logging.
                 logger.error("Error initializing orbit-async", ex);
             }
+
         }
         catch (Exception ex)
         {
             // no problem, application doesn't use orbit async.
         }
     }
-
     private final DependencyRegistry registry = new DependencyRegistry()
     {
         @Override
@@ -137,6 +137,7 @@ public class Container
         Object instance;
         boolean isSingleton;
         boolean isStartable;
+        int order;
     }
 
     protected enum ContainerState
@@ -166,6 +167,7 @@ public class Container
             state.isStartable = Startable.class.isAssignableFrom(componentClass);
         }
         state.implClass = componentClass;
+        state.order = computeOrder(componentClass);
     }
 
     public <T> void addInstance(T instance)
@@ -180,8 +182,15 @@ public class Container
         if (state.implClass == null)
         {
             state.implClass = instance.getClass();
+            state.order = computeOrder(state.implClass);
         }
         state.instance = instance;
+    }
+
+    private int computeOrder(final Class<?> implClass)
+    {
+        final Order ann = implClass.getAnnotation(Order.class);
+        return ann == null ? 0 : ann.value();
     }
 
     public void setProperties(final Map<String, Object> properties)
@@ -216,6 +225,10 @@ public class Container
             {
                 f.set(o, properties.getAsBoolean(config.value(), (Boolean) f.get(o)));
             }
+            else if (f.getType() == Long.TYPE || f.getType() == Long.class)
+            {
+                f.set(o, properties.getAsLong(config.value(), (Long) f.get(o)));
+            }
             else if (f.getType() == String.class)
             {
                 f.set(o, properties.getAsString(config.value(), (String) f.get(o)));
@@ -233,11 +246,6 @@ public class Container
                     f.set(o, Enum.valueOf((Class<Enum>) f.getType(), enumValue));
                 }
             }
-            else if (properties.getAll().get(config.value()) != null)
-            {
-                final Object val = properties.getAll().get(config.value());
-                f.set(o, val);
-            }
             else if (List.class.isAssignableFrom(f.getType()))
             {
                 if ((properties.getAll().get(config.value()) != null))
@@ -245,6 +253,26 @@ public class Container
                     final Object val = properties.getAll().get(config.value());
                     f.set(o, val);
                 }
+            }
+            else if (Set.class.isAssignableFrom(f.getType()))
+            {
+                if ((properties.getAll().get(config.value()) != null))
+                {
+                    final Object val = properties.getAll().get(config.value());
+                    if (val instanceof List)
+                    {
+                        f.set(o, new LinkedHashSet((List) val));
+                    }
+                    else
+                    {
+                        f.set(o, val);
+                    }
+                }
+            }
+            else if (properties.getAll().get(config.value()) != null)
+            {
+                final Object val = properties.getAll().get(config.value());
+                f.set(o, val);
             }
             else
             {
@@ -351,36 +379,42 @@ public class Container
             }
 
             // Instantiating modules
-            for (ComponentState state : componentMap.values())
+            componentMap.values().stream().sorted(this::compareComponents).forEach(state ->
             {
-                if (state.instance == null && Module.class.isAssignableFrom(state.implClass))
                 {
-                    state.instance = registry.locate(state.implClass);
+                    if (state.instance == null && Module.class.isAssignableFrom(state.implClass))
+                    {
+                        state.instance = registry.locate(state.implClass);
+                    }
                 }
-            }
+            });
 
             // Getting module classes
             Set<Class<?>> newComps = new LinkedHashSet<>();
-            for (ComponentState state : componentMap.values())
+            componentMap.values().stream().sorted(this::compareComponents).forEach(state ->
             {
-                if (state.instance != null && Module.class.isAssignableFrom(state.implClass))
                 {
-                    newComps.addAll(((Module) state.instance).getClasses());
+                    if (state.instance != null && Module.class.isAssignableFrom(state.implClass))
+                    {
+                        newComps.addAll(((Module) state.instance).getClasses());
+                    }
                 }
-            }
+            });
             newComps.forEach(c -> add(c));
 
             // component snapshot
             Set<ComponentState> comps = new LinkedHashSet<>(componentMap.values());
 
             // Instantiating the singletons
-            for (ComponentState state : comps)
+            comps.stream().sorted(this::compareComponents).forEach(state ->
             {
-                if (state.instance == null && state.isSingleton)
                 {
-                    state.instance = registry.locate(state.implClass);
+                    if (state.instance == null && state.isSingleton)
+                    {
+                        state.instance = registry.locate(state.implClass);
+                    }
                 }
-            }
+            });
 
             // just in case the post constructor added new componentMap
             if (componentMap.size() != comps.size())
@@ -390,7 +424,7 @@ public class Container
 
             List<Task<?>> futures = new ArrayList<>();
             // Call start methods
-            for (ComponentState state : comps)
+            comps.stream().sorted(this::compareComponents).forEach(state ->
             {
                 if (state.instance != null && state.instance instanceof Startable)
                 {
@@ -401,7 +435,7 @@ public class Container
                         futures.add(future);
                     }
                 }
-            }
+            });
             if (futures.size() > 0)
             {
                 Task.allOf(futures).join();
@@ -415,6 +449,11 @@ public class Container
             state = ContainerState.FAILED;
             throw new UncheckedException(ex);
         }
+    }
+
+    private int compareComponents(final ComponentState a, final ComponentState b)
+    {
+        return a.order - b.order;
     }
 
     private void readConfig(final Set<String> activeProfiles, final InputStream in) throws UnsupportedEncodingException
@@ -444,7 +483,8 @@ public class Container
         }
 
         state = ContainerState.STOPPING;
-        for (ComponentState componentState : componentMap.values())
+        // stop the components in the reverse order.
+        componentMap.values().stream().sorted((a, b) -> -compareComponents(a, b)).forEach(componentState ->
         {
             if (componentState.instance != null && componentState.instance instanceof Startable)
             {
@@ -458,7 +498,7 @@ public class Container
                     throw new UncheckedException("Error stopping " + componentState.implClass.getName(), e);
                 }
             }
-        }
+        });
         stopFuture.complete(null);
         state = ContainerState.STOPPED;
         logger.info("Orbit Container stopped");

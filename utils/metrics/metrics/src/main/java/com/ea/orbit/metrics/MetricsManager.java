@@ -40,6 +40,8 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Reporter;
 
+import javax.inject.Singleton;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -50,6 +52,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
+@Singleton
 public class MetricsManager
 {
     private static MetricsManager instance = new MetricsManager();
@@ -113,7 +116,10 @@ public class MetricsManager
         }
         else
         {
-            logger.info("Attempting to initialize the Metrics Manager when it is already initialized!");
+            if (logger.isWarnEnabled())
+            {
+                logger.warn("Attempting to initialize the Metrics Manager when it is already initialized!");
+            }
         }
     }
 

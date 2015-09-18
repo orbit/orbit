@@ -43,6 +43,10 @@ public interface ContainerConfig
 
     Integer getAsInt(String key, Integer defaultValue);
 
+    Long getAsLong(String value);
+
+    Long getAsLong(String value, Long defaultValue);
+
     Boolean getAsBoolean(String key);
 
     Boolean getAsBoolean(String key, Boolean defaultValue);
@@ -57,3 +61,5 @@ public interface ContainerConfig
 
     Map<String, Object> getPrefixedValues(String collectionPrefix);
 }
+
+

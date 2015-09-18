@@ -60,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 @Singleton
 public class Stage implements Startable
@@ -81,14 +82,8 @@ public class Stage implements Startable
     @Config("orbit.actors.extensions")
     private List<ActorExtension> extensions = new ArrayList<>();
 
-    @Config("orbit.metrics.reporters")
-    private List<ReporterConfig> metricsConfig = new ArrayList<>();
-
-    @Config("orbit.metrics.globalPrefix")
-    private String globalMetricsPrefix = new String();
-
     @Wired
-    Container container;
+    private Container container;
 
     public enum StageMode
     {
@@ -97,9 +92,11 @@ public class Stage implements Startable
     }
 
     private ClusterPeer clusterPeer;
-    private Task<?> startFuture;
+    @Wired
     private Messaging messaging;
-    private Execution execution = new Execution();
+    @Wired
+    private Execution execution;
+    @Wired
     private Hosting hosting;
     private boolean startCalled;
     private Clock clock;
@@ -109,20 +106,20 @@ public class Stage implements Startable
 
     static
     {
-        // Initializes orbit async, but only if the application uses it.
         try
         {
             Class.forName("com.ea.orbit.async.Async");
             try
             {
                 // async is present in the classpath, let's make sure await is initialized
-                Class.forName("com.ea.orbit.async.Await");
+                Class.forName("com.ea.orbit.async.Await").getMethod("init").invoke(null);;
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 // this might be a problem, logging.
                 logger.error("Error initializing orbit-async", ex);
             }
+
         }
         catch (Exception ex)
         {
@@ -237,16 +234,16 @@ public class Stage implements Startable
             setNodeName(getClusterName());
         }
 
-        if(executionPool == null || messagingPool == null)
+        if (executionPool == null || messagingPool == null)
         {
             final ExecutorService newService = ExecutorUtils.newScalingThreadPool(executionPoolSize);
 
-            if(executionPool == null)
+            if (executionPool == null)
             {
                 executionPool = newService;
             }
 
-            if(messagingPool == null)
+            if (messagingPool == null)
             {
                 messagingPool = newService;
             }
@@ -254,19 +251,33 @@ public class Stage implements Startable
 
         if (hosting == null)
         {
-            hosting = new Hosting();
+            hosting = container == null ? new Hosting() : container.get(Hosting.class);
         }
         if (messaging == null)
         {
-            messaging = new Messaging();
+            messaging = container == null ? new Messaging() : container.get(Messaging.class);
         }
         if (execution == null)
         {
-            execution = new Execution();
+            execution = container == null ? new Execution() : container.get(Execution.class);
         }
         if (clusterPeer == null)
         {
-            clusterPeer = new JGroupsClusterPeer();
+            if (container != null)
+            {
+                if (clusterPeer == null && !container.getClasses().stream().filter(ClusterPeer.class::isAssignableFrom).findAny().isPresent())
+                {
+                    clusterPeer = container.get(JGroupsClusterPeer.class);
+                }
+                else
+                {
+                    clusterPeer = container.get(ClusterPeer.class);
+                }
+            }
+            else
+            {
+                clusterPeer = new JGroupsClusterPeer();
+            }
         }
         if (clock == null)
         {
@@ -275,6 +286,12 @@ public class Stage implements Startable
         if (objectCloner == null)
         {
             objectCloner = new KryoCloner();
+        }
+
+        if (container != null)
+        {
+            extensions.addAll(container.getClasses().stream().filter(c -> ActorExtension.class.isAssignableFrom(c))
+                    .map(c -> (ActorExtension) container.get(c)).collect(Collectors.toList()));
         }
 
         this.configureOrbitContainer();
@@ -307,12 +324,10 @@ public class Stage implements Startable
         {
             future = future.thenRun(() -> Actor.getReference(ReminderController.class, "0").ensureStart());
         }
-        startFuture = future;
 
-        startFuture.join();
-        bind();
+        future = future.thenRun(() ->  bind());
 
-        return startFuture;
+        return future;
     }
 
     private void configureOrbitContainer()
@@ -473,13 +488,9 @@ public class Stage implements Startable
         {
             Class mmClazz = Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
             Method getInstanceMethod = mmClazz.getDeclaredMethod("getInstance");
-            Method initializeMetricsMethod = mmClazz.getDeclaredMethod("initializeMetrics", List.class);
-            Method setGlobalPrefixMethod = mmClazz.getDeclaredMethod("setGlobalPrefix", String.class);
             Method registerExportedMetricsMethod = mmClazz.getDeclaredMethod("registerExportedMetrics", Object.class, String.class);
 
             Object managerObject = getInstanceMethod.invoke(null);
-            setGlobalPrefixMethod.invoke(managerObject, globalMetricsPrefix);
-            initializeMetricsMethod.invoke(managerObject, metricsConfig);
             registerExportedMetricsMethod.invoke(managerObject, execution, execution.runtimeIdentity());
         }
         catch (ClassNotFoundException ex)

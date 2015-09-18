@@ -28,6 +28,7 @@
 
 package com.ea.orbit.actors.runtime;
 
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.cluster.NodeAddress;
@@ -35,6 +36,7 @@ import com.ea.orbit.concurrent.Task;
 
 import java.lang.reflect.Method;
 import java.time.Clock;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -50,10 +52,11 @@ public interface Runtime
      * @param oneWay      should expect an answer,
      *                    if false the task is completed with null.
      * @param methodId    the generated id for the method
-     * @param params      the method parameters, must all be serializable.
-     * @return a future with the return value, or a future with null (if one-way)
+     * @param headers   message headers
+     *@param params      the method parameters, must all be serializable.  @return a future with the return value, or a future with null (if one-way)
      */
-    Task<?> sendMessage(Addressable toReference, boolean oneWay, int methodId, Object[] params);
+    // TODO: replace this with sendRPC(RpcMessage) and change the InvokeHookExtension to RpcHook
+    Task<?> sendMessage(Addressable toReference, boolean oneWay, int methodId, final Map<Object, Object> headers, Object[] params);
 
     /**
      * Handles calls to actor reference methods.
@@ -68,7 +71,7 @@ public interface Runtime
     Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params);
 
     /**
-     * Registers a timer to for the orbit actor
+     * Registers a timer for the orbit actor
      *
      * @param actor        the actor requesting the timer.
      * @param taskCallable a callable that must return a task.
@@ -123,5 +126,40 @@ public interface Runtime
      * @return actor address, null if actor is not active and forceActivation==false
      */
     Task<NodeAddress> locateActor(final Addressable actorReference, final boolean forceActivation);
+
+
+    /**
+     * Installs this observer into this node.
+     * Can called several times the object is registered only once.
+     *
+     * @param iClass   hint to the framework about which ActorObserver interface this object represents.
+     *                 Can be null if there are no ambiguities.
+     * @param observer the object to install
+     * @param <T>      The type of reference class returned.
+     * @return a remote reference that can be sent to actors.
+     */
+    <T extends com.ea.orbit.actors.ActorObserver> T getObjectReference(final Class<T> iClass, final T observer);
+
+    /**
+     * Returns an observer reference to an observer in another node.
+     * <p/>
+     * Should only be used if the application knows for sure that an observer with the given id
+     * indeed exists on that other node.
+     * <p/>
+     * This is a low level use of orbit-actors, recommended only for ActorExtensions.
+     *
+     * @param address the other node address.
+     * @param iClass  the IObserverClass
+     * @param id      the id, must not be null
+     * @param <T>     the ActorObserver sub interface
+     * @return a remote reference to the observer
+     */
+    <T extends com.ea.orbit.actors.ActorObserver> T getRemoteObjectReference(NodeAddress address, final Class<T> iClass, final Object id);
+
+
+    /**
+     * Returns an actor reference
+     */
+    <T extends Actor> T getReference(final Class<T> iClass, final Object id);
 
 }

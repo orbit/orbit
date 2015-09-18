@@ -36,6 +36,8 @@ import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -50,6 +52,8 @@ public class ExceptionalTest extends ActorBaseTest
         Task<String> justRespond();
 
         Task<String> justThrowAnException();
+
+        Task<String> justThrowANonSerializableException();
     }
 
     @SuppressWarnings("rawtypes")
@@ -64,6 +68,20 @@ public class ExceptionalTest extends ActorBaseTest
         {
             throw new RuntimeException("as requested, one exception!");
         }
+
+        @Override
+        public Task<String> justThrowANonSerializableException()
+        {
+            throw new RuntimeException()
+            {
+                NonSerializableThing a = new NonSerializableThing();
+            };
+        }
+    }
+
+    public static class NonSerializableThing
+    {
+
     }
 
     @Test
@@ -119,11 +137,28 @@ public class ExceptionalTest extends ActorBaseTest
         assertTrue(ex.getMessage(), ex.getMessage().endsWith("as requested, one exception!"));
     }
 
+    @Test
+    public void checkingNonSerializable() throws ExecutionException, InterruptedException
+    {
+        // checks if exceptions with stuff that's not serializable get their stacktrace sent back to the caller.
+        Stage stage1 = createStage();
+        final ExceptionalThing ref = Actor.getReference(ExceptionalThing.class, "0");
+
+        final Throwable ex = expectException(() -> ref.justThrowANonSerializableException());
+
+        final StringWriter stringWriter = new StringWriter();
+        ex.printStackTrace(new PrintWriter(stringWriter));
+        assertTrue(stringWriter.toString().contains("ExceptionalTest.java:"));
+        assertTrue(stringWriter.toString().contains("NonSerializableThing"));
+        assertTrue(stringWriter.toString().contains("justThrowANonSerializableException"));
+    }
+
     //@Test
     // fixed on jdk 8_60
     public void checkCompletableFutureBehaviour()
     {
         // https://bugs.openjdk.java.net/browse/JDK-8068432
+        // "Inconsistent exception handling in CompletableFuture.thenCompose"
         // this test will fail once this bug is fixed
         Exception ex = new RuntimeException("x");
         // The order of events change how thenCompose wraps the returned exception

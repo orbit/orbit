@@ -168,8 +168,7 @@ public class ActorBaseTest
     public Stage createStage() throws ExecutionException, InterruptedException
     {
         Stage stage = new Stage();
-        DependencyRegistry dr = new DependencyRegistry();
-        dr.addSingleton(FakeSync.class, fakeSync);
+        DependencyRegistry dr = initDependencyRegistry();
         dr.addSingleton(Stage.class, stage);
         addLogging(stage);
         stage.addExtension(new LifetimeExtension()
@@ -192,6 +191,13 @@ public class ActorBaseTest
         stage.start().join();
         stage.bind();
         return stage;
+    }
+
+    protected DependencyRegistry initDependencyRegistry()
+    {
+        DependencyRegistry dr = new DependencyRegistry();
+        dr.addSingleton(FakeSync.class, fakeSync);
+        return dr;
     }
 
     private AtomicLong invocationId = new AtomicLong();
@@ -225,7 +231,7 @@ public class ActorBaseTest
     }
 
     @SuppressWarnings("PMD.AvoidCatchingThrowable")
-    public void expectException(Exceptional callable)
+    public Throwable expectException(Exceptional callable)
     {
         try
         {
@@ -238,9 +244,10 @@ public class ActorBaseTest
         catch (Throwable ex)
         {
             // ok
-            return;
+            return ex;
         }
         fail("Was expecting some exception");
+        return null;
     }
 
     private Object getField(Object target, Class<?> clazz, String name) throws IllegalAccessException, NoSuchFieldException
