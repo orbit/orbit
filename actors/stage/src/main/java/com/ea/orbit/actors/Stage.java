@@ -47,6 +47,8 @@ import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
+import com.ea.orbit.metrics.annotations.ExportMetric;
+import com.ea.orbit.metrics.annotations.MetricScope;
 import com.ea.orbit.metrics.config.ReporterConfig;
 
 import org.slf4j.Logger;
@@ -317,8 +319,6 @@ public class Stage implements Startable
         hosting.start();
         execution.start();
 
-        startMetrics();
-
         Task<?> future = clusterPeer.join(clusterName, nodeName);
         if (mode == StageMode.HOST)
         {
@@ -382,7 +382,7 @@ public class Stage implements Startable
         // * wait pending tasks execution
         // * stop the network
         return execution.stop()
-                .thenRun(clusterPeer::leave).thenRun(this::unregisterMetrics);
+                .thenRun(clusterPeer::leave);
     }
 
     /**
@@ -481,47 +481,52 @@ public class Stage implements Startable
         return execution.getState();
     }
 
-    @SuppressWarnings("unchecked")
-    private void startMetrics()
+    @ExportMetric(name = "localActorCount")
+    public long getLocalActorCount()
     {
-        try
+        long value = 0;
+        if (execution != null)
         {
-            Class mmClazz = Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
-            Method getInstanceMethod = mmClazz.getDeclaredMethod("getInstance");
-            Method registerExportedMetricsMethod = mmClazz.getDeclaredMethod("registerExportedMetrics", Object.class, String.class);
+            value =  execution.getLocalActorCount();
+        }
 
-            Object managerObject = getInstanceMethod.invoke(null);
-            registerExportedMetricsMethod.invoke(managerObject, execution, execution.runtimeIdentity());
-        }
-        catch (ClassNotFoundException ex)
-        {
-            //OK. Just means that metrics isn't being used.
-        }
-        catch (Exception ex)
-        {
-            logger.error("Unexpected error while initializing Orbit Metrics: " + ex.getMessage());
-        }
+        return value;
     }
 
-    @SuppressWarnings("unchecked")
-    private void unregisterMetrics()
+    @ExportMetric(name = "messagesReceived")
+    public long getMessagesReceived()
     {
-        try
+        long value = 0;
+        if (execution != null)
         {
-            Class mmClazz = Class.forName("com.ea.orbit.metrics.MetricsManager"); //make sure the metrics manager is on the classpath.
-            Method getInstanceMethod = mmClazz.getDeclaredMethod("getInstance");
-            Method unregisterExportedMetricsMethod = mmClazz.getDeclaredMethod("unregisterExportedMetrics", Object.class, String.class);
+            value =  execution.getMessagesReceivedCount();
+        }
 
-            Object managerObject = getInstanceMethod.invoke(null);
-            unregisterExportedMetricsMethod.invoke(managerObject, execution, execution.runtimeIdentity());
-        }
-        catch (ClassNotFoundException ex)
+        return value;
+    }
+
+    @ExportMetric(name = "messagesHandled")
+    public long getMessagesHandled()
+    {
+        long value = 0;
+        if (execution != null)
         {
-            //OK. Just means that metrics isn't being used.
+            value =  execution.getMessagesHandledCount();
         }
-        catch (Exception ex)
+
+        return value;
+
+    }
+
+    @ExportMetric(name = "refusedExecutions")
+    public long getRefusedExecutions()
+    {
+        long value = 0;
+        if (execution != null)
         {
-            logger.error("Unexpected error while un-registering execution metrics: " + ex.getMessage());
+            value =  execution.getRefusedExecutionsCount();
         }
+
+        return value;
     }
 }
