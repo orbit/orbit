@@ -28,8 +28,6 @@
 
 package com.ea.orbit.metrics.config;
 
-import com.ea.orbit.metrics.MetricsManager;
-
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Reporter;
 
