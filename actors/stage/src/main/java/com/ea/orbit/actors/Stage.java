@@ -48,8 +48,6 @@ import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.metrics.annotations.ExportMetric;
-import com.ea.orbit.metrics.annotations.MetricScope;
-import com.ea.orbit.metrics.config.ReporterConfig;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
