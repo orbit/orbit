@@ -70,6 +70,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
        </dependency>
 
        <dependency>
+           <groupId>io.dropwizard.metrics</groupId>
+           <artifactId>metrics-jvm</artifactId>
+           <version>${metrics.version}</version>
+       </dependency>
+
+       <dependency>
            <groupId>com.ea.orbit</groupId>
            <artifactId>orbit-commons</artifactId>
            <version>${project.version}</version>
