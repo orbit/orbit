@@ -36,7 +36,7 @@ public class ThreadCPUUsageSet implements MetricSet
         ThreadInfo[] threadInfos = threads.getThreadInfo(threads.getAllThreadIds());
         for (final ThreadInfo info : threadInfos)
         {
-            gauges.put("Thread." + info.getThreadName() + ".cputime", new Gauge<Long>()
+            gauges.put("thread." + info.getThreadName() + ".cputime", new Gauge<Long>()
             {
                 @Override
                 public Long getValue()
