@@ -31,10 +31,10 @@ public class JvmMetricsComponent implements Startable
         MetricRegistry registry = MetricsManager.getInstance().getRegistry();
         try
         {
-            registry.registerAll(gcMetricSet);
-            registry.registerAll(memoryMetricSet);
-            registry.registerAll(threadsMetricSet);
-            registry.registerAll(threadCPUMetricSet);
+            registry.register("gc", gcMetricSet);
+            registry.register("memory", memoryMetricSet);
+            registry.register("threads", threadsMetricSet);
+            registry.register("threads", threadCPUMetricSet);
         }
         catch(IllegalArgumentException iae)
         {
