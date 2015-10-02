@@ -129,7 +129,7 @@ public class MetricsManager
             //check to see if the field is accessible.
             if (!field.isAccessible())
             {
-                throw new IllegalStateException("Field " + field.getName() + " in object " + field.getDeclaringClass().getName() + " is marked for Metrics Export but the field is not accessible");
+                field.setAccessible(true);
             }
 
             final String metricName = buildMetricName(field.getDeclaringClass(), annotation, instanceId);

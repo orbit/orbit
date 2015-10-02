@@ -28,12 +28,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.extensions.mongodb;
 
+import com.codahale.metrics.Meter;
 import com.ea.orbit.actors.extensions.StorageExtension;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
+import com.ea.orbit.metrics.MetricsManager;
+import com.ea.orbit.metrics.annotations.ExportMetric;
+import com.ea.orbit.metrics.annotations.MetricScope;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.BasicDBObject;
@@ -55,6 +59,13 @@ public class MongoDBStorageExtension implements StorageExtension
 
     private MongoClient mongoClient;
     private ObjectMapper mapper;
+
+    @ExportMetric(name="MongoActorWriteStateRate", scope= MetricScope.PROTOTYPE)
+    private Meter readMeter = new Meter();
+    @ExportMetric(name="MongoActorReadStateRate", scope= MetricScope.PROTOTYPE)
+    private Meter writeMeter = new Meter();
+    @ExportMetric(name="MongoActorClearStateRate", scope= MetricScope.PROTOTYPE)
+    private Meter clearMeter = new Meter();
 
     private String user;
     private String database;
@@ -108,6 +119,8 @@ public class MongoDBStorageExtension implements StorageExtension
         }
         mongoClient = new MongoClient(new ServerAddress(host, port), credentials);
 
+        MetricsManager.getInstance().registerExportedMetrics(this, getName());
+
         return Task.done();
     }
 
@@ -120,6 +133,7 @@ public class MongoDBStorageExtension implements StorageExtension
     @Override
     public Task<Void> clearState(final ActorReference<?> reference, final Object state)
     {
+        clearMeter.mark();
         DB db = mongoClient.getDB(database);
         final DBCollection col = db.getCollection(ActorReference.getInterfaceClass(reference).getSimpleName());
         col.remove(new BasicDBObject("_id", String.valueOf(ActorReference.getId(reference))));
@@ -130,6 +144,7 @@ public class MongoDBStorageExtension implements StorageExtension
     public Task<Void> stop()
     {
         mongoClient.close();
+        MetricsManager.getInstance().unregisterExportedMetrics(this, getName());
         return Task.done();
     }
 
@@ -137,6 +152,7 @@ public class MongoDBStorageExtension implements StorageExtension
     @SuppressWarnings("unchecked")
     public Task<Boolean> readState(final ActorReference<?> reference, final Object state)
     {
+        readMeter.mark();
         DB db = mongoClient.getDB(database);
         final DBCollection col = db.getCollection(ActorReference.getInterfaceClass(reference).getSimpleName());
         JacksonDBCollection<Object, String> coll = JacksonDBCollection.wrap(
@@ -164,6 +180,7 @@ public class MongoDBStorageExtension implements StorageExtension
     @SuppressWarnings("unchecked")
     public Task<Void> writeState(final ActorReference<?> reference, final Object state)
     {
+        writeMeter.mark();
         DB db = mongoClient.getDB(database);
         final DBCollection col = db.getCollection(ActorReference.getInterfaceClass(reference).getSimpleName());
         JacksonDBCollection<Object, String> coll = JacksonDBCollection.wrap(
