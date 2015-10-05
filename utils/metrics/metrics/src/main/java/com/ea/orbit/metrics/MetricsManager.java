@@ -28,6 +28,7 @@
 
 package com.ea.orbit.metrics;
 
+import com.codahale.metrics.Metric;
 import com.ea.orbit.metrics.annotations.ExportMetric;
 import com.ea.orbit.metrics.annotations.MetricScope;
 import com.ea.orbit.metrics.config.ReporterConfig;
@@ -77,7 +78,7 @@ public class MetricsManager
         return nameSanitizationRegex.matcher(name).replaceAll(""); //strip illegal characters
     }
 
-    protected MetricRegistry getRegistry()
+     protected MetricRegistry getRegistry()
     {
         return registry;
     }
@@ -131,17 +132,27 @@ public class MetricsManager
                 throw new IllegalStateException("Field " + field.getName() + " in object " + field.getDeclaringClass().getName() + " is marked for Metrics Export but the field is not accessible");
             }
 
-            registerGauge(annotation, field.getDeclaringClass(), instanceId, () -> {
-                try
+            final String metricName = buildMetricName(field.getDeclaringClass(), annotation, instanceId);
+
+            try
+            {
+                Metric metric = null;
+                if (Metric.class.isAssignableFrom(field.getDeclaringClass()))
                 {
-                    Object value = field.get(obj);
-                    return value;
+                    metric = (Metric) field.get(obj);
                 }
-                catch (IllegalAccessException iae) //convert to an unchecked exception.
+                else
                 {
-                    throw new IllegalStateException("Field " + field.getName() + " was inaccessible: " + iae.getMessage());
+                    metric = buildGaugeForField(field, obj);
                 }
-            });
+
+                registerMetric(metricName, metric);
+            }
+            catch (IllegalAccessException iae)
+            {
+                throw new IllegalStateException("Field " + field.getName() + " was inaccessible: " + iae.getMessage());
+            }
+
         }
 
         for (Method method : findMethodsForMetricExport(obj))
@@ -154,7 +165,8 @@ public class MetricsManager
 
             final ExportMetric annotation = method.getAnnotation(ExportMetric.class);
 
-            registerGauge(annotation, method.getDeclaringClass(), instanceId, () -> {
+            final String counterName = buildMetricName(method.getDeclaringClass(), annotation, instanceId);
+            registerMetric(counterName, (Gauge<Object>) () -> {
                 try
                 {
                     Object value = method.invoke(obj, new Object[0]);
@@ -189,7 +201,7 @@ public class MetricsManager
             final ExportMetric annotation = field.getAnnotation(ExportMetric.class);
 
             String metricName = buildMetricName(field.getDeclaringClass(), annotation, instanceId);
-            registry.remove(metricName);
+            unregisterMetric(metricName);
         }
 
         for (Method method : findMethodsForMetricExport(obj))
@@ -197,30 +209,45 @@ public class MetricsManager
             final ExportMetric annotation = method.getAnnotation(ExportMetric.class);
 
             String metricName = buildMetricName(method.getDeclaringClass(), annotation, instanceId);
-            registry.remove(metricName);
+            unregisterMetric(metricName);
         }
     }
 
-     private void registerGauge(ExportMetric annotation, Class clazz, String instanceId, Supplier<Object> metricSupplier)
+    public void registerMetric(String name, Metric metric)
     {
-        final String gaugeName = buildMetricName(clazz, annotation, instanceId);
         try
         {
-            registry.register(gaugeName, (Gauge<Object>) () -> {
-
-                Object value = metricSupplier.get();
-                return value;
-            });
+            registry.register(name, metric);
 
             if (logger.isDebugEnabled())
             {
-                logger.debug("Registered new metric " + annotation.name());
+                logger.debug("Registered new metric " + name);
             }
         }
-       catch (IllegalArgumentException iae)
-       {
-           logger.warn("Unable to register metric " + annotation.name() + " because a metric already has been registered with the id: " + gaugeName);
-       }
+        catch (IllegalArgumentException iae)
+        {
+            logger.warn("Unable to register metric " + name + " because a metric already has been registered with the same name");
+        }
+    }
+
+    public void unregisterMetric(String name)
+    {
+        registry.remove(name);
+    }
+
+    private Metric buildGaugeForField(Field field, Object obj)
+    {
+        return (Gauge<Object>) () -> {
+            try
+            {
+                Object value = field.get(obj);
+                return value;
+            }
+            catch (IllegalAccessException iae) //convert to an unchecked exception.
+            {
+                throw new IllegalStateException("Field " + field.getName() + " was inaccessible: " + iae.getMessage());
+            }
+        };
     }
 
     private List<Field> findFieldsForMetricExport(Object obj)

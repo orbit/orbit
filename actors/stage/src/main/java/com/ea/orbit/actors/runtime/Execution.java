@@ -1412,6 +1412,26 @@ public class Execution implements Runtime
         return state;
     }
 
+    public long getLocalActorCount()
+    {
+        return localActors.size();
+    }
+
+    public long getMessagesReceivedCount()
+    {
+        return messagesReceived.longValue();
+    }
+
+    public long getMessagesHandledCount()
+    {
+        return messagesHandled.longValue();
+    }
+
+    public long getRefusedExecutionsCount()
+    {
+        return refusedExecutions.longValue();
+    }
+
     /**
      * Checks if the method passes an Activated check.
      * Verify passes on either of:
@@ -1429,29 +1449,5 @@ public class Execution implements Runtime
             }
         }
         return true;
-    }
-
-    @ExportMetric(name = "localActorCount", scope = MetricScope.PROTOTYPE)
-    public long getLocalActorCount()
-    {
-        return localActors.size();
-    }
-
-    @ExportMetric(name = "messagesReceived", scope = MetricScope.PROTOTYPE)
-    public long getMessagesReceived()
-    {
-        return messagesReceived.longValue();
-    }
-
-    @ExportMetric(name = "messagesHandled", scope = MetricScope.PROTOTYPE)
-    public long getMessagesHandled()
-    {
-        return messagesHandled.longValue();
-    }
-
-    @ExportMetric(name = "refusedExecutions", scope = MetricScope.PROTOTYPE)
-    public long getRefusedExecutions()
-    {
-        return refusedExecutions.longValue();
     }
 }

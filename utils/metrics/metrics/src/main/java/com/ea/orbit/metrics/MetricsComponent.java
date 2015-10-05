@@ -29,7 +29,9 @@
 package com.ea.orbit.metrics;
 
 import com.ea.orbit.annotation.Config;
+import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.metrics.config.ReporterConfig;
 
@@ -50,10 +52,22 @@ public class MetricsComponent implements Startable
     @Config("orbit.metrics.reporters")
     private List<ReporterConfig> metricsConfig = new ArrayList<>();
 
+    @Wired
+    Container container;
+
     @Override
     public Task<?> start()
     {
         MetricsManager.getInstance().initializeMetrics(metricsConfig);
+
+        for (Object obj : container.components())
+        {
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("Registering " + obj.getClass().getName());
+            }
+            MetricsManager.getInstance().registerExportedMetrics(obj);
+        }
         return Task.done();
     }
 
