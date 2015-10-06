@@ -51,7 +51,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 
 public class LdapStorageExtension extends AbstractStorageExtension
@@ -138,16 +137,19 @@ public class LdapStorageExtension extends AbstractStorageExtension
         //TODO this is cacheable
         Map<String, Field> map = new HashMap<>();
 
-        Stream<Field> stream = Stream.empty();
+        List<Field> fields = new ArrayList<>();
         for (Class c = clazz; c != null; c = clazz.getSuperclass())
         {
             final Field[] declaredFields = c.getDeclaredFields();
             if (declaredFields != null && declaredFields.length > 0)
             {
-                stream = Stream.concat(stream, Arrays.stream(declaredFields));
+                for (Field f : declaredFields)
+                {
+                    fields.add(f);
+                }
             }
         }
-        stream.filter(f -> Modifier.isPublic(f.getModifiers()) || f.isAnnotationPresent(LdapAttribute.class)).forEach(f -> {
+        fields.stream().filter(f -> Modifier.isPublic(f.getModifiers()) || f.isAnnotationPresent(LdapAttribute.class)).forEach(f -> {
             LdapAttribute attrann = f.getAnnotation(LdapAttribute.class);
             if (attrann == null)
             {
