@@ -138,10 +138,14 @@ public class LdapStorageExtension extends AbstractStorageExtension
         //TODO this is cacheable
         Map<String, Field> map = new HashMap<>();
 
-        Stream<Field> stream = Stream.of(clazz.getDeclaredFields());
-        for (Class c = clazz.getSuperclass(); c != null; c = clazz.getSuperclass())
+        Stream<Field> stream = Stream.empty();
+        for (Class c = clazz; c != null; c = clazz.getSuperclass())
         {
-            stream = Stream.concat(stream, Stream.of(c.getDeclaredFields()));
+            final Field[] declaredFields = c.getDeclaredFields();
+            if (declaredFields != null && declaredFields.length > 0)
+            {
+                stream = Stream.concat(stream, Arrays.stream(declaredFields));
+            }
         }
         stream.filter(f -> Modifier.isPublic(f.getModifiers()) || f.isAnnotationPresent(LdapAttribute.class)).forEach(f -> {
             LdapAttribute attrann = f.getAnnotation(LdapAttribute.class);
