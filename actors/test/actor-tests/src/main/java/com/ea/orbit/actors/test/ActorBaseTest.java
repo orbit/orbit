@@ -28,18 +28,26 @@
 
 package com.ea.orbit.actors.test;
 
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ActorFactoryGenerator;
+import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.ExecutionSerializer;
+import com.ea.orbit.actors.runtime.NodeCapabilities;
+import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.injection.DependencyRegistry;
 
@@ -51,10 +59,22 @@ import org.junit.runner.Description;
 
 import com.google.common.util.concurrent.ForwardingExecutorService;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.NumberFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -62,6 +82,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.fail;
 
@@ -71,6 +93,7 @@ public class ActorBaseTest
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
     protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
+
     protected static final ExecutorService commonPool = new ForwardingExecutorService()
     {
         ExecutorService delegate = ExecutorUtils.newScalingThreadPool(200);
@@ -102,9 +125,12 @@ public class ActorBaseTest
             }
         }
     };
-    protected FakeSync fakeSync = new FakeSync();
 
+    protected FakeSync fakeSync = new FakeSync();
+    private AtomicLong invocationId = new AtomicLong();
     protected final StringBuilder hiddenLogData = new StringBuilder();
+    protected final List<String> messageSequence = Collections.synchronizedList(new LinkedList<>());
+
     protected final SimpleLog hiddenLog = new SimpleLog("orbit")
     {
         private static final long serialVersionUID = 1L;
@@ -121,12 +147,51 @@ public class ActorBaseTest
             hiddenLogData.append(buffer).append("\r\n");
         }
     };
+
+    private static final String TEST_NAME_PROP = ActorBaseTest.class.getName() + ".testName";
+
     @Rule
     public TestRule dumpLogs = new TestWatcher()
     {
+        final ActorTaskContext taskContext = new ActorTaskContext();
+
+        protected void starting(Description description)
+        {
+            taskContext.push();
+            taskContext.setProperty(TEST_NAME_PROP, description.getMethodName());
+            taskContext.setProperty(ActorBaseTest.class.getName(), description);
+        }
+
+        /**
+         * Invoked when a test method finishes (whether passing or failing)
+         */
+        protected void finished(Description description)
+        {
+            try
+            {
+                taskContext.push();
+            }
+            catch (Exception ex)
+            {
+                // ignore
+            }
+        }
+
+
+        /**
+         * Invoked when a test succeeds
+         */
+        protected void succeeded(Description description)
+        {
+            messageSequence.clear();
+            hiddenLogData.setLength(0);
+            fakeDatabase.clear();
+        }
+
         @Override
         protected void failed(final Throwable e, final Description description)
         {
+
             final PrintStream out = System.out;
             out.println(">>>>>>>>> Start");
             out.println(">>>>>>>>> Test Dump for " + description);
@@ -136,11 +201,65 @@ public class ActorBaseTest
             out.print(">>>>>>>>> Error: ");
             e.printStackTrace(out);
             out.println(">>>>>>>>> End");
+            dumpMessages(description);
+            messageSequence.clear();
+            hiddenLogData.setLength(0);
+            fakeDatabase.clear();
         }
     };
 
+
+    protected void clearMessages()
+    {
+        messageSequence.clear();
+    }
+
+    protected void dumpMessages()
+    {
+        final TaskContext taskContext = TaskContext.current();
+
+        dumpMessages(taskContext != null ? (Description) taskContext.getProperty(ActorBaseTest.class.getName()) : null);
+    }
+
+    protected void dumpMessages(Description description)
+    {
+        final PrintStream out = System.out;
+        if (messageSequence.size() > 0)
+        {
+            String name = ActorBaseTest.this.getClass().getName();
+            if (description != null)
+            {
+                name += "-" + description.getMethodName();
+            }
+
+            final Path seqUml = Paths.get("target/surefire-reports/" + name + ".messages.puml");
+            try
+            {
+                Files.createDirectories(seqUml.getParent());
+
+                Files.write(seqUml,
+                        Stream.concat(Stream.concat(
+                                        Stream.of("@startuml"),
+                                        messageSequence.stream()),
+                                Stream.of("@enduml")
+                        ).collect(Collectors.toList()));
+                out.println("Message sequence diagram written to:");
+                out.println(seqUml.toUri());
+            }
+            catch (Exception ex)
+            {
+                new IOException("error dumping messages: " + ex.getMessage(), ex).printStackTrace();
+            }
+        }
+        else
+        {
+            out.println("No messages to dump");
+        }
+    }
+
     public Stage createClient() throws ExecutionException, InterruptedException
     {
+        hiddenLog.info("Create Client");
         Stage client = new Stage();
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
@@ -167,7 +286,10 @@ public class ActorBaseTest
 
     public Stage createStage() throws ExecutionException, InterruptedException
     {
+        hiddenLog.info("Create Stage");
         Stage stage = new Stage();
+
+
         DependencyRegistry dr = initDependencyRegistry();
         dr.addSingleton(Stage.class, stage);
         addLogging(stage);
@@ -189,6 +311,21 @@ public class ActorBaseTest
         stage.setClusterName(clusterName);
         stage.setClusterPeer(new FakeClusterPeer());
         stage.start().join();
+
+        // warm up
+        ActorFactoryGenerator afg = new ActorFactoryGenerator();
+        Stream.of(getClass().getClasses())
+                .forEach(c -> {
+                    if (Actor.class.isAssignableFrom(c) && c.isInterface())
+                    {
+                        afg.getFactoryFor(c);
+                        stage.getHosting().canActivate(c.getName()).join();
+                    }
+                    if (AbstractActor.class.isAssignableFrom(c) && !Modifier.isAbstract(c.getModifiers()))
+                    {
+                        afg.getInvokerFor(c);
+                    }
+                });
         stage.bind();
         return stage;
     }
@@ -200,20 +337,150 @@ public class ActorBaseTest
         return dr;
     }
 
-    private AtomicLong invocationId = new AtomicLong();
-
     private void addLogging(final Stage stage)
     {
         stage.addExtension(new InvokeHookExtension()
         {
+            String toString(Object obj)
+            {
+                if (obj instanceof String)
+                {
+                    return (String) obj;
+                }
+                if (obj instanceof AbstractActor)
+                {
+                    final ActorReference ref = ActorReference.from((AbstractActor) obj);
+                    return ActorReference.getInterfaceClass(ref).getSimpleName() + ":" +
+                            ActorReference.getId(ref);
+                }
+                if (obj instanceof ActorReference)
+                {
+                    return ActorReference.getInterfaceClass((ActorReference<?>) obj).getSimpleName() + ":" +
+                            ActorReference.getId((ActorReference<?>) obj);
+                }
+                return String.valueOf(obj);
+            }
+
             @Override
-            public Task<?> invoke(final InvocationContext context, final Addressable toReference, final Method method, final int methodId, final Object[] params)
+            public Task<?> invoke(final InvocationContext icontext, final Addressable toReference, final Method method, final int methodId, final Object[] params)
             {
                 long id = invocationId.incrementAndGet();
-                hiddenLog.info(id + " invoking: " + method.getDeclaringClass().getSimpleName() + "." + method.getName());
-                return context.invokeNext(toReference, method, methodId, params).whenComplete(
-                        (r, e) -> hiddenLog.info(id + " done invoking: " + method.getDeclaringClass().getSimpleName() + "." + method.getName())
-                );
+                if (toReference instanceof NodeCapabilities)
+                {
+                    return icontext.invokeNext(toReference, method, methodId, params);
+                }
+                if (toReference instanceof ReminderController && "ensureStart".equals(method.getName()))
+                {
+                    return icontext.invokeNext(toReference, method, methodId, params);
+                }
+                final ActorTaskContext context = ActorTaskContext.current();
+                String from;
+                if (context != null && context.getActor() != null)
+                {
+                    final ActorReference reference = ActorReference.from(context.getActor());
+                    from = ActorReference.getInterfaceClass(reference).getSimpleName()
+                            + ":"
+                            + ActorReference.getId(reference);
+                }
+                else
+                {
+                    if (ActorReference.getInterfaceClass((ActorReference) toReference) == NodeCapabilities.class
+                            && method.getName().equals("canActivate"))
+                    {
+                        from = "Stage";
+                    }
+                    else
+                    {
+                        final TaskContext current = TaskContext.current();
+                        if (current != null && current.getProperty(TEST_NAME_PROP) != null)
+                        {
+                            from = String.valueOf(current.getProperty(TEST_NAME_PROP));
+                        }
+                        else
+                        {
+                            from = "Thread:" + Thread.currentThread().getId();
+                        }
+                    }
+                }
+                String to = ActorReference.getInterfaceClass((ActorReference) toReference).getSimpleName()
+                        + ":"
+                        + ActorReference.getId((ActorReference) toReference);
+
+                String strParams;
+                if (params != null && params.length > 0)
+                {
+                    try
+                    {
+                        strParams = Arrays.asList(params).stream().map(a -> toString(a)).collect(Collectors.joining(", ", "(", ")"));
+                    }
+                    catch (Exception ex)
+                    {
+                        strParams = "(can't show parameters)";
+                    }
+                }
+                else
+                {
+                    strParams = "";
+                }
+                if (!method.isAnnotationPresent(OneWay.class))
+                {
+                    final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams
+                            + "\r\n"
+                            + "activate \"" + to + "\"";
+                    messageSequence.add(msg);
+                    while (messageSequence.size() > 100)
+                    {
+                        messageSequence.remove(0);
+                    }
+                    hiddenLog.info(msg);
+                    final long start = System.nanoTime();
+                    return icontext.invokeNext(toReference, method, methodId, params)
+                            .whenComplete((r, e) ->
+                                    {
+                                        final long timeUS = TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - start);
+                                        final String timeStr = NumberFormat.getNumberInstance(Locale.US).format(timeUS);
+                                        if (e == null)
+                                        {
+                                            final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id + "; "
+                                                    + timeStr + "us] (response to " + method.getName() + "): " + toString(r)
+                                                    + "\r\n"
+                                                    + "deactivate \"" + to + "\"";
+                                            messageSequence.add(resp);
+                                            hiddenLog.info(resp);
+                                        }
+                                        else
+                                        {
+                                            final Throwable throwable = unwrapException(e);
+                                            final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id
+                                                    + "; " + timeStr + "us] (exception at " + method.getName() + "):\\n"
+                                                    + throwable.getClass().getName()
+                                                    + (throwable.getMessage() != null ? ": \\n" + throwable.getMessage() : "")
+                                                    + "\r\n"
+                                                    + "deactivate \"" + to + "\"";
+                                            messageSequence.add(resp);
+                                            hiddenLog.info(resp);
+                                        }
+                                    }
+                            );
+
+                }
+                else
+                {
+                    final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams;
+                    messageSequence.add(msg);
+                    hiddenLog.info('"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams);
+                    return icontext.invokeNext(toReference, method, methodId, params);
+                }
+            }
+
+            private Throwable unwrapException(final Throwable e)
+            {
+                Throwable ex = e;
+                while (ex.getCause() != null && (ex instanceof CompletionException))
+                {
+                    ex = ex.getCause();
+                }
+                return ex;
             }
         });
     }
@@ -301,4 +568,40 @@ public class ActorBaseTest
         }
     }
 
+    protected void eventually(final Runnable runnable)
+    {
+        eventually(60_000, runnable);
+    }
+
+    protected void eventually(long timeoutMillis, final Runnable runnable)
+    {
+        final long start = System.currentTimeMillis();
+        do
+        {
+            try
+            {
+                runnable.run();
+                return;
+            }
+            catch (RuntimeException | Error ex)
+            {
+                if (System.currentTimeMillis() - start > timeoutMillis)
+                {
+                    // weird that this compiles...
+                    throw ex;
+                }
+                try
+                {
+                    Thread.sleep(Math.max(200, (System.currentTimeMillis() - start) / 4));
+                }
+                catch (InterruptedException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        } while (true);
+
+    }
+
 }
+

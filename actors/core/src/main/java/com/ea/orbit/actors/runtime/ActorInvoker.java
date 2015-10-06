@@ -32,8 +32,6 @@ import com.ea.orbit.concurrent.Task;
 
 public abstract class ActorInvoker<T>
 {
-    protected abstract int _interfaceId();
-
     public Task<?> invoke(T target, int methodId, Object[] params)
     {
         throw new com.ea.orbit.exception.MethodNotFoundException(target + " MethodId :" + methodId);

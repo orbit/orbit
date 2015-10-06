@@ -42,7 +42,7 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.Assert.assertEquals;
 
 @SuppressWarnings("unused")
-public class GenericActorState extends ActorBaseTest
+public class GenericActorStateTest extends ActorBaseTest
 {
     public interface GenActor extends Actor
     {

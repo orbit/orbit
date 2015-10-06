@@ -25,18 +25,16 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+package com.ea.orbit.actors.transactions;
 
-package com.ea.orbit.actors.runtime;
+import java.util.ArrayList;
+import java.util.List;
 
-import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.ActorObserver;
-
-import java.util.UUID;
-
-public interface RefFactory
+public class TransactionalState
 {
-    <T extends Actor> T getReference(Class<T> iClass, Object id);
+    protected List<TransactionEvent> events = new ArrayList<>();
 
-    <T extends ActorObserver> T getObserverReference(UUID nodeId, Class<T> iClass, Object id);
-
+    public void snapshot()
+    {
+    }
 }

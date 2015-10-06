@@ -59,6 +59,7 @@ public class LifeCycleTest extends ActorBaseTest
     @Test
     public void deactivationTest() throws ExecutionException, InterruptedException
     {
+        clock.stop();
         Stage stage = createStage();
         Stage client = createClient();
 

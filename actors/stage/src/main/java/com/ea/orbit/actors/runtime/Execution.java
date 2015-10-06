@@ -41,6 +41,7 @@ import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
+import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.OnlyIfActivated;
@@ -86,7 +87,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
@@ -142,7 +142,7 @@ public class Execution implements Runtime
      * </p>
      */
     @Config("orbit.actors.stickyHeaders")
-    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList("orbit.transactionId", "orbit.traceId"));
+    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
 
     public Execution()
     {
@@ -192,6 +192,10 @@ public class Execution implements Runtime
             final Class<?> concreteClass = finder.findActorImplementation(aInterface);
             descriptor.cannotActivate = concreteClass == null;
             descriptor.concreteClassName = concreteClass != null ? concreteClass.getName() : null;
+            if (concreteClass != null)
+            {
+                descriptor.invoker = dynamicReferenceFactory.getInvokerFor(concreteClass);
+            }
         }
         return !descriptor.cannotActivate;
     }
@@ -486,7 +490,7 @@ public class Execution implements Runtime
 
                 return Task.fromValue(instance);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 throw new UncheckedException(e);
             }
@@ -845,6 +849,7 @@ public class Execution implements Runtime
                 return concurrentInterfaceDescriptor;
             }
 
+
             descriptorMapByInterfaceId.put(interfaceDescriptor.factory.getInterfaceId(), interfaceDescriptor);
         }
         return interfaceDescriptor;
@@ -911,6 +916,10 @@ public class Execution implements Runtime
                 }
                 return Task.done();
             }
+            if (descriptor.invoker == null)
+            {
+                descriptor.invoker = dynamicReferenceFactory.getInvokerFor(observer.getClass());
+            }
             final Task<?> task = descriptor.invoker.safeInvoke(observer, methodId, params);
             return task.whenComplete((r, e) ->
                     sendResponseAndLogError(oneway, from, messageId, (Object) r, e));
@@ -973,8 +982,6 @@ public class Execution implements Runtime
 
     }
 
-
-    ThreadLocal<MessageContext> currentMessage = new ThreadLocal<>();
 
     static class MessageContext
     {
@@ -1089,9 +1096,9 @@ public class Execution implements Runtime
 
     protected void sendResponseAndLogError(boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
     {
-        if (exception != null && logger.isErrorEnabled())
+        if (exception != null && logger.isDebugEnabled())
         {
-            logger.error("Unknown application error. ", exception);
+            logger.debug("Unknown application error. ", exception);
         }
 
         if (!oneway)
@@ -1109,9 +1116,9 @@ public class Execution implements Runtime
             }
             catch (Exception ex2)
             {
-                if (logger.isErrorEnabled())
+                if (logger.isDebugEnabled())
                 {
-                    logger.error("Error sending method result", ex2);
+                    logger.debug("Error sending method result", ex2);
                 }
                 try
                 {
@@ -1126,9 +1133,9 @@ public class Execution implements Runtime
                 }
                 catch (Exception ex3)
                 {
-                    if (logger.isErrorEnabled())
+                    if (logger.isDebugEnabled())
                     {
-                        logger.error("Failed twice sending result. ", ex2);
+                        logger.debug("Failed twice sending result. ", ex2);
                     }
                     try
                     {
@@ -1157,7 +1164,6 @@ public class Execution implements Runtime
         }
         return runtimeException;
     }
-
 
     @SuppressWarnings({"unchecked"})
     <T> T createReference(final NodeAddress a, final Class<T> iClass, String id)
@@ -1392,7 +1398,7 @@ public class Execution implements Runtime
                 }
             }
         }
-        Task<List<CompletableFuture<?>>> listTask = Task.allOf(futures);
+        Task<Void> listTask = Task.allOf(futures);
         return listTask;
     }
 

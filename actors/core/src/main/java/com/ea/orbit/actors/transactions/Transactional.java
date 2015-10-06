@@ -25,18 +25,15 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+package com.ea.orbit.actors.transactions;
 
-package com.ea.orbit.actors.runtime;
+import com.ea.orbit.concurrent.Task;
 
-import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.ActorObserver;
-
-import java.util.UUID;
-
-public interface RefFactory
+/**
+ * Optional interface that the actor implementation can implement if it wants to be able to cancel transactions.
+ */
+public interface Transactional
 {
-    <T extends Actor> T getReference(Class<T> iClass, Object id);
-
-    <T extends ActorObserver> T getObserverReference(UUID nodeId, Class<T> iClass, Object id);
+    Task<Void> cancelTransaction(String transactionId);
 
 }

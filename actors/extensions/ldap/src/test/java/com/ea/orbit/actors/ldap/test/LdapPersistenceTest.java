@@ -70,7 +70,7 @@ public class LdapPersistenceTest extends AbstractLdapTestUnit
 
     private String clusterName = "cluster." + Math.random();
 
-    @Test
+    @Test(timeout = 60000L)
     public void ldapTest() throws Exception
     {
         Stage stage = createStage();

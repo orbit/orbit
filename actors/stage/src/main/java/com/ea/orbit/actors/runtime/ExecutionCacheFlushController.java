@@ -44,7 +44,7 @@ public class ExecutionCacheFlushController
     @Inject
     private Stage stage;
 
-    public Task<List<Task<Void>>> flushAll(Actor actor)
+    public Task<Void> flushAll(Actor actor)
     {
         final List<NodeAddress> nodes = stage.getAllNodes();
 

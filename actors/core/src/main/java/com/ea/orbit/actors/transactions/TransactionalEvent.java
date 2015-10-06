@@ -25,18 +25,15 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+package com.ea.orbit.actors.transactions;
 
-package com.ea.orbit.actors.runtime;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.ActorObserver;
-
-import java.util.UUID;
-
-public interface RefFactory
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface TransactionalEvent
 {
-    <T extends Actor> T getReference(Class<T> iClass, Object id);
-
-    <T extends ActorObserver> T getObserverReference(UUID nodeId, Class<T> iClass, Object id);
-
 }

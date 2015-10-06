@@ -25,18 +25,72 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+package com.ea.orbit.actors.transactions;
 
-package com.ea.orbit.actors.runtime;
-
-import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.ActorObserver;
-
-import java.util.UUID;
-
-public interface RefFactory
+public class TransactionEvent
 {
-    <T extends Actor> T getReference(Class<T> iClass, Object id);
+    // to be used to merge split clusters
+    // should be locally (node) monotonic
+    private long timestamp;
 
-    <T extends ActorObserver> T getObserverReference(UUID nodeId, Class<T> iClass, Object id);
+    private String transactionId;
+    private String methodName;
+    private Object[] params;
+
+    public TransactionEvent(
+            final long timestamp,
+            final String transactionId,
+            final String methodName,
+            final Object[] params)
+    {
+        this.timestamp = timestamp;
+        this.transactionId = transactionId;
+        this.methodName = methodName;
+        this.params = params;
+    }
+
+    public TransactionEvent()
+    {
+    }
+
+    public String getTransactionId()
+    {
+        return transactionId;
+    }
+
+    public String getMethodName()
+    {
+        return methodName;
+    }
+
+    public Object[] getParams()
+    {
+        return params;
+    }
+
+    public long getTimestamp()
+    {
+        return timestamp;
+    }
+
+    public void setTimestamp(final long timestamp)
+    {
+        this.timestamp = timestamp;
+    }
+
+    public void setTransactionId(final String transactionId)
+    {
+        this.transactionId = transactionId;
+    }
+
+    public void setMethodName(final String methodName)
+    {
+        this.methodName = methodName;
+    }
+
+    public void setParams(final Object[] params)
+    {
+        this.params = params;
+    }
 
 }

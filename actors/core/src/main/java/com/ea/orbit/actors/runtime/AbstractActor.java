@@ -33,21 +33,11 @@ import com.ea.orbit.actors.extensions.StorageExtension;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.googlecode.gentyref.GenericTypeReflector;
-
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -61,7 +51,6 @@ public abstract class AbstractActor<T>
     StorageExtension stateExtension;
     ActorReference<?> reference;
     Logger logger;
-    private final static Map<Type, Class<?>> stateClasses = new ConcurrentHashMap<>();
 
     protected AbstractActor()
     {
@@ -96,36 +85,11 @@ public abstract class AbstractActor<T>
     @SuppressWarnings({"PMD.LooseCoupling", "unchecked"})
     protected void createDefaultState()
     {
-        final Type stateType = GenericTypeReflector.getTypeParameter(getClass(),
-                AbstractActor.class.getTypeParameters()[0]);
-
-
-        Class<?> c;
-        if (stateType instanceof Class)
-        {
-            c = (Class<?>) stateType;
-        }
-        else if (stateType instanceof ParameterizedType)
-        {
-            c = stateClasses.get(stateType);
-            if (c == null)
-            {
-                c = createSubclass((ParameterizedType) stateType);
-                stateClasses.putIfAbsent(stateType, c);
-                c = stateClasses.get(stateType);
-            }
-        }
-        else if (stateType == null)
-        {
-            c = LinkedHashMap.class;
-        }
-        else
-        {
-            throw new IllegalArgumentException("Don't know how to handler state type: " + stateType);
-        }
+        Class<?> c = getStateClass();
         try
         {
-            state = (T) c.newInstance();
+            Object newState = (T) c.newInstance();
+            this.state = (T) newState;
         }
         catch (Exception e)
         {
@@ -133,57 +97,18 @@ public abstract class AbstractActor<T>
         }
     }
 
-    private Class createSubclass(ParameterizedType type)
+    public Object interceptStateMethod(
+            final Method method,
+            final String event,
+            final Object[] args)
     {
-        final Class<?> erased = GenericTypeReflector.erase(type);
-        Class<?> baseClass = erased.isInterface() ? Object.class : erased;
-        final String genericSignature = GenericUtils.toGenericSignature(type);
+        return ((ActorState) state()).invokeEvent(event, args);
+    }
 
-        org.objectweb.asm.Type superType = org.objectweb.asm.Type.getType(baseClass);
-        ClassWriter cw = new ClassWriter(0);
-        MethodVisitor mv;
-
-        final Class<? extends AbstractActor> actorClass = getClass();
-        final String actorSig = actorClass.getName().replace('.', '/');
-        final String simpleName = "State" + (genericSignature.hashCode() & 0xffff);
-        String name = actorSig + "$" + simpleName;
-
-
-        String superName = superType.getInternalName();
-        cw.visit(Opcodes.V1_8, Opcodes.ACC_SUPER | Opcodes.ACC_PUBLIC, name, genericSignature, superName, null);
-
-
-        cw.visitInnerClass(superName, actorSig, simpleName, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC);
-        {
-            mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            Label lbStart = new Label();
-            mv.visitLabel(lbStart);
-            mv.visitVarInsn(Opcodes.ALOAD, 0);
-            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, superName, "<init>", "()V", false);
-            mv.visitInsn(Opcodes.RETURN);
-            Label lbEnd = new Label();
-            mv.visitLabel(lbEnd);
-            mv.visitLocalVariable("this", "L" + name + ";", null, lbStart, lbEnd, 0);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-        cw.visitEnd();
-        final byte[] bytes = cw.toByteArray();
-        // perhaps we should use the source class ClassLoader as parent.
-        class Loader extends ClassLoader
-        {
-            Loader()
-            {
-                super(actorClass.getClassLoader());
-            }
-
-            public Class<?> define(final String o, final byte[] bytes)
-            {
-                return super.defineClass(o, bytes, 0, bytes.length);
-            }
-        }
-        return new Loader().define(null, bytes);
+    protected Class<?> getStateClass()
+    {
+        final Class<? extends AbstractActor> aClass = getClass();
+        return ActorFactoryGenerator.makeStateClass(aClass);
     }
 
     /**

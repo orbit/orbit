@@ -29,239 +29,130 @@
 package com.ea.orbit.concurrent.test;
 
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.tuples.Pair;
+import com.ea.orbit.util.StringUtils;
 
 import org.junit.Test;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class TaskTest
 {
-    @SuppressWarnings("deprecation")
-    private static class CTask<T> extends Task<T>
+
+    public abstract static class NotNeeded
     {
-        @Override
-        public boolean complete(T value)
+        public abstract Object get();
+
+        public abstract Object get(long t, TimeUnit tu);
+
+        public abstract Object isDone(long t, TimeUnit tu);
+    }
+
+    @Test
+    public void checkOverrides()
+    {
+
+        final Set<Pair<String, List<Class<?>>>> taskMethods =
+                Stream.concat(Stream.of(Task.class.getDeclaredMethods()), Stream.of(NotNeeded.class.getDeclaredMethods()))
+                        .map(m -> Pair.of(m.getName(), Arrays.asList(m.getParameterTypes())))
+                        .collect(Collectors.toSet());
+
+        Set<String> ignore = new HashSet<>(Arrays.asList(
+                "get,getNow,cancel,completedFuture,obtrudeValue,obtrudeException,isDone"
+                        .split(",")));
+
+
+        final List<Method> notOverriden = Stream.of(CompletableFuture.class.getMethods())
+                .filter(m -> !ignore.contains(m.getName()))
+                .filter(m -> !taskMethods.contains(Pair.of(m.getName(), Arrays.asList(m.getParameterTypes()))))
+                .filter(m -> m.getParameterTypes().length > 0)
+                .filter(m -> !(m.getGenericReturnType() instanceof Class))
+                .sorted((a, b) -> a.getName().compareTo(b.getName()))
+                .collect(Collectors.toList());
+
+
+        if (notOverriden.size() > 0)
         {
-            return super.internalComplete(value);
+//            notOverriden.stream()
+//                    .forEach(p -> System.out.println(p));
+//
+//            notOverriden.stream()
+//                    .flatMap(m -> Stream.of(m.getParameterTypes()))
+//                    .distinct()
+//                    .forEach(p -> System.out.println(p));
+
+            Pattern captures = Pattern.compile("BiFunction|Runnable|BiConsumer|Consumer|Function|Supplier", Pattern.CASE_INSENSITIVE);
+
+            notOverriden.stream().forEach(p -> {
+                if (!Modifier.isStatic(p.getModifiers()))
+                {
+                    System.out.println("\t@Override");
+                    System.out.print("\tpublic ");
+                }
+                else
+                {
+                    System.out.print("\tpublic static ");
+                }
+                if (p.getTypeParameters().length > 0)
+                {
+                    final Object collect = Stream.of(p.getTypeParameters())
+                            .map(m -> m.toString())
+                            .collect(Collectors.joining(", "));
+                    System.out.print("<" +
+                            collect + "> ");
+                }
+                System.out.println(p.getGenericReturnType().toString().replaceAll("^.*(CompletableFuture|CompletionStage)", "Task") + " "
+                        + p.getName() + "(" +
+                        Stream.of(p.getGenericParameterTypes())
+                                .map(c -> lastName(c.getTypeName()) + " " + toVarName(c.getTypeName()))
+                                .collect(Collectors.joining(", "))
+                        + ") {");
+                System.out.print("\t\treturn Task.from(");
+                if (Modifier.isStatic(p.getModifiers()))
+                {
+                    System.out.print("CompletableFuture");
+                }
+                else
+                {
+                    System.out.print("super");
+                }
+                System.out.println("." + p.getName() + "(" +
+                        Stream.of(p.getGenericParameterTypes())
+                                .map(c -> captures.matcher(toVarName(c.getTypeName())).matches()
+                                        ? "ExecutionContext.wrap(" + toVarName(c.getTypeName()) + ")"
+                                        : toVarName(c.getTypeName()))
+                                .collect(Collectors.joining(", "))
+                        + "));");
+                System.out.println("\t}");
+
+            });
         }
+        assertEquals("Task must override completable future methods", 0, notOverriden.size());
 
-        @Override
-        public boolean completeExceptionally(Throwable ex)
-        {
-            return super.internalCompleteExceptionally(ex);
-        }
     }
 
-    @Test
-    public void testAllOf()
+    private String toVarName(final String typeName)
     {
-        CTask<Integer> t1 = new CTask<>();
-        CTask<Integer> t2 = new CTask<>();
-        CTask<Integer> t3 = new CTask<>();
-        Task<?> all = Task.allOf(t1, t2, t3);
-
-        assertFalse(all.isDone());
-        t1.complete(1);
-        assertFalse(all.isDone());
-
-        t2.complete(2);
-        t3.complete(3);
-        assertTrue(all.isDone());
+        final String name = typeName.replaceAll("^[^<]*[.]", "").replaceAll("<.*", "");
+        return StringUtils.uncapitalize(name).toString();
     }
 
-    @Test
-    public void testAllOfWithError()
+    private String lastName(final String typeName)
     {
-        CTask<Integer> t1 = new CTask<>();
-        CTask<Integer> t2 = new CTask<>();
-        CTask<Integer> t3 = new CTask<>();
-        Task<?> all = Task.allOf(t1, t2, t3);
-
-        assertFalse(all.isDone());
-        t1.complete(1);
-        assertFalse(all.isDone());
-
-        // simulating an error
-        t2.completeExceptionally(new RuntimeException());
-        assertFalse(all.isDone());
-        t3.complete(3);
-        // ensuring that allOf only completes after all subs are completed, even if there were errors.
-        assertTrue(all.isDone());
-    }
-
-    @Test
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public void testAllOfVariations()
-    {
-        CTask<Integer> t1 = new CTask();
-        CTask t2 = new CTask();
-        CTask t3 = new CTask();
-        CompletableFuture c4 = new CompletableFuture();
-        Task all_regular = CTask.allOf(t1, t2, t3);
-        Task all_array = CTask.allOf(new CompletableFuture[]{t1, t2, t3});
-        Task all_array2 = CTask.allOf(new CTask[]{t1, t2, t3});
-        Task all_collection = CTask.allOf(Arrays.asList(t1, t2, t3));
-        Task all_stream = CTask.allOf(Arrays.asList(t1, t2, t3).stream());
-        Stream<CTask> stream = Arrays.asList(t1, t2, t3).stream();
-        Task all_stream2 = CTask.allOf(stream);
-        Task all_stream3 = CTask.allOf(Arrays.asList(c4).stream());
-        Stream<CompletableFuture> stream4 = Arrays.asList(t1, t2, t3, c4).stream();
-        Task all_stream4 = Task.allOf(stream4);
-        Task all_stream5 = Task.allOf(Arrays.asList(t1, t2, t3, c4).stream());
-
-        t1.complete(1);
-        t2.completeExceptionally(new RuntimeException());
-        t3.complete(3);
-        c4.complete(4);
-        assertTrue(all_regular.isDone());
-        assertTrue(all_array.isDone());
-        assertTrue(all_array2.isDone());
-        assertTrue(all_stream.isDone());
-        assertTrue(all_stream2.isDone());
-        assertTrue(all_stream3.isDone());
-        assertTrue(all_stream4.isDone());
-        assertTrue(all_stream5.isDone());
-        assertTrue(all_collection.isDone());
-    }
-
-    @Test
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public void testAnyOfVariations()
-    {
-        CTask<Integer> t1 = new CTask<>();
-        CTask t2 = new CTask<>();
-        CTask<?> t3 = new CTask<>();
-        CompletableFuture c4 = new CompletableFuture();
-        Task group_regular = CTask.anyOf(t1, t2, t3);
-        Task group_array = CTask.anyOf(new CompletableFuture[]{t1, t2, t3});
-        Task group_array2 = CTask.anyOf(new CTask[]{t1, t2, t3});
-        Task group_collection = CTask.anyOf(Arrays.asList(t1, t2, t3));
-        Task group_stream = CTask.anyOf(Arrays.asList(t1, t2, t3).stream());
-        Stream<CTask> stream = Arrays.asList(t1, t2, t3).stream();
-        Task group_stream2 = CTask.anyOf(stream);
-        Task group_stream3 = CTask.anyOf(Arrays.asList(c4).stream());
-        Stream<CompletableFuture> stream4 = Arrays.asList(t1, t2, t3, c4).stream();
-        Task group_stream4 = CTask.anyOf(stream4);
-        Task group_stream5 = CTask.anyOf(Arrays.asList(t1, t2, t3, c4).stream());
-
-        t1.complete(1);
-        c4.complete(4);
-        assertTrue(group_regular.isDone());
-        assertTrue(group_array.isDone());
-        assertTrue(group_array2.isDone());
-        assertTrue(group_stream.isDone());
-        assertTrue(group_stream2.isDone());
-        assertTrue(group_stream3.isDone());
-        assertTrue(group_stream4.isDone());
-        assertTrue(group_stream5.isDone());
-        assertTrue(group_collection.isDone());
-    }
-
-    @Test
-    public void testThenApply()
-    {
-        CTask<Integer> t1 = new CTask<>();
-        Task<String> t2 = t1.thenApply(x -> "a");
-        assertFalse(t1.isDone());
-        t1.complete(1);
-        assertTrue(t2.isDone());
-        assertEquals("a", t2.join());
-    }
-
-    @Test
-    public void testThenApplyWithVoid()
-    {
-        CTask<Void> t1 = new CTask<>();
-        Task<String> t2 = t1.thenApply(x -> "a");
-        assertFalse(t1.isDone());
-        t1.complete(null);
-        assertTrue(t2.isDone());
-        assertEquals("a", t2.join());
-    }
-
-    @Test
-    public void testThenReturn()
-    {
-        CTask<Integer> t1 = new CTask<>();
-        Task<String> t2 = t1.thenReturn(() -> "a");
-        assertFalse(t1.isDone());
-        t1.complete(1);
-        assertTrue(t2.isDone());
-        assertEquals("a", t2.join());
+        return typeName.replaceAll("^[^<]*[.]", "");
     }
 
 
-    @Test
-    public void testThenCompose()
-    {
-        CTask<Integer> t1 = new CTask<>();
-        Task<String> t2 = t1.thenCompose(x -> CTask.fromValue(x + "a"));
-        Task<String> t3 = t1.thenCompose(x -> CompletableFuture.completedFuture(x + "a"));
-        assertFalse(t1.isDone());
-        t1.complete(1);
-        assertTrue(t2.isDone());
-        assertEquals("1a", t2.join());
-        assertEquals("1a", t3.join());
-    }
-
-    @Test
-    public void testThenComposeNoParams()
-    {
-        CTask<Integer> t1 = new CTask<>();
-        Task<String> t2 = t1.thenCompose(() -> Task.fromValue("b"));
-        Task<String> t3 = t1.thenCompose(() -> CompletableFuture.completedFuture("c"));
-        assertFalse(t1.isDone());
-        t1.complete(1);
-        assertTrue(t2.isDone());
-        assertEquals("b", t2.join());
-        assertEquals("c", t3.join());
-    }
-
-
-    @Test
-    public void testThenReturnWithException()
-    {
-        CTask<Integer> t1 = new CTask<>();
-        Task<String> t2 = t1.thenReturn(() -> "a");
-        assertFalse(t1.isDone());
-        t1.completeExceptionally(new RuntimeException());
-        assertTrue(t2.isDone());
-        assertTrue(t2.isCompletedExceptionally());
-    }
-
-    @Test
-    public void testGetAndJoinWithWrappedForkJoinTask() throws ExecutionException, InterruptedException
-    {
-        final ForkJoinTask<String> task = ForkJoinTask.adapt(() -> "bla");
-        final Task<String> t1 = Task.fromFuture(task);
-        assertFalse(t1.isDone());
-        task.invoke();
-        assertEquals("bla", t1.join());
-        assertTrue(t1.isDone());
-        assertEquals("bla", t1.join());
-        assertEquals("bla", t1.get());
-    }
-
-
-    @Test
-    public void testGetAndJoinWithWrappedForkJoinTaskAndTimeout() throws ExecutionException, InterruptedException
-    {
-        final ForkJoinTask<String> task = ForkJoinTask.adapt(() -> "bla");
-        final Task<String> t1 = Task.fromFuture(task);
-        assertFalse(t1.isDone());
-        Thread.sleep(10);
-        task.fork();
-        assertEquals("bla", t1.join());
-        assertTrue(t1.isDone());
-        assertEquals("bla", t1.join());
-        assertEquals("bla", t1.get());
-    }
 }

@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors;
 
 import com.ea.orbit.actors.runtime.ReferenceFactory;
+import com.ea.orbit.actors.transactions.Transaction;
 
 /**
  * Interface marker for orbit actors.
@@ -65,8 +66,8 @@ public interface Actor
      * Gets a reference to an actor.
      *
      * @param actorInterface the actor interface
-     * @param id     the actor id
-     * @param <T>    the interface type
+     * @param id             the actor id
+     * @param <T>            the interface type
      * @return an actor reference
      */
     static <T extends Actor> T getReference(Class<T> actorInterface, String id)
@@ -78,11 +79,17 @@ public interface Actor
      * Gets a reference to an actor that has the {@literal@}NoIdentity annotation.
      *
      * @param actorInterface the actor interface
-     * @param <T>    the interface type
+     * @param <T>            the interface type
      * @return an actor reference
      */
     static <T extends Actor> T getReference(Class<T> actorInterface)
     {
         return ReferenceFactory.ref(actorInterface);
     }
+
+    static <T> T cast(Class<T> remoteInterface, Actor actor)
+    {
+        return ReferenceFactory.cast(remoteInterface, actor);
+    }
+
 }

@@ -35,13 +35,15 @@ import com.ea.orbit.concurrent.Task;
 import java.lang.reflect.Method;
 
 /**
- * Listener for actor method invocation.
+ * Listener for remote actor method invocation.
  */
 public interface InvokeHookExtension extends ActorExtension
 {
 
     /**
      * Invoke hook for actor methods.
+     * Called before sending a message to another actor.
+     * Can detect the response by wrapping the returned Task.
      *
      * @param context     current invocation context
      * @param toReference the reference to the actor

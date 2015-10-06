@@ -77,6 +77,16 @@ public class FakeSync
         get(key).complete(value);
     }
 
+    public void reset(Object key)
+    {
+        shared.remove(key);
+    }
+
+    public void putException(Object key, Throwable value)
+    {
+        get(key).completeExceptionally(value);
+    }
+
     public <T> Task<T> get(Object key)
     {
         Task<?> t = shared.get(key);
