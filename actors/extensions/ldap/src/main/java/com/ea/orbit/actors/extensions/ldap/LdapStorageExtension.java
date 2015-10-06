@@ -138,7 +138,7 @@ public class LdapStorageExtension extends AbstractStorageExtension
         Map<String, Field> map = new HashMap<>();
 
         List<Field> fields = new ArrayList<>();
-        for (Class c = clazz; c != null && c != Object.class; c = clazz.getSuperclass())
+        for (Class c = clazz; c != null && c != Object.class; c = c.getSuperclass())
         {
             final Field[] declaredFields = c.getDeclaredFields();
             if (declaredFields != null && declaredFields.length > 0)
@@ -171,7 +171,6 @@ public class LdapStorageExtension extends AbstractStorageExtension
         try
         {
             LdapEntity entity = entity(state);
-            connection = acquireConnection();
 
             List<String> attributes = new ArrayList(Arrays.asList(entity.attributes()));
             Map<String, Field> map = getFieldAttributeMap(state.getClass());
@@ -180,6 +179,7 @@ public class LdapStorageExtension extends AbstractStorageExtension
                 attributes.add(key + ": " + map.get(key).get(state).toString());
             }
 
+            connection = acquireConnection();
             EntryCursor cursor = connection.search(absoluteDn(reference, entity), "(objectclass=*)", SearchScope.OBJECT, "*");
             if (cursor.next())
             {
