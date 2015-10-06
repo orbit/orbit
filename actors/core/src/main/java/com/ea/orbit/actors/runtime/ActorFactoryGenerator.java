@@ -339,7 +339,16 @@ public class ActorFactoryGenerator
                             cc.addMethod(newMethod);
                         }
                     }
-                    invokerBody.append("} return ((" + ActorState.class.getName() + ")super).invokeEvent($1, $2); }");
+                    if (count > 0)
+                    {
+                        invokerBody.append(" } ");
+                    }
+                    else
+                    {
+                        invokerBody.setLength(0);
+                        invokerBody.append("{ ");
+                    }
+                    invokerBody.append("return ((" + ActorState.class.getName() + ")super).invokeEvent($1, $2); }");
                     final CtMethod invoker = CtNewMethod.make(
                             pool.get(Object.class.getName()), "invokeEvent",
                             new CtClass[]{pool.get(String.class.getName()), pool.get(Object[].class.getName())},
