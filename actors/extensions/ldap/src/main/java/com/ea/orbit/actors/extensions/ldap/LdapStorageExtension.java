@@ -138,7 +138,7 @@ public class LdapStorageExtension extends AbstractStorageExtension
         Map<String, Field> map = new HashMap<>();
 
         List<Field> fields = new ArrayList<>();
-        for (Class c = clazz; c != null; c = clazz.getSuperclass())
+        for (Class c = clazz; c != null && c != Object.class; c = clazz.getSuperclass())
         {
             final Field[] declaredFields = c.getDeclaredFields();
             if (declaredFields != null && declaredFields.length > 0)
