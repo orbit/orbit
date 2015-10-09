@@ -44,6 +44,7 @@ import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
 import org.jgroups.fork.ForkChannel;
+import org.jgroups.protocols.FORK;
 import org.jgroups.protocols.FRAG2;
 import org.jgroups.protocols.UDP;
 import org.jgroups.stack.ProtocolStack;
@@ -144,13 +145,21 @@ public class JGroupsClusterPeer implements ClusterPeer
                         udp.setMulticastPort(udp.getMulticastPort() + ((clusterName.hashCode() & 0x8fff_ffff) % portRangeLength));
                     }
 
+
+                    ProtocolStack stack = baseChannel.getProtocolStack();
+                    FORK fork = (FORK) stack.findProtocol(FORK.class);
+                    if (fork == null)
+                    {
+                        stack.insertProtocol(fork = new FORK(), ProtocolStack.ABOVE, FRAG2.class);
+                    }
+                    fork.setProtocolStack(stack);
+
                     channel = new ForkChannel(baseChannel,
                             "hijack-stack",
                             "lead-hijacker",
                             true,
                             ProtocolStack.ABOVE,
                             FRAG2.class);
-                    channel.connect(clusterName);
 
                     channel.setReceiver(new ReceiverAdapter()
                     {
@@ -176,6 +185,7 @@ public class JGroupsClusterPeer implements ClusterPeer
                     ConfigurationBuilder builder = new ConfigurationBuilder();
                     builder.clustering().cacheMode(CacheMode.DIST_ASYNC);
 
+
                     cacheManager = new DefaultCacheManager(globalConfigurationBuilder.build(), builder.build());
 
                     ConfigurationBuilder builder2 = new ConfigurationBuilder();
@@ -184,6 +194,7 @@ public class JGroupsClusterPeer implements ClusterPeer
 
                     // need to get a cache, any cache to force the initialization
                     cacheManager.getCache("clusterTopologyCache");
+                    channel.connect(clusterName);
                     local = new NodeInfo(channel.getAddress());
                     logger.info("Registering the local address");
                     logger.info("Done with JGroups initialization");

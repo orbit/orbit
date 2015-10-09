@@ -50,8 +50,6 @@ import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
-import com.ea.orbit.metrics.annotations.ExportMetric;
-import com.ea.orbit.metrics.annotations.MetricScope;
 import com.ea.orbit.tuples.Pair;
 
 import org.slf4j.Logger;
@@ -480,12 +478,10 @@ public class Execution implements Runtime
                                 throw ex;
                             }
                         }
-                        instance = newInstance;
-
                         await(actor.activateAsync());
                         await(Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postActivation(actor))));
+                        instance = newInstance;
                     }
-
                 }
 
                 return Task.fromValue(instance);
@@ -690,7 +686,7 @@ public class Execution implements Runtime
             }
         };
 
-        if(period > 0)
+        if (period > 0)
         {
             timer.schedule(timerTask, timeUnit.toMillis(dueTime), timeUnit.toMillis(period));
         }
@@ -1071,6 +1067,11 @@ public class Execution implements Runtime
                 bind();
                 final Object actor = await(activation.getOrCreateInstance());
                 context.setActor((AbstractActor<?>) actor);
+
+                if (descriptor.invoker == null)
+                {
+                    descriptor.invoker = dynamicReferenceFactory.getInvokerFor(actor.getClass());
+                }
 
                 Task<?> future = descriptor.invoker.safeInvoke(actor, methodId, params);
                 return future.whenComplete((r, e) -> {
