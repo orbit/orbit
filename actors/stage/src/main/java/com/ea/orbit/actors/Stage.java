@@ -54,7 +54,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
 
-import java.lang.reflect.Method;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -290,7 +289,7 @@ public class Stage implements Startable
 
         if (container != null)
         {
-            extensions.addAll(container.getClasses().stream().filter(c -> ActorExtension.class.isAssignableFrom(c))
+            extensions.addAll(container.getClasses().stream().filter(c -> ActorExtension.class.isAssignableFrom(c) && c.isAnnotationPresent(Singleton.class))
                     .map(c -> (ActorExtension) container.get(c)).collect(Collectors.toList()));
         }
 
