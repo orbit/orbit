@@ -71,7 +71,7 @@
         <dependency>
             <groupId>net.jodah</groupId>
             <artifactId>expiringmap</artifactId>
-            <version>0.4.1</version>
+            <version>0.5.1</version>
         </dependency>
     </dependencies>
 
