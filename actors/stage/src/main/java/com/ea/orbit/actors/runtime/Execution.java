@@ -43,7 +43,6 @@ import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.CacheResponse;
-import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.OnlyIfActivated;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
@@ -55,7 +54,6 @@ import com.ea.orbit.tuples.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.MapMaker;
 
 import java.io.IOException;
@@ -70,6 +68,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -140,7 +139,6 @@ public class Execution implements Runtime
      * And from the message header to the TaskContext when receiving them.
      * </p>
      */
-    @Config("orbit.actors.stickyHeaders")
     private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
 
     public Execution()
@@ -494,14 +492,9 @@ public class Execution implements Runtime
         }
     }
 
-    public void addStickerHeaders(String ...stickyHeaders)
+    public void addStickyHeaders(Collection<String> stickyHeaders)
     {
-        Collections.addAll(this.stickyHeaders, stickyHeaders);
-    }
-
-    public Set<String> getStickyHeaders()
-    {
-        return ImmutableSet.copyOf(stickyHeaders);
+        this.stickyHeaders.addAll(stickyHeaders);
     }
 
     public void setExtensions(List<ActorExtension> extensions)

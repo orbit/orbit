@@ -85,6 +85,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.ea.orbit.actors.Stage.*;
 import static org.junit.Assert.fail;
 
 @SuppressWarnings("VisibilityModifierCheck")
@@ -260,11 +261,10 @@ public class ActorBaseTest
     public Stage createClient() throws ExecutionException, InterruptedException
     {
         hiddenLog.info("Create Client");
-        Stage client = new Stage();
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
-        addLogging(client);
-        client.addExtension(new LifetimeExtension()
+
+        LifetimeExtension lifetimeExtension = new LifetimeExtension()
         {
             @Override
             public Task<?> preActivation(final AbstractActor<?> actor)
@@ -272,13 +272,20 @@ public class ActorBaseTest
                 dr.inject(actor);
                 return Task.done();
             }
-        });
-        client.setMode(Stage.StageMode.FRONT_END);
-        client.setExecutionPool(commonPool);
-        client.setMessagingPool(commonPool);
-        client.setClock(clock);
-        client.setClusterName(clusterName);
-        client.setClusterPeer(new FakeClusterPeer());
+        };
+
+        Stage client = new Builder()
+                .mode(StageMode.FRONT_END)
+                .executionPool(commonPool)
+                .messagingPool(commonPool)
+                .clock(clock)
+                .clusterName(clusterName)
+                .clusterPeer(new FakeClusterPeer())
+                .extensions(lifetimeExtension)
+                .build();
+
+        addLogging(client);
+
         client.start().join();
         client.bind();
         return client;
@@ -287,29 +294,32 @@ public class ActorBaseTest
     public Stage createStage() throws ExecutionException, InterruptedException
     {
         hiddenLog.info("Create Stage");
-        Stage stage = new Stage();
-
 
         DependencyRegistry dr = initDependencyRegistry();
-        dr.addSingleton(Stage.class, stage);
-        addLogging(stage);
-        stage.addExtension(new LifetimeExtension()
-        {
+
+        LifetimeExtension lifetimeExtension = new LifetimeExtension() {
             @Override
             public Task<?> preActivation(final AbstractActor<?> actor)
             {
                 dr.inject(actor);
                 return Task.done();
             }
-        });
-        stage.setMode(Stage.StageMode.HOST);
-        stage.setExecutionPool(commonPool);
-        stage.setMessagingPool(commonPool);
-        stage.setObjectCloner(getExecutionObjectCloner());
-        stage.addExtension(new FakeStorageExtension(fakeDatabase));
-        stage.setClock(clock);
-        stage.setClusterName(clusterName);
-        stage.setClusterPeer(new FakeClusterPeer());
+        };
+
+        Stage stage = new Builder()
+                .extensions(lifetimeExtension, new FakeStorageExtension(fakeDatabase))
+                .mode(StageMode.HOST)
+                .executionPool(commonPool)
+                .messagingPool(commonPool)
+                .objectCloner(getExecutionObjectCloner())
+                .clock(clock)
+                .clusterName(clusterName)
+                .clusterPeer(new FakeClusterPeer())
+                .build();
+
+        dr.addSingleton(Stage.class, stage);
+        addLogging(stage);
+
         stage.start().join();
 
         // warm up
