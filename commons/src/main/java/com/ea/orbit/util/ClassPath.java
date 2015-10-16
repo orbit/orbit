@@ -219,4 +219,9 @@ public class ClassPath
         return res;
     }
 
+    public static String getNullSafePackageName(final Class<?> clazz)
+    {
+        return clazz.getPackage() != null ? clazz.getPackage().getName() : "";
+    }
+
 }

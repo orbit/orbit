@@ -34,7 +34,7 @@ import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.annotation.NoIdentity;
 import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.actors.cluster.NodeAddressImpl;
-import com.ea.orbit.instrumentation.ClassPathUtils;
+import com.ea.orbit.util.ClassPath;
 
 import java.lang.reflect.Proxy;
 import java.util.UUID;
@@ -80,7 +80,7 @@ public class ReferenceFactory implements RefFactory
                 {
                     factoryClazz = factoryClazz.substring(1); // remove leading 'I'
                 }
-                factory = (ActorFactory<T>) Class.forName(ClassPathUtils.getNullSafePackageName(iClass) + "." + factoryClazz).newInstance();
+                factory = (ActorFactory<T>) Class.forName(ClassPath.getNullSafePackageName(iClass) + "." + factoryClazz).newInstance();
             }
             catch (Exception e)
             {
