@@ -111,7 +111,7 @@ public class Stage implements Startable
             try
             {
                 // async is present in the classpath, let's make sure await is initialized
-                Class.forName("com.ea.orbit.async.Await").getMethod("init").invoke(null);;
+                Class.forName("com.ea.orbit.async.Await").getMethod("init").invoke(null);
             }
             catch(Exception ex)
             {
@@ -129,6 +129,11 @@ public class Stage implements Startable
     public void setClock(final Clock clock)
     {
         this.clock = clock;
+    }
+
+    public void setExecution(final Execution execution)
+    {
+        this.execution = execution;
     }
 
     public void setMessaging(final Messaging messaging)

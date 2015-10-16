@@ -55,6 +55,7 @@ import com.ea.orbit.tuples.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.MapMaker;
 
 import java.io.IOException;
@@ -136,7 +137,7 @@ public class Execution implements Runtime
      * RPC message headers that are copied from and to the TaskContext.
      * <p>
      * These fields are copied from the TaskContext to the message headers when sending messagess.
-     * And from the message header to the TaskContext when receiving them.ø
+     * And from the message header to the TaskContext when receiving them.
      * </p>
      */
     @Config("orbit.actors.stickyHeaders")
@@ -493,6 +494,15 @@ public class Execution implements Runtime
         }
     }
 
+    public void addStickerHeaders(String ...stickyHeaders)
+    {
+        Collections.addAll(this.stickyHeaders, stickyHeaders);
+    }
+
+    public Set<String> getStickyHeaders()
+    {
+        return ImmutableSet.copyOf(stickyHeaders);
+    }
 
     public void setExtensions(List<ActorExtension> extensions)
     {
