@@ -29,7 +29,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.container;
 
 import com.ea.orbit.exception.UncheckedException;
-import com.ea.orbit.instrumentation.ClassPathUtils;
 import com.ea.orbit.util.ClassPath;
 import javax.inject.Singleton;
 
@@ -76,7 +75,7 @@ public class Module
         }
         else
         {
-            String packageName = ClassPathUtils.getNullSafePackageName(getClass()).replace('.', '/');
+            String packageName = ClassPath.getNullSafePackageName(getClass()).replace('.', '/');
             return ClassPath.get().getAllResources().stream()
                     .filter(r -> r.getResourceName().startsWith(packageName))
                     .filter(r -> r.getResourceName().endsWith(".class"))

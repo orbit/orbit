@@ -87,11 +87,6 @@ public class ClassPathUtils
         }
     }
 
-    public static String getNullSafePackageName(final Class<?> clazz)
-    {
-        return clazz.getPackage() != null ? clazz.getPackage().getName() : "";
-    }
-
     /**
      * Get the actual classpath resource location for a class
      *
