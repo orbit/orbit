@@ -85,12 +85,15 @@ public class EmbeddedHttpServer implements Startable
     @Config("orbit.http.providers")
     private List<Class<?>> providers = new ArrayList<>();
 
+    @Config("orbit.http.metricsEnabled")
+    private boolean metricsEnabled = true;
+
     public void registerProviders(Collection<Class<?>> classes)
     {
         providers.addAll(classes);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public Task<Void> start()
     {
 
@@ -153,14 +156,14 @@ public class EmbeddedHttpServer implements Startable
         final ContextHandler resourceContext = new ContextHandler();
         ResourceHandler resourceHandler = new ResourceHandler();
         resourceHandler.setDirectoriesListed(true);
-        resourceHandler.setWelcomeFiles(new String[]{ "index.html" });
+        resourceHandler.setWelcomeFiles(new String[]{"index.html"});
         resourceHandler.setBaseResource(Resource.newClassPathResource("/web"));
 
         resourceContext.setHandler(resourceHandler);
         resourceContext.setInitParameter("useFileMappedBuffer", "false");
         final ContextHandlerCollection contexts = new ContextHandlerCollection();
 
-        contexts.setHandlers(new Handler[]{ wrapHandlerWithMetrics(resourceContext, "resourceContext"), wrapHandlerWithMetrics(webAppContext, "webAppContext") });
+        contexts.setHandlers(new Handler[]{wrapHandlerWithMetrics(resourceContext, "resourceContext"), wrapHandlerWithMetrics(webAppContext, "webAppContext")});
 
         server = new Server(port);
         server.setHandler(contexts);
@@ -206,11 +209,12 @@ public class EmbeddedHttpServer implements Startable
         return Task.done();
     }
 
-    /**
-     * Gets the actual tcp port for the first server connector
-     *
-     * @return the actual port available only after start.
-     */
+        /**
+         * Gets the actual tcp port for the first server connector
+         *
+         * @return the actual port available only after start.
+         */
+
     public int getLocalPort()
     {
         return ((ServerConnector) server.getConnectors()[0]).getLocalPort();
@@ -242,6 +246,9 @@ public class EmbeddedHttpServer implements Startable
 
     private Handler wrapHandlerWithMetrics(Handler handlerToWrap, String handlerName)
     {
+        if(!metricsEnabled) {
+            return handlerToWrap;
+        }
         try
         {
             Class metricsWrapperClass = Class.forName("com.ea.orbit.metrics.JettyMetricsHandlerWrapper");

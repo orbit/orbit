@@ -44,11 +44,6 @@ public class ActorWebSocket
         this.session = session;
     }
 
-    @OnMessage
-    public void onMessage(byte[] message, int off, int count)
-    {
-
-    }
 
     @OnClose
     public void onClose()
