@@ -45,6 +45,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>stage</module>
         <module>client</module>
         <module>server</module>
+        <module>websocket</module>
         <module>extensions/jpa</module>
         <module>extensions/json</module>
         <module>extensions/mongodb</module>
