@@ -56,8 +56,11 @@ import javax.inject.Singleton;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
@@ -65,6 +68,8 @@ import java.util.stream.Collectors;
 public class Stage implements Startable
 {
     private static final Logger logger = LoggerFactory.getLogger(Stage.class);
+
+    private static final int DEFAULT_EXECUTION_POOL_SIZE = 128;
 
     @Config("orbit.actors.clusterName")
     private String clusterName;
@@ -76,10 +81,13 @@ public class Stage implements Startable
     private StageMode mode = StageMode.HOST;
 
     @Config("orbit.actors.executionPoolSize")
-    private int executionPoolSize = 128;
+    private int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
 
     @Config("orbit.actors.extensions")
     private List<ActorExtension> extensions = new ArrayList<>();
+
+    @Config("orbit.actors.stickyHeaders")
+    private Set<String> stickyHeaders = new HashSet<>();
 
     @Wired
     private Container container;
@@ -111,7 +119,7 @@ public class Stage implements Startable
             try
             {
                 // async is present in the classpath, let's make sure await is initialized
-                Class.forName("com.ea.orbit.async.Await").getMethod("init").invoke(null);;
+                Class.forName("com.ea.orbit.async.Await").getMethod("init").invoke(null);
             }
             catch(Exception ex)
             {
@@ -124,6 +132,104 @@ public class Stage implements Startable
         {
             // no problem, application doesn't use orbit async.
         }
+    }
+
+    public static class Builder {
+
+        private Clock clock;
+        private ExecutorService executionPool;
+        private ExecutorService messagingPool;
+        private ExecutionObjectCloner objectCloner;
+        private ClusterPeer clusterPeer;
+
+        private String clusterName;
+        private String nodeName;
+        private StageMode mode = StageMode.HOST;
+        private int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
+
+        private Messaging messaging;
+
+        private List<ActorExtension> extensions = new ArrayList<>();
+        private Set<String> stickyHeaders = new HashSet<>();
+
+        public Builder clock(Clock clock) {
+            this.clock = clock;
+            return this;
+        }
+
+        public Builder executionPool(ExecutorService executionPool) {
+            this.executionPool = executionPool;
+            return this;
+        }
+
+        public Builder messagingPool(ExecutorService messagingPool) {
+            this.messagingPool = messagingPool;
+            return this;
+        }
+
+        public Builder clusterPeer(ClusterPeer clusterPeer) {
+            this.clusterPeer = clusterPeer;
+            return this;
+        }
+
+        public Builder objectCloner(ExecutionObjectCloner objectCloner) {
+            this.objectCloner = objectCloner;
+            return this;
+        }
+
+        public Builder clusterName(String clusterName) {
+            this.clusterName = clusterName;
+            return this;
+        }
+
+        public Builder nodeName(String nodeName) {
+            this.nodeName = nodeName;
+            return this;
+        }
+
+        public Builder mode(StageMode mode) {
+            this.mode = mode;
+            return this;
+        }
+
+        public Builder messaging(Messaging messaging) {
+            this.messaging = messaging;
+            return this;
+        }
+
+        public Builder extensions(ActorExtension ...extensions)
+        {
+            Collections.addAll(this.extensions, extensions);
+            return this;
+        }
+
+        public Builder stickyHeaders(String ...stickyHeaders)
+        {
+            Collections.addAll(this.stickyHeaders, stickyHeaders);
+            return this;
+        }
+
+        public Stage build() {
+            Stage stage = new Stage();
+            stage.setClock(clock);
+            stage.setExecutionPool(executionPool);
+            stage.setMessagingPool(messagingPool);
+            stage.setObjectCloner(objectCloner);
+            stage.setClusterName(clusterName);
+            stage.setNodeName(nodeName);
+            stage.setMode(mode);
+            stage.setExecutionPoolSize(executionPoolSize);
+            extensions.forEach(stage::addExtension);
+            stage.setMessaging(messaging);
+            stage.addStickyHeaders(stickyHeaders);
+            return stage;
+        }
+
+    }
+
+    public void addStickyHeaders(Collection<String> stickyHeaders)
+    {
+        this.stickyHeaders.addAll(stickyHeaders);
     }
 
     public void setClock(final Clock clock)
@@ -264,7 +370,7 @@ public class Stage implements Startable
         {
             if (container != null)
             {
-                if (clusterPeer == null && !container.getClasses().stream().filter(ClusterPeer.class::isAssignableFrom).findAny().isPresent())
+                if (!container.getClasses().stream().filter(ClusterPeer.class::isAssignableFrom).findAny().isPresent())
                 {
                     clusterPeer = container.get(JGroupsClusterPeer.class);
                 }
@@ -301,6 +407,7 @@ public class Stage implements Startable
         execution.setMessaging(messaging);
         execution.setExecutor(executionPool);
         execution.setObjectCloner(objectCloner);
+        execution.addStickyHeaders(stickyHeaders);
 
         messaging.setExecution(execution);
         messaging.setClock(clock);

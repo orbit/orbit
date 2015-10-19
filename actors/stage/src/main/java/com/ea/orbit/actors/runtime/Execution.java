@@ -43,7 +43,6 @@ import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.CacheResponse;
-import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.OnlyIfActivated;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
@@ -69,6 +68,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -136,10 +136,9 @@ public class Execution implements Runtime
      * RPC message headers that are copied from and to the TaskContext.
      * <p>
      * These fields are copied from the TaskContext to the message headers when sending messagess.
-     * And from the message header to the TaskContext when receiving them.ø
+     * And from the message header to the TaskContext when receiving them.
      * </p>
      */
-    @Config("orbit.actors.stickyHeaders")
     private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
 
     public Execution()
@@ -493,6 +492,10 @@ public class Execution implements Runtime
         }
     }
 
+    public void addStickyHeaders(Collection<String> stickyHeaders)
+    {
+        this.stickyHeaders.addAll(stickyHeaders);
+    }
 
     public void setExtensions(List<ActorExtension> extensions)
     {
