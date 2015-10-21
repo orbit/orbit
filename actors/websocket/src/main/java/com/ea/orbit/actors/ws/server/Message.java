@@ -28,24 +28,23 @@
 
 package com.ea.orbit.actors.ws.server;
 
-import java.util.Map;
-
 public class Message
 {
-    private int messageType;
+    private int type;
     private int messageId;
-    private boolean oneWay;
-    private Map<Object, Object> headers;
+    private int interfaceId;
+    private int methodId;
+    private String objectId;
     private Object payload;
 
-    public int getMessageType()
+    public int getType()
     {
-        return messageType;
+        return type;
     }
 
-    public void setMessageType(final int messageType)
+    public void setType(final int type)
     {
-        this.messageType = messageType;
+        this.type = type;
     }
 
     public int getMessageId()
@@ -58,26 +57,6 @@ public class Message
         this.messageId = messageId;
     }
 
-    public boolean isOneWay()
-    {
-        return oneWay;
-    }
-
-    public void setOneWay(final boolean oneWay)
-    {
-        this.oneWay = oneWay;
-    }
-
-    public Map<Object, Object> getHeaders()
-    {
-        return headers;
-    }
-
-    public void setHeaders(final Map<Object, Object> headers)
-    {
-        this.headers = headers;
-    }
-
     public Object getPayload()
     {
         return payload;
@@ -86,5 +65,35 @@ public class Message
     public void setPayload(final Object payload)
     {
         this.payload = payload;
+    }
+
+    public int getInterfaceId()
+    {
+        return interfaceId;
+    }
+
+    public void setInterfaceId(final int interfaceId)
+    {
+        this.interfaceId = interfaceId;
+    }
+
+    public int getMethodId()
+    {
+        return methodId;
+    }
+
+    public void setMethodId(final int methodId)
+    {
+        this.methodId = methodId;
+    }
+
+    public String getObjectId()
+    {
+        return objectId;
+    }
+
+    public void setObjectId(final String objectId)
+    {
+        this.objectId = objectId;
     }
 }

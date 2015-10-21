@@ -49,9 +49,20 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-stage</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>javax.websocket</groupId>
             <artifactId>javax.websocket-api</artifactId>
             <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-json</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
         </dependency>
 
         <!-- test dependencies -->
