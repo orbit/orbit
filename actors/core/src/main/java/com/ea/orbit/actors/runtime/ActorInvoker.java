@@ -28,7 +28,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.concurrent.Task;
+
+import java.lang.reflect.Method;
 
 public abstract class ActorInvoker<T>
 {
@@ -58,4 +61,12 @@ public abstract class ActorInvoker<T>
             return Task.fromException(ex);
         }
     }
+
+    public Method getMethod(final int methodId)
+    {
+        throw new com.ea.orbit.exception.MethodNotFoundException("MethodId :" + methodId);
+    }
+
+    public abstract Class<Actor> getInterface();
+
 }

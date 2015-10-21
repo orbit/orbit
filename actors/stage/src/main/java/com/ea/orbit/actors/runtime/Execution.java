@@ -45,9 +45,11 @@ import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.OnlyIfActivated;
+import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.concurrent.TaskContext;
+import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.tuples.Pair;
@@ -142,6 +144,9 @@ public class Execution implements Runtime
     @Config("orbit.actors.stickyHeaders")
     private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
 
+    @Wired
+    private Container container;
+
     public Execution()
     {
         // the last runtime created will be the default.
@@ -224,10 +229,11 @@ public class Execution implements Runtime
     private static class InterfaceDescriptor
     {
         ActorFactory<?> factory;
-        ActorInvoker<Object> invoker;
+        volatile ActorInvoker<Object> invoker;
         boolean cannotActivate;
         String concreteClassName;
         boolean isObserver;
+        volatile ActorInvoker<Object> interfaceInvoker;
 
         @Override
         public String toString()
@@ -745,6 +751,18 @@ public class Execution implements Runtime
             finder.start().join();
         }
 
+        if (container != null)
+        {
+            container.getClasses().forEach(c ->
+            {
+                if (c.isInterface() && Actor.class.isAssignableFrom(c))
+                {
+                    final InterfaceDescriptor descriptor = getDescriptor(c);
+                    System.out.println(c + "" + descriptor);
+                }
+            });
+        }
+
         getDescriptor(NodeCapabilities.class);
         createObjectReference(NodeCapabilities.class, hosting, "");
 
@@ -853,7 +871,8 @@ public class Execution implements Runtime
 
     private InterfaceDescriptor getDescriptor(final int interfaceId)
     {
-        return descriptorMapByInterfaceId.get(interfaceId);
+        final InterfaceDescriptor interfaceDescriptor = descriptorMapByInterfaceId.get(interfaceId);
+        return interfaceDescriptor;
     }
 
     public void onMessageReceived(Message message)
@@ -887,7 +906,7 @@ public class Execution implements Runtime
             }
             if (!message.isOneWay())
             {
-                messaging.sendResponse(message.getFromNode(), MessageDefinitions.ERROR_RESPONSE, message.getMessageId(), "Execution refused");
+                messaging.sendResponse(message.getFromNode(), MessageDefinitions.RESPONSE_PROTOCOL_ERROR, message.getMessageId(), "Execution refused");
             }
         }
     }
@@ -908,7 +927,7 @@ public class Execution implements Runtime
             {
                 if (!oneway)
                 {
-                    messaging.sendResponse(from, MessageDefinitions.ERROR_RESPONSE, messageId, "Observer no longer present");
+                    messaging.sendResponse(from, MessageDefinitions.RESPONSE_PROTOCOL_ERROR, messageId, "Observer no longer present");
                 }
                 return Task.done();
             }
@@ -970,7 +989,7 @@ public class Execution implements Runtime
                 }
                 if (!oneway)
                 {
-                    messaging.sendResponse(from, MessageDefinitions.ERROR_RESPONSE, messageId, "Execution refused");
+                    messaging.sendResponse(from, MessageDefinitions.RESPONSE_PROTOCOL_ERROR, messageId, "Execution refused");
                 }
             }
             return Task.done();
@@ -1108,11 +1127,11 @@ public class Execution implements Runtime
             {
                 if (exception == null)
                 {
-                    messaging.sendResponse(from, MessageDefinitions.NORMAL_RESPONSE, messageId, result);
+                    messaging.sendResponse(from, MessageDefinitions.RESPONSE_OK, messageId, result);
                 }
                 else
                 {
-                    messaging.sendResponse(from, MessageDefinitions.EXCEPTION_RESPONSE, messageId, exception);
+                    messaging.sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
                 }
             }
             catch (Exception ex2)
@@ -1125,11 +1144,11 @@ public class Execution implements Runtime
                 {
                     if (exception != null)
                     {
-                        messaging.sendResponse(from, MessageDefinitions.EXCEPTION_RESPONSE, messageId, toSerializationSafeException(exception, ex2));
+                        messaging.sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, toSerializationSafeException(exception, ex2));
                     }
                     else
                     {
-                        messaging.sendResponse(from, MessageDefinitions.EXCEPTION_RESPONSE, messageId, ex2);
+                        messaging.sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, ex2);
                     }
                 }
                 catch (Exception ex3)
@@ -1140,7 +1159,7 @@ public class Execution implements Runtime
                     }
                     try
                     {
-                        messaging.sendResponse(from, MessageDefinitions.ERROR_RESPONSE, messageId, "failed twice sending result");
+                        messaging.sendResponse(from, MessageDefinitions.RESPONSE_PROTOCOL_ERROR, messageId, "failed twice sending result");
                     }
                     catch (Exception ex4)
                     {
@@ -1185,6 +1204,21 @@ public class Execution implements Runtime
         ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
         reference.runtime = this;
         return (T) reference;
+    }
+
+    @Override
+    public ActorInvoker<?> getInvoker(final int interfaceId)
+    {
+        final InterfaceDescriptor descriptor = getDescriptor(interfaceId);
+        if (descriptor == null)
+        {
+            return null;
+        }
+        if (descriptor.interfaceInvoker == null)
+        {
+            descriptor.interfaceInvoker = dynamicReferenceFactory.getInvokerFor(descriptor.factory.getInterface());
+        }
+        return descriptor.interfaceInvoker;
     }
 
     @SuppressWarnings("unchecked")
@@ -1235,7 +1269,7 @@ public class Execution implements Runtime
         }
 
         final Message message = new Message()
-                .withMessageType(MessageDefinitions.NORMAL_MESSAGE)
+                .withMessageType(MessageDefinitions.REQUEST_MESSAGE)
                 .withHeaders(actualHeaders)
                 .withHeader(MessageDefinitions.INTERFACE_ID, actorReference._interfaceId())
                 .withHeader(MessageDefinitions.METHOD_ID, methodId)

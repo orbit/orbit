@@ -22,6 +22,7 @@ import javassist.NotFoundException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -151,8 +152,7 @@ public class ActorFactoryGenerator
                 final String methodName = m.getName();
                 final CtClass[] parameterTypes = m.getParameterTypes();
 
-                final String methodSignature = methodName + "(" + Stream.of(parameterTypes).map(p -> p.getName()).collect(Collectors.joining(",")) + ")";
-                final int methodId = methodSignature.hashCode();
+                final int methodId = computeMethodId(methodName, parameterTypes);
 
                 final String methodReferenceField = methodName + "_" + count;
                 cc.addField(CtField.make("private static java.lang.reflect.Method " + methodReferenceField + " = null;", cc));
@@ -172,6 +172,12 @@ public class ActorFactoryGenerator
             cc.addMethod(CtNewMethod.make("protected Class  _interfaceClass() { return " + interfaceFullName + ".class;}", cc));
             return cc.toClass();
         }
+    }
+
+    private int computeMethodId(final String methodName, final CtClass[] parameterTypes)
+    {
+        final String methodSignature = methodName + "(" + Stream.of(parameterTypes).map(p -> p.getName()).collect(Collectors.joining(",")) + ")";
+        return methodSignature.hashCode();
     }
 
     public int getMethodId(Method method)
@@ -214,32 +220,62 @@ public class ActorFactoryGenerator
             ClassPool pool = classPool;
 
             final CtClass cc = pool.makeClass(invokerFullName);
-            final CtClass ccInterface = pool.get(actorClass.getName());
+            final String className = actorClass.getName();
+            final CtClass ccInterface = pool.get(className);
             final CtClass ccActorInvoker = pool.get(ActorInvoker.class.getName());
             cc.setSuperclass(ccActorInvoker);
 
-            final StringBuilder sb = new StringBuilder(2000);
-            sb.append("public " + Task.class.getName() + " invoke(Object target, int methodId, Object[] params) {");
+            final StringBuilder invokerBody = new StringBuilder(2000);
+            invokerBody.append("public " + Task.class.getName() + " invoke(Object target, int methodId, Object[] params) {");
             final CtMethod[] declaredMethods = ccInterface.getMethods();
-            sb.append(" switch(methodId) { ");
+            invokerBody.append(" switch(methodId) { ");
+
+            final StringBuilder getMethodBody = new StringBuilder(2000);
+            getMethodBody.append("public java.lang.reflect.Method getMethod(int methodId) {");
+            getMethodBody.append(" switch(methodId) { ");
+
             for (final CtMethod m : declaredMethods)
             {
-                if (!m.getReturnType().getName().equals(Task.class.getName()))
+                if (!m.getReturnType().getName().equals(Task.class.getName())
+                        || !Modifier.isPublic(m.getModifiers()))
                 {
                     continue;
                 }
                 final CtClass[] parameterTypes = m.getParameterTypes();
-                final String methodSignature = m.getName() + "(" + Stream.of(parameterTypes)
-                        .map(p -> p.getName())
-                        .collect(Collectors.joining(",")) + ")";
-                final int methodId = methodSignature.hashCode();
-                sb.append("case " + methodId + ": return ((" + actorClass.getName() + ")target)." + m.getName() + "(");
-                unwrapParams(sb, parameterTypes, "params");
-                sb.append("); ");
+                final String methodName = m.getName();
+                final int methodId = computeMethodId(methodName, parameterTypes);
+
+                // invoker
+                invokerBody.append("case " + methodId + ": return ((" + className + ")target)." + methodName + "(");
+                unwrapParams(invokerBody, parameterTypes, "params");
+                invokerBody.append("); ");
+
+                final String parameterTypesStr = Stream.of(parameterTypes)
+                        .map(p -> p.getName().replace('$', '.') + ".class")
+                        .collect(Collectors.joining(","));
+
+                // get method
+                String methodField = methodId > 0 ? "m" + methodId : "m_" + Math.abs(methodId);
+                final String src = "private static java.lang.reflect.Method " + methodField + " = "
+                        + className + ".class.getMethod(\"" + methodName + "\", "
+                        + "new Class"
+                        + ((parameterTypes.length > 0) ? "[]{" + parameterTypesStr + "}" : "[0]")
+                        + ");";
+                cc.addField(CtField.make(src, cc));
+                getMethodBody.append("case " + methodId + ": return " + methodField + ";");
+
+
             }
-            sb.append("default: ");
-            sb.append("return super.invoke(target,methodId,params);} }");
-            cc.addMethod(CtNewMethod.make(sb.toString(), cc));
+            invokerBody.append("default: ");
+            invokerBody.append("return super.invoke(target,methodId,params);} }");
+            cc.addMethod(CtNewMethod.make(invokerBody.toString(), cc));
+
+            getMethodBody.append("default: ");
+            getMethodBody.append("return super.getMethod(methodId);} }");
+            cc.addMethod(CtNewMethod.make(getMethodBody.toString(), cc));
+
+            cc.addMethod(CtNewMethod.make("public Class getInterface() { return " + className + ".class; }", cc));
+
             return cc.toClass();
         }
     }

@@ -162,4 +162,5 @@ public interface Runtime
      */
     <T extends Actor> T getReference(final Class<T> iClass, final Object id);
 
+    ActorInvoker<?> getInvoker(int interfaceId);
 }
