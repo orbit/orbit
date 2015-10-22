@@ -753,14 +753,11 @@ public class Execution implements Runtime
 
         if (container != null)
         {
-            container.getClasses().forEach(c ->
-            {
-                if (c.isInterface() && Actor.class.isAssignableFrom(c))
-                {
-                    final InterfaceDescriptor descriptor = getDescriptor(c);
-                    System.out.println(c + "" + descriptor);
-                }
-            });
+            // pre create the class descriptors if possbile.
+            container.getClasses().stream()
+                    .filter(c -> (c.isInterface() && Actor.class.isAssignableFrom(c)))
+                    .parallel()
+                    .forEach(c -> getDescriptor(c));
         }
 
         getDescriptor(NodeCapabilities.class);
@@ -1185,7 +1182,7 @@ public class Execution implements Runtime
         return runtimeException;
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "unchecked" })
     <T> T createReference(final NodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);

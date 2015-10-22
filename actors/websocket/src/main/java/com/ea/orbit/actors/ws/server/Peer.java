@@ -236,7 +236,6 @@ public class Peer
                     int messageId = messageIdSeed.incrementAndGet();
                     message.setType(1);
                     message.setPayload(args);
-                    System.out.println(ref);
                     message.setInterfaceId(ref.getName().replace('$', '.').hashCode());
                     message.setMethodId(computeMethodId(method));
                     message.setMessageId(messageId);
