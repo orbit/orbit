@@ -33,12 +33,8 @@ import com.ea.orbit.actors.cluster.JGroupsClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
-import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.actors.runtime.Execution;
-import com.ea.orbit.actors.runtime.Hosting;
-import com.ea.orbit.actors.runtime.Messaging;
-import com.ea.orbit.actors.runtime.NodeCapabilities;
-import com.ea.orbit.actors.runtime.ReminderController;
+import com.ea.orbit.actors.runtime.*;
+import com.ea.orbit.actors.runtime.Runtime;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.annotation.Config;
@@ -632,5 +628,10 @@ public class Stage implements Startable
         }
 
         return value;
+    }
+
+    public Runtime getRuntime()
+    {
+        return execution;
     }
 }
