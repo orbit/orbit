@@ -186,14 +186,14 @@ public class Messaging implements Startable
             message.withFromNode(from);
             switch (message.getMessageType())
             {
-                case MessageDefinitions.NORMAL_MESSAGE:
-                case MessageDefinitions.ONEWAY_MESSAGE:
+                case MessageDefinitions.REQUEST_MESSAGE:
+                case MessageDefinitions.ONE_WAY_MESSAGE:
                     execution.onMessageReceived(message);
                     return;
 
-                case MessageDefinitions.NORMAL_RESPONSE:
-                case MessageDefinitions.EXCEPTION_RESPONSE:
-                case MessageDefinitions.ERROR_RESPONSE:
+                case MessageDefinitions.RESPONSE_OK:
+                case MessageDefinitions.RESPONSE_ERROR:
+                case MessageDefinitions.RESPONSE_PROTOCOL_ERROR:
                 {
                     responsesReceived.increment();
                     PendingResponse pendingResponse = pendingResponseMap.remove(message.getMessageId());
@@ -213,13 +213,13 @@ public class Messaging implements Startable
                         }
                         switch (message.getMessageType())
                         {
-                            case MessageDefinitions.NORMAL_RESPONSE:
+                            case MessageDefinitions.RESPONSE_OK:
                                 pendingResponse.internalComplete(res);
                                 return;
-                            case MessageDefinitions.EXCEPTION_RESPONSE:
+                            case MessageDefinitions.RESPONSE_ERROR:
                                 pendingResponse.internalCompleteExceptionally((Throwable) res);
                                 return;
-                            case MessageDefinitions.ERROR_RESPONSE:
+                            case MessageDefinitions.RESPONSE_PROTOCOL_ERROR:
                                 pendingResponse.internalCompleteExceptionally(
                                         new UncheckedException("Error invoking but no exception provided. Response: " + res));
                                 return;

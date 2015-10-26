@@ -890,7 +890,7 @@ public class Execution implements Runtime
             }
             if (!message.isOneWay())
             {
-                messaging.sendResponse(message.getFromNode(), MessageDefinitions.ERROR_RESPONSE, message.getMessageId(), "Execution refused");
+                messaging.sendResponse(message.getFromNode(), MessageDefinitions.RESPONSE_PROTOCOL_ERROR, message.getMessageId(), "Execution refused");
             }
         }
     }
@@ -911,7 +911,7 @@ public class Execution implements Runtime
             {
                 if (!oneway)
                 {
-                    messaging.sendResponse(from, MessageDefinitions.ERROR_RESPONSE, messageId, "Observer no longer present");
+                    messaging.sendResponse(from, MessageDefinitions.RESPONSE_PROTOCOL_ERROR, messageId, "Observer no longer present");
                 }
                 return Task.done();
             }
@@ -973,7 +973,7 @@ public class Execution implements Runtime
                 }
                 if (!oneway)
                 {
-                    messaging.sendResponse(from, MessageDefinitions.ERROR_RESPONSE, messageId, "Execution refused");
+                    messaging.sendResponse(from, MessageDefinitions.RESPONSE_PROTOCOL_ERROR, messageId, "Execution refused");
                 }
             }
             return Task.done();
@@ -1111,11 +1111,11 @@ public class Execution implements Runtime
             {
                 if (exception == null)
                 {
-                    messaging.sendResponse(from, MessageDefinitions.NORMAL_RESPONSE, messageId, result);
+                    messaging.sendResponse(from, MessageDefinitions.RESPONSE_OK, messageId, result);
                 }
                 else
                 {
-                    messaging.sendResponse(from, MessageDefinitions.EXCEPTION_RESPONSE, messageId, exception);
+                    messaging.sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
                 }
             }
             catch (Exception ex2)
@@ -1128,11 +1128,11 @@ public class Execution implements Runtime
                 {
                     if (exception != null)
                     {
-                        messaging.sendResponse(from, MessageDefinitions.EXCEPTION_RESPONSE, messageId, toSerializationSafeException(exception, ex2));
+                        messaging.sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, toSerializationSafeException(exception, ex2));
                     }
                     else
                     {
-                        messaging.sendResponse(from, MessageDefinitions.EXCEPTION_RESPONSE, messageId, ex2);
+                        messaging.sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, ex2);
                     }
                 }
                 catch (Exception ex3)
@@ -1143,7 +1143,7 @@ public class Execution implements Runtime
                     }
                     try
                     {
-                        messaging.sendResponse(from, MessageDefinitions.ERROR_RESPONSE, messageId, "failed twice sending result");
+                        messaging.sendResponse(from, MessageDefinitions.RESPONSE_PROTOCOL_ERROR, messageId, "failed twice sending result");
                     }
                     catch (Exception ex4)
                     {
@@ -1238,7 +1238,7 @@ public class Execution implements Runtime
         }
 
         final Message message = new Message()
-                .withMessageType(MessageDefinitions.NORMAL_MESSAGE)
+                .withMessageType(MessageDefinitions.REQUEST_MESSAGE)
                 .withHeaders(actualHeaders)
                 .withHeader(MessageDefinitions.INTERFACE_ID, actorReference._interfaceId())
                 .withHeader(MessageDefinitions.METHOD_ID, methodId)
