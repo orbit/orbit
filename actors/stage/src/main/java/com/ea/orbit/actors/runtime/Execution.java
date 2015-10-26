@@ -44,9 +44,11 @@ import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.annotation.OnlyIfActivated;
+import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.concurrent.TaskContext;
+import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.tuples.Pair;
@@ -131,6 +133,9 @@ public class Execution implements Runtime
 
     private ExecutionCacheManager cacheManager = new ExecutionCacheManager();
     private ExecutionObjectCloner objectCloner;
+
+    @Wired
+    private Container container;
 
     /**
      * RPC message headers that are copied from and to the TaskContext.
@@ -223,10 +228,11 @@ public class Execution implements Runtime
     private static class InterfaceDescriptor
     {
         ActorFactory<?> factory;
-        ActorInvoker<Object> invoker;
+        volatile ActorInvoker<Object> invoker;
         boolean cannotActivate;
         String concreteClassName;
         boolean isObserver;
+        volatile ActorInvoker<Object> interfaceInvoker;
 
         @Override
         public String toString()
@@ -748,6 +754,17 @@ public class Execution implements Runtime
             finder.start().join();
         }
 
+        if (container != null)
+        {
+            container.getClasses().forEach(c ->
+            {
+                if (c.isInterface() && Actor.class.isAssignableFrom(c))
+                {
+                    getDescriptor(c);
+                }
+            });
+        }
+
         getDescriptor(NodeCapabilities.class);
         createObjectReference(NodeCapabilities.class, hosting, "");
 
@@ -1188,6 +1205,21 @@ public class Execution implements Runtime
         ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
         reference.runtime = this;
         return (T) reference;
+    }
+
+    @Override
+    public ActorInvoker<?> getInvoker(final int interfaceId)
+    {
+        final InterfaceDescriptor descriptor = getDescriptor(interfaceId);
+        if (descriptor == null)
+        {
+            return null;
+        }
+        if (descriptor.interfaceInvoker == null)
+        {
+            descriptor.interfaceInvoker = dynamicReferenceFactory.getInvokerFor(descriptor.factory.getInterface());
+        }
+        return descriptor.interfaceInvoker;
     }
 
     @SuppressWarnings("unchecked")
