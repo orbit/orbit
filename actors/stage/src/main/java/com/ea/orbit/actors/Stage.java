@@ -212,6 +212,7 @@ public class Stage implements Startable
             stage.setMessagingPool(messagingPool);
             stage.setObjectCloner(objectCloner);
             stage.setClusterName(clusterName);
+            stage.setClusterPeer(clusterPeer);
             stage.setNodeName(nodeName);
             stage.setMode(mode);
             stage.setExecutionPoolSize(executionPoolSize);
