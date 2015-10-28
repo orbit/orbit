@@ -34,6 +34,7 @@ import com.ea.orbit.actors.runtime.ActorInvoker;
 import com.ea.orbit.actors.runtime.MessageDefinitions;
 import com.ea.orbit.actors.runtime.Runtime;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.exception.NotImplementedException;
 import com.ea.orbit.exception.UncheckedException;
 
 import javax.websocket.Session;
@@ -125,7 +126,7 @@ public class Peer
 
     protected void sendBinary(final ByteBuffer wrap)
     {
-
+        throw new NotImplementedException("sendBinary");
     }
 
     final CompletableFuture<?> safeInvoke(Object target, Method method, Object[] params)
@@ -229,7 +230,7 @@ public class Peer
 
     public <T> T getReference(Class<T> ref)
     {
-        final Object o = Proxy.newProxyInstance(ref.getClassLoader(), new Class[]{ref},
+        final Object o = Proxy.newProxyInstance(ref.getClassLoader(), new Class[]{ ref },
                 (proxy, method, args) ->
                 {
                     Message message = new Message();
