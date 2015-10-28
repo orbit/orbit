@@ -20,6 +20,9 @@ public class Message
     private NodeAddress toNode;
     private Map<Object, Object> headers;
     private Object payload;
+    private int interfaceId;
+    private int methodId;
+    private String objectId;
 
     public Message()
     {

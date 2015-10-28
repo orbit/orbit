@@ -57,7 +57,6 @@ public class Messaging implements Startable
 {
     private static Object NIL = null;
     private static final Logger logger = LoggerFactory.getLogger(Messaging.class);
-    // consults with Hosting to determine the target server to send the message to.
     // serializes the messages
     // pass received messages to Execution
 
