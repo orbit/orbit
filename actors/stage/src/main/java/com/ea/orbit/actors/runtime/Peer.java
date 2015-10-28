@@ -26,11 +26,13 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.ws.server;
+package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.annotation.OneWay;
+import com.ea.orbit.actors.extensions.MessageSerializer;
 import com.ea.orbit.actors.runtime.ActorInvoker;
+import com.ea.orbit.actors.runtime.Message;
 import com.ea.orbit.actors.runtime.MessageDefinitions;
 import com.ea.orbit.actors.runtime.Runtime;
 import com.ea.orbit.concurrent.Task;
@@ -61,7 +63,7 @@ public class Peer
 {
     private Runtime runtime;
 
-    private PeerSerializer serializer;
+    private MessageSerializer serializer;
     private AtomicInteger messageIdSeed = new AtomicInteger();
 
     private final Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
@@ -153,22 +155,19 @@ public class Peer
     {
         try
         {
-            final Message message = serializer.deserializeMessage(null, new ByteArrayInputStream(data, offset, length));
-            switch (message.getType())
+            final Message message = serializer.deserializeMessage(runtime, new ByteArrayInputStream(data, offset, length));
+            switch (message.getMessageType())
             {
                 case MessageDefinitions.REQUEST_MESSAGE:
                 case MessageDefinitions.ONE_WAY_MESSAGE:
                     try
                     {
                         final ActorInvoker invoker = runtime.getInvoker(message.getInterfaceId());
-                        final Method method = invoker.getMethod(message.getMethodId());
-
-                        final Object[] args = castArgs(method.getGenericParameterTypes(), message.getPayload());
 
                         final Actor reference = Actor.getReference(invoker.getInterface(), "");
                         final int messageId = message.getMessageId();
-                        final Object res = invoker.safeInvoke(reference, message.getMethodId(), args);
-                        if (message.getType() == MessageDefinitions.REQUEST_MESSAGE)
+                        final Object res = invoker.safeInvoke(reference, message.getMethodId(), (Object[]) message.getPayload());
+                        if (message.getMessageType() == MessageDefinitions.REQUEST_MESSAGE)
                         {
                             if (res instanceof CompletableFuture)
                             {
@@ -196,7 +195,7 @@ public class Peer
                     if (pend != null)
                     {
                         final Object payload = message.getPayload();
-                        if (message.getType() == MessageDefinitions.RESPONSE_OK)
+                        if (message.getMessageType() == MessageDefinitions.RESPONSE_OK)
                         {
                             pend.internalComplete(payload);
                         }
@@ -224,12 +223,12 @@ public class Peer
         response.setMessageId(messageId);
         if (e == null)
         {
-            response.setType(MessageDefinitions.RESPONSE_OK);
+            response.setMessageType(MessageDefinitions.RESPONSE_OK);
             response.setPayload(r);
         }
         else
         {
-            response.setType(MessageDefinitions.RESPONSE_ERROR);
+            response.setMessageType(MessageDefinitions.RESPONSE_ERROR);
             response.setPayload(e);
         }
         sendMessage(response);
@@ -243,7 +242,7 @@ public class Peer
                 {
                     Message message = new Message();
                     int messageId = messageIdSeed.incrementAndGet();
-                    message.setType(1);
+                    message.setMessageType(MessageDefinitions.REQUEST_MESSAGE);
                     message.setPayload(args);
                     message.setObjectId(objectId);
                     message.setInterfaceId(ref.getName().replace('$', '.').hashCode());
@@ -279,18 +278,8 @@ public class Peer
         return methodSignature.hashCode();
     }
 
-    private Object[] castArgs(final Type[] genericParameterTypes, final Object payload)
-    {
-        Object[] args0 = payload instanceof List ? ((List) payload).toArray() : (Object[]) payload;
-        Object[] casted = new Object[genericParameterTypes.length];
-        for (int i = 0; i < genericParameterTypes.length; i++)
-        {
-            casted[i] = serializer.convertValue(args0[0], genericParameterTypes[i]);
-        }
-        return casted;
-    }
 
-    public void setSerializer(final PeerSerializer serializer)
+    public void setSerializer(final MessageSerializer serializer)
     {
         this.serializer = serializer;
     }

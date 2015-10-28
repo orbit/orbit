@@ -15,17 +15,64 @@ public class Message
 {
     private int messageType;
     private int messageId;
-    private boolean oneWay;
     private NodeAddress fromNode;
     private NodeAddress toNode;
     private Map<Object, Object> headers;
     private Object payload;
     private int interfaceId;
     private int methodId;
-    private String objectId;
+    private Object objectId;
 
     public Message()
     {
+    }
+
+    public int getInterfaceId()
+    {
+        return interfaceId;
+    }
+
+    public void setInterfaceId(final int interfaceId)
+    {
+        this.interfaceId = interfaceId;
+    }
+
+    public Message withInterfaceId(final int interfaceId)
+    {
+        this.interfaceId = interfaceId;
+        return this;
+    }
+
+    public int getMethodId()
+    {
+        return methodId;
+    }
+
+    public void setMethodId(final int methodId)
+    {
+        this.methodId = methodId;
+    }
+
+    public Message withMethodId(final int methodId)
+    {
+        this.methodId = methodId;
+        return this;
+    }
+
+    public Object getObjectId()
+    {
+        return objectId;
+    }
+
+    public void setObjectId(final Object objectId)
+    {
+        this.objectId = objectId;
+    }
+
+    public Message withObjectId(final Object objectId)
+    {
+        this.objectId = objectId;
+        return this;
     }
 
     public int getMessageId()
@@ -82,22 +129,6 @@ public class Message
     public void setHeaders(final Map<Object, Object> headers)
     {
         this.headers = headers;
-    }
-
-    public boolean isOneWay()
-    {
-        return oneWay;
-    }
-
-    public void setOneWay(final boolean oneWay)
-    {
-        this.oneWay = oneWay;
-    }
-
-    public Message withOneWay(final boolean oneWay)
-    {
-        this.oneWay = oneWay;
-        return this;
     }
 
     public int getMessageType()

@@ -874,9 +874,9 @@ public class Execution implements Runtime
 
     public void onMessageReceived(Message message)
     {
-        int interfaceId = (int) message.getHeader(MessageDefinitions.INTERFACE_ID);
-        int methodId = (int) message.getHeader(MessageDefinitions.METHOD_ID);
-        Object key = message.getHeader(MessageDefinitions.OBJECT_ID);
+        int interfaceId = message.getInterfaceId();
+        int methodId = message.getMethodId();
+        Object key = message.getObjectId();
 
         EntryKey entryKey = new EntryKey(interfaceId, key);
         if (logger.isDebugEnabled())
@@ -888,7 +888,7 @@ public class Execution implements Runtime
                 () -> handleOnMessageReceived(
                         entryKey,
                         message.getFromNode(),
-                        message.isOneWay(),
+                        message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE,
                         message.getMessageId(),
                         interfaceId, methodId, key,
                         message.getHeaders(),
@@ -901,7 +901,7 @@ public class Execution implements Runtime
             {
                 logger.error("Execution refused: " + key + ":" + interfaceId + ":" + methodId + ":" + message.getMessageId());
             }
-            if (!message.isOneWay())
+            if (message.getMessageType() != MessageDefinitions.ONE_WAY_MESSAGE)
             {
                 messaging.sendResponse(message.getFromNode(), MessageDefinitions.RESPONSE_PROTOCOL_ERROR, message.getMessageId(), "Execution refused");
             }
@@ -1268,9 +1268,9 @@ public class Execution implements Runtime
         final Message message = new Message()
                 .withMessageType(MessageDefinitions.REQUEST_MESSAGE)
                 .withHeaders(actualHeaders)
-                .withHeader(MessageDefinitions.INTERFACE_ID, actorReference._interfaceId())
-                .withHeader(MessageDefinitions.METHOD_ID, methodId)
-                .withHeader(MessageDefinitions.OBJECT_ID, ActorReference.getId(actorReference))
+                .withInterfaceId(actorReference._interfaceId())
+                .withMethodId(methodId)
+                .withObjectId(ActorReference.getId(actorReference))
                 .withPayload(params);
 
 

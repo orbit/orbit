@@ -37,7 +37,5 @@ public class MessageDefinitions
     public static final byte RESPONSE_PROTOCOL_ERROR = 4;
 
     // COMMON HEADERS
-    public static final Byte INTERFACE_ID = 1;
-    public static final Byte METHOD_ID = 2;
-    public static final Byte OBJECT_ID = 3;
+
 }

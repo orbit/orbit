@@ -289,7 +289,7 @@ public class Messaging implements Startable
             }
             return Task.fromException(new UncheckedException(e));
         }
-        final boolean oneWay = message.isOneWay();
+        final boolean oneWay = message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE;
         if (!oneWay)
         {
 

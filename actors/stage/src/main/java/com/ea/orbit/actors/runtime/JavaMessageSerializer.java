@@ -23,8 +23,10 @@ public class JavaMessageSerializer implements MessageSerializer
         final ObjectInput in = createObjectInput(runtime, inputStream);
         final Message message = new Message();
         message.setMessageType(in.readByte());
-        message.setOneWay(in.readBoolean());
         message.setMessageId(in.readInt());
+        message.setInterfaceId(in.readInt());
+        message.setMethodId(in.readInt());
+        message.setObjectId(in.readObject());
         message.setHeaders((Map) in.readObject());
         message.setPayload(in.readObject());
         return message;
@@ -34,8 +36,10 @@ public class JavaMessageSerializer implements MessageSerializer
     {
         final ObjectOutput out = createObjectOutput(runtime, outputStream);
         out.writeByte(message.getMessageType());
-        out.writeBoolean(message.isOneWay());
         out.writeInt(message.getMessageId());
+        out.writeInt(message.getInterfaceId());
+        out.writeInt(message.getMethodId());
+        out.writeObject(message.getObjectId());
         out.writeObject(message.getHeaders());
         out.writeObject(message.getPayload());
     }
