@@ -32,7 +32,6 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.test.FakeClusterPeer;
-import com.ea.orbit.actors.ws.server.ActorWebSocket;
 import com.ea.orbit.actors.ws.server.JsonPeerSerializer;
 import com.ea.orbit.actors.ws.server.Peer;
 import com.ea.orbit.annotation.Wired;
@@ -102,13 +101,14 @@ public class WsTest
     }
 
     @ServerEndpoint("/ws/test")
-    public static class MyActorWebSocket extends ActorWebSocket
+    public static class MyActorWebSocket
     {
         private Session wsSession;
         @Wired
         private Stage stage;
 
-        private Peer peer = new Peer() {
+        private Peer peer = new Peer()
+        {
             {
                 setSerializer(serializer);
             }
@@ -120,18 +120,17 @@ public class WsTest
             }
         };
 
-        @Override
+        @OnOpen
         public void onOpen(final Session session)
         {
             wsSession = session;
             peer.setRuntime(stage.getRuntime());
-            super.onOpen(session);
         }
 
         @OnMessage
         public void onMessage(byte[] message, boolean last, Session session)
         {
-            peer.onMessage(message, last, session);
+            peer.onMessage(message, 0, message.length);
         }
     }
 
@@ -140,10 +139,12 @@ public class WsTest
     public static class MyActorWebSocketClient
     {
         private Session wsSession;
-        private Peer peer = new Peer() {
+        private Peer peer = new Peer()
+        {
             {
                 setSerializer(serializer);
             }
+
             @Override
             protected void sendBinary(final ByteBuffer wrap)
             {
@@ -166,7 +167,7 @@ public class WsTest
         @OnMessage
         public void onMessage(byte[] message, boolean last, Session session)
         {
-            peer.onMessage(message, last, session);
+            peer.onMessage(message, 0, message.length);
         }
     }
 
@@ -202,7 +203,7 @@ public class WsTest
         final URI endpointURI = new URI("ws://localhost:" + localPort + "/ws/test");
         final MyActorWebSocketClient clientEndPoint = new MyActorWebSocketClient();
         final Session session = wsContainer.connectToServer(clientEndPoint, endpointURI);
-        final Hello hello = clientEndPoint.peer.getReference(Hello.class);
+        final Hello hello = clientEndPoint.peer.getReference(Hello.class, "0");
 
         assertEquals("hello: test", hello.hello("test").join());
         session.close();

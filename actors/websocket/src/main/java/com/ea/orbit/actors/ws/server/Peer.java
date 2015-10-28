@@ -34,9 +34,8 @@ import com.ea.orbit.actors.runtime.ActorInvoker;
 import com.ea.orbit.actors.runtime.MessageDefinitions;
 import com.ea.orbit.actors.runtime.Runtime;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.exception.NotImplementedException;
 import com.ea.orbit.exception.UncheckedException;
-
-import javax.websocket.Session;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -55,6 +54,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * This works as a bridge to perform calls between the server and a client.
+ */
 public class Peer
 {
     private Runtime runtime;
@@ -125,7 +127,7 @@ public class Peer
 
     protected void sendBinary(final ByteBuffer wrap)
     {
-
+        throw new NotImplementedException("sendBinary");
     }
 
     final CompletableFuture<?> safeInvoke(Object target, Method method, Object[] params)
@@ -146,28 +148,27 @@ public class Peer
         }
     }
 
-    public void onMessage(final byte[] message, final boolean last, final Session session)
+    @SuppressWarnings("unchecked")
+    public void onMessage(final byte[] data, final int offset, final int length)
     {
         try
         {
-            final Message message1 = serializer.deserializeMessage(null, new ByteArrayInputStream(message));
-            final Object payload = message1.getPayload();
-            switch (message1.getType())
+            final Message message = serializer.deserializeMessage(null, new ByteArrayInputStream(data, offset, length));
+            switch (message.getType())
             {
                 case MessageDefinitions.REQUEST_MESSAGE:
                 case MessageDefinitions.ONE_WAY_MESSAGE:
-                    final Class<? extends Actor> clazz;
                     try
                     {
-                        final ActorInvoker invoker = runtime.getInvoker(message1.getInterfaceId());
-                        final Method method = invoker.getMethod(message1.getMethodId());
+                        final ActorInvoker invoker = runtime.getInvoker(message.getInterfaceId());
+                        final Method method = invoker.getMethod(message.getMethodId());
 
-                        final Object[] args = castArgs(method.getGenericParameterTypes(), message1.getPayload());
+                        final Object[] args = castArgs(method.getGenericParameterTypes(), message.getPayload());
 
                         final Actor reference = Actor.getReference(invoker.getInterface(), "");
-                        final int messageId = message1.getMessageId();
-                        final Object res = invoker.safeInvoke(reference, message1.getMethodId(), args);
-                        if (message1.getType() == MessageDefinitions.REQUEST_MESSAGE)
+                        final int messageId = message.getMessageId();
+                        final Object res = invoker.safeInvoke(reference, message.getMethodId(), args);
+                        if (message.getType() == MessageDefinitions.REQUEST_MESSAGE)
                         {
                             if (res instanceof CompletableFuture)
                             {
@@ -191,12 +192,20 @@ public class Peer
                 case MessageDefinitions.RESPONSE_OK:
                 case MessageDefinitions.RESPONSE_ERROR:
                 case MessageDefinitions.RESPONSE_PROTOCOL_ERROR:
-                    final PendingResponse pend = pendingResponseMap.get(message1.getMessageId());
+                    final PendingResponse pend = pendingResponseMap.get(message.getMessageId());
                     if (pend != null)
                     {
-                        if (message1.getType() == MessageDefinitions.RESPONSE_OK)
+                        final Object payload = message.getPayload();
+                        if (message.getType() == MessageDefinitions.RESPONSE_OK)
                         {
-                            pend.internalComplete(message1.getPayload());
+                            pend.internalComplete(payload);
+                        }
+                        else
+                        {
+                            pend.internalCompleteExceptionally(
+                                    payload instanceof Exception
+                                            ? (Throwable) payload
+                                            : new UncheckedException(String.valueOf(payload)));
                         }
                     }
                     break;
@@ -227,7 +236,7 @@ public class Peer
         return null;
     }
 
-    public <T> T getReference(Class<T> ref)
+    public <T> T getReference(Class<T> ref, String objectId)
     {
         final Object o = Proxy.newProxyInstance(ref.getClassLoader(), new Class[]{ref},
                 (proxy, method, args) ->
@@ -236,6 +245,7 @@ public class Peer
                     int messageId = messageIdSeed.incrementAndGet();
                     message.setType(1);
                     message.setPayload(args);
+                    message.setObjectId(objectId);
                     message.setInterfaceId(ref.getName().replace('$', '.').hashCode());
                     message.setMethodId(computeMethodId(method));
                     message.setMessageId(messageId);
@@ -280,13 +290,20 @@ public class Peer
         return casted;
     }
 
-    public PeerSerializer getSerializer()
-    {
-        return serializer;
-    }
-
     public void setSerializer(final PeerSerializer serializer)
     {
         this.serializer = serializer;
     }
+
+    public void onClose()
+    {
+        // TODO: fail pending messages
+    }
+
+    public void onOpen()
+    {
+
+    }
+
+
 }
