@@ -41,6 +41,7 @@ import com.ea.orbit.exception.UncheckedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,6 +49,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -68,6 +70,8 @@ public class Hosting implements NodeCapabilities, Startable
     @Config("orbit.actors.timeToWaitForServersMillis")
     private long timeToWaitForServersMillis = 30000;
     private Random random = new Random();
+
+    private TreeMap<String, NodeInfo> consistentHashNodeTree = new TreeMap<>();
 
     public Hosting()
     {
@@ -173,6 +177,9 @@ public class Hosting implements NodeCapabilities, Startable
         HashMap<NodeAddress, NodeInfo> oldNodes = new HashMap<>(activeNodes);
         HashMap<NodeAddress, NodeInfo> newNodes = new HashMap<>(nodes.size());
         List<NodeInfo> justAddedNodes = new ArrayList<>(Math.max(1, nodes.size() - oldNodes.size()));
+
+        final TreeMap<String, NodeInfo> newHashes = new TreeMap<>();
+
         for (final NodeAddress a : nodes)
         {
             NodeInfo nodeInfo = oldNodes.remove(a);
@@ -185,6 +192,13 @@ public class Hosting implements NodeCapabilities, Startable
                 justAddedNodes.add(nodeInfo);
             }
             newNodes.put(a, nodeInfo);
+
+            final String addrHexStr = a.asUUID().toString();
+            for (int i = 0; i < 10; i++)
+            {
+                final String hash = getHash(addrHexStr + ":" + i);
+                newHashes.put(hash, nodeInfo);
+            }
         }
         // nodes that were removed
         for (NodeInfo oldNodeInfo : oldNodes.values())
@@ -192,6 +206,7 @@ public class Hosting implements NodeCapabilities, Startable
             oldNodeInfo.active = false;
         }
         activeNodes = newNodes;
+        consistentHashNodeTree = newHashes;
         updateServerNodes();
         // TODO notify someone? (NodeInfo oldNodeInfo : oldNodes.values()) { ... }
     }
@@ -378,6 +393,52 @@ public class Hosting implements NodeCapabilities, Startable
                 }
             }
         }
+    }
+
+    private String getHash(final String key)
+    {
+        try
+        {
+            MessageDigest md = null;
+            md = MessageDigest.getInstance("SHA-256");
+            md.update(key.getBytes("UTF-8"));
+            byte[] digest = md.digest();
+            return String.format("%064x", new java.math.BigInteger(1, digest));
+        }
+        catch (Exception e)
+        {
+            throw new UncheckedException(e);
+        }
+    }
+
+    /**
+     * Uses consistent hashing to determine the "owner" of a certain key.
+     *
+     * @param key
+     * @return the NodeAddress of the node that's supposed to own the key.
+     */
+    public NodeAddress getConsistentHashOwner(final String key)
+    {
+        final String keyHash = getHash(key);
+        final TreeMap<String, NodeInfo> currentHashes = consistentHashNodeTree;
+        Map.Entry<String, NodeInfo> info = currentHashes.ceilingEntry(keyHash);
+        if (info == null)
+        {
+            info = currentHashes.firstEntry();
+        }
+        return info.getValue().address;
+    }
+
+    /**
+     * Uses consistent hashing to determine this node is the "owner" of a certain key.
+     *
+     * @param key
+     * @return true if this node is assigned to "own" the key.
+     */
+    public boolean isConsistentHashOwner(final String key)
+    {
+        final NodeAddress owner = getConsistentHashOwner(key);
+        return clusterPeer.localAddress().equals(owner);
     }
 
 }
