@@ -71,6 +71,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -137,8 +138,8 @@ public class Execution implements Runtime
     /**
      * RPC message headers that are copied from and to the TaskContext.
      * <p>
-     * These fields are copied from the TaskContext to the message headers when sending messagess.
-     * And from the message header to the TaskContext when receiving them.ø
+     * These fields are copied from the TaskContext to the message headers when sending messages.
+     * And from the message header to the TaskContext when receiving them.
      * </p>
      */
     @Config("orbit.actors.stickyHeaders")
@@ -499,6 +500,10 @@ public class Execution implements Runtime
         }
     }
 
+    public void addStickyHeaders(Collection<String> stickyHeaders)
+    {
+        this.stickyHeaders.addAll(stickyHeaders);
+    }
 
     public void setExtensions(List<ActorExtension> extensions)
     {
@@ -753,7 +758,7 @@ public class Execution implements Runtime
 
         if (container != null)
         {
-            // pre create the class descriptors if possbile.
+            // pre create the class descriptors if possible.
             container.getClasses().stream()
                     .filter(c -> (c.isInterface() && Actor.class.isAssignableFrom(c)))
                     .parallel()
@@ -868,8 +873,7 @@ public class Execution implements Runtime
 
     private InterfaceDescriptor getDescriptor(final int interfaceId)
     {
-        final InterfaceDescriptor interfaceDescriptor = descriptorMapByInterfaceId.get(interfaceId);
-        return interfaceDescriptor;
+        return descriptorMapByInterfaceId.get(interfaceId);
     }
 
     public void onMessageReceived(Message message)

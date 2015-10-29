@@ -237,7 +237,8 @@ public class ActorFactoryGenerator
             for (final CtMethod m : declaredMethods)
             {
                 if (!m.getReturnType().getName().equals(Task.class.getName())
-                        || !Modifier.isPublic(m.getModifiers()))
+                        || !Modifier.isPublic(m.getModifiers())
+                        || Modifier.isStatic(m.getModifiers()))
                 {
                     continue;
                 }
