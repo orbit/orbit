@@ -35,6 +35,7 @@ import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
+import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorFactoryGenerator;
 import com.ea.orbit.actors.runtime.ActorReference;
@@ -95,6 +96,8 @@ public class ActorBaseTest
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
     protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
+
+    //protected ConcurrentHashMap<Stage, FakeServerPeer> fakeServerPeers = new ConcurrentHashMap<>();
 
     protected static final ExecutorService commonPool = new ForwardingExecutorService()
     {
@@ -259,6 +262,14 @@ public class ActorBaseTest
         }
     }
 
+    public RemoteClient createRemoteClient(Stage server) throws ExecutionException, InterruptedException
+    {
+        final FakeServerPeer serverPeer = new FakeServerPeer(server, new JsonMessageSerializer());
+        final FakeClient fakeClient = new FakeClient(null, new JsonMessageSerializer(), serverPeer);
+        serverPeer.setClient(fakeClient);
+        return fakeClient;
+    }
+
     public Stage createClient() throws ExecutionException, InterruptedException
     {
         hiddenLog.info("Create Client");
@@ -298,7 +309,8 @@ public class ActorBaseTest
 
         DependencyRegistry dr = initDependencyRegistry();
 
-        LifetimeExtension lifetimeExtension = new LifetimeExtension() {
+        LifetimeExtension lifetimeExtension = new LifetimeExtension()
+        {
             @Override
             public Task<?> preActivation(final AbstractActor<?> actor)
             {

@@ -31,23 +31,17 @@ package com.ea.orbit.actors.runtime;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.actors.extensions.MessageSerializer;
-import com.ea.orbit.actors.runtime.ActorInvoker;
-import com.ea.orbit.actors.runtime.Message;
-import com.ea.orbit.actors.runtime.MessageDefinitions;
-import com.ea.orbit.actors.runtime.Runtime;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.NotImplementedException;
 import com.ea.orbit.exception.UncheckedException;
+import com.ea.orbit.io.ByteBufferInputStream;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.time.Clock;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -123,6 +117,7 @@ public class Peer
         }
         catch (Exception e)
         {
+            e.printStackTrace();
             throw new UncheckedException(e);
         }
     }
@@ -151,11 +146,11 @@ public class Peer
     }
 
     @SuppressWarnings("unchecked")
-    public void onMessage(final byte[] data, final int offset, final int length)
+    public void onMessage(final ByteBuffer data)
     {
         try
         {
-            final Message message = serializer.deserializeMessage(runtime, new ByteArrayInputStream(data, offset, length));
+            final Message message = serializer.deserializeMessage(runtime, new ByteBufferInputStream(data));
             switch (message.getMessageType())
             {
                 case MessageDefinitions.REQUEST_MESSAGE:
@@ -237,7 +232,7 @@ public class Peer
 
     public <T> T getReference(Class<T> ref, String objectId)
     {
-        final Object o = Proxy.newProxyInstance(ref.getClassLoader(), new Class[]{ ref },
+        final Object o = Proxy.newProxyInstance(ref.getClassLoader(), new Class[]{ref},
                 (proxy, method, args) ->
                 {
                     Message message = new Message();

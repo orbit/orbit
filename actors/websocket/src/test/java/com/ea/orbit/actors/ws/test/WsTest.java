@@ -30,10 +30,10 @@ package com.ea.orbit.actors.ws.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Peer;
 import com.ea.orbit.actors.test.FakeClusterPeer;
-import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
 import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
@@ -130,7 +130,7 @@ public class WsTest
         @OnMessage
         public void onMessage(byte[] message, boolean last, Session session)
         {
-            peer.onMessage(message, 0, message.length);
+            peer.onMessage(ByteBuffer.wrap(message));
         }
     }
 
@@ -167,7 +167,7 @@ public class WsTest
         @OnMessage
         public void onMessage(byte[] message, boolean last, Session session)
         {
-            peer.onMessage(message, 0, message.length);
+            peer.onMessage(ByteBuffer.wrap(message));
         }
     }
 
