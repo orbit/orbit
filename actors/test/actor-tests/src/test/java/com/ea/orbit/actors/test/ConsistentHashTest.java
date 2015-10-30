@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -48,9 +49,20 @@ public class ConsistentHashTest extends ActorBaseTest
     public void lonelyServerTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        assertTrue(stage1.getHosting().isConsistentHashOwner("test1"));;
-        assertTrue(stage1.getHosting().isConsistentHashOwner("test2"));;
+        assertTrue(stage1.getHosting().isConsistentHashOwner("test1"));
+        assertTrue(stage1.getHosting().isConsistentHashOwner("test2"));
         assertTrue(stage1.getHosting().isConsistentHashOwner("test3"));
+    }
+
+    @Test
+    public void lonelyServerABunchOfKeys() throws ExecutionException, InterruptedException
+    {
+        Stage stage1 = createStage();
+        for (int i = 0; i < 1000; i++)
+        {
+            String key = "" + Math.random();
+            assertTrue(stage1.getHosting().isConsistentHashOwner(key));
+        }
     }
 
     @Test
@@ -137,12 +149,14 @@ public class ConsistentHashTest extends ActorBaseTest
         stage1.stop().join();
 
         // verify all stables keys haven't moved
-        stableKeys.forEach((k, s)->{
+        stableKeys.forEach((k, s) -> {
             Stage newStage = stages.stream().filter(g -> g.getHosting().isConsistentHashOwner(k)).findFirst().get();
             if (s == stage1)
             {
                 assertNotSame(stage1, newStage);
-            } else {
+            }
+            else
+            {
                 assertSame(s, newStage);
             }
         });
@@ -171,13 +185,15 @@ public class ConsistentHashTest extends ActorBaseTest
         AtomicInteger sameCount = new AtomicInteger(0);
 
         // verify all stables keys haven't moved
-        stableKeys.forEach((k, s)->{
+        stableKeys.forEach((k, s) -> {
             Stage newStage = stages.stream().filter(g -> g.getHosting().isConsistentHashOwner(k)).findFirst().get();
             if (stage1 != newStage)
             {
                 assertSame(s, newStage);
                 sameCount.incrementAndGet();
-            } else {
+            }
+            else
+            {
                 changedCount.incrementAndGet();
             }
         });
