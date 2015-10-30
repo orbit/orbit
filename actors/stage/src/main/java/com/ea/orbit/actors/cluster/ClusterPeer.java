@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Represents a node connection to a cluster of orbit actor nodes.
  */
+// TODO: Rename this class to ClusterChannel
 public interface ClusterPeer
 {
     /**
