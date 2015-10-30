@@ -32,10 +32,15 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.Hello;
+import com.ea.orbit.actors.test.actors.SomeActor;
+import com.ea.orbit.concurrent.Task;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -54,6 +59,25 @@ public class RemoteClientTest extends ActorBaseTest
         RemoteClient client = createRemoteClient(stage);
         Hello actor1 = client.getReference(Hello.class, "1000");
         assertEquals("test!", actor1.sayHello("test").join());
+    }
+
+
+    @Test
+    @Ignore
+    public void timeoutTest() throws ExecutionException, InterruptedException
+    {
+        Stage stage = createStage();
+        clock.stop();
+        // make sure the actor is there... remove this later
+        RemoteClient client = createRemoteClient(stage);
+        SomeActor someActor = Actor.getReference(SomeActor.class, "1");
+        Task<UUID> res = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
+        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
+
+        client.cleanup(true);
+        assertTrue(res.isDone());
+        assertTrue(res.isCompletedExceptionally());
+        expectException(() -> res.join());
     }
 
 }

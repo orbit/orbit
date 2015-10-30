@@ -31,6 +31,7 @@ package com.ea.orbit.actors.runtime;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.actors.extensions.MessageSerializer;
+import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.NotImplementedException;
 import com.ea.orbit.exception.UncheckedException;
@@ -62,6 +63,8 @@ public class Peer
 
     private final Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
     private final PriorityBlockingQueue<PendingResponse> pendingResponsesQueue = new PriorityBlockingQueue<>(50, new PendingResponseComparator());
+
+    @Wired
     private Clock clock = Clock.systemUTC();
 
     public void setRuntime(Runtime runtime)

@@ -4,5 +4,5 @@ import com.ea.orbit.actors.runtime.Message;
 
 public interface MessageListener
 {
-    void sendMessage(Message message);
+    void recvMessage(Message message);
 }

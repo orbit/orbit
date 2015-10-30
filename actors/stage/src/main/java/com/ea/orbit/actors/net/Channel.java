@@ -1,8 +1,9 @@
 package com.ea.orbit.actors.net;
 
-/**
- * Created by daniels on 30/10/2015.
- */
+import com.ea.orbit.actors.cluster.MessageListener;
+import com.ea.orbit.actors.runtime.Message;
+
 public interface Channel
 {
+    void sendMessage(Message message);
 }

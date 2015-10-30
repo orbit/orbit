@@ -9,7 +9,7 @@ import java.util.Map;
  * Represents a message being sent between orbit servers.
  * Messages may be requests, responses or oneway.
  *
- * Header and body serialization is handled by the message serializer.
+ * Header and payload serialization is handled by the message serializer.
  */
 public class Message
 {

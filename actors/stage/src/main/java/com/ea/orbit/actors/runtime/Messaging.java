@@ -244,7 +244,7 @@ public class Messaging implements Startable
         }
         catch (Exception ex)
         {
-            logger.error("Error processing message. ", ex);
+            logger.error("Error processing   message. ", ex);
         }
     }
 
