@@ -62,6 +62,7 @@ public class Peer
 
     private final Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
     private final PriorityBlockingQueue<PendingResponse> pendingResponsesQueue = new PriorityBlockingQueue<>(50, new PendingResponseComparator());
+    private Clock clock = Clock.systemUTC();
 
     public void setRuntime(Runtime runtime)
     {
@@ -247,7 +248,6 @@ public class Peer
                     final ByteArrayOutputStream out = new ByteArrayOutputStream();
                     serializer.serializeMessage(runtime, out, message);
                     final byte[] bytes = out.toByteArray();
-                    final Clock clock = Clock.systemUTC();
                     long timeoutAt = clock.millis() + 30_000;
                     PendingResponse pendingResponse = new PendingResponse(messageId, timeoutAt);
                     final boolean oneWay = method.isAnnotationPresent(OneWay.class);
@@ -289,5 +289,8 @@ public class Peer
 
     }
 
-
+    public void setClock(final Clock clock)
+    {
+        this.clock = clock;
+    }
 }
