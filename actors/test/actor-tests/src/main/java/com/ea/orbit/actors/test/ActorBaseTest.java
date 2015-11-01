@@ -75,6 +75,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -596,22 +597,43 @@ public class ActorBaseTest
         eventually(60_000, runnable);
     }
 
-    protected void eventually(long timeoutMillis, final Runnable runnable)
+    protected void eventually(long timeoutMillis, Runnable runnable)
+    {
+        eventuallyTrue(60_000, () -> {
+            try
+            {
+                runnable.run();
+                return true;
+            }
+            catch (RuntimeException | Error ex)
+            {
+                return false;
+            }
+        });
+    }
+
+    protected void eventuallyTrue(final Callable<Boolean> callable)
+    {
+        eventuallyTrue(60_000, callable);
+    }
+
+    protected void eventuallyTrue(long timeoutMillis, final Callable<Boolean> callable)
     {
         final long start = System.currentTimeMillis();
         do
         {
             try
             {
-                runnable.run();
-                return;
+                if (Boolean.TRUE.equals(callable.call()))
+                {
+                    return;
+                }
             }
-            catch (RuntimeException | Error ex)
+            catch (Exception ex)
             {
                 if (System.currentTimeMillis() - start > timeoutMillis)
                 {
-                    // weird that this compiles...
-                    throw ex;
+                    throw new UncheckedException(ex);
                 }
                 try
                 {

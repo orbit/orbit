@@ -67,7 +67,7 @@ public class PersistenceTest extends ActorBaseTest
             SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
             someMatch.addPlayer(somePlayer).get();
             assertTrue(fakeDatabase.values().size() > 0);
-            stage1.stop();
+            stage1.stop().join();
         }
         {
             Stage stage2 = createStage();

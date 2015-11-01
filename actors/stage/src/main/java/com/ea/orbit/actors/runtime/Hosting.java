@@ -119,6 +119,11 @@ public class Hosting implements NodeCapabilities, Startable
                 info.nodeCapabilities.nodeModeChanged(clusterPeer.localAddress(), execution.getState())));
     }
 
+    public NodeAddress getNodeAddress()
+    {
+        return clusterPeer.localAddress();
+    }
+
     private static class NodeInfo
     {
         boolean active;

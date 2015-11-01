@@ -20,7 +20,6 @@ public class FakeClient implements RemoteClient
     public FakeClient(InvokerProvider invokerProvider, MessageSerializer serializer, FakeServerPeer server)
     {
         this.server = server;
-        peer.setRuntime(null);
         peer.setSerializer(serializer);
     }
 

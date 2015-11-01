@@ -32,6 +32,7 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.SomeActor;
+import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
 
@@ -57,11 +58,10 @@ public class MessageTimeoutTest extends ActorBaseTest
 
         UUID uuid = someActor.getUniqueActivationId(0).get();
         assertEquals(uuid, someActor.getUniqueActivationId().get());
-        Future<UUID> call = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
+        Task<UUID> call = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
         client.cleanup(false);
-        assertTrue(call.isDone());
-        expectException(() -> call.get());
+        expectException(() -> call.join());
     }
 
     @Test
@@ -77,11 +77,11 @@ public class MessageTimeoutTest extends ActorBaseTest
         assertEquals(uuid, someActor.getUniqueActivationId().get());
 
         // first
-        Future<UUID> first = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
+        Task<UUID> first = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
         // speeding up the time.
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
         // later call
-        Future<UUID> second = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
+        Task<UUID> second = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
 
         // true only because the cleanup has not been called yet.
         assertFalse(first.isDone());
@@ -92,7 +92,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         client.cleanup(false);
 
         // after the cleanup this call is a goner.
-        assertTrue(first.isDone());
+        eventuallyTrue(() -> first.isCompletedExceptionally());
 
         // second call is still good
         assertFalse(second.isDone());
@@ -103,10 +103,10 @@ public class MessageTimeoutTest extends ActorBaseTest
         // and cleanup runs
         client.cleanup(false);
         // the second call also times out
-        assertTrue(second.isDone());
+        eventuallyTrue(() -> second.isCompletedExceptionally());
 
-        expectException(() -> first.get());
-        expectException(() -> second.get());
+        expectException(() -> first.join());
+        expectException(() -> second.join());
     }
 
 }
