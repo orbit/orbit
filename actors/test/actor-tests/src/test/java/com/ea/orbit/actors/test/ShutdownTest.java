@@ -31,8 +31,8 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
@@ -44,7 +44,6 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class ShutdownTest extends ActorBaseTest
 {
@@ -107,7 +106,7 @@ public class ShutdownTest extends ActorBaseTest
         fakeSync.put("canFinish", true);
         stopFuture.join();
 
-        assertTrue(methodCall.isDone());
+        eventuallyTrue(() -> methodCall.isDone());
 
     }
 
