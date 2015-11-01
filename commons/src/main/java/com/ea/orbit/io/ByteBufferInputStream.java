@@ -34,6 +34,7 @@ import java.nio.ByteBuffer;
 public class ByteBufferInputStream extends InputStream
 {
     private ByteBuffer buffer;
+    private int mark;
 
     public ByteBufferInputStream(ByteBuffer buffer)
     {
@@ -58,5 +59,17 @@ public class ByteBufferInputStream extends InputStream
             return length;
         }
         return -1;
+    }
+
+    @Override
+    public void mark(final int readlimit)
+    {
+        mark = buffer.position();
+    }
+
+    @Override
+    public void reset() throws IOException
+    {
+        buffer.position(mark);
     }
 }
