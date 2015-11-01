@@ -67,6 +67,12 @@
 
         <!-- test dependencies -->
         <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>2.6.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-web</artifactId>
             <version>${project.version}</version>

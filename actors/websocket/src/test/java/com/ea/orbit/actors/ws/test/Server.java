@@ -30,7 +30,6 @@ package com.ea.orbit.actors.ws.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Peer;
 import com.ea.orbit.actors.test.FakeClusterPeer;
@@ -39,17 +38,13 @@ import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.web.EmbeddedHttpServer;
 
-import org.junit.Test;
-
 import javax.inject.Singleton;
 import javax.websocket.ClientEndpoint;
 import javax.websocket.CloseReason;
-import javax.websocket.ContainerProvider;
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
-import javax.websocket.WebSocketContainer;
 import javax.websocket.server.ServerEndpoint;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -57,17 +52,16 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import java.net.URI;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-
-public class WsTest
+public class Server
 {
-    private static JsonMessageSerializer serializer = new JsonMessageSerializer();
+    private static MixedSerializer serializer = new MixedSerializer();
 
     public interface HelloWebApi
     {
@@ -83,6 +77,7 @@ public class WsTest
         @Override
         public String hello(String message)
         {
+            System.out.println("HelloWebHandler: " + message);
             return "helloWeb: " + message;
         }
     }
@@ -96,11 +91,12 @@ public class WsTest
     {
         public Task<String> hello(String msg)
         {
+            System.out.println("HelloActor: " + msg);
             return Task.fromValue("hello: " + msg);
         }
     }
 
-    @ServerEndpoint("/ws/test")
+    @ServerEndpoint("/websocket/con")
     public static class MyActorWebSocket
     {
         private Session wsSession;
@@ -109,10 +105,6 @@ public class WsTest
 
         private Peer peer = new Peer()
         {
-            {
-                setSerializer(serializer);
-            }
-
             @Override
             protected void sendBinary(final ByteBuffer wrap)
             {
@@ -124,14 +116,32 @@ public class WsTest
         public void onOpen(final Session session)
         {
             wsSession = session;
+            peer.setSerializer(serializer);
             peer.setRuntime(stage.getRuntime());
+            System.out.println("onOpen");
         }
 
         @OnMessage
         public void onMessage(byte[] message, boolean last, Session session)
         {
-            peer.onMessage(ByteBuffer.wrap(message));
+            System.out.println("onMessage: " + new String(message, 4, message.length - 4, StandardCharsets.UTF_8));
+            System.out.println(String.format("%032X", new BigInteger(1, message)));
+            try
+            {
+                peer.onMessage(ByteBuffer.wrap(message, 4, message.length - 4));
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
         }
+
+        @OnClose
+        public void onClose(final Session session)
+        {
+            System.out.println("onClose");
+        }
+
     }
 
 
@@ -139,7 +149,7 @@ public class WsTest
     public static class MyActorWebSocketClient
     {
         private Session wsSession;
-        private Peer peer = new Peer()
+        public Peer peer = new Peer()
         {
             {
                 setSerializer(serializer);
@@ -148,7 +158,11 @@ public class WsTest
             @Override
             protected void sendBinary(final ByteBuffer wrap)
             {
-                wsSession.getAsyncRemote().sendBinary(wrap);
+                ByteBuffer padding = ByteBuffer.allocate(wrap.remaining() + 4);
+                padding.putInt(wrap.remaining());
+                padding.put(wrap);
+                padding.flip();
+                wsSession.getAsyncRemote().sendBinary(padding);
             }
         };
 
@@ -177,12 +191,11 @@ public class WsTest
 
     }
 
-    @Test(timeout = 120_000L)
-    public void test() throws Exception
+    public static void main(String[] args) throws Exception
     {
         Map<String, Object> properties = new HashMap<>();
 
-        properties.put("orbit.http.port", 0);
+        properties.put("orbit.http.port", 9090);
         properties.put("orbit.actors.clusterName", "cluster");
         properties.put("orbit.components", Arrays.asList(
                 com.ea.orbit.actors.server.ServerModule.class,
@@ -197,15 +210,5 @@ public class WsTest
         container.setProperties(properties);
         container.start();
 
-        final int localPort = container.get(EmbeddedHttpServer.class).getLocalPort();
-        final WebSocketContainer wsContainer = ContainerProvider.getWebSocketContainer();
-
-        final URI endpointURI = new URI("ws://localhost:" + localPort + "/ws/test");
-        final MyActorWebSocketClient clientEndPoint = new MyActorWebSocketClient();
-        final Session session = wsContainer.connectToServer(clientEndPoint, endpointURI);
-        final Hello hello = clientEndPoint.peer.getReference(Hello.class, "0");
-
-        assertEquals("hello: test", hello.hello("test").join());
-        session.close();
     }
 }
