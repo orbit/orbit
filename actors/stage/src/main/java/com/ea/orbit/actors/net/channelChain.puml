@@ -1,0 +1,34 @@
+@startuml
+
+actor Application
+note right of Application : Actors, etc
+
+artifact Channel {
+    agent Handler_1
+    agent Handler_2
+    agent Handler_3
+    usecase Connection
+    note right of Handler_1 : ex: pending response completion, timeout
+    note right of Handler_2 : ex: serialization
+    note right of Handler_3 : ex: message framing, boundaries
+    note right of Connection : ex: websockets, tcp, jgroups
+}
+
+
+cloud Network
+
+Application --> Handler_1 : [ send message  ]
+    Handler_1 --> Handler_2  : [ onWrite ]
+    Handler_2 --> Handler_3  : [ onWrite ]
+    Handler_3 --> Connection : [ onWrite ]
+
+
+Connection --> Network : [ send bytes  ]
+
+Network --> Connection : [ receive bytes  ]
+Connection --> Handler_3 : [ onRead  ]
+Handler_3 --> Handler_2  : [ onRead  ]
+Handler_2 --> Handler_1  : [ onRead  ]
+Handler_1 --> Application : [ receive message]
+
+@enduml

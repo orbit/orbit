@@ -1,0 +1,42 @@
+@startuml
+
+actor Application
+note right of Application : Actors, Observers
+
+artifact Stage {
+    agent Hosting #LightBlue
+    note right of Hosting : Group coordination
+    artifact Channel {
+        agent Execution #LightBlue
+        agent Messaging #LightBlue
+        agent MessageSerializer
+        agent ClusterPeer
+        note right of Execution : Method Invocation
+        note right of Messaging {
+            Tracks responses,
+            Adds messageId
+        }
+        note right of MessageSerializer : Serialization
+        note right of ClusterPeer : JGroupsClusterPeer
+    }
+}
+cloud Network
+
+
+Execution --> Hosting : locate actor
+Hosting --> Execution : select node, find actor
+ClusterPeer --> Hosting: cluster view
+
+Application --> Execution : [ invokeRemote ]
+Execution --> Messaging  : [ onWrite ]
+Messaging --> MessageSerializer  : [ onWrite ]
+MessageSerializer --> ClusterPeer : [ onWrite ]
+ClusterPeer --> Network : [ send group message (bytes) ]
+
+Network --> ClusterPeer : [ receive group message (bytes) ]
+ClusterPeer --> MessageSerializer : [ onRead  ]
+MessageSerializer --> Messaging  : [ onRead  ]
+Messaging --> Execution  : [ onRead  ]
+Execution --> Application : [ receive message]
+
+@enduml
