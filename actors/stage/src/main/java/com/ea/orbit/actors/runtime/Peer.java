@@ -155,7 +155,8 @@ public class Peer
         try
         {
             final Message message = serializer.deserializeMessage(runtime, new ByteBufferInputStream(data));
-            switch (message.getMessageType())
+            final int messageType = message.getMessageType();
+            switch (messageType)
             {
                 case MessageDefinitions.REQUEST_MESSAGE:
                 case MessageDefinitions.ONE_WAY_MESSAGE:
@@ -166,7 +167,7 @@ public class Peer
                         final Actor reference = Actor.getReference(invoker.getInterface(), "");
                         final int messageId = message.getMessageId();
                         final Object res = invoker.safeInvoke(reference, message.getMethodId(), (Object[]) message.getPayload());
-                        if (message.getMessageType() == MessageDefinitions.REQUEST_MESSAGE)
+                        if (messageType == MessageDefinitions.REQUEST_MESSAGE)
                         {
                             if (res instanceof CompletableFuture)
                             {
@@ -194,7 +195,7 @@ public class Peer
                     if (pend != null)
                     {
                         final Object payload = message.getPayload();
-                        if (message.getMessageType() == MessageDefinitions.RESPONSE_OK)
+                        if (messageType == MessageDefinitions.RESPONSE_OK)
                         {
                             pend.internalComplete(payload);
                         }
