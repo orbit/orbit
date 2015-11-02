@@ -37,4 +37,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface PreferLocalPlacement
 {
+    int percentile() default 100;
 }

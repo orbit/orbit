@@ -251,6 +251,20 @@ public class Hosting implements NodeCapabilities, Startable
         final Class<?> interfaceClass = ((ActorReference<?>) actorReference)._interfaceClass();
         final String interfaceClassName = interfaceClass.getName();
 
+        // First we handle Stateless Worker as it's a special case
+        if(interfaceClass.isAnnotationPresent(StatelessWorker.class))
+        {
+            // Do we want to place locally?
+            if (shouldPlaceLocally(interfaceClass))
+            {
+                return Task.fromValue(clusterPeer.localAddress());
+            }
+            else
+            {
+                return Task.fromValue(selectNode(interfaceClassName, true));
+            }
+        }
+
         // Get the existing activation from the local cache (if any)
         NodeAddress address = localAddressCache.get(addressable);
 
@@ -296,14 +310,10 @@ public class Hosting implements NodeCapabilities, Startable
             }
             nodeAddress = null;
 
-            // Prefer Local Placement or Stateless Worker?
-            if(interfaceClass.isAnnotationPresent(PreferLocalPlacement.class) || interfaceClass.isAnnotationPresent(StatelessWorker.class))
+            // Should place locally?
+            if (shouldPlaceLocally(interfaceClass))
             {
-                // Can we place this actor locally?
-                if (nodeType == NodeTypeEnum.SERVER && execution.canActivateActor(interfaceClassName))
-                {
-                    nodeAddress = clusterPeer.localAddress();
-                }
+                nodeAddress = clusterPeer.localAddress();
             }
 
             // Do we have a target node yet?
@@ -410,6 +420,23 @@ public class Hosting implements NodeCapabilities, Startable
                 }
             }
         }
+    }
+
+    private boolean shouldPlaceLocally(final Class<?> interfaceClass)
+    {
+        final String interfaceClassName = interfaceClass.getName();
+
+        if (interfaceClass.isAnnotationPresent(PreferLocalPlacement.class) &&
+                nodeType == NodeTypeEnum.SERVER && execution.canActivateActor(interfaceClassName))
+        {
+            final int percentile = interfaceClass.getAnnotation(PreferLocalPlacement.class).percentile();
+            if (random.nextInt(100) < percentile)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private String getHash(final String key)
