@@ -49,14 +49,15 @@ public interface Runtime
      * Sends a message to an actor or observer.
      *
      * @param toReference destination actor reference or observer reference
+     * @param m    the method
      * @param oneWay      should expect an answer,
      *                    if false the task is completed with null.
      * @param methodId    the generated id for the method
      * @param headers   message headers
-     *@param params      the method parameters, must all be serializable.  @return a future with the return value, or a future with null (if one-way)
+     * @param params      the method parameters, must all be serializable.  @return a future with the return value, or a future with null (if one-way)
      */
     // TODO: replace this with sendRPC(RpcMessage) and change the InvokeHookExtension to RpcHook
-    Task<?> sendMessage(Addressable toReference, boolean oneWay, int methodId, final Map<Object, Object> headers, Object[] params);
+    Task<?> sendMessage(Addressable toReference, Method m, boolean oneWay, int methodId, final Map<Object, Object> headers, Object[] params);
 
     /**
      * Handles calls to actor reference methods.

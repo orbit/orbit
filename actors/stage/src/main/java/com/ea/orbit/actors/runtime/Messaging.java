@@ -125,11 +125,18 @@ public class Messaging implements Startable
     {
         final int messageId;
         final long timeoutAt;
+        final String methodName;
 
         public PendingResponse(final int messageId, final long timeoutAt)
         {
+            this(messageId, timeoutAt, null);
+        }
+
+        public PendingResponse(final int messageId, final long timeoutAt, final String methodName)
+        {
             this.messageId = messageId;
             this.timeoutAt = timeoutAt;
+            this.methodName = methodName;
         }
 
         @Override
@@ -276,7 +283,8 @@ public class Messaging implements Startable
     {
         int messageId = messageIdGen.incrementAndGet();
         message.setMessageId(messageId);
-        PendingResponse pendingResponse = new PendingResponse(messageId, clock.millis() + responseTimeoutMillis);
+        PendingResponse pendingResponse = new PendingResponse(messageId, clock.millis() + responseTimeoutMillis,
+                (String) message.getHeader(MessageDefinitions.METHOD_NAME_ID));
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try
         {
@@ -329,7 +337,7 @@ public class Messaging implements Startable
                 }
                 if (!top.isDone())
                 {
-                    top.internalCompleteExceptionally(new TimeoutException("Response timeout"));
+                    top.internalCompleteExceptionally(new TimeoutException("Response timeout of " + responseTimeoutMillis + "ms exceeded invoking " + top.methodName));
                 }
                 pendingResponseMap.remove(top.messageId);
             }

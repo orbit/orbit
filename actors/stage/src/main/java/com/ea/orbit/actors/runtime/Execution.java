@@ -1240,7 +1240,7 @@ public class Execution implements Runtime
         return (T) reference;
     }
 
-    public Task<?> sendMessage(Addressable toReference, boolean oneWay, final int methodId, final Map<Object, Object> headers, final Object[] params)
+    public Task<?> sendMessage(Addressable toReference, Method m, boolean oneWay, final int methodId, final Map<Object, Object> headers, final Object[] params)
     {
         if (logger.isDebugEnabled())
         {
@@ -1275,6 +1275,7 @@ public class Execution implements Runtime
                 .withHeader(MessageDefinitions.INTERFACE_ID, actorReference._interfaceId())
                 .withHeader(MessageDefinitions.METHOD_ID, methodId)
                 .withHeader(MessageDefinitions.OBJECT_ID, ActorReference.getId(actorReference))
+                .withHeader(MessageDefinitions.METHOD_NAME_ID, m.getDeclaringClass().getName() + '.' + m.getName())
                 .withPayload(params);
 
 
@@ -1344,7 +1345,7 @@ public class Execution implements Runtime
         if (hookExtensions.size() == 0)
         {
             // no hooks
-            return sendMessage(toReference, oneWay, methodId, null, params);
+            return sendMessage(toReference, m, oneWay, methodId, null, params);
         }
 
         Iterator<InvokeHookExtension> it = hookExtensions.iterator();
@@ -1366,7 +1367,7 @@ public class Execution implements Runtime
                 {
                     return it.next().invoke(this, toReference, method, methodId, params);
                 }
-                return sendMessage(toReference, oneWay, methodId, null, params);
+                return sendMessage(toReference, m, oneWay, methodId, null, params);
             }
         };
 
