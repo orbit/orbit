@@ -30,6 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Addressable;
+import com.ea.orbit.actors.annotation.PreferLocalPlacement;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
@@ -249,43 +250,41 @@ public class Hosting implements NodeCapabilities, Startable
 
     private Task<NodeAddress> locateAndActivateActor(final Addressable actorReference)
     {
-        ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
+        final ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
                 String.valueOf(((ActorReference) actorReference).id));
 
+        final Class<?> interfaceClass = ((ActorReference<?>) actorReference)._interfaceClass();
+        final String interfaceClassName = interfaceClass.getName();
+
+        // First we handle Stateless Worker as it's a special case
+        if(interfaceClass.isAnnotationPresent(StatelessWorker.class))
+        {
+            // Do we want to place locally?
+            if (shouldPlaceLocally(interfaceClass))
+            {
+                return Task.fromValue(clusterPeer.localAddress());
+            }
+            else
+            {
+                return Task.fromValue(selectNode(interfaceClassName, true));
+            }
+        }
+
+        // Get the existing activation from the local cache (if any)
         NodeAddress address = localAddressCache.get(addressable);
+
+        // Is this actor already activated and in the local cache? If so, we're done
         if (address != null && activeNodes.containsKey(address))
         {
             return Task.fromValue(address);
         }
-        final Class<?> interfaceClass = ((ActorReference<?>) actorReference)._interfaceClass();
-        final String interfaceClassName = interfaceClass.getName();
-        if (interfaceClass.isAnnotationPresent(StatelessWorker.class))
-        {
-            if (nodeType == NodeTypeEnum.SERVER && execution.canActivateActor(interfaceClassName))
-            {
-                // TODO: consider always using local instance if this node is a server
-                // ~90% chance of making a local call
-                if (random.nextInt(100) < 90)
-                {
-                    return Task.fromValue(clusterPeer.localAddress());
-                }
-                // randomly chooses one server node to process this actor
-                final NodeAddress nodeAddress = selectNode(interfaceClassName, false);
-                if (nodeAddress != null)
-                {
-                    return Task.fromValue(nodeAddress);
-                }
-            }
-        }
 
-        final CompletableFuture<NodeAddress> async = CompletableFuture.supplyAsync(() -> {
+        // There is no existing activation at this time or it's not in the local cache
+        final CompletableFuture<NodeAddress> async = CompletableFuture.supplyAsync(() ->
+        {
             NodeAddress nodeAddress = null;
 
-            if (interfaceClass.isAnnotationPresent(StatelessWorker.class))
-            {
-                // randomly chooses one server node to process this actor
-                return selectNode(interfaceClassName, true);
-            }
+            // Get the distributed cache if needed
             if (distributedDirectory == null)
             {
                 synchronized (this)
@@ -296,29 +295,57 @@ public class Hosting implements NodeCapabilities, Startable
                     }
                 }
             }
-            nodeAddress = distributedDirectory.get(addressable);
 
-            if (nodeAddress != null && activeNodes.containsKey(nodeAddress))
-            {
-                localAddressCache.put(addressable, nodeAddress);
-                return nodeAddress;
-            }
+            // Get the existing activation from the distributed cache (if any)
+            nodeAddress = distributedDirectory.get(addressable);
             if (nodeAddress != null)
             {
-                distributedDirectory.remove(addressable, nodeAddress);
+                // Target node still valid?
+                if(activeNodes.containsKey(nodeAddress))
+                {
+                    // Cache locally
+                    localAddressCache.put(addressable, nodeAddress);
+                    return nodeAddress;
+                }
+                else
+                {
+                    // Target node is now dead, remove this activation from distributed cache
+                    distributedDirectory.remove(addressable, nodeAddress);
+                }
             }
-            nodeAddress = selectNode(interfaceClassName, true);
+            nodeAddress = null;
+
+            // Should place locally?
+            if (shouldPlaceLocally(interfaceClass))
+            {
+                nodeAddress = clusterPeer.localAddress();
+            }
+
+            // Do we have a target node yet?
+            if(nodeAddress == null)
+            {
+                // If not, select randomly
+                nodeAddress = selectNode(interfaceClassName, true);
+            }
+
+            // Push our selection to the distributed cache (if possible)
             NodeAddress otherNodeAddress = distributedDirectory.putIfAbsent(addressable, nodeAddress);
-            // someone got there first.
+
+            // Someone else beat us to placement, use that node
             if (otherNodeAddress != null)
             {
-                localAddressCache.put(addressable, otherNodeAddress);
-                return otherNodeAddress;
+                nodeAddress = otherNodeAddress;
             }
+
+            // Add to local cache
             localAddressCache.put(addressable, nodeAddress);
+
             return nodeAddress;
+
         }, execution.getExecutor());
+
         return Task.from(async);
+
     }
 
     private NodeAddress selectNode(final String interfaceClassName, boolean allowToBlock)
@@ -398,6 +425,23 @@ public class Hosting implements NodeCapabilities, Startable
                 }
             }
         }
+    }
+
+    private boolean shouldPlaceLocally(final Class<?> interfaceClass)
+    {
+        final String interfaceClassName = interfaceClass.getName();
+
+        if (interfaceClass.isAnnotationPresent(PreferLocalPlacement.class) &&
+                nodeType == NodeTypeEnum.SERVER && execution.canActivateActor(interfaceClassName))
+        {
+            final int percentile = interfaceClass.getAnnotation(PreferLocalPlacement.class).percentile();
+            if (random.nextInt(100) < percentile)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private String getHash(final String key)
