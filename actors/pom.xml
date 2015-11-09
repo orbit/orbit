@@ -45,6 +45,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>stage</module>
         <module>client</module>
         <module>server</module>
+        <module>websocket</module>
         <module>extensions/jpa</module>
         <module>extensions/json</module>
         <module>extensions/mongodb</module>
@@ -78,7 +79,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <plugin>
                 <groupId>com.ea.orbit</groupId>
                 <!-- this version is to avoid mvn clean failures -->
-                <version>0.5.2-SNAPSHOT</version>
+                <version>0.5.1-SNAPSHOT</version>
                 <artifactId>orbit-async-maven-plugin</artifactId>
                 <executions>
                     <execution>

@@ -32,6 +32,7 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Remindable;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.annotation.StorageExtension;
 import com.ea.orbit.actors.cluster.NodeAddress;
@@ -43,6 +44,7 @@ import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.CacheResponse;
+import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.OnlyIfActivated;
 import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.ExecutorUtils;
@@ -134,17 +136,19 @@ public class Execution implements Runtime
     private ExecutionCacheManager cacheManager = new ExecutionCacheManager();
     private ExecutionObjectCloner objectCloner;
 
-    @Wired
-    private Container container;
-
+    private Stage stage;
     /**
      * RPC message headers that are copied from and to the TaskContext.
      * <p>
-     * These fields are copied from the TaskContext to the message headers when sending messagess.
+     * These fields are copied from the TaskContext to the message headers when sending messages.
      * And from the message header to the TaskContext when receiving them.
      * </p>
      */
+    @Config("orbit.actors.stickyHeaders")
     private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
+
+    @Wired
+    private Container container;
 
     public Execution()
     {
@@ -215,6 +219,16 @@ public class Execution implements Runtime
     public void setObjectCloner(ExecutionObjectCloner objectCloner)
     {
         this.objectCloner = objectCloner;
+    }
+
+    public Stage getStage()
+    {
+        return stage;
+    }
+
+    public void setStage(Stage stage)
+    {
+        this.stage = stage;
     }
 
     private static class NullOutputStream extends OutputStream
@@ -641,7 +655,7 @@ public class Execution implements Runtime
             final ActorReference<T> reference = (ActorReference<T>) factory.createReference(id);
             if (objectId == null)
             {
-                reference.address = messaging.getNodeAddress();
+                reference.address = hosting.getNodeAddress();
             }
             reference.runtime = Execution.this;
             observerInstances.putIfAbsent(key, observer);
@@ -756,13 +770,11 @@ public class Execution implements Runtime
 
         if (container != null)
         {
-            container.getClasses().forEach(c ->
-            {
-                if (c.isInterface() && Actor.class.isAssignableFrom(c))
-                {
-                    getDescriptor(c);
-                }
-            });
+            // pre create the class descriptors if possible.
+            container.getClasses().stream()
+                    .filter(c -> (c.isInterface() && Actor.class.isAssignableFrom(c)))
+                    .parallel()
+                    .forEach(c -> getDescriptor(c));
         }
 
         getDescriptor(NodeCapabilities.class);
@@ -792,7 +804,7 @@ public class Execution implements Runtime
             }
         }, cleanupIntervalMillis, cleanupIntervalMillis);
 
-        // TODO move this logic the messaging class
+        // TODO move this logic the messaging class, or to the stage
         // schedules the message cleanup
         timer.schedule(new TimerTask()
         {
@@ -876,11 +888,11 @@ public class Execution implements Runtime
         return descriptorMapByInterfaceId.get(interfaceId);
     }
 
-    public void onMessageReceived(Message message)
+    public Task<?> onMessageReceived(Message message)
     {
-        int interfaceId = (int) message.getHeader(MessageDefinitions.INTERFACE_ID);
-        int methodId = (int) message.getHeader(MessageDefinitions.METHOD_ID);
-        Object key = message.getHeader(MessageDefinitions.OBJECT_ID);
+        int interfaceId = message.getInterfaceId();
+        int methodId = message.getMethodId();
+        Object key = message.getObjectId();
 
         EntryKey entryKey = new EntryKey(interfaceId, key);
         if (logger.isDebugEnabled())
@@ -888,33 +900,34 @@ public class Execution implements Runtime
             logger.debug("onMessageReceived for: " + entryKey);
         }
         messagesReceived.increment();
-        if (!executionSerializer.offerJob(entryKey,
-                () -> handleOnMessageReceived(
+        Task completion = new Task();
+        if (!executionSerializer.offerJob(entryKey, () ->
+                (handleOnMessageReceived(completion,
                         entryKey,
                         message.getFromNode(),
-                        message.isOneWay(),
+                        message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE,
                         message.getMessageId(),
                         interfaceId, methodId, key,
                         message.getHeaders(),
                         (Object[]) message.getPayload()
-                ),
-                maxQueueSize))
+                )), maxQueueSize))
         {
             refusedExecutions.increment();
+
             if (logger.isErrorEnabled())
             {
                 logger.error("Execution refused: " + key + ":" + interfaceId + ":" + methodId + ":" + message.getMessageId());
             }
-            if (!message.isOneWay())
-            {
-                messaging.sendResponse(message.getFromNode(), MessageDefinitions.RESPONSE_PROTOCOL_ERROR, message.getMessageId(), "Execution refused");
-            }
+            completion.completeExceptionally(new UncheckedException("Execution refused"));
         }
+        return completion;
     }
 
     // this method is executed serially by entryKey
-    private Task<?> handleOnMessageReceived(final EntryKey entryKey, final NodeAddress from,
-                                            final boolean oneway, final int messageId, final int interfaceId,
+    private Task<?> handleOnMessageReceived(final Task completion,
+                                            final EntryKey entryKey, final NodeAddress from,
+                                            final boolean oneway,
+                                            final int messageId, final int interfaceId,
                                             final int methodId, final Object key,
                                             final Object headers,
                                             final Object[] params)
@@ -926,23 +939,28 @@ public class Execution implements Runtime
             final ActorObserver observer = observerInstances.get(entryKey);
             if (observer == null)
             {
-                if (!oneway)
-                {
-                    messaging.sendResponse(from, MessageDefinitions.RESPONSE_PROTOCOL_ERROR, messageId, "Observer no longer present");
-                }
+                completion.completeExceptionally(new UncheckedException("Observer no longer present"));
                 return Task.done();
             }
             if (descriptor.invoker == null)
             {
                 descriptor.invoker = dynamicReferenceFactory.getInvokerFor(observer.getClass());
             }
-            final Task<?> task = descriptor.invoker.safeInvoke(observer, methodId, params);
-            return task.whenComplete((r, e) ->
-                    sendResponseAndLogError(oneway, from, messageId, (Object) r, e));
+            return descriptor.invoker.safeInvoke(observer, methodId, params)
+                    .handle((r, e) -> {
+                        if (e == null)
+                        {
+                            completion.complete(r);
+                        }
+                        else
+                        {
+                            completion.completeExceptionally(e);
+                        }
+                        return null;
+                    });
         }
 
         ReferenceEntry entry = localActors.get(entryKey);
-
 
         if (logger.isDebugEnabled())
         {
@@ -975,12 +993,12 @@ public class Execution implements Runtime
         final ReferenceEntry theEntry = entry;
         if (!entry.statelessWorker)
         {
-            return executeMessage(theEntry, oneway, descriptor, methodId, headers, params, from, messageId);
+            return executeMessage(completion, theEntry, descriptor, methodId, headers, params, from);
         }
         else
         {
             if (!executionSerializer.offerJob(null,
-                    () -> executeMessage(theEntry, oneway, descriptor, methodId, headers, params, from, messageId),
+                    () -> executeMessage(completion, theEntry, descriptor, methodId, headers, params, from),
                     maxQueueSize))
             {
                 refusedExecutions.increment();
@@ -988,16 +1006,11 @@ public class Execution implements Runtime
                 {
                     logger.info("Execution refused: " + key + ":" + interfaceId + ":" + methodId + ":" + messageId);
                 }
-                if (!oneway)
-                {
-                    messaging.sendResponse(from, MessageDefinitions.RESPONSE_PROTOCOL_ERROR, messageId, "Execution refused");
-                }
+                completion.completeExceptionally(new UncheckedException("Execution refused"));
             }
             return Task.done();
         }
-
     }
-
 
     static class MessageContext
     {
@@ -1052,15 +1065,14 @@ public class Execution implements Runtime
         return current.traceId;
     }
 
-    private Task<?> executeMessage(
+    private Task<Void> executeMessage(
+            final Task completion,
             final ReferenceEntry theEntry,
-            final boolean oneway,
             final InterfaceDescriptor descriptor,
             final int methodId,
             final Object headers,
             final Object[] params,
-            final NodeAddress from,
-            final int messageId)
+            final NodeAddress from)
     {
         final ActorTaskContext context = ActorTaskContext.pushNew();
         try
@@ -1087,16 +1099,22 @@ public class Execution implements Runtime
                 bind();
                 final Object actor = await(activation.getOrCreateInstance());
                 context.setActor((AbstractActor<?>) actor);
-
                 if (descriptor.invoker == null)
                 {
                     descriptor.invoker = dynamicReferenceFactory.getInvokerFor(actor.getClass());
                 }
-
-                Task<?> future = descriptor.invoker.safeInvoke(actor, methodId, params);
-                return future.whenComplete((r, e) -> {
-                    sendResponseAndLogError(oneway, from, messageId, r, e);
-                });
+                return descriptor.invoker.safeInvoke(actor, methodId, params)
+                        .handle((r, e) -> {
+                            if (e == null)
+                            {
+                                completion.complete(r);
+                            }
+                            else
+                            {
+                                completion.completeExceptionally(e);
+                            }
+                            return null;
+                        });
             }
             finally
             {
@@ -1106,7 +1124,7 @@ public class Execution implements Runtime
         }
         catch (Exception ex)
         {
-            sendResponseAndLogError(oneway, from, messageId, null, ex);
+            completion.completeExceptionally(ex);
         }
         finally
         {
@@ -1115,78 +1133,8 @@ public class Execution implements Runtime
         return Task.done();
     }
 
-    protected void sendResponseAndLogError(boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
-    {
-        if (exception != null && logger.isDebugEnabled())
-        {
-            logger.debug("Unknown application error. ", exception);
-        }
 
-        if (!oneway)
-        {
-            try
-            {
-                if (exception == null)
-                {
-                    messaging.sendResponse(from, MessageDefinitions.RESPONSE_OK, messageId, result);
-                }
-                else
-                {
-                    messaging.sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
-                }
-            }
-            catch (Exception ex2)
-            {
-                if (logger.isDebugEnabled())
-                {
-                    logger.debug("Error sending method result", ex2);
-                }
-                try
-                {
-                    if (exception != null)
-                    {
-                        messaging.sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, toSerializationSafeException(exception, ex2));
-                    }
-                    else
-                    {
-                        messaging.sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, ex2);
-                    }
-                }
-                catch (Exception ex3)
-                {
-                    if (logger.isDebugEnabled())
-                    {
-                        logger.debug("Failed twice sending result. ", ex2);
-                    }
-                    try
-                    {
-                        messaging.sendResponse(from, MessageDefinitions.RESPONSE_PROTOCOL_ERROR, messageId, "failed twice sending result");
-                    }
-                    catch (Exception ex4)
-                    {
-                        logger.error("Failed sending exception. ", ex4);
-                    }
-                }
-            }
-        }
-    }
-
-    private Throwable toSerializationSafeException(final Throwable notSerializable, final Throwable secondaryException)
-    {
-        final UncheckedException runtimeException = new UncheckedException(secondaryException.getMessage(), secondaryException, true, true);
-        for (Throwable t = notSerializable; t != null; t = t.getCause())
-        {
-            final RuntimeException newEx = new RuntimeException(
-                    t.getMessage() == null
-                            ? t.getClass().getName()
-                            : (t.getClass().getName() + ": " + t.getMessage()));
-            newEx.setStackTrace(t.getStackTrace());
-            runtimeException.addSuppressed(newEx);
-        }
-        return runtimeException;
-    }
-
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "unchecked" })
     <T> T createReference(final NodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
@@ -1270,21 +1218,33 @@ public class Execution implements Runtime
         }
 
         final Message message = new Message()
-                .withMessageType(MessageDefinitions.REQUEST_MESSAGE)
+                .withMessageType(oneWay ? MessageDefinitions.REQUEST_MESSAGE : MessageDefinitions.REQUEST_MESSAGE)
+                .withToNode(toNode)
                 .withHeaders(actualHeaders)
-                .withHeader(MessageDefinitions.INTERFACE_ID, actorReference._interfaceId())
-                .withHeader(MessageDefinitions.METHOD_ID, methodId)
-                .withHeader(MessageDefinitions.OBJECT_ID, ActorReference.getId(actorReference))
+                .withInterfaceId(actorReference._interfaceId())
+                .withMethodId(methodId)
+                .withObjectId(ActorReference.getId(actorReference))
                 .withPayload(params);
 
 
+        final Task<?> task;
         if (toNode == null)
         {
             // TODO: Ensure that both paths encode exception the same way.
-            return hosting.locateActor(actorReference, true)
-                    .thenCompose(x -> messaging.sendMessage(message.withToNode(x)));
+            task = hosting.locateActor(actorReference, true)
+                    .thenCompose(x -> messaging.sendMessage(message
+                            .withToNode(x)
+                            .withFromNode(hosting.getNodeAddress())));
         }
-        return messaging.sendMessage(message.withToNode(toNode));
+        else
+        {
+            task = messaging.sendMessage(message.withToNode(toNode));
+        }
+        return task
+                .whenCompleteAsync((r, e) -> {
+                            // place holder, just to ensure the completion happens in another thread
+                        },
+                        executor);
     }
 
     public Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
@@ -1329,7 +1289,8 @@ public class Execution implements Runtime
         {
             final MessageDigest md = MessageDigest.getInstance("SHA-256");
             DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
-            messaging.messageSerializer.serializeMessage(this, d, new Message().withPayload(params));
+            // this entire function shouldn't be here...
+            getStage().getMessageSerializer().serializeMessage(this, d, new Message().withPayload(params));
             d.close();
             return String.format("%032X", new BigInteger(1, md.digest()));
         }

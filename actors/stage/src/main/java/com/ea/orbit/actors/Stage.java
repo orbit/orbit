@@ -33,8 +33,17 @@ import com.ea.orbit.actors.cluster.JGroupsClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
-import com.ea.orbit.actors.runtime.*;
-import com.ea.orbit.actors.runtime.Runtime;
+import com.ea.orbit.actors.extensions.MessageSerializer;
+import com.ea.orbit.actors.net.Channel;
+import com.ea.orbit.actors.net.MessageListener;
+import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.Execution;
+import com.ea.orbit.actors.runtime.Hosting;
+import com.ea.orbit.actors.runtime.JavaMessageSerializer;
+import com.ea.orbit.actors.runtime.Message;
+import com.ea.orbit.actors.runtime.Messaging;
+import com.ea.orbit.actors.runtime.NodeCapabilities;
+import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.annotation.Config;
@@ -43,6 +52,7 @@ import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
+import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.metrics.annotations.ExportMetric;
 
 import org.slf4j.Logger;
@@ -50,6 +60,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -106,6 +118,7 @@ public class Stage implements Startable
     private ExecutorService executionPool;
     private ExecutorService messagingPool;
     private ExecutionObjectCloner objectCloner;
+    private MessageSerializer messageSerializer;
 
     static
     {
@@ -117,7 +130,7 @@ public class Stage implements Startable
                 // async is present in the classpath, let's make sure await is initialized
                 Class.forName("com.ea.orbit.async.Await").getMethod("init").invoke(null);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 // this might be a problem, logging.
                 logger.error("Error initializing orbit-async", ex);
@@ -130,7 +143,8 @@ public class Stage implements Startable
         }
     }
 
-    public static class Builder {
+    public static class Builder
+    {
 
         private Clock clock;
         private ExecutorService executionPool;
@@ -148,64 +162,74 @@ public class Stage implements Startable
         private List<ActorExtension> extensions = new ArrayList<>();
         private Set<String> stickyHeaders = new HashSet<>();
 
-        public Builder clock(Clock clock) {
+        public Builder clock(Clock clock)
+        {
             this.clock = clock;
             return this;
         }
 
-        public Builder executionPool(ExecutorService executionPool) {
+        public Builder executionPool(ExecutorService executionPool)
+        {
             this.executionPool = executionPool;
             return this;
         }
 
-        public Builder messagingPool(ExecutorService messagingPool) {
+        public Builder messagingPool(ExecutorService messagingPool)
+        {
             this.messagingPool = messagingPool;
             return this;
         }
 
-        public Builder clusterPeer(ClusterPeer clusterPeer) {
+        public Builder clusterPeer(ClusterPeer clusterPeer)
+        {
             this.clusterPeer = clusterPeer;
             return this;
         }
 
-        public Builder objectCloner(ExecutionObjectCloner objectCloner) {
+        public Builder objectCloner(ExecutionObjectCloner objectCloner)
+        {
             this.objectCloner = objectCloner;
             return this;
         }
 
-        public Builder clusterName(String clusterName) {
+        public Builder clusterName(String clusterName)
+        {
             this.clusterName = clusterName;
             return this;
         }
 
-        public Builder nodeName(String nodeName) {
+        public Builder nodeName(String nodeName)
+        {
             this.nodeName = nodeName;
             return this;
         }
 
-        public Builder mode(StageMode mode) {
+        public Builder mode(StageMode mode)
+        {
             this.mode = mode;
             return this;
         }
 
-        public Builder messaging(Messaging messaging) {
+        public Builder messaging(Messaging messaging)
+        {
             this.messaging = messaging;
             return this;
         }
 
-        public Builder extensions(ActorExtension ...extensions)
+        public Builder extensions(ActorExtension... extensions)
         {
             Collections.addAll(this.extensions, extensions);
             return this;
         }
 
-        public Builder stickyHeaders(String ...stickyHeaders)
+        public Builder stickyHeaders(String... stickyHeaders)
         {
             Collections.addAll(this.stickyHeaders, stickyHeaders);
             return this;
         }
 
-        public Stage build() {
+        public Stage build()
+        {
             Stage stage = new Stage();
             stage.setClock(clock);
             stage.setExecutionPool(executionPool);
@@ -363,6 +387,11 @@ public class Stage implements Startable
         {
             execution = container == null ? new Execution() : container.get(Execution.class);
         }
+        if (messageSerializer == null)
+        {
+            messageSerializer = new JavaMessageSerializer();
+        }
+        execution.setStage(this);
         if (clusterPeer == null)
         {
             if (container != null)
@@ -406,13 +435,51 @@ public class Stage implements Startable
         execution.setObjectCloner(objectCloner);
         execution.addStickyHeaders(stickyHeaders);
 
-        messaging.setExecution(execution);
         messaging.setClock(clock);
-        messaging.setExecutor(messagingPool);
+        messaging.setInvocationHandler((m) -> execution.onMessageReceived(m));
 
         hosting.setExecution(execution);
         hosting.setClusterPeer(clusterPeer);
-        messaging.setClusterPeer(clusterPeer);
+        messaging.setChannel(new Channel()
+        {
+            @Override
+            public void sendMessage(final Message message)
+            {
+                if (message.getToNode() == null)
+                {
+                    throw new UncheckedException("Message.toNode must be defined");
+                }
+                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                try
+                {
+                    messageSerializer.serializeMessage(execution, baos, message);
+                }
+                catch (Exception e)
+                {
+                    throw new UncheckedException(e);
+                }
+                clusterPeer.sendMessage(message.getToNode(), baos.toByteArray());
+            }
+
+            @Override
+            public void setMessageListener(final MessageListener listener)
+            {
+                clusterPeer.registerMessageReceiver((n, m) -> {
+                    final ByteArrayInputStream bais = new ByteArrayInputStream(m);
+                    try
+                    {
+                        listener.recvMessage(
+                                messageSerializer
+                                        .deserializeMessage(execution, bais)
+                                        .withFromNode(n));
+                    }
+                    catch (Exception e)
+                    {
+                        logger.error("Error deserializing message", e);
+                    }
+                });
+            }
+        });
 
         execution.setExtensions(extensions);
 
@@ -426,7 +493,7 @@ public class Stage implements Startable
             future = future.thenRun(() -> Actor.getReference(ReminderController.class, "0").ensureStart());
         }
 
-        future = future.thenRun(() ->  bind());
+        future = future.thenRun(() -> bind());
 
         return future;
     }
@@ -588,7 +655,7 @@ public class Stage implements Startable
         long value = 0;
         if (execution != null)
         {
-            value =  execution.getLocalActorCount();
+            value = execution.getLocalActorCount();
         }
 
         return value;
@@ -600,7 +667,7 @@ public class Stage implements Startable
         long value = 0;
         if (execution != null)
         {
-            value =  execution.getMessagesReceivedCount();
+            value = execution.getMessagesReceivedCount();
         }
 
         return value;
@@ -612,7 +679,7 @@ public class Stage implements Startable
         long value = 0;
         if (execution != null)
         {
-            value =  execution.getMessagesHandledCount();
+            value = execution.getMessagesHandledCount();
         }
 
         return value;
@@ -625,14 +692,24 @@ public class Stage implements Startable
         long value = 0;
         if (execution != null)
         {
-            value =  execution.getRefusedExecutionsCount();
+            value = execution.getRefusedExecutionsCount();
         }
 
         return value;
     }
 
-    public Runtime getRuntime()
+    public com.ea.orbit.actors.runtime.Runtime getRuntime()
     {
         return execution;
+    }
+
+    public MessageSerializer getMessageSerializer()
+    {
+        return messageSerializer;
+    }
+
+    public void setMessageSerializer(final MessageSerializer messageSerializer)
+    {
+        this.messageSerializer = messageSerializer;
     }
 }

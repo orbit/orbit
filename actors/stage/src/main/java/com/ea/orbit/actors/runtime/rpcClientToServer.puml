@@ -1,0 +1,21 @@
+@startuml
+title RemoteClient-To-Server RPC Sequence
+
+group Client Caller
+User->Reference: Task call
+Reference->Peer: Task invokeRemote()
+Peer->Channel: sendMessage(message)
+group Server Receive Client Call
+Channel->ServerPeer: recvMessage(message)
+ServerPeer->Execution: Task invokeRemote(cid,mid,h,payload)
+Execution->ServerPeer: Task.complete()
+ServerPeer->Channel: sendMessage(message)
+end
+
+Channel->Peer: recvMessage(message)
+Peer->Peer: matchMessage
+Peer->User: completeTask(response)
+end
+
+
+@enduml

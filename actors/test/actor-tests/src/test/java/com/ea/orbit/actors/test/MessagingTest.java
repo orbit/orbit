@@ -36,13 +36,12 @@ import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
 
+import javax.inject.Inject;
+
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Semaphore;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @SuppressWarnings("unused")
 public class MessagingTest extends ActorBaseTest
@@ -57,31 +56,28 @@ public class MessagingTest extends ActorBaseTest
         Task<String> justRespond();
     }
 
-    static Semaphore semaphores[] = new Semaphore[]{new Semaphore(0), new Semaphore(0)};
 
     @SuppressWarnings("rawtypes")
     public static class BlockingResponderActor extends AbstractActor implements BlockingResponder
     {
+        @Inject
+        FakeSync sync;
+
         public Task<?> blockOnReceiving(final int semaphoreIndex)
         {
             // blocking the message receiver thread.
             // If the system was correctly implemented this will not block other actors from receiving messages.
-            return Actor.getReference(BlockingResponder.class, "0").justRespond().thenRun(() ->
-                    {
-                        try
-                        {
-                            // blocking to try to use all the threads of the message receiver pool.
-                            // this won't work very well if the same test is executed twice,
-                            // not a concern with this maven project.
-                            // using a different semaphore for each test.
-                            semaphores[semaphoreIndex].acquire(1);
-                        }
-                        catch (InterruptedException ex)
-                        {
-                            // not relevant
-                        }
-                    }
-            );
+            return Actor.getReference(BlockingResponder.class, "0")
+                    .justRespond()
+                    .thenRun(() ->
+                            {
+                                // blocking to try to use all the threads of the message receiver pool.
+                                // this won't work very well if the same test is executed twice,
+                                // not a concern with this maven project.
+                                // using a different semaphore for each test.
+                                sync.getBlockedFuture().join();
+                            }
+                    );
         }
 
         @Override
@@ -126,9 +122,10 @@ public class MessagingTest extends ActorBaseTest
         BlockingResponder responder = Actor.getReference(BlockingResponder.class, "free");
         final Task<?> blockedRes = blockingResponder.blockOnReceiving(0);
         final Task<?> res = responder.receiveAndRespond();
+        eventuallyTrue(() -> fakeSync.blockedFutureCount() == 1);
         assertEquals("hello", res.join());
         assertFalse(blockedRes.isDone());
-        semaphores[0].release(1);
+        fakeSync.completeFutures();
         blockedRes.join();
         assertFalse(blockedRes.isCompletedExceptionally());
     }
@@ -137,6 +134,11 @@ public class MessagingTest extends ActorBaseTest
     /**
      * Ensures that the use of thenRun, thenCompose, whenDone, etc with a
      * response object won't block the reception of new messages.
+     *
+     * Can happen if thenRun is executed in the clusterPeer's thread pool.
+     *
+     * This is possible when Messaging is processing responses.
+     * then the Task.complete() method may trigger the execution of actor code.
      */
     @Test
     public void blockingReceptionTestWithABunch() throws ExecutionException, InterruptedException
@@ -146,20 +148,23 @@ public class MessagingTest extends ActorBaseTest
 
         BlockingResponder blockingResponder2 = Actor.getReference(BlockingResponder.class, "free");
         ArrayList<Task<?>> blocked = new ArrayList<>();
+
+        // this number must be greater than the number of threads available to the cluster peer.
         for (int i = 0; i < 20; i++)
         {
             BlockingResponder blockingResponder1 = Actor.getReference(BlockingResponder.class, "100" + i);
             blocked.add(blockingResponder1.blockOnReceiving(1));
         }
-        // bad practice, but just to ensure that the other messages have get there before this last one.
-        Thread.sleep(5);
+        // ensure that the other messages got there before this last one.
+        eventuallyTrue(() -> fakeSync.blockedFutureCount() == 20);
+        // this will call "0" but shouldn't be stopped
         final Task<?> res2 = blockingResponder2.receiveAndRespond();
         long start = System.currentTimeMillis();
         assertEquals("hello", res2.join());
         assertTrue(System.currentTimeMillis() - start < 30000);
         final Task<Object> all = Task.anyOf(blocked);
         assertFalse(all.isDone());
-        semaphores[1].release(20);
+        fakeSync.completeFutures();
         all.join();
         assertTrue(all.isDone());
         assertFalse(all.isCompletedExceptionally());

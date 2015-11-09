@@ -152,8 +152,7 @@ public class ActorFactoryGenerator
                 final String methodName = m.getName();
                 final CtClass[] parameterTypes = m.getParameterTypes();
 
-                final String methodSignature = methodName + "(" + Stream.of(parameterTypes).map(p -> p.getName()).collect(Collectors.joining(",")) + ")";
-                final int methodId = methodSignature.hashCode();
+                final int methodId = computeMethodId(methodName, parameterTypes);
 
                 final String methodReferenceField = methodName + "_" + count;
                 cc.addField(CtField.make("private static java.lang.reflect.Method " + methodReferenceField + " = null;", cc));

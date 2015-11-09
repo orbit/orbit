@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 
 /**
@@ -20,7 +21,7 @@ public class FakeSync
     private ConcurrentHashMap<Object, Task<?>> shared = new ConcurrentHashMap<>();
 
     // pairs of completable futures and the future completions.
-    private Queue<Pair<CompletableFuture, Object>> blockedFutures = new LinkedList<>();
+    private Queue<Pair<CompletableFuture, Object>> blockedFutures = new ConcurrentLinkedQueue<>();
 
     // just calls a function
     public <T> Task<T> futureFrom(Supplier<Task<T>> supplier)
@@ -70,6 +71,11 @@ public class FakeSync
                 pair.getLeft().complete(pair.getRight());
             }
         }
+    }
+
+    public int blockedFutureCount()
+    {
+        return blockedFutures.size();
     }
 
     public void put(Object key, Object value)

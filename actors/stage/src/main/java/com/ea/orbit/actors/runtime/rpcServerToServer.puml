@@ -1,0 +1,38 @@
+@startuml
+title Server-To-Server RPC Sequence
+
+
+group Caller
+User->Reference: Task call
+Reference->Execution: Task invokeRemote
+Execution->Execution: runFilters
+Execution->Hosting: locate
+Hosting-->Execution: address
+Execution->Messaging: sendMessage(message)
+Messaging->Channel: sendMessage(message)
+Channel->Channel: serialize
+Channel->Channel: deserialize
+Channel->Messaging: recvMessage(message)
+Messaging->Messaging: matchMessage
+Messaging->Execution: completeTask(response)
+Execution->Execution: schedule
+Execution->User: completeTask(response)
+
+end
+
+
+group Receiver
+Channel->Channel: deserialize
+Channel->Messaging: recvMessage(message)
+'If not local: either forward or reply error
+Messaging->Execution: Task invokeLocal(message)
+Execution->Execution: runFilters (TODO)
+Execution->Execution: scheduleNewInvocation
+Execution->User : Task invoke(payload)
+User->Messaging: Task.complete()
+Messaging->Channel: sendMessage(message)
+Channel->Channel: serialize
+end
+
+
+@enduml

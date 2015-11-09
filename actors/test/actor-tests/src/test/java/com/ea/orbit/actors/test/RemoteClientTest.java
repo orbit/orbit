@@ -31,50 +31,53 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.test.actors.SomeMatch;
-import com.ea.orbit.actors.test.actors.SomePlayer;
+import com.ea.orbit.actors.test.actors.Hello;
+import com.ea.orbit.actors.test.actors.SomeActor;
+import com.ea.orbit.concurrent.Task;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("unused")
-public class PersistenceTest extends ActorBaseTest
+public class RemoteClientTest extends ActorBaseTest
 {
-
     @Test
-    public void checkWritesTest() throws ExecutionException, InterruptedException
+    public void callServer() throws ExecutionException, InterruptedException
     {
-        Stage stage1 = createStage();
-        assertEquals(0, fakeDatabase.values().size());
-        SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
-        SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
-        someMatch.addPlayer(somePlayer).get();
-        assertTrue(fakeDatabase.values().size() > 0);
+
+        Stage stage = createStage();
+        // make sure the actor is there... remove this later
+        Actor.getReference(Hello.class, "1000").sayHello("aa").join();
+
+        RemoteClient client = createRemoteClient(stage);
+        Hello actor1 = client.getReference(Hello.class, "1000");
+        assertEquals("test!", actor1.sayHello("test").join());
     }
 
+
     @Test
-    public void checkReads() throws ExecutionException, InterruptedException
+    @Ignore
+    public void timeoutTest() throws ExecutionException, InterruptedException
     {
-        {
-            // adding some state and then tearing down the cluster.
-            Stage stage1 = createStage();
-            assertEquals(0, fakeDatabase.values().size());
-            SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
-            SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
-            someMatch.addPlayer(somePlayer).get();
-            assertTrue(fakeDatabase.values().size() > 0);
-            stage1.stop().join();
-        }
-        {
-            Stage stage2 = createStage();
-            SomeMatch someMatch_r2 = Actor.getReference(SomeMatch.class, "300");
-            SomePlayer somePlayer_r2 = Actor.getReference(SomePlayer.class, "101");
-            assertEquals(1, someMatch_r2.getPlayers().get().size());
-            assertEquals(somePlayer_r2, someMatch_r2.getPlayers().get().get(0));
-        }
+        Stage stage = createStage();
+        clock.stop();
+        // make sure the actor is there... remove this later
+        RemoteClient client = createRemoteClient(stage);
+        SomeActor someActor = Actor.getReference(SomeActor.class, "1");
+        Task<UUID> res = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
+        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
+
+        client.cleanup(true);
+        assertTrue(res.isDone());
+        assertTrue(res.isCompletedExceptionally());
+        expectException(() -> res.join());
     }
+
 }

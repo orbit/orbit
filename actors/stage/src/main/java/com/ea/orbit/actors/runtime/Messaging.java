@@ -28,11 +28,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.actors.extensions.MessageSerializer;
+import com.ea.orbit.actors.net.Channel;
 import com.ea.orbit.annotation.Config;
-import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
@@ -40,29 +38,24 @@ import com.ea.orbit.exception.UncheckedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.time.Clock;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Function;
 
 public class Messaging implements Startable
 {
     private static Object NIL = null;
     private static final Logger logger = LoggerFactory.getLogger(Messaging.class);
-    // consults with Hosting to determine the target server to send the message to.
     // serializes the messages
     // pass received messages to Execution
 
-    private ClusterPeer clusterPeer;
-    private Execution execution;
+    private Channel channel;
     private final AtomicInteger messageIdGen = new AtomicInteger();
     private final Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
     private final PriorityBlockingQueue<PendingResponse> pendingResponsesQueue = new PriorityBlockingQueue<>(50, new PendingResponseComparator());
@@ -72,30 +65,8 @@ public class Messaging implements Startable
     private long responseTimeoutMillis = 30_000;
 
     private final LongAdder networkMessagesReceived = new LongAdder();
-    private final LongAdder objectMessagesReceived = new LongAdder();
     private final LongAdder responsesReceived = new LongAdder();
-    private ExecutorService executor;
-    protected MessageSerializer messageSerializer = new JavaMessageSerializer();
-
-    public void setExecution(final Execution execution)
-    {
-        this.execution = execution;
-    }
-
-    public void setClusterPeer(final ClusterPeer clusterPeer)
-    {
-        this.clusterPeer = clusterPeer;
-    }
-
-    public void setResponseTimeoutMillis(final long responseTimeoutMillis)
-    {
-        this.responseTimeoutMillis = responseTimeoutMillis;
-    }
-
-    public NodeAddress getNodeAddress()
-    {
-        return clusterPeer.localAddress();
-    }
+    private Function<Message, Task<?>> invocationHandler;
 
     /**
      * The messageId is used only to break a tie between messages that timeout at the same ms.
@@ -145,50 +116,43 @@ public class Messaging implements Startable
         }
     }
 
+    public void setChannel(final Channel channel)
+    {
+        this.channel = channel;
+        channel.setMessageListener(m -> onMessageReceived(m));
+    }
+
+    public void setResponseTimeoutMillis(final long responseTimeoutMillis)
+    {
+        this.responseTimeoutMillis = responseTimeoutMillis;
+    }
+
     public void setClock(final Clock clock)
     {
         this.clock = clock;
     }
 
-    public Task<?> start()
-    {
-        if (executor == null)
-        {
-            executor = ExecutorUtils.newScalingThreadPool(64);
-        }
-        clusterPeer.registerMessageReceiver((from, buff) -> executor.execute(() -> onMessageReceived(from, buff)));
-        //timeoutCleanup()
-        return Task.done();
-    }
-
-    @Override
-    public Task<?> stop()
-    {
-        executor.shutdown();
-        try
-        {
-            executor.awaitTermination(60, TimeUnit.SECONDS);
-        }
-        catch (InterruptedException e)
-        {
-            Thread.currentThread().interrupt();
-        }
-        return Task.done();
-    }
-
-    private void onMessageReceived(final NodeAddress from, final byte[] buff)
+    protected void onMessageReceived(Message message)
     {
         // deserialize and send to runtime
         try
         {
             networkMessagesReceived.increment();
-            Message message = messageSerializer.deserializeMessage(execution, new ByteArrayInputStream(buff));
-            message.withFromNode(from);
-            switch (message.getMessageType())
+            final int messageType = message.getMessageType();
+            final int messageId = message.getMessageId();
+            final NodeAddress fromNode = message.getFromNode();
+            switch (messageType)
             {
                 case MessageDefinitions.REQUEST_MESSAGE:
                 case MessageDefinitions.ONE_WAY_MESSAGE:
-                    execution.onMessageReceived(message);
+                    handleInvocation(message)
+                            .handle((r, e) -> {
+                                        sendResponseAndLogError(
+                                                messageType == MessageDefinitions.ONE_WAY_MESSAGE,
+                                                fromNode, messageId, r, e);
+                                        return null;
+                                    }
+                            );
                     return;
 
                 case MessageDefinitions.RESPONSE_OK:
@@ -196,7 +160,7 @@ public class Messaging implements Startable
                 case MessageDefinitions.RESPONSE_PROTOCOL_ERROR:
                 {
                     responsesReceived.increment();
-                    PendingResponse pendingResponse = pendingResponseMap.remove(message.getMessageId());
+                    PendingResponse pendingResponse = pendingResponseMap.remove(messageId);
                     if (pendingResponse != null)
                     {
                         pendingResponsesQueue.remove(pendingResponse);
@@ -211,7 +175,7 @@ public class Messaging implements Startable
                             pendingResponse.internalCompleteExceptionally(new UncheckedException("Error deserializing response", ex));
                             return;
                         }
-                        switch (message.getMessageType())
+                        switch (messageType)
                         {
                             case MessageDefinitions.RESPONSE_OK:
                                 pendingResponse.internalComplete(res);
@@ -226,7 +190,7 @@ public class Messaging implements Startable
                             default:
                                 // should be impossible
                                 logger.error("Illegal protocol, invalid response message type: {}",
-                                        message.getMessageType());
+                                        messageType);
                                 return;
                         }
                     }
@@ -234,42 +198,50 @@ public class Messaging implements Startable
                     {
                         // missing counterpart
                         logger.warn("Missing counterpart (pending message) for message with id: {} and type: {}.",
-                                message.getMessageId(), message.getMessageType());
+                                messageId, messageType);
                     }
                     break;
                 }
                 default:
-                    logger.error("Illegal protocol, invalid message type: {}", message.getMessageType());
+                    logger.error("Illegal protocol, invalid message type: {}", messageType);
                     return;
             }
         }
         catch (Exception ex)
         {
-            logger.error("Error processing message. ", ex);
+            logger.error("Error processing   message. ", ex);
         }
     }
 
-    public void onNodeDrop(final NodeAddress address)
+    protected Task<?> handleInvocation(final Message message)
     {
-        // could be used to decrease the timeout of messages sent to failed nodes.
-    }
-
-    public void sendResponse(NodeAddress to, int messageType, int messageId, Object res)
-    {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        if (invocationHandler == null)
+        {
+            return Task.fromException(new UncheckedException("No invocationHandler defined"));
+        }
         try
         {
-            messageSerializer.serializeMessage(execution, byteArrayOutputStream,
-                    new Message()
-                            .withMessageId(messageId)
-                            .withMessageType(messageType)
-                            .withPayload(res));
+            return invocationHandler.apply(message);
         }
-        catch (Exception e)
+        catch (Throwable ex)
         {
-            throw new UncheckedException(e);
+            return Task.fromException(ex);
         }
-        clusterPeer.sendMessage(to, byteArrayOutputStream.toByteArray());
+    }
+
+    public void setInvocationHandler(Function<Message, Task<?>> listener)
+    {
+        invocationHandler = listener;
+    }
+
+
+    private void sendResponse(NodeAddress to, int messageType, int messageId, Object res)
+    {
+        channel.sendMessage(new Message()
+                .withToNode(to)
+                .withMessageId(messageId)
+                .withMessageType(messageType)
+                .withPayload(res));
     }
 
     public Task<?> sendMessage(Message message)
@@ -277,20 +249,7 @@ public class Messaging implements Startable
         int messageId = messageIdGen.incrementAndGet();
         message.setMessageId(messageId);
         PendingResponse pendingResponse = new PendingResponse(messageId, clock.millis() + responseTimeoutMillis);
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        try
-        {
-            messageSerializer.serializeMessage(execution, byteArrayOutputStream, message);
-        }
-        catch (Exception | Error e)
-        {
-            if (logger.isErrorEnabled())
-            {
-                logger.error("Error sending message", e);
-            }
-            return Task.fromException(new UncheckedException(e));
-        }
-        final boolean oneWay = message.isOneWay();
+        final boolean oneWay = message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE;
         if (!oneWay)
         {
 
@@ -299,7 +258,7 @@ public class Messaging implements Startable
         }
         try
         {
-            clusterPeer.sendMessage(message.getToNode(), byteArrayOutputStream.toByteArray());
+            channel.sendMessage(message);
             if (oneWay)
             {
                 pendingResponse.internalComplete(NIL);
@@ -336,9 +295,75 @@ public class Messaging implements Startable
         }
     }
 
-    public void setExecutor(final ExecutorService pool)
+    protected void sendResponseAndLogError(boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
     {
-        this.executor = pool;
+        if (exception != null && logger.isDebugEnabled())
+        {
+            logger.debug("Unknown application error. ", exception);
+        }
+
+        if (!oneway)
+        {
+            try
+            {
+                if (exception == null)
+                {
+                    sendResponse(from, MessageDefinitions.RESPONSE_OK, messageId, result);
+                }
+                else
+                {
+                    sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
+                }
+            }
+            catch (Exception ex2)
+            {
+                if (logger.isDebugEnabled())
+                {
+                    logger.debug("Error sending method result", ex2);
+                }
+                try
+                {
+                    if (exception != null)
+                    {
+                        sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, toSerializationSafeException(exception, ex2));
+                    }
+                    else
+                    {
+                        sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, ex2);
+                    }
+                }
+                catch (Exception ex3)
+                {
+                    if (logger.isDebugEnabled())
+                    {
+                        logger.debug("Failed twice sending result. ", ex2);
+                    }
+                    try
+                    {
+                        sendResponse(from, MessageDefinitions.RESPONSE_PROTOCOL_ERROR, messageId, "failed twice sending result");
+                    }
+                    catch (Exception ex4)
+                    {
+                        logger.error("Failed sending exception. ", ex4);
+                    }
+                }
+            }
+        }
+    }
+
+    private Throwable toSerializationSafeException(final Throwable notSerializable, final Throwable secondaryException)
+    {
+        final UncheckedException runtimeException = new UncheckedException(secondaryException.getMessage(), secondaryException, true, true);
+        for (Throwable t = notSerializable; t != null; t = t.getCause())
+        {
+            final RuntimeException newEx = new RuntimeException(
+                    t.getMessage() == null
+                            ? t.getClass().getName()
+                            : (t.getClass().getName() + ": " + t.getMessage()));
+            newEx.setStackTrace(t.getStackTrace());
+            runtimeException.addSuppressed(newEx);
+        }
+        return runtimeException;
     }
 
 }

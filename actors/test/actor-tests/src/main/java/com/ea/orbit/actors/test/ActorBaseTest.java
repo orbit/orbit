@@ -35,6 +35,7 @@ import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
+import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorFactoryGenerator;
 import com.ea.orbit.actors.runtime.ActorReference;
@@ -74,6 +75,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -85,7 +87,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.ea.orbit.actors.Stage.*;
+import static com.ea.orbit.actors.Stage.Builder;
+import static com.ea.orbit.actors.Stage.StageMode;
 import static org.junit.Assert.fail;
 
 @SuppressWarnings("VisibilityModifierCheck")
@@ -94,6 +97,8 @@ public class ActorBaseTest
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
     protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
+
+    //protected ConcurrentHashMap<Stage, FakeServerPeer> fakeServerPeers = new ConcurrentHashMap<>();
 
     protected static final ExecutorService commonPool = new ForwardingExecutorService()
     {
@@ -258,6 +263,14 @@ public class ActorBaseTest
         }
     }
 
+    public RemoteClient createRemoteClient(Stage server) throws ExecutionException, InterruptedException
+    {
+        final FakeServerPeer serverPeer = new FakeServerPeer(server, new JsonMessageSerializer());
+        final FakeClient fakeClient = new FakeClient(null, new JsonMessageSerializer(), serverPeer);
+        serverPeer.setClient(fakeClient);
+        return fakeClient;
+    }
+
     public Stage createClient() throws ExecutionException, InterruptedException
     {
         hiddenLog.info("Create Client");
@@ -297,7 +310,8 @@ public class ActorBaseTest
 
         DependencyRegistry dr = initDependencyRegistry();
 
-        LifetimeExtension lifetimeExtension = new LifetimeExtension() {
+        LifetimeExtension lifetimeExtension = new LifetimeExtension()
+        {
             @Override
             public Task<?> preActivation(final AbstractActor<?> actor)
             {
@@ -583,22 +597,43 @@ public class ActorBaseTest
         eventually(60_000, runnable);
     }
 
-    protected void eventually(long timeoutMillis, final Runnable runnable)
+    protected void eventually(long timeoutMillis, Runnable runnable)
+    {
+        eventuallyTrue(60_000, () -> {
+            try
+            {
+                runnable.run();
+                return true;
+            }
+            catch (RuntimeException | Error ex)
+            {
+                return false;
+            }
+        });
+    }
+
+    protected void eventuallyTrue(final Callable<Boolean> callable)
+    {
+        eventuallyTrue(60_000, callable);
+    }
+
+    protected void eventuallyTrue(long timeoutMillis, final Callable<Boolean> callable)
     {
         final long start = System.currentTimeMillis();
         do
         {
             try
             {
-                runnable.run();
-                return;
+                if (Boolean.TRUE.equals(callable.call()))
+                {
+                    return;
+                }
             }
-            catch (RuntimeException | Error ex)
+            catch (Exception ex)
             {
                 if (System.currentTimeMillis() - start > timeoutMillis)
                 {
-                    // weird that this compiles...
-                    throw ex;
+                    throw new UncheckedException(ex);
                 }
                 try
                 {

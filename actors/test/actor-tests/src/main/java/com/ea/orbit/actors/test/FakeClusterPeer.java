@@ -29,8 +29,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.cluster.ClusterPeer;
-import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.cluster.MessageListener;
+import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.cluster.ViewListener;
 import com.ea.orbit.concurrent.Task;
 
@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * </p>
  * It's recommended to use the fake network for application unit tests.
  */
+// TODO: Rename this class to FakeClusterChannel
 public class FakeClusterPeer implements ClusterPeer
 {
     private ViewListener viewListener;
