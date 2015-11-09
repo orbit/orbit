@@ -65,7 +65,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ForkJoinTask;
 
-// TODO: Rename this class to FakeClusterChannel
 @Singleton
 public class JGroupsClusterPeer implements ClusterPeer
 {
