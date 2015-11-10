@@ -28,27 +28,26 @@
 
 package com.ea.orbit.actors.net;
 
-// netty.io inspired channel pipelining
+import com.ea.orbit.concurrent.Task;
+
 public interface ChannelHandlerContext
 {
-    /**
-     * Triggers a onRead in the next channel handler (inbound)
-     */
-    void fireChannelRead(Object message);
+    ChannelHandlerContext fireExceptionCaught(Throwable cause);
 
-    /**
-     * Let the next channel handler know that the channel is now active (outbound)
-     */
-    void fireChannelInactive();
+    ChannelHandlerContext fireActive();
 
-    /**
-     * Triggers a write in the next channel handler (inbound)
-     */
-    void fireChannelActive();
+    ChannelHandlerContext fireInactive();
 
-    /**
-     * Trigger a write in the next channel handler (outbound)
-     */
-    void write(Object message);
+    ChannelHandlerContext fireEventTriggered(Object event);
+
+    ChannelHandlerContext fireRead(Object msg);
+
+    Task connect(Object param);
+
+    Task disconnect();
+
+    Task close();
+
+    Task write(Object msg);
 
 }

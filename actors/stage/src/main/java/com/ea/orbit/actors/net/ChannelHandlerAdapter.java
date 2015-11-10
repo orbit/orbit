@@ -30,26 +30,66 @@ package com.ea.orbit.actors.net;
 
 import com.ea.orbit.concurrent.Task;
 
-public interface ChannelHandler
+public class ChannelHandlerAdapter implements ChannelHandler
 {
-    void onExceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception;
+    @Override
+    public void onExceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) throws Exception
+    {
+        ctx.fireExceptionCaught(cause);
+    }
 
-    void onActive(ChannelHandlerContext ctx) throws Exception;
+    @Override
+    public void onActive(final ChannelHandlerContext ctx) throws Exception
+    {
+        ctx.fireActive();
+    }
 
-    void onInactive(ChannelHandlerContext ctx) throws Exception;
+    @Override
+    public void onInactive(final ChannelHandlerContext ctx) throws Exception
+    {
+        ctx.fireInactive();
+    }
 
-    void onEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception;
+    @Override
+    public void onEventTriggered(final ChannelHandlerContext ctx, final Object evt) throws Exception
+    {
+        ctx.fireEventTriggered(evt);
+    }
 
-    void onRead(ChannelHandlerContext ctx, Object msg) throws Exception;
+    @Override
+    public void onRead(final ChannelHandlerContext ctx, final Object msg) throws Exception
+    {
+        ctx.fireRead(msg);
+    }
 
-    void onRegistered(ChannelHandlerContext ctx) throws Exception;
+    @Override
+    public void onRegistered(ChannelHandlerContext ctx) throws Exception
+    {
 
-    Task connect(ChannelHandlerContext ctx, Object param) throws Exception;
+    }
 
-    Task disconnect(ChannelHandlerContext ctx) throws Exception;
+    @Override
+    public Task connect(final ChannelHandlerContext ctx, final Object param) throws Exception
+    {
+        return ctx.connect(param);
+    }
 
-    Task close(ChannelHandlerContext ctx) throws Exception;
+    @Override
+    public Task disconnect(final ChannelHandlerContext ctx) throws Exception
+    {
+        return ctx.disconnect();
+    }
 
-    Task write(ChannelHandlerContext ctx, Object msg) throws Exception;
+    @Override
+    public Task close(final ChannelHandlerContext ctx) throws Exception
+    {
+        return ctx.close();
+    }
+
+    @Override
+    public Task write(final ChannelHandlerContext ctx, final Object msg) throws Exception
+    {
+        return ctx.write(msg);
+    }
 
 }

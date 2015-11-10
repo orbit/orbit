@@ -36,12 +36,14 @@ import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
+import com.ea.orbit.actors.net.Channel;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorFactoryGenerator;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.ExecutionSerializer;
+import com.ea.orbit.actors.runtime.Message;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
@@ -266,8 +268,9 @@ public class ActorBaseTest
     public RemoteClient createRemoteClient(Stage server) throws ExecutionException, InterruptedException
     {
         final FakeServerPeer serverPeer = new FakeServerPeer(server, new JsonMessageSerializer());
-        final FakeClient fakeClient = new FakeClient(null, new JsonMessageSerializer(), serverPeer);
-        serverPeer.setClient(fakeClient);
+        final FakeClient fakeClient = new FakeClient(null, new JsonMessageSerializer());
+
+
         return fakeClient;
     }
 

@@ -41,6 +41,8 @@ import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
+import com.ea.orbit.actors.net.ChannelHandlerAdapter;
+import com.ea.orbit.actors.net.ChannelHandlerContext;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.CacheResponse;
@@ -99,7 +101,7 @@ import java.util.stream.Collectors;
 
 import static com.ea.orbit.async.Await.await;
 
-public class Execution implements Runtime
+public class Execution extends ChannelHandlerAdapter implements Runtime
 {
 
     private static final Logger logger = LoggerFactory.getLogger(Execution.class);
@@ -149,6 +151,7 @@ public class Execution implements Runtime
 
     @Wired
     private Container container;
+    private ChannelHandlerContext handlerContext;
 
     public Execution()
     {
@@ -1156,6 +1159,13 @@ public class Execution implements Runtime
     }
 
     @Override
+    public void onActive(final ChannelHandlerContext ctx) throws Exception
+    {
+        handlerContext = ctx;
+        super.onActive(ctx);
+    }
+
+    @Override
     public ActorInvoker<?> getInvoker(final int interfaceId)
     {
         final InterfaceDescriptor descriptor = getDescriptor(interfaceId);
@@ -1232,13 +1242,13 @@ public class Execution implements Runtime
         {
             // TODO: Ensure that both paths encode exception the same way.
             task = hosting.locateActor(actorReference, true)
-                    .thenCompose(x -> messaging.sendMessage(message
+                    .thenCompose(x -> handlerContext.write(message
                             .withToNode(x)
                             .withFromNode(hosting.getNodeAddress())));
         }
         else
         {
-            task = messaging.sendMessage(message.withToNode(toNode));
+            task = handlerContext.write(message.withToNode(toNode));
         }
         return task
                 .whenCompleteAsync((r, e) -> {

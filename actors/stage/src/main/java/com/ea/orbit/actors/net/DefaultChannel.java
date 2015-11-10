@@ -29,27 +29,60 @@
 package com.ea.orbit.actors.net;
 
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.exception.UncheckedException;
 
-public interface ChannelHandler
+/**
+ * Protocol chain for orbit messages.
+ * <br>
+ * Inspired in netty.io and apache mina.
+ */
+public class DefaultChannel implements Channel
 {
-    void onExceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception;
+    private final DefaultChannelHandlerContext head;
+    private final DefaultChannelHandlerContext tail;
 
-    void onActive(ChannelHandlerContext ctx) throws Exception;
+    public DefaultChannel()
+    {
+        head = new DefaultChannelHandlerContext.HeadContext();
+        tail = new DefaultChannelHandlerContext.TailContext();
+        head.outbound = tail;
+        tail.inbound = head;
+    }
 
-    void onInactive(ChannelHandlerContext ctx) throws Exception;
+    @Override
+    public void addHandler(ChannelHandler handler)
+    {
+        final DefaultChannelHandlerContext ctx = new DefaultChannelHandlerContext();
+        ctx.handler = handler;
+        ctx.inbound = tail.inbound;
+        ctx.outbound = tail;
+        tail.inbound.outbound = ctx;
+        tail.inbound = ctx;
+        try
+        {
+            ctx.handler.onRegistered(ctx);
+        }
+        catch (Exception e)
+        {
+            throw new UncheckedException(e);
+        }
+    }
 
-    void onEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception;
+    @Override
+    public Task<Void> write(Object message)
+    {
+        return head.write(message);
+    }
 
-    void onRead(ChannelHandlerContext ctx, Object msg) throws Exception;
+    @Override
+    public Task<Void> connect(Object param)
+    {
+        return head.connect(param);
+    }
 
-    void onRegistered(ChannelHandlerContext ctx) throws Exception;
-
-    Task connect(ChannelHandlerContext ctx, Object param) throws Exception;
-
-    Task disconnect(ChannelHandlerContext ctx) throws Exception;
-
-    Task close(ChannelHandlerContext ctx) throws Exception;
-
-    Task write(ChannelHandlerContext ctx, Object msg) throws Exception;
-
+    @Override
+    public Task<Void> disconnect()
+    {
+        return head.disconnect();
+    }
 }

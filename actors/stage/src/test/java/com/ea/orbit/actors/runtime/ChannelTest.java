@@ -26,30 +26,15 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.net;
+package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.concurrent.Task;
+import org.junit.Test;
 
-public interface ChannelHandler
+public class ChannelTest
 {
-    void onExceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception;
+    @Test
+    public void testChannel()
+    {
 
-    void onActive(ChannelHandlerContext ctx) throws Exception;
-
-    void onInactive(ChannelHandlerContext ctx) throws Exception;
-
-    void onEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception;
-
-    void onRead(ChannelHandlerContext ctx, Object msg) throws Exception;
-
-    void onRegistered(ChannelHandlerContext ctx) throws Exception;
-
-    Task connect(ChannelHandlerContext ctx, Object param) throws Exception;
-
-    Task disconnect(ChannelHandlerContext ctx) throws Exception;
-
-    Task close(ChannelHandlerContext ctx) throws Exception;
-
-    Task write(ChannelHandlerContext ctx, Object msg) throws Exception;
-
+    }
 }

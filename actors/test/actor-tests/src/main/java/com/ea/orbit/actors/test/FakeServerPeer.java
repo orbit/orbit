@@ -4,35 +4,12 @@ import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.extensions.MessageSerializer;
 import com.ea.orbit.actors.runtime.Peer;
 
-import java.nio.ByteBuffer;
-
-public class FakeServerPeer
+public class FakeServerPeer extends Peer
 {
-    private Peer peer = new Peer()
-    {
-        @Override
-        protected void sendBinary(final ByteBuffer wrap)
-        {
-            client.doReceive(wrap);
-        }
-    };
-
-    private FakeClient client;
-
     public FakeServerPeer(Stage stage, MessageSerializer serializer)
     {
-        peer.setRuntime(stage.getRuntime());
-        peer.setSerializer(serializer);
+        setRuntime(stage.getRuntime());
+        setSerializer(serializer);
     }
 
-
-    void onMessage(final ByteBuffer wrap)
-    {
-        peer.onMessage(wrap);
-    }
-
-    public void setClient(final FakeClient client)
-    {
-        this.client = client;
-    }
 }

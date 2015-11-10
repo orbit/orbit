@@ -6,21 +6,11 @@ import com.ea.orbit.actors.runtime.Peer;
 
 import java.nio.ByteBuffer;
 
-public class FakeClient implements RemoteClient
+public class FakeClient extends Peer implements RemoteClient
 {
-    private final FakeServerPeer server;
-    private Peer peer = new Peer() {
-        @Override
-        protected void sendBinary(final ByteBuffer wrap)
-        {
-            doSendBinary(wrap);
-        }
-    };
-
-    public FakeClient(InvokerProvider invokerProvider, MessageSerializer serializer, FakeServerPeer server)
+    public FakeClient(InvokerProvider invokerProvider, MessageSerializer serializer)
     {
-        this.server = server;
-        peer.setSerializer(serializer);
+        setSerializer(serializer);
     }
 
     @Override
@@ -29,19 +19,10 @@ public class FakeClient implements RemoteClient
 
     }
 
-    private void doSendBinary(final ByteBuffer wrap)
-    {
-        server.onMessage(wrap);
-    }
-
-    void doReceive(final ByteBuffer wrap)
-    {
-        peer.onMessage(wrap);
-    }
 
     @Override
-    public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
+    public <T> T getReference(final Class<T> iClass, final String id)
     {
-        return peer.getReference(iClass, (String) id);
+        return super.getReference(iClass, (String) id);
     }
 }

@@ -35,6 +35,9 @@ import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.MessageSerializer;
 import com.ea.orbit.actors.net.Channel;
+import com.ea.orbit.actors.net.ChannelHandlerAdapter;
+import com.ea.orbit.actors.net.ChannelHandlerContext;
+import com.ea.orbit.actors.net.DefaultChannel;
 import com.ea.orbit.actors.net.MessageListener;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Execution;
@@ -54,6 +57,7 @@ import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.metrics.annotations.ExportMetric;
+import com.ea.orbit.tuples.Pair;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,6 +103,7 @@ public class Stage implements Startable
 
     @Wired
     private Container container;
+    private DefaultChannel channel;
 
     public enum StageMode
     {
@@ -440,11 +445,16 @@ public class Stage implements Startable
 
         hosting.setExecution(execution);
         hosting.setClusterPeer(clusterPeer);
-        messaging.setChannel(new Channel()
+        channel = new DefaultChannel();
+        channel.addHandler(messaging);
+
+        // message serializer handler
+        channel.addHandler(new ChannelHandlerAdapter()
         {
             @Override
-            public void sendMessage(final Message message)
+            public Task write(ChannelHandlerContext ctx, final Object msg)
             {
+                Message message = (Message) msg;
                 if (message.getToNode() == null)
                 {
                     throw new UncheckedException("Message.toNode must be defined");
@@ -458,36 +468,54 @@ public class Stage implements Startable
                 {
                     throw new UncheckedException(e);
                 }
-                clusterPeer.sendMessage(message.getToNode(), baos.toByteArray());
+                return ctx.write(Pair.of(message.getToNode(), baos.toByteArray()));
             }
 
             @Override
-            public void setMessageListener(final MessageListener listener)
+            public void onRead(ChannelHandlerContext ctx, final Object msg)
+            {
+                Pair<NodeAddress, byte[]> message = (Pair<NodeAddress, byte[]>) msg;
+                final ByteArrayInputStream bais = new ByteArrayInputStream(message.getRight());
+                try
+                {
+                    ctx.fireRead(messageSerializer
+                            .deserializeMessage(execution, bais)
+                            .withFromNode(message.getLeft()));
+                }
+                catch (Exception e)
+                {
+                    logger.error("Error deserializing message", e);
+                }
+            }
+        });
+        // cluster peer
+        channel.addHandler(new ChannelHandlerAdapter()
+        {
+            @Override
+            public Task write(final ChannelHandlerContext ctx, final Object msg) throws Exception
+            {
+                Pair<NodeAddress, byte[]> message = (Pair<NodeAddress, byte[]>) msg;
+                clusterPeer.sendMessage(message.getLeft(), message.getRight());
+                return Task.done();
+            }
+
+            @Override
+            public Task connect(final ChannelHandlerContext ctx, final Object param) throws Exception
             {
                 clusterPeer.registerMessageReceiver((n, m) -> {
                     final ByteArrayInputStream bais = new ByteArrayInputStream(m);
-                    try
-                    {
-                        listener.recvMessage(
-                                messageSerializer
-                                        .deserializeMessage(execution, bais)
-                                        .withFromNode(n));
-                    }
-                    catch (Exception e)
-                    {
-                        logger.error("Error deserializing message", e);
-                    }
+                    ctx.fireRead(Pair.of(n, m));
                 });
+                return clusterPeer.join(clusterName, nodeName).thenReturn(() -> ctx.fireActive());
             }
         });
 
         execution.setExtensions(extensions);
-
         messaging.start();
         hosting.start();
         execution.start();
 
-        Task<?> future = clusterPeer.join(clusterName, nodeName);
+        Task<Void> future = channel.connect(null);
         if (mode == StageMode.HOST)
         {
             future = future.thenRun(() -> Actor.getReference(ReminderController.class, "0").ensureStart());

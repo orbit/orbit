@@ -30,6 +30,7 @@ package com.ea.orbit.actors.ws.test;
 
 import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
 import com.ea.orbit.actors.net.ChannelHandler;
+import com.ea.orbit.actors.net.ChannelHandlerAdapter;
 import com.ea.orbit.actors.net.ChannelHandlerContext;
 import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.actors.runtime.Message;
@@ -37,7 +38,7 @@ import com.ea.orbit.concurrent.Task;
 
 import java.io.ByteArrayInputStream;
 
-public class SerializerHandler implements ChannelHandler
+public class SerializerHandler extends ChannelHandlerAdapter
 {
     JsonMessageSerializer json = new JsonMessageSerializer();
     ProtoMessageSerializer proto = new ProtoMessageSerializer();
@@ -52,7 +53,7 @@ public class SerializerHandler implements ChannelHandler
             try
             {
                 newMessage = json.deserializeMessage(ActorRuntime.getRuntime(), new ByteArrayInputStream(bytes));
-                ctx.fireChannelRead(newMessage);
+                ctx.fireRead(newMessage);
             }
             catch (Exception e)
             {
@@ -63,7 +64,7 @@ public class SerializerHandler implements ChannelHandler
         try
         {
             newMessage = proto.deserializeMessage(ActorRuntime.getRuntime(), new ByteArrayInputStream(bytes));
-            ctx.fireChannelRead(newMessage);
+            ctx.fireRead(newMessage);
         }
         catch (Exception e)
         {
@@ -71,12 +72,6 @@ public class SerializerHandler implements ChannelHandler
         }
         return;
 
-    }
-
-    @Override
-    public void onStart(final ChannelHandlerContext ctx)
-    {
-        ctx.fireChannelActive();
     }
 
     @Override

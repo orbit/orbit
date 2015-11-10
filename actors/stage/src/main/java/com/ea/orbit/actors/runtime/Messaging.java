@@ -30,6 +30,9 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.net.Channel;
+import com.ea.orbit.actors.net.ChannelHandler;
+import com.ea.orbit.actors.net.ChannelHandlerAdapter;
+import com.ea.orbit.actors.net.ChannelHandlerContext;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -48,14 +51,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
 
-public class Messaging implements Startable
+public class Messaging extends ChannelHandlerAdapter implements Startable
 {
     private static Object NIL = null;
     private static final Logger logger = LoggerFactory.getLogger(Messaging.class);
     // serializes the messages
     // pass received messages to Execution
 
-    private Channel channel;
     private final AtomicInteger messageIdGen = new AtomicInteger();
     private final Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
     private final PriorityBlockingQueue<PendingResponse> pendingResponsesQueue = new PriorityBlockingQueue<>(50, new PendingResponseComparator());
@@ -116,12 +118,6 @@ public class Messaging implements Startable
         }
     }
 
-    public void setChannel(final Channel channel)
-    {
-        this.channel = channel;
-        channel.setMessageListener(m -> onMessageReceived(m));
-    }
-
     public void setResponseTimeoutMillis(final long responseTimeoutMillis)
     {
         this.responseTimeoutMillis = responseTimeoutMillis;
@@ -132,7 +128,13 @@ public class Messaging implements Startable
         this.clock = clock;
     }
 
-    protected void onMessageReceived(Message message)
+    @Override
+    public void onRead(ChannelHandlerContext ctx, Object message)
+    {
+        this.onMessageReceived(ctx, (Message) message);
+    }
+
+    protected void onMessageReceived(ChannelHandlerContext ctx, Message message)
     {
         // deserialize and send to runtime
         try
@@ -147,7 +149,7 @@ public class Messaging implements Startable
                 case MessageDefinitions.ONE_WAY_MESSAGE:
                     handleInvocation(message)
                             .handle((r, e) -> {
-                                        sendResponseAndLogError(
+                                        sendResponseAndLogError(ctx,
                                                 messageType == MessageDefinitions.ONE_WAY_MESSAGE,
                                                 fromNode, messageId, r, e);
                                         return null;
@@ -235,16 +237,16 @@ public class Messaging implements Startable
     }
 
 
-    private void sendResponse(NodeAddress to, int messageType, int messageId, Object res)
+    private void sendResponse(ChannelHandlerContext ctx, NodeAddress to, int messageType, int messageId, Object res)
     {
-        channel.sendMessage(new Message()
+        ctx.write(new Message()
                 .withToNode(to)
                 .withMessageId(messageId)
                 .withMessageType(messageType)
                 .withPayload(res));
     }
 
-    public Task<?> sendMessage(Message message)
+    public Task<?> sendMessage(ChannelHandlerContext ctx, Message message)
     {
         int messageId = messageIdGen.incrementAndGet();
         message.setMessageId(messageId);
@@ -258,7 +260,7 @@ public class Messaging implements Startable
         }
         try
         {
-            channel.sendMessage(message);
+            ctx.write(message);
             if (oneWay)
             {
                 pendingResponse.internalComplete(NIL);
@@ -295,7 +297,7 @@ public class Messaging implements Startable
         }
     }
 
-    protected void sendResponseAndLogError(boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
+    protected void sendResponseAndLogError(ChannelHandlerContext ctx, boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
     {
         if (exception != null && logger.isDebugEnabled())
         {
@@ -308,11 +310,11 @@ public class Messaging implements Startable
             {
                 if (exception == null)
                 {
-                    sendResponse(from, MessageDefinitions.RESPONSE_OK, messageId, result);
+                    sendResponse(ctx, from, MessageDefinitions.RESPONSE_OK, messageId, result);
                 }
                 else
                 {
-                    sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
+                    sendResponse(ctx, from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
                 }
             }
             catch (Exception ex2)
@@ -325,11 +327,11 @@ public class Messaging implements Startable
                 {
                     if (exception != null)
                     {
-                        sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, toSerializationSafeException(exception, ex2));
+                        sendResponse(ctx, from, MessageDefinitions.RESPONSE_ERROR, messageId, toSerializationSafeException(exception, ex2));
                     }
                     else
                     {
-                        sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, ex2);
+                        sendResponse(ctx, from, MessageDefinitions.RESPONSE_ERROR, messageId, ex2);
                     }
                 }
                 catch (Exception ex3)
@@ -340,7 +342,7 @@ public class Messaging implements Startable
                     }
                     try
                     {
-                        sendResponse(from, MessageDefinitions.RESPONSE_PROTOCOL_ERROR, messageId, "failed twice sending result");
+                        sendResponse(ctx, from, MessageDefinitions.RESPONSE_PROTOCOL_ERROR, messageId, "failed twice sending result");
                     }
                     catch (Exception ex4)
                     {
