@@ -29,7 +29,6 @@
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Actor;
-
 import com.ea.orbit.actors.extensions.ActorClassFinder;
 
 public class DefaultActorClassFinder implements ActorClassFinder

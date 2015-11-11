@@ -32,7 +32,7 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.RefFactory;
+import com.ea.orbit.actors.runtime.ReferenceFactory;
 import com.ea.orbit.exception.UncheckedException;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -70,9 +70,9 @@ public class ActorReferenceModule extends Module
     /**
      * Class that will create concrete references to actor interfaces
      */
-    private final RefFactory referenceFactory;
+    private final ReferenceFactory referenceFactory;
 
-    public ActorReferenceModule(final RefFactory referenceFactory)
+    public ActorReferenceModule(final ReferenceFactory referenceFactory)
     {
         super();
         this.referenceFactory = referenceFactory;
@@ -174,9 +174,9 @@ public class ActorReferenceModule extends Module
     private static class RefDeserializer extends JsonDeserializer<Object>
     {
         private final Class<?> iClass;
-        private final RefFactory factory;
+        private final ReferenceFactory factory;
 
-        public RefDeserializer(final Class<?> iClass, final RefFactory factory)
+        public RefDeserializer(final Class<?> iClass, final ReferenceFactory factory)
         {
             super();
             this.iClass = iClass;
@@ -221,9 +221,9 @@ public class ActorReferenceModule extends Module
     private static class ObserverRefDeserializer extends JsonDeserializer<Object>
     {
         private final Class<?> iClass;
-        private final RefFactory factory;
+        private final ReferenceFactory factory;
 
-        public ObserverRefDeserializer(final Class<?> iClass, final RefFactory factory)
+        public ObserverRefDeserializer(final Class<?> iClass, final ReferenceFactory factory)
         {
             super();
             this.iClass = iClass;

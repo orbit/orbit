@@ -47,8 +47,10 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.function.Function;
 
+/**
+ * Handles matching requests with responses
+ */
 public class Messaging extends HandlerAdapter implements Startable
 {
     private static Object NIL = null;
@@ -64,7 +66,6 @@ public class Messaging extends HandlerAdapter implements Startable
 
     private final LongAdder networkMessagesReceived = new LongAdder();
     private final LongAdder responsesReceived = new LongAdder();
-    private Function<Message, Task<?>> invocationHandler;
 
     /**
      * The messageId is used only to break a tie between messages that timeout at the same ms.
@@ -143,14 +144,8 @@ public class Messaging extends HandlerAdapter implements Startable
             {
                 case MessageDefinitions.REQUEST_MESSAGE:
                 case MessageDefinitions.ONE_WAY_MESSAGE:
-                    handleInvocation(message)
-                            .handle((r, e) -> {
-                                        sendResponseAndLogError(ctx,
-                                                messageType == MessageDefinitions.ONE_WAY_MESSAGE,
-                                                fromNode, messageId, r, e);
-                                        return null;
-                                    }
-                            );
+                    // forwards the message to the next inbound handler
+                    ctx.fireRead(message);
                     return;
 
                 case MessageDefinitions.RESPONSE_OK:
@@ -211,37 +206,6 @@ public class Messaging extends HandlerAdapter implements Startable
         }
     }
 
-    protected Task<?> handleInvocation(final Message message)
-    {
-        if (invocationHandler == null)
-        {
-            return Task.fromException(new UncheckedException("No invocationHandler defined"));
-        }
-        try
-        {
-            return invocationHandler.apply(message);
-        }
-        catch (Throwable ex)
-        {
-            return Task.fromException(ex);
-        }
-    }
-
-    public void setInvocationHandler(Function<Message, Task<?>> listener)
-    {
-        invocationHandler = listener;
-    }
-
-
-    private Task sendResponse(HandlerContext ctx, NodeAddress to, int messageType, int messageId, Object res)
-    {
-        return ctx.write(new Message()
-                .withToNode(to)
-                .withMessageId(messageId)
-                .withMessageType(messageType)
-                .withPayload(res));
-    }
-
     @Override
     public Task write(final HandlerContext ctx, final Object msg) throws Exception
     {
@@ -250,7 +214,17 @@ public class Messaging extends HandlerAdapter implements Startable
 
     public Task<?> sendMessage(HandlerContext ctx, Message message)
     {
-        int messageId = messageIdGen.incrementAndGet();
+        int messageId = message.getMessageId();
+        if (messageId == 0)
+        {
+            messageId = messageIdGen.incrementAndGet();
+            message.setMessageId(messageId);
+        }
+        if (message.getMessageType() != MessageDefinitions.REQUEST_MESSAGE)
+        {
+            ctx.write(message);
+            return Task.done();
+        }
         message.setMessageId(messageId);
         PendingResponse pendingResponse = new PendingResponse(messageId, clock.millis() + responseTimeoutMillis);
         final boolean oneWay = message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE;
@@ -298,26 +272,5 @@ public class Messaging extends HandlerAdapter implements Startable
             }
         }
     }
-
-    protected void sendResponseAndLogError(HandlerContext ctx, boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
-    {
-        if (exception != null && logger.isDebugEnabled())
-        {
-            logger.debug("Unknown application error. ", exception);
-        }
-
-        if (!oneway)
-        {
-            if (exception == null)
-            {
-                sendResponse(ctx, from, MessageDefinitions.RESPONSE_OK, messageId, result);
-            }
-            else
-            {
-                sendResponse(ctx, from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
-            }
-        }
-    }
-
 
 }

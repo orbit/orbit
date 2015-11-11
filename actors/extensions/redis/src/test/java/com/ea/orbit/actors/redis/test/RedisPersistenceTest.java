@@ -31,7 +31,7 @@ package com.ea.orbit.actors.redis.test;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
 import com.ea.orbit.actors.extensions.redis.RedisStorageExtension;
-import com.ea.orbit.actors.runtime.ReferenceFactory;
+import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
 import com.ea.orbit.actors.test.StorageBaseTest;
 import com.ea.orbit.actors.test.StorageTest;
 import com.ea.orbit.actors.test.StorageTestState;
@@ -68,7 +68,7 @@ public class RedisPersistenceTest extends StorageBaseTest
     public void initStorage()
     {
         mapper = new ObjectMapper();
-        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
+        mapper.registerModule(new ActorReferenceModule(DefaultReferenceFactory.get()));
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)

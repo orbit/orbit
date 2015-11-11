@@ -64,16 +64,13 @@ import com.google.common.collect.MapMaker;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -101,11 +98,10 @@ import java.util.stream.Collectors;
 
 import static com.ea.orbit.async.Await.await;
 
-public class Execution extends HandlerAdapter implements Runtime
+public class Execution extends HandlerAdapter
 {
 
     private static final Logger logger = LoggerFactory.getLogger(Execution.class);
-    private final String runtimeIdentity;
     private ActorClassFinder finder;
     private ConcurrentMap<Class<?>, InterfaceDescriptor> descriptorMapByInterface = new ConcurrentHashMap<>();
     private ConcurrentMap<Integer, InterfaceDescriptor> descriptorMapByInterfaceId = new ConcurrentHashMap<>();
@@ -128,8 +124,6 @@ public class Execution extends HandlerAdapter implements Runtime
 
     private List<ActorExtension> extensions = new ArrayList<>();
 
-    private final WeakReference<Runtime> cachedRef = new WeakReference<>(this);
-
     private List<InvokeHookExtension> hookExtensions;
 
     private NodeCapabilities.NodeState state = NodeCapabilities.NodeState.RUNNING;
@@ -151,22 +145,13 @@ public class Execution extends HandlerAdapter implements Runtime
     @Wired
     private Container container;
     private HandlerContext handlerContext;
+    private Runtime runtime;
 
     public Execution()
     {
         // the last runtime created will be the default.
-        ActorRuntime.runtimeCreated(cachedRef);
-
-        runtimeIdentity = generateRuntimeIdentity();
     }
 
-    private String generateRuntimeIdentity()
-    {
-        final UUID uuid = UUID.randomUUID();
-        final String encoded = Base64.getEncoder().encodeToString(
-                ByteBuffer.allocate(16).putLong(uuid.getMostSignificantBits()).putLong(uuid.getLeastSignificantBits()).array());
-        return "Orbit[" + encoded.substring(0, encoded.length() - 2) + "]";
-    }
 
     public void setClock(final Clock clock)
     {
@@ -176,6 +161,11 @@ public class Execution extends HandlerAdapter implements Runtime
     public void setExecutor(final ExecutorService executor)
     {
         this.executor = executor;
+    }
+
+    public void setRuntime(final Runtime runtime)
+    {
+        this.runtime = runtime;
     }
 
     public ExecutorService getExecutor()
@@ -332,7 +322,6 @@ public class Execution extends HandlerAdapter implements Runtime
                         {
                             try
                             {
-
                                 bind();
                                 AbstractActor<?> actor = (AbstractActor<?>) singleActivation.instance;
                                 Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preDeactivation(actor)))
@@ -408,6 +397,11 @@ public class Execution extends HandlerAdapter implements Runtime
             }
             return Task.done();
         }
+    }
+
+    private void bind()
+    {
+        runtime.bind();
     }
 
     private static class EntryKey
@@ -654,7 +648,7 @@ public class Execution extends HandlerAdapter implements Runtime
             {
                 reference.address = hosting.getNodeAddress();
             }
-            reference.runtime = Execution.this;
+            reference.runtime = Execution.this.runtime;
             observerInstances.putIfAbsent(key, observer);
             observerReferences.putIfAbsent(observer, (ActorObserver) reference);
             return (T) reference;
@@ -718,42 +712,23 @@ public class Execution extends HandlerAdapter implements Runtime
         return timerTask::cancel;
     }
 
-    public void bind()
-    {
-        ActorRuntime.setRuntime(this.cachedRef);
-    }
+//    public void bind(Object object)
+//    {
+//        if (!(object instanceof ActorReference))
+//        {
+//            throw new IllegalArgumentException("Must be a reference");
+//        }
+//        ((ActorReference<?>) object).runtime = this;
+//    }
 
-    public void bind(Object object)
-    {
-        if (!(object instanceof ActorReference))
-        {
-            throw new IllegalArgumentException("Must be a reference");
-        }
-        ((ActorReference<?>) object).runtime = this;
-    }
-
-    @Override
-    public Clock clock()
-    {
-        return clock;
-    }
-
-    @Override
     public Task<?> registerReminder(final Remindable actor, final String reminderName, final long dueTime, final long period, final TimeUnit timeUnit)
     {
         return getReference(ReminderController.class, "0").registerOrUpdateReminder(actor, reminderName, new Date(clock.millis() + timeUnit.toMillis(dueTime)), period, timeUnit);
     }
 
-    @Override
     public Task<?> unregisterReminder(final Remindable actor, final String reminderName)
     {
         return getReference(ReminderController.class, "0").unregisterReminder(actor, reminderName);
-    }
-
-    @Override
-    public String runtimeIdentity()
-    {
-        return runtimeIdentity;
     }
 
     public void start()
@@ -885,6 +860,50 @@ public class Execution extends HandlerAdapter implements Runtime
         return descriptorMapByInterfaceId.get(interfaceId);
     }
 
+    @Override
+    public void onRead(HandlerContext ctx, Object msg)
+    {
+        final Message message = (Message) msg;
+        final int messageType = message.getMessageType();
+        final NodeAddress fromNode = message.getFromNode();
+
+        onMessageReceived(message)
+                .whenComplete((r, e) ->
+                        sendResponseAndLogError(ctx,
+                                messageType == MessageDefinitions.ONE_WAY_MESSAGE,
+                                fromNode, message.getMessageId(), r, e));
+
+    }
+
+    protected void sendResponseAndLogError(HandlerContext ctx, boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
+    {
+        if (exception != null && logger.isDebugEnabled())
+        {
+            logger.debug("Unknown application error. ", exception);
+        }
+
+        if (!oneway)
+        {
+            if (exception == null)
+            {
+                sendResponse(ctx, from, MessageDefinitions.RESPONSE_OK, messageId, result);
+            }
+            else
+            {
+                sendResponse(ctx, from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
+            }
+        }
+    }
+
+    private Task sendResponse(HandlerContext ctx, NodeAddress to, int messageType, int messageId, Object res)
+    {
+        return ctx.write(new Message()
+                .withToNode(to)
+                .withMessageId(messageId)
+                .withMessageType(messageType)
+                .withPayload(res));
+    }
+
     public Task<?> onMessageReceived(Message message)
     {
         int interfaceId = message.getInterfaceId();
@@ -975,7 +994,7 @@ public class Execution extends HandlerAdapter implements Runtime
                 entry.statelessActivations = new ConcurrentLinkedDeque<>();
             }
             entry.reference = (ActorReference<?>) descriptor.factory.createReference(key != null ? String.valueOf(key) : null);
-            entry.reference.runtime = this;
+            entry.reference.runtime = this.runtime;
             entry.removable = true;
 
             ReferenceEntry old = localActors.putIfAbsent(entryKey, entry);
@@ -1137,7 +1156,7 @@ public class Execution extends HandlerAdapter implements Runtime
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
         ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference("");
         reference.address = a;
-        reference.runtime = this;
+        reference.runtime = this.runtime;
         reference.id = id;
         return (T) reference;
     }
@@ -1148,7 +1167,7 @@ public class Execution extends HandlerAdapter implements Runtime
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
         ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
-        reference.runtime = this;
+        reference.runtime = this.runtime;
         return (T) reference;
     }
 
@@ -1159,7 +1178,6 @@ public class Execution extends HandlerAdapter implements Runtime
         super.onActive(ctx);
     }
 
-    @Override
     public ActorInvoker<?> getInvoker(final int interfaceId)
     {
         final InterfaceDescriptor descriptor = getDescriptor(interfaceId);
@@ -1187,7 +1205,7 @@ public class Execution extends HandlerAdapter implements Runtime
         }
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
         ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(String.valueOf(id));
-        reference.runtime = this;
+        reference.runtime = this.runtime;
         reference.address = address;
         return (T) reference;
     }
@@ -1251,6 +1269,19 @@ public class Execution extends HandlerAdapter implements Runtime
                         executor);
     }
 
+    @Override
+    public Task write(final HandlerContext ctx, final Object msg) throws Exception
+    {
+        if (msg instanceof Invocation)
+        {
+            return invoke(((Invocation) msg).getToReference(), ((Invocation) msg).getMethod(), ((Invocation) msg).isOneWay(), ((Invocation) msg).getMethodId(), ((Invocation) msg).getParams());
+        }
+        else
+        {
+            return super.write(ctx, msg);
+        }
+    }
+
     public Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
     {
         if (!verifyActivated(toReference, m))
@@ -1294,7 +1325,7 @@ public class Execution extends HandlerAdapter implements Runtime
             final MessageDigest md = MessageDigest.getInstance("SHA-256");
             DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
             // this entire function shouldn't be here...
-            getStage().getMessageSerializer().serializeMessage(this, d, new Message().withPayload(params));
+            getStage().getMessageSerializer().serializeMessage(this.runtime, d, new Message().withPayload(params));
             d.close();
             return String.format("%032X", new BigInteger(1, md.digest()));
         }
@@ -1321,7 +1352,7 @@ public class Execution extends HandlerAdapter implements Runtime
             @Override
             public Runtime getRuntime()
             {
-                return Execution.this;
+                return Execution.this.runtime;
             }
 
             @Override

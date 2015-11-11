@@ -96,7 +96,7 @@ public class ClientTest extends ActorBaseTest
         {
             client2.bind();
             SomeChatRoom chatRoom = Actor.getReference(SomeChatRoom.class, "chat");
-            final com.ea.orbit.actors.test.actors.SomeChatObserver reference = client2.getObserverReference(observer2);
+            final com.ea.orbit.actors.test.actors.SomeChatObserver reference = client2.registerObserver(null, observer2);
             chatRoom.join(reference).get();
             chatRoom.sendMessage(reference, "bla");
         }

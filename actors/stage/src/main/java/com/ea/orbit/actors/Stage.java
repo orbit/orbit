@@ -35,17 +35,20 @@ import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.MessageSerializer;
 import com.ea.orbit.actors.net.DefaultPipeline;
-import com.ea.orbit.actors.net.HandlerAdapter;
-import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ActorInvoker;
+import com.ea.orbit.actors.runtime.ActorRuntime;
+import com.ea.orbit.actors.runtime.ClusterHandler;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Hosting;
+import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.JavaMessageSerializer;
-import com.ea.orbit.actors.runtime.Message;
-import com.ea.orbit.actors.runtime.MessageDefinitions;
 import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
+import com.ea.orbit.actors.runtime.Registration;
 import com.ea.orbit.actors.runtime.ReminderController;
+import com.ea.orbit.actors.runtime.Runtime;
+import com.ea.orbit.actors.runtime.SerializationHandler;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.annotation.Config;
@@ -54,29 +57,33 @@ import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
-import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.metrics.annotations.ExportMetric;
-import com.ea.orbit.tuples.Pair;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Singleton
-public class Stage implements Startable
+public class Stage implements Startable, Runtime
 {
     private static final Logger logger = LoggerFactory.getLogger(Stage.class);
 
@@ -104,6 +111,8 @@ public class Stage implements Startable
     private Container container;
     private DefaultPipeline channel;
 
+    private final String runtimeIdentity;
+
     public enum StageMode
     {
         FRONT_END, // no activations
@@ -123,105 +132,7 @@ public class Stage implements Startable
     private ExecutorService messagingPool;
     private ExecutionObjectCloner objectCloner;
     private MessageSerializer messageSerializer;
-
-    private class SerializationHandler extends HandlerAdapter
-    {
-        @Override
-        public Task write(HandlerContext ctx, final Object msg)
-        {
-            Message message = (Message) msg;
-            if (message.getToNode() == null)
-            {
-                throw new UncheckedException("Message.toNode must be defined");
-            }
-            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try
-            {
-                messageSerializer.serializeMessage(execution, baos, message);
-            }
-            catch (Exception ex2)
-            {
-                final int messageType = message.getMessageType();
-                if (messageType != MessageDefinitions.RESPONSE_OK
-                        && messageType != MessageDefinitions.RESPONSE_ERROR)
-                {
-                    return Task.fromException(ex2);
-                }
-                baos.reset();
-                if (logger.isDebugEnabled())
-                {
-                    logger.debug("Error sending response", ex2);
-                }
-                try
-                {
-                    final Object payload = message.getPayload();
-                    if (messageType == MessageDefinitions.RESPONSE_ERROR && payload instanceof Throwable)
-                    {
-                        message.withMessageType(MessageDefinitions.RESPONSE_ERROR)
-                                .withPayload(toSerializationSafeException((Throwable) payload, ex2));
-                    }
-                    else
-                    {
-                        message.withMessageType(MessageDefinitions.RESPONSE_ERROR)
-                                .withPayload(ex2);
-                    }
-                    messageSerializer.serializeMessage(execution, baos, message);
-                }
-                catch (Exception ex3)
-                {
-                    baos.reset();
-                    if (logger.isDebugEnabled())
-                    {
-                        logger.debug("Failed twice sending result. ", ex2);
-                    }
-                    try
-                    {
-                        message.withMessageType(MessageDefinitions.RESPONSE_ERROR)
-                                .withPayload("failed twice sending response");
-                        messageSerializer.serializeMessage(execution, baos, message);
-                    }
-                    catch (Exception ex4)
-                    {
-                        logger.error("Failed sending exception. ", ex4);
-                    }
-                }
-            }
-
-            return ctx.write(Pair.of(message.getToNode(), baos.toByteArray()));
-        }
-
-        private Throwable toSerializationSafeException(final Throwable notSerializable, final Throwable secondaryException)
-        {
-            final UncheckedException runtimeException = new UncheckedException(secondaryException.getMessage(), secondaryException, true, true);
-            for (Throwable t = notSerializable; t != null; t = t.getCause())
-            {
-                final RuntimeException newEx = new RuntimeException(
-                        t.getMessage() == null
-                                ? t.getClass().getName()
-                                : (t.getClass().getName() + ": " + t.getMessage()));
-                newEx.setStackTrace(t.getStackTrace());
-                runtimeException.addSuppressed(newEx);
-            }
-            return runtimeException;
-        }
-
-        @Override
-        public void onRead(HandlerContext ctx, final Object msg)
-        {
-            Pair<NodeAddress, byte[]> message = (Pair<NodeAddress, byte[]>) msg;
-            final ByteArrayInputStream bais = new ByteArrayInputStream(message.getRight());
-            try
-            {
-                ctx.fireRead(messageSerializer
-                        .deserializeMessage(execution, bais)
-                        .withFromNode(message.getLeft()));
-            }
-            catch (Exception e)
-            {
-                logger.error("Error deserializing message", e);
-            }
-        }
-    }
+    private final WeakReference<Runtime> cachedRef = new WeakReference<>(this);
 
     static
     {
@@ -351,6 +262,12 @@ public class Stage implements Startable
 
     }
 
+    public Stage()
+    {
+        ActorRuntime.runtimeCreated(cachedRef);
+        runtimeIdentity = generateRuntimeIdentity();
+    }
+
     public void addStickyHeaders(Collection<String> stickyHeaders)
     {
         this.stickyHeaders.addAll(stickyHeaders);
@@ -404,15 +321,6 @@ public class Stage implements Startable
     public void setObjectCloner(ExecutionObjectCloner objectCloner)
     {
         this.objectCloner = objectCloner;
-    }
-
-    public String runtimeIdentity()
-    {
-        if (execution == null)
-        {
-            throw new IllegalStateException("Can only be called after the startup");
-        }
-        return execution.runtimeIdentity();
     }
 
     public String getClusterName()
@@ -531,6 +439,7 @@ public class Stage implements Startable
         this.configureOrbitContainer();
 
         hosting.setNodeType(mode == StageMode.HOST ? NodeCapabilities.NodeTypeEnum.SERVER : NodeCapabilities.NodeTypeEnum.CLIENT);
+        execution.setRuntime(this);
         execution.setClock(clock);
         execution.setHosting(hosting);
         execution.setExecutor(executionPool);
@@ -538,7 +447,6 @@ public class Stage implements Startable
         execution.addStickyHeaders(stickyHeaders);
 
         messaging.setClock(clock);
-        messaging.setInvocationHandler((m) -> execution.onMessageReceived(m));
 
         hosting.setExecution(execution);
         hosting.setClusterPeer(clusterPeer);
@@ -549,27 +457,9 @@ public class Stage implements Startable
         channel.addHandler(messaging);
 
         // message serializer handler
-        channel.addHandler(new SerializationHandler());
+        channel.addHandler(new SerializationHandler(this, messageSerializer));
         // cluster peer handler
-        channel.addHandler(new HandlerAdapter()
-        {
-            @Override
-            public Task write(final HandlerContext ctx, final Object msg) throws Exception
-            {
-                Pair<NodeAddress, byte[]> message = (Pair<NodeAddress, byte[]>) msg;
-                clusterPeer.sendMessage(message.getLeft(), message.getRight());
-                return Task.done();
-            }
-
-            @Override
-            public Task connect(final HandlerContext ctx, final Object param) throws Exception
-            {
-                clusterPeer.registerMessageReceiver((n, m) -> ctx.fireRead(Pair.of(n, m)));
-                return clusterPeer.join(clusterName, nodeName).thenRun(() ->
-                                ctx.fireActive()
-                );
-            }
-        });
+        channel.addHandler(new ClusterHandler(clusterPeer, clusterName, nodeName));
 
         execution.setExtensions(extensions);
         messaging.start();
@@ -642,35 +532,6 @@ public class Stage implements Startable
                 .thenRun(clusterPeer::leave);
     }
 
-    /**
-     * @deprecated Use #registerObserver instead
-     */
-    @Deprecated
-    public <T extends ActorObserver> T getObserverReference(Class<T> iClass, final T observer)
-    {
-        return registerObserver(iClass, observer);
-
-    }
-
-    /**
-     * @deprecated Use #registerObserver instead
-     */
-    @Deprecated
-    public <T extends ActorObserver> T getObserverReference(final T observer)
-    {
-        return registerObserver(null, observer);
-    }
-
-    public <T extends ActorObserver> T registerObserver(Class<T> iClass, final T observer)
-    {
-        return execution.getObjectReference(iClass, observer);
-    }
-
-    public <T extends ActorObserver> T registerObserver(Class<T> iClass, String id, final T observer)
-    {
-        return execution.getObserverReference(iClass, observer, id);
-    }
-
 
     public Hosting getHosting()
     {
@@ -712,7 +573,7 @@ public class Stage implements Startable
      */
     public void bind()
     {
-        execution.bind();
+        ActorRuntime.setRuntime(this.cachedRef);
     }
 
     public List<NodeAddress> getAllNodes()
@@ -789,7 +650,7 @@ public class Stage implements Startable
 
     public com.ea.orbit.actors.runtime.Runtime getRuntime()
     {
-        return execution;
+        return this;
     }
 
     public MessageSerializer getMessageSerializer()
@@ -800,5 +661,85 @@ public class Stage implements Startable
     public void setMessageSerializer(final MessageSerializer messageSerializer)
     {
         this.messageSerializer = messageSerializer;
+    }
+
+
+    @Override
+    public Task<?> invoke(final Addressable toReference, final Method m, final boolean oneWay, final int methodId, final Object[] params)
+    {
+        return channel.write(new Invocation(toReference, m, oneWay, methodId, params));
+    }
+
+    @Override
+    public Registration registerTimer(final AbstractActor<?> actor, final Callable<Task<?>> taskCallable, final long dueTime, final long period, final TimeUnit timeUnit)
+    {
+        return execution.registerTimer(actor, taskCallable, dueTime, period, timeUnit);
+    }
+
+    @Override
+    public Clock clock()
+    {
+        return clock;
+    }
+
+    @Override
+    public Task<?> registerReminder(final Remindable actor, final String reminderName, final long dueTime, final long period, final TimeUnit timeUnit)
+    {
+        return execution.registerReminder(actor, reminderName, dueTime, period, timeUnit);
+    }
+
+    @Override
+    public Task<?> unregisterReminder(final Remindable actor, final String reminderName)
+    {
+        return execution.unregisterReminder(actor, reminderName);
+    }
+
+    @Override
+    public String runtimeIdentity()
+    {
+        return runtimeIdentity;
+    }
+
+    private String generateRuntimeIdentity()
+    {
+        final UUID uuid = UUID.randomUUID();
+        final String encoded = Base64.getEncoder().encodeToString(
+                ByteBuffer.allocate(16).putLong(uuid.getMostSignificantBits()).putLong(uuid.getLeastSignificantBits()).array());
+        return "Orbit[" + encoded.substring(0, encoded.length() - 2) + "]";
+    }
+
+    @Override
+    public Task<NodeAddress> locateActor(final Addressable actorReference, final boolean forceActivation)
+    {
+        return execution.locateActor(actorReference, forceActivation);
+    }
+
+    public <T extends ActorObserver> T registerObserver(Class<T> iClass, String id, final T observer)
+    {
+        return execution.getObserverReference(iClass, observer, id);
+    }
+
+    @Override
+    public <T extends ActorObserver> T registerObserver(final Class<T> iClass, final T observer)
+    {
+        return execution.getObjectReference(iClass, observer);
+    }
+
+    @Override
+    public <T extends ActorObserver> T getRemoteObserverReference(final NodeAddress address, final Class<T> iClass, final Object id)
+    {
+        return execution.getRemoteObjectReference(address, iClass, id);
+    }
+
+    @Override
+    public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
+    {
+        return execution.getReference(iClass, id);
+    }
+
+    @Override
+    public ActorInvoker<?> getInvoker(final int interfaceId)
+    {
+        return execution.getInvoker(interfaceId);
     }
 }

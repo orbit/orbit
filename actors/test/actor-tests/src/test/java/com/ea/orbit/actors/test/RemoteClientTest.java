@@ -38,6 +38,7 @@ import com.ea.orbit.concurrent.Task;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.File;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +52,6 @@ public class RemoteClientTest extends ActorBaseTest
     @Test
     public void callServer() throws ExecutionException, InterruptedException
     {
-
         Stage stage = createStage();
         // make sure the actor is there... remove this later
         Actor.getReference(Hello.class, "1000").sayHello("aa").join();

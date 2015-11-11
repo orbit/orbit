@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public class JavaMessageSerializer implements MessageSerializer
 {
-    public Message deserializeMessage(final Runtime runtime, final InputStream inputStream) throws Exception
+    public Message deserializeMessage(final BasicRuntime runtime, final InputStream inputStream) throws Exception
     {
         final ObjectInput in = createObjectInput(runtime, inputStream);
         final Message message = new Message();
@@ -32,7 +32,7 @@ public class JavaMessageSerializer implements MessageSerializer
         return message;
     }
 
-    public void serializeMessage(final Runtime runtime, OutputStream outputStream, Message message) throws Exception
+    public void serializeMessage(final BasicRuntime runtime, OutputStream outputStream, Message message) throws Exception
     {
         final ObjectOutput out = createObjectOutput(runtime, outputStream);
         out.writeByte(message.getMessageType());
@@ -53,7 +53,7 @@ public class JavaMessageSerializer implements MessageSerializer
         NodeAddress address;
     }
 
-    protected ObjectOutput createObjectOutput(final Runtime runtime, final OutputStream outputStream) throws IOException
+    protected ObjectOutput createObjectOutput(final BasicRuntime runtime, final OutputStream outputStream) throws IOException
     {
         // TODO: move message serialization to a provider (IMessageSerializationProvider)
         // Message(messageId, type, reference, params) and Message(messageId, type, object)
@@ -76,7 +76,7 @@ public class JavaMessageSerializer implements MessageSerializer
                     }
                     else if (obj instanceof com.ea.orbit.actors.ActorObserver)
                     {
-                        com.ea.orbit.actors.ActorObserver objectReference = runtime.getObjectReference(null, (com.ea.orbit.actors.ActorObserver) obj);
+                        com.ea.orbit.actors.ActorObserver objectReference = runtime.registerObserver(null, (com.ea.orbit.actors.ActorObserver) obj);
                         reference = (ActorReference) objectReference;
                     }
                     else
@@ -97,7 +97,7 @@ public class JavaMessageSerializer implements MessageSerializer
         };
     }
 
-    protected ObjectInput createObjectInput(final Runtime runtime, InputStream in) throws IOException
+    protected ObjectInput createObjectInput(final BasicRuntime runtime, InputStream in) throws IOException
     {
         return new ObjectInputStream(in)
         {
@@ -114,7 +114,7 @@ public class JavaMessageSerializer implements MessageSerializer
                     ReferenceReplacement replacement = (ReferenceReplacement) obj;
                     if (replacement.address != null)
                     {
-                        return runtime.getRemoteObjectReference(replacement.address, (Class) replacement.interfaceClass, replacement.id);
+                        return runtime.getRemoteObserverReference(replacement.address, (Class) replacement.interfaceClass, replacement.id);
                     }
                     return runtime.getReference((Class) replacement.interfaceClass, replacement.id);
 

@@ -31,7 +31,7 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.extensions.StorageExtension;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
 import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.ReferenceFactory;
+import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -62,7 +62,7 @@ public class FakeStorageExtension implements StorageExtension
     {
         this.name = name;
         this.database = database;
-        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
+        mapper.registerModule(new ActorReferenceModule(DefaultReferenceFactory.get()));
         mapper.enableDefaultTyping();
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)

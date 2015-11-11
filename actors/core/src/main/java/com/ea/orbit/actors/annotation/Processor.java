@@ -26,43 +26,41 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.ws.test;
+package com.ea.orbit.actors.annotation;
 
-import com.ea.orbit.actors.extensions.MessageSerializer;
-import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
-import com.ea.orbit.actors.runtime.ActorRuntime;
-import com.ea.orbit.actors.runtime.BasicRuntime;
-import com.ea.orbit.actors.runtime.Message;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.util.Set;
 
-public class MixedSerializer implements MessageSerializer
+/**
+ * Annotation processor to write class info for ActorObservers and Actors
+ */
+@SupportedAnnotationTypes({ "*" })
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
+public class Processor extends AbstractProcessor
 {
-    JsonMessageSerializer json = new JsonMessageSerializer();
-    ProtoMessageSerializer proto = new ProtoMessageSerializer();
-
 
     @Override
-    public Message deserializeMessage(final BasicRuntime runtime, final InputStream inputStream) throws Exception
+    public boolean process(final Set<? extends TypeElement> annotations, final RoundEnvironment roundEnv)
     {
-        inputStream.mark(1);
-        int t = inputStream.read();
-        inputStream.reset();
-        Message newMessage;
-        if (t == '{')
+        final Types typeUtils = processingEnv.getTypeUtils();
+        final Elements elementUtils = processingEnv.getElementUtils();
+        for (Element e : roundEnv.getRootElements())
         {
-            newMessage = json.deserializeMessage(ActorRuntime.getRuntime(), inputStream);
-            return newMessage;
+            if (e instanceof TypeElement)
+            {
+                //typeUtils.isSubtype( ele)
+            }
         }
-        newMessage = proto.deserializeMessage(ActorRuntime.getRuntime(), inputStream);
-        return newMessage;
 
-    }
-
-    @Override
-    public void serializeMessage(final BasicRuntime runtime, final OutputStream out, final Message message) throws Exception
-    {
-        json.serializeMessage(runtime, out, message);
+        return false;
     }
 }

@@ -26,43 +26,32 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.ws.test;
+package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.extensions.MessageSerializer;
-import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
-import com.ea.orbit.actors.runtime.ActorRuntime;
-import com.ea.orbit.actors.runtime.BasicRuntime;
-import com.ea.orbit.actors.runtime.Message;
+import com.ea.orbit.actors.net.HandlerAdapter;
+import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.concurrent.Task;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-
-public class MixedSerializer implements MessageSerializer
+public class ShortCircuitHandler extends HandlerAdapter
 {
-    JsonMessageSerializer json = new JsonMessageSerializer();
-    ProtoMessageSerializer proto = new ProtoMessageSerializer();
+    private HandlerContext other;
 
-
-    @Override
-    public Message deserializeMessage(final BasicRuntime runtime, final InputStream inputStream) throws Exception
+    public void setOther(final HandlerContext other)
     {
-        inputStream.mark(1);
-        int t = inputStream.read();
-        inputStream.reset();
-        Message newMessage;
-        if (t == '{')
-        {
-            newMessage = json.deserializeMessage(ActorRuntime.getRuntime(), inputStream);
-            return newMessage;
-        }
-        newMessage = proto.deserializeMessage(ActorRuntime.getRuntime(), inputStream);
-        return newMessage;
-
+        this.other = other;
     }
 
     @Override
-    public void serializeMessage(final BasicRuntime runtime, final OutputStream out, final Message message) throws Exception
+    public Task connect(final HandlerContext ctx, final Object param) throws Exception
     {
-        json.serializeMessage(runtime, out, message);
+        ctx.fireActive();
+        return Task.done();
+    }
+
+    @Override
+    public Task write(final HandlerContext ctx, final Object msg) throws Exception
+    {
+        other.fireRead(msg);
+        return Task.done();
     }
 }

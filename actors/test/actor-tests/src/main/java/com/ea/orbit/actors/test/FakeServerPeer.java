@@ -6,10 +6,9 @@ import com.ea.orbit.actors.runtime.Peer;
 
 public class FakeServerPeer extends Peer
 {
-    public FakeServerPeer(Stage stage, MessageSerializer serializer)
+    public FakeServerPeer(Stage stage)
     {
         setRuntime(stage.getRuntime());
-        setSerializer(serializer);
     }
 
 }

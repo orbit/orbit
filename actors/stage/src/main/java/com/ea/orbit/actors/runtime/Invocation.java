@@ -26,43 +26,52 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.ws.test;
+package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.extensions.MessageSerializer;
-import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
-import com.ea.orbit.actors.runtime.ActorRuntime;
-import com.ea.orbit.actors.runtime.BasicRuntime;
-import com.ea.orbit.actors.runtime.Message;
+import com.ea.orbit.actors.Addressable;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.lang.reflect.Method;
 
-public class MixedSerializer implements MessageSerializer
+public class Invocation
 {
-    JsonMessageSerializer json = new JsonMessageSerializer();
-    ProtoMessageSerializer proto = new ProtoMessageSerializer();
+    private final Addressable toReference;
+    private final Method method;
+    private final boolean oneWay;
+    private final int methodId;
+    private final Object[] params;
 
-
-    @Override
-    public Message deserializeMessage(final BasicRuntime runtime, final InputStream inputStream) throws Exception
+    public Invocation(final Addressable toReference, final Method method, final boolean oneWay, final int methodId, final Object[] params)
     {
-        inputStream.mark(1);
-        int t = inputStream.read();
-        inputStream.reset();
-        Message newMessage;
-        if (t == '{')
-        {
-            newMessage = json.deserializeMessage(ActorRuntime.getRuntime(), inputStream);
-            return newMessage;
-        }
-        newMessage = proto.deserializeMessage(ActorRuntime.getRuntime(), inputStream);
-        return newMessage;
-
+        super();
+        this.toReference = toReference;
+        this.method = method;
+        this.oneWay = oneWay;
+        this.methodId = methodId;
+        this.params = params;
     }
 
-    @Override
-    public void serializeMessage(final BasicRuntime runtime, final OutputStream out, final Message message) throws Exception
+    public Addressable getToReference()
     {
-        json.serializeMessage(runtime, out, message);
+        return toReference;
+    }
+
+    public Method getMethod()
+    {
+        return method;
+    }
+
+    public boolean isOneWay()
+    {
+        return oneWay;
+    }
+
+    public int getMethodId()
+    {
+        return methodId;
+    }
+
+    public Object[] getParams()
+    {
+        return params;
     }
 }

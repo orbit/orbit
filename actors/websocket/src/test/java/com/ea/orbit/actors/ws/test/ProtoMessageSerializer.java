@@ -3,6 +3,7 @@ package com.ea.orbit.actors.ws.test;
 import com.ea.orbit.actors.extensions.MessageSerializer;
 import com.ea.orbit.actors.rpc.Msg;
 import com.ea.orbit.actors.runtime.ActorInvoker;
+import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.actors.runtime.Message;
 import com.ea.orbit.actors.runtime.MessageDefinitions;
 
@@ -18,7 +19,7 @@ public class ProtoMessageSerializer
 {
 
     @Override
-    public Message deserializeMessage(final com.ea.orbit.actors.runtime.Runtime runtime,
+    public Message deserializeMessage(final BasicRuntime runtime,
                                       final InputStream inputStream) throws Exception
     {
         final CodedInputStream input = CodedInputStream.newInstance(inputStream);
@@ -51,7 +52,7 @@ public class ProtoMessageSerializer
 
 
     @Override
-    public void serializeMessage(final com.ea.orbit.actors.runtime.Runtime runtime,
+    public void serializeMessage(final BasicRuntime runtime,
                                  OutputStream out,
                                  Message message) throws Exception
     {

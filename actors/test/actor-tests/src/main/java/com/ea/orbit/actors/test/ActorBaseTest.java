@@ -36,14 +36,23 @@ import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
+import com.ea.orbit.actors.net.DefaultPipeline;
+import com.ea.orbit.actors.net.HandlerAdapter;
+import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorFactoryGenerator;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
+import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.ExecutionSerializer;
+import com.ea.orbit.actors.runtime.Message;
+import com.ea.orbit.actors.runtime.MessageDefinitions;
+import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
+import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
 import com.ea.orbit.actors.runtime.ReminderController;
+import com.ea.orbit.actors.runtime.SerializationHandler;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.concurrent.ExecutorUtils;
@@ -245,8 +254,8 @@ public class ActorBaseTest
 
                 Files.write(seqUml,
                         Stream.concat(Stream.concat(
-                                        Stream.of("@startuml"),
-                                        messageSequence.stream()),
+                                Stream.of("@startuml"),
+                                messageSequence.stream()),
                                 Stream.of("@enduml")
                         ).collect(Collectors.toList()));
                 out.println("Message sequence diagram written to:");
@@ -263,11 +272,47 @@ public class ActorBaseTest
         }
     }
 
-    public RemoteClient createRemoteClient(Stage server) throws ExecutionException, InterruptedException
+    public RemoteClient createRemoteClient(Stage stage) throws ExecutionException, InterruptedException
     {
-        final FakeServerPeer serverPeer = new FakeServerPeer(server, new JsonMessageSerializer());
-        final FakeClient fakeClient = new FakeClient(null, new JsonMessageSerializer());
+        final FakeServerPeer serverPeer = new FakeServerPeer(stage);
 
+        BasicRuntime server = null;
+        final DefaultPipeline serverPipeline = new DefaultPipeline();
+        serverPipeline.addHandler(new HandlerAdapter()
+        {
+            @Override
+            public Task write(final HandlerContext ctx, final Object msg) throws Exception
+            {
+                // TODO: server-to-client invocation ?
+                return super.write(ctx, msg);
+            }
+
+            @Override
+            public void onRead(final HandlerContext ctx, final Object msg) throws Exception
+            {
+                if (msg instanceof Message)
+                {
+                    final Message message = (Message) msg;
+                    switch (message.getMessageType()) {
+                        case MessageDefinitions.REQUEST_MESSAGE:
+                        case MessageDefinitions.ONE_WAY_MESSAGE:
+                          //  stage.getRuntime().invoke(DefaultReferenceFactory.ref(message.getInterfaceId(), message.getObjectId()))
+                    }
+                }
+            }
+        });
+        serverPipeline.addHandler(new Messaging());
+        serverPipeline.addHandler(new SerializationHandler(server, new JsonMessageSerializer()));
+        serverPipeline.addHandler(new ShortCircuitHandler());
+
+        BasicRuntime client = null;
+        final DefaultPipeline clientPipeline = new DefaultPipeline();
+        clientPipeline.addHandler(new HandlerAdapter());
+        clientPipeline.addHandler(new Messaging());
+        clientPipeline.addHandler(new SerializationHandler(client, new JsonMessageSerializer()));
+        clientPipeline.addHandler(new ShortCircuitHandler());
+
+        final FakeClient fakeClient = new FakeClient();
 
         return fakeClient;
     }
@@ -650,4 +695,5 @@ public class ActorBaseTest
     }
 
 }
+
 

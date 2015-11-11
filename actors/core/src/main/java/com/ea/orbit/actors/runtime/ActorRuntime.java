@@ -89,7 +89,7 @@ public class ActorRuntime
      *
      * @param runtimeRef a reference to the runtime
      */
-    static void setRuntime(final WeakReference<Runtime> runtimeRef)
+    public static void setRuntime(final WeakReference<Runtime> runtimeRef)
     {
         final ActorTaskContext context = ActorTaskContext.current();
         if (context != null)
@@ -108,7 +108,7 @@ public class ActorRuntime
      *
      * @param runtimeRef a reference to the runtime
      */
-    static void runtimeCreated(final WeakReference<Runtime> runtimeRef)
+    public static void runtimeCreated(final WeakReference<Runtime> runtimeRef)
     {
         lastRuntime = runtimeRef;
         setRuntime(runtimeRef);

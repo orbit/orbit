@@ -31,7 +31,7 @@ package com.ea.orbit.actors.extensions.postgresql;
 import com.ea.orbit.actors.extensions.AbstractStorageExtension;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
 import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.ReferenceFactory;
+import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -181,7 +181,7 @@ public class PostgreSQLStorageExtension extends AbstractStorageExtension
 
         // initialize JSON mapper
         mapper = new ObjectMapper();
-        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
+        mapper.registerModule(new ActorReferenceModule(DefaultReferenceFactory.get()));
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)

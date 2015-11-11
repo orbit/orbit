@@ -2,10 +2,10 @@ package com.ea.orbit.actors.extensions.json;
 
 import com.ea.orbit.actors.extensions.MessageSerializer;
 import com.ea.orbit.actors.runtime.ActorInvoker;
+import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.actors.runtime.Message;
 import com.ea.orbit.actors.runtime.MessageDefinitions;
-import com.ea.orbit.actors.runtime.ReferenceFactory;
-import com.ea.orbit.actors.runtime.Runtime;
+import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +22,7 @@ public class JsonMessageSerializer implements MessageSerializer
 
     public JsonMessageSerializer()
     {
-        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
+        mapper.registerModule(new ActorReferenceModule(DefaultReferenceFactory.get()));
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
@@ -32,7 +32,7 @@ public class JsonMessageSerializer implements MessageSerializer
     }
 
     @Override
-    public Message deserializeMessage(final com.ea.orbit.actors.runtime.Runtime runtime, final InputStream inputStream) throws Exception
+    public Message deserializeMessage(final BasicRuntime runtime, final InputStream inputStream) throws Exception
     {
         final Message message = mapper.readValue(inputStream, Message.class);
 
@@ -52,7 +52,7 @@ public class JsonMessageSerializer implements MessageSerializer
     }
 
     @Override
-    public void serializeMessage(final Runtime runtime, final OutputStream out, final Message message) throws Exception
+    public void serializeMessage(final BasicRuntime runtime, final OutputStream out, final Message message) throws Exception
     {
         mapper.writeValue(out, message);
     }

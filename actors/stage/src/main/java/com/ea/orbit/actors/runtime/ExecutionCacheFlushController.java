@@ -49,6 +49,6 @@ public class ExecutionCacheFlushController
         final List<NodeAddress> nodes = stage.getAllNodes();
 
         return Task.allOf(nodes.stream()
-                .map(nodeAddress -> ReferenceFactory.observerRef(nodeAddress.asUUID(), ExecutionCacheFlushObserver.class, "").flush(actor)));
+                .map(nodeAddress -> DefaultReferenceFactory.observerRef(nodeAddress.asUUID(), ExecutionCacheFlushObserver.class, "").flush(actor)));
     }
 }

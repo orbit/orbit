@@ -34,6 +34,7 @@ import com.ea.orbit.concurrent.Task;
 
 import java.lang.reflect.Method;
 
+@Deprecated
 public interface InvocationContext
 {
     Runtime getRuntime();

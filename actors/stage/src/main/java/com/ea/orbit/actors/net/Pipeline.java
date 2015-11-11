@@ -29,6 +29,11 @@ package com.ea.orbit.actors.net;
 
 import com.ea.orbit.concurrent.Task;
 
+/**
+ * This is an implementation of the chain of responsibility pattern for the orbit message pipeline.
+ *
+ * @see <a href="https://en.wikipedia.org/wiki/Chain-of-responsibility_pattern">Chain-of-responsibility_pattern</a>
+ */
 // Inspired by netty.io and apache mina
 public interface Pipeline
 {

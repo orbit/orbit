@@ -26,43 +26,57 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.ws.test;
+package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.extensions.MessageSerializer;
-import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
-import com.ea.orbit.actors.runtime.ActorRuntime;
-import com.ea.orbit.actors.runtime.BasicRuntime;
-import com.ea.orbit.actors.runtime.Message;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-
-public class MixedSerializer implements MessageSerializer
+public class DefaultClassDictionary
 {
-    JsonMessageSerializer json = new JsonMessageSerializer();
-    ProtoMessageSerializer proto = new ProtoMessageSerializer();
+    private static DefaultClassDictionary instance = new DefaultClassDictionary();
+    private ConcurrentMap<Class<?>, Integer> classToId = new ConcurrentHashMap<>();
+    private ConcurrentMap<Integer, Class<?>> idToClass = new ConcurrentHashMap<>();
+    private ConcurrentMap<Integer, String> idToName = new ConcurrentHashMap<>();
 
-
-    @Override
-    public Message deserializeMessage(final BasicRuntime runtime, final InputStream inputStream) throws Exception
+    private DefaultClassDictionary()
     {
-        inputStream.mark(1);
-        int t = inputStream.read();
-        inputStream.reset();
-        Message newMessage;
-        if (t == '{')
-        {
-            newMessage = json.deserializeMessage(ActorRuntime.getRuntime(), inputStream);
-            return newMessage;
-        }
-        newMessage = proto.deserializeMessage(ActorRuntime.getRuntime(), inputStream);
-        return newMessage;
+        // Load classIds written to classpath with the annotation processor
+        // META-INF/services/orbit/classes/class-name.yaml
 
+        // file format:
+        // classId: integer
     }
 
-    @Override
-    public void serializeMessage(final BasicRuntime runtime, final OutputStream out, final Message message) throws Exception
+    public static DefaultClassDictionary get()
     {
-        json.serializeMessage(runtime, out, message);
+        return instance;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Class<T> classForName(final String className, boolean ignoreException)
+    {
+        try
+        {
+            return (Class<T>) Class.forName(className);
+        }
+        catch (Error | Exception ex)
+        {
+            if (!ignoreException)
+            {
+                throw new Error("Error loading class: " + className, ex);
+            }
+        }
+        return null;
+    }
+
+    public Class<?> getClassById(int classId)
+    {
+        return idToClass.get(classId);
+    }
+
+    public Integer getClassId(Class<?> clazz)
+    {
+        //return mapByclassToId.get(clazz);
+        return null;
     }
 }

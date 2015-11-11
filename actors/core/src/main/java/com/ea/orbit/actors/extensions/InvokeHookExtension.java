@@ -37,6 +37,7 @@ import java.lang.reflect.Method;
 /**
  * Listener for remote actor method invocation.
  */
+@Deprecated
 public interface InvokeHookExtension extends ActorExtension
 {
 

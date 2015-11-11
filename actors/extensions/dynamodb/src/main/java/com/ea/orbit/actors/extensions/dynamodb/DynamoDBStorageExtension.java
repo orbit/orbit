@@ -31,7 +31,7 @@ package com.ea.orbit.actors.extensions.dynamodb;
 import com.ea.orbit.actors.extensions.StorageExtension;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
 import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.ReferenceFactory;
+import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.util.ExceptionUtils;
@@ -93,7 +93,7 @@ public class DynamoDBStorageExtension implements StorageExtension
     {
         tableHashMap = new ConcurrentHashMap<>();
         mapper = new ObjectMapper();
-        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
+        mapper.registerModule(new ActorReferenceModule(DefaultReferenceFactory.get()));
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)

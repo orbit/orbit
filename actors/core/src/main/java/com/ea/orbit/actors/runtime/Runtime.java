@@ -34,41 +34,14 @@ import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.concurrent.Task;
 
-import java.lang.reflect.Method;
-import java.time.Clock;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Interface used by the generated code to interact with the orbit actors runtime.
  */
-public interface Runtime
+public interface Runtime extends BasicRuntime
 {
-    /**
-     * Sends a message to an actor or observer.
-     *
-     * @param toReference destination actor reference or observer reference
-     * @param oneWay      should expect an answer,
-     *                    if false the task is completed with null.
-     * @param methodId    the generated id for the method
-     * @param headers   message headers
-     *@param params      the method parameters, must all be serializable.  @return a future with the return value, or a future with null (if one-way)
-     */
-    // TODO: replace this with sendRPC(RpcMessage) and change the InvokeHookExtension to RpcHook
-    Task<?> sendMessage(Addressable toReference, boolean oneWay, int methodId, final Map<Object, Object> headers, Object[] params);
-
-    /**
-     * Handles calls to actor reference methods.
-     *
-     * @param toReference destination actor reference or observer reference
-     * @param oneWay      should expect an answer,
-     *                    if false the task is completed with null.
-     * @param methodId    the generated id for the method
-     * @param params      the method parameters, must all be serializable.
-     * @return a future with the return value, or a future with null (if one-way)
-     */
-    Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params);
 
     /**
      * Registers a timer for the orbit actor
@@ -81,13 +54,6 @@ public interface Runtime
      * @return a registration that allows to cancel the timer.
      */
     Registration registerTimer(AbstractActor<?> actor, Callable<Task<?>> taskCallable, long dueTime, long period, TimeUnit timeUnit);
-
-    /**
-     * Gets the local clock. It's usually the system clock, but it can be changed for testing.
-     *
-     * @return the clock that should be used for checking the time during tests.
-     */
-    Clock clock();
 
     /**
      * Registers or updated a persisted reminder.
@@ -110,12 +76,6 @@ public interface Runtime
      */
     Task<?> unregisterReminder(Remindable actor, String reminderName);
 
-    /**
-     * Gets a string that represents uniquely the node that currently holds this actor.
-     *
-     * @return unique identity string
-     */
-    String runtimeIdentity();
 
     /**
      * Locates the node address of an actor.
@@ -127,40 +87,4 @@ public interface Runtime
      */
     Task<NodeAddress> locateActor(final Addressable actorReference, final boolean forceActivation);
 
-
-    /**
-     * Installs this observer into this node.
-     * Can called several times the object is registered only once.
-     *
-     * @param iClass   hint to the framework about which ActorObserver interface this object represents.
-     *                 Can be null if there are no ambiguities.
-     * @param observer the object to install
-     * @param <T>      The type of reference class returned.
-     * @return a remote reference that can be sent to actors.
-     */
-    <T extends com.ea.orbit.actors.ActorObserver> T getObjectReference(final Class<T> iClass, final T observer);
-
-    /**
-     * Returns an observer reference to an observer in another node.
-     * <p/>
-     * Should only be used if the application knows for sure that an observer with the given id
-     * indeed exists on that other node.
-     * <p/>
-     * This is a low level use of orbit-actors, recommended only for ActorExtensions.
-     *
-     * @param address the other node address.
-     * @param iClass  the IObserverClass
-     * @param id      the id, must not be null
-     * @param <T>     the ActorObserver sub interface
-     * @return a remote reference to the observer
-     */
-    <T extends com.ea.orbit.actors.ActorObserver> T getRemoteObjectReference(NodeAddress address, final Class<T> iClass, final Object id);
-
-
-    /**
-     * Returns an actor reference
-     */
-    <T extends Actor> T getReference(final Class<T> iClass, final Object id);
-
-    ActorInvoker<?> getInvoker(int interfaceId);
 }

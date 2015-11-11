@@ -43,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 public class SimpleTest extends ActorBaseTest
 {
 
-    @Test
+    @Test //(timeout = 4_000)
     public void singleActorSingleStageTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();

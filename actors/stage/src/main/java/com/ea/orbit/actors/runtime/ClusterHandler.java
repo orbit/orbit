@@ -26,43 +26,42 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.ws.test;
+package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.extensions.MessageSerializer;
-import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
-import com.ea.orbit.actors.runtime.ActorRuntime;
-import com.ea.orbit.actors.runtime.BasicRuntime;
-import com.ea.orbit.actors.runtime.Message;
+import com.ea.orbit.actors.cluster.ClusterPeer;
+import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.net.HandlerAdapter;
+import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.tuples.Pair;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-
-public class MixedSerializer implements MessageSerializer
+public class ClusterHandler extends HandlerAdapter
 {
-    JsonMessageSerializer json = new JsonMessageSerializer();
-    ProtoMessageSerializer proto = new ProtoMessageSerializer();
+    private ClusterPeer clusterPeer;
+    private String clusterName;
+    private String nodeName;
 
-
-    @Override
-    public Message deserializeMessage(final BasicRuntime runtime, final InputStream inputStream) throws Exception
+    public ClusterHandler(final ClusterPeer clusterPeer, final String clusterName, final String nodeName)
     {
-        inputStream.mark(1);
-        int t = inputStream.read();
-        inputStream.reset();
-        Message newMessage;
-        if (t == '{')
-        {
-            newMessage = json.deserializeMessage(ActorRuntime.getRuntime(), inputStream);
-            return newMessage;
-        }
-        newMessage = proto.deserializeMessage(ActorRuntime.getRuntime(), inputStream);
-        return newMessage;
-
+        this.clusterPeer = clusterPeer;
+        this.clusterName = clusterName;
+        this.nodeName = nodeName;
     }
 
     @Override
-    public void serializeMessage(final BasicRuntime runtime, final OutputStream out, final Message message) throws Exception
+    public Task write(final HandlerContext ctx, final Object msg) throws Exception
     {
-        json.serializeMessage(runtime, out, message);
+        Pair<NodeAddress, byte[]> message = (Pair<NodeAddress, byte[]>) msg;
+        clusterPeer.sendMessage(message.getLeft(), message.getRight());
+        return Task.done();
+    }
+
+    @Override
+    public Task connect(final HandlerContext ctx, final Object param) throws Exception
+    {
+        clusterPeer.registerMessageReceiver((n, m) -> ctx.fireRead(Pair.of(n, m)));
+        return clusterPeer.join(clusterName, nodeName).thenRun(() ->
+                ctx.fireActive()
+        );
     }
 }
