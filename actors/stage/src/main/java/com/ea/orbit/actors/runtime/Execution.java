@@ -41,8 +41,8 @@ import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.InvocationContext;
 import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
-import com.ea.orbit.actors.net.ChannelHandlerAdapter;
-import com.ea.orbit.actors.net.ChannelHandlerContext;
+import com.ea.orbit.actors.net.HandlerAdapter;
+import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.CacheResponse;
@@ -101,7 +101,7 @@ import java.util.stream.Collectors;
 
 import static com.ea.orbit.async.Await.await;
 
-public class Execution extends ChannelHandlerAdapter implements Runtime
+public class Execution extends HandlerAdapter implements Runtime
 {
 
     private static final Logger logger = LoggerFactory.getLogger(Execution.class);
@@ -115,7 +115,6 @@ public class Execution extends ChannelHandlerAdapter implements Runtime
     private Map<ActorObserver, ActorObserver> observerReferences = new MapMaker().weakKeys().makeMap();
 
     private Hosting hosting;
-    private Messaging messaging;
     private ExecutionSerializer<Object> executionSerializer;
     private int maxQueueSize = 10000;
     private Timer timer = new Timer("Orbit stage timer");
@@ -151,7 +150,7 @@ public class Execution extends ChannelHandlerAdapter implements Runtime
 
     @Wired
     private Container container;
-    private ChannelHandlerContext handlerContext;
+    private HandlerContext handlerContext;
 
     public Execution()
     {
@@ -562,11 +561,6 @@ public class Execution extends ChannelHandlerAdapter implements Runtime
         this.hosting = hosting;
     }
 
-    public void setMessaging(final Messaging messaging)
-    {
-        this.messaging = messaging;
-    }
-
     public Task<?> stop()
     {
         // * refuse new actor activations
@@ -591,7 +585,7 @@ public class Execution extends ChannelHandlerAdapter implements Runtime
         executionSerializer.shutdown();
 
         // * cancel all pending messages, and prevents sending new ones
-        await(messaging.stop());
+        //await(messaging.stop());
 
         // ** stop all extensions
         await(Task.allOf(extensions.stream().map(Startable::stop)));
@@ -809,14 +803,14 @@ public class Execution extends ChannelHandlerAdapter implements Runtime
 
         // TODO move this logic the messaging class, or to the stage
         // schedules the message cleanup
-        timer.schedule(new TimerTask()
-        {
-            @Override
-            public void run()
-            {
-                messaging.timeoutCleanup();
-            }
-        }, 5000, 5000);
+//        timer.schedule(new TimerTask()
+//        {
+//            @Override
+//            public void run()
+//            {
+//                messaging.timeoutCleanup();
+//            }
+//        }, 5000, 5000);
     }
 
     private <T> Class<T> classForName(final String className)
@@ -1159,7 +1153,7 @@ public class Execution extends ChannelHandlerAdapter implements Runtime
     }
 
     @Override
-    public void onActive(final ChannelHandlerContext ctx) throws Exception
+    public void onActive(final HandlerContext ctx) throws Exception
     {
         handlerContext = ctx;
         super.onActive(ctx);

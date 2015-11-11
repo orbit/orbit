@@ -34,16 +34,15 @@ import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.MessageSerializer;
-import com.ea.orbit.actors.net.Channel;
-import com.ea.orbit.actors.net.ChannelHandlerAdapter;
-import com.ea.orbit.actors.net.ChannelHandlerContext;
-import com.ea.orbit.actors.net.DefaultChannel;
-import com.ea.orbit.actors.net.MessageListener;
+import com.ea.orbit.actors.net.DefaultPipeline;
+import com.ea.orbit.actors.net.HandlerAdapter;
+import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Hosting;
 import com.ea.orbit.actors.runtime.JavaMessageSerializer;
 import com.ea.orbit.actors.runtime.Message;
+import com.ea.orbit.actors.runtime.MessageDefinitions;
 import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.ReminderController;
@@ -103,7 +102,7 @@ public class Stage implements Startable
 
     @Wired
     private Container container;
-    private DefaultChannel channel;
+    private DefaultPipeline channel;
 
     public enum StageMode
     {
@@ -124,6 +123,105 @@ public class Stage implements Startable
     private ExecutorService messagingPool;
     private ExecutionObjectCloner objectCloner;
     private MessageSerializer messageSerializer;
+
+    private class SerializationHandler extends HandlerAdapter
+    {
+        @Override
+        public Task write(HandlerContext ctx, final Object msg)
+        {
+            Message message = (Message) msg;
+            if (message.getToNode() == null)
+            {
+                throw new UncheckedException("Message.toNode must be defined");
+            }
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try
+            {
+                messageSerializer.serializeMessage(execution, baos, message);
+            }
+            catch (Exception ex2)
+            {
+                final int messageType = message.getMessageType();
+                if (messageType != MessageDefinitions.RESPONSE_OK
+                        && messageType != MessageDefinitions.RESPONSE_ERROR)
+                {
+                    return Task.fromException(ex2);
+                }
+                baos.reset();
+                if (logger.isDebugEnabled())
+                {
+                    logger.debug("Error sending response", ex2);
+                }
+                try
+                {
+                    final Object payload = message.getPayload();
+                    if (messageType == MessageDefinitions.RESPONSE_ERROR && payload instanceof Throwable)
+                    {
+                        message.withMessageType(MessageDefinitions.RESPONSE_ERROR)
+                                .withPayload(toSerializationSafeException((Throwable) payload, ex2));
+                    }
+                    else
+                    {
+                        message.withMessageType(MessageDefinitions.RESPONSE_ERROR)
+                                .withPayload(ex2);
+                    }
+                    messageSerializer.serializeMessage(execution, baos, message);
+                }
+                catch (Exception ex3)
+                {
+                    baos.reset();
+                    if (logger.isDebugEnabled())
+                    {
+                        logger.debug("Failed twice sending result. ", ex2);
+                    }
+                    try
+                    {
+                        message.withMessageType(MessageDefinitions.RESPONSE_ERROR)
+                                .withPayload("failed twice sending response");
+                        messageSerializer.serializeMessage(execution, baos, message);
+                    }
+                    catch (Exception ex4)
+                    {
+                        logger.error("Failed sending exception. ", ex4);
+                    }
+                }
+            }
+
+            return ctx.write(Pair.of(message.getToNode(), baos.toByteArray()));
+        }
+
+        private Throwable toSerializationSafeException(final Throwable notSerializable, final Throwable secondaryException)
+        {
+            final UncheckedException runtimeException = new UncheckedException(secondaryException.getMessage(), secondaryException, true, true);
+            for (Throwable t = notSerializable; t != null; t = t.getCause())
+            {
+                final RuntimeException newEx = new RuntimeException(
+                        t.getMessage() == null
+                                ? t.getClass().getName()
+                                : (t.getClass().getName() + ": " + t.getMessage()));
+                newEx.setStackTrace(t.getStackTrace());
+                runtimeException.addSuppressed(newEx);
+            }
+            return runtimeException;
+        }
+
+        @Override
+        public void onRead(HandlerContext ctx, final Object msg)
+        {
+            Pair<NodeAddress, byte[]> message = (Pair<NodeAddress, byte[]>) msg;
+            final ByteArrayInputStream bais = new ByteArrayInputStream(message.getRight());
+            try
+            {
+                ctx.fireRead(messageSerializer
+                        .deserializeMessage(execution, bais)
+                        .withFromNode(message.getLeft()));
+            }
+            catch (Exception e)
+            {
+                logger.error("Error deserializing message", e);
+            }
+        }
+    }
 
     static
     {
@@ -435,7 +533,6 @@ public class Stage implements Startable
         hosting.setNodeType(mode == StageMode.HOST ? NodeCapabilities.NodeTypeEnum.SERVER : NodeCapabilities.NodeTypeEnum.CLIENT);
         execution.setClock(clock);
         execution.setHosting(hosting);
-        execution.setMessaging(messaging);
         execution.setExecutor(executionPool);
         execution.setObjectCloner(objectCloner);
         execution.addStickyHeaders(stickyHeaders);
@@ -445,54 +542,19 @@ public class Stage implements Startable
 
         hosting.setExecution(execution);
         hosting.setClusterPeer(clusterPeer);
-        channel = new DefaultChannel();
+        channel = new DefaultPipeline();
+
+        channel.addHandler(execution);
+
         channel.addHandler(messaging);
 
         // message serializer handler
-        channel.addHandler(new ChannelHandlerAdapter()
+        channel.addHandler(new SerializationHandler());
+        // cluster peer handler
+        channel.addHandler(new HandlerAdapter()
         {
             @Override
-            public Task write(ChannelHandlerContext ctx, final Object msg)
-            {
-                Message message = (Message) msg;
-                if (message.getToNode() == null)
-                {
-                    throw new UncheckedException("Message.toNode must be defined");
-                }
-                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try
-                {
-                    messageSerializer.serializeMessage(execution, baos, message);
-                }
-                catch (Exception e)
-                {
-                    throw new UncheckedException(e);
-                }
-                return ctx.write(Pair.of(message.getToNode(), baos.toByteArray()));
-            }
-
-            @Override
-            public void onRead(ChannelHandlerContext ctx, final Object msg)
-            {
-                Pair<NodeAddress, byte[]> message = (Pair<NodeAddress, byte[]>) msg;
-                final ByteArrayInputStream bais = new ByteArrayInputStream(message.getRight());
-                try
-                {
-                    ctx.fireRead(messageSerializer
-                            .deserializeMessage(execution, bais)
-                            .withFromNode(message.getLeft()));
-                }
-                catch (Exception e)
-                {
-                    logger.error("Error deserializing message", e);
-                }
-            }
-        });
-        // cluster peer
-        channel.addHandler(new ChannelHandlerAdapter()
-        {
-            @Override
-            public Task write(final ChannelHandlerContext ctx, final Object msg) throws Exception
+            public Task write(final HandlerContext ctx, final Object msg) throws Exception
             {
                 Pair<NodeAddress, byte[]> message = (Pair<NodeAddress, byte[]>) msg;
                 clusterPeer.sendMessage(message.getLeft(), message.getRight());
@@ -500,13 +562,12 @@ public class Stage implements Startable
             }
 
             @Override
-            public Task connect(final ChannelHandlerContext ctx, final Object param) throws Exception
+            public Task connect(final HandlerContext ctx, final Object param) throws Exception
             {
-                clusterPeer.registerMessageReceiver((n, m) -> {
-                    final ByteArrayInputStream bais = new ByteArrayInputStream(m);
-                    ctx.fireRead(Pair.of(n, m));
-                });
-                return clusterPeer.join(clusterName, nodeName).thenReturn(() -> ctx.fireActive());
+                clusterPeer.registerMessageReceiver((n, m) -> ctx.fireRead(Pair.of(n, m)));
+                return clusterPeer.join(clusterName, nodeName).thenRun(() ->
+                                ctx.fireActive()
+                );
             }
         });
 

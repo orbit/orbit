@@ -1,18 +1,18 @@
 @startuml
 
 activate Handler_1
-Handler_1 -> Handler_1 : ctx1.fireWrite
-Handler_1 --> Handler_2 : onWrite
+Handler_1 -> Handler_1 : ctx1.write
+Handler_1 --> Handler_2 : write
 deactivate Handler_1
 
 activate Handler_2
-Handler_2 -> Handler_2 : ctx2.fireWrite
-Handler_2 --> Handler_3 : onWrite
+Handler_2 -> Handler_2 : ctx2.write
+Handler_2 --> Handler_3 : write
 deactivate Handler_2
 
 activate Handler_3
-Handler_3 -> Handler_3 : ctx3.fireWrite
-Handler_3 --> Connection : onWrite
+Handler_3 -> Handler_3 : ctx3.write
+Handler_3 --> Connection : write
 deactivate Handler_3
 
 

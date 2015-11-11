@@ -29,10 +29,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.actors.net.Channel;
-import com.ea.orbit.actors.net.ChannelHandler;
-import com.ea.orbit.actors.net.ChannelHandlerAdapter;
-import com.ea.orbit.actors.net.ChannelHandlerContext;
+import com.ea.orbit.actors.net.HandlerAdapter;
+import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -51,12 +49,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
 
-public class Messaging extends ChannelHandlerAdapter implements Startable
+public class Messaging extends HandlerAdapter implements Startable
 {
     private static Object NIL = null;
     private static final Logger logger = LoggerFactory.getLogger(Messaging.class);
-    // serializes the messages
-    // pass received messages to Execution
 
     private final AtomicInteger messageIdGen = new AtomicInteger();
     private final Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
@@ -129,12 +125,12 @@ public class Messaging extends ChannelHandlerAdapter implements Startable
     }
 
     @Override
-    public void onRead(ChannelHandlerContext ctx, Object message)
+    public void onRead(HandlerContext ctx, Object message)
     {
         this.onMessageReceived(ctx, (Message) message);
     }
 
-    protected void onMessageReceived(ChannelHandlerContext ctx, Message message)
+    protected void onMessageReceived(HandlerContext ctx, Message message)
     {
         // deserialize and send to runtime
         try
@@ -237,16 +233,22 @@ public class Messaging extends ChannelHandlerAdapter implements Startable
     }
 
 
-    private void sendResponse(ChannelHandlerContext ctx, NodeAddress to, int messageType, int messageId, Object res)
+    private Task sendResponse(HandlerContext ctx, NodeAddress to, int messageType, int messageId, Object res)
     {
-        ctx.write(new Message()
+        return ctx.write(new Message()
                 .withToNode(to)
                 .withMessageId(messageId)
                 .withMessageType(messageType)
                 .withPayload(res));
     }
 
-    public Task<?> sendMessage(ChannelHandlerContext ctx, Message message)
+    @Override
+    public Task write(final HandlerContext ctx, final Object msg) throws Exception
+    {
+        return sendMessage(ctx, (Message) msg);
+    }
+
+    public Task<?> sendMessage(HandlerContext ctx, Message message)
     {
         int messageId = messageIdGen.incrementAndGet();
         message.setMessageId(messageId);
@@ -297,7 +299,7 @@ public class Messaging extends ChannelHandlerAdapter implements Startable
         }
     }
 
-    protected void sendResponseAndLogError(ChannelHandlerContext ctx, boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
+    protected void sendResponseAndLogError(HandlerContext ctx, boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
     {
         if (exception != null && logger.isDebugEnabled())
         {
@@ -306,66 +308,16 @@ public class Messaging extends ChannelHandlerAdapter implements Startable
 
         if (!oneway)
         {
-            try
+            if (exception == null)
             {
-                if (exception == null)
-                {
-                    sendResponse(ctx, from, MessageDefinitions.RESPONSE_OK, messageId, result);
-                }
-                else
-                {
-                    sendResponse(ctx, from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
-                }
+                sendResponse(ctx, from, MessageDefinitions.RESPONSE_OK, messageId, result);
             }
-            catch (Exception ex2)
+            else
             {
-                if (logger.isDebugEnabled())
-                {
-                    logger.debug("Error sending method result", ex2);
-                }
-                try
-                {
-                    if (exception != null)
-                    {
-                        sendResponse(ctx, from, MessageDefinitions.RESPONSE_ERROR, messageId, toSerializationSafeException(exception, ex2));
-                    }
-                    else
-                    {
-                        sendResponse(ctx, from, MessageDefinitions.RESPONSE_ERROR, messageId, ex2);
-                    }
-                }
-                catch (Exception ex3)
-                {
-                    if (logger.isDebugEnabled())
-                    {
-                        logger.debug("Failed twice sending result. ", ex2);
-                    }
-                    try
-                    {
-                        sendResponse(ctx, from, MessageDefinitions.RESPONSE_PROTOCOL_ERROR, messageId, "failed twice sending result");
-                    }
-                    catch (Exception ex4)
-                    {
-                        logger.error("Failed sending exception. ", ex4);
-                    }
-                }
+                sendResponse(ctx, from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
             }
         }
     }
 
-    private Throwable toSerializationSafeException(final Throwable notSerializable, final Throwable secondaryException)
-    {
-        final UncheckedException runtimeException = new UncheckedException(secondaryException.getMessage(), secondaryException, true, true);
-        for (Throwable t = notSerializable; t != null; t = t.getCause())
-        {
-            final RuntimeException newEx = new RuntimeException(
-                    t.getMessage() == null
-                            ? t.getClass().getName()
-                            : (t.getClass().getName() + ": " + t.getMessage()));
-            newEx.setStackTrace(t.getStackTrace());
-            runtimeException.addSuppressed(newEx);
-        }
-        return runtimeException;
-    }
 
 }

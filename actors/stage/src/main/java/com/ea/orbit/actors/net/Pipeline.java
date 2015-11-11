@@ -25,57 +25,18 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package com.ea.orbit.actors.net;
 
-package com.ea.orbit.actors.ws.test;
-
-import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
-import com.ea.orbit.actors.net.HandlerAdapter;
-import com.ea.orbit.actors.net.HandlerContext;
-import com.ea.orbit.actors.runtime.ActorRuntime;
-import com.ea.orbit.actors.runtime.Message;
 import com.ea.orbit.concurrent.Task;
 
-import java.io.ByteArrayInputStream;
-
-public class SerializerHandler extends HandlerAdapter
+// Inspired by netty.io and apache mina
+public interface Pipeline
 {
-    JsonMessageSerializer json = new JsonMessageSerializer();
-    ProtoMessageSerializer proto = new ProtoMessageSerializer();
+    void addHandler(Handler handler);
 
-    @Override
-    public void onRead(final HandlerContext ctx, final Object message)
-    {
-        final byte[] bytes = (byte[]) message;
-        final Message newMessage;
-        if (bytes[0] == '{')
-        {
-            try
-            {
-                newMessage = json.deserializeMessage(ActorRuntime.getRuntime(), new ByteArrayInputStream(bytes));
-                ctx.fireRead(newMessage);
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-            return;
-        }
-        try
-        {
-            newMessage = proto.deserializeMessage(ActorRuntime.getRuntime(), new ByteArrayInputStream(bytes));
-            ctx.fireRead(newMessage);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        return;
+    Task<Void> write(Object message);
 
-    }
+    Task<Void> connect(Object param);
 
-    @Override
-    public Task write(final HandlerContext ctx, final Object message)
-    {
-        return null;
-    }
+    Task<Void> disconnect();
 }

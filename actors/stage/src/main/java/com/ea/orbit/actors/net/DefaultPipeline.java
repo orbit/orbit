@@ -29,67 +29,62 @@
 package com.ea.orbit.actors.net;
 
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.exception.UncheckedException;
 
-public class ChannelHandlerAdapter implements ChannelHandler
+/**
+ * Protocol chain for orbit messages.
+ * <br>
+ * Inspired in netty.io and apache mina.
+ */
+public class DefaultPipeline implements Pipeline
 {
-    @Override
-    public void onExceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) throws Exception
+    private final DefaultHandlerContext head;
+    private final DefaultHandlerContext tail;
+
+    public DefaultPipeline()
     {
-        ctx.fireExceptionCaught(cause);
+        head = new DefaultHandlerContext.HeadContext();
+        head.handler = new HandlerAdapter();
+        tail = new DefaultHandlerContext.TailContext();
+        tail.handler = new HandlerAdapter();
+        head.outbound = tail;
+        tail.inbound = head;
     }
 
     @Override
-    public void onActive(final ChannelHandlerContext ctx) throws Exception
+    public void addHandler(Handler handler)
     {
-        ctx.fireActive();
+        final DefaultHandlerContext ctx = new DefaultHandlerContext();
+        ctx.handler = handler;
+        ctx.inbound = tail.inbound;
+        ctx.outbound = tail;
+        tail.inbound.outbound = ctx;
+        tail.inbound = ctx;
+        try
+        {
+            ctx.handler.onRegistered(ctx);
+        }
+        catch (Exception e)
+        {
+            throw new UncheckedException(e);
+        }
     }
 
     @Override
-    public void onInactive(final ChannelHandlerContext ctx) throws Exception
+    public Task<Void> write(Object message)
     {
-        ctx.fireInactive();
+        return head.write(message);
     }
 
     @Override
-    public void onEventTriggered(final ChannelHandlerContext ctx, final Object evt) throws Exception
+    public Task<Void> connect(Object param)
     {
-        ctx.fireEventTriggered(evt);
+        return head.connect(param);
     }
 
     @Override
-    public void onRead(final ChannelHandlerContext ctx, final Object msg) throws Exception
+    public Task<Void> disconnect()
     {
-        ctx.fireRead(msg);
+        return head.disconnect();
     }
-
-    @Override
-    public void onRegistered(ChannelHandlerContext ctx) throws Exception
-    {
-
-    }
-
-    @Override
-    public Task connect(final ChannelHandlerContext ctx, final Object param) throws Exception
-    {
-        return ctx.connect(param);
-    }
-
-    @Override
-    public Task disconnect(final ChannelHandlerContext ctx) throws Exception
-    {
-        return ctx.disconnect();
-    }
-
-    @Override
-    public Task close(final ChannelHandlerContext ctx) throws Exception
-    {
-        return ctx.close();
-    }
-
-    @Override
-    public Task write(final ChannelHandlerContext ctx, final Object msg) throws Exception
-    {
-        return ctx.write(msg);
-    }
-
 }

@@ -29,60 +29,67 @@
 package com.ea.orbit.actors.net;
 
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.exception.UncheckedException;
 
-/**
- * Protocol chain for orbit messages.
- * <br>
- * Inspired in netty.io and apache mina.
- */
-public class DefaultChannel implements Channel
+public class HandlerAdapter implements Handler
 {
-    private final DefaultChannelHandlerContext head;
-    private final DefaultChannelHandlerContext tail;
-
-    public DefaultChannel()
+    @Override
+    public void onExceptionCaught(final HandlerContext ctx, final Throwable cause) throws Exception
     {
-        head = new DefaultChannelHandlerContext.HeadContext();
-        tail = new DefaultChannelHandlerContext.TailContext();
-        head.outbound = tail;
-        tail.inbound = head;
+        ctx.fireExceptionCaught(cause);
     }
 
     @Override
-    public void addHandler(ChannelHandler handler)
+    public void onActive(final HandlerContext ctx) throws Exception
     {
-        final DefaultChannelHandlerContext ctx = new DefaultChannelHandlerContext();
-        ctx.handler = handler;
-        ctx.inbound = tail.inbound;
-        ctx.outbound = tail;
-        tail.inbound.outbound = ctx;
-        tail.inbound = ctx;
-        try
-        {
-            ctx.handler.onRegistered(ctx);
-        }
-        catch (Exception e)
-        {
-            throw new UncheckedException(e);
-        }
+        ctx.fireActive();
     }
 
     @Override
-    public Task<Void> write(Object message)
+    public void onInactive(final HandlerContext ctx) throws Exception
     {
-        return head.write(message);
+        ctx.fireInactive();
     }
 
     @Override
-    public Task<Void> connect(Object param)
+    public void onEventTriggered(final HandlerContext ctx, final Object evt) throws Exception
     {
-        return head.connect(param);
+        ctx.fireEventTriggered(evt);
     }
 
     @Override
-    public Task<Void> disconnect()
+    public void onRead(final HandlerContext ctx, final Object msg) throws Exception
     {
-        return head.disconnect();
+        ctx.fireRead(msg);
     }
+
+    @Override
+    public void onRegistered(HandlerContext ctx) throws Exception
+    {
+
+    }
+
+    @Override
+    public Task connect(final HandlerContext ctx, final Object param) throws Exception
+    {
+        return ctx.connect(param);
+    }
+
+    @Override
+    public Task disconnect(final HandlerContext ctx) throws Exception
+    {
+        return ctx.disconnect();
+    }
+
+    @Override
+    public Task close(final HandlerContext ctx) throws Exception
+    {
+        return ctx.close();
+    }
+
+    @Override
+    public Task write(final HandlerContext ctx, final Object msg) throws Exception
+    {
+        return ctx.write(msg);
+    }
+
 }

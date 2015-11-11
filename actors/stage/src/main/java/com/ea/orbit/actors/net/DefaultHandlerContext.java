@@ -30,31 +30,33 @@ package com.ea.orbit.actors.net;
 
 import com.ea.orbit.concurrent.Task;
 
-public class DefaultChannelHandlerContext implements ChannelHandlerContext
-{
-    ChannelHandler handler;
-    DefaultChannelHandlerContext outbound;
-    DefaultChannelHandlerContext inbound;
+import org.slf4j.Logger;
 
-    private ChannelHandler handler()
+public class DefaultHandlerContext implements HandlerContext
+{
+    Handler handler;
+    DefaultHandlerContext outbound;
+    DefaultHandlerContext inbound;
+
+    private Handler handler()
     {
         return handler;
     }
 
-    private DefaultChannelHandlerContext inbound()
+    private DefaultHandlerContext inbound()
     {
         return inbound;
     }
 
-    private DefaultChannelHandlerContext outbound()
+    private DefaultHandlerContext outbound()
     {
         return outbound;
     }
 
     @Override
-    public ChannelHandlerContext fireExceptionCaught(final Throwable cause)
+    public HandlerContext fireExceptionCaught(final Throwable cause)
     {
-        final DefaultChannelHandlerContext inbound = inbound();
+        final DefaultHandlerContext inbound = inbound();
         try
         {
             inbound.handler().onExceptionCaught(inbound, cause);
@@ -67,9 +69,9 @@ public class DefaultChannelHandlerContext implements ChannelHandlerContext
     }
 
     @Override
-    public ChannelHandlerContext fireActive()
+    public HandlerContext fireActive()
     {
-        final DefaultChannelHandlerContext inbound = inbound();
+        final DefaultHandlerContext inbound = inbound();
         try
         {
             inbound.handler().onActive(inbound);
@@ -82,9 +84,9 @@ public class DefaultChannelHandlerContext implements ChannelHandlerContext
     }
 
     @Override
-    public ChannelHandlerContext fireInactive()
+    public HandlerContext fireInactive()
     {
-        final DefaultChannelHandlerContext inbound = inbound();
+        final DefaultHandlerContext inbound = inbound();
         try
         {
             inbound.handler().onInactive(inbound);
@@ -97,9 +99,9 @@ public class DefaultChannelHandlerContext implements ChannelHandlerContext
     }
 
     @Override
-    public ChannelHandlerContext fireEventTriggered(final Object event)
+    public HandlerContext fireEventTriggered(final Object event)
     {
-        final DefaultChannelHandlerContext inbound = inbound();
+        final DefaultHandlerContext inbound = inbound();
         try
         {
             inbound.handler().onEventTriggered(inbound, event);
@@ -112,9 +114,9 @@ public class DefaultChannelHandlerContext implements ChannelHandlerContext
     }
 
     @Override
-    public ChannelHandlerContext fireRead(final Object msg)
+    public HandlerContext fireRead(final Object msg)
     {
-        final DefaultChannelHandlerContext inbound = inbound();
+        final DefaultHandlerContext inbound = inbound();
         try
         {
             inbound.handler().onRead(inbound, msg);
@@ -129,7 +131,7 @@ public class DefaultChannelHandlerContext implements ChannelHandlerContext
     @Override
     public Task connect(final Object param)
     {
-        final DefaultChannelHandlerContext outbound = outbound();
+        final DefaultHandlerContext outbound = outbound();
         try
         {
             return outbound.handler().connect(outbound, param);
@@ -143,7 +145,7 @@ public class DefaultChannelHandlerContext implements ChannelHandlerContext
     @Override
     public Task disconnect()
     {
-        final DefaultChannelHandlerContext outbound = outbound();
+        final DefaultHandlerContext outbound = outbound();
         try
         {
             return outbound.handler().disconnect(outbound);
@@ -157,7 +159,7 @@ public class DefaultChannelHandlerContext implements ChannelHandlerContext
     @Override
     public Task close()
     {
-        final DefaultChannelHandlerContext outbound = outbound();
+        final DefaultHandlerContext outbound = outbound();
         try
         {
             return outbound.handler().close(outbound);
@@ -171,7 +173,7 @@ public class DefaultChannelHandlerContext implements ChannelHandlerContext
     @Override
     public Task write(final Object msg)
     {
-        final DefaultChannelHandlerContext outbound = outbound();
+        final DefaultHandlerContext outbound = outbound();
         try
         {
             return outbound.handler().write(outbound, msg);
@@ -182,7 +184,7 @@ public class DefaultChannelHandlerContext implements ChannelHandlerContext
         }
     }
 
-    static final class TailContext extends DefaultChannelHandlerContext
+    static final class TailContext extends DefaultHandlerContext
     {
         @Override
         public Task connect(final Object param)
@@ -209,34 +211,37 @@ public class DefaultChannelHandlerContext implements ChannelHandlerContext
         }
     }
 
-    static final class HeadContext extends DefaultChannelHandlerContext
+    static final class HeadContext extends DefaultHandlerContext
     {
+        static Logger logger = org.slf4j.LoggerFactory.getLogger(HeadContext.class);
+
         @Override
-        public ChannelHandlerContext fireExceptionCaught(final Throwable cause)
+        public HandlerContext fireExceptionCaught(final Throwable cause)
+        {
+            logger.error("Uncaught exception", cause);
+            return this;
+        }
+
+        @Override
+        public HandlerContext fireActive()
         {
             return this;
         }
 
         @Override
-        public ChannelHandlerContext fireActive()
+        public HandlerContext fireInactive()
         {
             return this;
         }
 
         @Override
-        public ChannelHandlerContext fireInactive()
+        public HandlerContext fireEventTriggered(final Object event)
         {
             return this;
         }
 
         @Override
-        public ChannelHandlerContext fireEventTriggered(final Object event)
-        {
-            return this;
-        }
-
-        @Override
-        public ChannelHandlerContext fireRead(final Object msg)
+        public HandlerContext fireRead(final Object msg)
         {
             return this;
         }

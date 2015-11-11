@@ -1,6 +1,6 @@
 @startuml
 
-title Channel Sequence
+title Pipeline Sequence
 actor  Application
 box "Handler 1" #LightBlue
 participant Handler_1

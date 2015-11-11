@@ -6,7 +6,7 @@ note right of Application : Actors, Observers
 artifact Stage {
     agent Hosting #LightBlue
     note right of Hosting : Group coordination
-    artifact Channel {
+    artifact "Message Pipeline" {
         agent Execution #LightBlue
         agent Messaging #LightBlue
         agent MessageSerializer

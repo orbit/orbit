@@ -30,24 +30,26 @@ package com.ea.orbit.actors.net;
 
 import com.ea.orbit.concurrent.Task;
 
-public interface ChannelHandlerContext
+public interface Handler
 {
-    ChannelHandlerContext fireExceptionCaught(Throwable cause);
+    void onExceptionCaught(HandlerContext ctx, Throwable cause) throws Exception;
 
-    ChannelHandlerContext fireActive();
+    void onActive(HandlerContext ctx) throws Exception;
 
-    ChannelHandlerContext fireInactive();
+    void onInactive(HandlerContext ctx) throws Exception;
 
-    ChannelHandlerContext fireEventTriggered(Object event);
+    void onEventTriggered(HandlerContext ctx, Object evt) throws Exception;
 
-    ChannelHandlerContext fireRead(Object msg);
+    void onRead(HandlerContext ctx, Object msg) throws Exception;
 
-    Task connect(Object param);
+    void onRegistered(HandlerContext ctx) throws Exception;
 
-    Task disconnect();
+    Task connect(HandlerContext ctx, Object param) throws Exception;
 
-    Task close();
+    Task disconnect(HandlerContext ctx) throws Exception;
 
-    Task write(Object msg);
+    Task close(HandlerContext ctx) throws Exception;
+
+    Task write(HandlerContext ctx, Object msg) throws Exception;
 
 }
