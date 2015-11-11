@@ -91,7 +91,7 @@ public class MultipleStorageTest extends ActorBaseTest
     }
 
     @Override
-    public Stage createStage() throws ExecutionException, InterruptedException
+    public Stage createStage()
     {
         Stage stage = new Stage();
         stage.setMode(Stage.StageMode.HOST);

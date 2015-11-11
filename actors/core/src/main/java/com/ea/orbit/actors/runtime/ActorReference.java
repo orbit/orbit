@@ -147,6 +147,11 @@ public abstract class ActorReference<T> implements Serializable, Addressable
         return reference.id;
     }
 
+    public static Object getId(final AbstractActor actor)
+    {
+        return getId(from(actor));
+    }
+
     /**
      * Utility method used by the framework and framework extensions to retrieve the Actor or ActorObserver
      * interface implemented by this reference.
@@ -159,6 +164,12 @@ public abstract class ActorReference<T> implements Serializable, Addressable
     public static <R> Class<R> getInterfaceClass(final ActorReference<R> reference)
     {
         return reference._interfaceClass();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <R> Class<R> getInterfaceClass(final AbstractActor reference)
+    {
+        return from(reference)._interfaceClass();
     }
 
     /**

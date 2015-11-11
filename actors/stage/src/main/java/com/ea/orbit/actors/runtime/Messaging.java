@@ -28,11 +28,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
+import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -40,8 +43,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Clock;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeoutException;
@@ -63,6 +71,9 @@ public class Messaging extends HandlerAdapter implements Startable
 
     @Config("orbit.actors.defaultMessageTimeout")
     private long responseTimeoutMillis = 30_000;
+
+    @Config("orbit.actors.stickyHeaders")
+    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
 
     private final LongAdder networkMessagesReceived = new LongAdder();
     private final LongAdder responsesReceived = new LongAdder();
@@ -209,7 +220,58 @@ public class Messaging extends HandlerAdapter implements Startable
     @Override
     public Task write(final HandlerContext ctx, final Object msg) throws Exception
     {
-        return sendMessage(ctx, (Message) msg);
+        if (msg instanceof Invocation)
+        {
+            return sendInvocation(ctx, (Invocation) msg);
+        }
+        if (msg instanceof Message)
+        {
+            return sendMessage(ctx, (Message) msg);
+        }
+        return super.write(ctx, msg);
+    }
+
+    public Task<?> sendInvocation(final HandlerContext ctx, Invocation invocation)
+    {
+        final Addressable toReference = invocation.getToReference();
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("sending message to " + toReference);
+        }
+        ActorReference<?> actorReference = (ActorReference<?>) toReference;
+        NodeAddress toNode = invocation.getToNode();
+
+        final LinkedHashMap<Object, Object> actualHeaders = new LinkedHashMap<>();
+        if (invocation.getHeaders() != null)
+        {
+            actualHeaders.putAll(invocation.getHeaders());
+        }
+        final TaskContext context = TaskContext.current();
+
+        // copy stick context valued to the message headers headers
+        if (context != null)
+        {
+            for (String key : stickyHeaders)
+            {
+                final Object value = context.getProperty(key);
+                if (value != null)
+                {
+                    actualHeaders.put(key, value);
+                }
+            }
+        }
+
+        final Message message = new Message()
+                .withMessageType(invocation.isOneWay() ? MessageDefinitions.REQUEST_MESSAGE : MessageDefinitions.REQUEST_MESSAGE)
+                .withToNode(toNode)
+                .withHeaders(actualHeaders)
+                .withInterfaceId(actorReference._interfaceId())
+                .withMethodId(invocation.getMethodId())
+                .withObjectId(ActorReference.getId(actorReference))
+                .withPayload(invocation.getParams());
+
+
+        return sendMessage(ctx, message);
     }
 
     public Task<?> sendMessage(HandlerContext ctx, Message message)
@@ -271,6 +333,11 @@ public class Messaging extends HandlerAdapter implements Startable
                 pendingResponseMap.remove(top.messageId);
             }
         }
+    }
+
+    public void addStickyHeaders(Collection<String> stickyHeaders)
+    {
+        this.stickyHeaders.addAll(stickyHeaders);
     }
 
 }

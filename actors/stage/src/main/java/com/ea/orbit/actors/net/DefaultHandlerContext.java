@@ -37,6 +37,7 @@ public class DefaultHandlerContext implements HandlerContext
     Handler handler;
     DefaultHandlerContext outbound;
     DefaultHandlerContext inbound;
+    String name;
 
     private Handler handler()
     {
@@ -176,7 +177,8 @@ public class DefaultHandlerContext implements HandlerContext
         final DefaultHandlerContext outbound = outbound();
         try
         {
-            return outbound.handler().write(outbound, msg);
+            final Handler handler = outbound.handler();
+            return handler.write(outbound, msg);
         }
         catch (Exception e)
         {
@@ -207,6 +209,7 @@ public class DefaultHandlerContext implements HandlerContext
         @Override
         public Task write(final Object msg)
         {
+            // TODO: logger.warn("Unprocessed write " + msg);
             return Task.done();
         }
     }

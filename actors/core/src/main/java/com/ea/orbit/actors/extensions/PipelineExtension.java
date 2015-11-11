@@ -29,33 +29,27 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.extensions;
 
 
-import com.ea.orbit.actors.Addressable;
-import com.ea.orbit.concurrent.Task;
-
-import java.lang.reflect.Method;
+import com.ea.orbit.actors.net.Handler;
 
 /**
- * Listener for remote actor method invocation.
+ * Listener to extend the message pipeline.
+ * Can intercept remote invocation, requests, responses, and binary messages
+ * One of beforeHandlerName() or afterHandlerName() must be implemented.
+ *
+ * The default handler names are "head", "caching", "execution", "messaging", "serialization", "connection", "tail"
+ *
+ * Handlers can only be inserted between "head" and "tail".
  */
-@Deprecated
-public interface InvokeHookExtension extends ActorExtension
+public interface PipelineExtension extends Handler, ActorExtension
 {
 
-    /**
-     * Invoke hook for actor methods.
-     * Called before sending a message to another actor.
-     * Can detect the response by wrapping the returned Task.
-     *
-     * @param context     current invocation context
-     * @param toReference the reference to the actor
-     * @param method      the method reflection information
-     * @param methodId    the target method id
-     * @param params      parameters for the method, must all be serializable.
-     * @return a completion promise, the framework will wait if necessary.
-     */
-    default Task<?> invoke(InvocationContext context, Addressable toReference, Method method, int methodId, Object[] params)
+    default String beforeHandlerName()
     {
-        return context.invokeNext(toReference, method, methodId, params);
+        return null;
     }
 
+    default String afterHandlerName()
+    {
+        return null;
+    }
 }

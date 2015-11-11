@@ -32,9 +32,8 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.annotation.OneWay;
-import com.ea.orbit.actors.extensions.InvocationContext;
-import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
+import com.ea.orbit.actors.extensions.PipelineExtension;
 import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
 import com.ea.orbit.actors.net.DefaultPipeline;
 import com.ea.orbit.actors.net.HandlerAdapter;
@@ -46,11 +45,9 @@ import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.ExecutionSerializer;
-import com.ea.orbit.actors.runtime.Message;
-import com.ea.orbit.actors.runtime.MessageDefinitions;
+import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
-import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
 import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.runtime.SerializationHandler;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
@@ -62,10 +59,13 @@ import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.injection.DependencyRegistry;
 
 import org.apache.commons.logging.impl.SimpleLog;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.ForwardingExecutorService;
 
@@ -78,6 +78,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -96,18 +97,16 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.ea.orbit.actors.Stage.Builder;
-import static com.ea.orbit.actors.Stage.StageMode;
 import static org.junit.Assert.fail;
 
 @SuppressWarnings("VisibilityModifierCheck")
 public class ActorBaseTest
 {
+    private static Logger logger = LoggerFactory.getLogger(ActorBaseTest.class);
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
     protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
-
-    //protected ConcurrentHashMap<Stage, FakeServerPeer> fakeServerPeers = new ConcurrentHashMap<>();
+    protected List<Stage> stages = new ArrayList<>();
 
     protected static final ExecutorService commonPool = new ForwardingExecutorService()
     {
@@ -223,6 +222,12 @@ public class ActorBaseTest
         }
     };
 
+    @After
+    public void after()
+    {
+        stages.clear();
+    }
+
 
     protected void clearMessages()
     {
@@ -254,8 +259,8 @@ public class ActorBaseTest
 
                 Files.write(seqUml,
                         Stream.concat(Stream.concat(
-                                Stream.of("@startuml"),
-                                messageSequence.stream()),
+                                        Stream.of("@startuml"),
+                                        messageSequence.stream()),
                                 Stream.of("@enduml")
                         ).collect(Collectors.toList()));
                 out.println("Message sequence diagram written to:");
@@ -278,29 +283,7 @@ public class ActorBaseTest
 
         BasicRuntime server = null;
         final DefaultPipeline serverPipeline = new DefaultPipeline();
-        serverPipeline.addHandler(new HandlerAdapter()
-        {
-            @Override
-            public Task write(final HandlerContext ctx, final Object msg) throws Exception
-            {
-                // TODO: server-to-client invocation ?
-                return super.write(ctx, msg);
-            }
-
-            @Override
-            public void onRead(final HandlerContext ctx, final Object msg) throws Exception
-            {
-                if (msg instanceof Message)
-                {
-                    final Message message = (Message) msg;
-                    switch (message.getMessageType()) {
-                        case MessageDefinitions.REQUEST_MESSAGE:
-                        case MessageDefinitions.ONE_WAY_MESSAGE:
-                          //  stage.getRuntime().invoke(DefaultReferenceFactory.ref(message.getInterfaceId(), message.getObjectId()))
-                    }
-                }
-            }
-        });
+        serverPipeline.addHandler(new ServerPeerExecutor(stage));
         serverPipeline.addHandler(new Messaging());
         serverPipeline.addHandler(new SerializationHandler(server, new JsonMessageSerializer()));
         serverPipeline.addHandler(new ShortCircuitHandler());
@@ -333,8 +316,8 @@ public class ActorBaseTest
             }
         };
 
-        Stage client = new Builder()
-                .mode(StageMode.FRONT_END)
+        Stage client = new Stage.Builder()
+                .mode(Stage.StageMode.FRONT_END)
                 .executionPool(commonPool)
                 .messagingPool(commonPool)
                 .clock(clock)
@@ -350,7 +333,7 @@ public class ActorBaseTest
         return client;
     }
 
-    public Stage createStage() throws ExecutionException, InterruptedException
+    public Stage createStage()
     {
         hiddenLog.info("Create Stage");
 
@@ -366,9 +349,9 @@ public class ActorBaseTest
             }
         };
 
-        Stage stage = new Builder()
+        Stage stage = new Stage.Builder()
                 .extensions(lifetimeExtension, new FakeStorageExtension(fakeDatabase))
-                .mode(StageMode.HOST)
+                .mode(Stage.StageMode.HOST)
                 .executionPool(commonPool)
                 .messagingPool(commonPool)
                 .objectCloner(getExecutionObjectCloner())
@@ -409,150 +392,7 @@ public class ActorBaseTest
 
     private void addLogging(final Stage stage)
     {
-        stage.addExtension(new InvokeHookExtension()
-        {
-            String toString(Object obj)
-            {
-                if (obj instanceof String)
-                {
-                    return (String) obj;
-                }
-                if (obj instanceof AbstractActor)
-                {
-                    final ActorReference ref = ActorReference.from((AbstractActor) obj);
-                    return ActorReference.getInterfaceClass(ref).getSimpleName() + ":" +
-                            ActorReference.getId(ref);
-                }
-                if (obj instanceof ActorReference)
-                {
-                    return ActorReference.getInterfaceClass((ActorReference<?>) obj).getSimpleName() + ":" +
-                            ActorReference.getId((ActorReference<?>) obj);
-                }
-                return String.valueOf(obj);
-            }
-
-            @Override
-            public Task<?> invoke(final InvocationContext icontext, final Addressable toReference, final Method method, final int methodId, final Object[] params)
-            {
-                long id = invocationId.incrementAndGet();
-                if (toReference instanceof NodeCapabilities)
-                {
-                    return icontext.invokeNext(toReference, method, methodId, params);
-                }
-                if (toReference instanceof ReminderController && "ensureStart".equals(method.getName()))
-                {
-                    return icontext.invokeNext(toReference, method, methodId, params);
-                }
-                final ActorTaskContext context = ActorTaskContext.current();
-                String from;
-                if (context != null && context.getActor() != null)
-                {
-                    final ActorReference reference = ActorReference.from(context.getActor());
-                    from = ActorReference.getInterfaceClass(reference).getSimpleName()
-                            + ":"
-                            + ActorReference.getId(reference);
-                }
-                else
-                {
-                    if (ActorReference.getInterfaceClass((ActorReference) toReference) == NodeCapabilities.class
-                            && method.getName().equals("canActivate"))
-                    {
-                        from = "Stage";
-                    }
-                    else
-                    {
-                        final TaskContext current = TaskContext.current();
-                        if (current != null && current.getProperty(TEST_NAME_PROP) != null)
-                        {
-                            from = String.valueOf(current.getProperty(TEST_NAME_PROP));
-                        }
-                        else
-                        {
-                            from = "Thread:" + Thread.currentThread().getId();
-                        }
-                    }
-                }
-                String to = ActorReference.getInterfaceClass((ActorReference) toReference).getSimpleName()
-                        + ":"
-                        + ActorReference.getId((ActorReference) toReference);
-
-                String strParams;
-                if (params != null && params.length > 0)
-                {
-                    try
-                    {
-                        strParams = Arrays.asList(params).stream().map(a -> toString(a)).collect(Collectors.joining(", ", "(", ")"));
-                    }
-                    catch (Exception ex)
-                    {
-                        strParams = "(can't show parameters)";
-                    }
-                }
-                else
-                {
-                    strParams = "";
-                }
-                if (!method.isAnnotationPresent(OneWay.class))
-                {
-                    final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams
-                            + "\r\n"
-                            + "activate \"" + to + "\"";
-                    messageSequence.add(msg);
-                    while (messageSequence.size() > 100)
-                    {
-                        messageSequence.remove(0);
-                    }
-                    hiddenLog.info(msg);
-                    final long start = System.nanoTime();
-                    return icontext.invokeNext(toReference, method, methodId, params)
-                            .whenComplete((r, e) ->
-                                    {
-                                        final long timeUS = TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - start);
-                                        final String timeStr = NumberFormat.getNumberInstance(Locale.US).format(timeUS);
-                                        if (e == null)
-                                        {
-                                            final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id + "; "
-                                                    + timeStr + "us] (response to " + method.getName() + "): " + toString(r)
-                                                    + "\r\n"
-                                                    + "deactivate \"" + to + "\"";
-                                            messageSequence.add(resp);
-                                            hiddenLog.info(resp);
-                                        }
-                                        else
-                                        {
-                                            final Throwable throwable = unwrapException(e);
-                                            final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id
-                                                    + "; " + timeStr + "us] (exception at " + method.getName() + "):\\n"
-                                                    + throwable.getClass().getName()
-                                                    + (throwable.getMessage() != null ? ": \\n" + throwable.getMessage() : "")
-                                                    + "\r\n"
-                                                    + "deactivate \"" + to + "\"";
-                                            messageSequence.add(resp);
-                                            hiddenLog.info(resp);
-                                        }
-                                    }
-                            );
-
-                }
-                else
-                {
-                    final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams;
-                    messageSequence.add(msg);
-                    hiddenLog.info('"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams);
-                    return icontext.invokeNext(toReference, method, methodId, params);
-                }
-            }
-
-            private Throwable unwrapException(final Throwable e)
-            {
-                Throwable ex = e;
-                while (ex.getCause() != null && (ex instanceof CompletionException))
-                {
-                    ex = ex.getCause();
-                }
-                return ex;
-            }
-        });
+        stage.addExtension(new LoggingExtension());
     }
 
     protected ExecutionObjectCloner getExecutionObjectCloner()
@@ -565,6 +405,7 @@ public class ActorBaseTest
     {
         @SuppressWarnings("Checkstyle:IllegalThrowsCheck")
         Object call() throws Throwable;
+
     }
 
     @SuppressWarnings("PMD.AvoidCatchingThrowable")
@@ -694,6 +535,166 @@ public class ActorBaseTest
 
     }
 
+    private class LoggingExtension extends HandlerAdapter implements PipelineExtension
+    {
+        @Override
+        public String afterHandlerName()
+        {
+            return "head";
+        }
+
+        String toString(Object obj)
+        {
+            if (obj instanceof String)
+            {
+                return (String) obj;
+            }
+            if (obj instanceof AbstractActor)
+            {
+                final ActorReference ref = ActorReference.from((AbstractActor) obj);
+                return ActorReference.getInterfaceClass(ref).getSimpleName() + ":" +
+                        ActorReference.getId(ref);
+            }
+            if (obj instanceof ActorReference)
+            {
+                return ActorReference.getInterfaceClass((ActorReference<?>) obj).getSimpleName() + ":" +
+                        ActorReference.getId((ActorReference<?>) obj);
+            }
+            return String.valueOf(obj);
+        }
+
+        @Override
+        public Task<?> write(HandlerContext ctx, Object message)
+        {
+            if (!(message instanceof Invocation))
+            {
+                return ctx.write(message);
+            }
+            final Invocation invocation = (Invocation) message;
+            long id = invocationId.incrementAndGet();
+            final Addressable toReference = invocation.getToReference();
+            if (toReference instanceof NodeCapabilities)
+            {
+                return ctx.write(message);
+            }
+            final Method method = invocation.getMethod();
+            if (toReference instanceof ReminderController && "ensureStart".equals(method.getName()))
+            {
+                return ctx.write(message);
+            }
+            final ActorTaskContext context = ActorTaskContext.current();
+            String from;
+            if (context != null && context.getActor() != null)
+            {
+                final ActorReference reference = ActorReference.from(context.getActor());
+                from = ActorReference.getInterfaceClass(reference).getSimpleName()
+                        + ":"
+                        + ActorReference.getId(reference);
+            }
+            else
+            {
+                if (ActorReference.getInterfaceClass((ActorReference) toReference) == NodeCapabilities.class
+                        && method.getName().equals("canActivate"))
+                {
+                    from = "Stage";
+                }
+                else
+                {
+                    final TaskContext current = TaskContext.current();
+                    if (current != null && current.getProperty(TEST_NAME_PROP) != null)
+                    {
+                        from = String.valueOf(current.getProperty(TEST_NAME_PROP));
+                    }
+                    else
+                    {
+                        from = "Thread:" + Thread.currentThread().getId();
+                    }
+                }
+            }
+            String to = ActorReference.getInterfaceClass((ActorReference) toReference).getSimpleName()
+                    + ":"
+                    + ActorReference.getId((ActorReference) toReference);
+
+            String strParams;
+            final Object[] params = invocation.getParams();
+            if (params != null && params.length > 0)
+            {
+                try
+                {
+                    strParams = Arrays.asList(params).stream().map(a -> toString(a)).collect(Collectors.joining(", ", "(", ")"));
+                }
+                catch (Exception ex)
+                {
+                    strParams = "(can't show parameters)";
+                }
+            }
+            else
+            {
+                strParams = "";
+            }
+            if (!method.isAnnotationPresent(OneWay.class))
+            {
+                final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams
+                        + "\r\n"
+                        + "activate \"" + to + "\"";
+                messageSequence.add(msg);
+                while (messageSequence.size() > 100)
+                {
+                    messageSequence.remove(0);
+                }
+                hiddenLog.info(msg);
+                final long start = System.nanoTime();
+
+                @SuppressWarnings("unchecked")
+                final Task<Object> write = (Task) ctx.write(message);
+                return write.whenComplete((r, e) ->
+                {
+                    final long timeUS = TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - start);
+                    final String timeStr = NumberFormat.getNumberInstance(Locale.US).format(timeUS);
+                    if (e == null)
+                    {
+                        final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id + "; "
+                                + timeStr + "us] (response to " + method.getName() + "): " + toString(r)
+                                + "\r\n"
+                                + "deactivate \"" + to + "\"";
+                        messageSequence.add(resp);
+                        hiddenLog.info(resp);
+                    }
+                    else
+                    {
+                        @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
+                        final Throwable throwable = unwrapException(e);
+                        final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id
+                                + "; " + timeStr + "us] (exception at " + method.getName() + "):\\n"
+                                + throwable.getClass().getName()
+                                + (throwable.getMessage() != null ? ": \\n" + throwable.getMessage() : "")
+                                + "\r\n"
+                                + "deactivate \"" + to + "\"";
+                        messageSequence.add(resp);
+                        hiddenLog.info(resp);
+                    }
+                });
+
+            }
+            else
+            {
+                final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams;
+                messageSequence.add(msg);
+                hiddenLog.info('"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams);
+                return ctx.write(message);
+            }
+        }
+
+        private Throwable unwrapException(final Throwable e)
+        {
+            Throwable ex = e;
+            while (ex.getCause() != null && (ex instanceof CompletionException))
+            {
+                ex = ex.getCause();
+            }
+            return ex;
+        }
+    }
 }
 
 

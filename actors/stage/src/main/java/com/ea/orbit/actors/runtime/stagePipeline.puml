@@ -6,18 +6,22 @@ note right of Application : Actors, Observers
 artifact Stage {
     agent Hosting #LightBlue
     note right of Hosting : Group coordination
-    artifact "Message Pipeline" {
+    artifact "Message Pipeline"  {
+        interface " " as Pipeline
+        note right of Pipeline : Head of the protocol stack
+        agent Caching #LightBlue
         agent Execution #LightBlue
         agent Messaging #LightBlue
         agent MessageSerializer
         agent ClusterPeer
+        note right of Caching : Cache responses
         note right of Execution : Method Invocation
         note right of Messaging {
             Tracks responses,
             Adds messageId
         }
-        note right of MessageSerializer : Serialization
-        note right of ClusterPeer : JGroupsClusterPeer
+        note right of MessageSerializer : Serialization, Replaceable
+        note right of ClusterPeer : JGroupsClusterPeer, Replaceable
     }
 }
 cloud Network
@@ -27,16 +31,20 @@ Execution --> Hosting : locate actor
 Hosting --> Execution : select node, find actor
 ClusterPeer --> Hosting: cluster view
 
-Application --> Execution : [ invokeRemote ]
-Execution --> Messaging  : [ onWrite ]
-Messaging --> MessageSerializer  : [ onWrite ]
-MessageSerializer --> ClusterPeer : [ onWrite ]
+Application --> Pipeline : [ invokeRemote ]
+Pipeline --> Caching : [ write ]
+Caching --> Execution : [ write ]
+Execution --> Messaging  : [ write ]
+Messaging --> MessageSerializer  : [ write ]
+MessageSerializer --> ClusterPeer : [ write ]
 ClusterPeer --> Network : [ send group message (bytes) ]
 
 Network --> ClusterPeer : [ receive group message (bytes) ]
 ClusterPeer --> MessageSerializer : [ onRead  ]
 MessageSerializer --> Messaging  : [ onRead  ]
 Messaging --> Execution  : [ onRead  ]
-Execution --> Application : [ receive message]
+Execution --> Caching : [ response ]
+Caching --> Pipeline : [ response ]
+Pipeline --> Application : [ response ]
 
 @enduml

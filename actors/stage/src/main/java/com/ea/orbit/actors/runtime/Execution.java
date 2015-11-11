@@ -38,14 +38,10 @@ import com.ea.orbit.actors.annotation.StorageExtension;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.ActorClassFinder;
 import com.ea.orbit.actors.extensions.ActorExtension;
-import com.ea.orbit.actors.extensions.InvocationContext;
-import com.ea.orbit.actors.extensions.InvokeHookExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
-import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.transactions.TransactionUtils;
-import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.OnlyIfActivated;
 import com.ea.orbit.annotation.Wired;
@@ -55,19 +51,13 @@ import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
-import com.ea.orbit.tuples.Pair;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.MapMaker;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Method;
-import java.math.BigInteger;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,7 +66,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -124,12 +113,8 @@ public class Execution extends HandlerAdapter
 
     private List<ActorExtension> extensions = new ArrayList<>();
 
-    private List<InvokeHookExtension> hookExtensions;
-
     private NodeCapabilities.NodeState state = NodeCapabilities.NodeState.RUNNING;
 
-    private ExecutionCacheManager cacheManager = new ExecutionCacheManager();
-    private ExecutionObjectCloner objectCloner;
 
     private Stage stage;
     /**
@@ -139,13 +124,14 @@ public class Execution extends HandlerAdapter
      * And from the message header to the TaskContext when receiving them.
      * </p>
      */
-    @Config("orbit.actors.stickyHeaders")
-    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
 
     @Wired
     private Container container;
-    private HandlerContext handlerContext;
+
     private Runtime runtime;
+
+    @Config("orbit.actors.stickyHeaders")
+    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
 
     public Execution()
     {
@@ -161,6 +147,11 @@ public class Execution extends HandlerAdapter
     public void setExecutor(final ExecutorService executor)
     {
         this.executor = executor;
+    }
+
+    public void addStickyHeaders(Collection<String> stickyHeaders)
+    {
+        this.stickyHeaders.addAll(stickyHeaders);
     }
 
     public void setRuntime(final Runtime runtime)
@@ -203,16 +194,6 @@ public class Execution extends HandlerAdapter
         // TODO: will enable caching the reference factory
     }
 
-    public ExecutionCacheManager getCacheManager()
-    {
-        return cacheManager;
-    }
-
-    public void setObjectCloner(ExecutionObjectCloner objectCloner)
-    {
-        this.objectCloner = objectCloner;
-    }
-
     public Stage getStage()
     {
         return stage;
@@ -221,14 +202,6 @@ public class Execution extends HandlerAdapter
     public void setStage(Stage stage)
     {
         this.stage = stage;
-    }
-
-    private static class NullOutputStream extends OutputStream
-    {
-        @Override
-        public void write(int b) throws IOException
-        {
-        }
     }
 
     private static class InterfaceDescriptor
@@ -508,11 +481,6 @@ public class Execution extends HandlerAdapter
         }
     }
 
-    public void addStickyHeaders(Collection<String> stickyHeaders)
-    {
-        this.stickyHeaders.addAll(stickyHeaders);
-    }
-
     public void setExtensions(List<ActorExtension> extensions)
     {
         this.extensions = extensions;
@@ -757,10 +725,6 @@ public class Execution extends HandlerAdapter
             executor = ExecutorUtils.newScalingThreadPool(64);
         }
         executionSerializer = new ExecutionSerializer<>(executor);
-
-        hookExtensions = getAllExtensions(InvokeHookExtension.class);
-
-        getObserverReference(ExecutionCacheFlushObserver.class, cacheManager, "");
 
         extensions.forEach(Startable::start);
         // schedules the cleanup
@@ -1150,7 +1114,7 @@ public class Execution extends HandlerAdapter
     }
 
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({"unchecked"})
     <T> T createReference(final NodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
@@ -1169,13 +1133,6 @@ public class Execution extends HandlerAdapter
         ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
         reference.runtime = this.runtime;
         return (T) reference;
-    }
-
-    @Override
-    public void onActive(final HandlerContext ctx) throws Exception
-    {
-        handlerContext = ctx;
-        super.onActive(ctx);
     }
 
     public ActorInvoker<?> getInvoker(final int interfaceId)
@@ -1210,163 +1167,57 @@ public class Execution extends HandlerAdapter
         return (T) reference;
     }
 
-    public Task<?> sendMessage(Addressable toReference, boolean oneWay, final int methodId, final Map<Object, Object> headers, final Object[] params)
-    {
-        if (logger.isDebugEnabled())
-        {
-            logger.debug("sending message to " + toReference);
-        }
-        ActorReference<?> actorReference = (ActorReference<?>) toReference;
-        NodeAddress toNode = actorReference.address;
-
-        final LinkedHashMap<Object, Object> actualHeaders = new LinkedHashMap<>();
-        if (headers != null)
-        {
-            actualHeaders.putAll(headers);
-        }
-        final TaskContext context = TaskContext.current();
-
-        // copy stick context valued to the message headers headers
-        if (context != null)
-        {
-            for (String key : stickyHeaders)
-            {
-                final Object value = context.getProperty(key);
-                if (value != null)
-                {
-                    actualHeaders.put(key, value);
-                }
-            }
-        }
-
-        final Message message = new Message()
-                .withMessageType(oneWay ? MessageDefinitions.REQUEST_MESSAGE : MessageDefinitions.REQUEST_MESSAGE)
-                .withToNode(toNode)
-                .withHeaders(actualHeaders)
-                .withInterfaceId(actorReference._interfaceId())
-                .withMethodId(methodId)
-                .withObjectId(ActorReference.getId(actorReference))
-                .withPayload(params);
-
-
-        final Task<?> task;
-        if (toNode == null)
-        {
-            // TODO: Ensure that both paths encode exception the same way.
-            task = hosting.locateActor(actorReference, true)
-                    .thenCompose(x -> handlerContext.write(message
-                            .withToNode(x)
-                            .withFromNode(hosting.getNodeAddress())));
-        }
-        else
-        {
-            task = handlerContext.write(message.withToNode(toNode));
-        }
-        return task
-                .whenCompleteAsync((r, e) -> {
-                            // place holder, just to ensure the completion happens in another thread
-                        },
-                        executor);
-    }
 
     @Override
     public Task write(final HandlerContext ctx, final Object msg) throws Exception
     {
         if (msg instanceof Invocation)
         {
-            return invoke(((Invocation) msg).getToReference(), ((Invocation) msg).getMethod(), ((Invocation) msg).isOneWay(), ((Invocation) msg).getMethodId(), ((Invocation) msg).getParams());
+            return invoke(ctx, (Invocation) msg);
         }
-        else
-        {
-            return super.write(ctx, msg);
-        }
+        return super.write(ctx, msg);
     }
 
-    public Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
+    public Task<?> invoke(final HandlerContext ctx, Invocation invocation)
     {
-        if (!verifyActivated(toReference, m))
+        final Method method = invocation.getMethod();
+        final Addressable toReference = invocation.getToReference();
+        if (!verifyActivated(toReference, method))
         {
             return Task.done();
         }
-
-        if (m.isAnnotationPresent(CacheResponse.class))
+        final Task<?> task;
+        if (invocation.getToNode() == null)
         {
-            return cacheResponseInvoke(toReference, m, oneWay, methodId, params);
-        }
 
-        return invokeInternal(toReference, m, oneWay, methodId, params);
-    }
-
-    private Task<?> cacheResponseInvoke(Addressable toReference, Method method, boolean oneWay, int methodId, Object[] params)
-    {
-        String parameterHash = generateParameterHash(params);
-        Pair<Addressable, String> key = Pair.of(toReference, parameterHash);
-
-        Task<?> cached = cacheManager.get(method, key);
-        if (cached == null
-                || cached.isCompletedExceptionally()
-                || cached.isCancelled())
-        {
-            cached = invokeInternal(toReference, method, oneWay, methodId, params);
-            cacheManager.put(method, key, cached);
-        }
-
-        return cached.thenApply(objectCloner::clone);
-    }
-
-    private String generateParameterHash(Object[] params)
-    {
-        if (params == null || params.length == 0)
-        {
-            return "";
-        }
-        try
-        {
-            final MessageDigest md = MessageDigest.getInstance("SHA-256");
-            DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
-            // this entire function shouldn't be here...
-            getStage().getMessageSerializer().serializeMessage(this.runtime, d, new Message().withPayload(params));
-            d.close();
-            return String.format("%032X", new BigInteger(1, md.digest()));
-        }
-        catch (Exception e)
-        {
-            throw new UncheckedException("Unable to make parameter hash", e);
-        }
-    }
-
-    private Task<?> invokeInternal(Addressable toReference, Method m, final boolean oneWay, int methodId, Object[] params)
-    {
-        if (hookExtensions.size() == 0)
-        {
-            // no hooks
-            return sendMessage(toReference, oneWay, methodId, null, params);
-        }
-
-        Iterator<InvokeHookExtension> it = hookExtensions.iterator();
-
-        // invoke the hook extensions as a chain where one can
-        // filter the input and output of the next.
-        InvocationContext ctx = new InvocationContext()
-        {
-            @Override
-            public Runtime getRuntime()
+            NodeAddress address;
+            if (toReference instanceof ActorReference
+                    && (address = ActorReference.getAddress((ActorReference) toReference)) != null)
             {
-                return Execution.this.runtime;
+                invocation.withToNode(address);
+                task = ctx.write(invocation);
             }
-
-            @Override
-            public Task<?> invokeNext(final Addressable toReference, final Method method, final int methodId, final Object[] params)
+            else
             {
-                if (it.hasNext())
-                {
-                    return it.next().invoke(this, toReference, method, methodId, params);
-                }
-                return sendMessage(toReference, oneWay, methodId, null, params);
+                final Addressable actorReference = toReference;
+                // TODO: Ensure that both paths encode exception the same way.
+                task = hosting.locateActor(actorReference, true)
+                        .thenCompose(x -> {
+                            return ctx.write(invocation
+                                    .withToNode(x)
+                                    .withFromNode(hosting.getNodeAddress()));
+                        });
             }
-        };
-
-        return ctx.invokeNext(toReference, m, methodId, params);
+        }
+        else
+        {
+            task = ctx.write(invocation);
+        }
+        return task
+                .whenCompleteAsync((r, e) -> {
+                            // place holder, just to ensure the completion happens in another thread
+                        },
+                        executor);
     }
 
     public Task<?> activationCleanup()

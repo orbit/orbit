@@ -76,7 +76,7 @@ public class Module
         else
         {
             String packageName = ClassPath.getNullSafePackageName(getClass()).replace('.', '/');
-            return ClassPath.get().getAllResources().stream()
+            return ClassPath.get().getAllClasses().stream()
                     .filter(r -> r.getResourceName().startsWith(packageName))
                     .filter(r -> r.getResourceName().endsWith(".class"))
                     .map(r -> r.getResourceName())

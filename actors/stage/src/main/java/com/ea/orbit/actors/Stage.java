@@ -40,6 +40,8 @@ import com.ea.orbit.actors.runtime.ActorInvoker;
 import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.actors.runtime.ClusterHandler;
 import com.ea.orbit.actors.runtime.Execution;
+import com.ea.orbit.actors.runtime.ExecutionCacheFlushObserver;
+import com.ea.orbit.actors.runtime.ResponseCaching;
 import com.ea.orbit.actors.runtime.Hosting;
 import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.JavaMessageSerializer;
@@ -74,7 +76,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -109,9 +110,11 @@ public class Stage implements Startable, Runtime
 
     @Wired
     private Container container;
-    private DefaultPipeline channel;
+    private DefaultPipeline pipeline;
 
     private final String runtimeIdentity;
+    private ResponseCaching cacheManager;
+
 
     public enum StageMode
     {
@@ -436,6 +439,8 @@ public class Stage implements Startable, Runtime
                     .map(c -> (ActorExtension) container.get(c)).collect(Collectors.toList()));
         }
 
+        cacheManager = new ResponseCaching();
+
         this.configureOrbitContainer();
 
         hosting.setNodeType(mode == StageMode.HOST ? NodeCapabilities.NodeTypeEnum.SERVER : NodeCapabilities.NodeTypeEnum.CLIENT);
@@ -443,30 +448,38 @@ public class Stage implements Startable, Runtime
         execution.setClock(clock);
         execution.setHosting(hosting);
         execution.setExecutor(executionPool);
-        execution.setObjectCloner(objectCloner);
+
+        cacheManager.setObjectCloner(objectCloner);
+        cacheManager.setRuntime(this);
+        cacheManager.setMessageSerializer(messageSerializer);
+        messaging.addStickyHeaders(stickyHeaders);
         execution.addStickyHeaders(stickyHeaders);
 
         messaging.setClock(clock);
 
         hosting.setExecution(execution);
         hosting.setClusterPeer(clusterPeer);
-        channel = new DefaultPipeline();
+        pipeline = new DefaultPipeline();
 
-        channel.addHandler(execution);
+        registerObserver(ExecutionCacheFlushObserver.class, "", cacheManager);
 
-        channel.addHandler(messaging);
+        pipeline.addHandler(cacheManager);
+
+        pipeline.addHandler(execution);
+
+        pipeline.addHandler(messaging);
 
         // message serializer handler
-        channel.addHandler(new SerializationHandler(this, messageSerializer));
+        pipeline.addHandler(new SerializationHandler(this, messageSerializer));
         // cluster peer handler
-        channel.addHandler(new ClusterHandler(clusterPeer, clusterName, nodeName));
+        pipeline.addHandler(new ClusterHandler(clusterPeer, clusterName, nodeName));
 
         execution.setExtensions(extensions);
         messaging.start();
         hosting.start();
         execution.start();
 
-        Task<Void> future = channel.connect(null);
+        Task<Void> future = pipeline.connect(null);
         if (mode == StageMode.HOST)
         {
             future = future.thenRun(() -> Actor.getReference(ReminderController.class, "0").ensureStart());
@@ -667,8 +680,15 @@ public class Stage implements Startable, Runtime
     @Override
     public Task<?> invoke(final Addressable toReference, final Method m, final boolean oneWay, final int methodId, final Object[] params)
     {
-        return channel.write(new Invocation(toReference, m, oneWay, methodId, params));
+        final Task<Void> result = pipeline.write(new Invocation(toReference, m, oneWay, methodId, params, null));
+        return result;
     }
+//
+//    public Task<?> invoke(final int interfaceId, final int methodId, final Object objectId, final Object payload)
+//    {
+//        return null;
+//    }
+
 
     @Override
     public Registration registerTimer(final AbstractActor<?> actor, final Callable<Task<?>> taskCallable, final long dueTime, final long period, final TimeUnit timeUnit)

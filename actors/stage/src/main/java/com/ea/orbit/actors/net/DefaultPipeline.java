@@ -54,10 +54,15 @@ public class DefaultPipeline implements Pipeline
     @Override
     public void addHandler(Handler handler)
     {
+        addHandler(handler, null);
+    }
+    public void addHandler(Handler handler, String name)
+    {
         final DefaultHandlerContext ctx = new DefaultHandlerContext();
         ctx.handler = handler;
         ctx.inbound = tail.inbound;
         ctx.outbound = tail;
+        ctx.name = name;
         tail.inbound.outbound = ctx;
         tail.inbound = ctx;
         try

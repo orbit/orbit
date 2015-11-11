@@ -113,11 +113,11 @@ public class WsTest
                 setSerializer(serializer);
             }
 
-            @Override
-            protected void sendBinary(final ByteBuffer wrap)
-            {
-                wsSession.getAsyncRemote().sendBinary(wrap);
-            }
+//            @Override
+//            protected void sendBinary(final ByteBuffer wrap)
+//            {
+//                wsSession.getAsyncRemote().sendBinary(wrap);
+//            }
         };
 
         @OnOpen
@@ -130,7 +130,7 @@ public class WsTest
         @OnMessage
         public void onMessage(byte[] message, boolean last, Session session)
         {
-            peer.onMessage(ByteBuffer.wrap(message));
+//            peer.onMessage(ByteBuffer.wrap(message));
         }
     }
 
@@ -145,11 +145,11 @@ public class WsTest
                 setSerializer(serializer);
             }
 
-            @Override
-            protected void sendBinary(final ByteBuffer wrap)
-            {
-                wsSession.getAsyncRemote().sendBinary(wrap);
-            }
+//            @Override
+//            protected void sendBinary(final ByteBuffer wrap)
+//            {
+//                wsSession.getAsyncRemote().sendBinary(wrap);
+//            }
         };
 
 
@@ -167,7 +167,7 @@ public class WsTest
         @OnMessage
         public void onMessage(byte[] message, boolean last, Session session)
         {
-            peer.onMessage(ByteBuffer.wrap(message));
+//            peer.onMessage(ByteBuffer.wrap(message));
         }
     }
 

@@ -105,7 +105,7 @@ public class Server
 
         private Peer peer = new Peer()
         {
-            @Override
+//            @Override
             protected void sendBinary(final ByteBuffer wrap)
             {
                 wsSession.getAsyncRemote().sendBinary(wrap);
@@ -128,7 +128,7 @@ public class Server
             System.out.println(String.format("%032X", new BigInteger(1, message)));
             try
             {
-                peer.onMessage(ByteBuffer.wrap(message, 4, message.length - 4));
+//                peer.onMessage(ByteBuffer.wrap(message, 4, message.length - 4));
             }
             catch (Exception e)
             {
@@ -155,7 +155,7 @@ public class Server
                 setSerializer(serializer);
             }
 
-            @Override
+//            @Override
             protected void sendBinary(final ByteBuffer wrap)
             {
                 ByteBuffer padding = ByteBuffer.allocate(wrap.remaining() + 4);
@@ -181,7 +181,7 @@ public class Server
         @OnMessage
         public void onMessage(byte[] message, boolean last, Session session)
         {
-            peer.onMessage(ByteBuffer.wrap(message));
+//            peer.onMessage(ByteBuffer.wrap(message));
         }
     }
 

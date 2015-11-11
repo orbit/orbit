@@ -29,8 +29,11 @@
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Addressable;
+import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.concurrent.Task;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 
 public class Invocation
 {
@@ -39,8 +42,12 @@ public class Invocation
     private final boolean oneWay;
     private final int methodId;
     private final Object[] params;
+    private Map<?, ?> headers;
+    private final Task completion;
+    private NodeAddress toNode;
+    private NodeAddress fromNode;
 
-    public Invocation(final Addressable toReference, final Method method, final boolean oneWay, final int methodId, final Object[] params)
+    public Invocation(final Addressable toReference, final Method method, final boolean oneWay, final int methodId, final Object[] params, final Task completion)
     {
         super();
         this.toReference = toReference;
@@ -48,6 +55,7 @@ public class Invocation
         this.oneWay = oneWay;
         this.methodId = methodId;
         this.params = params;
+        this.completion = completion;
     }
 
     public Addressable getToReference()
@@ -73,5 +81,53 @@ public class Invocation
     public Object[] getParams()
     {
         return params;
+    }
+
+    public Task getCompletion()
+    {
+        return completion;
+    }
+
+    public Map<?, ?> getHeaders()
+    {
+        return headers;
+    }
+
+    public void setHeaders(Map<?, ?> headers)
+    {
+        this.headers = headers;
+    }
+
+    public NodeAddress getToNode()
+    {
+        return toNode;
+    }
+
+    public void setToNode(final NodeAddress toNode)
+    {
+        this.toNode = toNode;
+    }
+
+    public Invocation withToNode(final NodeAddress toNode)
+    {
+        this.toNode = toNode;
+        return this;
+    }
+
+    public Invocation withFromNode(final NodeAddress fromNode)
+    {
+        this.fromNode = fromNode;
+        return this;
+    }
+
+    public NodeAddress getFromNode()
+    {
+        return fromNode;
+    }
+
+    @Override
+    public String toString()
+    {
+        return getToReference() + "." + method.getName();
     }
 }

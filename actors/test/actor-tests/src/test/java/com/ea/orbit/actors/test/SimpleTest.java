@@ -48,7 +48,7 @@ public class SimpleTest extends ActorBaseTest
     {
         Stage stage1 = createStage();
         SomeActor someActor = Actor.getReference(SomeActor.class, "1");
-        assertEquals("bla", someActor.sayHello("bla").get());
+        assertEquals("bla", someActor.sayHello("bla").join());
     }
 
 }

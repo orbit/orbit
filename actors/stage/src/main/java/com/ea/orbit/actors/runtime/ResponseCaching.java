@@ -30,38 +30,66 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Addressable;
+import com.ea.orbit.actors.extensions.MessageSerializer;
+import com.ea.orbit.actors.net.HandlerAdapter;
+import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.tuples.Pair;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.math.BigInteger;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ExecutionCacheManager implements ExecutionCacheFlushObserver
+public class ResponseCaching
+        extends HandlerAdapter
+        implements ExecutionCacheFlushObserver
 {
+    private static final Logger logger = LoggerFactory.getLogger(ExecutionCacheFlushObserver.class);
     private static Ticker defaultCacheTicker = null;
+    private MessageSerializer messageSerializer;
+    private BasicRuntime runtime;
+
+    private static class NullOutputStream extends OutputStream
+    {
+        @Override
+        public void write(int b) throws IOException
+        {
+        }
+    }
+
+    private ExecutionObjectCloner objectCloner;
 
     /**
      * masterCache is a mapping of caches for each CacheResponse annotated method.
      * The individual caches are defined with a maximum item size and TTL based on the annotation.
      * Key: The method being called (actor agnostic)
      * Value: a cache
-     *      Key: Pairing of the Actor address, and a hash of the parameters being passed into the method
-     *      Value: The method result corresponding with the actor's call to the method with provided parameters
+     * Key: Pairing of the Actor address, and a hash of the parameters being passed into the method
+     * Value: The method result corresponding with the actor's call to the method with provided parameters
      */
     private Cache<Method, Cache<Pair<Addressable, String>, Task>> masterCache = CacheBuilder.newBuilder().build();
 
     public static void setDefaultCacheTicker(Ticker defaultCacheTicker)
     {
-        ExecutionCacheManager.defaultCacheTicker = defaultCacheTicker;
+        ResponseCaching.defaultCacheTicker = defaultCacheTicker;
     }
 
-    public ExecutionCacheManager()
+    public ResponseCaching()
     {
     }
 
@@ -142,9 +170,78 @@ public class ExecutionCacheManager implements ExecutionCacheFlushObserver
         return Task.done();
     }
 
+    public void setObjectCloner(ExecutionObjectCloner objectCloner)
+    {
+        this.objectCloner = objectCloner;
+    }
+
     @Override
     public Task<Void> flushWithoutWaiting(Actor actor)
     {
         return flush(actor);
+    }
+
+    private Task<?> cacheResponseInvoke(HandlerContext ctx, Invocation invocation)
+    {
+        String parameterHash = generateParameterHash(invocation.getParams());
+        Pair<Addressable, String> key = Pair.of(invocation.getToReference(), parameterHash);
+
+        final Method method = invocation.getMethod();
+        Task<?> cached = get(method, key);
+        if (cached == null
+                || cached.isCompletedExceptionally()
+                || cached.isCancelled())
+        {
+            cached = ctx.write(invocation);
+            put(method, key, cached);
+        }
+
+        return cached.thenApply(objectCloner::clone);
+    }
+
+    private String generateParameterHash(Object[] params)
+    {
+        if (params == null || params.length == 0)
+        {
+            return "";
+        }
+        try
+        {
+            final MessageDigest md = MessageDigest.getInstance("SHA-256");
+            DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
+            // this entire function shouldn't be here...
+            messageSerializer.serializeMessage(runtime, d, new Message().withPayload(params));
+            d.close();
+            return String.format("%032X", new BigInteger(1, md.digest()));
+        }
+        catch (Exception e)
+        {
+            throw new UncheckedException("Unable to make parameter hash", e);
+        }
+    }
+
+    @Override
+    public Task write(final HandlerContext ctx, final Object msg) throws Exception
+    {
+        if (msg instanceof Invocation)
+        {
+            final Invocation invocation = (Invocation) msg;
+            if (invocation.getMethod() != null
+                    && invocation.getMethod().isAnnotationPresent(CacheResponse.class))
+            {
+                return cacheResponseInvoke(ctx, invocation);
+            }
+        }
+        return super.write(ctx, msg);
+    }
+
+    public void setMessageSerializer(MessageSerializer messageSerializer)
+    {
+        this.messageSerializer = messageSerializer;
+    }
+
+    public void setRuntime(BasicRuntime runtime)
+    {
+        this.runtime = runtime;
     }
 }
