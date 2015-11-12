@@ -36,9 +36,11 @@ import com.ea.orbit.actors.net.Handler;
  * Can intercept remote invocation, requests, responses, and binary messages
  * One of beforeHandlerName() or afterHandlerName() must be implemented.
  *
- * The default handler names are "head", "caching", "execution", "messaging", "serialization", "connection", "tail"
+ * The default handler names are "head", "caching", "execution", "messaging", "serialization", "network", "tail"
  *
  * Handlers can only be inserted between "head" and "tail".
+ *
+ * @see com.ea.orbit.actors.runtime.DefaultHandlers
  */
 public interface PipelineExtension extends Handler, ActorExtension
 {
@@ -49,6 +51,11 @@ public interface PipelineExtension extends Handler, ActorExtension
     }
 
     default String afterHandlerName()
+    {
+        return null;
+    }
+
+    default String getName()
     {
         return null;
     }

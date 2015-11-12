@@ -34,6 +34,7 @@ import com.ea.orbit.actors.extensions.PipelineExtension;
 import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.DefaultHandlers;
 import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.Invocation;
@@ -61,9 +62,15 @@ public class TraceSender extends HandlerAdapter implements PipelineExtension
     }
 
     @Override
+    public String getName()
+    {
+        return "trace-sender";
+    }
+
+    @Override
     public String beforeHandlerName()
     {
-        return "execution";
+        return DefaultHandlers.EXECUTION;
     }
 
     public Task<?> write(HandlerContext ctx, Object msg)

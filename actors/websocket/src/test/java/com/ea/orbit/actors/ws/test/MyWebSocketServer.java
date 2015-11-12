@@ -26,15 +26,17 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.runtime;
+package com.ea.orbit.actors.ws.test;
 
-public class DefaultHandlers
+import com.ea.orbit.actors.net.HandlerAdapter;
+import com.ea.orbit.actors.ws.WebSocketServer;
+
+import javax.websocket.server.ServerEndpoint;
+
+@ServerEndpoint("/websocket/con")
+public class MyWebSocketServer extends WebSocketServer
 {
-    public static final String HEAD = "head";
-    public static final String CACHING = "caching";
-    public static final String EXECUTION = "execution";
-    public static final String MESSAGING = "messaging";
-    public static final String SERIALIZATION = "serialization";
-    public static final String NETWORK = "network";
-    public static final String TAIL = "tail";
+    public MyWebSocketServer()
+    {
+    }
 }

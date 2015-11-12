@@ -54,6 +54,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         </dependency>
         <dependency>
             <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-server</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-actors-json</artifactId>
             <version>${project.version}</version>
         </dependency>

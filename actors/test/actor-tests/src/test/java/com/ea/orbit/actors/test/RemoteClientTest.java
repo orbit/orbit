@@ -31,6 +31,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.runtime.RemoteClient;
 import com.ea.orbit.actors.test.actors.Hello;
 import com.ea.orbit.actors.test.actors.SomeActor;
 import com.ea.orbit.concurrent.Task;
@@ -38,7 +39,6 @@ import com.ea.orbit.concurrent.Task;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.File;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;

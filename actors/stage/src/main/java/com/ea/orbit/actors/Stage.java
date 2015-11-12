@@ -34,6 +34,7 @@ import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.MessageSerializer;
+import com.ea.orbit.actors.extensions.PipelineExtension;
 import com.ea.orbit.actors.net.DefaultPipeline;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ObjectInvoker;
@@ -475,7 +476,25 @@ public class Stage implements Startable, ActorRuntime
         pipeline.addLast(DefaultHandlers.SERIALIZATION, new SerializationHandler(this, messageSerializer));
 
         // cluster peer handler
-        pipeline.addLast(DefaultHandlers.CLUSTER, new ClusterHandler(clusterPeer, clusterName, nodeName));
+        pipeline.addLast(DefaultHandlers.NETWORK, new ClusterHandler(clusterPeer, clusterName, nodeName));
+
+        extensions.stream().filter(extension -> extension instanceof PipelineExtension)
+                .map(extension -> (PipelineExtension) extension)
+                .forEach(extension -> {
+                    if (extension.beforeHandlerName() != null)
+                    {
+                        pipeline.addHandlerBefore(extension.beforeHandlerName(), extension.getName(), extension);
+                    }
+                    else if (extension.afterHandlerName() != null)
+                    {
+                        pipeline.addHandlerAfter(extension.afterHandlerName(), extension.getName(), extension);
+                    }
+                    else
+                    {
+                        pipeline.addFirst(extension.getName(), extension);
+                    }
+                });
+
 
         execution.setExtensions(extensions);
         messaging.start();

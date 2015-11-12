@@ -28,6 +28,7 @@
 
 package com.ea.orbit.actors.net;
 
+import com.ea.orbit.actors.runtime.DefaultHandlers;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -44,12 +45,14 @@ public class DefaultPipeline implements Pipeline
     public DefaultPipeline()
     {
         head = new DefaultHandlerContext.HeadContext();
-        head.handler = new HandlerAdapter();
-        head.name = "head";
         tail = new DefaultHandlerContext.TailContext();
-        tail.handler = new HandlerAdapter();
+
+        head.handler = new HandlerAdapter();
+        head.name = DefaultHandlers.HEAD;
         head.outbound = tail;
-        head.name = "tail";
+
+        tail.handler = new HandlerAdapter();
+        tail.name = DefaultHandlers.TAIL;
         tail.inbound = head;
     }
 
@@ -150,5 +153,11 @@ public class DefaultPipeline implements Pipeline
     public Task<Void> disconnect()
     {
         return head.disconnect();
+    }
+
+    @Override
+    public Task<Void> close()
+    {
+        return head.close();
     }
 }

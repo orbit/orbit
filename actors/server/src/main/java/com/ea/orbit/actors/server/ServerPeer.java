@@ -26,15 +26,43 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.runtime;
+package com.ea.orbit.actors.server;
 
-public class DefaultHandlers
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.net.Pipeline;
+import com.ea.orbit.actors.runtime.DefaultHandlers;
+import com.ea.orbit.actors.runtime.Messaging;
+import com.ea.orbit.actors.runtime.Peer;
+import com.ea.orbit.actors.runtime.SerializationHandler;
+import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.container.Startable;
+
+public class ServerPeer extends Peer implements Startable
 {
-    public static final String HEAD = "head";
-    public static final String CACHING = "caching";
-    public static final String EXECUTION = "execution";
-    public static final String MESSAGING = "messaging";
-    public static final String SERIALIZATION = "serialization";
-    public static final String NETWORK = "network";
-    public static final String TAIL = "tail";
+    private Stage stage;
+
+    public ServerPeer()
+    {
+
+    }
+
+    public Stage getStage()
+    {
+        return stage;
+    }
+
+    public void setStage(final Stage stage)
+    {
+        this.stage = stage;
+    }
+
+    public Task<?> start()
+    {
+        final Pipeline pipeline = getPipeline();
+        pipeline.addLast(DefaultHandlers.EXECUTION, new ServerPeerExecutor(stage));
+        pipeline.addLast(DefaultHandlers.MESSAGING, new Messaging());
+        pipeline.addLast(DefaultHandlers.SERIALIZATION, new SerializationHandler(stage, getMessageSerializer()));
+        pipeline.addLast(DefaultHandlers.NETWORK, getNetwork());
+        return getPipeline().connect(null);
+    }
 }

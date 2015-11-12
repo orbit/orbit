@@ -29,7 +29,9 @@
 package com.ea.orbit.actors.ws.test;
 
 import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
+import com.ea.orbit.actors.ws.WebSocketClient;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.websocket.ContainerProvider;
@@ -46,18 +48,19 @@ public class WsTest2
 
 
     @Test
+    @Ignore
     public void test() throws Exception
     {
 
         final int localPort = 9090;
-        final WebSocketContainer wsContainer = ContainerProvider.getWebSocketContainer();
 
         final URI endpointURI = new URI("ws://localhost:" + localPort + "/websocket/con");
-        final Server.MyActorWebSocketClient clientEndPoint = new Server.MyActorWebSocketClient();
-        final Session session = wsContainer.connectToServer(clientEndPoint, endpointURI);
+        final WebSocketClient clientEndPoint = new WebSocketClient();
+        clientEndPoint.connect(endpointURI).join();
+        clientEndPoint.close().join();
         final Server.Hello hello = clientEndPoint.peer.getReference(Server.Hello.class, "0");
 
         assertEquals("hello: test", hello.hello("test").join());
-        session.close();
+
     }
 }

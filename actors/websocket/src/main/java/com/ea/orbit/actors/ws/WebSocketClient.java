@@ -26,15 +26,50 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.runtime;
+package com.ea.orbit.actors.ws;
 
-public class DefaultHandlers
+import com.ea.orbit.actors.client.ClientPeer;
+import com.ea.orbit.actors.runtime.Peer;
+import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.exception.UncheckedException;
+
+import javax.websocket.ClientEndpoint;
+import javax.websocket.ContainerProvider;
+import javax.websocket.DeploymentException;
+import javax.websocket.Session;
+import javax.websocket.WebSocketContainer;
+
+import java.io.IOException;
+import java.net.URI;
+
+@ClientEndpoint
+public class WebSocketClient extends AbstractWebSocket
 {
-    public static final String HEAD = "head";
-    public static final String CACHING = "caching";
-    public static final String EXECUTION = "execution";
-    public static final String MESSAGING = "messaging";
-    public static final String SERIALIZATION = "serialization";
-    public static final String NETWORK = "network";
-    public static final String TAIL = "tail";
+    public ClientPeer peer = new ClientPeer();
+
+    public ClientPeer getPeer()
+    {
+        return peer;
+    }
+
+    @Override
+    protected Peer peer()
+    {
+        return peer;
+    }
+
+    public Task connect(final URI endpointURI)
+    {
+        final WebSocketContainer wsContainer = ContainerProvider.getWebSocketContainer();
+        try
+        {
+            session = wsContainer.connectToServer(this, endpointURI);
+        }
+        catch (Exception e)
+        {
+            throw new UncheckedException(e);
+        }
+        return Task.done();
+    }
+
 }

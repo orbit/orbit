@@ -53,7 +53,7 @@ import java.util.Set;
  * Annotation processor to write class info for ActorObservers and Actors
  * This info speeds up classId lookup.
  */
-@SupportedAnnotationTypes({"*"})
+@SupportedAnnotationTypes({ "*" })
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class Processor extends AbstractProcessor
 {
@@ -117,6 +117,6 @@ public class Processor extends AbstractProcessor
 
     private int getClassId(final TypeElement e)
     {
-        return elementUtils.getBinaryName(e).toString().hashCode();
+        return elementUtils.getBinaryName(e).toString().replace('$', '.').hashCode();
     }
 }

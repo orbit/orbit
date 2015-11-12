@@ -26,15 +26,55 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.runtime;
+package com.ea.orbit.actors.ws;
 
-public class DefaultHandlers
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.client.ClientPeer;
+import com.ea.orbit.actors.extensions.MessageSerializer;
+import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.actors.runtime.Peer;
+import com.ea.orbit.actors.server.ServerPeer;
+import com.ea.orbit.annotation.Wired;
+import com.ea.orbit.concurrent.Task;
+
+import javax.websocket.ClientEndpoint;
+import javax.websocket.CloseReason;
+import javax.websocket.OnClose;
+import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
+import javax.websocket.Session;
+import javax.websocket.server.ServerEndpoint;
+
+import java.nio.ByteBuffer;
+
+
+public class WebSocketServer extends AbstractWebSocket
 {
-    public static final String HEAD = "head";
-    public static final String CACHING = "caching";
-    public static final String EXECUTION = "execution";
-    public static final String MESSAGING = "messaging";
-    public static final String SERIALIZATION = "serialization";
-    public static final String NETWORK = "network";
-    public static final String TAIL = "tail";
+    private ServerPeer peer = new ServerPeer();
+    @Wired
+    private Stage stage;
+
+    public void setStage(Stage stage)
+    {
+        peer.setStage(stage);
+    }
+
+    @Override
+    public void onOpen(final Session wsSession)
+    {
+        peer.setStage(stage);
+        super.onOpen(wsSession);
+    }
+
+    public ServerPeer getPeer()
+    {
+        return peer;
+    }
+
+    @Override
+    protected Peer peer()
+    {
+        return peer;
+    }
+
 }

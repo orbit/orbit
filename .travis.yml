@@ -2,9 +2,9 @@ language: java
 jdk: oraclejdk8
 
 # blacklist
-branches:
-  except:
-    - feature/ws
+#branches:
+#  except:
+#    - feature/ws
 	
 install:
   - mkdir /tmp/dynamodb

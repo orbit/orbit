@@ -28,13 +28,8 @@
 
 package com.ea.orbit.actors.runtime;
 
-public class DefaultHandlers
+public interface RemoteClient extends BasicRuntime
 {
-    public static final String HEAD = "head";
-    public static final String CACHING = "caching";
-    public static final String EXECUTION = "execution";
-    public static final String MESSAGING = "messaging";
-    public static final String SERIALIZATION = "serialization";
-    public static final String NETWORK = "network";
-    public static final String TAIL = "tail";
+    void cleanup(boolean block);
+
 }

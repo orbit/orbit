@@ -32,6 +32,7 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.annotation.OneWay;
+import com.ea.orbit.actors.client.ClientPeer;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.PipelineExtension;
 import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
@@ -39,6 +40,7 @@ import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorFactoryGenerator;
+import com.ea.orbit.actors.runtime.DefaultHandlers;
 import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.Execution;
@@ -273,12 +275,22 @@ public class ActorBaseTest
         }
     }
 
-    public RemoteClient createRemoteClient(Stage stage) throws ExecutionException, InterruptedException
+    public ClientPeer createRemoteClient(Stage stage) throws ExecutionException, InterruptedException
     {
         final JsonMessageSerializer serializer = new JsonMessageSerializer();
         final ShortCircuitHandler network = new ShortCircuitHandler();
-        final FakeServerPeer serverPeer = new FakeServerPeer(stage, serializer, network);
-        final FakeClient fakeClient = new FakeClient(serializer, network);
+
+        final FakeServerPeer serverPeer = new FakeServerPeer();
+        serverPeer.setNetworkHandler(network);
+        serverPeer.setClock(clock);
+        serverPeer.setStage(stage);
+        serverPeer.setMessageSerializer(serializer);
+
+        final FakeClient fakeClient = new FakeClient();
+
+        fakeClient.setNetworkHandler(network);
+        fakeClient.setClock(clock);
+        fakeClient.setMessageSerializer(serializer);
 
         serverPeer.start();
         fakeClient.start();
@@ -524,9 +536,15 @@ public class ActorBaseTest
     private class LoggingExtension extends HandlerAdapter implements PipelineExtension
     {
         @Override
+        public String getName()
+        {
+            return "test-logging";
+        }
+
+        @Override
         public String afterHandlerName()
         {
-            return "head";
+            return DefaultHandlers.HEAD;
         }
 
         String toString(Object obj)

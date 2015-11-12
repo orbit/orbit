@@ -29,32 +29,19 @@
 package com.ea.orbit.actors.ws.test;
 
 import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.actors.runtime.Peer;
 import com.ea.orbit.actors.test.FakeClusterPeer;
-import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.web.EmbeddedHttpServer;
 
 import javax.inject.Singleton;
-import javax.websocket.ClientEndpoint;
-import javax.websocket.CloseReason;
-import javax.websocket.OnClose;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
-import javax.websocket.server.ServerEndpoint;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -96,95 +83,6 @@ public class Server
         }
     }
 
-    @ServerEndpoint("/websocket/con")
-    public static class MyActorWebSocket
-    {
-        private Session wsSession;
-        @Wired
-        private Stage stage;
-
-        private Peer peer = new Peer()
-        {
-//            @Override
-            protected void sendBinary(final ByteBuffer wrap)
-            {
-                wsSession.getAsyncRemote().sendBinary(wrap);
-            }
-        };
-
-        @OnOpen
-        public void onOpen(final Session session)
-        {
-            wsSession = session;
-            peer.setSerializer(serializer);
-            peer.setRuntime(stage.getRuntime());
-            System.out.println("onOpen");
-        }
-
-        @OnMessage
-        public void onMessage(byte[] message, boolean last, Session session)
-        {
-            System.out.println("onMessage: " + new String(message, 4, message.length - 4, StandardCharsets.UTF_8));
-            System.out.println(String.format("%032X", new BigInteger(1, message)));
-            try
-            {
-//                peer.onMessage(ByteBuffer.wrap(message, 4, message.length - 4));
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-        @OnClose
-        public void onClose(final Session session)
-        {
-            System.out.println("onClose");
-        }
-
-    }
-
-
-    @ClientEndpoint
-    public static class MyActorWebSocketClient
-    {
-        private Session wsSession;
-        public Peer peer = new Peer()
-        {
-            {
-                setSerializer(serializer);
-            }
-
-//            @Override
-            protected void sendBinary(final ByteBuffer wrap)
-            {
-                ByteBuffer padding = ByteBuffer.allocate(wrap.remaining() + 4);
-                padding.putInt(wrap.remaining());
-                padding.put(wrap);
-                padding.flip();
-                wsSession.getAsyncRemote().sendBinary(padding);
-            }
-        };
-
-
-        @OnOpen
-        public void onOpen(Session wsSession)
-        {
-            this.wsSession = wsSession;
-        }
-
-        @OnClose
-        public void onClose(Session userSession, CloseReason reason)
-        {
-        }
-
-        @OnMessage
-        public void onMessage(byte[] message, boolean last, Session session)
-        {
-//            peer.onMessage(ByteBuffer.wrap(message));
-        }
-    }
-
     @Singleton
     public static class SFakePeer extends FakeClusterPeer
     {
@@ -204,7 +102,7 @@ public class Server
                 Hello.class,
                 HelloWebHandler.class,
                 EmbeddedHttpServer.class,
-                MyActorWebSocket.class));
+                MyWebSocketServer.class));
 
         final Container container = new Container();
         container.setProperties(properties);

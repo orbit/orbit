@@ -30,31 +30,47 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.extensions.MessageSerializer;
 import com.ea.orbit.actors.net.DefaultPipeline;
+import com.ea.orbit.actors.net.Handler;
 import com.ea.orbit.actors.net.Pipeline;
 import com.ea.orbit.annotation.Wired;
+import com.ea.orbit.container.Startable;
 
 import java.time.Clock;
 
 /**
  * This works as a bridge to perform calls between the server and a client.
  */
-public class Peer
+public class Peer implements Startable
 {
     private Pipeline pipeline = new DefaultPipeline();
-    private BasicRuntime runtime;
-
     @Wired
     private Clock clock = Clock.systemUTC();
+    private MessageSerializer messageSerializer;
+    private Handler network;
 
-
-    public void setRuntime(BasicRuntime runtime)
+    public void setNetworkHandler(Handler network)
     {
-        this.runtime = runtime;
+        this.network = network;
     }
 
-    public void setSerializer(final MessageSerializer serializer)
+    public Handler getNetwork()
     {
-        //this.serializer = serializer;
+        return network;
+    }
+
+    public void setMessageSerializer(final MessageSerializer messageSerializer)
+    {
+        this.messageSerializer = messageSerializer;
+    }
+
+    public Clock getClock()
+    {
+        return clock;
+    }
+
+    public MessageSerializer getMessageSerializer()
+    {
+        return messageSerializer;
     }
 
     public void setClock(final Clock clock)
@@ -62,10 +78,6 @@ public class Peer
         this.clock = clock;
     }
 
-    public <T> T getReference(final Class<T> iClass, final String id)
-    {
-        return null;
-    }
 
     public Pipeline getPipeline()
     {

@@ -50,4 +50,6 @@ public interface Pipeline
     Task<Void> connect(Object param);
 
     Task<Void> disconnect();
+
+    Task<Void> close();
 }

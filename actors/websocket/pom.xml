@@ -50,6 +50,16 @@
         </dependency>
         <dependency>
             <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-server</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-actors-stage</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -86,12 +96,6 @@
         <dependency>
             <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-actors-tests</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-actors-server</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
