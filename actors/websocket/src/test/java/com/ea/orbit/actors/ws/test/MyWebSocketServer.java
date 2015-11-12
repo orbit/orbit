@@ -28,7 +28,6 @@
 
 package com.ea.orbit.actors.ws.test;
 
-import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.ws.WebSocketServer;
 
 import javax.websocket.server.ServerEndpoint;

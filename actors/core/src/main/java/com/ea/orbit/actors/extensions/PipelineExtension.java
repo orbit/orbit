@@ -30,6 +30,8 @@ package com.ea.orbit.actors.extensions;
 
 
 import com.ea.orbit.actors.net.Handler;
+import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.concurrent.Task;
 
 /**
  * Listener to extend the message pipeline.
@@ -58,5 +60,65 @@ public interface PipelineExtension extends Handler, ActorExtension
     default String getName()
     {
         return null;
+    }
+
+    @Override
+    default void onExceptionCaught(final HandlerContext ctx, final Throwable cause) throws Exception
+    {
+        ctx.fireExceptionCaught(cause);
+    }
+
+    @Override
+    default void onActive(final HandlerContext ctx) throws Exception
+    {
+        ctx.fireActive();
+    }
+
+    @Override
+    default void onInactive(final HandlerContext ctx) throws Exception
+    {
+        ctx.fireInactive();
+    }
+
+    @Override
+    default void onEventTriggered(final HandlerContext ctx, final Object evt) throws Exception
+    {
+        ctx.fireEventTriggered(evt);
+    }
+
+    @Override
+    default void onRead(final HandlerContext ctx, final Object msg) throws Exception
+    {
+        ctx.fireRead(msg);
+    }
+
+    @Override
+    default void onRegistered(HandlerContext ctx) throws Exception
+    {
+
+    }
+
+    @Override
+    default Task connect(final HandlerContext ctx, final Object param) throws Exception
+    {
+        return ctx.connect(param);
+    }
+
+    @Override
+    default Task disconnect(final HandlerContext ctx) throws Exception
+    {
+        return ctx.disconnect();
+    }
+
+    @Override
+    default Task close(final HandlerContext ctx) throws Exception
+    {
+        return ctx.close();
+    }
+
+    @Override
+    default Task write(final HandlerContext ctx, final Object msg) throws Exception
+    {
+        return ctx.write(msg);
     }
 }

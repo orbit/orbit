@@ -26,56 +26,9 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.ws.test;
+package com.ea.orbit.actors.server;
 
-import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
-import com.ea.orbit.actors.net.HandlerAdapter;
-import com.ea.orbit.actors.net.HandlerContext;
-import com.ea.orbit.actors.runtime.ActorRuntime;
-import com.ea.orbit.actors.runtime.Message;
-import com.ea.orbit.concurrent.Task;
-
-import java.io.ByteArrayInputStream;
-
-public class SerializerHandler extends HandlerAdapter
+public interface ServerMessageFilter
 {
-    JsonMessageSerializer json = new JsonMessageSerializer();
-    ProtoMessageSerializer proto = new ProtoMessageSerializer();
-
-    @Override
-    public void onRead(final HandlerContext ctx, final Object message)
-    {
-        final byte[] bytes = (byte[]) message;
-        final Message newMessage;
-        if (bytes[0] == '{')
-        {
-            try
-            {
-                newMessage = json.deserializeMessage(ActorRuntime.getRuntime(), new ByteArrayInputStream(bytes));
-                ctx.fireRead(newMessage);
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-            return;
-        }
-        try
-        {
-            newMessage = proto.deserializeMessage(ActorRuntime.getRuntime(), new ByteArrayInputStream(bytes));
-            ctx.fireRead(newMessage);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        return;
-
-    }
-
-    @Override
-    public Task write(final HandlerContext ctx, final Object message)
-    {
-        return null;
-    }
+    void filter(MessageContext messageContext);
 }

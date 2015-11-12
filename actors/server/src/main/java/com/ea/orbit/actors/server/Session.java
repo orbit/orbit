@@ -26,27 +26,11 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.ws.test;
+package com.ea.orbit.actors.server;
 
-public class ProtoStream
+import java.security.Principal;
+
+public interface Session
 {
-
-    void WriteByte(int value)
-    {
-
-    }
-
-    public void writeUnsignedVarInt(int value)
-    {
-        int v = value;
-        for (; (v & 0xff_ff_ff_80) != 0; v >>= 7)
-        {
-            WriteByte(v & 0x7f);
-        }
-        WriteByte(v);
-    }
-
-    public void writeString(int tag, String value)
-    {
-    }
+    Principal getPrincipal();
 }

@@ -26,41 +26,35 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.ws.test;
+package com.ea.orbit.actors.server;
 
-import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
-import com.ea.orbit.actors.ws.WebSocketClient;
+import com.ea.orbit.actors.extensions.PipelineExtension;
+import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.actors.runtime.DefaultClassDictionary;
+import com.ea.orbit.actors.runtime.DefaultHandlers;
+import com.ea.orbit.actors.runtime.Message;
 
-import org.junit.Ignore;
-import org.junit.Test;
-
-import javax.websocket.ContainerProvider;
-import javax.websocket.Session;
-import javax.websocket.WebSocketContainer;
-
-import java.net.URI;
-
-import static org.junit.Assert.assertEquals;
-
-public class WsTest2
+public class SecurityFilter implements PipelineExtension
 {
-    private static JsonMessageSerializer serializer = new JsonMessageSerializer();
-
-
-    @Test
-    @Ignore
-    public void test() throws Exception
+    @Override
+    public String getName()
     {
+        return "security";
+    }
 
-        final int localPort = 9090;
+    @Override
+    public String beforeHandlerName()
+    {
+        return DefaultHandlers.SERIALIZATION;
+    }
 
-        final URI endpointURI = new URI("ws://localhost:" + localPort + "/websocket/con");
-        final WebSocketClient clientEndPoint = new WebSocketClient();
-        clientEndPoint.connect(endpointURI).join();
-        clientEndPoint.close().join();
-        final Server.Hello hello = clientEndPoint.peer.getReference(Server.Hello.class, "0");
+    @Override
+    public void onRead(final HandlerContext ctx, final Object msg) throws Exception
+    {
+        Message message = (Message) msg;
 
-        assertEquals("hello: test", hello.hello("test").join());
+        final Class<?> clazz = DefaultClassDictionary.get().getClassById(message.getInterfaceId());
+        // TODO: check method access, check object access
 
     }
 }
