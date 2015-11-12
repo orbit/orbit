@@ -28,7 +28,7 @@
 
 package com.ea.orbit.actors.extensions;
 
-import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.RemoteReference;
 
 public abstract class AbstractStorageExtension implements StorageExtension
 {
@@ -45,9 +45,9 @@ public abstract class AbstractStorageExtension implements StorageExtension
         return name;
     }
 
-    protected String getIdentity(final ActorReference<?> reference)
+    protected String getIdentity(final RemoteReference<?> reference)
     {
-        return String.valueOf(ActorReference.getId(reference));
+        return String.valueOf(RemoteReference.getId(reference));
     }
 
 }

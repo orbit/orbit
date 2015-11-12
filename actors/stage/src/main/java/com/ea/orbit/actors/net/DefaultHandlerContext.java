@@ -120,7 +120,8 @@ public class DefaultHandlerContext implements HandlerContext
         final DefaultHandlerContext inbound = inbound();
         try
         {
-            inbound.handler().onRead(inbound, msg);
+            final Handler handler = inbound.handler();
+            handler.onRead(inbound, msg);
         }
         catch (Exception e)
         {

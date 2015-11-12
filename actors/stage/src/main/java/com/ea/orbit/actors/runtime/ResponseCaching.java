@@ -153,8 +153,8 @@ public class ResponseCaching
     @Override
     public Task<Void> flush(Actor actor)
     {
-        ActorReference actorReference = (ActorReference) actor;
-        Class interfaceClass = ActorReference.getInterfaceClass(actorReference);
+        RemoteReference actorReference = (RemoteReference) actor;
+        Class interfaceClass = RemoteReference.getInterfaceClass(actorReference);
 
         masterCache.asMap().entrySet().stream()
                 .filter(e -> interfaceClass.equals(e.getKey().getDeclaringClass()))

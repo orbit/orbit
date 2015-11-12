@@ -58,10 +58,7 @@ public class SerializationHandler extends HandlerAdapter
     public Task write(HandlerContext ctx, final Object msg)
     {
         Message message = (Message) msg;
-        if (message.getToNode() == null)
-        {
-            throw new UncheckedException("Message.toNode must be defined");
-        }
+
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try
         {
@@ -104,7 +101,7 @@ public class SerializationHandler extends HandlerAdapter
                 }
                 try
                 {
-                    message.withMessageType(MessageDefinitions.RESPONSE_ERROR)
+                    message.withMessageType(MessageDefinitions.RESPONSE_PROTOCOL_ERROR)
                             .withPayload("failed twice sending response");
                     messageSerializer.serializeMessage(runtime, baos, message);
                 }

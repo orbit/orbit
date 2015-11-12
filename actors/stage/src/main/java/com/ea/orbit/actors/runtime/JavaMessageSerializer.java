@@ -67,8 +67,8 @@ public class JavaMessageSerializer implements MessageSerializer
             @Override
             protected Object replaceObject(final Object obj) throws IOException
             {
-                final ActorReference reference;
-                if (!(obj instanceof ActorReference))
+                final RemoteReference reference;
+                if (!(obj instanceof RemoteReference))
                 {
                     if (obj instanceof AbstractActor)
                     {
@@ -77,7 +77,7 @@ public class JavaMessageSerializer implements MessageSerializer
                     else if (obj instanceof com.ea.orbit.actors.ActorObserver)
                     {
                         com.ea.orbit.actors.ActorObserver objectReference = runtime.registerObserver(null, (com.ea.orbit.actors.ActorObserver) obj);
-                        reference = (ActorReference) objectReference;
+                        reference = (RemoteReference) objectReference;
                     }
                     else
                     {
@@ -86,7 +86,7 @@ public class JavaMessageSerializer implements MessageSerializer
                 }
                 else
                 {
-                    reference = (ActorReference) obj;
+                    reference = (RemoteReference) obj;
                 }
                 ReferenceReplacement replacement = new ReferenceReplacement();
                 replacement.address = reference.address;

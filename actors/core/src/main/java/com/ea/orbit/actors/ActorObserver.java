@@ -30,7 +30,7 @@ package com.ea.orbit.actors;
 
 
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.concurrent.Task;
 
 /**
@@ -117,6 +117,6 @@ public interface ActorObserver
      */
     static <T extends ActorObserver> T getObserverReference(NodeAddress node, Class<T> actorObserverInterface, String id)
     {
-        return DefaultReferenceFactory.observerRef(node.asUUID(), actorObserverInterface, id);
+        return DefaultDescriptorFactory.observerRef(node.asUUID(), actorObserverInterface, id);
     }
 }

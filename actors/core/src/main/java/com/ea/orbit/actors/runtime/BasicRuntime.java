@@ -34,7 +34,6 @@ import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.concurrent.Task;
 
 import java.lang.reflect.Method;
-import java.time.Clock;
 
 /**
  * Interface used by the generated code to interact with the orbit actors runtime.
@@ -54,20 +53,11 @@ public interface BasicRuntime
      */
     Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params);
 
-    /**
-     * Gets the local clock. It's usually the system clock, but it can be changed for testing.
-     *
-     * @return the clock that should be used for checking the time during tests.
-     */
-    Clock clock();
 
     /**
-     * Gets a string that represents uniquely the node that currently holds this actor.
-     *
-     * @return unique identity string
+     * Returns an actor reference
      */
-    String runtimeIdentity();
-
+    <T extends Actor> T getReference(final Class<T> iClass, final Object id);
 
     /**
      * Installs this observer into this node.
@@ -97,13 +87,5 @@ public interface BasicRuntime
      */
     <T extends com.ea.orbit.actors.ActorObserver> T getRemoteObserverReference(NodeAddress address, final Class<T> iClass, final Object id);
 
-
-    /**
-     * Returns an actor reference
-     */
-    <T extends Actor> T getReference(final Class<T> iClass, final Object id);
-
-    ActorInvoker<?> getInvoker(int interfaceId);
-
-    void bind();
+    ObjectInvoker<?> getInvoker(int interfaceId);
 }

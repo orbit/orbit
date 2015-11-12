@@ -26,50 +26,14 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.test;
+package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.net.HandlerAdapter;
-import com.ea.orbit.actors.net.HandlerContext;
-import com.ea.orbit.concurrent.Task;
-
-public class ShortCircuitHandler extends HandlerAdapter
+public class DefaultHandlers
 {
-    private HandlerContext firstCtx;
-    private HandlerContext secondCtx;
-
-    @Override
-    public Task connect(final HandlerContext ctx, final Object param) throws Exception
-    {
-        if (ctx != firstCtx && ctx != secondCtx)
-        {
-            if (firstCtx == null)
-            {
-                firstCtx = ctx;
-            }
-            else if (secondCtx == null)
-            {
-                secondCtx = ctx;
-            }
-            else
-            {
-                throw new IllegalStateException("Connect called with 3 different contexts!");
-            }
-        }
-        ctx.fireActive();
-        return Task.done();
-    }
-
-    @Override
-    public Task write(final HandlerContext ctx, final Object msg) throws Exception
-    {
-        if (ctx == firstCtx)
-        {
-            secondCtx.fireRead(msg);
-        }
-        else
-        {
-            firstCtx.fireRead(msg);
-        }
-        return Task.done();
-    }
+    public static final String CACHING = "caching";
+    public static final String EXECUTION = "execution";
+    public static final String MESSAGING = "messaging";
+    public static final String SERIALIZATION = "serialization";
+    public static final String CLUSTER = "cluster";
+    public static final String NETWORK = "network";
 }

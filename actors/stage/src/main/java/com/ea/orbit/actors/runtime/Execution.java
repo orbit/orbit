@@ -96,6 +96,7 @@ public class Execution extends HandlerAdapter
     private ConcurrentMap<Integer, InterfaceDescriptor> descriptorMapByInterfaceId = new ConcurrentHashMap<>();
     private Map<EntryKey, ReferenceEntry> localActors = new ConcurrentHashMap<>();
     private Map<EntryKey, ActorObserver> observerInstances = new MapMaker().weakValues().makeMap();
+
     // from implementation to reference
     private Map<ActorObserver, ActorObserver> observerReferences = new MapMaker().weakKeys().makeMap();
 
@@ -128,7 +129,7 @@ public class Execution extends HandlerAdapter
     @Wired
     private Container container;
 
-    private Runtime runtime;
+    private ActorRuntime runtime;
 
     @Config("orbit.actors.stickyHeaders")
     private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
@@ -154,7 +155,7 @@ public class Execution extends HandlerAdapter
         this.stickyHeaders.addAll(stickyHeaders);
     }
 
-    public void setRuntime(final Runtime runtime)
+    public void setRuntime(final ActorRuntime runtime)
     {
         this.runtime = runtime;
     }
@@ -189,7 +190,7 @@ public class Execution extends HandlerAdapter
         return !descriptor.cannotActivate;
     }
 
-    public void registerFactory(ActorFactory<?> factory)
+    public void registerFactory(ReferenceFactory<?> factory)
     {
         // TODO: will enable caching the reference factory
     }
@@ -206,12 +207,12 @@ public class Execution extends HandlerAdapter
 
     private static class InterfaceDescriptor
     {
-        ActorFactory<?> factory;
-        volatile ActorInvoker<Object> invoker;
+        ReferenceFactory<?> factory;
+        volatile ObjectInvoker<Object> invoker;
         boolean cannotActivate;
         String concreteClassName;
         boolean isObserver;
-        volatile ActorInvoker<Object> interfaceInvoker;
+        volatile ObjectInvoker<Object> interfaceInvoker;
 
         @Override
         public String toString()
@@ -222,7 +223,7 @@ public class Execution extends HandlerAdapter
 
     private class ReferenceEntry
     {
-        ActorReference<?> reference;
+        RemoteReference<?> reference;
         InterfaceDescriptor descriptor;
         boolean statelessWorker;
         Activation singleActivation;
@@ -446,7 +447,7 @@ public class Execution extends HandlerAdapter
                         final AbstractActor<?> actor = (AbstractActor<?>) newInstance;
                         ActorTaskContext.current().setActor(actor);
                         actor.reference = entry.reference;
-
+                        actor.runtime = stage;
                         actor.stateExtension = getStorageExtensionFor(actor);
 
                         await(Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preActivation(actor))));
@@ -579,9 +580,9 @@ public class Execution extends HandlerAdapter
         final ActorObserver ref = observerReferences.get(observer);
         if (ref != null)
         {
-            if (id != null && !id.equals(((ActorReference<?>) ref).id))
+            if (id != null && !id.equals(((RemoteReference<?>) ref).id))
             {
-                throw new IllegalArgumentException("Called twice with different ids: " + id + " != " + ((ActorReference<?>) ref).id);
+                throw new IllegalArgumentException("Called twice with different ids: " + id + " != " + ((RemoteReference<?>) ref).id);
             }
             return (T) ref;
         }
@@ -592,7 +593,7 @@ public class Execution extends HandlerAdapter
     private <T extends ActorObserver> T createObjectReference(final Class<T> iClass, final T observer, String objectId)
     {
 
-        ActorFactory<?> factory;
+        ReferenceFactory<?> factory;
         if (iClass == null)
         {
             factory = findFactoryFor(ActorObserver.class, observer);
@@ -611,7 +612,7 @@ public class Execution extends HandlerAdapter
         final ActorObserver existingObserver = observerInstances.get(key);
         if (existingObserver == null)
         {
-            final ActorReference<T> reference = (ActorReference<T>) factory.createReference(id);
+            final RemoteReference<T> reference = (RemoteReference<T>) factory.createReference(id);
             if (objectId == null)
             {
                 reference.address = hosting.getNodeAddress();
@@ -680,15 +681,6 @@ public class Execution extends HandlerAdapter
         return timerTask::cancel;
     }
 
-//    public void bind(Object object)
-//    {
-//        if (!(object instanceof ActorReference))
-//        {
-//            throw new IllegalArgumentException("Must be a reference");
-//        }
-//        ((ActorReference<?>) object).runtime = this;
-//    }
-
     public Task<?> registerReminder(final Remindable actor, final String reminderName, final long dueTime, final long period, final TimeUnit timeUnit)
     {
         return getReference(ReminderController.class, "0").registerOrUpdateReminder(actor, reminderName, new Date(clock.millis() + timeUnit.toMillis(dueTime)), period, timeUnit);
@@ -739,17 +731,6 @@ public class Execution extends HandlerAdapter
                 }
             }
         }, cleanupIntervalMillis, cleanupIntervalMillis);
-
-        // TODO move this logic the messaging class, or to the stage
-        // schedules the message cleanup
-//        timer.schedule(new TimerTask()
-//        {
-//            @Override
-//            public void run()
-//            {
-//                messaging.timeoutCleanup();
-//            }
-//        }, 5000, 5000);
     }
 
     private <T> Class<T> classForName(final String className)
@@ -774,13 +755,13 @@ public class Execution extends HandlerAdapter
         return null;
     }
 
-    private ActorFactory<?> findFactoryFor(final Class<?> baseInterface, final Object instance)
+    private ReferenceFactory<?> findFactoryFor(final Class<?> baseInterface, final Object instance)
     {
         for (Class<?> aInterface : instance.getClass().getInterfaces())
         {
             if (baseInterface.isAssignableFrom(aInterface))
             {
-                ActorFactory<?> factory = getDescriptor(aInterface).factory;
+                ReferenceFactory<?> factory = getDescriptor(aInterface).factory;
                 if (factory != null)
                 {
                     return factory;
@@ -804,7 +785,7 @@ public class Execution extends HandlerAdapter
             interfaceDescriptor = new InterfaceDescriptor();
             interfaceDescriptor.isObserver = ActorObserver.class.isAssignableFrom(aInterface);
             interfaceDescriptor.factory = dynamicReferenceFactory.getFactoryFor(aInterface);
-            interfaceDescriptor.invoker = (ActorInvoker<Object>) interfaceDescriptor.factory.getInvoker();
+            interfaceDescriptor.invoker = (ObjectInvoker<Object>) interfaceDescriptor.factory.getInvoker();
 
             InterfaceDescriptor concurrentInterfaceDescriptor = descriptorMapByInterface.putIfAbsent(aInterface, interfaceDescriptor);
             if (concurrentInterfaceDescriptor != null)
@@ -957,7 +938,7 @@ public class Execution extends HandlerAdapter
             {
                 entry.statelessActivations = new ConcurrentLinkedDeque<>();
             }
-            entry.reference = (ActorReference<?>) descriptor.factory.createReference(key != null ? String.valueOf(key) : null);
+            entry.reference = (RemoteReference<?>) descriptor.factory.createReference(key != null ? String.valueOf(key) : null);
             entry.reference.runtime = this.runtime;
             entry.removable = true;
 
@@ -1025,7 +1006,7 @@ public class Execution extends HandlerAdapter
     }
 
 
-    public ActorReference getCurrentActivation()
+    public RemoteReference getCurrentActivation()
     {
         final MessageContext current = getMessageContext();
         if (current == null)
@@ -1057,7 +1038,7 @@ public class Execution extends HandlerAdapter
         final ActorTaskContext context = ActorTaskContext.pushNew();
         try
         {
-            context.setProperty(Runtime.class.getName(), this);
+            context.setProperty(ActorRuntime.class.getName(), this);
             final MessageContext messageContext = new MessageContext(theEntry, methodId, from);
             context.setProperty(MessageContext.class.getName(), messageContext);
             Activation activation = theEntry.popActivation();
@@ -1098,7 +1079,7 @@ public class Execution extends HandlerAdapter
             }
             finally
             {
-                // we don't need to unset the Runtime, @see Runtime.setRuntime:
+                // we don't need to unset the ActorRuntime, @see ActorRuntime.setRuntime:
                 theEntry.pushActivation(activation);
             }
         }
@@ -1114,11 +1095,11 @@ public class Execution extends HandlerAdapter
     }
 
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "unchecked" })
     <T> T createReference(final NodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
-        ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference("");
+        RemoteReference<?> reference = (RemoteReference<?>) descriptor.factory.createReference("");
         reference.address = a;
         reference.runtime = this.runtime;
         reference.id = id;
@@ -1130,12 +1111,12 @@ public class Execution extends HandlerAdapter
     public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
-        ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
+        RemoteReference<?> reference = (RemoteReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
         reference.runtime = this.runtime;
         return (T) reference;
     }
 
-    public ActorInvoker<?> getInvoker(final int interfaceId)
+    public ObjectInvoker<?> getInvoker(final int interfaceId)
     {
         final InterfaceDescriptor descriptor = getDescriptor(interfaceId);
         if (descriptor == null)
@@ -1161,7 +1142,7 @@ public class Execution extends HandlerAdapter
             throw new IllegalArgumentException("Null class");
         }
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
-        ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(String.valueOf(id));
+        RemoteReference<?> reference = (RemoteReference<?>) descriptor.factory.createReference(String.valueOf(id));
         reference.runtime = this.runtime;
         reference.address = address;
         return (T) reference;
@@ -1191,8 +1172,8 @@ public class Execution extends HandlerAdapter
         {
 
             NodeAddress address;
-            if (toReference instanceof ActorReference
-                    && (address = ActorReference.getAddress((ActorReference) toReference)) != null)
+            if (toReference instanceof RemoteReference
+                    && (address = RemoteReference.getAddress((RemoteReference) toReference)) != null)
             {
                 invocation.withToNode(address);
                 task = ctx.write(invocation);

@@ -1,8 +1,9 @@
 package com.ea.orbit.actors.test;
 
-public interface RemoteClient
+import com.ea.orbit.actors.runtime.BasicRuntime;
+
+public interface RemoteClient extends BasicRuntime
 {
     void cleanup(boolean block);
 
-    <T> T getReference(final Class<T> iClass, final String id);
 }

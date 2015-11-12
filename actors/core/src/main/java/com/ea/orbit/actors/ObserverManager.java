@@ -28,7 +28,7 @@
 
 package com.ea.orbit.actors;
 
-import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.concurrent.ConcurrentHashSet;
 import com.ea.orbit.concurrent.Task;
 
@@ -66,7 +66,7 @@ public class ObserverManager<T extends ActorObserver> implements Serializable
             throw new NullPointerException("Observer must not be null");
         }
 
-        if (!(observer instanceof ActorReference))
+        if (!(observer instanceof RemoteReference))
         {
             throw new IllegalArgumentException("Was expecting a reference");
         }
@@ -101,7 +101,7 @@ public class ObserverManager<T extends ActorObserver> implements Serializable
     public Task<?> cleanup()
     {
         // TODO: replace ping for a single batch call for each node containing observers from this list.
-        // TODO: add a observer validation function to the runtime. Runtime
+        // TODO: add a observer validation function to the runtime. ActorRuntime
         final Stream<Task<?>> stream = observers.stream()
                 .map(o ->
                         ((Task<?>) (o).ping()).whenComplete((final Object pr, final Throwable pe) ->

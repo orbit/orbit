@@ -35,21 +35,17 @@ import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.PipelineExtension;
 import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
-import com.ea.orbit.actors.net.DefaultPipeline;
 import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorFactoryGenerator;
-import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
-import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.ExecutionSerializer;
 import com.ea.orbit.actors.runtime.Invocation;
-import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.ReminderController;
-import com.ea.orbit.actors.runtime.SerializationHandler;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.concurrent.ExecutorUtils;
@@ -259,8 +255,8 @@ public class ActorBaseTest
 
                 Files.write(seqUml,
                         Stream.concat(Stream.concat(
-                                        Stream.of("@startuml"),
-                                        messageSequence.stream()),
+                                Stream.of("@startuml"),
+                                messageSequence.stream()),
                                 Stream.of("@enduml")
                         ).collect(Collectors.toList()));
                 out.println("Message sequence diagram written to:");
@@ -279,23 +275,13 @@ public class ActorBaseTest
 
     public RemoteClient createRemoteClient(Stage stage) throws ExecutionException, InterruptedException
     {
-        final FakeServerPeer serverPeer = new FakeServerPeer(stage);
+        final JsonMessageSerializer serializer = new JsonMessageSerializer();
+        final ShortCircuitHandler network = new ShortCircuitHandler();
+        final FakeServerPeer serverPeer = new FakeServerPeer(stage, serializer, network);
+        final FakeClient fakeClient = new FakeClient(serializer, network);
 
-        BasicRuntime server = null;
-        final DefaultPipeline serverPipeline = new DefaultPipeline();
-        serverPipeline.addHandler(new ServerPeerExecutor(stage));
-        serverPipeline.addHandler(new Messaging());
-        serverPipeline.addHandler(new SerializationHandler(server, new JsonMessageSerializer()));
-        serverPipeline.addHandler(new ShortCircuitHandler());
-
-        BasicRuntime client = null;
-        final DefaultPipeline clientPipeline = new DefaultPipeline();
-        clientPipeline.addHandler(new HandlerAdapter());
-        clientPipeline.addHandler(new Messaging());
-        clientPipeline.addHandler(new SerializationHandler(client, new JsonMessageSerializer()));
-        clientPipeline.addHandler(new ShortCircuitHandler());
-
-        final FakeClient fakeClient = new FakeClient();
+        serverPeer.start();
+        fakeClient.start();
 
         return fakeClient;
     }
@@ -551,14 +537,14 @@ public class ActorBaseTest
             }
             if (obj instanceof AbstractActor)
             {
-                final ActorReference ref = ActorReference.from((AbstractActor) obj);
-                return ActorReference.getInterfaceClass(ref).getSimpleName() + ":" +
-                        ActorReference.getId(ref);
+                final RemoteReference ref = RemoteReference.from((AbstractActor) obj);
+                return RemoteReference.getInterfaceClass(ref).getSimpleName() + ":" +
+                        RemoteReference.getId(ref);
             }
-            if (obj instanceof ActorReference)
+            if (obj instanceof RemoteReference)
             {
-                return ActorReference.getInterfaceClass((ActorReference<?>) obj).getSimpleName() + ":" +
-                        ActorReference.getId((ActorReference<?>) obj);
+                return RemoteReference.getInterfaceClass((RemoteReference<?>) obj).getSimpleName() + ":" +
+                        RemoteReference.getId((RemoteReference<?>) obj);
             }
             return String.valueOf(obj);
         }
@@ -586,14 +572,14 @@ public class ActorBaseTest
             String from;
             if (context != null && context.getActor() != null)
             {
-                final ActorReference reference = ActorReference.from(context.getActor());
-                from = ActorReference.getInterfaceClass(reference).getSimpleName()
+                final RemoteReference reference = RemoteReference.from(context.getActor());
+                from = RemoteReference.getInterfaceClass(reference).getSimpleName()
                         + ":"
-                        + ActorReference.getId(reference);
+                        + RemoteReference.getId(reference);
             }
             else
             {
-                if (ActorReference.getInterfaceClass((ActorReference) toReference) == NodeCapabilities.class
+                if (RemoteReference.getInterfaceClass((RemoteReference) toReference) == NodeCapabilities.class
                         && method.getName().equals("canActivate"))
                 {
                     from = "Stage";
@@ -611,9 +597,9 @@ public class ActorBaseTest
                     }
                 }
             }
-            String to = ActorReference.getInterfaceClass((ActorReference) toReference).getSimpleName()
+            String to = RemoteReference.getInterfaceClass((RemoteReference) toReference).getSimpleName()
                     + ":"
-                    + ActorReference.getId((ActorReference) toReference);
+                    + RemoteReference.getId((RemoteReference) toReference);
 
             String strParams;
             final Object[] params = invocation.getParams();

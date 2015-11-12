@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.extensions.jpa;
 
 import com.ea.orbit.actors.extensions.AbstractStorageExtension;
-import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -58,7 +58,7 @@ public class JpaStorageExtension extends AbstractStorageExtension
     }
 
     @Override
-    public synchronized Task<Void> clearState(final ActorReference<?> reference, final Object state)
+    public synchronized Task<Void> clearState(final RemoteReference<?> reference, final Object state)
     {
         try
         {
@@ -79,7 +79,7 @@ public class JpaStorageExtension extends AbstractStorageExtension
     }
 
     @Override
-    public synchronized Task<Boolean> readState(final ActorReference<?> reference, Object state)
+    public synchronized Task<Boolean> readState(final RemoteReference<?> reference, Object state)
     {
         try
         {
@@ -123,7 +123,7 @@ public class JpaStorageExtension extends AbstractStorageExtension
     }
 
     @Override
-    public synchronized Task<Void> writeState(final ActorReference<?> reference, Object state)
+    public synchronized Task<Void> writeState(final RemoteReference<?> reference, Object state)
     {
         boolean isJpaEntity = state.getClass().isAnnotationPresent(Entity.class);
 

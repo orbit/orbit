@@ -28,79 +28,98 @@
 
 package com.ea.orbit.actors.runtime;
 
+import com.ea.orbit.actors.Addressable;
+import com.ea.orbit.actors.Remindable;
+import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.concurrent.Task;
+
 import java.lang.ref.WeakReference;
+import java.time.Clock;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Utility class to get the current IRuntime. Used by the generated code.
+ * Interface used by the generated code to interact with the orbit actors runtime.
  */
-public class ActorRuntime
+public interface ActorRuntime extends BasicRuntime
 {
-    /**
-     * Last created runtime or at least the last surviving one to call setRuntime.
-     */
-    private static WeakReference<Runtime> lastRuntime;
 
     /**
-     * Last runtime to touch the current thread.
-     */
-    private static final ThreadLocal<WeakReference<Runtime>> currentRuntime = new ThreadLocal<>();
-
-    private ActorRuntime()
-    {
-        // utility class
-    }
-
-    /**
-     * Gets the current runtime, first looking at a thread local,
-     * then at a global variable that contains the lasted runtime created
+     * Registers a timer for the orbit actor
      *
-     * @return the closest runtime to the current thread.
+     * @param actor        the actor requesting the timer.
+     * @param taskCallable a callable that must return a task.
+     * @param dueTime      the first time the timer will tick.
+     * @param period       the period of subsequent ticks (if ZERO then will only tick once)
+     * @param timeUnit     the time unit for period and dueTime
+     * @return a registration that allows to cancel the timer.
      */
-    public static Runtime getRuntime()
-    {
-        final ActorTaskContext context = ActorTaskContext.current();
-        if (context != null)
-        {
-            final Runtime runtime = context.getRuntime();
-            if (runtime != null)
-            {
-                return runtime;
-            }
-        }
-        final WeakReference<Runtime> runtimeRef = currentRuntime.get();
-        Runtime runtime;
-
-        return (runtimeRef != null && (runtime = runtimeRef.get()) != null) ? runtime
-                : (lastRuntime != null) ? lastRuntime.get()
-                : null;
-    }
+    Registration registerTimer(AbstractActor<?> actor, Callable<Task<?>> taskCallable, long dueTime, long period, TimeUnit timeUnit);
 
     /**
-     * Sets the runtime associated with the current thread.
-     * <p>
-     * It also tries to set the static runtime if the previous one got garbage collected.
-     * </p>
-     * <p> It's not necessary to "unset" the runtime because:
-     * <ol>
-     * <li>there should normally exist only one (only test cases are expected to have more than one)</li>
-     * <li>it is already a weak reference</li>
-     * <li>if another runtime is using the same thread later (shared thread pools) it will set the runtime before each usage</li>
-     * </ol></p>
+     * Registers or updated a persisted reminder.
+     *
+     * @param actor        the reference to the actor.
+     * @param reminderName the remainder's name
+     * @param dueTime      how long since now the first tick should be triggered.
+     * @param period       after the first tick, how often should the reminder be called.
+     * @param timeUnit     the time unit for dueTime and period
+     * @return completion promise for this operation
+     */
+    Task<?> registerReminder(Remindable actor, String reminderName, long dueTime, long period, TimeUnit timeUnit);
+
+    /**
+     * Removes a previously registered reminder.
+     *
+     * @param actor        the actor that registered this reminder
+     * @param reminderName the remainder's name
+     * @return completion promise for this operation
+     */
+    Task<?> unregisterReminder(Remindable actor, String reminderName);
+
+
+    /**
+     * Locates the node address of an actor.
+     *
+     * @param forceActivation a node will be chosen to activate the actor if
+     *                        it's not currently active.
+     *                        Actual activation is postponed until the actor receives one message.
+     * @return actor address, null if actor is not active and forceActivation==false
+     */
+    Task<NodeAddress> locateActor(final Addressable actorReference, final boolean forceActivation);
+
+
+    /**
+     * Gets the local clock. It's usually the system clock, but it can be changed for testing.
+     *
+     * @return the clock that should be used for checking the time during tests.
+     */
+    Clock clock();
+
+    /**
+     * Gets a string that represents uniquely the node that currently holds this actor.
+     *
+     * @return unique identity string
+     */
+    String runtimeIdentity();
+
+
+    void bind();
+
+    static ActorRuntime getRuntime()
+    {
+        return RuntimeBinder.getRuntime();
+    }
+
+
+    /**
+     * Sets a static reference to the last created runtime.
      *
      * @param runtimeRef a reference to the runtime
      */
-    public static void setRuntime(final WeakReference<Runtime> runtimeRef)
+    static void setRuntime(final WeakReference<ActorRuntime> runtimeRef)
     {
-        final ActorTaskContext context = ActorTaskContext.current();
-        if (context != null)
-        {
-            context.setRuntime(runtimeRef.get());
-        }
-        currentRuntime.set(runtimeRef);
-        if (lastRuntime == null || lastRuntime.get() == null)
-        {
-            lastRuntime = runtimeRef;
-        }
+        RuntimeBinder.setRuntime(runtimeRef);
     }
 
     /**
@@ -108,9 +127,8 @@ public class ActorRuntime
      *
      * @param runtimeRef a reference to the runtime
      */
-    public static void runtimeCreated(final WeakReference<Runtime> runtimeRef)
+    static void runtimeCreated(final WeakReference<ActorRuntime> runtimeRef)
     {
-        lastRuntime = runtimeRef;
-        setRuntime(runtimeRef);
+        RuntimeBinder.runtimeCreated(runtimeRef);
     }
 }

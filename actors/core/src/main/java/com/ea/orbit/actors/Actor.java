@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors;
 
 import com.ea.orbit.actors.annotation.NoIdentity;
-import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 
 /**
  * Interface marker for orbit actors.
@@ -76,7 +76,7 @@ public interface Actor
         {
             throw new IllegalArgumentException("Shouldn't supply ids for Actors annotated with " + NoIdentity.class);
         }
-        return DefaultReferenceFactory.ref(actorInterface, id);
+        return DefaultDescriptorFactory.ref(actorInterface, id);
     }
 
     /**
@@ -92,12 +92,12 @@ public interface Actor
         {
             throw new IllegalArgumentException("Not annotated with " + NoIdentity.class);
         }
-        return DefaultReferenceFactory.ref(actorInterface, null);
+        return DefaultDescriptorFactory.ref(actorInterface, null);
     }
 
     static <T> T cast(Class<T> remoteInterface, Actor actor)
     {
-        return DefaultReferenceFactory.cast(remoteInterface, actor);
+        return DefaultDescriptorFactory.cast(remoteInterface, actor);
     }
 
 }

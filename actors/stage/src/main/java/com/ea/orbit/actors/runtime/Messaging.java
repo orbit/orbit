@@ -50,6 +50,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeoutException;
@@ -77,6 +79,7 @@ public class Messaging extends HandlerAdapter implements Startable
 
     private final LongAdder networkMessagesReceived = new LongAdder();
     private final LongAdder responsesReceived = new LongAdder();
+    private static Timer timer = new Timer("Messaging timer");
 
     /**
      * The messageId is used only to break a tie between messages that timeout at the same ms.
@@ -137,6 +140,21 @@ public class Messaging extends HandlerAdapter implements Startable
     }
 
     @Override
+    public Task connect(final HandlerContext ctx, final Object param) throws Exception
+    {
+        timer.schedule(new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                timeoutCleanup();
+            }
+        }, 1000, 1000);
+
+        return super.connect(ctx, param);
+    }
+
+    @Override
     public void onRead(HandlerContext ctx, Object message)
     {
         this.onMessageReceived(ctx, (Message) message);
@@ -185,7 +203,14 @@ public class Messaging extends HandlerAdapter implements Startable
                                 pendingResponse.internalComplete(res);
                                 return;
                             case MessageDefinitions.RESPONSE_ERROR:
-                                pendingResponse.internalCompleteExceptionally((Throwable) res);
+                                if (res instanceof Throwable)
+                                {
+                                    pendingResponse.internalCompleteExceptionally((Throwable) res);
+                                }
+                                else
+                                {
+                                    pendingResponse.internalCompleteExceptionally(new UncheckedException(String.valueOf(res)));
+                                }
                                 return;
                             case MessageDefinitions.RESPONSE_PROTOCOL_ERROR:
                                 pendingResponse.internalCompleteExceptionally(
@@ -238,7 +263,7 @@ public class Messaging extends HandlerAdapter implements Startable
         {
             logger.debug("sending message to " + toReference);
         }
-        ActorReference<?> actorReference = (ActorReference<?>) toReference;
+        RemoteReference<?> actorReference = (RemoteReference<?>) toReference;
         NodeAddress toNode = invocation.getToNode();
 
         final LinkedHashMap<Object, Object> actualHeaders = new LinkedHashMap<>();
@@ -267,7 +292,7 @@ public class Messaging extends HandlerAdapter implements Startable
                 .withHeaders(actualHeaders)
                 .withInterfaceId(actorReference._interfaceId())
                 .withMethodId(invocation.getMethodId())
-                .withObjectId(ActorReference.getId(actorReference))
+                .withObjectId(RemoteReference.getId(actorReference))
                 .withPayload(invocation.getParams());
 
 

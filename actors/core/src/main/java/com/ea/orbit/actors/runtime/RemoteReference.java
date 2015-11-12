@@ -48,13 +48,13 @@ import java.lang.reflect.Method;
  *
  * @param <T> the Actor of ActorObserver implemented by this reference.
  */
-public abstract class ActorReference<T> implements Serializable, Addressable
+public abstract class RemoteReference<T> implements Serializable, Addressable
 {
     private static final long serialVersionUID = 1L;
 
     NodeAddress address;
     Object id;
-    transient Runtime runtime;
+    transient BasicRuntime runtime;
 
 
     /**
@@ -78,7 +78,7 @@ public abstract class ActorReference<T> implements Serializable, Addressable
      *
      * @param id the actor or actor observer id
      */
-    public ActorReference(final Object id)
+    public RemoteReference(final Object id)
     {
         this.id = id;
         if (id == null)
@@ -105,9 +105,9 @@ public abstract class ActorReference<T> implements Serializable, Addressable
     @Override
     public boolean equals(final Object o)
     {
-        ActorReference<?> that;
-        return (this == o) || ((o instanceof ActorReference)
-                && ((_interfaceId() == (that = (ActorReference<?>) o)._interfaceId())
+        RemoteReference<?> that;
+        return (this == o) || ((o instanceof RemoteReference)
+                && ((_interfaceId() == (that = (RemoteReference<?>) o)._interfaceId())
                 && ((!(address != null ? !address.equals(that.address) : that.address != null))
                 && ((!(id != null ? !id.equals(that.id) : that.id != null))))));
     }
@@ -130,7 +130,7 @@ public abstract class ActorReference<T> implements Serializable, Addressable
      * @param reference the reference being inspected
      * @return the implemented interface id
      */
-    public static int getInterfaceId(final ActorReference<?> reference)
+    public static int getInterfaceId(final RemoteReference<?> reference)
     {
         return reference._interfaceId();
     }
@@ -142,7 +142,7 @@ public abstract class ActorReference<T> implements Serializable, Addressable
      * @param reference the reference being inspected
      * @return the actor id
      */
-    public static Object getId(final ActorReference<?> reference)
+    public static Object getId(final RemoteReference<?> reference)
     {
         return reference.id;
     }
@@ -161,7 +161,7 @@ public abstract class ActorReference<T> implements Serializable, Addressable
      * @param reference the reference being inspected
      * @return the implemented interface
      */
-    public static <R> Class<R> getInterfaceClass(final ActorReference<R> reference)
+    public static <R> Class<R> getInterfaceClass(final RemoteReference<R> reference)
     {
         return reference._interfaceClass();
     }
@@ -181,7 +181,7 @@ public abstract class ActorReference<T> implements Serializable, Addressable
      * @param reference the reference being inspected
      * @return the node address where the actor observer resides
      */
-    public static NodeAddress getAddress(final ActorReference<?> reference)
+    public static NodeAddress getAddress(final RemoteReference<?> reference)
     {
         return reference.address;
     }
@@ -195,20 +195,20 @@ public abstract class ActorReference<T> implements Serializable, Addressable
      * @param reference   the reference being inspected
      * @param nodeAddress the node address where the actor observer resides
      */
-    public static void setAddress(final ActorReference<?> reference, final NodeAddress nodeAddress)
+    public static void setAddress(final RemoteReference<?> reference, final NodeAddress nodeAddress)
     {
         reference.address = nodeAddress;
     }
 
-    public static ActorReference from(AbstractActor actor)
+    public static RemoteReference from(AbstractActor actor)
     {
         return actor.reference;
     }
 
-    static ActorReference from(Actor actor)
+    static RemoteReference from(Actor actor)
     {
         return actor instanceof AbstractActor ? ((AbstractActor) actor).reference
-                : actor instanceof ActorReference ? (ActorReference) actor
+                : actor instanceof RemoteReference ? (RemoteReference) actor
                 : null;
     }
 

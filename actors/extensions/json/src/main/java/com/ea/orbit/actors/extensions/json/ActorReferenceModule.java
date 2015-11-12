@@ -31,8 +31,8 @@ package com.ea.orbit.actors.extensions.json;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.ReferenceFactory;
+import com.ea.orbit.actors.runtime.RemoteReference;
+import com.ea.orbit.actors.runtime.DescriptorFactory;
 import com.ea.orbit.exception.UncheckedException;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -70,12 +70,12 @@ public class ActorReferenceModule extends Module
     /**
      * Class that will create concrete references to actor interfaces
      */
-    private final ReferenceFactory referenceFactory;
+    private final DescriptorFactory descriptorFactory;
 
-    public ActorReferenceModule(final ReferenceFactory referenceFactory)
+    public ActorReferenceModule(final DescriptorFactory descriptorFactory)
     {
         super();
-        this.referenceFactory = referenceFactory;
+        this.descriptorFactory = descriptorFactory;
     }
 
     private static class RefSerializer extends JsonSerializer<Object> implements ContextualSerializer
@@ -98,9 +98,9 @@ public class ActorReferenceModule extends Module
         @Override
         public void serialize(final Object value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException
         {
-            final ActorReference<?> reference = (ActorReference<?>) value;
-            final String text = String.valueOf(ActorReference.getId(reference));
-            final Class<?> interfaceClass = ActorReference.getInterfaceClass(reference);
+            final RemoteReference<?> reference = (RemoteReference<?>) value;
+            final String text = String.valueOf(RemoteReference.getId(reference));
+            final Class<?> interfaceClass = RemoteReference.getInterfaceClass(reference);
             if (interfaceClass != null && (interfaceClass == rawClass))
             {
                 // escape starting '!'
@@ -159,8 +159,8 @@ public class ActorReferenceModule extends Module
         @Override
         public void serialize(final Object value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException
         {
-            final NodeAddress address = ActorReference.getAddress((ActorReference<?>) value);
-            final Object actorId = ActorReference.getId((ActorReference<?>) value);
+            final NodeAddress address = RemoteReference.getAddress((RemoteReference<?>) value);
+            final Object actorId = RemoteReference.getId((RemoteReference<?>) value);
             jgen.writeString(address.asUUID() + "/" + actorId);
         }
 
@@ -174,9 +174,9 @@ public class ActorReferenceModule extends Module
     private static class RefDeserializer extends JsonDeserializer<Object>
     {
         private final Class<?> iClass;
-        private final ReferenceFactory factory;
+        private final DescriptorFactory factory;
 
-        public RefDeserializer(final Class<?> iClass, final ReferenceFactory factory)
+        public RefDeserializer(final Class<?> iClass, final DescriptorFactory factory)
         {
             super();
             this.iClass = iClass;
@@ -193,7 +193,7 @@ public class ActorReferenceModule extends Module
                 if (text.startsWith("!!!"))
                 {
                     // three "!!!" is the escape when the id starts with "!!"
-                    return factory.getReference((Class) iClass, text.substring(1));
+                    return factory.getReference(null, (Class) iClass, text.substring(1));
                 }
                 int idx = text.indexOf(' ');
                 String className = text.substring(2, idx);
@@ -201,14 +201,14 @@ public class ActorReferenceModule extends Module
                 try
                 {
                     final Class aClass = Class.forName(className);
-                    return factory.getReference(aClass, key);
+                    return factory.getReference(null, aClass, key);
                 }
                 catch (ClassNotFoundException e)
                 {
                     throw new UncheckedException("Can't find class: " + e);
                 }
             }
-            return factory.getReference((Class) iClass, text);
+            return factory.getReference(null, (Class) iClass, text);
         }
 
         @Override
@@ -221,9 +221,9 @@ public class ActorReferenceModule extends Module
     private static class ObserverRefDeserializer extends JsonDeserializer<Object>
     {
         private final Class<?> iClass;
-        private final ReferenceFactory factory;
+        private final DescriptorFactory factory;
 
-        public ObserverRefDeserializer(final Class<?> iClass, final ReferenceFactory factory)
+        public ObserverRefDeserializer(final Class<?> iClass, final DescriptorFactory factory)
         {
             super();
             this.iClass = iClass;
@@ -271,11 +271,11 @@ public class ActorReferenceModule extends Module
                 final Class<?> rawClass = type.getRawClass();
                 if (Actor.class.isAssignableFrom(rawClass))
                 {
-                    return new RefDeserializer(rawClass, referenceFactory);
+                    return new RefDeserializer(rawClass, descriptorFactory);
                 }
                 if (ActorObserver.class.isAssignableFrom(rawClass))
                 {
-                    return new ObserverRefDeserializer(rawClass, referenceFactory);
+                    return new ObserverRefDeserializer(rawClass, descriptorFactory);
                 }
                 return null;
             }

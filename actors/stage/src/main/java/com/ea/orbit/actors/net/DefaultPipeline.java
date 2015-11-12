@@ -45,34 +45,93 @@ public class DefaultPipeline implements Pipeline
     {
         head = new DefaultHandlerContext.HeadContext();
         head.handler = new HandlerAdapter();
+        head.name = "head";
         tail = new DefaultHandlerContext.TailContext();
         tail.handler = new HandlerAdapter();
         head.outbound = tail;
+        head.name = "tail";
         tail.inbound = head;
     }
 
-    @Override
-    public void addHandler(Handler handler)
+    void addContextBefore(DefaultHandlerContext base, DefaultHandlerContext newContext)
     {
-        addHandler(handler, null);
-    }
-    public void addHandler(Handler handler, String name)
-    {
-        final DefaultHandlerContext ctx = new DefaultHandlerContext();
-        ctx.handler = handler;
-        ctx.inbound = tail.inbound;
-        ctx.outbound = tail;
-        ctx.name = name;
-        tail.inbound.outbound = ctx;
-        tail.inbound = ctx;
+        if (base == head)
+        {
+            base = head.outbound;
+        }
+        newContext.inbound = base.inbound;
+        newContext.outbound = base;
+        base.inbound.outbound = newContext;
+        base.inbound = newContext;
         try
         {
-            ctx.handler.onRegistered(ctx);
+            newContext.handler.onRegistered(newContext);
         }
         catch (Exception e)
         {
             throw new UncheckedException(e);
         }
+    }
+
+    @Override
+    public void addFirst(final String name, final Handler handler)
+    {
+        final DefaultHandlerContext ctx = new DefaultHandlerContext();
+        ctx.handler = handler;
+        ctx.name = name;
+        addContextBefore(head.outbound, ctx);
+    }
+
+    @Override
+    public void addLast(final String name, final Handler handler)
+    {
+        final DefaultHandlerContext ctx = new DefaultHandlerContext();
+        ctx.handler = handler;
+        ctx.name = name;
+        addContextBefore(tail, ctx);
+    }
+
+    DefaultHandlerContext findFirstHandlerContext(String name)
+    {
+        for (DefaultHandlerContext ctx = head; ctx != null; ctx = ctx.outbound)
+        {
+            if (ctx.name != null && ctx.name.equals(name))
+            {
+                return ctx;
+            }
+        }
+        return null;
+    }
+
+    DefaultHandlerContext findLastHandlerContext(String name)
+    {
+        for (DefaultHandlerContext ctx = tail; ctx != null; ctx = ctx.inbound)
+        {
+            if (ctx.name != null && ctx.name.equals(name))
+            {
+                return ctx;
+            }
+        }
+        return null;
+    }
+
+
+    @Override
+    public void addHandlerBefore(final String base, final String name, final Handler handler)
+    {
+        final DefaultHandlerContext ctx = new DefaultHandlerContext();
+        ctx.handler = handler;
+        ctx.name = name;
+        addContextBefore(findFirstHandlerContext(base), ctx);
+    }
+
+    @Override
+    public void addHandlerAfter(final String base, final String name, final Handler handler)
+    {
+        final DefaultHandlerContext ctx = new DefaultHandlerContext();
+        ctx.handler = handler;
+        ctx.name = name;
+        addContextBefore(findLastHandlerContext(base), ctx);
     }
 
     @Override

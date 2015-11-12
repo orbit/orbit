@@ -36,9 +36,10 @@ import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.MessageSerializer;
 import com.ea.orbit.actors.net.DefaultPipeline;
 import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.actors.runtime.ActorInvoker;
+import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.actors.runtime.ClusterHandler;
+import com.ea.orbit.actors.runtime.DefaultHandlers;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.ExecutionCacheFlushObserver;
 import com.ea.orbit.actors.runtime.ResponseCaching;
@@ -49,7 +50,6 @@ import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.Registration;
 import com.ea.orbit.actors.runtime.ReminderController;
-import com.ea.orbit.actors.runtime.Runtime;
 import com.ea.orbit.actors.runtime.SerializationHandler;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
@@ -84,7 +84,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Singleton
-public class Stage implements Startable, Runtime
+public class Stage implements Startable, ActorRuntime
 {
     private static final Logger logger = LoggerFactory.getLogger(Stage.class);
 
@@ -135,7 +135,7 @@ public class Stage implements Startable, Runtime
     private ExecutorService messagingPool;
     private ExecutionObjectCloner objectCloner;
     private MessageSerializer messageSerializer;
-    private final WeakReference<Runtime> cachedRef = new WeakReference<>(this);
+    private final WeakReference<ActorRuntime> cachedRef = new WeakReference<>(this);
 
     static
     {
@@ -463,16 +463,19 @@ public class Stage implements Startable, Runtime
 
         registerObserver(ExecutionCacheFlushObserver.class, "", cacheManager);
 
-        pipeline.addHandler(cacheManager);
+        // caches responses
+        pipeline.addLast(DefaultHandlers.CACHING, cacheManager);
 
-        pipeline.addHandler(execution);
+        pipeline.addLast(DefaultHandlers.EXECUTION, execution);
 
-        pipeline.addHandler(messaging);
+        // handles invocation messages and request-response matching
+        pipeline.addLast(DefaultHandlers.MESSAGING, messaging);
 
         // message serializer handler
-        pipeline.addHandler(new SerializationHandler(this, messageSerializer));
+        pipeline.addLast(DefaultHandlers.SERIALIZATION, new SerializationHandler(this, messageSerializer));
+
         // cluster peer handler
-        pipeline.addHandler(new ClusterHandler(clusterPeer, clusterName, nodeName));
+        pipeline.addLast(DefaultHandlers.CLUSTER, new ClusterHandler(clusterPeer, clusterName, nodeName));
 
         execution.setExtensions(extensions);
         messaging.start();
@@ -661,7 +664,7 @@ public class Stage implements Startable, Runtime
         return value;
     }
 
-    public com.ea.orbit.actors.runtime.Runtime getRuntime()
+    public ActorRuntime getRuntime()
     {
         return this;
     }
@@ -676,19 +679,12 @@ public class Stage implements Startable, Runtime
         this.messageSerializer = messageSerializer;
     }
 
-
     @Override
     public Task<?> invoke(final Addressable toReference, final Method m, final boolean oneWay, final int methodId, final Object[] params)
     {
         final Task<Void> result = pipeline.write(new Invocation(toReference, m, oneWay, methodId, params, null));
         return result;
     }
-//
-//    public Task<?> invoke(final int interfaceId, final int methodId, final Object objectId, final Object payload)
-//    {
-//        return null;
-//    }
-
 
     @Override
     public Registration registerTimer(final AbstractActor<?> actor, final Callable<Task<?>> taskCallable, final long dueTime, final long period, final TimeUnit timeUnit)
@@ -758,7 +754,7 @@ public class Stage implements Startable, Runtime
     }
 
     @Override
-    public ActorInvoker<?> getInvoker(final int interfaceId)
+    public ObjectInvoker<?> getInvoker(final int interfaceId)
     {
         return execution.getInvoker(interfaceId);
     }

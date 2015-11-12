@@ -46,32 +46,32 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class DefaultReferenceFactory implements ReferenceFactory
+public class DefaultDescriptorFactory implements DescriptorFactory
 {
-    private static final Logger logger = LoggerFactory.getLogger(ReferenceFactory.class);
-    private static DefaultReferenceFactory instance = new DefaultReferenceFactory();
+    private static final Logger logger = LoggerFactory.getLogger(DescriptorFactory.class);
+    private static DefaultDescriptorFactory instance = new DefaultDescriptorFactory();
 
-    private ConcurrentMap<Class<?>, ActorFactory<?>> factories = new ConcurrentHashMap<>();
+    private ConcurrentMap<Class<?>, ReferenceFactory<?>> factories = new ConcurrentHashMap<>();
     private ActorFactoryGenerator dynamicReferenceFactory = new ActorFactoryGenerator();
 
     private ActorClassFinder finder;
-    private ConcurrentMap<Class<?>, InterfaceDescriptor> descriptorMapByInterface = new ConcurrentHashMap<>();
-    private ConcurrentMap<Integer, InterfaceDescriptor> descriptorMapByInterfaceId = new ConcurrentHashMap<>();
+    private ConcurrentMap<Class<?>, ClassDescriptor> descriptorMapByInterface = new ConcurrentHashMap<>();
+    private ConcurrentMap<Integer, ClassDescriptor> descriptorMapByInterfaceId = new ConcurrentHashMap<>();
 
-    static class InterfaceDescriptor
+    static class ClassDescriptor
     {
-        ActorFactory<?> factory;
-        ActorInvoker<Object> invoker;
+        ReferenceFactory<?> factory;
+        ObjectInvoker<Object> invoker;
         boolean isObserver;
         boolean isActor;
     }
 
-    private DefaultReferenceFactory()
+    private DefaultDescriptorFactory()
     {
 
     }
 
-    public static ReferenceFactory get()
+    public static DescriptorFactory get()
     {
         return instance;
     }
@@ -94,37 +94,38 @@ public class DefaultReferenceFactory implements ReferenceFactory
     }
 
     @SuppressWarnings("unchecked")
-    private InterfaceDescriptor getDescriptor(final Class<?> aInterface)
+    private ClassDescriptor getDescriptor(final Class<?> aInterface)
     {
-        InterfaceDescriptor interfaceDescriptor = descriptorMapByInterface.get(aInterface);
-        if (interfaceDescriptor == null)
+        ClassDescriptor descriptor = descriptorMapByInterface.get(aInterface);
+        if (descriptor == null)
         {
             if (aInterface == Actor.class || aInterface == ActorObserver.class || !aInterface.isInterface())
             {
                 return null;
             }
 
-            interfaceDescriptor = new InterfaceDescriptor();
-            interfaceDescriptor.isObserver = ActorObserver.class.isAssignableFrom(aInterface);
-            interfaceDescriptor.factory = dynamicReferenceFactory.getFactoryFor(aInterface);
-            interfaceDescriptor.invoker = (ActorInvoker<Object>) interfaceDescriptor.factory.getInvoker();
+            descriptor = new ClassDescriptor();
+            descriptor.isObserver = ActorObserver.class.isAssignableFrom(aInterface);
+            if (aInterface.isInterface())
+            {
+                descriptor.factory = dynamicReferenceFactory.getFactoryFor(aInterface);
+            }
+            descriptor.invoker = (ObjectInvoker<Object>) descriptor.factory.getInvoker();
 
-            InterfaceDescriptor concurrentInterfaceDescriptor = descriptorMapByInterface.putIfAbsent(aInterface, interfaceDescriptor);
+            ClassDescriptor concurrentInterfaceDescriptor = descriptorMapByInterface.putIfAbsent(aInterface, descriptor);
             if (concurrentInterfaceDescriptor != null)
             {
-                descriptorMapByInterfaceId.put(interfaceDescriptor.factory.getInterfaceId(), concurrentInterfaceDescriptor);
+                descriptorMapByInterfaceId.put(descriptor.factory.getInterfaceId(), concurrentInterfaceDescriptor);
                 return concurrentInterfaceDescriptor;
             }
-
-
-            descriptorMapByInterfaceId.put(interfaceDescriptor.factory.getInterfaceId(), interfaceDescriptor);
+            descriptorMapByInterfaceId.put(descriptor.factory.getInterfaceId(), descriptor);
         }
-        return interfaceDescriptor;
+        return descriptor;
     }
 
-    private InterfaceDescriptor getDescriptor(final int interfaceId)
+    private ClassDescriptor getDescriptor(final int interfaceId)
     {
-        final InterfaceDescriptor interfaceDescriptor = descriptorMapByInterfaceId.get(interfaceId);
+        final ClassDescriptor interfaceDescriptor = descriptorMapByInterfaceId.get(interfaceId);
         if (interfaceDescriptor != null)
         {
             return interfaceDescriptor;
@@ -138,9 +139,9 @@ public class DefaultReferenceFactory implements ReferenceFactory
         return null;
     }
 
-    public ActorInvoker<?> getInvoker(Class clazz)
+    public ObjectInvoker<?> getInvoker(Class clazz)
     {
-        final InterfaceDescriptor descriptor = getDescriptor(clazz);
+        final ClassDescriptor descriptor = getDescriptor(clazz);
         if (descriptor == null)
         {
             return null;
@@ -152,9 +153,9 @@ public class DefaultReferenceFactory implements ReferenceFactory
         return descriptor.invoker;
     }
 
-    public ActorInvoker<?> getInvoker(final int interfaceId)
+    public ObjectInvoker<?> getInvoker(final int interfaceId)
     {
-        final InterfaceDescriptor descriptor = getDescriptor(interfaceId);
+        final ClassDescriptor descriptor = getDescriptor(interfaceId);
         if (descriptor == null)
         {
             return null;
@@ -168,25 +169,27 @@ public class DefaultReferenceFactory implements ReferenceFactory
 
 
     @Override
-    public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
+    public <T extends Actor> T getReference(BasicRuntime runtime, final Class<T> iClass, final Object id)
     {
-        ActorFactory<T> factory = getFactory(iClass);
-        return factory.createReference(String.valueOf(id));
+        ReferenceFactory<T> factory = getFactory(iClass);
+        final T reference = factory.createReference(String.valueOf(id));
+        ((RemoteReference) reference).runtime = runtime;
+        return reference;
     }
 
     @Override
     public <T extends ActorObserver> T getObserverReference(final UUID nodeId, final Class<T> iClass, final Object id)
     {
-        ActorFactory<T> factory = getFactory(iClass);
+        ReferenceFactory<T> factory = getFactory(iClass);
         final T reference = factory.createReference(String.valueOf(id));
-        ActorReference.setAddress((ActorReference<?>) reference, new NodeAddressImpl(nodeId));
+        RemoteReference.setAddress((RemoteReference<?>) reference, new NodeAddressImpl(nodeId));
         return reference;
     }
 
     @SuppressWarnings("unchecked")
-    private <T> ActorFactory<T> getFactory(final Class<T> iClass)
+    private <T> ReferenceFactory<T> getFactory(final Class<T> iClass)
     {
-        ActorFactory<T> factory = (ActorFactory<T>) factories.get(iClass);
+        ReferenceFactory<T> factory = (ReferenceFactory<T>) factories.get(iClass);
         if (factory == null)
         {
             if (!iClass.isInterface())
@@ -200,7 +203,7 @@ public class DefaultReferenceFactory implements ReferenceFactory
                 {
                     factoryClazz = factoryClazz.substring(1); // remove leading 'I'
                 }
-                factory = (ActorFactory<T>) Class.forName(ClassPath.getNullSafePackageName(iClass) + "." + factoryClazz).newInstance();
+                factory = (ReferenceFactory<T>) Class.forName(ClassPath.getNullSafePackageName(iClass) + "." + factoryClazz).newInstance();
             }
             catch (Exception e)
             {
@@ -239,7 +242,7 @@ public class DefaultReferenceFactory implements ReferenceFactory
         {
             throw new IllegalArgumentException("Not annotated with " + NoIdentity.class);
         }
-        return instance.getReference(actorInterface, id);
+        return instance.getReference(null, actorInterface, id);
     }
 
     public static <T extends ActorObserver> T observerRef(UUID nodeId, Class<T> actorObserverInterface, String id)
@@ -251,7 +254,7 @@ public class DefaultReferenceFactory implements ReferenceFactory
     @SuppressWarnings("unchecked")
     public static <T> T cast(Class<T> remoteInterface, Actor actor)
     {
-        return (T) Proxy.newProxyInstance(DefaultReferenceFactory.class.getClassLoader(), new Class[]{ remoteInterface },
+        return (T) Proxy.newProxyInstance(DefaultDescriptorFactory.class.getClassLoader(), new Class[]{ remoteInterface },
                 (proxy, method, args) -> {
                     // TODO: throw proper exceptions for the expected error scenarios (non task return),
                     final int methodId = instance.dynamicReferenceFactory.getMethodId(method);

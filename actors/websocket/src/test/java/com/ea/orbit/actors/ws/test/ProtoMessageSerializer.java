@@ -2,7 +2,7 @@ package com.ea.orbit.actors.ws.test;
 
 import com.ea.orbit.actors.extensions.MessageSerializer;
 import com.ea.orbit.actors.rpc.Msg;
-import com.ea.orbit.actors.runtime.ActorInvoker;
+import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.actors.runtime.Message;
 import com.ea.orbit.actors.runtime.MessageDefinitions;
@@ -34,7 +34,7 @@ public class ProtoMessageSerializer
                 (message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE
                         || message.getMessageType() == MessageDefinitions.REQUEST_MESSAGE))
         {
-            final ActorInvoker invoker = runtime.getInvoker(message.getInterfaceId());
+            final ObjectInvoker invoker = runtime.getInvoker(message.getInterfaceId());
             final Method method = invoker.getMethod(message.getMethodId());
 
             final Type[] genericParameterTypes = method.getGenericParameterTypes();

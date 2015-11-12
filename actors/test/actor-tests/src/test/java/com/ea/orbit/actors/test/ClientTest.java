@@ -32,7 +32,7 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.actors.test.actors.SomeActor;
 import com.ea.orbit.actors.test.actors.SomeChatRoom;
 import com.ea.orbit.concurrent.Task;
@@ -137,7 +137,7 @@ public class ClientTest extends ActorBaseTest
             SomeActor player = Actor.getReference(SomeActor.class, String.valueOf(i));
             client.bind();
             assertEquals("bla", player.sayHello("meh").join());
-            assertTrue(serverAddresses.contains(client.getHosting().locateActor((ActorReference<?>) player, true).join()));
+            assertTrue(serverAddresses.contains(client.getHosting().locateActor((RemoteReference<?>) player, true).join()));
         }
 
     }

@@ -30,8 +30,8 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.extensions.StorageExtension;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
-import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
+import com.ea.orbit.actors.runtime.RemoteReference;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -62,7 +62,7 @@ public class FakeStorageExtension implements StorageExtension
     {
         this.name = name;
         this.database = database;
-        mapper.registerModule(new ActorReferenceModule(DefaultReferenceFactory.get()));
+        mapper.registerModule(new ActorReferenceModule(DefaultDescriptorFactory.get()));
         mapper.enableDefaultTyping();
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
@@ -73,7 +73,7 @@ public class FakeStorageExtension implements StorageExtension
     }
 
     @Override
-    public Task<Void> clearState(final ActorReference<?> reference, final Object state)
+    public Task<Void> clearState(final RemoteReference<?> reference, final Object state)
     {
         database.remove(reference);
         return Task.done();
@@ -86,7 +86,7 @@ public class FakeStorageExtension implements StorageExtension
     }
 
     @Override
-    public Task<Boolean> readState(final ActorReference<?> reference, final Object state)
+    public Task<Boolean> readState(final RemoteReference<?> reference, final Object state)
     {
         String databaseObject = (String) database.get(reference);
         if (databaseObject != null)
@@ -107,7 +107,7 @@ public class FakeStorageExtension implements StorageExtension
     }
 
     @Override
-    public Task<Void> writeState(final ActorReference<?> reference, final Object state)
+    public Task<Void> writeState(final RemoteReference<?> reference, final Object state)
     {
         try
         {

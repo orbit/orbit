@@ -49,8 +49,9 @@ public abstract class AbstractActor<T>
 {
     T state;
     StorageExtension stateExtension;
-    ActorReference<?> reference;
+    RemoteReference<?> reference;
     Logger logger;
+    ActorRuntime runtime;
 
     protected AbstractActor()
     {
@@ -163,7 +164,7 @@ public abstract class AbstractActor<T>
      */
     protected Registration registerTimer(Callable<Task<?>> futureCallable, long dueTime, long period, TimeUnit timeUnit)
     {
-        return reference.runtime.registerTimer(this, futureCallable, dueTime, period, timeUnit);
+        return runtime.registerTimer(this, futureCallable, dueTime, period, timeUnit);
     }
 
     /**
@@ -180,7 +181,7 @@ public abstract class AbstractActor<T>
         {
             throw new IllegalArgumentException("This must implement IRemindable: " + this.getClass().getName());
         }
-        return reference.runtime.registerReminder((Remindable) reference, reminderName, dueTime, period, timeUnit);
+        return runtime.registerReminder((Remindable) reference, reminderName, dueTime, period, timeUnit);
     }
 
     /**
@@ -191,7 +192,7 @@ public abstract class AbstractActor<T>
      */
     protected Task<?> unregisterReminder(String reminderName)
     {
-        return reference.runtime.unregisterReminder((Remindable) reference, reminderName);
+        return runtime.unregisterReminder((Remindable) reference, reminderName);
     }
 
     /**
@@ -201,7 +202,7 @@ public abstract class AbstractActor<T>
      */
     protected String runtimeIdentity()
     {
-        return reference.runtime.runtimeIdentity();
+        return runtime.runtimeIdentity();
     }
 
     /**

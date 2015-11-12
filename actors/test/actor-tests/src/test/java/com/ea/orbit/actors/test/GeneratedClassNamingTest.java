@@ -1,7 +1,7 @@
 package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 
 import org.junit.Test;
 
@@ -19,7 +19,7 @@ public class GeneratedClassNamingTest extends ActorBaseTest
     @Test
     public void testReferenceName()
     {
-        final Class<? extends SomeName> aClass = DefaultReferenceFactory.ref(SomeName.class, "0").getClass();
+        final Class<? extends SomeName> aClass = DefaultDescriptorFactory.ref(SomeName.class, "0").getClass();
         assertEquals(SomeName.class.getName() + "$Reference", aClass.getName());
 
     }

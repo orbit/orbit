@@ -28,48 +28,55 @@
 
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.net.HandlerAdapter;
-import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.DefaultActorClassFinder;
+import com.ea.orbit.actors.test.actors.SomeActor;
+import com.ea.orbit.actors.test.actors.SomeActorImpl;
+import com.ea.orbit.actors.test.actors.SomeMatch;
+import com.ea.orbit.actors.test.actors.SomeMatchActor;
+import com.ea.orbit.actors.test.actors.SomePlayer;
+import com.ea.orbit.actors.test.actors.SomePlayerActor;
 import com.ea.orbit.concurrent.Task;
 
-public class ShortCircuitHandler extends HandlerAdapter
-{
-    private HandlerContext firstCtx;
-    private HandlerContext secondCtx;
+import org.junit.Test;
 
-    @Override
-    public Task connect(final HandlerContext ctx, final Object param) throws Exception
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.*;
+
+/**
+ * Test nodes that do not contain the same collection of actors.
+ */
+@SuppressWarnings("unused")
+public class RuntimeIdentityTest extends ActorBaseTest
+{
+    public interface IdentityGetter extends Actor
     {
-        if (ctx != firstCtx && ctx != secondCtx)
-        {
-            if (firstCtx == null)
-            {
-                firstCtx = ctx;
-            }
-            else if (secondCtx == null)
-            {
-                secondCtx = ctx;
-            }
-            else
-            {
-                throw new IllegalStateException("Connect called with 3 different contexts!");
-            }
-        }
-        ctx.fireActive();
-        return Task.done();
+        Task<String> getRuntimeIdentity();
     }
 
-    @Override
-    public Task write(final HandlerContext ctx, final Object msg) throws Exception
+    public static class MyActorActor extends AbstractActor implements IdentityGetter
     {
-        if (ctx == firstCtx)
+        @Override
+        public Task<String> getRuntimeIdentity()
         {
-            secondCtx.fireRead(msg);
+            return Task.fromValue(runtimeIdentity());
         }
-        else
-        {
-            firstCtx.fireRead(msg);
-        }
-        return Task.done();
+    }
+
+    @Test
+    public void getRuntimeIdentity()
+    {
+        createStage();
+        IdentityGetter identityGetter = Actor.getReference(IdentityGetter.class, "0");
+        assertNotNull(identityGetter.getRuntimeIdentity().join());
     }
 }

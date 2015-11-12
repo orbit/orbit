@@ -1,15 +1,21 @@
 package com.ea.orbit.actors.test;
 
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.annotation.OneWay;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.actors.runtime.DefaultClassDictionary;
 import com.ea.orbit.actors.runtime.Message;
 import com.ea.orbit.actors.runtime.MessageDefinitions;
 import com.ea.orbit.concurrent.Task;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Method;
 
 class ServerPeerExecutor extends HandlerAdapter
 {
@@ -42,14 +48,22 @@ class ServerPeerExecutor extends HandlerAdapter
             {
                 case MessageDefinitions.ONE_WAY_MESSAGE:
                 case MessageDefinitions.REQUEST_MESSAGE:
-//                    final Task<Object> result = (Task) stage.invoke(message.getInterfaceId(), message.getMethodId(), message.getObjectId(), message.getPayload());
-//                    result.whenComplete((r, e) -> sendResponseAndLogError(ctx,
-//                            messageType == MessageDefinitions.ONE_WAY_MESSAGE,
-//                            fromNode, messageId, r, e));
+                    final Class<?> clazz = DefaultClassDictionary.get().getClassById(message.getInterfaceId());
+                    final Addressable reference = (Addressable)stage.getReference((Class)clazz, message.getObjectId());
+                    final boolean oneWay = message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE;
+                    final Method method = stage.getInvoker(message.getInterfaceId()).getMethod(message.getMethodId());
+                    final Task<?> res = stage.invoke(reference, method,
+                            oneWay, message.getMethodId(),
+                            (Object[]) message.getPayload());
+                    res.whenComplete((r, e) ->
+                            sendResponseAndLogError(ctx,
+                                    messageType == MessageDefinitions.ONE_WAY_MESSAGE,
+                                    fromNode, messageId, r, e));
                     break;
             }
         }
     }
+
 
     protected void sendResponseAndLogError(HandlerContext ctx, boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
     {

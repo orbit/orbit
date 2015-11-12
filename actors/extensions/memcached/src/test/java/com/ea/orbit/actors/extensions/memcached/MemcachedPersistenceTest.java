@@ -30,7 +30,7 @@ package com.ea.orbit.actors.extensions.memcached;
 
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
-import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.actors.test.StorageBaseTest;
 import com.ea.orbit.actors.test.StorageTest;
 import com.ea.orbit.actors.test.StorageTestState;
@@ -65,7 +65,7 @@ public class MemcachedPersistenceTest extends StorageBaseTest
     public void initStorage()
     {
         mapper = new ObjectMapper();
-        mapper.registerModule(new ActorReferenceModule(DefaultReferenceFactory.get()));
+        mapper.registerModule(new ActorReferenceModule(DefaultDescriptorFactory.get()));
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)

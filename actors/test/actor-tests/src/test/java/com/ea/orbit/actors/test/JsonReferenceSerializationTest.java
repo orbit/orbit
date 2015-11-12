@@ -30,8 +30,8 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
-import com.ea.orbit.actors.runtime.ReferenceFactory;
-import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
+import com.ea.orbit.actors.runtime.DescriptorFactory;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 
 import org.junit.Test;
 
@@ -51,7 +51,7 @@ import static org.junit.Assert.assertEquals;
 
 public class JsonReferenceSerializationTest
 {
-    private ReferenceFactory factory = DefaultReferenceFactory.get();
+    private DescriptorFactory factory = DefaultDescriptorFactory.get();
 
     public static class RefHolder {
         SomeActor actor ;

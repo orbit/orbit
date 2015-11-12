@@ -1,17 +1,19 @@
 package com.ea.orbit.actors.extensions.json;
 
 import com.ea.orbit.actors.extensions.MessageSerializer;
-import com.ea.orbit.actors.runtime.ActorInvoker;
+import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.actors.runtime.Message;
 import com.ea.orbit.actors.runtime.MessageDefinitions;
-import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.List;
@@ -22,7 +24,7 @@ public class JsonMessageSerializer implements MessageSerializer
 
     public JsonMessageSerializer()
     {
-        mapper.registerModule(new ActorReferenceModule(DefaultReferenceFactory.get()));
+        mapper.registerModule(new ActorReferenceModule(DefaultDescriptorFactory.get()));
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
@@ -41,7 +43,7 @@ public class JsonMessageSerializer implements MessageSerializer
                 (message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE
                         || message.getMessageType() == MessageDefinitions.REQUEST_MESSAGE))
         {
-            final ActorInvoker invoker = runtime.getInvoker(message.getInterfaceId());
+            final ObjectInvoker invoker = runtime.getInvoker(message.getInterfaceId());
             final Method method = invoker.getMethod(message.getMethodId());
 
             final Object[] args = castArgs(method.getGenericParameterTypes(), message.getPayload());
@@ -54,6 +56,16 @@ public class JsonMessageSerializer implements MessageSerializer
     @Override
     public void serializeMessage(final BasicRuntime runtime, final OutputStream out, final Message message) throws Exception
     {
+        if (message.getPayload() instanceof Throwable && message.getMessageType() == MessageDefinitions.RESPONSE_ERROR)
+        {
+            final StringWriter sw = new StringWriter();
+            try (PrintWriter pw = new PrintWriter(sw))
+            {
+                ((Throwable) message.getPayload()).printStackTrace(pw);
+                pw.flush();
+            }
+            message.withPayload(sw.toString());
+        }
         mapper.writeValue(out, message);
     }
 

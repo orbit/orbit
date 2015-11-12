@@ -28,13 +28,44 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-public abstract class ActorFactory<T>
+import com.ea.orbit.concurrent.Task;
+
+import java.lang.reflect.Method;
+
+public abstract class ObjectInvoker<T>
 {
+    public Task<?> invoke(T target, int methodId, Object[] params)
+    {
+        throw new com.ea.orbit.exception.MethodNotFoundException(target + " MethodId :" + methodId);
+    }
+
+    /**
+     * Safely invokes a method, no exceptions ever thrown, and the returned Task is always non null.
+     *
+     * @param target   the target actor or observer implementation
+     * @param methodId the generated methodId
+     * @param params   array with the method parameters
+     * @return a non null task.
+     */
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
+    public final Task<?> safeInvoke(T target, int methodId, Object[] params)
+    {
+        try
+        {
+            final Task<?> task = invoke(target, methodId, params);
+            return task != null ? task : Task.done();
+        }
+        catch (Throwable ex)
+        {
+            return Task.fromException(ex);
+        }
+    }
+
+    public Method getMethod(final int methodId)
+    {
+        throw new com.ea.orbit.exception.MethodNotFoundException("MethodId :" + methodId);
+    }
+
     public abstract Class<T> getInterface();
 
-    public abstract int getInterfaceId();
-
-    public abstract ActorInvoker<T> getInvoker();
-
-    public abstract T createReference(final String id);
 }

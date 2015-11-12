@@ -34,9 +34,8 @@ import com.ea.orbit.actors.extensions.PipelineExtension;
 import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
-import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.TraceConstants;
 import com.ea.orbit.concurrent.Task;
@@ -80,13 +79,13 @@ public class TraceSender extends HandlerAdapter implements PipelineExtension
         if (source != null)
         {
             final String traceId = (String) actorTaskContext.getProperty(TraceConstants.TRACE_ID);
-            String sourceInterface = ActorReference.getInterfaceClass(source).getName();
+            String sourceInterface = RemoteReference.getInterfaceClass(source).getName();
             final Addressable toReference = invocation.getToReference();
-            String targetInterface = ActorReference.getInterfaceClass((ActorReference) toReference).getName();
+            String targetInterface = RemoteReference.getInterfaceClass((RemoteReference) toReference).getName();
             preInvoke(traceId, sourceInterface,
-                    String.valueOf(ActorReference.getId(source)),
+                    String.valueOf(RemoteReference.getId(source)),
                     targetInterface,
-                    String.valueOf(ActorReference.getId((ActorReference) toReference)),
+                    String.valueOf(RemoteReference.getId((RemoteReference) toReference)),
                     invocation.getMethodId(), invocation.getParams());
 
             //noinspection unchecked

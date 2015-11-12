@@ -28,44 +28,21 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.ActorObserver;
 
-import java.lang.reflect.Method;
+import java.util.UUID;
 
-public abstract class ActorInvoker<T>
+public interface DescriptorFactory
 {
-    public Task<?> invoke(T target, int methodId, Object[] params)
+    default <T extends Actor> T getReference(Class<T> iClass, Object id)
     {
-        throw new com.ea.orbit.exception.MethodNotFoundException(target + " MethodId :" + methodId);
+        return getReference(null, iClass, id);
     }
 
-    /**
-     * Safely invokes a method, no exceptions ever thrown, and the returned Task is always non null.
-     *
-     * @param target   the target actor or observer implementation
-     * @param methodId the generated methodId
-     * @param params   array with the method parameters
-     * @return a non null task.
-     */
-    @SuppressWarnings("PMD.AvoidCatchingThrowable")
-    public final Task<?> safeInvoke(T target, int methodId, Object[] params)
-    {
-        try
-        {
-            final Task<?> task = invoke(target, methodId, params);
-            return task != null ? task : Task.done();
-        }
-        catch (Throwable ex)
-        {
-            return Task.fromException(ex);
-        }
-    }
+    <T extends Actor> T getReference(BasicRuntime runtime, Class<T> iClass, Object id);
 
-    public Method getMethod(final int methodId)
-    {
-        throw new com.ea.orbit.exception.MethodNotFoundException("MethodId :" + methodId);
-    }
+    <T extends ActorObserver> T getObserverReference(UUID nodeId, Class<T> iClass, Object id);
 
-    public abstract Class<T> getInterface();
 
 }

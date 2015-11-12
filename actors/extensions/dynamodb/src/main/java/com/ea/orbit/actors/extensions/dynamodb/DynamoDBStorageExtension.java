@@ -30,8 +30,8 @@ package com.ea.orbit.actors.extensions.dynamodb;
 
 import com.ea.orbit.actors.extensions.StorageExtension;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
-import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.DefaultReferenceFactory;
+import com.ea.orbit.actors.runtime.RemoteReference;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.util.ExceptionUtils;
@@ -93,7 +93,7 @@ public class DynamoDBStorageExtension implements StorageExtension
     {
         tableHashMap = new ConcurrentHashMap<>();
         mapper = new ObjectMapper();
-        mapper.registerModule(new ActorReferenceModule(DefaultReferenceFactory.get()));
+        mapper.registerModule(new ActorReferenceModule(DefaultDescriptorFactory.get()));
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
@@ -132,10 +132,10 @@ public class DynamoDBStorageExtension implements StorageExtension
     }
 
     @Override
-    public Task<Void> clearState(final ActorReference<?> reference, final Object state)
+    public Task<Void> clearState(final RemoteReference<?> reference, final Object state)
     {
-        return getOrCreateTable(ActorReference.getInterfaceClass(reference).getSimpleName())
-                .thenAccept(table -> table.deleteItem("_id", String.valueOf(ActorReference.getId(reference))));
+        return getOrCreateTable(RemoteReference.getInterfaceClass(reference).getSimpleName())
+                .thenAccept(table -> table.deleteItem("_id", String.valueOf(RemoteReference.getId(reference))));
     }
 
     @Override
@@ -146,11 +146,11 @@ public class DynamoDBStorageExtension implements StorageExtension
 
     @Override
     @SuppressWarnings("unchecked")
-    public Task<Boolean> readState(final ActorReference<?> reference, final Object state)
+    public Task<Boolean> readState(final RemoteReference<?> reference, final Object state)
     {
 
-        return getOrCreateTable(ActorReference.getInterfaceClass(reference).getSimpleName())
-                .thenApply(table -> table.getItem("_id", String.valueOf(ActorReference.getId(reference))))
+        return getOrCreateTable(RemoteReference.getInterfaceClass(reference).getSimpleName())
+                .thenApply(table -> table.getItem("_id", String.valueOf(RemoteReference.getId(reference))))
                 .thenApply(item ->
                 {
                     if (item != null)
@@ -174,14 +174,14 @@ public class DynamoDBStorageExtension implements StorageExtension
 
     @Override
     @SuppressWarnings("unchecked")
-    public Task<Void> writeState(final ActorReference<?> reference, final Object state)
+    public Task<Void> writeState(final RemoteReference<?> reference, final Object state)
     {
         try
         {
             final String serializedState = mapper.writeValueAsString(state);
 
-            return getOrCreateTable(ActorReference.getInterfaceClass(reference).getSimpleName())
-                    .thenAccept(table -> table.putItem(new Item().withPrimaryKey("_id", String.valueOf(ActorReference.getId(reference))).withJSON("_state", serializedState)));
+            return getOrCreateTable(RemoteReference.getInterfaceClass(reference).getSimpleName())
+                    .thenAccept(table -> table.putItem(new Item().withPrimaryKey("_id", String.valueOf(RemoteReference.getId(reference))).withJSON("_state", serializedState)));
         }
         catch (JsonProcessingException e)
         {

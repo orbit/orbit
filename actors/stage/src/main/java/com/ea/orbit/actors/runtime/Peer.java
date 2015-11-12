@@ -29,6 +29,8 @@
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.extensions.MessageSerializer;
+import com.ea.orbit.actors.net.DefaultPipeline;
+import com.ea.orbit.actors.net.Pipeline;
 import com.ea.orbit.annotation.Wired;
 
 import java.time.Clock;
@@ -38,30 +40,35 @@ import java.time.Clock;
  */
 public class Peer
 {
-    private Runtime runtime;
-
-    private MessageSerializer serializer;
+    private Pipeline pipeline = new DefaultPipeline();
+    private BasicRuntime runtime;
 
     @Wired
     private Clock clock = Clock.systemUTC();
 
-    public void setRuntime(Runtime runtime)
+
+    public void setRuntime(BasicRuntime runtime)
     {
         this.runtime = runtime;
     }
 
     public void setSerializer(final MessageSerializer serializer)
     {
-        this.serializer = serializer;
+        //this.serializer = serializer;
     }
 
     public void setClock(final Clock clock)
     {
         this.clock = clock;
     }
+
     public <T> T getReference(final Class<T> iClass, final String id)
     {
         return null;
     }
 
+    public Pipeline getPipeline()
+    {
+        return pipeline;
+    }
 }

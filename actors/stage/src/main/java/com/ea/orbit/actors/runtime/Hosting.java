@@ -238,8 +238,8 @@ public class Hosting implements NodeCapabilities, Startable
 
     private Task<NodeAddress> locateActiveActor(final Addressable actorReference)
     {
-        ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
-                String.valueOf(((ActorReference) actorReference).id));
+        ActorKey addressable = new ActorKey(((RemoteReference) actorReference)._interfaceClass().getName(),
+                String.valueOf(((RemoteReference) actorReference).id));
         NodeAddress address = localAddressCache.get(addressable);
         if (address != null && activeNodes.containsKey(address))
         {
@@ -250,10 +250,10 @@ public class Hosting implements NodeCapabilities, Startable
 
     private Task<NodeAddress> locateAndActivateActor(final Addressable actorReference)
     {
-        final ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
-                String.valueOf(((ActorReference) actorReference).id));
+        final ActorKey addressable = new ActorKey(((RemoteReference) actorReference)._interfaceClass().getName(),
+                String.valueOf(((RemoteReference) actorReference).id));
 
-        final Class<?> interfaceClass = ((ActorReference<?>) actorReference)._interfaceClass();
+        final Class<?> interfaceClass = ((RemoteReference<?>) actorReference)._interfaceClass();
         final String interfaceClassName = interfaceClass.getName();
 
         // First we handle Stateless Worker as it's a special case
