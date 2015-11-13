@@ -39,28 +39,12 @@ public class DefaultHandlerContext implements HandlerContext
     DefaultHandlerContext inbound;
     String name;
 
-    private Handler handler()
-    {
-        return handler;
-    }
-
-    private DefaultHandlerContext inbound()
-    {
-        return inbound;
-    }
-
-    private DefaultHandlerContext outbound()
-    {
-        return outbound;
-    }
-
     @Override
     public HandlerContext fireExceptionCaught(final Throwable cause)
     {
-        final DefaultHandlerContext inbound = inbound();
         try
         {
-            inbound.handler().onExceptionCaught(inbound, cause);
+            inbound.handler.onExceptionCaught(inbound, cause);
         }
         catch (Exception e)
         {
@@ -72,10 +56,9 @@ public class DefaultHandlerContext implements HandlerContext
     @Override
     public HandlerContext fireActive()
     {
-        final DefaultHandlerContext inbound = inbound();
         try
         {
-            inbound.handler().onActive(inbound);
+            inbound.handler.onActive(inbound);
         }
         catch (Exception e)
         {
@@ -87,10 +70,9 @@ public class DefaultHandlerContext implements HandlerContext
     @Override
     public HandlerContext fireInactive()
     {
-        final DefaultHandlerContext inbound = inbound();
         try
         {
-            inbound.handler().onInactive(inbound);
+            inbound.handler.onInactive(inbound);
         }
         catch (Exception e)
         {
@@ -102,10 +84,9 @@ public class DefaultHandlerContext implements HandlerContext
     @Override
     public HandlerContext fireEventTriggered(final Object event)
     {
-        final DefaultHandlerContext inbound = inbound();
         try
         {
-            inbound.handler().onEventTriggered(inbound, event);
+            inbound.handler.onEventTriggered(inbound, event);
         }
         catch (Exception e)
         {
@@ -117,11 +98,9 @@ public class DefaultHandlerContext implements HandlerContext
     @Override
     public HandlerContext fireRead(final Object msg)
     {
-        final DefaultHandlerContext inbound = inbound();
         try
         {
-            final Handler handler = inbound.handler();
-            handler.onRead(inbound, msg);
+            inbound.handler.onRead(inbound, msg);
         }
         catch (Exception e)
         {
@@ -133,10 +112,9 @@ public class DefaultHandlerContext implements HandlerContext
     @Override
     public Task connect(final Object param)
     {
-        final DefaultHandlerContext outbound = outbound();
         try
         {
-            return outbound.handler().connect(outbound, param);
+            return outbound.handler.connect(outbound, param);
         }
         catch (Exception e)
         {
@@ -147,10 +125,9 @@ public class DefaultHandlerContext implements HandlerContext
     @Override
     public Task disconnect()
     {
-        final DefaultHandlerContext outbound = outbound();
         try
         {
-            return outbound.handler().disconnect(outbound);
+            return outbound.handler.disconnect(outbound);
         }
         catch (Exception e)
         {
@@ -161,10 +138,9 @@ public class DefaultHandlerContext implements HandlerContext
     @Override
     public Task close()
     {
-        final DefaultHandlerContext outbound = outbound();
         try
         {
-            return outbound.handler().close(outbound);
+            return outbound.handler.close(outbound);
         }
         catch (Exception e)
         {
@@ -175,11 +151,9 @@ public class DefaultHandlerContext implements HandlerContext
     @Override
     public Task write(final Object msg)
     {
-        final DefaultHandlerContext outbound = outbound();
         try
         {
-            final Handler handler = outbound.handler();
-            return handler.write(outbound, msg);
+            return outbound.handler.write(outbound, msg);
         }
         catch (Exception e)
         {

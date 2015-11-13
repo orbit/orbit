@@ -49,7 +49,7 @@ import com.google.common.cache.CacheBuilder;
 
 import java.util.concurrent.TimeUnit;
 
-public class TraceSender extends HandlerAdapter implements PipelineExtension
+public class TraceSender implements PipelineExtension
 {
 
     private Cache<String, TraceInfo> traceMap = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.MINUTES)

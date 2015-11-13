@@ -533,7 +533,7 @@ public class ActorBaseTest
 
     }
 
-    private class LoggingExtension extends HandlerAdapter implements PipelineExtension
+    private class LoggingExtension implements PipelineExtension
     {
         @Override
         public String getName()
