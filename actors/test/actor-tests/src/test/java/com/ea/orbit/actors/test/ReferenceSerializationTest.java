@@ -32,6 +32,7 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.cluster.NodeAddressImpl;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorKey;
 import com.ea.orbit.actors.test.actors.SomeMatch;
 import com.ea.orbit.actors.test.actors.SomePlayer;
@@ -49,6 +50,17 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("unused")
 public class ReferenceSerializationTest extends ActorBaseTest
 {
+
+    public interface Per1
+    {
+
+    }
+
+    public class Per1Actor extends AbstractActor implements Actor
+    {
+
+    }
+
     @Test
     public void referencePassingTest() throws ExecutionException, InterruptedException
     {

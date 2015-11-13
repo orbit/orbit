@@ -38,7 +38,9 @@ import com.ea.orbit.actors.annotation.StorageExtension;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.ActorClassFinder;
 import com.ea.orbit.actors.extensions.ActorExtension;
+import com.ea.orbit.actors.extensions.DefaultLoggerExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
+import com.ea.orbit.actors.extensions.LoggerExtension;
 import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.transactions.TransactionUtils;
@@ -133,6 +135,7 @@ public class Execution extends HandlerAdapter
 
     @Config("orbit.actors.stickyHeaders")
     private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
+    private LoggerExtension loggerExtension;
 
     public Execution()
     {
@@ -448,6 +451,7 @@ public class Execution extends HandlerAdapter
                         ActorTaskContext.current().setActor(actor);
                         actor.reference = entry.reference;
                         actor.runtime = stage;
+                        actor.logger = loggerExtension.getLogger(actor);
                         actor.stateExtension = getStorageExtensionFor(actor);
 
                         await(Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preActivation(actor))));
@@ -693,6 +697,15 @@ public class Execution extends HandlerAdapter
 
     public void start()
     {
+        if (loggerExtension == null)
+        {
+            loggerExtension = getFirstExtension(LoggerExtension.class);
+            if (loggerExtension == null)
+            {
+                loggerExtension = new DefaultLoggerExtension();
+            }
+        }
+
         finder = getFirstExtension(ActorClassFinder.class);
         if (finder == null)
         {
@@ -1095,7 +1108,7 @@ public class Execution extends HandlerAdapter
     }
 
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({"unchecked"})
     <T> T createReference(final NodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
