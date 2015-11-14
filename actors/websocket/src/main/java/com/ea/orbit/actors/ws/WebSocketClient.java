@@ -28,24 +28,25 @@
 
 package com.ea.orbit.actors.ws;
 
+import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.client.ClientPeer;
+import com.ea.orbit.actors.runtime.Agora;
 import com.ea.orbit.actors.runtime.Peer;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
 import javax.websocket.ClientEndpoint;
 import javax.websocket.ContainerProvider;
-import javax.websocket.DeploymentException;
-import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 
-import java.io.IOException;
 import java.net.URI;
 
 @ClientEndpoint
 public class WebSocketClient extends AbstractWebSocket
 {
-    public ClientPeer peer = new ClientPeer();
+    private ClientPeer peer = new ClientPeer();
+
+    private Agora agora;
 
     public ClientPeer getPeer()
     {
@@ -72,4 +73,21 @@ public class WebSocketClient extends AbstractWebSocket
         return Task.done();
     }
 
+    public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
+    {
+        return peer.getReference(iClass, id);
+    }
+
+    /**
+     * Register a object locally without notifying the cluster about it's location.
+     *
+     * @param remoteInterface the implemented remote interface class (T.class)
+     * @param implementation  a implementation of the remote interface
+     * @param <T>             the remote interface type
+     */
+
+    public <T> void registerLocalObject(final Class<T> remoteInterface, final T interfaceImplementation)
+    {
+
+    }
 }

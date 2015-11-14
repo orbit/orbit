@@ -120,7 +120,7 @@ public class WsTest
         final URI endpointURI = new URI("ws://localhost:" + localPort + "/websocket/con");
         final WebSocketClient clientEndPoint = new WebSocketClient();
         clientEndPoint.connect(endpointURI);
-        final Hello hello = clientEndPoint.peer.getReference(Hello.class, "0");
+        final Hello hello = clientEndPoint.getReference(Hello.class, "0");
 
         assertEquals("hello: test", hello.hello("test").join());
         clientEndPoint.close();

@@ -41,7 +41,6 @@ import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.DefaultLoggerExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.LoggerExtension;
-import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.Config;
@@ -49,13 +48,9 @@ import com.ea.orbit.annotation.OnlyIfActivated;
 import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.MapMaker;
 
@@ -82,17 +77,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.ea.orbit.async.Await.await;
 
-public class Execution extends HandlerAdapter
+public class Execution extends AbstractExecution
 {
-
-    private static final Logger logger = LoggerFactory.getLogger(Execution.class);
     private ActorClassFinder finder;
     private ConcurrentMap<Class<?>, InterfaceDescriptor> descriptorMapByInterface = new ConcurrentHashMap<>();
     private ConcurrentMap<Integer, InterfaceDescriptor> descriptorMapByInterfaceId = new ConcurrentHashMap<>();
@@ -103,14 +94,9 @@ public class Execution extends HandlerAdapter
     private Map<ActorObserver, ActorObserver> observerReferences = new MapMaker().weakKeys().makeMap();
 
     private Hosting hosting;
-    private ExecutionSerializer<Object> executionSerializer;
-    private int maxQueueSize = 10000;
     private Timer timer = new Timer("Orbit stage timer");
     private Clock clock = Clock.systemUTC();
     private long cleanupIntervalMillis = TimeUnit.MINUTES.toMillis(5);
-    private final LongAdder messagesReceived = new LongAdder();
-    private final LongAdder messagesHandled = new LongAdder();
-    private final LongAdder refusedExecutions = new LongAdder();
     private ExecutorService executor;
     private ActorFactoryGenerator dynamicReferenceFactory = new ActorFactoryGenerator();
 
@@ -379,49 +365,6 @@ public class Execution extends HandlerAdapter
     private void bind()
     {
         runtime.bind();
-    }
-
-    private static class EntryKey
-    {
-        int interfaceId;
-        Object id;
-
-        private EntryKey(final int interfaceId, final Object id)
-        {
-            this.interfaceId = interfaceId;
-            this.id = id;
-        }
-
-        @Override
-        public boolean equals(final Object o)
-        {
-            if (this == o) return true;
-            if (!(o instanceof EntryKey)) return false;
-
-            final EntryKey entryKey = (EntryKey) o;
-
-            if (interfaceId != entryKey.interfaceId) return false;
-            if (id != null ? !id.equals(entryKey.id) : entryKey.id != null) return false;
-
-            return true;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = interfaceId;
-            result = 31 * result + (id != null ? id.hashCode() : 0);
-            return result;
-        }
-
-        @Override
-        public String toString()
-        {
-            return "EntryKey{" +
-                    "interfaceId=" + interfaceId +
-                    ", id=" + id +
-                    '}';
-        }
     }
 
     private class Activation
@@ -862,52 +805,13 @@ public class Execution extends HandlerAdapter
                 .withPayload(res));
     }
 
-    public Task<?> onMessageReceived(Message message)
-    {
-        int interfaceId = message.getInterfaceId();
-        int methodId = message.getMethodId();
-        Object key = message.getObjectId();
-
-        EntryKey entryKey = new EntryKey(interfaceId, key);
-        if (logger.isDebugEnabled())
-        {
-            logger.debug("onMessageReceived for: " + entryKey);
-        }
-        messagesReceived.increment();
-        Task completion = new Task();
-        if (!executionSerializer.offerJob(entryKey, () ->
-                (handleOnMessageReceived(completion,
-                        entryKey,
-                        message.getFromNode(),
-                        message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE,
-                        message.getMessageId(),
-                        interfaceId, methodId, key,
-                        message.getHeaders(),
-                        (Object[]) message.getPayload()
-                )), maxQueueSize))
-        {
-            refusedExecutions.increment();
-
-            if (logger.isErrorEnabled())
-            {
-                logger.error("Execution refused: " + key + ":" + interfaceId + ":" + methodId + ":" + message.getMessageId());
-            }
-            completion.completeExceptionally(new UncheckedException("Execution refused"));
-        }
-        return completion;
-    }
 
     // this method is executed serially by entryKey
-    private Task<?> handleOnMessageReceived(final Task completion,
-                                            final EntryKey entryKey, final NodeAddress from,
-                                            final boolean oneway,
-                                            final int messageId, final int interfaceId,
-                                            final int methodId, final Object key,
-                                            final Object headers,
-                                            final Object[] params)
+    protected Task<?> handleOnMessageReceived(final Task completion,
+                                              final EntryKey entryKey, final Message message)
     {
         messagesHandled.increment();
-        final InterfaceDescriptor descriptor = getDescriptor(interfaceId);
+        final InterfaceDescriptor descriptor = getDescriptor(message.getInterfaceId());
         if (descriptor.isObserver)
         {
             final ActorObserver observer = observerInstances.get(entryKey);
@@ -920,7 +824,7 @@ public class Execution extends HandlerAdapter
             {
                 descriptor.invoker = dynamicReferenceFactory.getInvokerFor(observer.getClass());
             }
-            return descriptor.invoker.safeInvoke(observer, methodId, params)
+            return descriptor.invoker.safeInvoke(observer, message.getMethodId(), (Object[]) message.getPayload())
                     .handle((r, e) -> {
                         if (e == null)
                         {
@@ -935,6 +839,7 @@ public class Execution extends HandlerAdapter
         }
 
         ReferenceEntry entry = localActors.get(entryKey);
+        Object key = message.getObjectId();
 
         if (logger.isDebugEnabled())
         {
@@ -967,18 +872,18 @@ public class Execution extends HandlerAdapter
         final ReferenceEntry theEntry = entry;
         if (!entry.statelessWorker)
         {
-            return executeMessage(completion, theEntry, descriptor, methodId, headers, params, from);
+            return executeMessage(completion, theEntry, descriptor, message);
         }
         else
         {
             if (!executionSerializer.offerJob(null,
-                    () -> executeMessage(completion, theEntry, descriptor, methodId, headers, params, from),
+                    () -> executeMessage(completion, theEntry, descriptor, message),
                     maxQueueSize))
             {
                 refusedExecutions.increment();
                 if (logger.isErrorEnabled())
                 {
-                    logger.info("Execution refused: " + key + ":" + interfaceId + ":" + methodId + ":" + messageId);
+                    logger.info("Execution refused: " + key + ":" + message.getInterfaceId() + ":" + message.getMethodId() + ":" + message.getMessageId());
                 }
                 completion.completeExceptionally(new UncheckedException("Execution refused"));
             }
@@ -986,80 +891,23 @@ public class Execution extends HandlerAdapter
         }
     }
 
-    static class MessageContext
-    {
-        ReferenceEntry theEntry;
-        int methodId;
-        NodeAddress from;
-        long traceId;
-        public static final AtomicLong counter = new AtomicLong(0L);
-
-        public MessageContext(final ReferenceEntry theEntry, final int methodId, final NodeAddress from)
-        {
-            this.traceId = counter.incrementAndGet();
-            this.theEntry = theEntry;
-            this.methodId = methodId;
-            this.from = from;
-        }
-    }
-
-    private MessageContext getMessageContext()
-    {
-        final TaskContext current = TaskContext.current();
-        if (current == null)
-        {
-            return null;
-        }
-        final Object property = current.getProperty(MessageContext.class.getName());
-        if (!(property instanceof MessageContext))
-        {
-            return null;
-        }
-        return ((MessageContext) property);
-    }
-
-
-    public RemoteReference getCurrentActivation()
-    {
-        final MessageContext current = getMessageContext();
-        if (current == null)
-        {
-            return null;
-        }
-        return current.theEntry.reference;
-    }
-
-    public long getCurrentTraceId()
-    {
-        final MessageContext current = getMessageContext();
-        if (current == null)
-        {
-            return 0;
-        }
-        return current.traceId;
-    }
 
     private Task<Void> executeMessage(
             final Task completion,
             final ReferenceEntry theEntry,
             final InterfaceDescriptor descriptor,
-            final int methodId,
-            final Object headers,
-            final Object[] params,
-            final NodeAddress from)
+            final Message message)
     {
         final ActorTaskContext context = ActorTaskContext.pushNew();
         try
         {
             context.setProperty(ActorRuntime.class.getName(), this);
-            final MessageContext messageContext = new MessageContext(theEntry, methodId, from);
-            context.setProperty(MessageContext.class.getName(), messageContext);
             Activation activation = theEntry.popActivation();
             activation.lastAccess = clock.millis();
-            if (headers instanceof Map)
+            if (message.getHeaders() instanceof Map)
             {
                 @SuppressWarnings("unchecked")
-                final Map<Object, Object> headersMap = (Map) headers;
+                final Map<Object, Object> headersMap = (Map) message.getHeaders();
                 for (Map.Entry<Object, Object> e : headersMap.entrySet())
                 {
                     if (stickyHeaders.contains(e.getKey()))
@@ -1077,7 +925,7 @@ public class Execution extends HandlerAdapter
                 {
                     descriptor.invoker = dynamicReferenceFactory.getInvokerFor(actor.getClass());
                 }
-                return descriptor.invoker.safeInvoke(actor, methodId, params)
+                return descriptor.invoker.safeInvoke(actor, message.getMethodId(), (Object[]) message.getPayload())
                         .handle((r, e) -> {
                             if (e == null)
                             {
@@ -1108,7 +956,7 @@ public class Execution extends HandlerAdapter
     }
 
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings({ "unchecked" })
     <T> T createReference(final NodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
@@ -1207,11 +1055,11 @@ public class Execution extends HandlerAdapter
         {
             task = ctx.write(invocation);
         }
-        return task
-                .whenCompleteAsync((r, e) -> {
-                            // place holder, just to ensure the completion happens in another thread
-                        },
-                        executor);
+        return task.whenCompleteAsync((r, e) ->
+                {
+                    // place holder, just to ensure the completion happens in another thread
+                },
+                executor);
     }
 
     public Task<?> activationCleanup()

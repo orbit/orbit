@@ -28,12 +28,9 @@
 
 package com.ea.orbit.actors.client;
 
-import com.ea.orbit.actors.*;
+import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.actors.extensions.MessageSerializer;
-import com.ea.orbit.actors.net.DefaultPipeline;
-import com.ea.orbit.actors.net.Handler;
-import com.ea.orbit.actors.net.Pipeline;
 import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.actors.runtime.DefaultHandlers;
@@ -43,12 +40,10 @@ import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.Peer;
 import com.ea.orbit.actors.runtime.RemoteClient;
 import com.ea.orbit.actors.runtime.SerializationHandler;
-import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 
 import java.lang.reflect.Method;
-import java.time.Clock;
 
 /**
  * This works as a bridge to perform calls between the server and a client.

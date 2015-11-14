@@ -35,9 +35,9 @@ import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.LoggerExtension;
 import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.AbstractExecution;
 import com.ea.orbit.actors.runtime.ActorFactoryGenerator;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
-import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.ExecutionSerializer;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
@@ -310,7 +310,7 @@ public class ActorBaseTest
                 .extensions(lifetimeExtension)
                 .build();
 
-        addLogging(client);
+        installExtensions(client);
 
         client.start().join();
         client.bind();
@@ -345,7 +345,7 @@ public class ActorBaseTest
                 .build();
 
         dr.addSingleton(Stage.class, stage);
-        addLogging(stage);
+        installExtensions(stage);
 
         stage.start().join();
 
@@ -374,8 +374,9 @@ public class ActorBaseTest
         return dr;
     }
 
-    private void addLogging(final Stage stage)
+    protected void installExtensions(final Stage stage)
     {
+        stage.addExtension(new ActorTestLogging(this));
         stage.addExtension(new ActorTestLogging(this));
     }
 
@@ -451,7 +452,7 @@ public class ActorBaseTest
         {
             // this is very ad hoc, but should work for our tests, until execution changes.
             // for starters access to this map should be synchronized.
-            Map running = (Map) getField(getField(getField(stage, Stage.class, "execution"), Execution.class,
+            Map running = (Map) getField(getField(getField(stage, Stage.class, "execution"), AbstractExecution.class,
                     "executionSerializer"), ExecutionSerializer.class, "running");
 
             return running.size() == 0;

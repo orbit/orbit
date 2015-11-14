@@ -31,7 +31,8 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.test.actors.SomeActor;
+import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
 
@@ -42,13 +43,28 @@ import static org.junit.Assert.assertEquals;
 @SuppressWarnings("unused")
 public class SimpleTest extends ActorBaseTest
 {
+    public interface Hello extends Actor
+    {
+        Task<String> sayHello(String greeting);
+    }
+
+    public static class HelloActor extends AbstractActor implements Hello
+    {
+        @Override
+        public Task<String> sayHello(final String greeting)
+        {
+            return Task.fromValue(greeting);
+        }
+    }
 
     @Test
     public void singleActorSingleStageTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        SomeActor someActor = Actor.getReference(SomeActor.class, "1");
-        assertEquals("bla", someActor.sayHello("bla").join());
+        Hello hello = Actor.getReference(Hello.class, "1");
+        assertEquals("bla", hello.sayHello("bla").join());
+        assertEquals("hi", hello.sayHello("hi").join());
+        dumpMessages();
     }
 
 }

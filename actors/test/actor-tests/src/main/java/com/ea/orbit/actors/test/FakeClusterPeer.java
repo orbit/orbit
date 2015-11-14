@@ -108,44 +108,10 @@ public class FakeClusterPeer implements ClusterPeer
         this.messageListener = messageListener;
     }
 
-    private static final char[] HEXES = "0123456789abcdef".toCharArray();
-
-    static String getHex(byte[] raw)
-    {
-        int i = 0, j = 0;
-        int x = 0, w = ((raw.length / 32) + 1) * 32;
-        final StringBuilder hex = new StringBuilder(w * 4 + 32);
-        hex.append("size: ").append(raw.length).append("\r\n");
-        for (; x < w; x++)
-        {
-            if (i < raw.length)
-            {
-                final byte b = raw[i++];
-                hex.append(HEXES[(b & 0xF0) >> 4]).append(HEXES[b & 0x0F]);
-            }
-            else
-            {
-                hex.append(' ').append(' ');
-            }
-            hex.append((x % 8 == 7) ? '|' : ' ');
-            if (x % 32 == 31)
-            {
-                hex.append(' ');
-                for (; j < i; j++)
-                {
-                    final byte b = raw[j];
-                    hex.append(b >= 32 ? (char) raw[j] : "_");
-                }
-                hex.append("\r\n");
-            }
-        }
-        return hex.toString();
-    }
 
     @Override
     public void sendMessage(final NodeAddress to, final byte[] message)
     {
-        //System.out.println(getHex(message));
         startFuture.join();
         messagesSent.incrementAndGet();
         group.sendMessage(address, to, message);
