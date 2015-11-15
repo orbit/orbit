@@ -57,6 +57,6 @@ public class DiagnosticsHandler
     {
         final HealthcheckResult healthcheckResult = new HealthcheckResult();
         healthcheckResult.alive = orbitContainer.getContainerState() == Container.ContainerState.STARTED;
-        return new HealthcheckResult();
+        return healthcheckResult;
     }
 }
