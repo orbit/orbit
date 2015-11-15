@@ -46,8 +46,28 @@ public class DiagnosticsHandler
 
     public static class HealthcheckResult
     {
-        public Boolean alive = true;
-        public Date serverTime = new Date();
+        private Boolean alive = true;
+        private Date serverTime = new Date();
+
+        public Boolean getAlive()
+        {
+            return alive;
+        }
+
+        public void setAlive(Boolean alive)
+        {
+            this.alive = alive;
+        }
+
+        public Date getServerTime()
+        {
+            return serverTime;
+        }
+
+        public void setServerTime(Date serverTime)
+        {
+            this.serverTime = serverTime;
+        }
     }
 
     @GET
@@ -56,7 +76,7 @@ public class DiagnosticsHandler
     public HealthcheckResult getHealthCheck()
     {
         final HealthcheckResult healthcheckResult = new HealthcheckResult();
-        healthcheckResult.alive = orbitContainer.getContainerState() == Container.ContainerState.STARTED;
+        healthcheckResult.setAlive(orbitContainer.getContainerState() == Container.ContainerState.STARTED);
         return healthcheckResult;
     }
 }
