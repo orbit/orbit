@@ -10,21 +10,27 @@ repeat
             while (dequeue?)
                 :execute;
                 note right
-                  Pushes to an executor
-                  or run immediately
+                  Pushes to an executor or run immediately
                   ====
-                  obs.: if running immediately a
-                  very active target can prevent
-                  others from executing.
+                  Before running immediately it should
+                  ensure that it is running in the correct executor/thread pool
+                  ====
+                  obs.: if always running immediately
+                  N very active targets that run always synchronously
+                  can prevent others from executing,
+                  provided that N is close to the thread pool size.
                 end note
                 :whenComplete;
                 note right
-                  May be executed in
-                  the current thread or another.
+                  May be executed in the current thread or another.
                   The lock must not be thread bound.
                 end note
             endwhile
             :unlock;
+                note right
+                  The lock must not be thread bound.
+                  Unlock may run in a different thread.
+                end note
     else (no)
         end;
     endif
@@ -32,16 +38,15 @@ repeat
     note right
         necessary to prevent
         a race condition where a task
-        is left seating in the queue.
+        could be left seating in the queue.
         ====
-        (could happen if
+        (happens if
         thread1.dequeue==false,
         thread2.queue,
         thread2.tryLock==false,
         thread1.unlock)
     end note
 repeat while(queue not empty)
-:return;
 end;
 @enduml
 
