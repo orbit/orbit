@@ -108,7 +108,8 @@ public class EmbeddedHttpServer implements Startable
             classes.addAll(container.getClasses());
             for (final Class<?> c : container.getClasses())
             {
-                if (c.isAnnotationPresent(Singleton.class))
+                // Is a singleton or container itself?
+                if (c.isAnnotationPresent(Singleton.class) || c == Container.class)
                 {
                     Injections.addBinding(
                             Injections.newFactoryBinder(new Factory()
