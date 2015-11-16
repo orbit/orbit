@@ -31,9 +31,11 @@ package com.ea.orbit.actors.net;
 import com.ea.orbit.concurrent.Task;
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DefaultHandlerContext implements HandlerContext
 {
+    private static Logger logger = LoggerFactory.getLogger(DefaultHandlerContext.class);
     Handler handler;
     DefaultHandlerContext outbound;
     DefaultHandlerContext inbound;
@@ -157,6 +159,10 @@ public class DefaultHandlerContext implements HandlerContext
         }
         catch (Exception e)
         {
+            if (logger.isErrorEnabled())
+            {
+                logger.error("Error writing: ", e);
+            }
             return Task.fromException(e);
         }
     }

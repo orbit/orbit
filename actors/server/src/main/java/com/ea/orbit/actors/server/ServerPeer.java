@@ -29,6 +29,8 @@
 package com.ea.orbit.actors.server;
 
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.net.HandlerAdapter;
+import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.net.Pipeline;
 import com.ea.orbit.actors.runtime.DefaultHandlers;
 import com.ea.orbit.actors.runtime.Messaging;
@@ -59,10 +61,34 @@ public class ServerPeer extends Peer implements Startable
     public Task<?> start()
     {
         final Pipeline pipeline = getPipeline();
+        ServerExtension serverExtension = (ServerExtension) stage.getExtensions().stream()
+                .filter(e -> e instanceof ServerExtension).findFirst().orElse(null);
         pipeline.addLast(DefaultHandlers.EXECUTION, new ServerPeerExecutor(stage));
         pipeline.addLast(DefaultHandlers.MESSAGING, new Messaging());
         pipeline.addLast(DefaultHandlers.SERIALIZATION, new SerializationHandler(stage, getMessageSerializer()));
+        pipeline.addLast("serverNotification", new HandlerAdapter()
+        {
+            @Override
+            public void onInactive(final HandlerContext ctx) throws Exception
+            {
+                if (serverExtension != null)
+                {
+                    serverExtension.connectionClosed(ServerPeer.this);
+                }
+                super.onInactive(ctx);
+            }
+
+            @Override
+            public void onActive(final HandlerContext ctx) throws Exception
+            {
+                if (serverExtension != null)
+                {
+                    serverExtension.connectionOpened(ServerPeer.this);
+                }
+                super.onActive(ctx);
+            }
+        });
         pipeline.addLast(DefaultHandlers.NETWORK, getNetwork());
-        return getPipeline().connect(null);
+        return Task.done();
     }
 }

@@ -49,7 +49,48 @@ public abstract class AbstractWebSocket
 {
     protected Session session;
     protected HandlerContext peerContext;
-    protected Handler network = new HandlerAdapter()
+    protected Handler network = new WebSocketNetwork();
+
+    public void setMessageSerializer(MessageSerializer serializer)
+    {
+        peer().setMessageSerializer(serializer);
+    }
+
+    protected abstract Peer peer();
+
+
+    @OnOpen
+    public void onOpen(Session wsSession)
+    {
+        this.session = wsSession;
+
+        if (peer().getMessageSerializer() == null)
+        {
+            peer().setMessageSerializer(new JsonMessageSerializer());
+        }
+        peer().setNetworkHandler(network);
+        peer().start().join();
+        peerContext.fireActive();
+    }
+
+    @OnClose
+    public void onClose(Session userSession, CloseReason reason)
+    {
+        peerContext.fireInactive();
+    }
+
+    @OnMessage
+    public void onMessage(byte[] message, boolean last, Session session)
+    {
+        peerContext.fireRead(Pair.of(null, message));
+    }
+
+    public Task close()
+    {
+        return peer().getPipeline().close();
+    }
+
+    private class WebSocketNetwork extends HandlerAdapter
     {
         @Override
         public void onRegistered(final HandlerContext ctx) throws Exception
@@ -71,44 +112,5 @@ public abstract class AbstractWebSocket
             session.close();
             return Task.done();
         }
-    };
-
-    public void setMessageSerializer(MessageSerializer serializer)
-    {
-        peer().setMessageSerializer(serializer);
     }
-
-    protected abstract Peer peer();
-
-
-    @OnOpen
-    public void onOpen(Session wsSession)
-    {
-        this.session = wsSession;
-
-        if (peer().getMessageSerializer() == null)
-        {
-            peer().setMessageSerializer(new JsonMessageSerializer());
-        }
-        peer().setNetworkHandler(network);
-        peer().start().join();
-    }
-
-    @OnClose
-    public void onClose(Session userSession, CloseReason reason)
-    {
-        peerContext.fireInactive();
-    }
-
-    @OnMessage
-    public void onMessage(byte[] message, boolean last, Session session)
-    {
-        peerContext.fireRead(Pair.of(null, message));
-    }
-
-    public Task close()
-    {
-        return peer().getPipeline().close();
-    }
-
 }
