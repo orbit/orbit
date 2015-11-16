@@ -1,15 +1,16 @@
 @startuml
 title Serialized execution
+start;
 :enqueue;
-note right
+note left
   each target has its
   own queue and lock
 end note
 repeat
     if (try lock) then (yes)
-            while (dequeue?)
+            if (dequeue?)
                 :execute;
-                note right
+                note left
                   Pushes to an executor or run immediately
                   ====
                   Before running immediately it should
@@ -21,13 +22,13 @@ repeat
                   provided that N is close to the thread pool size.
                 end note
                 :whenComplete;
-                note right
+                note left
                   May be executed in the current thread or another.
                   The lock must not be thread bound.
                 end note
-            endwhile
+            endif
             :unlock;
-                note right
+                note left
                   The lock must not be thread bound.
                   Unlock may run in a different thread.
                 end note
@@ -35,7 +36,7 @@ repeat
         end;
     endif
     :double take;
-    note right
+    note left
         necessary to prevent
         a race condition where a task
         could be left seating in the queue.
