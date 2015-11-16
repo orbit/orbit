@@ -1,0 +1,45 @@
+@startuml
+title Execution
+start
+if (get descriptor) then (found)
+else if (should create) then (yes)
+    :create Descriptor;
+    :put if absent;
+else (no)
+    :not found;
+    end;
+endif
+if (actor) then
+    partition ActorDescriptor {
+        :execute serialized;
+        if(no instance) then
+            :check ownership;
+            :activate;
+        endif
+        :execute;
+    }
+else if(stateless)
+    partition StatelessDescriptor {
+        :get instance from pool;
+        if(no instance) then
+            :create instance;
+        endif
+        :execute;
+        :return instance to pool;
+    }
+else if(stateless singleton)
+    partition StatelessSingletonDescriptor {
+        if(no instance) then
+            :check ownership;
+            :create instance;
+        endif
+        :execute;
+    }
+else if(observer)
+    partition ObserverDescriptor {
+        :execute serialized;
+    }
+endif;
+end;
+@enduml
+
