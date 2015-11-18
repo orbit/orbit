@@ -32,23 +32,82 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.cluster.NodeAddressImpl;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorKey;
+import com.ea.orbit.actors.test.actors.Hello;
 import com.ea.orbit.actors.test.actors.SomeMatch;
 import com.ea.orbit.actors.test.actors.SomePlayer;
+import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
 
 import com.google.common.collect.Sets;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.fail;
+import static com.ea.orbit.async.Await.await;
+import static org.junit.Assert.*;
 
 @SuppressWarnings("unused")
 public class ReferenceSerializationTest extends ActorBaseTest
 {
+
+    public interface MapSer extends Actor
+    {
+        Task test(String key, Hello reference);
+    }
+
+    public static class MapSerActor extends AbstractActor<MapSerActor.State> implements MapSer
+    {
+        public static class State
+        {
+            Map<String, Hello> map = new HashMap<>();
+        }
+
+        public Task test(String key, Hello reference)
+        {
+            state().map.put(key, reference);
+            await(writeState());
+            return readState();
+        }
+    }
+
+    public interface MiscSer extends Actor
+    {
+        Task<MiscActor.State> test(String key, Hello reference);
+    }
+
+    public static class MiscActor extends AbstractActor<MiscActor.State> implements MiscSer
+    {
+        public static class State implements Serializable
+        {
+            Hello reference;
+            Map<String, Hello> map = new HashMap<>();
+            Set<Hello> set = new HashSet<>();
+            List<Hello> list = new ArrayList<>();
+        }
+
+        public Task<MiscActor.State> test(String key, Hello reference)
+        {
+            state().map.put(key, reference);
+            state().list.add(reference);
+            state().set.add(reference);
+            state().reference = reference;
+            await(writeState());
+            await(readState());
+            return Task.fromValue(state());
+
+        }
+    }
+
+
     @Test
     public void referencePassingTest() throws ExecutionException, InterruptedException
     {
@@ -103,6 +162,28 @@ public class ReferenceSerializationTest extends ActorBaseTest
                 }
             }
         }
+    }
+
+    @Test
+    public void mapSerializationTest() throws ExecutionException, InterruptedException
+    {
+        Stage stage1 = createStage();
+        MapSer mapSer = Actor.getReference(MapSer.class, "300");
+
+        mapSer.test("blah", Actor.getReference(Hello.class, "11")).join();
+    }
+
+
+    @Test
+    public void miscSerializationTest() throws ExecutionException, InterruptedException
+    {
+        Stage stage1 = createStage();
+        MiscSer mapSer = Actor.getReference(MiscSer.class, "300");
+        final MiscActor.State res
+                = mapSer.test("blah", Actor.getReference(Hello.class, "11")).join();
+        assertEquals(1, res.list.size());
+        assertEquals(1, res.map.size());
+        assertNotNull(res.reference);
     }
 
 
