@@ -140,7 +140,7 @@ public class Container
         int order;
     }
 
-    protected enum ContainerState
+    public enum ContainerState
     {
         CREATED,
         STARTING,
@@ -560,5 +560,7 @@ public class Container
         }
         return list;
     }
+
+    public ContainerState getContainerState() { return state; }
 
 }
