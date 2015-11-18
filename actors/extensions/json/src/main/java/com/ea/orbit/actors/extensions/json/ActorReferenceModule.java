@@ -31,6 +31,7 @@ package com.ea.orbit.actors.extensions.json;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.RefFactory;
 import com.ea.orbit.exception.UncheckedException;
@@ -98,7 +99,8 @@ public class ActorReferenceModule extends Module
         @Override
         public void serialize(final Object value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException
         {
-            final ActorReference<?> reference = (ActorReference<?>) value;
+            final ActorReference<?> reference = (ActorReference<?>)
+                    (value instanceof AbstractActor ? ActorReference.from((AbstractActor) value) : value);
             final String text = String.valueOf(ActorReference.getId(reference));
             final Class<?> interfaceClass = ActorReference.getInterfaceClass(reference);
             if (interfaceClass != null && (interfaceClass == rawClass))

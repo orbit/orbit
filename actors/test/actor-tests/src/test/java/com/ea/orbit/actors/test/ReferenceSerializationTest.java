@@ -82,6 +82,8 @@ public class ReferenceSerializationTest extends ActorBaseTest
     public interface MiscSer extends Actor
     {
         Task<MiscActor.State> test(String key, Hello reference);
+
+        Task<MiscActor.State> testThis(String key);
     }
 
     public static class MiscActor extends AbstractActor<MiscActor.State> implements MiscSer
@@ -92,6 +94,12 @@ public class ReferenceSerializationTest extends ActorBaseTest
             Map<String, Hello> map = new HashMap<>();
             Set<Hello> set = new HashSet<>();
             List<Hello> list = new ArrayList<>();
+
+
+            MiscSer reference2;
+            Map<String, MiscSer> map2 = new HashMap<>();
+            Set<MiscSer> set2 = new HashSet<>();
+            List<MiscSer> list2 = new ArrayList<>();
         }
 
         public Task<MiscActor.State> test(String key, Hello reference)
@@ -104,6 +112,18 @@ public class ReferenceSerializationTest extends ActorBaseTest
             await(readState());
             return Task.fromValue(state());
 
+        }
+
+        public Task<MiscActor.State> testThis(String key)
+        {
+            final MiscSer reference = this;
+            state().map2.put(key, reference);
+            state().list2.add(reference);
+            state().set2.add(reference);
+            state().reference2 = reference;
+            await(writeState());
+            await(readState());
+            return Task.fromValue(state());
         }
     }
 
@@ -184,6 +204,18 @@ public class ReferenceSerializationTest extends ActorBaseTest
         assertEquals(1, res.list.size());
         assertEquals(1, res.map.size());
         assertNotNull(res.reference);
+    }
+
+    @Test
+    public void thisSerializationTest() throws ExecutionException, InterruptedException
+    {
+        Stage stage1 = createStage();
+        MiscSer mapSer = Actor.getReference(MiscSer.class, "300");
+        final MiscActor.State res
+                = mapSer.testThis("blah").join();
+        assertEquals(1, res.list2.size());
+        assertEquals(1, res.map2.size());
+        assertNotNull(res.reference2);
     }
 
 
