@@ -31,11 +31,14 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.test.actors.ReferenceMapStorage;
 import com.ea.orbit.actors.test.actors.SomeMatch;
 import com.ea.orbit.actors.test.actors.SomePlayer;
 
 import org.junit.Test;
 
+import java.lang.ref.Reference;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -76,5 +79,23 @@ public class PersistenceTest extends ActorBaseTest
             assertEquals(1, someMatch_r2.getPlayers().get().size());
             assertEquals(somePlayer_r2, someMatch_r2.getPlayers().get().get(0));
         }
+    }
+
+    @Test
+    public void testReferenceMapPersistence() throws ExecutionException, InterruptedException
+    {
+
+        Stage stage1 = createStage();
+        ReferenceMapStorage storage = Actor.getReference(ReferenceMapStorage.class, "0");
+        SomePlayer player = Actor.getReference(SomePlayer.class, "1");
+        storage.addPlayerToMap(player).join();
+        stage1.stop().join();
+
+        Stage stage2 = createStage();
+        ReferenceMapStorage storage2 = Actor.getReference(ReferenceMapStorage.class, "0");
+        SomePlayer player2 = Actor.getReference(SomePlayer.class, "1");
+        Map<Integer,SomePlayer> playerMap = storage2.getPlayers().join();
+        assertTrue(playerMap.size() > 0);
+
     }
 }
