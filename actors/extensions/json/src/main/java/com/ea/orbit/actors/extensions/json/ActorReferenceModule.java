@@ -144,6 +144,10 @@ public class ActorReferenceModule extends Module
                     {
                         return new RefSerializer(type.getContentType().getRawClass());
                     }
+                    if (type.isMapLikeType())
+                    {
+                        return new RefSerializer(type.getContentType().getRawClass());
+                    }
                     if (clazz != null)
                     {
                         return new RefSerializer(clazz);
@@ -183,7 +187,7 @@ public class ActorReferenceModule extends Module
             this.factory = factory;
         }
 
-        @SuppressWarnings({"unchecked", "rawtypes"})
+        @SuppressWarnings({ "unchecked", "rawtypes" })
         @Override
         public Object deserialize(final JsonParser jsonParser, final DeserializationContext ctxt) throws IOException
         {
@@ -230,7 +234,7 @@ public class ActorReferenceModule extends Module
             this.factory = factory;
         }
 
-        @SuppressWarnings({"rawtypes", "unchecked"})
+        @SuppressWarnings({ "rawtypes", "unchecked" })
         @Override
         public Object deserialize(final JsonParser jsonParser, final DeserializationContext ctxt) throws IOException
         {
