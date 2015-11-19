@@ -33,7 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <parent>
         <groupId>com.ea.orbit</groupId>
         <artifactId>orbit-metrics-parent</artifactId>
-        <version>0.5.2-SNAPSHOT</version>
+        <version>0.5.3-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>orbit-metrics</artifactId>

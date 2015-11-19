@@ -98,9 +98,10 @@ public class ActorReferenceModule extends Module
         @Override
         public void serialize(final Object value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException
         {
-            final RemoteReference<?> reference = (RemoteReference<?>) value;
-            final String text = String.valueOf(RemoteReference.getId(reference));
-            final Class<?> interfaceClass = RemoteReference.getInterfaceClass(reference);
+            final ActorReference<?> reference = (ActorReference<?>)
+                    (value instanceof AbstractActor ? ActorReference.from((AbstractActor) value) : value);
+            final String text = String.valueOf(ActorReference.getId(reference));
+            final Class<?> interfaceClass = ActorReference.getInterfaceClass(reference);
             if (interfaceClass != null && (interfaceClass == rawClass))
             {
                 // escape starting '!'
@@ -144,6 +145,10 @@ public class ActorReferenceModule extends Module
                     {
                         return new RefSerializer(type.getContentType().getRawClass());
                     }
+                    if (type.isMapLikeType())
+                    {
+                        return new RefSerializer(type.getContentType().getRawClass());
+                    }
                     if (clazz != null)
                     {
                         return new RefSerializer(clazz);
@@ -183,7 +188,7 @@ public class ActorReferenceModule extends Module
             this.factory = factory;
         }
 
-        @SuppressWarnings({"unchecked", "rawtypes"})
+        @SuppressWarnings({ "unchecked", "rawtypes" })
         @Override
         public Object deserialize(final JsonParser jsonParser, final DeserializationContext ctxt) throws IOException
         {
@@ -230,7 +235,7 @@ public class ActorReferenceModule extends Module
             this.factory = factory;
         }
 
-        @SuppressWarnings({"rawtypes", "unchecked"})
+        @SuppressWarnings({ "rawtypes", "unchecked" })
         @Override
         public Object deserialize(final JsonParser jsonParser, final DeserializationContext ctxt) throws IOException
         {
