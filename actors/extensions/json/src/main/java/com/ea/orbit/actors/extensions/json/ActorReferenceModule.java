@@ -31,8 +31,9 @@ package com.ea.orbit.actors.extensions.json;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.actors.runtime.RemoteReference;
+import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.DescriptorFactory;
+import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.exception.UncheckedException;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -98,10 +99,10 @@ public class ActorReferenceModule extends Module
         @Override
         public void serialize(final Object value, final JsonGenerator jgen, final SerializerProvider provider) throws IOException
         {
-            final ActorReference<?> reference = (ActorReference<?>)
-                    (value instanceof AbstractActor ? ActorReference.from((AbstractActor) value) : value);
-            final String text = String.valueOf(ActorReference.getId(reference));
-            final Class<?> interfaceClass = ActorReference.getInterfaceClass(reference);
+            final RemoteReference<?> reference = (RemoteReference<?>)
+                    (value instanceof AbstractActor ? RemoteReference.from((AbstractActor) value) : value);
+            final String text = String.valueOf(RemoteReference.getId(reference));
+            final Class<?> interfaceClass = RemoteReference.getInterfaceClass(reference);
             if (interfaceClass != null && (interfaceClass == rawClass))
             {
                 // escape starting '!'
