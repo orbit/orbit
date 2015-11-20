@@ -66,6 +66,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -91,6 +92,7 @@ public class ActorBaseTest
     protected FakeClock clock = new FakeClock();
     protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
     protected List<Stage> stages = new ArrayList<>();
+    protected Description testDescription;
 
     protected static final ExecutorService commonPool = new ForwardingExecutorService()
     {
@@ -126,7 +128,7 @@ public class ActorBaseTest
 
     protected FakeSync fakeSync = new FakeSync();
     protected final StringBuilder hiddenLogData = new StringBuilder();
-    protected final ConcurrentLinkedQueue<String> sequenceDiagram = new ConcurrentLinkedQueue<>();
+    protected final List<String> sequenceDiagram = Collections.synchronizedList(new ArrayList<>());
 
     protected final SimpleLog hiddenLog = new SimpleLog("orbit")
     {
@@ -157,6 +159,7 @@ public class ActorBaseTest
             taskContext.push();
             taskContext.setProperty(TEST_NAME_PROP, description.getMethodName());
             taskContext.setProperty(ActorBaseTest.class.getName(), description);
+            testDescription = description;
         }
 
         /**
@@ -166,7 +169,7 @@ public class ActorBaseTest
         {
             try
             {
-                taskContext.push();
+                taskContext.pop();
             }
             catch (Exception ex)
             {
@@ -219,9 +222,7 @@ public class ActorBaseTest
 
     protected void dumpMessages()
     {
-        final TaskContext taskContext = TaskContext.current();
-
-        dumpMessages(taskContext != null ? (Description) taskContext.getProperty(ActorBaseTest.class.getName()) : null);
+        dumpMessages(testDescription);
     }
 
     protected void dumpMessages(Description description)
@@ -243,7 +244,7 @@ public class ActorBaseTest
                 Files.write(seqUml,
                         Stream.concat(Stream.concat(
                                 Stream.of("@startuml"),
-                                sequenceDiagram.stream()),
+                                Stream.of(sequenceDiagram.toArray()).map(o -> (String) o)),
                                 Stream.of("@enduml")
                         ).collect(Collectors.toList()));
                 out.println("Message sequence diagram written to:");
