@@ -85,4 +85,10 @@ public class ActorTaskContext extends TaskContext
         tc.properties().putAll(properties());
         return tc;
     }
+
+    public static AbstractActor<?> currentActor()
+    {
+        ActorTaskContext current = current();
+        return current != null ? current.getActor() : null;
+    }
 }

@@ -35,9 +35,11 @@ import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.MessageSerializer;
 import com.ea.orbit.actors.extensions.PipelineExtension;
+import com.ea.orbit.actors.extensions.StreamProvider;
 import com.ea.orbit.actors.net.DefaultPipeline;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorRuntime;
+import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.ClusterHandler;
 import com.ea.orbit.actors.runtime.DefaultHandlers;
 import com.ea.orbit.actors.runtime.Execution;
@@ -54,13 +56,19 @@ import com.ea.orbit.actors.runtime.ResponseCaching;
 import com.ea.orbit.actors.runtime.SerializationHandler;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
+import com.ea.orbit.actors.streams.AsyncObserver;
+import com.ea.orbit.actors.streams.AsyncStream;
+import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
+import com.ea.orbit.actors.streams.simple.SimpleStreamExtension;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
+import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.metrics.annotations.ExportMetric;
+import com.ea.orbit.util.StringUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -502,7 +510,19 @@ public class Stage implements Startable, ActorRuntime
                 });
 
 
+        StreamProvider defaultStreamProvider = extensions.stream()
+                .filter(p -> p instanceof StreamProvider)
+                .map(p -> (StreamProvider) p)
+                .filter(p -> StringUtils.equals(p.getName(), AsyncStream.DEFAULT_PROVIDER)).findFirst().orElse(null);
+
+        if (defaultStreamProvider == null)
+        {
+            defaultStreamProvider = new SimpleStreamExtension(AsyncStream.DEFAULT_PROVIDER);
+            extensions.add(defaultStreamProvider);
+        }
+
         execution.setExtensions(extensions);
+
         messaging.start();
         hosting.start();
         execution.start();
@@ -782,5 +802,77 @@ public class Stage implements Startable, ActorRuntime
     public ObjectInvoker<?> getInvoker(final int interfaceId)
     {
         return execution.getInvoker(interfaceId);
+    }
+
+
+    @Override
+    public StreamProvider getStreamProvider(final String name)
+    {
+        StreamProvider streamProvider = execution.getAllExtensions(StreamProvider.class).stream()
+                .filter(p -> StringUtils.equals(p.getName(), name))
+                .findFirst().orElseThrow(() -> new UncheckedException(String.format("Provider: %s not found", name)));
+
+        final AbstractActor<?> actor = ActorTaskContext.currentActor();
+        if (actor != null)
+        {
+            // wraps the stream provider to ensure sequential execution
+            return new StreamProvider()
+            {
+                @Override
+                public <T> AsyncStream<T> getStream(final Class<T> dataClass, final String id)
+                {
+                    final AsyncStream<T> stream = streamProvider.getStream(dataClass, id);
+                    return new AsyncStream<T>()
+                    {
+                        @Override
+                        public Task<Void> unsubscribe(final StreamSubscriptionHandle<T> handle)
+                        {
+                            return stream.unsubscribe(handle);
+                        }
+
+                        @Override
+                        public Task<StreamSubscriptionHandle<T>> subscribe(final AsyncObserver<T> observer)
+                        {
+                            return stream.subscribe(new AsyncObserver<T>()
+                            {
+                                @Override
+                                public Task<Void> onNext(final T data)
+                                {
+                                    // TODO use actor executor, when available
+                                    return observer.onNext(data);
+                                }
+
+                                @Override
+                                public Task<Void> onError(final Exception ex)
+                                {
+                                    // TODO use actor executor, when available
+                                    return observer.onError(ex);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public Task<Void> post(final T data)
+                        {
+                            return stream.post(data);
+                        }
+                    };
+                }
+
+                @Override
+                public String getName()
+                {
+                    return streamProvider.getName();
+                }
+            };
+        }
+        return streamProvider;
+    }
+
+
+    @Override
+    public <T> AsyncStream<T> getStream(final String provider, final Class<T> dataClass, final String id)
+    {
+        return getStreamProvider(provider).getStream(dataClass, id);
     }
 }

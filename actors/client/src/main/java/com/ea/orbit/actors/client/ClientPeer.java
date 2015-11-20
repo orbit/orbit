@@ -40,6 +40,7 @@ import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.Peer;
 import com.ea.orbit.actors.runtime.RemoteClient;
 import com.ea.orbit.actors.runtime.SerializationHandler;
+import com.ea.orbit.actors.streams.AsyncStream;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 
@@ -93,6 +94,12 @@ public class ClientPeer extends Peer implements BasicRuntime, Startable, RemoteC
 
     @Override
     public ObjectInvoker<?> getInvoker(final int interfaceId)
+    {
+        return null;
+    }
+
+    @Override
+    public <T> AsyncStream<T> getStream(final String provider, final Class<T> dataClass, final String id)
     {
         return null;
     }

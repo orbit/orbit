@@ -158,7 +158,7 @@ public class DefaultClassDictionary
         return clazz;
     }
 
-    public Integer getClassId(Class<?> clazz)
+    public int getClassId(Class<?> clazz)
     {
         Integer id = classToId.get(clazz);
         if (id != null)

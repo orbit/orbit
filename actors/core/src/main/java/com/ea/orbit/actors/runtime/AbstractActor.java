@@ -30,6 +30,7 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.extensions.StorageExtension;
+import com.ea.orbit.actors.extensions.StreamProvider;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -83,7 +84,7 @@ public abstract class AbstractActor<T>
     /**
      * Creates a default state representation for this actor
      */
-    @SuppressWarnings({"PMD.LooseCoupling", "unchecked"})
+    @SuppressWarnings({ "PMD.LooseCoupling", "unchecked" })
     protected void createDefaultState()
     {
         Class<?> c = getStateClass();
@@ -235,4 +236,11 @@ public abstract class AbstractActor<T>
         return Task.done();
     }
 
+    protected StreamProvider getStreamProvider(String name)
+    {
+        StreamProvider provider = runtime.getStreamProvider(name);
+
+        // TODO: wrap StreamProvider to use an actor executor for call backs
+        return provider;
+    }
 }

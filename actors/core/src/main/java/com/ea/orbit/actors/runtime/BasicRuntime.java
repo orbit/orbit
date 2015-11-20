@@ -31,6 +31,7 @@ package com.ea.orbit.actors.runtime;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.streams.AsyncStream;
 import com.ea.orbit.concurrent.Task;
 
 import java.lang.reflect.Method;
@@ -88,4 +89,11 @@ public interface BasicRuntime
     <T extends com.ea.orbit.actors.ActorObserver> T getRemoteObserverReference(NodeAddress address, final Class<T> iClass, final Object id);
 
     ObjectInvoker<?> getInvoker(int interfaceId);
+
+    static BasicRuntime getRuntime()
+    {
+        return RuntimeBinder.getRuntime();
+    }
+
+    <T> AsyncStream<T> getStream(String provider, Class<T> dataClass, String id);
 }

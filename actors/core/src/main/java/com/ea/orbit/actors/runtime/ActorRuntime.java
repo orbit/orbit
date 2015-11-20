@@ -31,6 +31,7 @@ package com.ea.orbit.actors.runtime;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.extensions.StreamProvider;
 import com.ea.orbit.concurrent.Task;
 
 import java.lang.ref.WeakReference;
@@ -106,6 +107,9 @@ public interface ActorRuntime extends BasicRuntime
 
     void bind();
 
+
+    StreamProvider getStreamProvider(String name);
+
     static ActorRuntime getRuntime()
     {
         return RuntimeBinder.getRuntime();
@@ -131,4 +135,5 @@ public interface ActorRuntime extends BasicRuntime
     {
         RuntimeBinder.runtimeCreated(runtimeRef);
     }
+
 }
