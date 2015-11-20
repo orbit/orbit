@@ -195,9 +195,10 @@ public class DefaultHandlerContext implements HandlerContext
         }
     }
 
-    static final class HeadContext extends DefaultHandlerContext
+    static class HeadContext extends DefaultHandlerContext
     {
         static Logger logger = org.slf4j.LoggerFactory.getLogger(HeadContext.class);
+        private boolean active;
 
         @Override
         public HandlerContext fireExceptionCaught(final Throwable cause)
@@ -209,12 +210,14 @@ public class DefaultHandlerContext implements HandlerContext
         @Override
         public HandlerContext fireActive()
         {
+            active = true;
             return this;
         }
 
         @Override
         public HandlerContext fireInactive()
         {
+            active = false;
             return this;
         }
 
@@ -228,6 +231,11 @@ public class DefaultHandlerContext implements HandlerContext
         public HandlerContext fireRead(final Object msg)
         {
             return this;
+        }
+
+        public boolean isActive()
+        {
+            return active;
         }
     }
 }

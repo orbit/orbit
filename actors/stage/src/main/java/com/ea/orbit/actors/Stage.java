@@ -825,9 +825,9 @@ public class Stage implements Startable, ActorRuntime
                     return new AsyncStream<T>()
                     {
                         @Override
-                        public Task<Void> unsubscribe(final StreamSubscriptionHandle<T> handle)
+                        public Task<Void> unSubscribe(final StreamSubscriptionHandle<T> handle)
                         {
-                            return stream.unsubscribe(handle);
+                            return stream.unSubscribe(handle);
                         }
 
                         @Override
@@ -849,6 +849,7 @@ public class Stage implements Startable, ActorRuntime
                                     return observer.onError(ex);
                                 }
                             });
+                            // TODO unsubscribe automatically on deactivation
                         }
 
                         @Override

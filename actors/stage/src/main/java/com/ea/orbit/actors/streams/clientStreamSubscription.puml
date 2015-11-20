@@ -1,0 +1,21 @@
+@startuml
+box "client 1"
+participant Alice
+participant ClientConnection
+Alice -> ClientConnection : subscribe
+end box
+box "server" #white
+participant Connection1
+ClientConnection -> ClientSubscriptions1 : subscribe
+ClientSubscriptions1 -> StreamProvider : subscribe
+end box
+
+StreamProvider -> Stream : subscribe
+Bob -> Stream : post("hello")
+Stream -> ClientSubscriptions1 : onNext("hello")
+ClientSubscriptions1 -> ClientConnection : onNext("hello")
+ClientConnection -> Alice : onNext("hello")
+ClientConnection -> Connection1 : disconnect
+Connection1 -> ClientSubscriptions1 : disconnect
+ClientSubscriptions1 -> StreamProvider : unsubscribe (all)
+@enduml

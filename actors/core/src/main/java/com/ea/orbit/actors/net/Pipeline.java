@@ -37,6 +37,8 @@ import com.ea.orbit.concurrent.Task;
 // Inspired by netty.io and apache mina
 public interface Pipeline
 {
+    boolean isActive();
+    
     void addFirst(String name, Handler handler);
 
     void addLast(String name, Handler handler);

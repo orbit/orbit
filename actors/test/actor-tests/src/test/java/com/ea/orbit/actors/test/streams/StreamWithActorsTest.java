@@ -55,7 +55,7 @@ public class StreamWithActorsTest extends ActorBaseTest
         @Override
         public Task<Void> doUnSubscribe(final String streamId)
         {
-            await(AsyncStream.getStream(String.class, streamId).unsubscribe(handle));
+            await(AsyncStream.getStream(String.class, streamId).unSubscribe(handle));
             return Task.done();
         }
     }

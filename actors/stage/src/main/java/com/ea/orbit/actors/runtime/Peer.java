@@ -40,7 +40,7 @@ import java.time.Clock;
 /**
  * This works as a bridge to perform calls between the server and a client.
  */
-public class Peer implements Startable
+public abstract class Peer implements Startable
 {
     private Pipeline pipeline = new DefaultPipeline();
     @Wired
@@ -83,4 +83,5 @@ public class Peer implements Startable
     {
         return pipeline;
     }
+
 }

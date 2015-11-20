@@ -261,7 +261,7 @@ public class ActorBaseTest
         }
     }
 
-    public ClientPeer createRemoteClient(Stage stage) throws ExecutionException, InterruptedException
+    public ClientPeer createRemoteClient(Stage stage)
     {
         final JsonMessageSerializer serializer = new JsonMessageSerializer();
         final ShortCircuitHandler network = new ShortCircuitHandler();
@@ -284,7 +284,7 @@ public class ActorBaseTest
         return fakeClient;
     }
 
-    public Stage createClient() throws ExecutionException, InterruptedException
+    public Stage createClient()
     {
         hiddenLog.info("Create Client");
         DependencyRegistry dr = new DependencyRegistry();

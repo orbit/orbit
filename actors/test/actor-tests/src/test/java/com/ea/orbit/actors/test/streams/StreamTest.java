@@ -151,7 +151,7 @@ public class StreamTest extends ActorBaseTest
             push2.complete(d);
             return Task.done();
         }).join();
-        test.unsubscribe(handle1).join();
+        test.unSubscribe(handle1).join();
 
         test3.post("hello2").join();
 

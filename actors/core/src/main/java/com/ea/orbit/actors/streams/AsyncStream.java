@@ -7,7 +7,7 @@ public interface AsyncStream<T>
 {
     String DEFAULT_PROVIDER = "default";
 
-    Task<Void> unsubscribe(StreamSubscriptionHandle<T> handler);
+    Task<Void> unSubscribe(StreamSubscriptionHandle<T> handle);
 
     Task<StreamSubscriptionHandle<T>> subscribe(AsyncObserver<T> observer);
 

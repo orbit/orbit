@@ -40,7 +40,9 @@ import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.Peer;
 import com.ea.orbit.actors.runtime.RemoteClient;
 import com.ea.orbit.actors.runtime.SerializationHandler;
+import com.ea.orbit.actors.streams.AsyncObserver;
 import com.ea.orbit.actors.streams.AsyncStream;
+import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 
@@ -101,6 +103,25 @@ public class ClientPeer extends Peer implements BasicRuntime, Startable, RemoteC
     @Override
     public <T> AsyncStream<T> getStream(final String provider, final Class<T> dataClass, final String id)
     {
-        return null;
+        return new AsyncStream<T>()
+        {
+            @Override
+            public Task<Void> unSubscribe(final StreamSubscriptionHandle<T> handle)
+            {
+                return null;
+            }
+
+            @Override
+            public Task<StreamSubscriptionHandle<T>> subscribe(final AsyncObserver<T> observer)
+            {
+                return null;
+            }
+
+            @Override
+            public Task<Void> post(final T data)
+            {
+                return null;
+            }
+        };
     }
 }

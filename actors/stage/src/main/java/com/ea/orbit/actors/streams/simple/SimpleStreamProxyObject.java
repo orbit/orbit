@@ -83,7 +83,7 @@ public class SimpleStreamProxyObject<T> implements SimpleStreamProxy<T>
         if (sharedHandle != null && observerMap.size() == 0)
         {
             // await(sharedHandle);
-            // TODO unsubscribe from the stream
+            // TODO unSubscribe from the stream
             provider.getHardRefs().remove(this);
         }
         return Task.done();

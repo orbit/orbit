@@ -37,15 +37,19 @@ import java.util.Map;
 
 public class Invocation
 {
-    private final Addressable toReference;
-    private final Method method;
-    private final boolean oneWay;
-    private final int methodId;
-    private final Object[] params;
+    private Addressable toReference;
+    private Method method;
+    private boolean oneWay;
+    private int methodId;
+    private Object[] params;
     private Map<?, ?> headers;
-    private final Task completion;
+    private Task completion;
     private NodeAddress toNode;
     private NodeAddress fromNode;
+
+    public Invocation()
+    {
+    }
 
     public Invocation(final Addressable toReference, final Method method, final boolean oneWay, final int methodId, final Object[] params, final Task completion)
     {

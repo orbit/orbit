@@ -39,7 +39,7 @@ import com.ea.orbit.exception.UncheckedException;
  */
 public class DefaultPipeline implements Pipeline
 {
-    private final DefaultHandlerContext head;
+    private final DefaultHandlerContext.HeadContext head;
     private final DefaultHandlerContext tail;
 
     public DefaultPipeline()
@@ -74,6 +74,12 @@ public class DefaultPipeline implements Pipeline
         {
             throw new UncheckedException(e);
         }
+    }
+
+    @Override
+    public boolean isActive()
+    {
+        return head.isActive();
     }
 
     @Override
