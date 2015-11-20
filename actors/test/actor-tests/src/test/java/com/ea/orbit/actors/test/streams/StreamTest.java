@@ -32,12 +32,12 @@ public class StreamTest extends ActorBaseTest
     @Test
     public void test2Stages()
     {
-        CompletableFuture<String> push = new Task<>();
+        CompletableFuture<String> push1 = new Task<>();
         final Stage stage1 = createStage();
         {
             AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
             test.subscribe(d -> {
-                push.complete(d);
+                push1.complete(d);
                 return Task.done();
             }).join();
         }
@@ -48,7 +48,41 @@ public class StreamTest extends ActorBaseTest
             AsyncStream<String> test2 = AsyncStream.getStream(String.class, "test");
             test2.post("hello");
         }
-        assertEquals("hello", push.join());
+        assertEquals("hello", push1.join());
+        dumpMessages();
+    }
+
+
+    @Test(timeout = 1000L)
+    public void test3Stages()
+    {
+        CompletableFuture<String> push1 = new Task<>();
+        final Stage stage1 = createStage();
+        final Stage stage2 = createStage();
+        final Stage stage3 = createStage();
+        {
+            AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
+            test.subscribe(d -> {
+                push1.complete(d);
+                return Task.done();
+            }).join();
+        }
+        CompletableFuture<String> push2 = new Task<>();
+        {
+            AsyncStream<String> test2 = AsyncStream.getStream(String.class, "test");
+            test2.subscribe(d -> {
+                push2.complete(d);
+                return Task.done();
+            }).join();
+        }
+
+        {
+            stage3.bind();
+            AsyncStream<String> test3 = AsyncStream.getStream(String.class, "test");
+            test3.post("hello");
+        }
+        assertEquals("hello", push1.join());
+        assertEquals("hello", push2.join());
         dumpMessages();
     }
 }
