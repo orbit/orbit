@@ -15,10 +15,12 @@ public class SimpleStreamProxyObject<T> implements SimpleStreamProxy<T>
     private Map<String, AsyncObserver<T>> observerMap = new LinkedHashMap<>();
     private volatile Task<String> sharedHandle;
     private final Object mutex = new Object();
+    private SimpleStreamExtension provider;
     private SimpleStream streamActorRef;
 
-    public SimpleStreamProxyObject(final SimpleStream streamActorRef)
+    public SimpleStreamProxyObject(final SimpleStreamExtension provider, final SimpleStream streamActorRef)
     {
+        this.provider = provider;
         this.streamActorRef = streamActorRef;
     }
 
@@ -59,6 +61,7 @@ public class SimpleStreamProxyObject<T> implements SimpleStreamProxy<T>
     public Task<StreamSubscriptionHandle<T>> subscribe(final AsyncObserver<T> observer)
     {
         String handle = IdUtils.urlSafeString(128);
+        provider.getHardRefs().add(this);
         observerMap.put(handle, observer);
         if (sharedHandle == null)
         {
@@ -81,6 +84,7 @@ public class SimpleStreamProxyObject<T> implements SimpleStreamProxy<T>
         {
             // await(sharedHandle);
             // TODO unsubscribe from the stream
+            provider.getHardRefs().remove(this);
         }
         return Task.done();
     }
