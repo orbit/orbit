@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 public class StreamTest extends ActorBaseTest
 {
     @SuppressWarnings("Duplicates")
-    @Test
+    @Test(timeout = 30_000L)
     public void test()
     {
         createStage();
@@ -33,7 +33,7 @@ public class StreamTest extends ActorBaseTest
         dumpMessages();
     }
 
-    @Test
+    @Test(timeout = 30_000L)
     public void test2Stages()
     {
         CompletableFuture<String> push1 = new Task<>();

@@ -42,7 +42,7 @@ import static org.junit.Assert.assertEquals;
 public class SimpleStreamTest extends ActorBaseTest
 {
     @SuppressWarnings("Duplicates")
-    @Test
+    @Test(timeout = 30_000L)
     public void test()
     {
         createStage();

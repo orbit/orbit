@@ -167,4 +167,9 @@ public class StreamWithActorsTest extends ActorBaseTest
         dumpMessages();
     }
 
+    // TODO test actor deactivation
+    // TODO test actor unSubscription
+    // TODO test stage crash (forceful removal from the network)
+    // TODO test stream persistence
+
 }
