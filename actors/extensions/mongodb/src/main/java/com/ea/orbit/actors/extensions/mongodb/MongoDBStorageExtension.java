@@ -30,8 +30,8 @@ package com.ea.orbit.actors.extensions.mongodb;
 
 import com.ea.orbit.actors.extensions.StorageExtension;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
-import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.ReferenceFactory;
+import com.ea.orbit.actors.runtime.RemoteReference;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -93,7 +93,7 @@ public class MongoDBStorageExtension implements StorageExtension
     public Task<Void> start()
     {
         mapper = new ObjectMapper();
-        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
+        mapper.registerModule(new ActorReferenceModule(DefaultDescriptorFactory.get()));
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
@@ -119,11 +119,11 @@ public class MongoDBStorageExtension implements StorageExtension
     }
 
     @Override
-    public Task<Void> clearState(final ActorReference<?> reference, final Object state)
+    public Task<Void> clearState(final RemoteReference<?> reference, final Object state)
     {
         DB db = mongoClient.getDB(database);
-        final DBCollection col = db.getCollection(ActorReference.getInterfaceClass(reference).getSimpleName());
-        col.remove(new BasicDBObject("_id", String.valueOf(ActorReference.getId(reference))));
+        final DBCollection col = db.getCollection(RemoteReference.getInterfaceClass(reference).getSimpleName());
+        col.remove(new BasicDBObject("_id", String.valueOf(RemoteReference.getId(reference))));
         return Task.done();
     }
 
@@ -136,14 +136,14 @@ public class MongoDBStorageExtension implements StorageExtension
 
     @Override
     @SuppressWarnings("unchecked")
-    public Task<Boolean> readState(final ActorReference<?> reference, final Object state)
+    public Task<Boolean> readState(final RemoteReference<?> reference, final Object state)
     {
         DB db = mongoClient.getDB(database);
-        final DBCollection col = db.getCollection(ActorReference.getInterfaceClass(reference).getSimpleName());
+        final DBCollection col = db.getCollection(RemoteReference.getInterfaceClass(reference).getSimpleName());
         JacksonDBCollection<Object, String> coll = JacksonDBCollection.wrap(
                 col, (Class<Object>) state.getClass(), String.class, mapper);
 
-        DBObject obj = col.findOne(String.valueOf(ActorReference.getId(reference)));
+        DBObject obj = col.findOne(String.valueOf(RemoteReference.getId(reference)));
         if (obj != null)
         {
             try
@@ -163,14 +163,14 @@ public class MongoDBStorageExtension implements StorageExtension
 
     @Override
     @SuppressWarnings("unchecked")
-    public Task<Void> writeState(final ActorReference<?> reference, final Object state)
+    public Task<Void> writeState(final RemoteReference<?> reference, final Object state)
     {
         DB db = mongoClient.getDB(database);
-        final DBCollection col = db.getCollection(ActorReference.getInterfaceClass(reference).getSimpleName());
+        final DBCollection col = db.getCollection(RemoteReference.getInterfaceClass(reference).getSimpleName());
         JacksonDBCollection<Object, String> coll = JacksonDBCollection.wrap(
                 col, (Class<Object>) state.getClass(), String.class, mapper);
         DBObject obj = coll.convertToDbObject(state);
-        obj.put("_id", String.valueOf(ActorReference.getId(reference)));
+        obj.put("_id", String.valueOf(RemoteReference.getId(reference)));
         col.save(obj);
         return Task.done();
     }

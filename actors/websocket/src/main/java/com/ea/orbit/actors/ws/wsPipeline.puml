@@ -1,0 +1,40 @@
+@startuml
+
+actor Application
+note right of Application : Actors, Observers
+
+artifact WebSocketEndpoint {
+    artifact "Message Pipeline"  {
+        interface " " as Pipeline
+        note right of Pipeline : protocol stack
+        agent Execution #LightBlue
+        agent Messaging #LightBlue
+        agent MessageSerializer
+        agent Endpoint
+        note right of Execution : Method Invocation
+        note right of Messaging {
+            Tracks responses,
+            Adds messageId
+        }
+        note right of MessageSerializer : Serialization, Replaceable
+        note right of Endpoint : WebSocket Endpoint
+    }
+}
+cloud Network
+
+
+Application --> Pipeline : [ invokeRemote ]
+Pipeline --> Execution : [ write ]
+Execution --> Messaging  : [ write ]
+Messaging --> MessageSerializer  : [ write ]
+MessageSerializer --> Endpoint : [ write ]
+Endpoint --> Network : [ send group message (bytes) ]
+
+Network --> Endpoint : [ receive group message (bytes) ]
+Endpoint --> MessageSerializer : [ onRead  ]
+MessageSerializer --> Messaging  : [ onRead  ]
+Messaging --> Execution  : [ onRead  ]
+Execution --> Pipeline : [ response ]
+Pipeline --> Application : [ response ]
+
+@enduml

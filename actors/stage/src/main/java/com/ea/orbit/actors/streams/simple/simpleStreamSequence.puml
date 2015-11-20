@@ -1,0 +1,33 @@
+@startuml
+
+title internal implementation
+
+box "Node 1" #white
+participant Alice
+participant StreamReference1
+participant SimpleStreamSubscriber
+end box
+
+box "Node 2"
+participant SimpleStream
+end box
+
+box "Node 3" #white
+participant StreamReference2
+participant Bob
+end box
+
+Alice -> StreamReference1: subscribe
+StreamReference1 -> SimpleStreamSubscriber : subscribe
+SimpleStreamSubscriber -> SimpleStream : subscribe
+
+Bob -> StreamReference2: post
+StreamReference2 -> SimpleStream : post
+SimpleStream -> SimpleStreamSubscriber : onNext
+SimpleStreamSubscriber -> Alice : observer.onNext
+
+Alice -> StreamReference1: unsubscribe
+StreamReference1 -> SimpleStreamSubscriber : unsubscribe
+SimpleStreamSubscriber -> SimpleStream : unsubscribe
+
+@enduml

@@ -137,7 +137,7 @@ public class ExceptionalTest extends ActorBaseTest
         assertTrue(ex.getMessage(), ex.getMessage().endsWith("as requested, one exception!"));
     }
 
-    @Test
+    @Test(timeout = 30_000L)
     public void checkingNonSerializable() throws ExecutionException, InterruptedException
     {
         // checks if exceptions with stuff that's not serializable get their stacktrace sent back to the caller.

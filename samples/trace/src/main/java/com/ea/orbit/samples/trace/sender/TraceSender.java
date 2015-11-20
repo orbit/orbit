@@ -30,10 +30,14 @@ package com.ea.orbit.samples.trace.sender;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Addressable;
-import com.ea.orbit.actors.extensions.InvokeHookExtension;
-import com.ea.orbit.actors.extensions.InvocationContext;
-import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.Execution;
+import com.ea.orbit.actors.extensions.PipelineExtension;
+import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ActorTaskContext;
+import com.ea.orbit.actors.runtime.DefaultHandlers;
+import com.ea.orbit.actors.runtime.Invocation;
+import com.ea.orbit.actors.runtime.RemoteReference;
+import com.ea.orbit.actors.runtime.TraceConstants;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.samples.trace.messaging.ITraceMessaging;
 import com.ea.orbit.samples.trace.messaging.TraceInfo;
@@ -42,13 +46,12 @@ import com.ea.orbit.samples.trace.messaging.TraceMulticastMessaging;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
-import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
-public class TraceSender implements InvokeHookExtension
+public class TraceSender implements PipelineExtension
 {
 
-    private Cache<Long, TraceInfo> traceMap = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.MINUTES)
+    private Cache<String, TraceInfo> traceMap = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.MINUTES)
             .build();
 
     private ITraceMessaging messaging = new TraceMulticastMessaging(); //default implementation
@@ -57,25 +60,50 @@ public class TraceSender implements InvokeHookExtension
     {
     }
 
-    public Task<?> invoke(InvocationContext context, Addressable toReference, Method method, int methodId, Object[] params)
+    @Override
+    public String getName()
     {
+        return "trace-sender";
+    }
 
-        final ActorReference source = ((Execution) context.getRuntime()).getCurrentActivation();
-        if (source!=null)
+    @Override
+    public String beforeHandlerName()
+    {
+        return DefaultHandlers.EXECUTION;
+    }
+
+    public Task<?> write(HandlerContext ctx, Object msg)
+    {
+        if (!(msg instanceof Invocation))
         {
-            final long traceId = ((Execution) context.getRuntime()).getCurrentTraceId();
-            String sourceInterface = ActorReference.getInterfaceClass(source).getName();
-            String targetInterface = ActorReference.getInterfaceClass((ActorReference) toReference).getName();
-            preInvoke(traceId, sourceInterface, String.valueOf(ActorReference.getId(source)), targetInterface, String.valueOf(ActorReference.getId((ActorReference) toReference)), methodId, params);
-            return context.invokeNext(toReference, method, methodId, params).thenApply((Object r) -> {
+            return ctx.write(msg);
+        }
+        final Invocation invocation = (Invocation) msg;
+
+        final ActorTaskContext actorTaskContext = ActorTaskContext.current();
+        final AbstractActor source = actorTaskContext != null ? actorTaskContext.getActor() : null;
+        if (source != null)
+        {
+            final String traceId = (String) actorTaskContext.getProperty(TraceConstants.TRACE_ID);
+            String sourceInterface = RemoteReference.getInterfaceClass(source).getName();
+            final Addressable toReference = invocation.getToReference();
+            String targetInterface = RemoteReference.getInterfaceClass((RemoteReference) toReference).getName();
+            preInvoke(traceId, sourceInterface,
+                    String.valueOf(RemoteReference.getId(source)),
+                    targetInterface,
+                    String.valueOf(RemoteReference.getId((RemoteReference) toReference)),
+                    invocation.getMethodId(), invocation.getParams());
+
+            //noinspection unchecked
+            return ((Task<Object>) ctx.write(msg)).thenApply((Object r) -> {
                 postInvoke(traceId, r);
                 return r;
             });
         }
-        return context.invokeNext(toReference, method, methodId, params);
+        return ctx.write(msg);
     }
 
-    public void preInvoke(long traceId, String sourceInterface, String sourceId, String targetInterface, String targetId, int methodId, Object[] params)
+    public void preInvoke(String traceId, String sourceInterface, String sourceId, String targetInterface, String targetId, int methodId, Object[] params)
     {
         try
         {
@@ -100,7 +128,7 @@ public class TraceSender implements InvokeHookExtension
         return;
     }
 
-    public void postInvoke(long traceId, Object result)
+    public void postInvoke(String traceId, Object result)
     {
         try
         {

@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.extensions;
 
-import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.concurrent.Task;
 
 /**
@@ -49,7 +49,7 @@ public interface StorageExtension extends ActorExtension
      * @param state the state object, not modified.
      * @return a completion promise
      */
-    Task<Void> clearState(ActorReference<?> reference, Object state);
+    Task<Void> clearState(RemoteReference<?> reference, Object state);
 
     /**
      * Asynchronously reads an actors state.
@@ -57,7 +57,7 @@ public interface StorageExtension extends ActorExtension
      * @param state the state object, modified by the storage provider implementation
      * @return a boolean completion promise of whether or not the state was modified
      */
-    Task<Boolean> readState(ActorReference<?> reference, Object state);
+    Task<Boolean> readState(RemoteReference<?> reference, Object state);
 
     /**
      * Asynchronously writes an actors state.
@@ -65,5 +65,5 @@ public interface StorageExtension extends ActorExtension
      * @param state the state object, not modified by the call
      * @return a completion promise
      */
-    Task<Void> writeState(ActorReference<?> reference, Object state);
+    Task<Void> writeState(RemoteReference<?> reference, Object state);
 }

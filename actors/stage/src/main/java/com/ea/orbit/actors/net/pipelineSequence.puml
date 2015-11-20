@@ -1,0 +1,34 @@
+@startuml
+
+activate Handler_1
+Handler_1 -> Handler_1 : ctx1.write
+Handler_1 --> Handler_2 : write
+deactivate Handler_1
+
+activate Handler_2
+Handler_2 -> Handler_2 : ctx2.write
+Handler_2 --> Handler_3 : write
+deactivate Handler_2
+
+activate Handler_3
+Handler_3 -> Handler_3 : ctx3.write
+Handler_3 --> Connection : write
+deactivate Handler_3
+
+
+activate Connection
+Connection -> Connection : ctx4.fireRead
+Connection --> Handler_3 : onRead
+deactivate Connection
+
+activate Handler_3
+Handler_3 -> Handler_3 : ctx3.fireRead
+Handler_3 --> Handler_2 : onRead
+deactivate Handler_3
+
+activate Handler_2
+Handler_2 -> Handler_2 : ctx2.fireRead
+Handler_2 --> Handler_1 : onRead
+deactivate Handler_2
+
+@enduml

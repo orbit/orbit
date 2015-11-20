@@ -108,6 +108,7 @@ public class FakeClusterPeer implements ClusterPeer
         this.messageListener = messageListener;
     }
 
+
     @Override
     public void sendMessage(final NodeAddress to, final byte[] message)
     {

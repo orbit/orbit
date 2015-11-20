@@ -30,8 +30,8 @@ package com.ea.orbit.actors.extensions.memcached;
 
 import com.ea.orbit.actors.extensions.AbstractStorageExtension;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
-import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.ReferenceFactory;
+import com.ea.orbit.actors.runtime.RemoteReference;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -66,7 +66,7 @@ public class MemcachedStorageExtension extends AbstractStorageExtension
     public Task<Void> start()
     {
         mapper = new ObjectMapper();
-        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
+        mapper.registerModule(new ActorReferenceModule(DefaultDescriptorFactory.get()));
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
@@ -82,7 +82,7 @@ public class MemcachedStorageExtension extends AbstractStorageExtension
     }
 
     @Override
-    public Task<Void> clearState(final ActorReference reference, final Object state)
+    public Task<Void> clearState(final RemoteReference reference, final Object state)
     {
         memcachedClient.delete(asKey(reference));
         return Task.done();
@@ -95,7 +95,7 @@ public class MemcachedStorageExtension extends AbstractStorageExtension
     }
 
     @Override
-    public Task<Boolean> readState(final ActorReference<?> reference, final Object state)
+    public Task<Boolean> readState(final RemoteReference<?> reference, final Object state)
     {
         try
         {
@@ -122,7 +122,7 @@ public class MemcachedStorageExtension extends AbstractStorageExtension
 
     @Override
     @SuppressWarnings("unchecked")
-    public Task<Void> writeState(final ActorReference reference, final Object state)
+    public Task<Void> writeState(final RemoteReference reference, final Object state)
     {
         try
         {
@@ -136,10 +136,10 @@ public class MemcachedStorageExtension extends AbstractStorageExtension
         }
     }
 
-    private String asKey(final ActorReference reference)
+    private String asKey(final RemoteReference reference)
     {
-        String clazzName = useShortKeys ? ActorReference.getInterfaceClass(reference).getSimpleName() : ActorReference.getInterfaceClass(reference).getName();
-        return clazzName + KEY_SEPARATOR + String.valueOf(ActorReference.getId(reference));
+        String clazzName = useShortKeys ? RemoteReference.getInterfaceClass(reference).getSimpleName() : RemoteReference.getInterfaceClass(reference).getName();
+        return clazzName + KEY_SEPARATOR + String.valueOf(RemoteReference.getId(reference));
     }
 
     public void setUseShortKeys(final boolean useShortKeys)

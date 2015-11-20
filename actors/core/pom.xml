@@ -42,6 +42,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <!-- check this link to understand why: http://jira.codehaus.org/browse/MCOMPILER-97 -->
+                    <compilerArgument>-proc:none</compilerArgument>
+                </configuration>
+            </plugin>
+            <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
                 <executions>
                     <execution>
@@ -55,9 +63,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                     <include>com.googlecode.gentyref:gentyref</include>
                                     <include>org.ow2.asm:asm</include>
                                     <include>org.javassist:javassist</include>
+                                    <include>org.yaml:snakeyaml</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
+                                <relocation>
+                                    <pattern>org.yaml.</pattern>
+                                    <shadedPattern>com.ea.orbit.actors.core.shaded.org.yaml.</shadedPattern>
+                                </relocation>
                                 <relocation>
                                     <pattern>com.googlecode.</pattern>
                                     <shadedPattern>com.ea.orbit.actors.core.shaded.com.googlecode.</shadedPattern>
@@ -103,6 +116,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
         </dependency>
     </dependencies>
 </project>

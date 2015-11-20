@@ -1,0 +1,51 @@
+@startuml
+
+title Pipeline Sequence
+actor  Application
+box "Handler 1" #LightBlue
+participant Handler_1
+participant Context_1
+end box
+
+box "Handler 2" #White
+participant Handler_2
+participant Context_2
+end box
+
+box "Handler 3" #LightBlue
+participant Handler_3
+participant Context_3
+end box
+
+box "Connection (last)" #White
+participant Connection
+participant Context_4
+end box
+
+Application -> Handler_1 : sendMessage
+Handler_1 -> Context_1 : fireWrite
+Context_1 --> Handler_2 : onWrite
+
+Handler_2 -> Context_2 : fireWrite
+Context_2 --> Handler_3 : onWrite
+
+Handler_3 -> Context_3 : fireWrite
+Context_3 --> Connection : onWrite
+Connection -->Network : send bytes
+
+|||
+
+Network--> Connection : receive bytes
+
+Connection -> Context_4 : fireRead
+Context_4 --> Handler_3 : onRead
+
+Handler_3 -> Context_3 : fireRead
+Context_3 --> Handler_2 : onRead
+
+Handler_2 -> Context_2 : fireRead
+Context_2 --> Handler_1 : onRead
+
+Handler_1 -> Application  : receiveMessage
+
+@enduml

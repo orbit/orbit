@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.runtime.ExecutionCacheManager;
+import com.ea.orbit.actors.runtime.ResponseCaching;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.test.actors.CacheResponse;
 import com.ea.orbit.actors.test.actors.CacheResponseActor;
@@ -77,7 +77,7 @@ public class CacheResponseTest extends ActorBaseTest
     public void testCacheDuration()
     {
         CacheResponseTestTicker ticker = new CacheResponseTestTicker();
-        ExecutionCacheManager.setDefaultCacheTicker(ticker);
+        ResponseCaching.setDefaultCacheTicker(ticker);
 
         CacheResponse actor = Actor.getReference(CacheResponse.class, UUID.randomUUID().toString());
 
@@ -142,7 +142,7 @@ public class CacheResponseTest extends ActorBaseTest
     public void testCacheFlush()
     {
         CacheResponseTestTicker ticker = new CacheResponseTestTicker();
-        ExecutionCacheManager.setDefaultCacheTicker(ticker);
+        ResponseCaching.setDefaultCacheTicker(ticker);
 
         CacheResponse actor = Actor.getReference(CacheResponse.class, UUID.randomUUID().toString());
 
@@ -218,7 +218,7 @@ public class CacheResponseTest extends ActorBaseTest
     @Before
     public void initializeCacheManager()
     {
-        ExecutionCacheManager.setDefaultCacheTicker(null);
+        ResponseCaching.setDefaultCacheTicker(null);
     }
 
     @After

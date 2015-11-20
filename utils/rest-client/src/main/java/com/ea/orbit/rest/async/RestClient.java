@@ -47,6 +47,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.InvocationCallback;
@@ -105,6 +106,11 @@ public class RestClient
         futureClass = futureClass1;
     }
 
+    public RestClient(String basePath)
+    {
+        this(createWebTarget(basePath));
+    }
+
     /**
      * Constructs an orbit rest client from a jax-rs WebTarget.
      *
@@ -121,6 +127,15 @@ public class RestClient
     {
         this.target = target;
         this.headers = headers;
+    }
+
+
+    static private WebTarget createWebTarget(String basePath)
+    {
+        return ClientBuilder
+                .newBuilder()
+                .build()
+                .target(basePath);
     }
 
     /**
@@ -191,7 +206,7 @@ public class RestClient
         if (proxy == null)
         {
             final WebTarget interfaceTarget = addPath(target, interfaceClass);
-            proxy = Proxy.newProxyInstance(RestClient.class.getClassLoader(), new Class[]{interfaceClass},
+            proxy = Proxy.newProxyInstance(RestClient.class.getClassLoader(), new Class[]{ interfaceClass },
                     (theProxy, method, args) -> invoke(interfaceClass, interfaceTarget, method, args));
             proxies.put(interfaceClass, proxy);
         }

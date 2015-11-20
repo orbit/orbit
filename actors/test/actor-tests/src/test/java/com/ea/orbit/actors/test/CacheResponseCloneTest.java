@@ -30,7 +30,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.runtime.ExecutionCacheManager;
+import com.ea.orbit.actors.runtime.ResponseCaching;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.JavaSerializationCloner;
@@ -168,7 +168,7 @@ public class CacheResponseCloneTest extends ActorBaseTest
     @Before
     public void initializeCacheManager()
     {
-        ExecutionCacheManager.setDefaultCacheTicker(null);
+        ResponseCaching.setDefaultCacheTicker(null);
     }
 
     @After

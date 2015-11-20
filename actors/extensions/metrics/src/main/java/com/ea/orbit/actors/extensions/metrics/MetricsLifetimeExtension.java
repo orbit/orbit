@@ -30,7 +30,7 @@ package com.ea.orbit.actors.extensions.metrics;
 
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.metrics.MetricsManager;
 
@@ -49,7 +49,7 @@ public class MetricsLifetimeExtension implements LifetimeExtension
     {
         try
         {
-            String actorId = ActorReference.getId(ActorReference.from(actor)).toString();
+            String actorId = RemoteReference.getId(RemoteReference.from(actor)).toString();
             MetricsManager.getInstance().registerExportedMetrics(actor, actorId);
         }
         catch(Exception ex)
@@ -67,7 +67,7 @@ public class MetricsLifetimeExtension implements LifetimeExtension
     {
         try
         {
-            String actorId = ActorReference.getId(ActorReference.from(actor)).toString();
+            String actorId = RemoteReference.getId(RemoteReference.from(actor)).toString();
             MetricsManager.getInstance().unregisterExportedMetrics(actor, actorId);
         }
         catch(Exception ex)

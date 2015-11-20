@@ -28,10 +28,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
+import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.actors.net.Channel;
+import com.ea.orbit.actors.net.HandlerAdapter;
+import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -39,23 +43,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Clock;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.function.Function;
 
-public class Messaging implements Startable
+/**
+ * Handles matching requests with responses
+ */
+public class Messaging extends HandlerAdapter implements Startable
 {
     private static Object NIL = null;
     private static final Logger logger = LoggerFactory.getLogger(Messaging.class);
-    // serializes the messages
-    // pass received messages to Execution
 
-    private Channel channel;
     private final AtomicInteger messageIdGen = new AtomicInteger();
     private final Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
     private final PriorityBlockingQueue<PendingResponse> pendingResponsesQueue = new PriorityBlockingQueue<>(50, new PendingResponseComparator());
@@ -64,9 +74,12 @@ public class Messaging implements Startable
     @Config("orbit.actors.defaultMessageTimeout")
     private long responseTimeoutMillis = 30_000;
 
+    @Config("orbit.actors.stickyHeaders")
+    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
+
     private final LongAdder networkMessagesReceived = new LongAdder();
     private final LongAdder responsesReceived = new LongAdder();
-    private Function<Message, Task<?>> invocationHandler;
+    private static Timer timer = new Timer("Messaging timer");
 
     /**
      * The messageId is used only to break a tie between messages that timeout at the same ms.
@@ -116,12 +129,6 @@ public class Messaging implements Startable
         }
     }
 
-    public void setChannel(final Channel channel)
-    {
-        this.channel = channel;
-        channel.setMessageListener(m -> onMessageReceived(m));
-    }
-
     public void setResponseTimeoutMillis(final long responseTimeoutMillis)
     {
         this.responseTimeoutMillis = responseTimeoutMillis;
@@ -132,7 +139,28 @@ public class Messaging implements Startable
         this.clock = clock;
     }
 
-    protected void onMessageReceived(Message message)
+    @Override
+    public Task connect(final HandlerContext ctx, final Object param) throws Exception
+    {
+        timer.schedule(new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                timeoutCleanup();
+            }
+        }, 1000, 1000);
+
+        return super.connect(ctx, param);
+    }
+
+    @Override
+    public void onRead(HandlerContext ctx, Object message)
+    {
+        this.onMessageReceived(ctx, (Message) message);
+    }
+
+    protected void onMessageReceived(HandlerContext ctx, Message message)
     {
         // deserialize and send to runtime
         try
@@ -145,14 +173,8 @@ public class Messaging implements Startable
             {
                 case MessageDefinitions.REQUEST_MESSAGE:
                 case MessageDefinitions.ONE_WAY_MESSAGE:
-                    handleInvocation(message)
-                            .handle((r, e) -> {
-                                        sendResponseAndLogError(
-                                                messageType == MessageDefinitions.ONE_WAY_MESSAGE,
-                                                fromNode, messageId, r, e);
-                                        return null;
-                                    }
-                            );
+                    // forwards the message to the next inbound handler
+                    ctx.fireRead(message);
                     return;
 
                 case MessageDefinitions.RESPONSE_OK:
@@ -181,7 +203,14 @@ public class Messaging implements Startable
                                 pendingResponse.internalComplete(res);
                                 return;
                             case MessageDefinitions.RESPONSE_ERROR:
-                                pendingResponse.internalCompleteExceptionally((Throwable) res);
+                                if (res instanceof Throwable)
+                                {
+                                    pendingResponse.internalCompleteExceptionally((Throwable) res);
+                                }
+                                else
+                                {
+                                    pendingResponse.internalCompleteExceptionally(new UncheckedException(String.valueOf(res)));
+                                }
                                 return;
                             case MessageDefinitions.RESPONSE_PROTOCOL_ERROR:
                                 pendingResponse.internalCompleteExceptionally(
@@ -213,40 +242,76 @@ public class Messaging implements Startable
         }
     }
 
-    protected Task<?> handleInvocation(final Message message)
+    @Override
+    public Task write(final HandlerContext ctx, final Object msg) throws Exception
     {
-        if (invocationHandler == null)
+        if (msg instanceof Invocation)
         {
-            return Task.fromException(new UncheckedException("No invocationHandler defined"));
+            return sendInvocation(ctx, (Invocation) msg);
         }
-        try
+        if (msg instanceof Message)
         {
-            return invocationHandler.apply(message);
+            return sendMessage(ctx, (Message) msg);
         }
-        catch (Throwable ex)
-        {
-            return Task.fromException(ex);
-        }
+        return super.write(ctx, msg);
     }
 
-    public void setInvocationHandler(Function<Message, Task<?>> listener)
+    public Task<?> sendInvocation(final HandlerContext ctx, Invocation invocation)
     {
-        invocationHandler = listener;
+        final Addressable toReference = invocation.getToReference();
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("sending message to " + toReference);
+        }
+        RemoteReference<?> actorReference = (RemoteReference<?>) toReference;
+        NodeAddress toNode = invocation.getToNode();
+
+        final LinkedHashMap<Object, Object> actualHeaders = new LinkedHashMap<>();
+        if (invocation.getHeaders() != null)
+        {
+            actualHeaders.putAll(invocation.getHeaders());
+        }
+        final TaskContext context = TaskContext.current();
+
+        // copy stick context valued to the message headers headers
+        if (context != null)
+        {
+            for (String key : stickyHeaders)
+            {
+                final Object value = context.getProperty(key);
+                if (value != null)
+                {
+                    actualHeaders.put(key, value);
+                }
+            }
+        }
+
+        final Message message = new Message()
+                .withMessageType(invocation.isOneWay() ? MessageDefinitions.REQUEST_MESSAGE : MessageDefinitions.REQUEST_MESSAGE)
+                .withToNode(toNode)
+                .withHeaders(actualHeaders)
+                .withInterfaceId(actorReference._interfaceId())
+                .withMethodId(invocation.getMethodId())
+                .withObjectId(RemoteReference.getId(actorReference))
+                .withPayload(invocation.getParams());
+
+
+        return sendMessage(ctx, message);
     }
 
-
-    private void sendResponse(NodeAddress to, int messageType, int messageId, Object res)
+    public Task<?> sendMessage(HandlerContext ctx, Message message)
     {
-        channel.sendMessage(new Message()
-                .withToNode(to)
-                .withMessageId(messageId)
-                .withMessageType(messageType)
-                .withPayload(res));
-    }
-
-    public Task<?> sendMessage(Message message)
-    {
-        int messageId = messageIdGen.incrementAndGet();
+        int messageId = message.getMessageId();
+        if (messageId == 0)
+        {
+            messageId = messageIdGen.incrementAndGet();
+            message.setMessageId(messageId);
+        }
+        if (message.getMessageType() != MessageDefinitions.REQUEST_MESSAGE)
+        {
+            ctx.write(message);
+            return Task.done();
+        }
         message.setMessageId(messageId);
         PendingResponse pendingResponse = new PendingResponse(messageId, clock.millis() + responseTimeoutMillis);
         final boolean oneWay = message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE;
@@ -258,7 +323,7 @@ public class Messaging implements Startable
         }
         try
         {
-            channel.sendMessage(message);
+            ctx.write(message);
             if (oneWay)
             {
                 pendingResponse.internalComplete(NIL);
@@ -295,75 +360,9 @@ public class Messaging implements Startable
         }
     }
 
-    protected void sendResponseAndLogError(boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
+    public void addStickyHeaders(Collection<String> stickyHeaders)
     {
-        if (exception != null && logger.isDebugEnabled())
-        {
-            logger.debug("Unknown application error. ", exception);
-        }
-
-        if (!oneway)
-        {
-            try
-            {
-                if (exception == null)
-                {
-                    sendResponse(from, MessageDefinitions.RESPONSE_OK, messageId, result);
-                }
-                else
-                {
-                    sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
-                }
-            }
-            catch (Exception ex2)
-            {
-                if (logger.isDebugEnabled())
-                {
-                    logger.debug("Error sending method result", ex2);
-                }
-                try
-                {
-                    if (exception != null)
-                    {
-                        sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, toSerializationSafeException(exception, ex2));
-                    }
-                    else
-                    {
-                        sendResponse(from, MessageDefinitions.RESPONSE_ERROR, messageId, ex2);
-                    }
-                }
-                catch (Exception ex3)
-                {
-                    if (logger.isDebugEnabled())
-                    {
-                        logger.debug("Failed twice sending result. ", ex2);
-                    }
-                    try
-                    {
-                        sendResponse(from, MessageDefinitions.RESPONSE_PROTOCOL_ERROR, messageId, "failed twice sending result");
-                    }
-                    catch (Exception ex4)
-                    {
-                        logger.error("Failed sending exception. ", ex4);
-                    }
-                }
-            }
-        }
-    }
-
-    private Throwable toSerializationSafeException(final Throwable notSerializable, final Throwable secondaryException)
-    {
-        final UncheckedException runtimeException = new UncheckedException(secondaryException.getMessage(), secondaryException, true, true);
-        for (Throwable t = notSerializable; t != null; t = t.getCause())
-        {
-            final RuntimeException newEx = new RuntimeException(
-                    t.getMessage() == null
-                            ? t.getClass().getName()
-                            : (t.getClass().getName() + ": " + t.getMessage()));
-            newEx.setStackTrace(t.getStackTrace());
-            runtimeException.addSuppressed(newEx);
-        }
-        return runtimeException;
+        this.stickyHeaders.addAll(stickyHeaders);
     }
 
 }

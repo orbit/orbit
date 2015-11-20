@@ -21,6 +21,7 @@ public class Message
     private Object payload;
     private int interfaceId;
     private int methodId;
+    private NodeAddress refNode;
     private Object objectId;
 
     public Message()

@@ -1,0 +1,53 @@
+@startuml
+title Serialized execution
+start;
+:enqueue;
+note left
+  each target has its
+  own queue and lock
+end note
+repeat
+    if (try lock) then (yes)
+            if (dequeue?)
+                :execute;
+                note left
+                  Pushes to an executor or run immediately
+                  ====
+                  Before running immediately it should
+                  ensure that it is running in the correct executor/thread pool
+                  ====
+                  obs.: if always running immediately
+                  N very active targets that run always synchronously
+                  can prevent others from executing,
+                  provided that N is close to the thread pool size.
+                end note
+                :whenComplete;
+                note left
+                  May be executed in the current thread or another.
+                  The lock must not be thread bound.
+                end note
+            endif
+            :unlock;
+                note left
+                  The lock must not be thread bound.
+                  Unlock may run in a different thread.
+                end note
+    else (no)
+        end;
+    endif
+    :double take;
+    note left
+        necessary to prevent
+        a race condition where a task
+        could be left seating in the queue.
+        ====
+        (happens if
+        thread1.dequeue==false,
+        thread2.queue,
+        thread2.tryLock==false,
+        thread1.unlock)
+    end note
+repeat while(queue not empty)
+end;
+@enduml
+

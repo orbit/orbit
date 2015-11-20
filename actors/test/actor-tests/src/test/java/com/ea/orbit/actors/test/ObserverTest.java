@@ -67,9 +67,9 @@ public class ObserverTest extends ActorBaseTest
     {
         Stage stage1 = createStage();
         SomeChatObserver observer = new SomeChatObserver();
-        com.ea.orbit.actors.test.actors.SomeChatObserver ref1 = stage1.getObserverReference(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer);
+        com.ea.orbit.actors.test.actors.SomeChatObserver ref1 = stage1.registerObserver(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer);
         assertNotNull(ref1);
-        com.ea.orbit.actors.test.actors.SomeChatObserver ref2 = stage1.getObserverReference(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer);
+        com.ea.orbit.actors.test.actors.SomeChatObserver ref2 = stage1.registerObserver(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer);
         assertNotNull(ref2);
         assertSame(ref1, ref2);
     }
@@ -80,7 +80,7 @@ public class ObserverTest extends ActorBaseTest
         Stage stage1 = createStage();
         SomeChatRoom chatRoom = Actor.getReference(SomeChatRoom.class, "1");
         SomeChatObserver observer = new SomeChatObserver();
-        final com.ea.orbit.actors.test.actors.SomeChatObserver observerReference = stage1.getObserverReference(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer);
+        final com.ea.orbit.actors.test.actors.SomeChatObserver observerReference = stage1.registerObserver(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer);
         assertNotNull(observerReference);
         chatRoom.join(observerReference).get();
         chatRoom.sendMessage(observerReference, "bla").get();
@@ -109,10 +109,10 @@ public class ObserverTest extends ActorBaseTest
         Stage stage2 = createStage();
 
         SomeChatObserver observer1 = new SomeChatObserver();
-        final com.ea.orbit.actors.test.actors.SomeChatObserver observerReference1 = stage1.getObserverReference(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer1);
+        final com.ea.orbit.actors.test.actors.SomeChatObserver observerReference1 = stage1.registerObserver(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer1);
 
         SomeChatObserver observer2 = new SomeChatObserver();
-        final com.ea.orbit.actors.test.actors.SomeChatObserver observerReference2 = stage2.getObserverReference(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer2);
+        final com.ea.orbit.actors.test.actors.SomeChatObserver observerReference2 = stage2.registerObserver(com.ea.orbit.actors.test.actors.SomeChatObserver.class, observer2);
 
 
         SomeChatRoom chatRoom = Actor.getReference(SomeChatRoom.class, "1");
@@ -166,7 +166,7 @@ public class ObserverTest extends ActorBaseTest
         Stage stage1 = createStage();
 
         SomeChatObserver observer1 = new SomeChatObserver();
-        final com.ea.orbit.actors.test.actors.SomeChatObserver ref1 = stage1.getObserverReference(observer1);
+        final com.ea.orbit.actors.test.actors.SomeChatObserver ref1 = stage1.registerObserver(null, observer1);
 
         ref1.receiveMessage(null, "hello").join();
         observer1 = null;

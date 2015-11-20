@@ -29,12 +29,9 @@
 package com.ea.orbit.actors.ws.test;
 
 import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
 import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.actors.runtime.Peer;
 import com.ea.orbit.actors.test.FakeClusterPeer;
-import com.ea.orbit.annotation.Wired;
+import com.ea.orbit.actors.ws.WebSocketClient;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.web.EmbeddedHttpServer;
@@ -42,15 +39,8 @@ import com.ea.orbit.web.EmbeddedHttpServer;
 import org.junit.Test;
 
 import javax.inject.Singleton;
-import javax.websocket.ClientEndpoint;
-import javax.websocket.CloseReason;
 import javax.websocket.ContainerProvider;
-import javax.websocket.OnClose;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
-import javax.websocket.server.ServerEndpoint;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -58,7 +48,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,8 +56,6 @@ import static org.junit.Assert.assertEquals;
 
 public class WsTest
 {
-    private static JsonMessageSerializer serializer = new JsonMessageSerializer();
-
     public interface HelloWebApi
     {
         @Path("/hello")
@@ -100,76 +87,6 @@ public class WsTest
         }
     }
 
-    @ServerEndpoint("/ws/test")
-    public static class MyActorWebSocket
-    {
-        private Session wsSession;
-        @Wired
-        private Stage stage;
-
-        private Peer peer = new Peer()
-        {
-            {
-                setSerializer(serializer);
-            }
-
-            @Override
-            protected void sendBinary(final ByteBuffer wrap)
-            {
-                wsSession.getAsyncRemote().sendBinary(wrap);
-            }
-        };
-
-        @OnOpen
-        public void onOpen(final Session session)
-        {
-            wsSession = session;
-            peer.setRuntime(stage.getRuntime());
-        }
-
-        @OnMessage
-        public void onMessage(byte[] message, boolean last, Session session)
-        {
-            peer.onMessage(ByteBuffer.wrap(message));
-        }
-    }
-
-
-    @ClientEndpoint
-    public static class MyActorWebSocketClient
-    {
-        private Session wsSession;
-        private Peer peer = new Peer()
-        {
-            {
-                setSerializer(serializer);
-            }
-
-            @Override
-            protected void sendBinary(final ByteBuffer wrap)
-            {
-                wsSession.getAsyncRemote().sendBinary(wrap);
-            }
-        };
-
-
-        @OnOpen
-        public void onOpen(Session wsSession)
-        {
-            this.wsSession = wsSession;
-        }
-
-        @OnClose
-        public void onClose(Session userSession, CloseReason reason)
-        {
-        }
-
-        @OnMessage
-        public void onMessage(byte[] message, boolean last, Session session)
-        {
-            peer.onMessage(ByteBuffer.wrap(message));
-        }
-    }
 
     @Singleton
     public static class SFakePeer extends FakeClusterPeer
@@ -191,7 +108,7 @@ public class WsTest
                 Hello.class,
                 HelloWebHandler.class,
                 EmbeddedHttpServer.class,
-                MyActorWebSocket.class));
+                MyWebSocketServer.class));
 
         final Container container = new Container();
         container.setProperties(properties);
@@ -200,12 +117,12 @@ public class WsTest
         final int localPort = container.get(EmbeddedHttpServer.class).getLocalPort();
         final WebSocketContainer wsContainer = ContainerProvider.getWebSocketContainer();
 
-        final URI endpointURI = new URI("ws://localhost:" + localPort + "/ws/test");
-        final MyActorWebSocketClient clientEndPoint = new MyActorWebSocketClient();
-        final Session session = wsContainer.connectToServer(clientEndPoint, endpointURI);
-        final Hello hello = clientEndPoint.peer.getReference(Hello.class, "0");
+        final URI endpointURI = new URI("ws://localhost:" + localPort + "/websocket/con");
+        final WebSocketClient clientEndPoint = new WebSocketClient();
+        clientEndPoint.connect(endpointURI);
+        final Hello hello = clientEndPoint.getReference(Hello.class, "0");
 
         assertEquals("hello: test", hello.hello("test").join());
-        session.close();
+        clientEndPoint.close();
     }
 }

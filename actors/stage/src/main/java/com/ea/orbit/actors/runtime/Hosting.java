@@ -42,6 +42,9 @@ import com.ea.orbit.exception.UncheckedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -54,6 +57,7 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Hosting implements NodeCapabilities, Startable
@@ -66,7 +70,11 @@ public class Hosting implements NodeCapabilities, Startable
     private volatile List<NodeInfo> serverNodes = new ArrayList<>(0);
     private final Object serverNodesUpdateMutex = new Object();
     private Execution execution;
-    private ConcurrentMap<ActorKey, NodeAddress> localAddressCache = new ConcurrentHashMap<>();
+    private Cache<ActorKey, NodeAddress> localAddressCache = CacheBuilder.newBuilder()
+            .maximumSize(10_000)
+            .expireAfterWrite(5, TimeUnit.MINUTES)
+            .build();
+
     private volatile ConcurrentMap<ActorKey, NodeAddress> distributedDirectory;
     @Config("orbit.actors.timeToWaitForServersMillis")
     private long timeToWaitForServersMillis = 30000;
@@ -167,6 +175,12 @@ public class Hosting implements NodeCapabilities, Startable
         return Task.done();
     }
 
+    public Task<Void> moved(ActorKey actorKey, NodeAddress oldAddress, NodeAddress newAddress)
+    {
+        localAddressCache.put(actorKey, newAddress);
+        return Task.done();
+    }
+
     public void setClusterPeer(final ClusterPeer clusterPeer)
     {
         this.clusterPeer = clusterPeer;
@@ -238,9 +252,9 @@ public class Hosting implements NodeCapabilities, Startable
 
     private Task<NodeAddress> locateActiveActor(final Addressable actorReference)
     {
-        ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
-                String.valueOf(((ActorReference) actorReference).id));
-        NodeAddress address = localAddressCache.get(addressable);
+        ActorKey addressable = new ActorKey(((RemoteReference) actorReference)._interfaceClass().getName(),
+                String.valueOf(((RemoteReference) actorReference).id));
+        NodeAddress address = localAddressCache.getIfPresent(addressable);
         if (address != null && activeNodes.containsKey(address))
         {
             return Task.fromValue(address);
@@ -250,14 +264,14 @@ public class Hosting implements NodeCapabilities, Startable
 
     private Task<NodeAddress> locateAndActivateActor(final Addressable actorReference)
     {
-        final ActorKey addressable = new ActorKey(((ActorReference) actorReference)._interfaceClass().getName(),
-                String.valueOf(((ActorReference) actorReference).id));
+        final ActorKey addressable = new ActorKey(((RemoteReference) actorReference)._interfaceClass().getName(),
+                String.valueOf(((RemoteReference) actorReference).id));
 
-        final Class<?> interfaceClass = ((ActorReference<?>) actorReference)._interfaceClass();
+        final Class<?> interfaceClass = ((RemoteReference<?>) actorReference)._interfaceClass();
         final String interfaceClassName = interfaceClass.getName();
 
         // First we handle Stateless Worker as it's a special case
-        if(interfaceClass.isAnnotationPresent(StatelessWorker.class))
+        if (interfaceClass.isAnnotationPresent(StatelessWorker.class))
         {
             // Do we want to place locally?
             if (shouldPlaceLocally(interfaceClass))
@@ -271,7 +285,7 @@ public class Hosting implements NodeCapabilities, Startable
         }
 
         // Get the existing activation from the local cache (if any)
-        NodeAddress address = localAddressCache.get(addressable);
+        NodeAddress address = localAddressCache.getIfPresent(addressable);
 
         // Is this actor already activated and in the local cache? If so, we're done
         if (address != null && activeNodes.containsKey(address))
@@ -301,7 +315,7 @@ public class Hosting implements NodeCapabilities, Startable
             if (nodeAddress != null)
             {
                 // Target node still valid?
-                if(activeNodes.containsKey(nodeAddress))
+                if (activeNodes.containsKey(nodeAddress))
                 {
                     // Cache locally
                     localAddressCache.put(addressable, nodeAddress);
@@ -322,7 +336,7 @@ public class Hosting implements NodeCapabilities, Startable
             }
 
             // Do we have a target node yet?
-            if(nodeAddress == null)
+            if (nodeAddress == null)
             {
                 // If not, select randomly
                 nodeAddress = selectNode(interfaceClassName, true);

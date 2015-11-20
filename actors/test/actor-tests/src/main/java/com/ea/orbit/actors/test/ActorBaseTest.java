@@ -29,21 +29,16 @@
 package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.annotation.OneWay;
-import com.ea.orbit.actors.extensions.InvocationContext;
-import com.ea.orbit.actors.extensions.InvokeHookExtension;
+import com.ea.orbit.actors.client.ClientPeer;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
+import com.ea.orbit.actors.extensions.LoggerExtension;
 import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.AbstractExecution;
 import com.ea.orbit.actors.runtime.ActorFactoryGenerator;
-import com.ea.orbit.actors.runtime.ActorReference;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
-import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.ExecutionSerializer;
-import com.ea.orbit.actors.runtime.NodeCapabilities;
-import com.ea.orbit.actors.runtime.ReminderController;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.concurrent.ExecutorUtils;
@@ -53,52 +48,51 @@ import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.injection.DependencyRegistry;
 
 import org.apache.commons.logging.impl.SimpleLog;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.ForwardingExecutorService;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.NumberFormat;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.ea.orbit.actors.Stage.Builder;
-import static com.ea.orbit.actors.Stage.StageMode;
 import static org.junit.Assert.fail;
 
 @SuppressWarnings("VisibilityModifierCheck")
 public class ActorBaseTest
 {
+    static final String TEST_NAME_PROP = ActorBaseTest.class.getName() + ".testName";
+    protected LoggerExtension loggerExtension = new TestLogger(this);
+    protected Logger logger = LoggerFactory.getLogger(this.getClass());
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
     protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
-
-    //protected ConcurrentHashMap<Stage, FakeServerPeer> fakeServerPeers = new ConcurrentHashMap<>();
+    protected List<Stage> stages = new ArrayList<>();
+    protected Description testDescription;
 
     protected static final ExecutorService commonPool = new ForwardingExecutorService()
     {
@@ -133,9 +127,8 @@ public class ActorBaseTest
     };
 
     protected FakeSync fakeSync = new FakeSync();
-    private AtomicLong invocationId = new AtomicLong();
     protected final StringBuilder hiddenLogData = new StringBuilder();
-    protected final List<String> messageSequence = Collections.synchronizedList(new LinkedList<>());
+    protected final List<String> sequenceDiagram = Collections.synchronizedList(new ArrayList<>());
 
     protected final SimpleLog hiddenLog = new SimpleLog("orbit")
     {
@@ -154,7 +147,6 @@ public class ActorBaseTest
         }
     };
 
-    private static final String TEST_NAME_PROP = ActorBaseTest.class.getName() + ".testName";
 
     @Rule
     public TestRule dumpLogs = new TestWatcher()
@@ -163,9 +155,11 @@ public class ActorBaseTest
 
         protected void starting(Description description)
         {
+            logger = loggerExtension.getLogger(description.getMethodName());
             taskContext.push();
             taskContext.setProperty(TEST_NAME_PROP, description.getMethodName());
             taskContext.setProperty(ActorBaseTest.class.getName(), description);
+            testDescription = description;
         }
 
         /**
@@ -175,7 +169,7 @@ public class ActorBaseTest
         {
             try
             {
-                taskContext.push();
+                taskContext.pop();
             }
             catch (Exception ex)
             {
@@ -189,7 +183,7 @@ public class ActorBaseTest
          */
         protected void succeeded(Description description)
         {
-            messageSequence.clear();
+            sequenceDiagram.clear();
             hiddenLogData.setLength(0);
             fakeDatabase.clear();
         }
@@ -208,29 +202,33 @@ public class ActorBaseTest
             e.printStackTrace(out);
             out.println(">>>>>>>>> End");
             dumpMessages(description);
-            messageSequence.clear();
+            sequenceDiagram.clear();
             hiddenLogData.setLength(0);
             fakeDatabase.clear();
         }
     };
 
+    @After
+    public void after()
+    {
+        stages.clear();
+    }
+
 
     protected void clearMessages()
     {
-        messageSequence.clear();
+        sequenceDiagram.clear();
     }
 
     protected void dumpMessages()
     {
-        final TaskContext taskContext = TaskContext.current();
-
-        dumpMessages(taskContext != null ? (Description) taskContext.getProperty(ActorBaseTest.class.getName()) : null);
+        dumpMessages(testDescription);
     }
 
     protected void dumpMessages(Description description)
     {
         final PrintStream out = System.out;
-        if (messageSequence.size() > 0)
+        if (sequenceDiagram.size() > 0)
         {
             String name = ActorBaseTest.this.getClass().getName();
             if (description != null)
@@ -245,8 +243,8 @@ public class ActorBaseTest
 
                 Files.write(seqUml,
                         Stream.concat(Stream.concat(
-                                        Stream.of("@startuml"),
-                                        messageSequence.stream()),
+                                Stream.of("@startuml"),
+                                Stream.of(sequenceDiagram.toArray()).map(o -> (String) o)),
                                 Stream.of("@enduml")
                         ).collect(Collectors.toList()));
                 out.println("Message sequence diagram written to:");
@@ -263,15 +261,30 @@ public class ActorBaseTest
         }
     }
 
-    public RemoteClient createRemoteClient(Stage server) throws ExecutionException, InterruptedException
+    public ClientPeer createRemoteClient(Stage stage)
     {
-        final FakeServerPeer serverPeer = new FakeServerPeer(server, new JsonMessageSerializer());
-        final FakeClient fakeClient = new FakeClient(null, new JsonMessageSerializer(), serverPeer);
-        serverPeer.setClient(fakeClient);
+        final JsonMessageSerializer serializer = new JsonMessageSerializer();
+        final ShortCircuitHandler network = new ShortCircuitHandler();
+
+        final FakeServerPeer serverPeer = new FakeServerPeer();
+        serverPeer.setNetworkHandler(network);
+        serverPeer.setClock(clock);
+        serverPeer.setStage(stage);
+        serverPeer.setMessageSerializer(serializer);
+
+        final FakeClient fakeClient = new FakeClient();
+
+        fakeClient.setNetworkHandler(network);
+        fakeClient.setClock(clock);
+        fakeClient.setMessageSerializer(serializer);
+
+        serverPeer.start();
+        fakeClient.start();
+
         return fakeClient;
     }
 
-    public Stage createClient() throws ExecutionException, InterruptedException
+    public Stage createClient()
     {
         hiddenLog.info("Create Client");
         DependencyRegistry dr = new DependencyRegistry();
@@ -287,8 +300,8 @@ public class ActorBaseTest
             }
         };
 
-        Stage client = new Builder()
-                .mode(StageMode.FRONT_END)
+        Stage client = new Stage.Builder()
+                .mode(Stage.StageMode.FRONT_END)
                 .executionPool(commonPool)
                 .messagingPool(commonPool)
                 .clock(clock)
@@ -297,14 +310,14 @@ public class ActorBaseTest
                 .extensions(lifetimeExtension)
                 .build();
 
-        addLogging(client);
+        installExtensions(client);
 
         client.start().join();
         client.bind();
         return client;
     }
 
-    public Stage createStage() throws ExecutionException, InterruptedException
+    public Stage createStage()
     {
         hiddenLog.info("Create Stage");
 
@@ -320,9 +333,9 @@ public class ActorBaseTest
             }
         };
 
-        Stage stage = new Builder()
+        Stage stage = new Stage.Builder()
                 .extensions(lifetimeExtension, new FakeStorageExtension(fakeDatabase))
-                .mode(StageMode.HOST)
+                .mode(Stage.StageMode.HOST)
                 .executionPool(commonPool)
                 .messagingPool(commonPool)
                 .objectCloner(getExecutionObjectCloner())
@@ -332,7 +345,7 @@ public class ActorBaseTest
                 .build();
 
         dr.addSingleton(Stage.class, stage);
-        addLogging(stage);
+        installExtensions(stage);
 
         stage.start().join();
 
@@ -361,152 +374,10 @@ public class ActorBaseTest
         return dr;
     }
 
-    private void addLogging(final Stage stage)
+    protected void installExtensions(final Stage stage)
     {
-        stage.addExtension(new InvokeHookExtension()
-        {
-            String toString(Object obj)
-            {
-                if (obj instanceof String)
-                {
-                    return (String) obj;
-                }
-                if (obj instanceof AbstractActor)
-                {
-                    final ActorReference ref = ActorReference.from((AbstractActor) obj);
-                    return ActorReference.getInterfaceClass(ref).getSimpleName() + ":" +
-                            ActorReference.getId(ref);
-                }
-                if (obj instanceof ActorReference)
-                {
-                    return ActorReference.getInterfaceClass((ActorReference<?>) obj).getSimpleName() + ":" +
-                            ActorReference.getId((ActorReference<?>) obj);
-                }
-                return String.valueOf(obj);
-            }
-
-            @Override
-            public Task<?> invoke(final InvocationContext icontext, final Addressable toReference, final Method method, final int methodId, final Object[] params)
-            {
-                long id = invocationId.incrementAndGet();
-                if (toReference instanceof NodeCapabilities)
-                {
-                    return icontext.invokeNext(toReference, method, methodId, params);
-                }
-                if (toReference instanceof ReminderController && "ensureStart".equals(method.getName()))
-                {
-                    return icontext.invokeNext(toReference, method, methodId, params);
-                }
-                final ActorTaskContext context = ActorTaskContext.current();
-                String from;
-                if (context != null && context.getActor() != null)
-                {
-                    final ActorReference reference = ActorReference.from(context.getActor());
-                    from = ActorReference.getInterfaceClass(reference).getSimpleName()
-                            + ":"
-                            + ActorReference.getId(reference);
-                }
-                else
-                {
-                    if (ActorReference.getInterfaceClass((ActorReference) toReference) == NodeCapabilities.class
-                            && method.getName().equals("canActivate"))
-                    {
-                        from = "Stage";
-                    }
-                    else
-                    {
-                        final TaskContext current = TaskContext.current();
-                        if (current != null && current.getProperty(TEST_NAME_PROP) != null)
-                        {
-                            from = String.valueOf(current.getProperty(TEST_NAME_PROP));
-                        }
-                        else
-                        {
-                            from = "Thread:" + Thread.currentThread().getId();
-                        }
-                    }
-                }
-                String to = ActorReference.getInterfaceClass((ActorReference) toReference).getSimpleName()
-                        + ":"
-                        + ActorReference.getId((ActorReference) toReference);
-
-                String strParams;
-                if (params != null && params.length > 0)
-                {
-                    try
-                    {
-                        strParams = Arrays.asList(params).stream().map(a -> toString(a)).collect(Collectors.joining(", ", "(", ")"));
-                    }
-                    catch (Exception ex)
-                    {
-                        strParams = "(can't show parameters)";
-                    }
-                }
-                else
-                {
-                    strParams = "";
-                }
-                if (!method.isAnnotationPresent(OneWay.class))
-                {
-                    final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams
-                            + "\r\n"
-                            + "activate \"" + to + "\"";
-                    messageSequence.add(msg);
-                    while (messageSequence.size() > 100)
-                    {
-                        messageSequence.remove(0);
-                    }
-                    hiddenLog.info(msg);
-                    final long start = System.nanoTime();
-                    return icontext.invokeNext(toReference, method, methodId, params)
-                            .whenComplete((r, e) ->
-                                    {
-                                        final long timeUS = TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - start);
-                                        final String timeStr = NumberFormat.getNumberInstance(Locale.US).format(timeUS);
-                                        if (e == null)
-                                        {
-                                            final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id + "; "
-                                                    + timeStr + "us] (response to " + method.getName() + "): " + toString(r)
-                                                    + "\r\n"
-                                                    + "deactivate \"" + to + "\"";
-                                            messageSequence.add(resp);
-                                            hiddenLog.info(resp);
-                                        }
-                                        else
-                                        {
-                                            final Throwable throwable = unwrapException(e);
-                                            final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id
-                                                    + "; " + timeStr + "us] (exception at " + method.getName() + "):\\n"
-                                                    + throwable.getClass().getName()
-                                                    + (throwable.getMessage() != null ? ": \\n" + throwable.getMessage() : "")
-                                                    + "\r\n"
-                                                    + "deactivate \"" + to + "\"";
-                                            messageSequence.add(resp);
-                                            hiddenLog.info(resp);
-                                        }
-                                    }
-                            );
-
-                }
-                else
-                {
-                    final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams;
-                    messageSequence.add(msg);
-                    hiddenLog.info('"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams);
-                    return icontext.invokeNext(toReference, method, methodId, params);
-                }
-            }
-
-            private Throwable unwrapException(final Throwable e)
-            {
-                Throwable ex = e;
-                while (ex.getCause() != null && (ex instanceof CompletionException))
-                {
-                    ex = ex.getCause();
-                }
-                return ex;
-            }
-        });
+        stage.addExtension(new TestLogger(this));
+        stage.addExtension(new TestMessageLog(this));
     }
 
     protected ExecutionObjectCloner getExecutionObjectCloner()
@@ -519,6 +390,7 @@ public class ActorBaseTest
     {
         @SuppressWarnings("Checkstyle:IllegalThrowsCheck")
         Object call() throws Throwable;
+
     }
 
     @SuppressWarnings("PMD.AvoidCatchingThrowable")
@@ -580,7 +452,7 @@ public class ActorBaseTest
         {
             // this is very ad hoc, but should work for our tests, until execution changes.
             // for starters access to this map should be synchronized.
-            Map running = (Map) getField(getField(getField(stage, Stage.class, "execution"), Execution.class,
+            Map running = (Map) getField(getField(getField(stage, Stage.class, "execution"), AbstractExecution.class,
                     "executionSerializer"), ExecutionSerializer.class, "running");
 
             return running.size() == 0;
@@ -647,6 +519,4 @@ public class ActorBaseTest
         } while (true);
 
     }
-
 }
-

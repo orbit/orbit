@@ -56,16 +56,18 @@ import java.util.stream.Collectors;
 
 public class ClassPath
 {
+    public static final String CLASS_FILE_EXTENSION = ".class";
     private static Logger logger = Logger.getLogger(ClassPath.class.getName());
     private static volatile ClassPath sharedInstance;
     private static final Object MUTEX = new Object();
 
     private List<ResourceInfo> resources;
+    private List<ClassResourceInfo> classes;
 
     public static class ResourceInfo
     {
-        private String resourceName;
-        private ClassLoader loader;
+        protected String resourceName;
+        protected ClassLoader loader;
 
         private ResourceInfo(final String resourceName, final ClassLoader loader)
         {
@@ -85,9 +87,37 @@ public class ClassPath
 
     }
 
+    public static class ClassResourceInfo extends ResourceInfo
+    {
+        private String className;
+
+        private ClassResourceInfo(final String resourceName, final ClassLoader loader)
+        {
+            super(resourceName, loader);
+            className = resourceName
+                    .substring(0, resourceName.length() - CLASS_FILE_EXTENSION.length())
+                    .replace('/', '.');
+        }
+
+        public Class<?> load() throws ClassNotFoundException
+        {
+            return loader.loadClass(className);
+        }
+
+        public String getClassName()
+        {
+            return className;
+        }
+    }
+
     public List<ResourceInfo> getAllResources()
     {
         return resources;
+    }
+
+    public List<ClassResourceInfo> getAllClasses()
+    {
+        return classes;
     }
 
     public static ClassPath from(final ClassLoader classloader) throws IOException
@@ -130,7 +160,7 @@ public class ClassPath
                     {
                         resourceInfos.addAll(Files.walk(entryPath)
                                 .filter(x -> !Files.isDirectory(x))
-                                .map(x -> new ResourceInfo(entryPath.relativize(x).toString().replace(File.separatorChar, '/'), loader))
+                                .map(x -> createResourceInfo(entryPath.relativize(x).toString().replace(File.separatorChar, '/'), loader))
                                 .collect(Collectors.toList()));
                     }
                     else
@@ -142,7 +172,7 @@ public class ClassPath
 
                             resourceInfos.addAll(Collections.list(jar.entries()).stream()
                                     .filter(x -> !x.isDirectory())
-                                    .map(x -> new ResourceInfo(x.getName(), loader))
+                                    .map(x -> createResourceInfo(x.getName(), loader))
                                     .collect(Collectors.toList()));
 
                             // getting the classpath from the jar manifest
@@ -166,7 +196,7 @@ public class ClassPath
                                 }
                             }
                         }
-                        catch(IOException ex)
+                        catch (IOException ex)
                         {
                             if (logger.isLoggable(Level.FINE))
                             {
@@ -188,7 +218,18 @@ public class ClassPath
         }
         ClassPath cp = new ClassPath();
         cp.resources = resourceInfos;
+        cp.classes = resourceInfos.stream()
+                .filter(r -> r instanceof ClassResourceInfo)
+                .map(r -> (ClassResourceInfo) r)
+                .collect(Collectors.toList());
         return cp;
+    }
+
+    private static ResourceInfo createResourceInfo(final String name, final ClassLoader loader)
+    {
+        return name.endsWith(CLASS_FILE_EXTENSION)
+                ? new ClassResourceInfo(name, loader)
+                : new ResourceInfo(name, loader);
     }
 
     public static ClassPath get()

@@ -1,0 +1,29 @@
+@startuml
+title Actor deactivation (Draft)
+start;
+if(actor) then
+partition ActorDescriptor {
+    :execute serialized;
+    :call deactivate;
+    :notify hosting;
+    :remove descriptor;
+    :forward new
+    pending messages;
+}
+else if(stateless actor) then
+partition StatelessDescriptor {
+    :remove descriptor;
+    while (for each instance)
+    :call deactivate;
+    endwhile;
+}
+else if(observer) then
+partition ActorDescriptor {
+    :execute serialized;
+    :remove descriptor;
+}
+endif
+
+end;
+@enduml
+

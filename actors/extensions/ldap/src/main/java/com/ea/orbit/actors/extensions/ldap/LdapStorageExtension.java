@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.extensions.ldap;
 
 import com.ea.orbit.actors.extensions.AbstractStorageExtension;
-import com.ea.orbit.actors.runtime.ActorReference;
+import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -74,7 +74,7 @@ public class LdapStorageExtension extends AbstractStorageExtension
     }
 
     @Override
-    public Task<Void> clearState(final ActorReference reference, final Object state)
+    public Task<Void> clearState(final RemoteReference reference, final Object state)
     {
         LdapConnection connection = null;
         try
@@ -97,7 +97,7 @@ public class LdapStorageExtension extends AbstractStorageExtension
 
     @Override
     @SuppressWarnings("unchecked")
-    public Task<Boolean> readState(final ActorReference reference, final Object state)
+    public Task<Boolean> readState(final RemoteReference reference, final Object state)
     {
         LdapConnection connection = null;
         try
@@ -165,7 +165,7 @@ public class LdapStorageExtension extends AbstractStorageExtension
 
     @Override
     @SuppressWarnings("unchecked")
-    public Task<Void> writeState(final ActorReference reference, final Object state)
+    public Task<Void> writeState(final RemoteReference reference, final Object state)
     {
         LdapConnection connection = null;
         try
@@ -246,12 +246,12 @@ public class LdapStorageExtension extends AbstractStorageExtension
         return state.getClass().getAnnotation(LdapEntity.class);
     }
 
-    private String relativeDn(ActorReference reference, LdapEntity entity)
+    private String relativeDn(RemoteReference reference, LdapEntity entity)
     {
         return entity.dnKey() + "=" + getIdentity(reference);
     }
 
-    private String absoluteDn(ActorReference reference, LdapEntity entity)
+    private String absoluteDn(RemoteReference reference, LdapEntity entity)
     {
         return relativeDn(reference, entity) + ", " + entity.baseDn();
     }

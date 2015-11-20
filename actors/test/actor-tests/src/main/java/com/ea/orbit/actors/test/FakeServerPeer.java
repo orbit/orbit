@@ -1,38 +1,11 @@
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.extensions.MessageSerializer;
-import com.ea.orbit.actors.runtime.Peer;
+import com.ea.orbit.actors.net.DefaultPipeline;
+import com.ea.orbit.actors.server.ServerPeer;
 
-import java.nio.ByteBuffer;
-
-public class FakeServerPeer
+public class FakeServerPeer extends ServerPeer
 {
-    private Peer peer = new Peer()
+    public FakeServerPeer()
     {
-        @Override
-        protected void sendBinary(final ByteBuffer wrap)
-        {
-            client.doReceive(wrap);
-        }
-    };
-
-    private FakeClient client;
-
-    public FakeServerPeer(Stage stage, MessageSerializer serializer)
-    {
-        peer.setRuntime(stage.getRuntime());
-        peer.setSerializer(serializer);
-    }
-
-
-    void onMessage(final ByteBuffer wrap)
-    {
-        peer.onMessage(wrap);
-    }
-
-    public void setClient(final FakeClient client)
-    {
-        this.client = client;
     }
 }

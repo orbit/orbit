@@ -109,4 +109,21 @@ public class MessageTimeoutTest extends ActorBaseTest
         expectException(() -> second.join());
     }
 
+    @Test
+    public void timeoutWithoutCallingCleanup()
+    {
+        clock.stop();
+        Stage stage1 = createStage();
+
+        SomeActor actor = Actor.getReference(SomeActor.class, "1");
+
+        UUID uuid = actor.getUniqueActivationId(0).join();
+        assertEquals(uuid, actor.getUniqueActivationId(0).join());
+
+        final Task<UUID> timeoutCall = actor.getUniqueActivationId(TimeUnit.MINUTES.toNanos(2));
+        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
+        // not calling stage.cleanup, to make sure the timeout cleanup is being called
+        eventuallyTrue(() -> timeoutCall.isCompletedExceptionally());
+    }
+
 }

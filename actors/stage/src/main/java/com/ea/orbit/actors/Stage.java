@@ -34,18 +34,32 @@ import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.MessageSerializer;
-import com.ea.orbit.actors.net.Channel;
-import com.ea.orbit.actors.net.MessageListener;
+import com.ea.orbit.actors.extensions.PipelineExtension;
+import com.ea.orbit.actors.extensions.StreamProvider;
+import com.ea.orbit.actors.net.DefaultPipeline;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ActorRuntime;
+import com.ea.orbit.actors.runtime.ActorTaskContext;
+import com.ea.orbit.actors.runtime.ClusterHandler;
+import com.ea.orbit.actors.runtime.DefaultHandlers;
 import com.ea.orbit.actors.runtime.Execution;
+import com.ea.orbit.actors.runtime.ExecutionCacheFlushObserver;
 import com.ea.orbit.actors.runtime.Hosting;
+import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.JavaMessageSerializer;
-import com.ea.orbit.actors.runtime.Message;
 import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
+import com.ea.orbit.actors.runtime.ObjectInvoker;
+import com.ea.orbit.actors.runtime.Registration;
 import com.ea.orbit.actors.runtime.ReminderController;
+import com.ea.orbit.actors.runtime.ResponseCaching;
+import com.ea.orbit.actors.runtime.SerializationHandler;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
+import com.ea.orbit.actors.streams.AsyncObserver;
+import com.ea.orbit.actors.streams.AsyncStream;
+import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
+import com.ea.orbit.actors.streams.simple.SimpleStreamExtension;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.ExecutorUtils;
@@ -54,26 +68,33 @@ import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.metrics.annotations.ExportMetric;
+import com.ea.orbit.util.StringUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Singleton
-public class Stage implements Startable
+public class Stage implements Startable, ActorRuntime
 {
     private static final Logger logger = LoggerFactory.getLogger(Stage.class);
 
@@ -92,13 +113,23 @@ public class Stage implements Startable
     private int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
 
     @Config("orbit.actors.extensions")
-    private List<ActorExtension> extensions = new ArrayList<>();
+    private List<ActorExtension> extensions = new CopyOnWriteArrayList<>();
 
     @Config("orbit.actors.stickyHeaders")
     private Set<String> stickyHeaders = new HashSet<>();
 
     @Wired
     private Container container;
+    private DefaultPipeline pipeline;
+
+    private final String runtimeIdentity;
+    private ResponseCaching cacheManager;
+
+    public List<ActorExtension> getExtensions()
+    {
+        return extensions;
+    }
+
 
     public enum StageMode
     {
@@ -119,6 +150,7 @@ public class Stage implements Startable
     private ExecutorService messagingPool;
     private ExecutionObjectCloner objectCloner;
     private MessageSerializer messageSerializer;
+    private final WeakReference<ActorRuntime> cachedRef = new WeakReference<>(this);
 
     static
     {
@@ -248,6 +280,12 @@ public class Stage implements Startable
 
     }
 
+    public Stage()
+    {
+        ActorRuntime.runtimeCreated(cachedRef);
+        runtimeIdentity = generateRuntimeIdentity();
+    }
+
     public void addStickyHeaders(Collection<String> stickyHeaders)
     {
         this.stickyHeaders.addAll(stickyHeaders);
@@ -301,15 +339,6 @@ public class Stage implements Startable
     public void setObjectCloner(ExecutionObjectCloner objectCloner)
     {
         this.objectCloner = objectCloner;
-    }
-
-    public String runtimeIdentity()
-    {
-        if (execution == null)
-        {
-            throw new IllegalStateException("Can only be called after the startup");
-        }
-        return execution.runtimeIdentity();
     }
 
     public String getClusterName()
@@ -425,61 +454,72 @@ public class Stage implements Startable
                     .map(c -> (ActorExtension) container.get(c)).collect(Collectors.toList()));
         }
 
+        cacheManager = new ResponseCaching();
+
         this.configureOrbitContainer();
 
         hosting.setNodeType(mode == StageMode.HOST ? NodeCapabilities.NodeTypeEnum.SERVER : NodeCapabilities.NodeTypeEnum.CLIENT);
+        execution.setRuntime(this);
         execution.setClock(clock);
         execution.setHosting(hosting);
-        execution.setMessaging(messaging);
         execution.setExecutor(executionPool);
-        execution.setObjectCloner(objectCloner);
+
+        cacheManager.setObjectCloner(objectCloner);
+        cacheManager.setRuntime(this);
+        cacheManager.setMessageSerializer(messageSerializer);
+        messaging.addStickyHeaders(stickyHeaders);
         execution.addStickyHeaders(stickyHeaders);
 
         messaging.setClock(clock);
-        messaging.setInvocationHandler((m) -> execution.onMessageReceived(m));
 
         hosting.setExecution(execution);
         hosting.setClusterPeer(clusterPeer);
-        messaging.setChannel(new Channel()
-        {
-            @Override
-            public void sendMessage(final Message message)
-            {
-                if (message.getToNode() == null)
-                {
-                    throw new UncheckedException("Message.toNode must be defined");
-                }
-                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try
-                {
-                    messageSerializer.serializeMessage(execution, baos, message);
-                }
-                catch (Exception e)
-                {
-                    throw new UncheckedException(e);
-                }
-                clusterPeer.sendMessage(message.getToNode(), baos.toByteArray());
-            }
+        pipeline = new DefaultPipeline();
 
-            @Override
-            public void setMessageListener(final MessageListener listener)
-            {
-                clusterPeer.registerMessageReceiver((n, m) -> {
-                    final ByteArrayInputStream bais = new ByteArrayInputStream(m);
-                    try
+        registerObserver(ExecutionCacheFlushObserver.class, "", cacheManager);
+
+        // caches responses
+        pipeline.addLast(DefaultHandlers.CACHING, cacheManager);
+
+        pipeline.addLast(DefaultHandlers.EXECUTION, execution);
+
+        // handles invocation messages and request-response matching
+        pipeline.addLast(DefaultHandlers.MESSAGING, messaging);
+
+        // message serializer handler
+        pipeline.addLast(DefaultHandlers.SERIALIZATION, new SerializationHandler(this, messageSerializer));
+
+        // cluster peer handler
+        pipeline.addLast(DefaultHandlers.NETWORK, new ClusterHandler(clusterPeer, clusterName, nodeName));
+
+        extensions.stream().filter(extension -> extension instanceof PipelineExtension)
+                .map(extension -> (PipelineExtension) extension)
+                .forEach(extension -> {
+                    if (extension.beforeHandlerName() != null)
                     {
-                        listener.recvMessage(
-                                messageSerializer
-                                        .deserializeMessage(execution, bais)
-                                        .withFromNode(n));
+                        pipeline.addHandlerBefore(extension.beforeHandlerName(), extension.getName(), extension);
                     }
-                    catch (Exception e)
+                    else if (extension.afterHandlerName() != null)
                     {
-                        logger.error("Error deserializing message", e);
+                        pipeline.addHandlerAfter(extension.afterHandlerName(), extension.getName(), extension);
+                    }
+                    else
+                    {
+                        pipeline.addFirst(extension.getName(), extension);
                     }
                 });
-            }
-        });
+
+
+        StreamProvider defaultStreamProvider = extensions.stream()
+                .filter(p -> p instanceof StreamProvider)
+                .map(p -> (StreamProvider) p)
+                .filter(p -> StringUtils.equals(p.getName(), AsyncStream.DEFAULT_PROVIDER)).findFirst().orElse(null);
+
+        if (defaultStreamProvider == null)
+        {
+            defaultStreamProvider = new SimpleStreamExtension(AsyncStream.DEFAULT_PROVIDER);
+            extensions.add(defaultStreamProvider);
+        }
 
         execution.setExtensions(extensions);
 
@@ -487,7 +527,7 @@ public class Stage implements Startable
         hosting.start();
         execution.start();
 
-        Task<?> future = clusterPeer.join(clusterName, nodeName);
+        Task<Void> future = pipeline.connect(null);
         if (mode == StageMode.HOST)
         {
             future = future.thenRun(() -> Actor.getReference(ReminderController.class, "0").ensureStart());
@@ -553,35 +593,6 @@ public class Stage implements Startable
                 .thenRun(clusterPeer::leave);
     }
 
-    /**
-     * @deprecated Use #registerObserver instead
-     */
-    @Deprecated
-    public <T extends ActorObserver> T getObserverReference(Class<T> iClass, final T observer)
-    {
-        return registerObserver(iClass, observer);
-
-    }
-
-    /**
-     * @deprecated Use #registerObserver instead
-     */
-    @Deprecated
-    public <T extends ActorObserver> T getObserverReference(final T observer)
-    {
-        return registerObserver(null, observer);
-    }
-
-    public <T extends ActorObserver> T registerObserver(Class<T> iClass, final T observer)
-    {
-        return execution.getObjectReference(iClass, observer);
-    }
-
-    public <T extends ActorObserver> T registerObserver(Class<T> iClass, String id, final T observer)
-    {
-        return execution.getObserverReference(iClass, observer, id);
-    }
-
 
     public Hosting getHosting()
     {
@@ -623,7 +634,7 @@ public class Stage implements Startable
      */
     public void bind()
     {
-        execution.bind();
+        ActorRuntime.setRuntime(this.cachedRef);
     }
 
     public List<NodeAddress> getAllNodes()
@@ -698,9 +709,9 @@ public class Stage implements Startable
         return value;
     }
 
-    public com.ea.orbit.actors.runtime.Runtime getRuntime()
+    public ActorRuntime getRuntime()
     {
-        return execution;
+        return this;
     }
 
     public MessageSerializer getMessageSerializer()
@@ -711,5 +722,158 @@ public class Stage implements Startable
     public void setMessageSerializer(final MessageSerializer messageSerializer)
     {
         this.messageSerializer = messageSerializer;
+    }
+
+    @Override
+    public Task<?> invoke(final Addressable toReference, final Method m, final boolean oneWay, final int methodId, final Object[] params)
+    {
+        final Task<Void> result = pipeline.write(new Invocation(toReference, m, oneWay, methodId, params, null));
+        return result;
+    }
+
+    @Override
+    public Registration registerTimer(final AbstractActor<?> actor, final Callable<Task<?>> taskCallable, final long dueTime, final long period, final TimeUnit timeUnit)
+    {
+        return execution.registerTimer(actor, taskCallable, dueTime, period, timeUnit);
+    }
+
+    @Override
+    public Clock clock()
+    {
+        return clock;
+    }
+
+    @Override
+    public Task<?> registerReminder(final Remindable actor, final String reminderName, final long dueTime, final long period, final TimeUnit timeUnit)
+    {
+        return execution.registerReminder(actor, reminderName, dueTime, period, timeUnit);
+    }
+
+    @Override
+    public Task<?> unregisterReminder(final Remindable actor, final String reminderName)
+    {
+        return execution.unregisterReminder(actor, reminderName);
+    }
+
+    @Override
+    public String runtimeIdentity()
+    {
+        return runtimeIdentity;
+    }
+
+    private String generateRuntimeIdentity()
+    {
+        final UUID uuid = UUID.randomUUID();
+        final String encoded = Base64.getEncoder().encodeToString(
+                ByteBuffer.allocate(16).putLong(uuid.getMostSignificantBits()).putLong(uuid.getLeastSignificantBits()).array());
+        return "Orbit[" + encoded.substring(0, encoded.length() - 2) + "]";
+    }
+
+    @Override
+    public Task<NodeAddress> locateActor(final Addressable actorReference, final boolean forceActivation)
+    {
+        return execution.locateActor(actorReference, forceActivation);
+    }
+
+    public <T extends ActorObserver> T registerObserver(Class<T> iClass, String id, final T observer)
+    {
+        return execution.getObserverReference(iClass, observer, id);
+    }
+
+    @Override
+    public <T extends ActorObserver> T registerObserver(final Class<T> iClass, final T observer)
+    {
+        return execution.getObjectReference(iClass, observer);
+    }
+
+    @Override
+    public <T extends ActorObserver> T getRemoteObserverReference(final NodeAddress address, final Class<T> iClass, final Object id)
+    {
+        return execution.getRemoteObjectReference(address, iClass, id);
+    }
+
+    @Override
+    public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
+    {
+        return execution.getReference(iClass, id);
+    }
+
+    @Override
+    public ObjectInvoker<?> getInvoker(final int interfaceId)
+    {
+        return execution.getInvoker(interfaceId);
+    }
+
+
+    @Override
+    public StreamProvider getStreamProvider(final String name)
+    {
+        StreamProvider streamProvider = execution.getAllExtensions(StreamProvider.class).stream()
+                .filter(p -> StringUtils.equals(p.getName(), name))
+                .findFirst().orElseThrow(() -> new UncheckedException(String.format("Provider: %s not found", name)));
+
+        final AbstractActor<?> actor = ActorTaskContext.currentActor();
+        if (actor != null)
+        {
+            // wraps the stream provider to ensure sequential execution
+            return new StreamProvider()
+            {
+                @Override
+                public <T> AsyncStream<T> getStream(final Class<T> dataClass, final String id)
+                {
+                    final AsyncStream<T> stream = streamProvider.getStream(dataClass, id);
+                    return new AsyncStream<T>()
+                    {
+                        @Override
+                        public Task<Void> unSubscribe(final StreamSubscriptionHandle<T> handle)
+                        {
+                            return stream.unSubscribe(handle);
+                        }
+
+                        @Override
+                        public Task<StreamSubscriptionHandle<T>> subscribe(final AsyncObserver<T> observer)
+                        {
+                            return stream.subscribe(new AsyncObserver<T>()
+                            {
+                                @Override
+                                public Task<Void> onNext(final T data)
+                                {
+                                    // TODO use actor executor, when available
+                                    return observer.onNext(data);
+                                }
+
+                                @Override
+                                public Task<Void> onError(final Exception ex)
+                                {
+                                    // TODO use actor executor, when available
+                                    return observer.onError(ex);
+                                }
+                            });
+                            // TODO unsubscribe automatically on deactivation
+                        }
+
+                        @Override
+                        public Task<Void> post(final T data)
+                        {
+                            return stream.post(data);
+                        }
+                    };
+                }
+
+                @Override
+                public String getName()
+                {
+                    return streamProvider.getName();
+                }
+            };
+        }
+        return streamProvider;
+    }
+
+
+    @Override
+    public <T> AsyncStream<T> getStream(final String provider, final Class<T> dataClass, final String id)
+    {
+        return getStreamProvider(provider).getStream(dataClass, id);
     }
 }

@@ -49,11 +49,11 @@ public class ActorFactoryGenerator
         classPool.appendClassPath(new ClassClassPath(ActorFactoryGenerator.class));
     }
 
-    private static class GenericActorFactory<T> extends ActorFactory<T>
+    private static class GenericActorFactory<T> extends ReferenceFactory<T>
     {
         private int interfaceId;
         private Class<T> interfaceClass;
-        private ActorInvoker<T> invoker;
+        private ObjectInvoker<T> invoker;
         private Constructor<T> referenceConstructor;
 
         @Override
@@ -69,7 +69,7 @@ public class ActorFactoryGenerator
         }
 
         @Override
-        public ActorInvoker<T> getInvoker()
+        public ObjectInvoker<T> getInvoker()
         {
             return invoker;
         }
@@ -89,7 +89,7 @@ public class ActorFactoryGenerator
     }
 
     @SuppressWarnings("unchecked")
-    public <T> ActorFactory<T> getFactoryFor(final Class<T> aInterface)
+    public <T> ReferenceFactory<T> getFactoryFor(final Class<T> aInterface)
     {
         final String interfaceFullName = aInterface.getName().replace('$', '.');
 
@@ -133,7 +133,7 @@ public class ActorFactoryGenerator
 
             final CtClass cc = pool.makeClass(referenceFullName);
             final CtClass ccInterface = pool.get(aInterface.getName());
-            final CtClass ccActorReference = pool.get(ActorReference.class.getName());
+            final CtClass ccActorReference = pool.get(RemoteReference.class.getName());
             cc.setSuperclass(ccActorReference);
             cc.addInterface(ccInterface);
             cc.addConstructor(CtNewConstructor.make(new CtClass[]{pool.get(String.class.getName())}, null, "{ super($1); }", cc));
@@ -161,7 +161,7 @@ public class ActorFactoryGenerator
                 final String lazyMethodReferenceInit = "(" + methodReferenceField + "!=null) ? " + methodReferenceField + " : ( "
                         + methodReferenceField + "=" + aInterface.getName() + ".class.getMethod(\"" + methodName + "\",$sig) )";
 
-                // TODO: remove the method parameter from the invoke, this could be an utility method of ActorReference
+                // TODO: remove the method parameter from the invoke, this could be an utility method of RemoteReference
                 final CtMethod newMethod = CtNewMethod.make(m.getReturnType(), methodName,
                         parameterTypes, m.getExceptionTypes(),
                         "{ return super.invoke(" + lazyMethodReferenceInit + ", " + oneWay + ", " + methodId + ", $args);  }",
@@ -187,12 +187,12 @@ public class ActorFactoryGenerator
         return methodSignature.hashCode();
     }
 
-    public ActorInvoker<Object> getInvokerFor(final Class<?> concreteClass)
+    public ObjectInvoker<Object> getInvokerFor(final Class<?> concreteClass)
     {
         try
         {
-            final Class<?> aClass = makeInvokerClass(concreteClass, concreteClass.getName() + "$Invoker");
-            return (ActorInvoker<Object>) aClass.newInstance();
+            final Class<?> aClass = makeInvokerClass(concreteClass, concreteClass.getName() + "$ObjectInvoker");
+            return (ObjectInvoker<Object>) aClass.newInstance();
         }
         catch (Exception e)
         {
@@ -222,7 +222,7 @@ public class ActorFactoryGenerator
             final CtClass cc = pool.makeClass(invokerFullName);
             final String className = actorClass.getName();
             final CtClass ccInterface = pool.get(className);
-            final CtClass ccActorInvoker = pool.get(ActorInvoker.class.getName());
+            final CtClass ccActorInvoker = pool.get(ObjectInvoker.class.getName());
             cc.setSuperclass(ccActorInvoker);
 
             final StringBuilder invokerBody = new StringBuilder(2000);

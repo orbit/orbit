@@ -38,46 +38,31 @@ import com.ea.orbit.actors.annotation.StorageExtension;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.ActorClassFinder;
 import com.ea.orbit.actors.extensions.ActorExtension;
-import com.ea.orbit.actors.extensions.InvocationContext;
-import com.ea.orbit.actors.extensions.InvokeHookExtension;
+import com.ea.orbit.actors.extensions.DefaultLoggerExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
-import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
+import com.ea.orbit.actors.extensions.LoggerExtension;
+import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.transactions.TransactionUtils;
-import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.OnlyIfActivated;
 import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
-import com.ea.orbit.tuples.Pair;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.MapMaker;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.security.DigestOutputStream;
-import java.security.MessageDigest;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,49 +77,33 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.ea.orbit.async.Await.await;
 
-public class Execution implements Runtime
+public class Execution extends AbstractExecution
 {
-
-    private static final Logger logger = LoggerFactory.getLogger(Execution.class);
-    private final String runtimeIdentity;
     private ActorClassFinder finder;
     private ConcurrentMap<Class<?>, InterfaceDescriptor> descriptorMapByInterface = new ConcurrentHashMap<>();
     private ConcurrentMap<Integer, InterfaceDescriptor> descriptorMapByInterfaceId = new ConcurrentHashMap<>();
     private Map<EntryKey, ReferenceEntry> localActors = new ConcurrentHashMap<>();
     private Map<EntryKey, ActorObserver> observerInstances = new MapMaker().weakValues().makeMap();
+
     // from implementation to reference
     private Map<ActorObserver, ActorObserver> observerReferences = new MapMaker().weakKeys().makeMap();
 
     private Hosting hosting;
-    private Messaging messaging;
-    private ExecutionSerializer<Object> executionSerializer;
-    private int maxQueueSize = 10000;
     private Timer timer = new Timer("Orbit stage timer");
     private Clock clock = Clock.systemUTC();
     private long cleanupIntervalMillis = TimeUnit.MINUTES.toMillis(5);
-    private final LongAdder messagesReceived = new LongAdder();
-    private final LongAdder messagesHandled = new LongAdder();
-    private final LongAdder refusedExecutions = new LongAdder();
     private ExecutorService executor;
     private ActorFactoryGenerator dynamicReferenceFactory = new ActorFactoryGenerator();
 
     private List<ActorExtension> extensions = new ArrayList<>();
 
-    private final WeakReference<Runtime> cachedRef = new WeakReference<>(this);
-
-    private List<InvokeHookExtension> hookExtensions;
-
     private NodeCapabilities.NodeState state = NodeCapabilities.NodeState.RUNNING;
 
-    private ExecutionCacheManager cacheManager = new ExecutionCacheManager();
-    private ExecutionObjectCloner objectCloner;
 
     private Stage stage;
     /**
@@ -144,27 +113,21 @@ public class Execution implements Runtime
      * And from the message header to the TaskContext when receiving them.
      * </p>
      */
-    @Config("orbit.actors.stickyHeaders")
-    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
 
     @Wired
     private Container container;
 
+    private ActorRuntime runtime;
+
+    @Config("orbit.actors.stickyHeaders")
+    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
+    private LoggerExtension loggerExtension;
+
     public Execution()
     {
         // the last runtime created will be the default.
-        ActorRuntime.runtimeCreated(cachedRef);
-
-        runtimeIdentity = generateRuntimeIdentity();
     }
 
-    private String generateRuntimeIdentity()
-    {
-        final UUID uuid = UUID.randomUUID();
-        final String encoded = Base64.getEncoder().encodeToString(
-                ByteBuffer.allocate(16).putLong(uuid.getMostSignificantBits()).putLong(uuid.getLeastSignificantBits()).array());
-        return "Orbit[" + encoded.substring(0, encoded.length() - 2) + "]";
-    }
 
     public void setClock(final Clock clock)
     {
@@ -174,6 +137,16 @@ public class Execution implements Runtime
     public void setExecutor(final ExecutorService executor)
     {
         this.executor = executor;
+    }
+
+    public void addStickyHeaders(Collection<String> stickyHeaders)
+    {
+        this.stickyHeaders.addAll(stickyHeaders);
+    }
+
+    public void setRuntime(final ActorRuntime runtime)
+    {
+        this.runtime = runtime;
     }
 
     public ExecutorService getExecutor()
@@ -206,19 +179,9 @@ public class Execution implements Runtime
         return !descriptor.cannotActivate;
     }
 
-    public void registerFactory(ActorFactory<?> factory)
+    public void registerFactory(ReferenceFactory<?> factory)
     {
         // TODO: will enable caching the reference factory
-    }
-
-    public ExecutionCacheManager getCacheManager()
-    {
-        return cacheManager;
-    }
-
-    public void setObjectCloner(ExecutionObjectCloner objectCloner)
-    {
-        this.objectCloner = objectCloner;
     }
 
     public Stage getStage()
@@ -231,22 +194,14 @@ public class Execution implements Runtime
         this.stage = stage;
     }
 
-    private static class NullOutputStream extends OutputStream
-    {
-        @Override
-        public void write(int b) throws IOException
-        {
-        }
-    }
-
     private static class InterfaceDescriptor
     {
-        ActorFactory<?> factory;
-        volatile ActorInvoker<Object> invoker;
+        ReferenceFactory<?> factory;
+        volatile ObjectInvoker<Object> invoker;
         boolean cannotActivate;
         String concreteClassName;
         boolean isObserver;
-        volatile ActorInvoker<Object> interfaceInvoker;
+        volatile ObjectInvoker<Object> interfaceInvoker;
 
         @Override
         public String toString()
@@ -257,7 +212,7 @@ public class Execution implements Runtime
 
     private class ReferenceEntry
     {
-        ActorReference<?> reference;
+        RemoteReference<?> reference;
         InterfaceDescriptor descriptor;
         boolean statelessWorker;
         Activation singleActivation;
@@ -330,7 +285,6 @@ public class Execution implements Runtime
                         {
                             try
                             {
-
                                 bind();
                                 AbstractActor<?> actor = (AbstractActor<?>) singleActivation.instance;
                                 Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preDeactivation(actor)))
@@ -408,47 +362,9 @@ public class Execution implements Runtime
         }
     }
 
-    private static class EntryKey
+    private void bind()
     {
-        int interfaceId;
-        Object id;
-
-        private EntryKey(final int interfaceId, final Object id)
-        {
-            this.interfaceId = interfaceId;
-            this.id = id;
-        }
-
-        @Override
-        public boolean equals(final Object o)
-        {
-            if (this == o) return true;
-            if (!(o instanceof EntryKey)) return false;
-
-            final EntryKey entryKey = (EntryKey) o;
-
-            if (interfaceId != entryKey.interfaceId) return false;
-            if (id != null ? !id.equals(entryKey.id) : entryKey.id != null) return false;
-
-            return true;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = interfaceId;
-            result = 31 * result + (id != null ? id.hashCode() : 0);
-            return result;
-        }
-
-        @Override
-        public String toString()
-        {
-            return "EntryKey{" +
-                    "interfaceId=" + interfaceId +
-                    ", id=" + id +
-                    '}';
-        }
+        runtime.bind();
     }
 
     private class Activation
@@ -477,7 +393,8 @@ public class Execution implements Runtime
                         final AbstractActor<?> actor = (AbstractActor<?>) newInstance;
                         ActorTaskContext.current().setActor(actor);
                         actor.reference = entry.reference;
-
+                        actor.runtime = stage;
+                        actor.logger = loggerExtension.getLogger(actor);
                         actor.stateExtension = getStorageExtensionFor(actor);
 
                         await(Task.allOf(getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preActivation(actor))));
@@ -510,11 +427,6 @@ public class Execution implements Runtime
                 throw new UncheckedException(e);
             }
         }
-    }
-
-    public void addStickyHeaders(Collection<String> stickyHeaders)
-    {
-        this.stickyHeaders.addAll(stickyHeaders);
     }
 
     public void setExtensions(List<ActorExtension> extensions)
@@ -559,11 +471,6 @@ public class Execution implements Runtime
         this.hosting = hosting;
     }
 
-    public void setMessaging(final Messaging messaging)
-    {
-        this.messaging = messaging;
-    }
-
     public Task<?> stop()
     {
         // * refuse new actor activations
@@ -588,7 +495,7 @@ public class Execution implements Runtime
         executionSerializer.shutdown();
 
         // * cancel all pending messages, and prevents sending new ones
-        await(messaging.stop());
+        //await(messaging.stop());
 
         // ** stop all extensions
         await(Task.allOf(extensions.stream().map(Startable::stop)));
@@ -620,9 +527,9 @@ public class Execution implements Runtime
         final ActorObserver ref = observerReferences.get(observer);
         if (ref != null)
         {
-            if (id != null && !id.equals(((ActorReference<?>) ref).id))
+            if (id != null && !id.equals(((RemoteReference<?>) ref).id))
             {
-                throw new IllegalArgumentException("Called twice with different ids: " + id + " != " + ((ActorReference<?>) ref).id);
+                throw new IllegalArgumentException("Called twice with different ids: " + id + " != " + ((RemoteReference<?>) ref).id);
             }
             return (T) ref;
         }
@@ -633,7 +540,7 @@ public class Execution implements Runtime
     private <T extends ActorObserver> T createObjectReference(final Class<T> iClass, final T observer, String objectId)
     {
 
-        ActorFactory<?> factory;
+        ReferenceFactory<?> factory;
         if (iClass == null)
         {
             factory = findFactoryFor(ActorObserver.class, observer);
@@ -652,12 +559,12 @@ public class Execution implements Runtime
         final ActorObserver existingObserver = observerInstances.get(key);
         if (existingObserver == null)
         {
-            final ActorReference<T> reference = (ActorReference<T>) factory.createReference(id);
+            final RemoteReference<T> reference = (RemoteReference<T>) factory.createReference(id);
             if (objectId == null)
             {
                 reference.address = hosting.getNodeAddress();
             }
-            reference.runtime = Execution.this;
+            reference.runtime = Execution.this.runtime;
             observerInstances.putIfAbsent(key, observer);
             observerReferences.putIfAbsent(observer, (ActorObserver) reference);
             return (T) reference;
@@ -721,46 +628,27 @@ public class Execution implements Runtime
         return timerTask::cancel;
     }
 
-    public void bind()
-    {
-        ActorRuntime.setRuntime(this.cachedRef);
-    }
-
-    public void bind(Object object)
-    {
-        if (!(object instanceof ActorReference))
-        {
-            throw new IllegalArgumentException("Must be a reference");
-        }
-        ((ActorReference<?>) object).runtime = this;
-    }
-
-    @Override
-    public Clock clock()
-    {
-        return clock;
-    }
-
-    @Override
     public Task<?> registerReminder(final Remindable actor, final String reminderName, final long dueTime, final long period, final TimeUnit timeUnit)
     {
         return getReference(ReminderController.class, "0").registerOrUpdateReminder(actor, reminderName, new Date(clock.millis() + timeUnit.toMillis(dueTime)), period, timeUnit);
     }
 
-    @Override
     public Task<?> unregisterReminder(final Remindable actor, final String reminderName)
     {
         return getReference(ReminderController.class, "0").unregisterReminder(actor, reminderName);
     }
 
-    @Override
-    public String runtimeIdentity()
-    {
-        return runtimeIdentity;
-    }
-
     public void start()
     {
+        if (loggerExtension == null)
+        {
+            loggerExtension = getFirstExtension(LoggerExtension.class);
+            if (loggerExtension == null)
+            {
+                loggerExtension = new DefaultLoggerExtension();
+            }
+        }
+
         finder = getFirstExtension(ActorClassFinder.class);
         if (finder == null)
         {
@@ -786,10 +674,6 @@ public class Execution implements Runtime
         }
         executionSerializer = new ExecutionSerializer<>(executor);
 
-        hookExtensions = getAllExtensions(InvokeHookExtension.class);
-
-        getObserverReference(ExecutionCacheFlushObserver.class, cacheManager, "");
-
         extensions.forEach(Startable::start);
         // schedules the cleanup
         timer.schedule(new TimerTask()
@@ -803,17 +687,6 @@ public class Execution implements Runtime
                 }
             }
         }, cleanupIntervalMillis, cleanupIntervalMillis);
-
-        // TODO move this logic the messaging class, or to the stage
-        // schedules the message cleanup
-        timer.schedule(new TimerTask()
-        {
-            @Override
-            public void run()
-            {
-                messaging.timeoutCleanup();
-            }
-        }, 5000, 5000);
     }
 
     private <T> Class<T> classForName(final String className)
@@ -838,13 +711,13 @@ public class Execution implements Runtime
         return null;
     }
 
-    private ActorFactory<?> findFactoryFor(final Class<?> baseInterface, final Object instance)
+    private ReferenceFactory<?> findFactoryFor(final Class<?> baseInterface, final Object instance)
     {
         for (Class<?> aInterface : instance.getClass().getInterfaces())
         {
             if (baseInterface.isAssignableFrom(aInterface))
             {
-                ActorFactory<?> factory = getDescriptor(aInterface).factory;
+                ReferenceFactory<?> factory = getDescriptor(aInterface).factory;
                 if (factory != null)
                 {
                     return factory;
@@ -868,7 +741,7 @@ public class Execution implements Runtime
             interfaceDescriptor = new InterfaceDescriptor();
             interfaceDescriptor.isObserver = ActorObserver.class.isAssignableFrom(aInterface);
             interfaceDescriptor.factory = dynamicReferenceFactory.getFactoryFor(aInterface);
-            interfaceDescriptor.invoker = (ActorInvoker<Object>) interfaceDescriptor.factory.getInvoker();
+            interfaceDescriptor.invoker = (ObjectInvoker<Object>) interfaceDescriptor.factory.getInvoker();
 
             InterfaceDescriptor concurrentInterfaceDescriptor = descriptorMapByInterface.putIfAbsent(aInterface, interfaceDescriptor);
             if (concurrentInterfaceDescriptor != null)
@@ -888,52 +761,57 @@ public class Execution implements Runtime
         return descriptorMapByInterfaceId.get(interfaceId);
     }
 
-    public Task<?> onMessageReceived(Message message)
+    @Override
+    public void onRead(HandlerContext ctx, Object msg)
     {
-        int interfaceId = message.getInterfaceId();
-        int methodId = message.getMethodId();
-        Object key = message.getObjectId();
+        final Message message = (Message) msg;
+        final int messageType = message.getMessageType();
+        final NodeAddress fromNode = message.getFromNode();
 
-        EntryKey entryKey = new EntryKey(interfaceId, key);
-        if (logger.isDebugEnabled())
-        {
-            logger.debug("onMessageReceived for: " + entryKey);
-        }
-        messagesReceived.increment();
-        Task completion = new Task();
-        if (!executionSerializer.offerJob(entryKey, () ->
-                (handleOnMessageReceived(completion,
-                        entryKey,
-                        message.getFromNode(),
-                        message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE,
-                        message.getMessageId(),
-                        interfaceId, methodId, key,
-                        message.getHeaders(),
-                        (Object[]) message.getPayload()
-                )), maxQueueSize))
-        {
-            refusedExecutions.increment();
+        onMessageReceived(message)
+                .whenComplete((r, e) ->
+                        sendResponseAndLogError(ctx,
+                                messageType == MessageDefinitions.ONE_WAY_MESSAGE,
+                                fromNode, message.getMessageId(), r, e));
 
-            if (logger.isErrorEnabled())
-            {
-                logger.error("Execution refused: " + key + ":" + interfaceId + ":" + methodId + ":" + message.getMessageId());
-            }
-            completion.completeExceptionally(new UncheckedException("Execution refused"));
-        }
-        return completion;
     }
 
+    protected void sendResponseAndLogError(HandlerContext ctx, boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
+    {
+        if (exception != null && logger.isDebugEnabled())
+        {
+            logger.debug("Unknown application error. ", exception);
+        }
+
+        if (!oneway)
+        {
+            if (exception == null)
+            {
+                sendResponse(ctx, from, MessageDefinitions.RESPONSE_OK, messageId, result);
+            }
+            else
+            {
+                sendResponse(ctx, from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
+            }
+        }
+    }
+
+    private Task sendResponse(HandlerContext ctx, NodeAddress to, int messageType, int messageId, Object res)
+    {
+        return ctx.write(new Message()
+                .withToNode(to)
+                .withMessageId(messageId)
+                .withMessageType(messageType)
+                .withPayload(res));
+    }
+
+
     // this method is executed serially by entryKey
-    private Task<?> handleOnMessageReceived(final Task completion,
-                                            final EntryKey entryKey, final NodeAddress from,
-                                            final boolean oneway,
-                                            final int messageId, final int interfaceId,
-                                            final int methodId, final Object key,
-                                            final Object headers,
-                                            final Object[] params)
+    protected Task<?> handleOnMessageReceived(final Task completion,
+                                              final EntryKey entryKey, final Message message)
     {
         messagesHandled.increment();
-        final InterfaceDescriptor descriptor = getDescriptor(interfaceId);
+        final InterfaceDescriptor descriptor = getDescriptor(message.getInterfaceId());
         if (descriptor.isObserver)
         {
             final ActorObserver observer = observerInstances.get(entryKey);
@@ -946,7 +824,7 @@ public class Execution implements Runtime
             {
                 descriptor.invoker = dynamicReferenceFactory.getInvokerFor(observer.getClass());
             }
-            return descriptor.invoker.safeInvoke(observer, methodId, params)
+            return descriptor.invoker.safeInvoke(observer, message.getMethodId(), (Object[]) message.getPayload())
                     .handle((r, e) -> {
                         if (e == null)
                         {
@@ -961,6 +839,7 @@ public class Execution implements Runtime
         }
 
         ReferenceEntry entry = localActors.get(entryKey);
+        Object key = message.getObjectId();
 
         if (logger.isDebugEnabled())
         {
@@ -977,8 +856,8 @@ public class Execution implements Runtime
             {
                 entry.statelessActivations = new ConcurrentLinkedDeque<>();
             }
-            entry.reference = (ActorReference<?>) descriptor.factory.createReference(key != null ? String.valueOf(key) : null);
-            entry.reference.runtime = this;
+            entry.reference = (RemoteReference<?>) descriptor.factory.createReference(key != null ? String.valueOf(key) : null);
+            entry.reference.runtime = this.runtime;
             entry.removable = true;
 
             ReferenceEntry old = localActors.putIfAbsent(entryKey, entry);
@@ -993,18 +872,18 @@ public class Execution implements Runtime
         final ReferenceEntry theEntry = entry;
         if (!entry.statelessWorker)
         {
-            return executeMessage(completion, theEntry, descriptor, methodId, headers, params, from);
+            return executeMessage(completion, theEntry, descriptor, message);
         }
         else
         {
             if (!executionSerializer.offerJob(null,
-                    () -> executeMessage(completion, theEntry, descriptor, methodId, headers, params, from),
+                    () -> executeMessage(completion, theEntry, descriptor, message),
                     maxQueueSize))
             {
                 refusedExecutions.increment();
                 if (logger.isErrorEnabled())
                 {
-                    logger.info("Execution refused: " + key + ":" + interfaceId + ":" + methodId + ":" + messageId);
+                    logger.info("Execution refused: " + key + ":" + message.getInterfaceId() + ":" + message.getMethodId() + ":" + message.getMessageId());
                 }
                 completion.completeExceptionally(new UncheckedException("Execution refused"));
             }
@@ -1012,80 +891,23 @@ public class Execution implements Runtime
         }
     }
 
-    static class MessageContext
-    {
-        ReferenceEntry theEntry;
-        int methodId;
-        NodeAddress from;
-        long traceId;
-        public static final AtomicLong counter = new AtomicLong(0L);
-
-        public MessageContext(final ReferenceEntry theEntry, final int methodId, final NodeAddress from)
-        {
-            this.traceId = counter.incrementAndGet();
-            this.theEntry = theEntry;
-            this.methodId = methodId;
-            this.from = from;
-        }
-    }
-
-    private MessageContext getMessageContext()
-    {
-        final TaskContext current = TaskContext.current();
-        if (current == null)
-        {
-            return null;
-        }
-        final Object property = current.getProperty(MessageContext.class.getName());
-        if (!(property instanceof MessageContext))
-        {
-            return null;
-        }
-        return ((MessageContext) property);
-    }
-
-
-    public ActorReference getCurrentActivation()
-    {
-        final MessageContext current = getMessageContext();
-        if (current == null)
-        {
-            return null;
-        }
-        return current.theEntry.reference;
-    }
-
-    public long getCurrentTraceId()
-    {
-        final MessageContext current = getMessageContext();
-        if (current == null)
-        {
-            return 0;
-        }
-        return current.traceId;
-    }
 
     private Task<Void> executeMessage(
             final Task completion,
             final ReferenceEntry theEntry,
             final InterfaceDescriptor descriptor,
-            final int methodId,
-            final Object headers,
-            final Object[] params,
-            final NodeAddress from)
+            final Message message)
     {
         final ActorTaskContext context = ActorTaskContext.pushNew();
         try
         {
-            context.setProperty(Runtime.class.getName(), this);
-            final MessageContext messageContext = new MessageContext(theEntry, methodId, from);
-            context.setProperty(MessageContext.class.getName(), messageContext);
+            context.setProperty(ActorRuntime.class.getName(), this);
             Activation activation = theEntry.popActivation();
             activation.lastAccess = clock.millis();
-            if (headers instanceof Map)
+            if (message.getHeaders() instanceof Map)
             {
                 @SuppressWarnings("unchecked")
-                final Map<Object, Object> headersMap = (Map) headers;
+                final Map<Object, Object> headersMap = (Map) message.getHeaders();
                 for (Map.Entry<Object, Object> e : headersMap.entrySet())
                 {
                     if (stickyHeaders.contains(e.getKey()))
@@ -1103,7 +925,7 @@ public class Execution implements Runtime
                 {
                     descriptor.invoker = dynamicReferenceFactory.getInvokerFor(actor.getClass());
                 }
-                return descriptor.invoker.safeInvoke(actor, methodId, params)
+                return descriptor.invoker.safeInvoke(actor, message.getMethodId(), (Object[]) message.getPayload())
                         .handle((r, e) -> {
                             if (e == null)
                             {
@@ -1118,7 +940,7 @@ public class Execution implements Runtime
             }
             finally
             {
-                // we don't need to unset the Runtime, @see Runtime.setRuntime:
+                // we don't need to unset the ActorRuntime, @see ActorRuntime.setRuntime:
                 theEntry.pushActivation(activation);
             }
         }
@@ -1138,9 +960,9 @@ public class Execution implements Runtime
     <T> T createReference(final NodeAddress a, final Class<T> iClass, String id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
-        ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference("");
+        RemoteReference<?> reference = (RemoteReference<?>) descriptor.factory.createReference("");
         reference.address = a;
-        reference.runtime = this;
+        reference.runtime = this.runtime;
         reference.id = id;
         return (T) reference;
     }
@@ -1150,13 +972,12 @@ public class Execution implements Runtime
     public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
     {
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
-        ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
-        reference.runtime = this;
+        RemoteReference<?> reference = (RemoteReference<?>) descriptor.factory.createReference(id != null ? String.valueOf(id) : null);
+        reference.runtime = this.runtime;
         return (T) reference;
     }
 
-    @Override
-    public ActorInvoker<?> getInvoker(final int interfaceId)
+    public ObjectInvoker<?> getInvoker(final int interfaceId)
     {
         final InterfaceDescriptor descriptor = getDescriptor(interfaceId);
         if (descriptor == null)
@@ -1182,156 +1003,63 @@ public class Execution implements Runtime
             throw new IllegalArgumentException("Null class");
         }
         final InterfaceDescriptor descriptor = getDescriptor(iClass);
-        ActorReference<?> reference = (ActorReference<?>) descriptor.factory.createReference(String.valueOf(id));
-        reference.runtime = this;
+        RemoteReference<?> reference = (RemoteReference<?>) descriptor.factory.createReference(String.valueOf(id));
+        reference.runtime = this.runtime;
         reference.address = address;
         return (T) reference;
     }
 
-    public Task<?> sendMessage(Addressable toReference, boolean oneWay, final int methodId, final Map<Object, Object> headers, final Object[] params)
+
+    @Override
+    public Task write(final HandlerContext ctx, final Object msg) throws Exception
     {
-        if (logger.isDebugEnabled())
+        if (msg instanceof Invocation)
         {
-            logger.debug("sending message to " + toReference);
+            return invoke(ctx, (Invocation) msg);
         }
-        ActorReference<?> actorReference = (ActorReference<?>) toReference;
-        NodeAddress toNode = actorReference.address;
-
-        final LinkedHashMap<Object, Object> actualHeaders = new LinkedHashMap<>();
-        if (headers != null)
-        {
-            actualHeaders.putAll(headers);
-        }
-        final TaskContext context = TaskContext.current();
-
-        // copy stick context valued to the message headers headers
-        if (context != null)
-        {
-            for (String key : stickyHeaders)
-            {
-                final Object value = context.getProperty(key);
-                if (value != null)
-                {
-                    actualHeaders.put(key, value);
-                }
-            }
-        }
-
-        final Message message = new Message()
-                .withMessageType(oneWay ? MessageDefinitions.REQUEST_MESSAGE : MessageDefinitions.REQUEST_MESSAGE)
-                .withToNode(toNode)
-                .withHeaders(actualHeaders)
-                .withInterfaceId(actorReference._interfaceId())
-                .withMethodId(methodId)
-                .withObjectId(ActorReference.getId(actorReference))
-                .withPayload(params);
-
-
-        final Task<?> task;
-        if (toNode == null)
-        {
-            // TODO: Ensure that both paths encode exception the same way.
-            task = hosting.locateActor(actorReference, true)
-                    .thenCompose(x -> messaging.sendMessage(message
-                            .withToNode(x)
-                            .withFromNode(hosting.getNodeAddress())));
-        }
-        else
-        {
-            task = messaging.sendMessage(message.withToNode(toNode));
-        }
-        return task
-                .whenCompleteAsync((r, e) -> {
-                            // place holder, just to ensure the completion happens in another thread
-                        },
-                        executor);
+        return super.write(ctx, msg);
     }
 
-    public Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params)
+    public Task<?> invoke(final HandlerContext ctx, Invocation invocation)
     {
-        if (!verifyActivated(toReference, m))
+        final Method method = invocation.getMethod();
+        final Addressable toReference = invocation.getToReference();
+        if (!verifyActivated(toReference, method))
         {
             return Task.done();
         }
-
-        if (m.isAnnotationPresent(CacheResponse.class))
+        final Task<?> task;
+        if (invocation.getToNode() == null)
         {
-            return cacheResponseInvoke(toReference, m, oneWay, methodId, params);
-        }
 
-        return invokeInternal(toReference, m, oneWay, methodId, params);
-    }
-
-    private Task<?> cacheResponseInvoke(Addressable toReference, Method method, boolean oneWay, int methodId, Object[] params)
-    {
-        String parameterHash = generateParameterHash(params);
-        Pair<Addressable, String> key = Pair.of(toReference, parameterHash);
-
-        Task<?> cached = cacheManager.get(method, key);
-        if (cached == null
-                || cached.isCompletedExceptionally()
-                || cached.isCancelled())
-        {
-            cached = invokeInternal(toReference, method, oneWay, methodId, params);
-            cacheManager.put(method, key, cached);
-        }
-
-        return cached.thenApply(objectCloner::clone);
-    }
-
-    private String generateParameterHash(Object[] params)
-    {
-        if (params == null || params.length == 0)
-        {
-            return "";
-        }
-        try
-        {
-            final MessageDigest md = MessageDigest.getInstance("SHA-256");
-            DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
-            // this entire function shouldn't be here...
-            getStage().getMessageSerializer().serializeMessage(this, d, new Message().withPayload(params));
-            d.close();
-            return String.format("%032X", new BigInteger(1, md.digest()));
-        }
-        catch (Exception e)
-        {
-            throw new UncheckedException("Unable to make parameter hash", e);
-        }
-    }
-
-    private Task<?> invokeInternal(Addressable toReference, Method m, final boolean oneWay, int methodId, Object[] params)
-    {
-        if (hookExtensions.size() == 0)
-        {
-            // no hooks
-            return sendMessage(toReference, oneWay, methodId, null, params);
-        }
-
-        Iterator<InvokeHookExtension> it = hookExtensions.iterator();
-
-        // invoke the hook extensions as a chain where one can
-        // filter the input and output of the next.
-        InvocationContext ctx = new InvocationContext()
-        {
-            @Override
-            public Runtime getRuntime()
+            NodeAddress address;
+            if (toReference instanceof RemoteReference
+                    && (address = RemoteReference.getAddress((RemoteReference) toReference)) != null)
             {
-                return Execution.this;
+                invocation.withToNode(address);
+                task = ctx.write(invocation);
             }
-
-            @Override
-            public Task<?> invokeNext(final Addressable toReference, final Method method, final int methodId, final Object[] params)
+            else
             {
-                if (it.hasNext())
+                final Addressable actorReference = toReference;
+                // TODO: Ensure that both paths encode exception the same way.
+                task = hosting.locateActor(actorReference, true)
+                        .thenCompose(x -> {
+                            return ctx.write(invocation
+                                    .withToNode(x)
+                                    .withFromNode(hosting.getNodeAddress()));
+                        });
+            }
+        }
+        else
+        {
+            task = ctx.write(invocation);
+        }
+        return task.whenCompleteAsync((r, e) ->
                 {
-                    return it.next().invoke(this, toReference, method, methodId, params);
-                }
-                return sendMessage(toReference, oneWay, methodId, null, params);
-            }
-        };
-
-        return ctx.invokeNext(toReference, m, methodId, params);
+                    // place holder, just to ensure the completion happens in another thread
+                },
+                executor);
     }
 
     public Task<?> activationCleanup()

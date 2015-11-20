@@ -30,6 +30,7 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.extensions.StorageExtension;
+import com.ea.orbit.actors.extensions.StreamProvider;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -49,8 +50,9 @@ public abstract class AbstractActor<T>
 {
     T state;
     StorageExtension stateExtension;
-    ActorReference<?> reference;
+    RemoteReference<?> reference;
     Logger logger;
+    ActorRuntime runtime;
 
     protected AbstractActor()
     {
@@ -82,7 +84,7 @@ public abstract class AbstractActor<T>
     /**
      * Creates a default state representation for this actor
      */
-    @SuppressWarnings({"PMD.LooseCoupling", "unchecked"})
+    @SuppressWarnings({ "PMD.LooseCoupling", "unchecked" })
     protected void createDefaultState()
     {
         Class<?> c = getStateClass();
@@ -163,7 +165,7 @@ public abstract class AbstractActor<T>
      */
     protected Registration registerTimer(Callable<Task<?>> futureCallable, long dueTime, long period, TimeUnit timeUnit)
     {
-        return reference.runtime.registerTimer(this, futureCallable, dueTime, period, timeUnit);
+        return runtime.registerTimer(this, futureCallable, dueTime, period, timeUnit);
     }
 
     /**
@@ -180,7 +182,7 @@ public abstract class AbstractActor<T>
         {
             throw new IllegalArgumentException("This must implement IRemindable: " + this.getClass().getName());
         }
-        return reference.runtime.registerReminder((Remindable) reference, reminderName, dueTime, period, timeUnit);
+        return runtime.registerReminder((Remindable) reference, reminderName, dueTime, period, timeUnit);
     }
 
     /**
@@ -191,7 +193,7 @@ public abstract class AbstractActor<T>
      */
     protected Task<?> unregisterReminder(String reminderName)
     {
-        return reference.runtime.unregisterReminder((Remindable) reference, reminderName);
+        return runtime.unregisterReminder((Remindable) reference, reminderName);
     }
 
     /**
@@ -201,7 +203,7 @@ public abstract class AbstractActor<T>
      */
     protected String runtimeIdentity()
     {
-        return reference.runtime.runtimeIdentity();
+        return runtime.runtimeIdentity();
     }
 
     /**
@@ -234,4 +236,11 @@ public abstract class AbstractActor<T>
         return Task.done();
     }
 
+    protected StreamProvider getStreamProvider(String name)
+    {
+        StreamProvider provider = runtime.getStreamProvider(name);
+
+        // TODO: wrap StreamProvider to use an actor executor for call backs
+        return provider;
+    }
 }

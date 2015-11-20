@@ -33,7 +33,7 @@ import com.ea.orbit.concurrent.TaskContext;
 public class ActorTaskContext extends TaskContext
 {
     private AbstractActor<?> actor;
-    private Runtime runtime;
+    private ActorRuntime runtime;
 
     /**
      * Creates a new actor task context and pushes it to the current thread context stack.
@@ -67,12 +67,12 @@ public class ActorTaskContext extends TaskContext
         return null;
     }
 
-    void setRuntime(final Runtime runtime)
+    void setRuntime(final ActorRuntime runtime)
     {
         this.runtime = runtime;
     }
 
-    public Runtime getRuntime()
+    public ActorRuntime getRuntime()
     {
         return runtime;
     }
@@ -84,5 +84,11 @@ public class ActorTaskContext extends TaskContext
         tc.runtime = runtime;
         tc.properties().putAll(properties());
         return tc;
+    }
+
+    public static AbstractActor<?> currentActor()
+    {
+        ActorTaskContext current = current();
+        return current != null ? current.getActor() : null;
     }
 }

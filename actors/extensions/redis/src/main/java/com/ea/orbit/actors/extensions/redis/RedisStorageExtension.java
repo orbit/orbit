@@ -30,8 +30,8 @@ package com.ea.orbit.actors.extensions.redis;
 
 import com.ea.orbit.actors.extensions.AbstractStorageExtension;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
-import com.ea.orbit.actors.runtime.ActorReference;
-import com.ea.orbit.actors.runtime.ReferenceFactory;
+import com.ea.orbit.actors.runtime.RemoteReference;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -58,7 +58,7 @@ public class RedisStorageExtension extends AbstractStorageExtension
     public Task<Void> start()
     {
         mapper = new ObjectMapper();
-        mapper.registerModule(new ActorReferenceModule(new ReferenceFactory()));
+        mapper.registerModule(new ActorReferenceModule(DefaultDescriptorFactory.get()));
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
@@ -70,15 +70,15 @@ public class RedisStorageExtension extends AbstractStorageExtension
         return Task.done();
     }
 
-    private String asKey(final ActorReference reference)
+    private String asKey(final RemoteReference reference)
     {
-        String clazzName = ActorReference.getInterfaceClass(reference).getName();
-        String id = String.valueOf(ActorReference.getId(reference));
+        String clazzName = RemoteReference.getInterfaceClass(reference).getName();
+        String id = String.valueOf(RemoteReference.getId(reference));
         return databaseName + "_" + clazzName + "_" + id;
     }
 
     @Override
-    public Task<Void> clearState(final ActorReference reference, final Object state)
+    public Task<Void> clearState(final RemoteReference reference, final Object state)
     {
         try (Jedis redis = pool.getResource())
         {
@@ -96,7 +96,7 @@ public class RedisStorageExtension extends AbstractStorageExtension
 
     @Override
     @SuppressWarnings("unchecked")
-    public Task<Boolean> readState(final ActorReference reference, final Object state)
+    public Task<Boolean> readState(final RemoteReference reference, final Object state)
     {
         String data;
         try (Jedis redis = pool.getResource())
@@ -120,7 +120,7 @@ public class RedisStorageExtension extends AbstractStorageExtension
 
     @Override
     @SuppressWarnings("unchecked")
-    public Task<Void> writeState(final ActorReference reference, final Object state)
+    public Task<Void> writeState(final RemoteReference reference, final Object state)
     {
         String data;
         try
