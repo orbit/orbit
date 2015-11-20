@@ -17,6 +17,7 @@ import static org.junit.Assert.assertTrue;
 
 public class StreamTest extends ActorBaseTest
 {
+    @SuppressWarnings("Duplicates")
     @Test
     public void test()
     {

@@ -41,6 +41,7 @@ import static org.junit.Assert.assertEquals;
 
 public class SimpleStreamTest extends ActorBaseTest
 {
+    @SuppressWarnings("Duplicates")
     @Test
     public void test()
     {
