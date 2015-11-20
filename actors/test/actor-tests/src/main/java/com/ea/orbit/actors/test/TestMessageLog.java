@@ -1,10 +1,7 @@
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.annotation.OneWay;
-import com.ea.orbit.actors.extensions.DefaultLoggerExtension;
-import com.ea.orbit.actors.extensions.LoggerExtension;
 import com.ea.orbit.actors.extensions.PipelineExtension;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.AbstractActor;
@@ -17,9 +14,6 @@ import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.concurrent.TaskContext;
 
-import org.slf4j.Logger;
-import org.slf4j.Marker;
-
 import java.lang.reflect.Method;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -30,14 +24,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 
-class ActorTestLogging implements PipelineExtension, LoggerExtension
+class TestMessageLog implements PipelineExtension
 {
     private AtomicLong invocationId = new AtomicLong();
 
     private ActorBaseTest actorBaseTest;
-    DefaultLoggerExtension defaultLogger = new DefaultLoggerExtension();
 
-    public ActorTestLogging(final ActorBaseTest actorBaseTest)
+    public TestMessageLog(final ActorBaseTest actorBaseTest)
     {
         this.actorBaseTest = actorBaseTest;
     }
@@ -178,35 +171,6 @@ class ActorTestLogging implements PipelineExtension, LoggerExtension
         return ex;
     }
 
-    @Override
-    public Logger getLogger(final Object object)
-    {
-        final Logger logger = defaultLogger.getLogger(object);
-
-        String target;
-        if (object instanceof Actor)
-        {
-            final RemoteReference reference = RemoteReference.from((Actor) object);
-            target = (RemoteReference.getInterfaceClass(reference).getSimpleName()
-                    + ":" + RemoteReference.getId(reference)).replaceAll("[\"\\t\\r\\n]", "");
-        }
-        else
-        {
-            target = logger.getName();
-        }
-        return new LogInterceptor(logger)
-        {
-            @Override
-            protected void message(final String type, final Marker marker, final String format, final Object... arguments)
-            {
-                super.message(type, marker, format, arguments);
-                final String message = (!"info".equalsIgnoreCase(type) ? type + ": " : "") +
-                        String.format(format, arguments);
-                String position = "over";
-                note(position, target, message);
-            }
-        };
-    }
 
     private String getFrom(final RemoteReference reference, final Method method)
     {
@@ -242,26 +206,4 @@ class ActorTestLogging implements PipelineExtension, LoggerExtension
         return from;
     }
 
-    public void note(final String position, final String message)
-    {
-        note(position, getFrom(null, null), message);
-    }
-
-    private void note(final String position, final String target, final String message)
-    {
-        final StringBuilder note = new StringBuilder("note ");
-        note.append(position).append(" \"").append(target);
-        if (message.contains("\n"))
-        {
-            note.append("\r\n");
-            note.append(message);
-            note.append("\r\n").append("end note");
-
-        }
-        else
-        {
-            note.append("\": ").append(message);
-        }
-        actorBaseTest.sequenceDiagram.add(note.toString());
-    }
 }

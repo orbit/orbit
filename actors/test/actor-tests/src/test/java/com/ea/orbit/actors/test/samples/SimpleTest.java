@@ -26,65 +26,46 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.ws;
+package com.ea.orbit.actors.test.samples;
+
 
 import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.client.ClientPeer;
-import com.ea.orbit.actors.runtime.Peer;
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.exception.UncheckedException;
 
-import javax.websocket.ClientEndpoint;
-import javax.websocket.ContainerProvider;
-import javax.websocket.WebSocketContainer;
+import org.junit.Test;
 
-import java.net.URI;
+import java.util.concurrent.ExecutionException;
 
-@ClientEndpoint
-public class WebSocketClient extends AbstractWebSocket
+import static org.junit.Assert.assertEquals;
+
+@SuppressWarnings("unused")
+public class SimpleTest extends ActorBaseTest
 {
-    private ClientPeer peer = new ClientPeer();
-
-    public ClientPeer getPeer()
+    public interface Hello extends Actor
     {
-        return peer;
+        Task<String> sayHello(String greeting);
     }
 
-    @Override
-    protected Peer peer()
+    public static class HelloActor extends AbstractActor implements Hello
     {
-        return peer;
-    }
-
-    public Task connect(final URI endpointURI)
-    {
-        final WebSocketContainer wsContainer = ContainerProvider.getWebSocketContainer();
-        try
+        @Override
+        public Task<String> sayHello(final String greeting)
         {
-            session = wsContainer.connectToServer(this, endpointURI);
+            return Task.fromValue(greeting);
         }
-        catch (Exception e)
-        {
-            throw new UncheckedException(e);
-        }
-        return Task.done();
     }
 
-    public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
+    @Test
+    public void singleActorSingleStageTest() throws ExecutionException, InterruptedException
     {
-        return peer.getReference(iClass, id);
+        Stage stage1 = createStage();
+        Hello hello = Actor.getReference(Hello.class, "1");
+        assertEquals("bla", hello.sayHello("bla").join());
+        assertEquals("hi", hello.sayHello("hi").join());
+        dumpMessages();
     }
 
-    /**
-     * Register a object locally without notifying the cluster about it's location.
-     *
-     * @param remoteInterface the implemented remote interface class (T.class)
-     * @param implementation  a implementation of the remote interface
-     * @param <T>             the remote interface type
-     */
-
-    public <T> void registerLocalObject(final Class<T> remoteInterface, final T interfaceImplementation)
-    {
-
-    }
 }

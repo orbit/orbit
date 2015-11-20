@@ -37,20 +37,20 @@ import com.ea.orbit.actors.extensions.MessageSerializer;
 import com.ea.orbit.actors.extensions.PipelineExtension;
 import com.ea.orbit.actors.net.DefaultPipeline;
 import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.actors.runtime.ClusterHandler;
 import com.ea.orbit.actors.runtime.DefaultHandlers;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.ExecutionCacheFlushObserver;
-import com.ea.orbit.actors.runtime.ResponseCaching;
 import com.ea.orbit.actors.runtime.Hosting;
 import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.JavaMessageSerializer;
 import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
+import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.Registration;
 import com.ea.orbit.actors.runtime.ReminderController;
+import com.ea.orbit.actors.runtime.ResponseCaching;
 import com.ea.orbit.actors.runtime.SerializationHandler;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
@@ -80,6 +80,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -104,7 +105,7 @@ public class Stage implements Startable, ActorRuntime
     private int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
 
     @Config("orbit.actors.extensions")
-    private List<ActorExtension> extensions = new ArrayList<>();
+    private List<ActorExtension> extensions = new CopyOnWriteArrayList<>();
 
     @Config("orbit.actors.stickyHeaders")
     private Set<String> stickyHeaders = new HashSet<>();
@@ -115,6 +116,11 @@ public class Stage implements Startable, ActorRuntime
 
     private final String runtimeIdentity;
     private ResponseCaching cacheManager;
+
+    public List<ActorExtension> getExtensions()
+    {
+        return extensions;
+    }
 
 
     public enum StageMode

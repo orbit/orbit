@@ -86,7 +86,7 @@ import static org.junit.Assert.fail;
 public class ActorBaseTest
 {
     static final String TEST_NAME_PROP = ActorBaseTest.class.getName() + ".testName";
-    protected LoggerExtension loggerExtension = new ActorTestLogging(this);
+    protected LoggerExtension loggerExtension = new TestLogger(this);
     protected Logger logger = LoggerFactory.getLogger(this.getClass());
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
@@ -243,8 +243,8 @@ public class ActorBaseTest
 
                 Files.write(seqUml,
                         Stream.concat(Stream.concat(
-                                        Stream.of("@startuml"),
-                                        sequenceDiagram.stream()),
+                                Stream.of("@startuml"),
+                                sequenceDiagram.stream()),
                                 Stream.of("@enduml")
                         ).collect(Collectors.toList()));
                 out.println("Message sequence diagram written to:");
@@ -376,8 +376,8 @@ public class ActorBaseTest
 
     protected void installExtensions(final Stage stage)
     {
-        stage.addExtension(new ActorTestLogging(this));
-        stage.addExtension(new ActorTestLogging(this));
+        stage.addExtension(new TestLogger(this));
+        stage.addExtension(new TestMessageLog(this));
     }
 
     protected ExecutionObjectCloner getExecutionObjectCloner()
@@ -520,5 +520,3 @@ public class ActorBaseTest
 
     }
 }
-
-

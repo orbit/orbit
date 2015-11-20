@@ -26,65 +26,25 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.ws;
+package com.ea.orbit.actors.server;
 
-import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.client.ClientPeer;
-import com.ea.orbit.actors.runtime.Peer;
-import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.exception.UncheckedException;
+import com.ea.orbit.actors.extensions.ActorExtension;
 
-import javax.websocket.ClientEndpoint;
-import javax.websocket.ContainerProvider;
-import javax.websocket.WebSocketContainer;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
-import java.net.URI;
-
-@ClientEndpoint
-public class WebSocketClient extends AbstractWebSocket
+public class ServerExtension implements ActorExtension
 {
-    private ClientPeer peer = new ClientPeer();
+    private Set<ServerPeer> currentConnections = new ConcurrentSkipListSet<>();
 
-    public ClientPeer getPeer()
+    public void connectionOpened(ServerPeer peer)
     {
-        return peer;
+        currentConnections.add(peer);
     }
 
-    @Override
-    protected Peer peer()
+    public void connectionClosed(ServerPeer peer)
     {
-        return peer;
+        currentConnections.remove(peer);
     }
 
-    public Task connect(final URI endpointURI)
-    {
-        final WebSocketContainer wsContainer = ContainerProvider.getWebSocketContainer();
-        try
-        {
-            session = wsContainer.connectToServer(this, endpointURI);
-        }
-        catch (Exception e)
-        {
-            throw new UncheckedException(e);
-        }
-        return Task.done();
-    }
-
-    public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
-    {
-        return peer.getReference(iClass, id);
-    }
-
-    /**
-     * Register a object locally without notifying the cluster about it's location.
-     *
-     * @param remoteInterface the implemented remote interface class (T.class)
-     * @param implementation  a implementation of the remote interface
-     * @param <T>             the remote interface type
-     */
-
-    public <T> void registerLocalObject(final Class<T> remoteInterface, final T interfaceImplementation)
-    {
-
-    }
 }

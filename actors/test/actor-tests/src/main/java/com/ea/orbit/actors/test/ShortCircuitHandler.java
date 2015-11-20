@@ -38,7 +38,7 @@ public class ShortCircuitHandler extends HandlerAdapter
     private HandlerContext secondCtx;
 
     @Override
-    public Task connect(final HandlerContext ctx, final Object param) throws Exception
+    public void onRegistered(final HandlerContext ctx) throws Exception
     {
         if (ctx != firstCtx && ctx != secondCtx)
         {
@@ -52,11 +52,9 @@ public class ShortCircuitHandler extends HandlerAdapter
             }
             else
             {
-                throw new IllegalStateException("Connect called with 3 different contexts!");
+                throw new IllegalStateException("onRegistered called with more than 2 different contexts!");
             }
         }
-        ctx.fireActive();
-        return Task.done();
     }
 
     @Override
