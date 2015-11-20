@@ -1,0 +1,60 @@
+@startuml
+
+title Draft
+
+class Message {
+    1: optional uint8 type
+    2: optional int32 messageId
+    3: optional int32 classId
+    4: optional int32 methodId
+    5: optional byte[] objectId
+    ---
+    8: optional uuid from
+    9: optional uuid to
+    ---
+    10: optional Header[] headers
+    ---
+    15: optional byte[] payload
+}
+
+Message o-- Header
+class  Header {
+    1: optional uint32 intkey
+    2: optional string strkey
+    ---
+    9: optional uint32 intvalue
+    10: optional string strValue
+    11: optional byte byteValue
+}
+
+class Invocation {
+    int messageId
+    int32 classId
+    int32 methodId
+    Method method
+    boolean oneWay
+    Addressable toReference
+    Task completion
+    ---
+    NodeAddress from
+    NodeAddress to
+    ----
+    Map<String|Integer, String|Integer> headers
+    ----
+    Object[] params
+}
+
+class Response {
+    uint8 type
+    int messageId
+    ---
+    NodeAddress toNode
+    NodeAddress fromNode
+    ---
+    Map<String|Integer, String|Integer> headers
+    ---
+    Object result
+}
+
+
+@enduml
