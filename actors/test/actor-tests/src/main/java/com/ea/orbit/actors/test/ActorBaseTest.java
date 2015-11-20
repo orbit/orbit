@@ -66,12 +66,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -127,7 +126,7 @@ public class ActorBaseTest
 
     protected FakeSync fakeSync = new FakeSync();
     protected final StringBuilder hiddenLogData = new StringBuilder();
-    protected final List<String> sequenceDiagram = Collections.synchronizedList(new LinkedList<>());
+    protected final ConcurrentLinkedQueue<String> sequenceDiagram = new ConcurrentLinkedQueue<>();
 
     protected final SimpleLog hiddenLog = new SimpleLog("orbit")
     {
