@@ -71,7 +71,7 @@ public class ExecutionSerializer2
     {
         do
         {
-            if (!lock.compareAndSet(false, true))
+            if (!lock())
             {
                 // some other thread has the lock and it is now responsible for draining the queue.
                 return;
@@ -95,7 +95,7 @@ public class ExecutionSerializer2
                     catch (Throwable ex)
                     {
                         // just to be on the safe side... loggers can fail...
-                        lock.compareAndSet(true, false);
+                        unlock();
                         ex.printStackTrace();
                         return;
                     }
@@ -111,16 +111,26 @@ public class ExecutionSerializer2
                 {
                     // was executed immediately
                     // unlock
-                    lock.compareAndSet(true, false);
+                    unlock();
                 }
             }
         } while (!queue.isEmpty());
     }
 
+    private void unlock()
+    {
+        lock.compareAndSet(true, false);
+    }
+
+    private boolean lock()
+    {
+        return lock.compareAndSet(false, true);
+    }
+
     private <T> void whenCompleteAsync(T result, Throwable error)
     {
         // unlock
-        lock.compareAndSet(true, false);
+        unlock();
         // double take:
         // try executing again, in case some new data arrived
         tryExecute();
