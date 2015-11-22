@@ -167,27 +167,24 @@ public class DefaultDescriptorFactory implements DescriptorFactory
         return descriptor.invoker;
     }
 
-
     @Override
-    public <T extends Actor> T getReference(BasicRuntime runtime, final Class<T> iClass, final Object id)
+    public <T> T getReference(BasicRuntime runtime, final UUID nodeId, final Class<T> iClass, final Object id)
     {
         ReferenceFactory<T> factory = getFactory(iClass);
         final T reference = factory.createReference(String.valueOf(id));
-        ((RemoteReference) reference).runtime = runtime;
-        return reference;
-    }
-
-    @Override
-    public <T extends ActorObserver> T getObserverReference(final UUID nodeId, final Class<T> iClass, final Object id)
-    {
-        ReferenceFactory<T> factory = getFactory(iClass);
-        final T reference = factory.createReference(String.valueOf(id));
-        RemoteReference.setAddress((RemoteReference<?>) reference, new NodeAddressImpl(nodeId));
+        if (nodeId != null)
+        {
+            RemoteReference.setAddress((RemoteReference<?>) reference, new NodeAddressImpl(nodeId));
+        }
+        if (runtime != null)
+        {
+            ((RemoteReference) reference).runtime = runtime;
+        }
         return reference;
     }
 
     @SuppressWarnings("unchecked")
-    private <T> ReferenceFactory<T> getFactory(final Class<T> iClass)
+    public <T> ReferenceFactory<T> getFactory(final Class<T> iClass)
     {
         ReferenceFactory<T> factory = (ReferenceFactory<T>) factories.get(iClass);
         if (factory == null)
@@ -247,7 +244,7 @@ public class DefaultDescriptorFactory implements DescriptorFactory
 
     public static <T extends ActorObserver> T observerRef(UUID nodeId, Class<T> actorObserverInterface, String id)
     {
-        return instance.getObserverReference(nodeId, actorObserverInterface, id);
+        return instance.getReference(nodeId, actorObserverInterface, id);
     }
 
 

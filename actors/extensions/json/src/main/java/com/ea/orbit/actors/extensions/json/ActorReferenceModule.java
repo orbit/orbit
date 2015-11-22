@@ -244,7 +244,7 @@ public class ActorReferenceModule extends Module
             final int idx = text.indexOf('/');
 
             final UUID uuid = UUID.fromString(text.substring(0, idx));
-            return factory.getObserverReference(uuid, (Class) iClass, text.substring(idx + 1));
+            return factory.getReference(uuid, (Class) iClass, text.substring(idx + 1));
         }
 
         @Override

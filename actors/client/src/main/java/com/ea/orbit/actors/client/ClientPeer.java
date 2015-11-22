@@ -91,7 +91,7 @@ public class ClientPeer extends Peer implements BasicRuntime, Startable, RemoteC
     @Override
     public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
     {
-        return DefaultDescriptorFactory.get().getReference(this, iClass, id);
+        return DefaultDescriptorFactory.get().getReference(this, null, iClass, id);
     }
 
     @Override
