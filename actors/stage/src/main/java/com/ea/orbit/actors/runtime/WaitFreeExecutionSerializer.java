@@ -41,14 +41,14 @@ import java.util.function.Supplier;
 /**
  * Ensures that only a single task is executed at each time.
  */
-public class ExecutionSerializer2
+public class WaitFreeExecutionSerializer
 {
-    private static final Logger logger = LoggerFactory.getLogger(ExecutionSerializer2.class);
+    private static final Logger logger = LoggerFactory.getLogger(WaitFreeExecutionSerializer.class);
     private ExecutorService executorService;
     private ConcurrentLinkedQueue<Supplier<Task<?>>> queue = new ConcurrentLinkedQueue<>();
     private AtomicBoolean lock = new AtomicBoolean();
 
-    public ExecutionSerializer2(final ExecutorService executorService)
+    public WaitFreeExecutionSerializer(final ExecutorService executorService)
     {
         this.executorService = executorService;
     }
@@ -63,11 +63,19 @@ public class ExecutionSerializer2
         {
             return false;
         }
-        tryExecute();
+        tryExecute(false);
         return true;
     }
 
-    private void tryExecute()
+    public boolean isBusy()
+    {
+        return lock.get() || queue.size() > 0;
+    }
+
+    /**
+     * @param local defines if can execute in the current thread
+     */
+    private void tryExecute(boolean local)
     {
         do
         {
@@ -78,27 +86,19 @@ public class ExecutionSerializer2
             }
 
             // while there is something in the queue
-            for (Supplier<Task<?>> toRun; null != (toRun = queue.poll()); )
+            final Supplier<Task<?>> toRun = queue.poll();
+            try
             {
                 Task<?> taskFuture;
-                try
+                if (local)
                 {
                     taskFuture = toRun.get();
                 }
-                catch (Throwable error)
+                else
                 {
-                    taskFuture = null;
-                    try
-                    {
-                        logger.error("Error executing action", error);
-                    }
-                    catch (Throwable ex)
-                    {
-                        // just to be on the safe side... loggers can fail...
-                        unlock();
-                        ex.printStackTrace();
-                        return;
-                    }
+                    // execute in another thread
+                    final Task<?> task = taskFuture = new Task<>();
+                    executorService.execute(() -> wrapExecution(toRun, task));
                 }
                 if (taskFuture != null && !taskFuture.isDone())
                 {
@@ -107,19 +107,60 @@ public class ExecutionSerializer2
                     // returning without unlocking, onComplete will do it;
                     return;
                 }
-                else
+            }
+            catch (Throwable error)
+            {
+                try
                 {
-                    // was executed immediately
-                    // unlock
-                    unlock();
+                    logger.error("Error executing action", error);
+                }
+                catch (Throwable ex)
+                {
+                    // just to be on the safe side... loggers can fail...
+                    ex.printStackTrace();
                 }
             }
+            // was executed immediately
+            // unlock
+            unlock();
         } while (!queue.isEmpty());
+    }
+
+    private void wrapExecution(final Supplier<Task<?>> toRun, final Task<?> taskFuture)
+    {
+        try
+        {
+            final Task<?> task = (Task) toRun.get();
+            if (task == null)
+            {
+                taskFuture.complete(null);
+            }
+            else
+            {
+                task.whenComplete((r, e) -> {
+                    if (e != null)
+                    {
+                        taskFuture.completeExceptionally(e);
+                    }
+                    else
+                    {
+                        taskFuture.complete(null);
+                    }
+                });
+            }
+        }
+        catch (Exception e)
+        {
+            taskFuture.completeExceptionally(e);
+        }
     }
 
     private void unlock()
     {
-        lock.compareAndSet(true, false);
+        if (!lock.compareAndSet(true, false))
+        {
+            logger.error("Unlocking without having the lock");
+        }
     }
 
     private boolean lock()
@@ -133,6 +174,6 @@ public class ExecutionSerializer2
         unlock();
         // double take:
         // try executing again, in case some new data arrived
-        tryExecute();
+        tryExecute(true);
     }
 }
