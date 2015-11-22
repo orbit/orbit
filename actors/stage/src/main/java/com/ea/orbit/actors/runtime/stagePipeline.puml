@@ -3,14 +3,16 @@
 actor Application
 note right of Application : Actors, Observers
 
+database databases
+entity MMS
+usecase "Dependency Injection" as DependencyInjection
 artifact Stage {
-    agent Hosting #LightBlue
-    note right of Hosting : Group coordination
-    artifact "Message Pipeline"  {
-        interface " " as Pipeline
-        note right of Pipeline : Head of the protocol stack
+    artifact "Message Pipeline" as MessagePipeline  {
+        interface " " as Head
+        note right of Head : Head of the protocol stack
         agent Caching #LightBlue
         agent Execution #LightBlue
+        agent Hosting #LightBlue
         agent Messaging #LightBlue
         agent MessageSerializer
         agent ClusterPeer
@@ -22,19 +24,40 @@ artifact Stage {
         }
         note right of MessageSerializer : Serialization, Replaceable
         note right of ClusterPeer : JGroupsClusterPeer, Replaceable
+        note right of Hosting : Group coordination, locates actors
     }
+    artifact "Components"  {
+        agent LocalObjects #LightBlue
+        agent ExecutionSerializer #LightBlue
+        agent Timer #LightBlue
+        agent ReminderController #LightBlue
+        agent ExecutorService
+        agent Clock
+    }
+    artifact "Extensions"  {
+        agent ActorFinder
+        agent LoggerExtension
+        agent StreamProviders
+        agent StorageExtensions
+        agent PipelineExtensions
+        agent LifetimeExtensions
+    }
+    Extensions -down-- Components
+    ' MessagePipeline - PipelineExtensions
+    databases -- StorageExtensions
+    MMS -- StreamProviders
+    DependencyInjection -- LifetimeExtensions
+'    note right of ActorFinder {
+'        can be used with containers
+'    }
 }
 cloud Network
 
-
-Execution --> Hosting : locate actor
-Hosting --> Execution : select node, find actor
-ClusterPeer --> Hosting: cluster view
-
-Application --> Pipeline : [ invokeRemote ]
-Pipeline --> Caching : [ write ]
+Application --> Head : [ invokeRemote ]
+Head --> Caching : [ write ]
 Caching --> Execution : [ write ]
-Execution --> Messaging  : [ write ]
+Execution --> Hosting  : [ write ]
+Hosting --> Messaging  : [ write ]
 Messaging --> MessageSerializer  : [ write ]
 MessageSerializer --> ClusterPeer : [ write ]
 ClusterPeer --> Network : [ send group message (bytes) ]
@@ -42,9 +65,10 @@ ClusterPeer --> Network : [ send group message (bytes) ]
 Network --> ClusterPeer : [ receive group message (bytes) ]
 ClusterPeer --> MessageSerializer : [ onRead  ]
 MessageSerializer --> Messaging  : [ onRead  ]
-Messaging --> Execution  : [ onRead  ]
+Hosting --> Execution  : [ onRead  ]
+Messaging --> Hosting  : [ onRead (ClusterView) ]
 Execution --> Caching : [ response ]
-Caching --> Pipeline : [ response ]
-Pipeline --> Application : [ response ]
+Caching --> Head : [ response ]
+Head --> Application : [ response ]
 
 @enduml
