@@ -1,0 +1,49 @@
+@startuml
+
+title Exposing client objects to the cluster
+
+package server {
+    package Stage {
+          object LocalObjects
+    }
+
+
+    package "connection : ServerPeer" {
+        object ClientProxies {
+            clientProxies
+        }
+        ClientProxies o-right- ClientObjectProxy
+    }
+    LocalObjects o-left- ClientObjectProxy
+}
+
+package client {
+    package "connection : ClientPeer" {
+        object ClientObjects
+    }
+
+    ClientObjects o-right- ClientObject
+}
+
+ClientObjectProxy --left-- ClientObject
+
+note right of ClientObject {
+    The application code creates objects
+    and registers them with the server connection
+    the server registers proxies in the Stage
+    ---
+    This makes the client objects reachable
+    by actors in the cluster
+    and by other clients.
+    ---
+    Security: What the client application can
+    register/reach must be filtered
+    using stage extensions.
+    ---
+    On disconnection the client proxies
+    are removed from the server Stage.
+}
+
+
+
+@enduml
