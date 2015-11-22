@@ -42,6 +42,7 @@ import com.ea.orbit.actors.extensions.DefaultLoggerExtension;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.LoggerExtension;
 import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.OnlyIfActivated;
@@ -68,7 +69,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -553,7 +553,7 @@ public class Execution extends AbstractExecution
         {
             throw new UncheckedException("Can't find factory for " + observer.getClass());
         }
-        final String id = objectId != null ? objectId : UUID.randomUUID().toString();
+        final String id = objectId != null ? objectId : IdUtils.urlSafeString(128);
 
         EntryKey key = new EntryKey(factory.getInterfaceId(), id);
         final ActorObserver existingObserver = observerInstances.get(key);
