@@ -38,7 +38,7 @@ import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.AbstractExecution;
 import com.ea.orbit.actors.runtime.ActorFactoryGenerator;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
-import com.ea.orbit.actors.runtime.ExecutionSerializer;
+import com.ea.orbit.actors.concurrent.MultiExecutionSerializer;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.concurrent.ExecutorUtils;
@@ -67,7 +67,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -449,10 +448,10 @@ public class ActorBaseTest
         {
             // this is very ad hoc, but should work for our tests, until execution changes.
             // for starters access to this map should be synchronized.
-            Map running = (Map) getField(getField(getField(stage, Stage.class, "execution"), AbstractExecution.class,
-                    "executionSerializer"), ExecutionSerializer.class, "running");
+            MultiExecutionSerializer executionSerializer = (MultiExecutionSerializer) getField(getField(stage, Stage.class, "execution"), AbstractExecution.class,
+                    "executionSerializer");
 
-            return running.size() == 0;
+            return !executionSerializer.isBusy();
         }
         catch (Exception e)
         {

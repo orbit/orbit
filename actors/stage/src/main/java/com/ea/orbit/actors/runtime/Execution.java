@@ -33,6 +33,7 @@ import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.concurrent.WaitFreeMultiExecutionSerializer;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.annotation.StorageExtension;
 import com.ea.orbit.actors.cluster.NodeAddress;
@@ -177,11 +178,6 @@ public class Execution extends AbstractExecution
             }
         }
         return !descriptor.cannotActivate;
-    }
-
-    public void registerFactory(ReferenceFactory<?> factory)
-    {
-        // TODO: will enable caching the reference factory
     }
 
     public Stage getStage()
@@ -672,7 +668,7 @@ public class Execution extends AbstractExecution
         {
             executor = ExecutorUtils.newScalingThreadPool(64);
         }
-        executionSerializer = new ExecutionSerializer<>(executor);
+        executionSerializer = new WaitFreeMultiExecutionSerializer<>(executor);
 
         extensions.forEach(Startable::start);
         // schedules the cleanup

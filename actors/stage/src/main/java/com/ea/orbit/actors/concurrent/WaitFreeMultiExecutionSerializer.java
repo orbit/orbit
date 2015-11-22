@@ -26,7 +26,7 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.runtime;
+package com.ea.orbit.actors.concurrent;
 
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
@@ -40,24 +40,27 @@ import com.google.common.cache.CacheBuilder;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
  * Ensures that only a single task is executed at each time per key.
+ *
+ * @author Daniel Sperry
  */
-public class MultiExecutionSerializer<T>
+public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerializer<T>
 {
-    private static final Logger logger = LoggerFactory.getLogger(Execution.class);
+    private static final Logger logger = LoggerFactory.getLogger(WaitFreeMultiExecutionSerializer.class);
     private ExecutorService executorService;
-    private Cache<T, WaitFreeExecutionSerializer> serializers = CacheBuilder.newBuilder().softValues().build();
+    private Cache<T, WaitFreeExecutionSerializer> serializers = CacheBuilder.newBuilder().weakValues().build();
 
-    public MultiExecutionSerializer()
+    public WaitFreeMultiExecutionSerializer()
     {
-        executorService = ExecutorUtils.newScalingThreadPool(64);
+        executorService = ExecutorUtils.newScalingThreadPool(ForkJoinPool.getCommonPoolParallelism());
     }
 
-    public MultiExecutionSerializer(final ExecutorService executor)
+    public WaitFreeMultiExecutionSerializer(final ExecutorService executor)
     {
         this.executorService = executor;
     }
@@ -106,5 +109,17 @@ public class MultiExecutionSerializer<T>
         {
             Thread.currentThread().interrupt();
         }
+    }
+
+    public boolean isBusy()
+    {
+        for (WaitFreeExecutionSerializer serializer : serializers.asMap().values())
+        {
+            if (serializer.isBusy())
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }
