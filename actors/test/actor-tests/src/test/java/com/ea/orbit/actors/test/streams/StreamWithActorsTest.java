@@ -111,7 +111,7 @@ public class StreamWithActorsTest extends ActorBaseTest
         final Stage stage2 = createStage();
         AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
 
-        hello.doUnSubscribe("test");
+        hello.doUnSubscribe("test").join();
         test.post("hello").join();
         assertFalse(fakeSync.get("0-last").isDone());
         dumpMessages();
