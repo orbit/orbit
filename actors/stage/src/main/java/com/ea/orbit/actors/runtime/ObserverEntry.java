@@ -28,15 +28,28 @@
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.concurrent.Task;
-
-/**
- * Optional default implementation of actor observer. It's not necessary to extend this class to create an observer.
- */
-public class ActorObserver
+public class ObserverEntry implements LocalObjects.LocalObjectEntry
 {
-    public Task<?> ping()
+
+    private final RemoteReference reference;
+    private final com.ea.orbit.actors.ActorObserver object;
+
+    public ObserverEntry(final RemoteReference reference, final com.ea.orbit.actors.ActorObserver object)
     {
-        return Task.done();
+
+        this.reference = reference;
+        this.object = object;
+    }
+
+    @Override
+    public RemoteReference getRemoteReference()
+    {
+        return reference;
+    }
+
+    @Override
+    public Object getObject()
+    {
+        return object;
     }
 }

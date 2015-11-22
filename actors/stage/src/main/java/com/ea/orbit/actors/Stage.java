@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors;
 
+import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.JGroupsClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
@@ -38,6 +39,7 @@ import com.ea.orbit.actors.extensions.PipelineExtension;
 import com.ea.orbit.actors.extensions.StreamProvider;
 import com.ea.orbit.actors.net.DefaultPipeline;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ActorEntry;
 import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.ClusterHandler;
@@ -47,13 +49,17 @@ import com.ea.orbit.actors.runtime.ExecutionCacheFlushObserver;
 import com.ea.orbit.actors.runtime.Hosting;
 import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.JavaMessageSerializer;
+import com.ea.orbit.actors.runtime.LocalObjects;
 import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.ObjectInvoker;
+import com.ea.orbit.actors.runtime.ObserverEntry;
 import com.ea.orbit.actors.runtime.Registration;
 import com.ea.orbit.actors.runtime.ReminderController;
+import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.actors.runtime.ResponseCaching;
 import com.ea.orbit.actors.runtime.SerializationHandler;
+import com.ea.orbit.actors.runtime.StatelessActorEntry;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.actors.streams.AsyncObserver;
@@ -100,6 +106,15 @@ public class Stage implements Startable, ActorRuntime
 
     private static final int DEFAULT_EXECUTION_POOL_SIZE = 128;
 
+    LocalObjects objects = new LocalObjects()
+    {
+        @Override
+        protected <T> LocalObjectEntry createLocalObjectEntry(final RemoteReference<T> reference, final T object)
+        {
+            return Stage.this.createLocalObjectEntry(reference, object);
+        }
+    };
+
     @Config("orbit.actors.clusterName")
     private String clusterName;
 
@@ -124,11 +139,6 @@ public class Stage implements Startable, ActorRuntime
 
     private final String runtimeIdentity;
     private ResponseCaching cacheManager;
-
-    public List<ActorExtension> getExtensions()
-    {
-        return extensions;
-    }
 
 
     public enum StageMode
@@ -621,7 +631,7 @@ public class Stage implements Startable, ActorRuntime
      * Binds this stage to the current thread.
      * This tells ungrounded references to use this stage to call remote methods.
      * <p>
-     * An ungrounded reference is a reference created with {@code Actor.getReference} and used outside of an actor method.
+     * An ungrounded reference is a reference created with {@code Actor.getRemoteReference} and used outside of an actor method.
      * <p>
      * This is only necessary when there are <i>two or more</i> OrbitStages active in the same virtual machine and
      * remote calls need to be issued from outside an actor.
@@ -876,4 +886,27 @@ public class Stage implements Startable, ActorRuntime
     {
         return getStreamProvider(provider).getStream(dataClass, id);
     }
+
+    public List<ActorExtension> getExtensions()
+    {
+        return extensions;
+    }
+
+    private <T> LocalObjects.LocalObjectEntry createLocalObjectEntry(final RemoteReference<T> reference, final T object)
+    {
+        if (object instanceof AbstractActor)
+        {
+            if (object.getClass().isAnnotationPresent(StatelessWorker.class))
+            {
+                return new StatelessActorEntry(reference, (AbstractActor)object);
+            }
+            return new ActorEntry(reference, (AbstractActor)object);
+        }
+        if (object instanceof ActorObserver)
+        {
+            return new ObserverEntry(reference, (ActorObserver)object);
+        }
+        throw new IllegalArgumentException("Invalid object type: " + object.getClass());
+    }
+
 }

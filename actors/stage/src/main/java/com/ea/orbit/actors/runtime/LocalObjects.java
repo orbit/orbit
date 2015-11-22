@@ -33,16 +33,25 @@ import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.exception.NotImplementedException;
+import com.ea.orbit.exception.UncheckedException;
 
-import com.google.common.collect.MapMaker;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalCause;
+import com.google.common.cache.RemovalNotification;
 
+import java.util.ConcurrentModificationException;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 
 public class LocalObjects
 {
     private ConcurrentMap<RemoteReference<?>, LocalObjectEntry> localObjects = new ConcurrentHashMap<>();
-    private ConcurrentMap<Object, LocalObjectEntry> objectMap = new MapMaker().weakKeys().makeMap();
+    private Cache<Object, LocalObjectEntry> objectMap = CacheBuilder.newBuilder().weakKeys()
+            .removalListener(this::onRemoval).build();
+
 
     // used for searches in localObjects
     private static class ObjectKey extends RemoteReference<Object>
@@ -77,16 +86,16 @@ public class LocalObjects
         }
     }
 
-    public interface LocalObjectEntry
+    public interface LocalObjectEntry<T>
     {
-        RemoteReference getReference();
+        RemoteReference<T> getRemoteReference();
 
         Object getObject();
     }
 
-    public static class NormalObjectEntry implements LocalObjectEntry
+    public static class NormalObjectEntry<T> implements LocalObjectEntry<T>
     {
-        protected RemoteReference reference;
+        protected RemoteReference<T> reference;
         protected Object object;
 
         @Override
@@ -96,7 +105,7 @@ public class LocalObjects
         }
 
         @Override
-        public RemoteReference getReference()
+        public RemoteReference<T> getRemoteReference()
         {
             return reference;
         }
@@ -120,7 +129,7 @@ public class LocalObjects
 
     public LocalObjectEntry findLocalObjectByObject(Object object)
     {
-        return objectMap.get(object);
+        return objectMap.getIfPresent(object);
     }
 
 
@@ -139,11 +148,11 @@ public class LocalObjects
     @SuppressWarnings("unchecked")
     public <T> RemoteReference<T> getOrAddLocalObjectReference(NodeAddress address, Class<T> iClass, String objectId, final T object)
     {
-        final LocalObjectEntry localObject = objectMap.get(object);
+        final LocalObjectEntry localObject = objectMap.getIfPresent(object);
 
         if (localObject != null)
         {
-            RemoteReference ref = localObject.getReference();
+            RemoteReference ref = localObject.getRemoteReference();
             if (!java.util.Objects.equals(ref.id, objectId))
             {
                 throw new IllegalArgumentException("Called twice with different ids: " + objectId + " != " + ((RemoteReference<?>) ref).id);
@@ -164,13 +173,12 @@ public class LocalObjects
     @SuppressWarnings("unchecked")
     protected <T> RemoteReference<T> registerLocalObject(NodeAddress address, Class<T> iClass, String objectId, final T object)
     {
-        final LocalObjectEntry previousLocalObject = objectMap.get(object);
+        final LocalObjectEntry previousLocalObject = objectMap.getIfPresent(object);
         if (previousLocalObject != null)
         {
             // perhaps should just return instead? modify if later code introduce concurrency issues
-            throw new IllegalArgumentException("Object already installed: " + previousLocalObject.getReference());
+            throw new IllegalArgumentException("Object already installed: " + previousLocalObject.getRemoteReference());
         }
-        ReferenceFactory<?> factory;
         if (iClass == null)
         {
             iClass = (Class) findRemoteInterface(ActorObserver.class, object);
@@ -194,9 +202,31 @@ public class LocalObjects
             throw new IllegalArgumentException("Object clashes with a pre-existing object: " + reference);
         }
         LocalObjectEntry localObject = createLocalObjectEntry(reference, object);
-        objectMap.putIfAbsent(object, localObject);
+        try
+        {
+            final LocalObjectEntry other = objectMap.get(object, () -> localObject);
+            if (localObject != other)
+            {
+                if (!Objects.equals(reference, other.getRemoteReference()))
+                {
+                    throw new ConcurrentModificationException();
+                }
+                return (RemoteReference) other.getRemoteReference();
+            }
+        }
+        catch (ExecutionException e)
+        {
+            throw new UncheckedException(e);
+        }
         final LocalObjectEntry previous = localObjects.putIfAbsent(reference, localObject);
-
+        if (previous != null && localObject != previous)
+        {
+            if (!Objects.equals(reference, previous.getRemoteReference()))
+            {
+                throw new ConcurrentModificationException();
+            }
+            return (RemoteReference) previous.getRemoteReference();
+        }
         return reference;
     }
 
@@ -236,5 +266,16 @@ public class LocalObjects
         return localObject;
     }
 
+    private void onRemoval(final RemovalNotification<Object, LocalObjectEntry> objectObjectRemovalNotification)
+    {
+        if (objectObjectRemovalNotification.getCause() == RemovalCause.COLLECTED)
+        {
+            final LocalObjectEntry objectEntry = objectObjectRemovalNotification.getValue();
+            if (objectEntry != null && objectEntry.getRemoteReference() != null)
+            {
+                localObjects.remove(objectEntry.getRemoteReference());
+            }
+        }
+    }
 
 }
