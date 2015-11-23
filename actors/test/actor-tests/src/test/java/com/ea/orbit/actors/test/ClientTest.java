@@ -78,7 +78,7 @@ public class ClientTest extends ActorBaseTest
         assertEquals("bla", player.sayHello("meh").get());
     }
 
-    @Test
+    @Test(timeout = 10_000L)
     public void observerTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();

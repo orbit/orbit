@@ -43,9 +43,18 @@ public class SomeMatchActor extends AbstractActor<SomeMatchActor.SomeMatchDto> i
         return Task.fromValue(runtimeIdentity());
     }
 
+
+    @Override
+    public Task<?> activateAsync()
+    {
+        getLogger().debug("activateAsync");
+        return super.activateAsync();
+    }
+
     @Override
     public Task<?> deactivateAsync()
     {
+        getLogger().debug("deactivateAsync");
         for (SomePlayer p : state().players)
         {
             try

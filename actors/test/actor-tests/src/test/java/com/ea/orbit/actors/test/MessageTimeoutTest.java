@@ -38,10 +38,10 @@ import org.junit.Test;
 
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @SuppressWarnings("unused")
 public class MessageTimeoutTest extends ActorBaseTest
@@ -60,7 +60,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         assertEquals(uuid, someActor.getUniqueActivationId().get());
         Task<UUID> call = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
-        client.cleanup(false);
+        client.cleanup();
         expectException(() -> call.join());
     }
 
@@ -89,7 +89,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         assertFalse(second.isDone());
 
         // now the first call will timeout because the time has passed and cleanup is being called
-        client.cleanup(false);
+        client.cleanup().join();
 
         // after the cleanup this call is a goner.
         eventuallyTrue(() -> first.isCompletedExceptionally());
@@ -101,7 +101,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
         assertFalse(second.isDone());
         // and cleanup runs
-        client.cleanup(false);
+        client.cleanup();
         // the second call also times out
         eventuallyTrue(() -> second.isCompletedExceptionally());
 

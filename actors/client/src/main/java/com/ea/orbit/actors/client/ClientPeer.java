@@ -29,7 +29,7 @@
 package com.ea.orbit.actors.client;
 
 import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.Addressable;
+import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
@@ -39,6 +39,7 @@ import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.Peer;
 import com.ea.orbit.actors.runtime.RemoteClient;
+import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.actors.runtime.SerializationHandler;
 import com.ea.orbit.actors.streams.AsyncObserver;
 import com.ea.orbit.actors.streams.AsyncStream;
@@ -63,21 +64,29 @@ public class ClientPeer extends Peer implements BasicRuntime, Startable, RemoteC
     public Task<?> start()
     {
         getPipeline().addLast(DefaultHandlers.EXECUTION, new ClientPeerExecutor());
-        getPipeline().addLast(DefaultHandlers.MESSAGING, new Messaging());
+        final Messaging handler = new Messaging();
+        handler.setRuntime(this);
+        getPipeline().addLast(DefaultHandlers.MESSAGING, handler);
         getPipeline().addLast(DefaultHandlers.SERIALIZATION, new SerializationHandler(this, getMessageSerializer()));
         getPipeline().addLast(DefaultHandlers.NETWORK, getNetwork());
         return getPipeline().connect(null);
     }
 
     @Override
-    public Task<?> invoke(final Addressable toReference, final Method m, final boolean oneWay, final int methodId, final Object[] params)
+    public Task<?> invoke(final RemoteReference toReference, final Method m, final boolean oneWay, final int methodId, final Object[] params)
     {
         final Invocation invocation = new Invocation(toReference, m, oneWay, methodId, params, null);
         return getPipeline().write(invocation);
     }
 
     @Override
-    public <T extends com.ea.orbit.actors.ActorObserver> T registerObserver(final Class<T> iClass, final T observer)
+    public <T extends ActorObserver> T registerObserver(final Class<T> iClass, final T observer)
+    {
+        return null;
+    }
+
+    @Override
+    public <T extends ActorObserver> T registerObserver(final Class<T> iClass, final String id, final T observer)
     {
         return null;
     }

@@ -28,7 +28,6 @@
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.concurrent.Task;
 
@@ -37,7 +36,7 @@ import java.util.Map;
 
 public class Invocation
 {
-    private Addressable toReference;
+    private RemoteReference toReference;
     private Method method;
     private boolean oneWay;
     private int methodId;
@@ -46,12 +45,14 @@ public class Invocation
     private Task completion;
     private NodeAddress toNode;
     private NodeAddress fromNode;
+    private int hops;
+    private int messageId;
 
     public Invocation()
     {
     }
 
-    public Invocation(final Addressable toReference, final Method method, final boolean oneWay, final int methodId, final Object[] params, final Task completion)
+    public Invocation(final RemoteReference toReference, final Method method, final boolean oneWay, final int methodId, final Object[] params, final Task completion)
     {
         super();
         this.toReference = toReference;
@@ -62,7 +63,7 @@ public class Invocation
         this.completion = completion;
     }
 
-    public Addressable getToReference()
+    public RemoteReference getToReference()
     {
         return toReference;
     }
@@ -132,6 +133,36 @@ public class Invocation
     @Override
     public String toString()
     {
-        return getToReference() + "." + method.getName();
+        return getToReference() + "." + (method != null ? method.getName() : Integer.toString(methodId));
+    }
+
+    public int getHops()
+    {
+        return hops;
+    }
+
+    public void setHops(final int hops)
+    {
+        this.hops = hops;
+    }
+
+    public void setCompletion(final Task completion)
+    {
+        this.completion = completion;
+    }
+
+    public int getMessageId()
+    {
+        return messageId;
+    }
+
+    public void setMessageId(final int messageId)
+    {
+        this.messageId = messageId;
+    }
+
+    public void setFromNode(final NodeAddress fromNode)
+    {
+        this.fromNode = fromNode;
     }
 }

@@ -23,6 +23,7 @@ public class Message
     private int methodId;
     private NodeAddress refNode;
     private Object objectId;
+    private NodeAddress referenceAddress;
 
     public Message()
     {
@@ -197,4 +198,19 @@ public class Message
     }
 
 
+    public NodeAddress getReferenceAddress()
+    {
+        return referenceAddress;
+    }
+
+    public void setReferenceAddress(final NodeAddress referenceAddress)
+    {
+        this.referenceAddress = referenceAddress;
+    }
+
+    public Message withReferenceAddress(final NodeAddress referenceAddress)
+    {
+        this.referenceAddress = referenceAddress;
+        return this;
+    }
 }

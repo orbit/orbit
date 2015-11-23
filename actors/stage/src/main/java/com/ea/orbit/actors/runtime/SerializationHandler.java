@@ -57,6 +57,10 @@ public class SerializationHandler extends HandlerAdapter
     @Override
     public Task write(HandlerContext ctx, final Object msg)
     {
+        if (!(msg instanceof Message))
+        {
+            return ctx.write(msg);
+        }
         Message message = (Message) msg;
 
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -137,9 +141,12 @@ public class SerializationHandler extends HandlerAdapter
         final ByteArrayInputStream bais = new ByteArrayInputStream(message.getRight());
         try
         {
-            ctx.fireRead(messageSerializer
-                    .deserializeMessage(runtime, bais)
-                    .withFromNode(message.getLeft()));
+            final Message msg1 = messageSerializer.deserializeMessage(runtime, bais);
+            if (msg1.getFromNode() == null)
+            {
+                msg1.setFromNode(message.getLeft());
+            }
+            ctx.fireRead(msg1);
         }
         catch (Exception e)
         {

@@ -30,15 +30,17 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.runtime.ResponseCaching;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
+import com.ea.orbit.actors.runtime.ResponseCaching;
 import com.ea.orbit.actors.test.actors.CacheResponse;
 import com.ea.orbit.actors.test.actors.CacheResponseActor;
 import com.ea.orbit.exception.UncheckedException;
-import com.google.common.base.Ticker;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.base.Ticker;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -46,9 +48,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.*;
 
 public class CacheResponseTest extends ActorBaseTest
 {
@@ -138,7 +138,7 @@ public class CacheResponseTest extends ActorBaseTest
         });
     }
 
-    @Test
+    @Test(timeout = 10_000L)
     public void testCacheFlush()
     {
         CacheResponseTestTicker ticker = new CacheResponseTestTicker();
@@ -153,7 +153,7 @@ public class CacheResponseTest extends ActorBaseTest
         assertEquals((long) 2, (long) actor.getIndexTally(1).join()); // Not a cached access
     }
 
-    @Test
+    @Test(timeout = 10_000L)
     public void testCacheFlushWithMultipleActors()
     {
         CacheResponse actor1 = Actor.getReference(CacheResponse.class, UUID.randomUUID().toString());
@@ -175,7 +175,7 @@ public class CacheResponseTest extends ActorBaseTest
         assertEquals(a2Time1, a2Time1Cached); // nonflushed actor is still cached
     }
 
-    @Test
+    @Test(timeout = 10_000L)
     public void testCacheFlushWithMultipleInputs()
     {
         CacheResponse actor1 = Actor.getReference(CacheResponse.class, UUID.randomUUID().toString());

@@ -1,25 +1,17 @@
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.Addressable;
-import com.ea.orbit.actors.annotation.OneWay;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.extensions.PipelineExtension;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.actors.runtime.ActorTaskContext;
+import com.ea.orbit.actors.runtime.DefaultClassDictionary;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.actors.runtime.DefaultHandlers;
-import com.ea.orbit.actors.runtime.Invocation;
-import com.ea.orbit.actors.runtime.NodeCapabilities;
-import com.ea.orbit.actors.runtime.ReminderController;
+import com.ea.orbit.actors.runtime.Message;
 import com.ea.orbit.actors.runtime.RemoteReference;
-import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.concurrent.TaskContext;
 
 import java.lang.reflect.Method;
-import java.text.NumberFormat;
 import java.util.Arrays;
-import java.util.Locale;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -29,22 +21,24 @@ class TestMessageLog implements PipelineExtension
     private AtomicLong invocationId = new AtomicLong();
 
     private ActorBaseTest actorBaseTest;
+    private Stage stage;
 
-    public TestMessageLog(final ActorBaseTest actorBaseTest)
+    public TestMessageLog(final ActorBaseTest actorBaseTest, final Stage stage)
     {
         this.actorBaseTest = actorBaseTest;
+        this.stage = stage;
     }
 
     @Override
     public String getName()
     {
-        return "test-logging";
+        return "test-message-logging";
     }
 
     @Override
     public String afterHandlerName()
     {
-        return DefaultHandlers.HEAD;
+        return DefaultHandlers.MESSAGING;
     }
 
     String toString(Object obj)
@@ -68,142 +62,62 @@ class TestMessageLog implements PipelineExtension
     }
 
     @Override
-    public Task<?> write(HandlerContext ctx, Object message)
+    public void onRead(HandlerContext ctx, Object msg)
     {
-        if (!(message instanceof Invocation))
+        if (!(msg instanceof Message))
         {
-            return ctx.write(message);
+            ctx.fireRead(msg);
+            return;
         }
-        final Invocation invocation = (Invocation) message;
-        long id = invocationId.incrementAndGet();
-        final Addressable toReference = invocation.getToReference();
-        if (toReference instanceof NodeCapabilities)
-        {
-            return ctx.write(message);
-        }
-        final Method method = invocation.getMethod();
-        if (toReference instanceof ReminderController && "ensureStart".equals(method.getName()))
-        {
-            return ctx.write(message);
-        }
-        String from = getFrom((RemoteReference) toReference, method);
-        String to = RemoteReference.getInterfaceClass((RemoteReference) toReference).getSimpleName()
-                + ":"
-                + RemoteReference.getId((RemoteReference) toReference);
+        final Message message = (Message) msg;
+        long messageId = message.getMessageId();
 
-        String strParams;
-        final Object[] params = invocation.getParams();
-        if (params != null && params.length > 0)
+
+        String from = message.getFromNode() != null ? String.valueOf(message.getFromNode().asUUID().getLeastSignificantBits()) : "QQQ";
+        String to = message.getToNode() != null ? String.valueOf(message.getToNode().asUUID().getLeastSignificantBits())
+                : String.valueOf(stage.getHosting().getNodeAddress().asUUID().getLeastSignificantBits());
+
+        String strParams = "";
+        final Object payload = message.getPayload();
+        if (payload instanceof Object[])
         {
-            try
+            final Object[] params = (Object[]) payload;
+            if (params.length > 0)
             {
-                strParams = Arrays.asList(params).stream().map(a -> toString(a)).collect(Collectors.joining(", ", "(", ")"));
-            }
-            catch (Exception ex)
-            {
-                strParams = "(can't show parameters)";
+                try
+                {
+                    strParams = Arrays.asList(params).stream().map(a -> toString(a)).collect(Collectors.joining(", ", "(", ")"));
+                }
+                catch (Exception ex)
+                {
+                    strParams = "(can't show parameters)";
+                }
             }
         }
         else
         {
-            strParams = "";
+            strParams = payload != null ? String.valueOf(payload) : "";
         }
-        if (!method.isAnnotationPresent(OneWay.class))
+        String strTarget = "";
+        if (message.getInterfaceId() != 0)
         {
-            final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams
-                    + "\r\n"
-                    + "activate \"" + to + "\"";
-            actorBaseTest.sequenceDiagram.add(msg);
-            while (actorBaseTest.sequenceDiagram.size() > 100)
+            Class clazz = DefaultClassDictionary.get().getClassById(message.getInterfaceId());
+            if (clazz != null)
             {
-                actorBaseTest.sequenceDiagram.remove(0);
-            }
-            actorBaseTest.hiddenLog.info(msg);
-            final long start = System.nanoTime();
-
-            @SuppressWarnings("unchecked")
-            final Task<Object> write = (Task) ctx.write(message);
-            return write.whenComplete((r, e) ->
-            {
-                final long timeUS = TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - start);
-                final String timeStr = NumberFormat.getNumberInstance(Locale.US).format(timeUS);
-                if (e == null)
-                {
-                    final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id + "; "
-                            + timeStr + "us] (response to " + method.getName() + "): " + toString(r)
-                            + "\r\n"
-                            + "deactivate \"" + to + "\"";
-                    actorBaseTest.sequenceDiagram.add(resp);
-                    actorBaseTest.hiddenLog.info(resp);
-                }
-                else
-                {
-                    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-                    final Throwable throwable = unwrapException(e);
-                    final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id
-                            + "; " + timeStr + "us] (exception at " + method.getName() + "):\\n"
-                            + throwable.getClass().getName()
-                            + (throwable.getMessage() != null ? ": \\n" + throwable.getMessage() : "")
-                            + "\r\n"
-                            + "deactivate \"" + to + "\"";
-                    actorBaseTest.sequenceDiagram.add(resp);
-                    actorBaseTest.hiddenLog.info(resp);
-                }
-            });
-
-        }
-        else
-        {
-            final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams;
-            actorBaseTest.sequenceDiagram.add(msg);
-            actorBaseTest.hiddenLog.info('"' + from + "\" -> \"" + to + "\" : [" + id + "] " + method.getName() + strParams);
-            return ctx.write(message);
-        }
-    }
-
-    private Throwable unwrapException(final Throwable e)
-    {
-        Throwable ex = e;
-        while (ex.getCause() != null && (ex instanceof CompletionException))
-        {
-            ex = ex.getCause();
-        }
-        return ex;
-    }
-
-
-    private String getFrom(final RemoteReference reference, final Method method)
-    {
-        final ActorTaskContext context = ActorTaskContext.current();
-        String from;
-        if (context != null && context.getActor() != null)
-        {
-            final RemoteReference contextReference = RemoteReference.from(context.getActor());
-            from = RemoteReference.getInterfaceClass(contextReference).getSimpleName()
-                    + ":"
-                    + RemoteReference.getId(contextReference);
-        }
-        else
-        {
-            if (reference != null && RemoteReference.getInterfaceClass(reference) == NodeCapabilities.class
-                    && method.getName().equals("canActivate"))
-            {
-                from = "Stage";
-            }
-            else
-            {
-                final TaskContext current = TaskContext.current();
-                if (current != null && current.getProperty(ActorBaseTest.TEST_NAME_PROP) != null)
-                {
-                    from = String.valueOf(current.getProperty(ActorBaseTest.TEST_NAME_PROP));
-                }
-                else
-                {
-                    from = "Thread:" + Thread.currentThread().getId();
-                }
+                final Method method = DefaultDescriptorFactory.get().getInvoker(clazz).getMethod(message.getMethodId());
+                strTarget = clazz.getSimpleName() + ":" + message.getObjectId() + "." + method.getName();
             }
         }
-        return from;
+        final String seqMsg = '"' + from + "\" -> \"" + to + "\" : [" + messageId + "] " + strTarget + " " + strParams;
+        actorBaseTest.sequenceDiagram.add(seqMsg);
+        while (actorBaseTest.sequenceDiagram.size() > 100)
+        {
+            actorBaseTest.sequenceDiagram.remove(0);
+        }
+        actorBaseTest.hiddenLog.info(seqMsg);
+
+        ctx.fireRead(msg);
     }
+
 
 }

@@ -54,17 +54,17 @@ public class SimpleTest extends ActorBaseTest
         @Override
         public Task<String> sayHello(final String greeting)
         {
+            getLogger().info("sayHello: " + greeting);
             return Task.fromValue(greeting);
         }
     }
 
-    @Test
+    @Test()
     public void singleActorSingleStageTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
         Hello hello = Actor.getReference(Hello.class, "1");
         assertEquals("bla", hello.sayHello("bla").join());
-        assertEquals("hi", hello.sayHello("hi").join());
         dumpMessages();
     }
 

@@ -86,6 +86,7 @@ public class DemoTest extends ActorBaseTest
         @Override
         public Task add(final int value)
         {
+            getLogger().info("adding: " + value);
             state().balance += value;
             return writeState();
         }
@@ -93,6 +94,7 @@ public class DemoTest extends ActorBaseTest
         @Override
         public Task<Integer> getBalance()
         {
+            getLogger().info("getBalance: " + state().balance);
             return Task.fromValue(state().balance);
         }
 
@@ -137,7 +139,7 @@ public class DemoTest extends ActorBaseTest
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(11));
 
         sequenceDiagram.add("...10 minutes later...");
-        stage1.cleanup(true);
+        stage1.cleanup().join();
         assertEquals(100, bank.getBalance().join().intValue());
 
         dumpMessages();

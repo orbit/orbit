@@ -31,14 +31,14 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.client.ClientPeer;
+import com.ea.orbit.actors.concurrent.MultiExecutionSerializer;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
-import com.ea.orbit.actors.extensions.LoggerExtension;
 import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.AbstractExecution;
 import com.ea.orbit.actors.runtime.ActorFactoryGenerator;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
-import com.ea.orbit.actors.concurrent.MultiExecutionSerializer;
+import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.concurrent.ExecutorUtils;
@@ -53,7 +53,6 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.ForwardingExecutorService;
 
@@ -82,8 +81,8 @@ import static org.junit.Assert.fail;
 public class ActorBaseTest
 {
     static final String TEST_NAME_PROP = ActorBaseTest.class.getName() + ".testName";
-    protected LoggerExtension loggerExtension = new TestLogger(this);
-    protected Logger logger = LoggerFactory.getLogger(this.getClass());
+    protected TestLogger loggerExtension = new TestLogger(this);
+    protected Logger logger = loggerExtension.getLogger(this.getClass());
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
     protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
@@ -372,8 +371,9 @@ public class ActorBaseTest
 
     protected void installExtensions(final Stage stage)
     {
-        stage.addExtension(new TestLogger(this));
-        stage.addExtension(new TestMessageLog(this));
+        stage.addExtension(loggerExtension);
+        //stage.addExtension(new TestMessageLog(this, stage));
+        stage.addExtension(new TestInvocationLog(this));
     }
 
     protected ExecutionObjectCloner getExecutionObjectCloner()
@@ -421,13 +421,13 @@ public class ActorBaseTest
      *
      * @param condition a function that must eventually return true
      */
-    protected void awaitFor(Supplier<Boolean> condition)
+    protected void waitFor(Supplier<Boolean> condition)
     {
         try
         {
             while (!condition.get())
             {
-                Thread.sleep(5);
+                Thread.sleep(20);
             }
         }
         catch (Exception e)
@@ -503,16 +503,34 @@ public class ActorBaseTest
                 {
                     throw new UncheckedException(ex);
                 }
-                try
-                {
-                    Thread.sleep(Math.max(200, (System.currentTimeMillis() - start) / 4));
-                }
-                catch (InterruptedException e)
-                {
-                    e.printStackTrace();
-                }
+            }
+            try
+            {
+                Thread.sleep(Math.max(200, (System.currentTimeMillis() - start) / 2));
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
             }
         } while (true);
 
+    }
+
+
+    @After
+    public void tearDown()
+    {
+        Task.runAsync(() -> stages.stream()
+                .filter(s -> s.getState() == NodeCapabilities.NodeState.RUNNING)
+                .forEach(s -> {
+                    try
+                    {
+                        s.stop();
+                    }
+                    catch (Throwable t)
+                    {
+                        // ignore
+                    }
+                }));
     }
 }

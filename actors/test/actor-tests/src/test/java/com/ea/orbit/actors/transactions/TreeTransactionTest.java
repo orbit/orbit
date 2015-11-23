@@ -105,7 +105,7 @@ public class TreeTransactionTest extends ActorBaseTest
     }
 
 
-    @Test
+    @Test(timeout = 10_000L)
     public void treeSuccess() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
@@ -117,7 +117,7 @@ public class TreeTransactionTest extends ActorBaseTest
     }
 
 
-    @Test
+    @Test(timeout = 10_000L)
     public void treeCancellation() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();

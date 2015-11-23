@@ -117,6 +117,6 @@ public interface ActorObserver
      */
     static <T extends ActorObserver> T getObserverReference(NodeAddress node, Class<T> actorObserverInterface, String id)
     {
-        return DefaultDescriptorFactory.observerRef(node.asUUID(), actorObserverInterface, id);
+        return DefaultDescriptorFactory.observerRef(node, actorObserverInterface, id);
     }
 }

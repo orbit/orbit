@@ -33,6 +33,7 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ReminderControllerActor;
 import com.ea.orbit.actors.runtime.TickStatus;
 import com.ea.orbit.concurrent.Task;
 
@@ -89,9 +90,10 @@ public class ReminderTests extends ActorBaseTest
         assertEquals("bla", remindersReceived.poll(5, TimeUnit.SECONDS));
     }
 
-	@Test
+    @Test
     public void persistedTimerTest() throws ExecutionException, InterruptedException
     {
+        loggerExtension.enableDebugFor(ReminderControllerActor.class);
         Stage stage1 = createStage();
         Stage frontend = createClient();
 
@@ -106,7 +108,9 @@ public class ReminderTests extends ActorBaseTest
         Stage stage2 = createStage();
         //actor.addReminder("bla", 0, 20, TimeUnit.MILLISECONDS).join();
 
-        assertEquals("bla", remindersReceived.poll(5, TimeUnit.SECONDS));
+        assertEquals("bla", remindersReceived.poll(100, TimeUnit.SECONDS));
+        stage2.stop().join();
     }
+
 
 }

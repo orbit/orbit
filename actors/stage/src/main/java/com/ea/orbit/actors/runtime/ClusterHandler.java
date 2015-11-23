@@ -51,6 +51,10 @@ public class ClusterHandler extends HandlerAdapter
     @Override
     public Task write(final HandlerContext ctx, final Object msg) throws Exception
     {
+        if (!(msg instanceof Pair))
+        {
+            return ctx.write(msg);
+        }
         Pair<NodeAddress, byte[]> message = (Pair<NodeAddress, byte[]>) msg;
         clusterPeer.sendMessage(message.getLeft(), message.getRight());
         return Task.done();
@@ -63,5 +67,12 @@ public class ClusterHandler extends HandlerAdapter
         return clusterPeer.join(clusterName, nodeName).thenRun(() ->
                 ctx.fireActive()
         );
+    }
+
+    @Override
+    public Task close(final HandlerContext ctx) throws Exception
+    {
+        clusterPeer.leave();
+        return super.close(ctx);
     }
 }

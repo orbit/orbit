@@ -61,7 +61,6 @@ public class ObserverTest extends ActorBaseTest
         }
     }
 
-
     @Test
     public void avoidReinsertionTest() throws ExecutionException, InterruptedException
     {

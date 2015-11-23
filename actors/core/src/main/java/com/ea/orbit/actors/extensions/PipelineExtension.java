@@ -86,6 +86,7 @@ public interface PipelineExtension extends Handler, ActorExtension
         ctx.fireEventTriggered(evt);
     }
 
+
     @Override
     default void onRead(final HandlerContext ctx, final Object msg) throws Exception
     {

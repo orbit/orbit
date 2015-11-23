@@ -28,28 +28,47 @@
 
 package com.ea.orbit.actors.runtime;
 
-public class ObserverEntry implements LocalObjects.LocalObjectEntry
+import com.ea.orbit.actors.concurrent.MultiExecutionSerializer;
+import com.ea.orbit.concurrent.Task;
+
+import com.google.common.base.Function;
+
+import java.lang.ref.WeakReference;
+
+public class ObserverEntry<T> implements LocalObjects.LocalObjectEntry<T>
 {
+    private final RemoteReference<T> reference;
+    private final WeakReference<T> object;
+    private MultiExecutionSerializer<Object> executionSerializer;
 
-    private final RemoteReference reference;
-    private final com.ea.orbit.actors.ActorObserver object;
-
-    public ObserverEntry(final RemoteReference reference, final com.ea.orbit.actors.ActorObserver object)
+    public ObserverEntry(final RemoteReference reference, final T object)
     {
 
         this.reference = reference;
-        this.object = object;
+        this.object = new WeakReference<>(object);
     }
 
     @Override
-    public RemoteReference getRemoteReference()
+    public RemoteReference<T> getRemoteReference()
     {
         return reference;
     }
 
     @Override
-    public Object getObject()
+    public T getObject()
     {
-        return object;
+        return object.get();
+    }
+
+    @Override
+    public Task<?> run(final Function<T, Task<?>> function)
+    {
+
+        return function.apply(getObject());
+    }
+
+    public void setExecutionSerializer(final MultiExecutionSerializer<Object> executionSerializer)
+    {
+        this.executionSerializer = executionSerializer;
     }
 }

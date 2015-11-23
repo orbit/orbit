@@ -1,6 +1,7 @@
 package com.ea.orbit.actors.transactions;
 
 import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.concurrent.TaskContext;
@@ -51,6 +52,7 @@ public class TransactionUtils
         final ActorTaskContext oldContext = ActorTaskContext.current();
         final ActorTaskContext context = oldContext != null ? oldContext.cloneContext() : new ActorTaskContext();
 
+
         // http://security.stackexchange.com/questions/1952/how-long-should-a-random-nonce-be
         final String transactionId = IdUtils.urlSafeString(96);
 
@@ -61,6 +63,14 @@ public class TransactionUtils
 
         // mus not use await in this method after the push, since push and pop must be in the same thread.
         context.push();
+        if (oldContext == null)
+        {
+            final ActorRuntime runtime = ActorRuntime.getRuntime();
+            if (runtime != null)
+            {
+                runtime.bind();
+            }
+        }
         try
         {
             return safeCall(() -> {

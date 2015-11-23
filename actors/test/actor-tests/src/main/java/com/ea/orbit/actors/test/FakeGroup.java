@@ -126,6 +126,10 @@ public class FakeGroup
 
     public void sendMessage(final NodeAddress from, final NodeAddress to, final byte[] buff)
     {
+        if (to == null)
+        {
+            throw new NullPointerException("Target address cannot be null");
+        }
         CompletableFuture.runAsync(() -> {
             try
             {

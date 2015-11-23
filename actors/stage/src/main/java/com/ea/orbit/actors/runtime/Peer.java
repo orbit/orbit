@@ -63,7 +63,7 @@ public abstract class Peer implements Startable
         this.messageSerializer = messageSerializer;
     }
 
-    public Clock getClock()
+    public Clock clock()
     {
         return clock;
     }

@@ -31,6 +31,7 @@ package com.ea.orbit.actors.extensions.json;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.cluster.NodeAddressImpl;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.DescriptorFactory;
 import com.ea.orbit.actors.runtime.RemoteReference;
@@ -244,7 +245,7 @@ public class ActorReferenceModule extends Module
             final int idx = text.indexOf('/');
 
             final UUID uuid = UUID.fromString(text.substring(0, idx));
-            return factory.getReference(uuid, (Class) iClass, text.substring(idx + 1));
+            return factory.getReference(new NodeAddressImpl(uuid), (Class) iClass, text.substring(idx + 1));
         }
 
         @Override

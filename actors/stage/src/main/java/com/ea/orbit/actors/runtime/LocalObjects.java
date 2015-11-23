@@ -32,9 +32,11 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.transactions.IdUtils;
+import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.NotImplementedException;
 import com.ea.orbit.exception.UncheckedException;
 
+import com.google.common.base.Function;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalCause;
@@ -45,6 +47,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Stream;
 
 public class LocalObjects
 {
@@ -90,18 +93,26 @@ public class LocalObjects
     {
         RemoteReference<T> getRemoteReference();
 
-        Object getObject();
+        T getObject();
+
+        Task<?> run(Function<T, Task<?>> function);
     }
 
     public static class NormalObjectEntry<T> implements LocalObjectEntry<T>
     {
         protected RemoteReference<T> reference;
-        protected Object object;
+        protected T object;
 
         @Override
-        public Object getObject()
+        public T getObject()
         {
             return object;
+        }
+
+        @Override
+        public Task<?> run(final Function<T, Task<?>> function)
+        {
+            return function.apply(getObject());
         }
 
         @Override
@@ -153,11 +164,11 @@ public class LocalObjects
         if (localObject != null)
         {
             RemoteReference ref = localObject.getRemoteReference();
-            if (!java.util.Objects.equals(ref.id, objectId))
+            if (objectId != null && !java.util.Objects.equals(ref.id, objectId))
             {
                 throw new IllegalArgumentException("Called twice with different ids: " + objectId + " != " + ((RemoteReference<?>) ref).id);
             }
-            if (!java.util.Objects.equals(ref.address, address))
+            if (address != null &&!java.util.Objects.equals(ref.address, address))
             {
                 throw new IllegalArgumentException("Called twice with different addresses: " + address + " != " + ((RemoteReference<?>) ref).address);
             }
@@ -195,6 +206,22 @@ public class LocalObjects
 
 
         RemoteReference reference = createReference(address, iClass, actualObjectId);
+        return registerLocalObject(reference, object);
+    }
+
+
+    @SuppressWarnings("unchecked")
+    public <T> RemoteReference<T> registerLocalObject(RemoteReference reference, final T object)
+    {
+        if (object != null)
+        {
+            final LocalObjectEntry previousLocalObject = objectMap.getIfPresent(object);
+            if (previousLocalObject != null)
+            {
+                // perhaps should just return instead? modify if later code introduce concurrency issues
+                throw new IllegalArgumentException("Object already installed: " + previousLocalObject.getRemoteReference());
+            }
+        }
 
         final LocalObjectEntry existing = localObjects.get(reference);
         if (existing != null)
@@ -204,14 +231,17 @@ public class LocalObjects
         LocalObjectEntry localObject = createLocalObjectEntry(reference, object);
         try
         {
-            final LocalObjectEntry other = objectMap.get(object, () -> localObject);
-            if (localObject != other)
+            if (object != null)
             {
-                if (!Objects.equals(reference, other.getRemoteReference()))
+                final LocalObjectEntry other = objectMap.get(object, () -> localObject);
+                if (localObject != other)
                 {
-                    throw new ConcurrentModificationException();
+                    if (!Objects.equals(reference, other.getRemoteReference()))
+                    {
+                        throw new ConcurrentModificationException();
+                    }
+                    return (RemoteReference) other.getRemoteReference();
                 }
-                return (RemoteReference) other.getRemoteReference();
             }
         }
         catch (ExecutionException e)
@@ -277,5 +307,11 @@ public class LocalObjects
             }
         }
     }
+
+    public Stream<LocalObjectEntry> stream()
+    {
+        return localObjects.values().stream();
+    }
+
 
 }

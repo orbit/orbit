@@ -39,7 +39,6 @@ import org.junit.Test;
 
 import javax.inject.Inject;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -88,7 +87,7 @@ public class ShutdownTest extends ActorBaseTest
     }
 
 
-    @Test
+    @Test(timeout = 10_000L)
     public void asyncShutdownTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
@@ -99,13 +98,15 @@ public class ShutdownTest extends ActorBaseTest
         assertEquals(true, fakeSync.get("executing").join());
         Stage stage2 = createStage();
         assertFalse(methodCall.isDone());
-        CompletableFuture<Void> stopFuture = CompletableFuture.runAsync(() -> stage1.stop().join());
-        awaitFor(() -> stage1.getState() == NodeCapabilities.NodeState.STOPPING);
+        final Task<?> stopFuture = Task.runAsync(() -> stage1.stop().join());
+        waitFor(() -> stage1.getState() == NodeCapabilities.NodeState.STOPPING);
 
         // release doSomethingTo finish
+        System.out.printf("can finish");
         fakeSync.put("canFinish", true);
         stopFuture.join();
 
+        // tries to ensure that the current running methods finish before the shutdown.
         eventuallyTrue(() -> methodCall.isDone());
 
     }

@@ -137,6 +137,13 @@ public class DisjunctTransactionTest extends ActorBaseTest
         {
             return Task.fromValue(state().balance);
         }
+
+        @Override
+        public Task<?> activateAsync()
+        {
+            getLogger().info("activate");
+            return super.activateAsync();
+        }
     }
 
     @Test
@@ -148,7 +155,7 @@ public class DisjunctTransactionTest extends ActorBaseTest
         assertEquals(3, (int) jimmy.local(1, 2).join());
     }
 
-    @Test
+    @Test(timeout = 10_000L)
     public void localFailureInTheSecond() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
@@ -162,7 +169,7 @@ public class DisjunctTransactionTest extends ActorBaseTest
         eventually(() -> assertEquals(16, (int) jimmy.getBalance().join()));
     }
 
-    @Test
+    @Test(timeout = 10_000L)
     public void localFailureInTheFirst() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();

@@ -221,4 +221,9 @@ public abstract class RemoteReference<T> implements Serializable, Addressable
         }
         return id != null ? _interfaceClass().getName() + ":" + id : _interfaceClass().getName() + ":" + address;
     }
+
+    public static void setRuntime(final RemoteReference<?> reference, final BasicRuntime runtime)
+    {
+        reference.runtime = runtime;
+    }
 }

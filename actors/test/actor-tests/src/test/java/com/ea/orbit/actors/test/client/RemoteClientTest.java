@@ -65,6 +65,7 @@ public class RemoteClientTest extends ActorBaseTest
     }
 
     @Test
+    @Ignore
     public void callServer() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();

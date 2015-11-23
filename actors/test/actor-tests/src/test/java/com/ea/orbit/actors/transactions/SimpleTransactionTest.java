@@ -30,6 +30,7 @@ package com.ea.orbit.actors.transactions;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.concurrent.Task;
 
@@ -100,7 +101,7 @@ public class SimpleTransactionTest extends ActorBaseTest
         }
     }
 
-    @Test
+    @Test(timeout = 10_000L)
     public void simpleTransaction() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
@@ -116,7 +117,7 @@ public class SimpleTransactionTest extends ActorBaseTest
     }
 
 
-    @Test
+    @Test(timeout = 10_000L)
     public void simpleTransactionFailure() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();

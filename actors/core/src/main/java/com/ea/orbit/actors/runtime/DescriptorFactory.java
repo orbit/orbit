@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import java.util.UUID;
+import com.ea.orbit.actors.cluster.NodeAddress;
 
 public interface DescriptorFactory
 {
@@ -37,11 +37,13 @@ public interface DescriptorFactory
         return getReference(null, null, iClass, id);
     }
 
-    default <T> T getReference(UUID nodeId, Class<T> iClass, Object id)
+    default <T> T getReference(NodeAddress nodeId, Class<T> iClass, Object id)
     {
         return getReference(null, nodeId, iClass, id);
     }
 
-    <T> T getReference(BasicRuntime runtime, UUID nodeId, Class<T> iClass, Object id);
+    ObjectInvoker<?> getInvoker(Class clazz);
+
+    <T> T getReference(BasicRuntime runtime, NodeAddress nodeId, Class<T> iClass, Object id);
 
 }

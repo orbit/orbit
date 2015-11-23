@@ -28,26 +28,113 @@
 
 package com.ea.orbit.actors.runtime;
 
-public class ActorEntry implements LocalObjects.LocalObjectEntry
+import com.ea.orbit.concurrent.Task;
+
+import com.google.common.base.Function;
+
+import static com.ea.orbit.async.Await.await;
+
+public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
 {
-    private final RemoteReference<?> reference;
-    private final AbstractActor actor;
+    private AbstractActor actor;
 
-    public ActorEntry(final RemoteReference reference, final AbstractActor actor)
+    public ActorEntry(final RemoteReference reference)
     {
-        this.reference = reference;
-        this.actor = actor;
+        super(reference);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public T getObject()
+    {
+        return (T) actor;
     }
 
     @Override
-    public RemoteReference getRemoteReference()
+    public Task<?> run(final Function<T, Task<?>> function)
     {
-        return reference;
+        lastAccess = runtime.clock().millis();
+        executionSerializer.offerJob(getRemoteReference(), () -> doRun(function), 1000);
+        return Task.done();
     }
 
     @Override
-    public Object getObject()
+    public Task deactivate()
     {
-        return actor;
+        try
+        {
+            if (isDeactivated())
+            {
+                return Task.done();
+            }
+            Task completion = new Task();
+            if (!executionSerializer.offerJob(getRemoteReference(), () -> doDeactivate(completion), 1000))
+            {
+                completion.complete(null);
+                getLogger().error("Execution serializer refused task to deactivate instance of " + getRemoteReference());
+            }
+            return completion;
+        }
+        catch (Throwable ex)
+        {
+            // this should never happen, but deactivate must't fail.
+            ex.printStackTrace();
+            return Task.done();
+        }
     }
+
+    private Task<?> doDeactivate(final Task completion)
+    {
+        try
+        {
+            if (actor != null)
+            {
+                try
+                {
+                    await(super.deactivate(getObject()));
+                    actor = null;
+                }
+                catch (Throwable ex)
+                {
+                    getLogger().error("error deactivating " + getRemoteReference(), ex);
+                }
+            }
+        }
+        catch (Throwable ex)
+        {
+            // ignore
+        }
+        setDeactivated(true);
+        completion.complete(null);
+        return Task.done();
+    }
+
+    private Task<?> doRun(final Function<T, Task<?>> function)
+    {
+        runtime.bind();
+        final ActorTaskContext actorTaskContext = ActorTaskContext.pushNew();
+        try
+        {
+            if (actor == null)
+            {
+                return activate().thenAccept(actor -> {
+                    this.actor = actor;
+                    runtime.bind();
+                    //noinspection ConstantConditions
+                    ActorTaskContext.current().setActor(actor);
+                    function.apply(getObject());
+                });
+            }
+            else
+            {
+                actorTaskContext.setActor(getObject());
+                return function.apply(getObject());
+            }
+        }
+        finally
+        {
+            actorTaskContext.pop();
+        }
+    }
+
 }

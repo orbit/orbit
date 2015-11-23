@@ -28,24 +28,153 @@
 
 package com.ea.orbit.actors.runtime;
 
-public class StatelessActorEntry implements LocalObjects.LocalObjectEntry
-{
-    private AbstractActor actor;
+import com.ea.orbit.concurrent.Task;
 
-    public  StatelessActorEntry(final RemoteReference reference, final AbstractActor actor)
+import com.google.common.base.Function;
+
+import java.lang.ref.SoftReference;
+import java.util.concurrent.ConcurrentLinkedDeque;
+
+public class StatelessActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
+{
+    private ConcurrentLinkedDeque<SoftReference<T>> activations = new ConcurrentLinkedDeque<>();
+
+    public StatelessActorEntry(final RemoteReference reference)
     {
-        this.actor = actor;
+        super(reference);
     }
 
     @Override
-    public RemoteReference getRemoteReference()
+    public T getObject()
     {
         return null;
     }
 
     @Override
-    public Object getObject()
+    public Task<?> run(final Function<T, Task<?>> function)
     {
-        return actor;
+        lastAccess = runtime.clock().millis();
+        T actor = tryPop();
+        if (actor == null)
+        {
+            final ActorTaskContext context = ActorTaskContext.pushNew();
+            try
+            {
+                activate().thenAccept(newActor -> executionSerializer.offerJob(newActor, () -> doRun(newActor, function), 1000));
+            }
+            finally
+            {
+                context.pop();
+            }
+        }
+        else
+        {
+            executionSerializer.offerJob(actor, () -> doRun(actor, function), 1000);
+        }
+        return Task.done();
+    }
+
+    @Override
+    public boolean isDeactivated()
+    {
+        return false;
+    }
+
+    @Override
+    public Task deactivate()
+    {
+        try
+        {
+            if (isDeactivated())
+            {
+                return Task.done();
+            }
+            Task completion = new Task();
+            if (!executionSerializer.offerJob(getRemoteReference(), () -> doDeactivate(completion), 1000))
+            {
+                completion.complete(null);
+                getLogger().error("Execution serializer refused task to deactivate instance of " + getRemoteReference());
+            }
+            return completion;
+        }
+        catch (Throwable ex)
+        {
+            // this should never happen, but deactivate must't fail.
+            ex.printStackTrace();
+            return Task.done();
+        }
+    }
+
+    private Task<?> doDeactivate(final Task completion)
+    {
+        try
+        {
+            setDeactivated(true);
+            activations.clear();
+        }
+        finally
+        {
+            completion.complete(null);
+        }
+        return Task.done();
+    }
+
+    T tryPop()
+    {
+        while (true)
+        {
+            final SoftReference<T> ref = activations.pollFirst();
+            if (ref == null)
+            {
+                return null;
+            }
+            T value = ref.get();
+            if (value != null)
+            {
+                return value;
+            }
+        }
+    }
+
+    void push(T value)
+    {
+        activations.push(new SoftReference<>(value));
+    }
+
+    private Task<?> doRun(T actor, final Function<T, Task<?>> function)
+    {
+        runtime.bind();
+        final ActorTaskContext actorTaskContext = ActorTaskContext.pushNew();
+        try
+        {
+            actorTaskContext.setActor(actor);
+            final Task<?> apply;
+            try
+            {
+                apply = function.apply(actor);
+            }
+            catch (Throwable ex)
+            {
+                push(actor);
+                if (actor.logger.isDebugEnabled())
+                {
+                    actor.logger.error("Error invoking stateless actor " + getRemoteReference(), ex);
+                }
+                return Task.done();
+            }
+            if (apply == null || apply.isDone())
+            {
+                push(actor);
+            }
+            else
+            {
+                apply.whenComplete((r, e) -> push(actor));
+            }
+            return apply;
+        }
+        finally
+        {
+            actorTaskContext.pop();
+        }
     }
 }

@@ -30,13 +30,13 @@ package com.ea.orbit.actors.runtime;
 
 public class Utils
 {
-    static <T> Class<T> classForName(final String className)
+    public static <T> Class<T> classForName(final String className)
     {
         return classForName(className, false);
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> Class<T> classForName(final String className, boolean ignoreException)
+    public static <T> Class<T> classForName(final String className, boolean ignoreException)
     {
         try
         {
@@ -50,5 +50,17 @@ public class Utils
             }
         }
         return null;
+    }
+
+    public static void sleep(final long millis)
+    {
+        try
+        {
+            Thread.sleep(millis);
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
     }
 }

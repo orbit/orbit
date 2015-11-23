@@ -30,10 +30,9 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
-import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.annotation.NoIdentity;
 import com.ea.orbit.actors.annotation.OneWay;
-import com.ea.orbit.actors.cluster.NodeAddressImpl;
+import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.extensions.ActorClassFinder;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.util.ClassPath;
@@ -42,7 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Proxy;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -99,7 +97,7 @@ public class DefaultDescriptorFactory implements DescriptorFactory
         ClassDescriptor descriptor = descriptorMapByInterface.get(aInterface);
         if (descriptor == null)
         {
-            if (aInterface == Actor.class || aInterface == ActorObserver.class || !aInterface.isInterface())
+            if (aInterface == Actor.class || aInterface == ActorObserver.class)
             {
                 return null;
             }
@@ -109,16 +107,16 @@ public class DefaultDescriptorFactory implements DescriptorFactory
             if (aInterface.isInterface())
             {
                 descriptor.factory = dynamicReferenceFactory.getFactoryFor(aInterface);
+                descriptor.invoker = (ObjectInvoker<Object>) descriptor.factory.getInvoker();
             }
-            descriptor.invoker = (ObjectInvoker<Object>) descriptor.factory.getInvoker();
 
             ClassDescriptor concurrentInterfaceDescriptor = descriptorMapByInterface.putIfAbsent(aInterface, descriptor);
             if (concurrentInterfaceDescriptor != null)
             {
-                descriptorMapByInterfaceId.put(descriptor.factory.getInterfaceId(), concurrentInterfaceDescriptor);
+                descriptorMapByInterfaceId.put(DefaultClassDictionary.get().getClassId(aInterface), concurrentInterfaceDescriptor);
                 return concurrentInterfaceDescriptor;
             }
-            descriptorMapByInterfaceId.put(descriptor.factory.getInterfaceId(), descriptor);
+            descriptorMapByInterfaceId.put(DefaultClassDictionary.get().getClassId(aInterface), descriptor);
         }
         return descriptor;
     }
@@ -139,6 +137,7 @@ public class DefaultDescriptorFactory implements DescriptorFactory
         return null;
     }
 
+    @Override
     public ObjectInvoker<?> getInvoker(Class clazz)
     {
         final ClassDescriptor descriptor = getDescriptor(clazz);
@@ -148,7 +147,7 @@ public class DefaultDescriptorFactory implements DescriptorFactory
         }
         if (descriptor.invoker == null)
         {
-            descriptor.invoker = dynamicReferenceFactory.getInvokerFor(descriptor.factory.getInterface());
+            descriptor.invoker = dynamicReferenceFactory.getInvokerFor(clazz);
         }
         return descriptor.invoker;
     }
@@ -168,13 +167,13 @@ public class DefaultDescriptorFactory implements DescriptorFactory
     }
 
     @Override
-    public <T> T getReference(BasicRuntime runtime, final UUID nodeId, final Class<T> iClass, final Object id)
+    public <T> T getReference(BasicRuntime runtime, final NodeAddress nodeId, final Class<T> iClass, final Object id)
     {
         ReferenceFactory<T> factory = getFactory(iClass);
         final T reference = factory.createReference(String.valueOf(id));
         if (nodeId != null)
         {
-            RemoteReference.setAddress((RemoteReference<?>) reference, new NodeAddressImpl(nodeId));
+            RemoteReference.setAddress((RemoteReference<?>) reference, nodeId);
         }
         if (runtime != null)
         {
@@ -242,7 +241,7 @@ public class DefaultDescriptorFactory implements DescriptorFactory
         return instance.getReference(null, actorInterface, id);
     }
 
-    public static <T extends ActorObserver> T observerRef(UUID nodeId, Class<T> actorObserverInterface, String id)
+    public static <T extends ActorObserver> T observerRef(NodeAddress nodeId, Class<T> actorObserverInterface, String id)
     {
         return instance.getReference(nodeId, actorObserverInterface, id);
     }
@@ -256,7 +255,7 @@ public class DefaultDescriptorFactory implements DescriptorFactory
                     // TODO: throw proper exceptions for the expected error scenarios (non task return),
                     final int methodId = instance.dynamicReferenceFactory.getMethodId(method);
                     return ActorRuntime.getRuntime()
-                            .invoke((Addressable) actor, method, method.isAnnotationPresent(OneWay.class), methodId, args);
+                            .invoke(RemoteReference.from(actor), method, method.isAnnotationPresent(OneWay.class), methodId, args);
                 });
 
     }

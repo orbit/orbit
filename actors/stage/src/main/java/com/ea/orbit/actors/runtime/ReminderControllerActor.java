@@ -124,6 +124,7 @@ public class ReminderControllerActor extends AbstractActor<ReminderControllerAct
 
     public Task<?> activateAsync()
     {
+        getLogger().debug("activated");
         // registering the local timers.
         return super.activateAsync().thenRun(
                 () -> state.reminders.forEach(r -> registerLocalTimer(r)));

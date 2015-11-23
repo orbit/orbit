@@ -41,6 +41,7 @@ public class StreamWithActorsTest extends ActorBaseTest
         @Override
         public Task<Void> doSubscribe(final String streamId)
         {
+            getLogger().info("doSubscribe hash:" + hashCode());
             handle = await(AsyncStream.getStream(String.class, streamId)
                     .subscribe(d -> {
                         state().last = d;
@@ -55,8 +56,16 @@ public class StreamWithActorsTest extends ActorBaseTest
         @Override
         public Task<Void> doUnSubscribe(final String streamId)
         {
+            getLogger().info("doUnSubscribe hash:" + hashCode());
             await(AsyncStream.getStream(String.class, streamId).unSubscribe(handle));
             return Task.done();
+        }
+
+        @Override
+        public Task<?> activateAsync()
+        {
+            getLogger().info("activateAsync");
+            return super.activateAsync();
         }
     }
 
@@ -107,16 +116,30 @@ public class StreamWithActorsTest extends ActorBaseTest
         final Stage stage1 = createStage();
         Hello hello = Actor.getReference(Hello.class, "0");
         hello.doSubscribe("test").join();
-
-        final Stage stage2 = createStage();
         AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
-
         hello.doUnSubscribe("test").join();
+        assertFalse(fakeSync.get("0-last").isDone());
         test.post("hello").join();
         assertFalse(fakeSync.get("0-last").isDone());
         dumpMessages();
     }
 
+    @Test(timeout = 30_000L)
+    public void testUnSubscribe2()
+    {
+        final Stage stage1 = createStage();
+        Hello hello = Actor.getReference(Hello.class, "0");
+        hello.doSubscribe("test").join();
+
+        final Stage stage2 = createStage();
+        AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
+
+        hello.doUnSubscribe("test").join();
+        assertFalse(fakeSync.get("0-last").isDone());
+        test.post("hello").join();
+        assertFalse(fakeSync.get("0-last").isDone());
+        dumpMessages();
+    }
 
     @Test(timeout = 30_000L)
     public void test2SubscriberActors()

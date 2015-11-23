@@ -36,6 +36,7 @@ import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.web.EmbeddedHttpServer;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.inject.Singleton;
@@ -94,7 +95,8 @@ public class WsTest
 
     }
 
-    @Test(timeout = 120_000L)
+    @Test(timeout = 30_000L)
+    @Ignore
     public void test() throws Exception
     {
         Map<String, Object> properties = new HashMap<>();

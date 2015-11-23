@@ -31,6 +31,7 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.test.actors.StatelessThing;
+import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
 import org.junit.Test;
@@ -43,13 +44,84 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class StatelessActorTest extends ActorBaseTest
 {
+
+    @Test
+    public void simpleStatelessTest() throws ExecutionException, InterruptedException
+    {
+        createStage();
+        StatelessThing actor1 = Actor.getReference(StatelessThing.class, "1000");
+        assertNotNull(actor1.getUniqueActivationId().join());
+        dumpMessages();
+    }
+
+    @Test
+    public void simpleStatelessTest2() throws ExecutionException, InterruptedException
+    {
+        createStage();
+        StatelessThing actor1 = Actor.getReference(StatelessThing.class, "1000");
+        for (int i = 0; i < 100; i++)
+        {
+            assertNotNull(actor1.sayHello().join());
+        }
+    }
+
+    @Test
+    public void simpleStatelessTestConcurrentCalls() throws ExecutionException, InterruptedException, TimeoutException
+    {
+        createStage();
+        StatelessThing actor1 = Actor.getReference(StatelessThing.class, "1000");
+        assertNotNull(actor1.sayHello().join());
+
+        List<Task<String>> futures = new ArrayList<>();
+        for (int i = 0; i < 100; i++)
+        {
+            futures.add(actor1.sayHello());
+        }
+        Task.allOf(futures).get(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void simpleStatelessTwoStages() throws ExecutionException, InterruptedException, TimeoutException
+    {
+        final Stage stage1 = createStage();
+        StatelessThing actor = Actor.getReference(StatelessThing.class, "1000");
+        createStage();
+        assertNotNull(actor.sayHello().get(10, TimeUnit.SECONDS));
+        stage1.bind();
+        assertNotNull(actor.sayHello().get(10, TimeUnit.SECONDS));
+        Thread.sleep(500);
+        dumpMessages();
+    }
+
+    @Test
+    public void simpleStatelessTestConcurrentTwoStages() throws ExecutionException, InterruptedException, TimeoutException
+    {
+        final Stage stage1 = createStage();
+        StatelessThing actor1 = Actor.getReference(StatelessThing.class, "1000");
+        final Stage stage2 = createStage();
+        StatelessThing actor2 = Actor.getReference(StatelessThing.class, "1000");
+        assertNotNull(actor1.sayHello().join());
+
+        List<Task<String>> futures = new ArrayList<>();
+        for (int i = 0; i < 10; i++)
+        {
+            stage1.bind();
+            futures.add(actor1.sayHello());
+            stage2.bind();
+            futures.add(actor2.sayHello());
+        }
+        Task.allOf(futures).get(30, TimeUnit.SECONDS);
+    }
+
 
     @Test
     public void statelessTest() throws ExecutionException, InterruptedException
@@ -73,19 +145,19 @@ public class StatelessActorTest extends ActorBaseTest
             // there will be no concurrent executions here
             // each node will have at most one activation of the stateless worker
             stage1.bind();
-            awaitFor(stagesIdle);
+            waitFor(stagesIdle);
             set.add(actor1.getUniqueActivationId().join());
             stage2.bind();
-            awaitFor(stagesIdle);
+            waitFor(stagesIdle);
             set.add(actor2.getUniqueActivationId().join());
             stage3.bind();
-            awaitFor(stagesIdle);
+            waitFor(stagesIdle);
             set.add(actor3.getUniqueActivationId().join());
             stage4.bind();
-            awaitFor(stagesIdle);
+            waitFor(stagesIdle);
             set.add(actor4.getUniqueActivationId().join());
             client.bind();
-            awaitFor(stagesIdle);
+            waitFor(stagesIdle);
             set.add(actor5.getUniqueActivationId().join());
         }
         // Statistics might let us down from time to time here...
@@ -136,8 +208,6 @@ public class StatelessActorTest extends ActorBaseTest
         assertTrue("Expecting >4 but was: " + size, size > 4);
         // only 25*5 calls => there should not be more than 125 activations
         assertTrue("Expecting <=" + (50 * 5) + " but was: " + size, size <= 50 * 5);
-
-
     }
 
     /**
@@ -178,7 +248,6 @@ public class StatelessActorTest extends ActorBaseTest
         assertTrue(set.size() > 1);
         // only 25*5 calls => there should not be more than 125 activations
         assertTrue(set.size() <= 100);
-
     }
 
 }

@@ -32,7 +32,6 @@ import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
-import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.concurrent.TaskContext;
@@ -42,14 +41,9 @@ import com.ea.orbit.exception.UncheckedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Clock;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,22 +58,19 @@ import java.util.concurrent.atomic.LongAdder;
 public class Messaging extends HandlerAdapter implements Startable
 {
     private static Object NIL = null;
-    private static final Logger logger = LoggerFactory.getLogger(Messaging.class);
+    private Logger logger = LoggerFactory.getLogger(Messaging.class);
 
     private final AtomicInteger messageIdGen = new AtomicInteger();
     private final Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
     private final PriorityBlockingQueue<PendingResponse> pendingResponsesQueue = new PriorityBlockingQueue<>(50, new PendingResponseComparator());
-    private Clock clock = Clock.systemUTC();
 
     @Config("orbit.actors.defaultMessageTimeout")
     private long responseTimeoutMillis = 30_000;
 
-    @Config("orbit.actors.stickyHeaders")
-    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
-
     private final LongAdder networkMessagesReceived = new LongAdder();
     private final LongAdder responsesReceived = new LongAdder();
     private static Timer timer = new Timer("Messaging timer");
+    private BasicRuntime runtime;
 
     /**
      * The messageId is used only to break a tie between messages that timeout at the same ms.
@@ -127,16 +118,31 @@ public class Messaging extends HandlerAdapter implements Startable
         {
             return super.internalCompleteExceptionally(ex);
         }
+
+        @Override
+        public String toString()
+        {
+            int count;
+            final StringBuilder builder = new StringBuilder()
+                    .append("PendingResponse:").append(hashCode())
+                    .append("[messageId=").append(messageId);
+            if (isDone())
+            {
+                return builder.append((isCompletedExceptionally()
+                        ? ",Completed exceptionally]" : ",Completed normally]")).toString();
+            }
+            if ((count = getNumberOfDependents()) != 0)
+            {
+                return builder.append(",Not completed,").append(count).append(" dependents]").toString();
+            }
+            return builder.append(",Not completed]").toString();
+        }
+
     }
 
     public void setResponseTimeoutMillis(final long responseTimeoutMillis)
     {
         this.responseTimeoutMillis = responseTimeoutMillis;
-    }
-
-    public void setClock(final Clock clock)
-    {
-        this.clock = clock;
     }
 
     @Override
@@ -147,7 +153,7 @@ public class Messaging extends HandlerAdapter implements Startable
             @Override
             public void run()
             {
-                timeoutCleanup();
+                cleanup();
             }
         }, 1000, 1000);
 
@@ -157,7 +163,14 @@ public class Messaging extends HandlerAdapter implements Startable
     @Override
     public void onRead(HandlerContext ctx, Object message)
     {
-        this.onMessageReceived(ctx, (Message) message);
+        if (message instanceof Message)
+        {
+            this.onMessageReceived(ctx, (Message) message);
+        }
+        else
+        {
+            ctx.fireRead(message);
+        }
     }
 
     protected void onMessageReceived(HandlerContext ctx, Message message)
@@ -174,7 +187,28 @@ public class Messaging extends HandlerAdapter implements Startable
                 case MessageDefinitions.REQUEST_MESSAGE:
                 case MessageDefinitions.ONE_WAY_MESSAGE:
                     // forwards the message to the next inbound handler
-                    ctx.fireRead(message);
+
+                    final Class classById = DefaultClassDictionary.get().getClassById(message.getInterfaceId());
+                    final RemoteReference reference = (RemoteReference) DefaultDescriptorFactory.get().getReference(
+                            runtime,
+                            message.getReferenceAddress(),
+                            classById, message.getObjectId());
+
+                    // todo: defer the payload decoding, in the object thread, preferably
+                    final Invocation invocation = new Invocation(reference, null,
+                            messageType == MessageDefinitions.ONE_WAY_MESSAGE,
+                            message.getMethodId(), (Object[]) message.getPayload(), null);
+                    invocation.setHeaders(message.getHeaders());
+                    invocation.setFromNode(message.getFromNode());
+                    invocation.setMessageId(messageId);
+
+                    if (!invocation.isOneWay())
+                    {
+                        Task<Object> completion = new Task<>();
+                        completion.whenComplete((r, e) -> sendResponseAndLogError(ctx, fromNode, messageId, r, e));
+                        invocation.setCompletion(completion);
+                    }
+                    ctx.fireRead(invocation);
                     return;
 
                 case MessageDefinitions.RESPONSE_OK:
@@ -183,6 +217,10 @@ public class Messaging extends HandlerAdapter implements Startable
                 {
                     responsesReceived.increment();
                     PendingResponse pendingResponse = pendingResponseMap.remove(messageId);
+                    if (logger.isTraceEnabled())
+                    {
+                        logger.trace("response received: " + message.getMessageId() + " " + message.getPayload() + "\r\n" + pendingResponse);
+                    }
                     if (pendingResponse != null)
                     {
                         pendingResponsesQueue.remove(pendingResponse);
@@ -242,27 +280,44 @@ public class Messaging extends HandlerAdapter implements Startable
         }
     }
 
+    protected void sendResponseAndLogError(HandlerContext ctx, final NodeAddress from, int messageId, Object result, Throwable exception)
+    {
+        if (exception == null)
+        {
+            sendResponse(ctx, from, MessageDefinitions.RESPONSE_OK, messageId, result);
+        }
+        else
+        {
+            sendResponse(ctx, from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
+        }
+    }
+
+    private Task sendResponse(HandlerContext ctx, NodeAddress to, int messageType, int messageId, Object res)
+    {
+        return ctx.write(new Message()
+                .withToNode(to)
+                .withMessageId(messageId)
+                .withMessageType(messageType)
+                .withPayload(res));
+    }
+
     @Override
     public Task write(final HandlerContext ctx, final Object msg) throws Exception
     {
         if (msg instanceof Invocation)
         {
-            return sendInvocation(ctx, (Invocation) msg);
+            return writeInvocation(ctx, (Invocation) msg);
         }
         if (msg instanceof Message)
         {
-            return sendMessage(ctx, (Message) msg);
+            return writeMessage(ctx, (Message) msg);
         }
         return super.write(ctx, msg);
     }
 
-    public Task<?> sendInvocation(final HandlerContext ctx, Invocation invocation)
+    public Task<?> writeInvocation(final HandlerContext ctx, Invocation invocation)
     {
         final Addressable toReference = invocation.getToReference();
-        if (logger.isDebugEnabled())
-        {
-            logger.debug("sending message to " + toReference);
-        }
         RemoteReference<?> actorReference = (RemoteReference<?>) toReference;
         NodeAddress toNode = invocation.getToNode();
 
@@ -273,33 +328,29 @@ public class Messaging extends HandlerAdapter implements Startable
         }
         final TaskContext context = TaskContext.current();
 
-        // copy stick context valued to the message headers headers
-        if (context != null)
-        {
-            for (String key : stickyHeaders)
-            {
-                final Object value = context.getProperty(key);
-                if (value != null)
-                {
-                    actualHeaders.put(key, value);
-                }
-            }
-        }
 
         final Message message = new Message()
-                .withMessageType(invocation.isOneWay() ? MessageDefinitions.REQUEST_MESSAGE : MessageDefinitions.REQUEST_MESSAGE)
+                .withMessageType(invocation.isOneWay() ? MessageDefinitions.ONE_WAY_MESSAGE : MessageDefinitions.REQUEST_MESSAGE)
                 .withToNode(toNode)
+                .withFromNode(invocation.getFromNode())
                 .withHeaders(actualHeaders)
                 .withInterfaceId(actorReference._interfaceId())
+                .withMessageId(invocation.getMessageId())
                 .withMethodId(invocation.getMethodId())
                 .withObjectId(RemoteReference.getId(actorReference))
-                .withPayload(invocation.getParams());
+                .withPayload(invocation.getParams())
+                .withReferenceAddress(invocation.getToReference().address);
 
 
-        return sendMessage(ctx, message);
+        if (logger.isTraceEnabled())
+        {
+            logger.trace("sending message to " + toReference);
+        }
+
+        return writeMessage(ctx, message);
     }
 
-    public Task<?> sendMessage(HandlerContext ctx, Message message)
+    public Task<?> writeMessage(HandlerContext ctx, Message message)
     {
         int messageId = message.getMessageId();
         if (messageId == 0)
@@ -307,13 +358,28 @@ public class Messaging extends HandlerAdapter implements Startable
             messageId = messageIdGen.incrementAndGet();
             message.setMessageId(messageId);
         }
+        else if (message.getFromNode() != null)
+        {
+            // forwarding message somewhere, hosting's doing, likely
+            // occurs when the object ownership changes
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("Forwarding message: " + messageId + " to " + message.getToNode().asUUID().getLeastSignificantBits());
+            }
+            return ctx.write(message);
+        }
+        if (logger.isTraceEnabled())
+        {
+            logger.trace("sending message " + messageId);
+        }
+
         if (message.getMessageType() != MessageDefinitions.REQUEST_MESSAGE)
         {
             ctx.write(message);
             return Task.done();
         }
         message.setMessageId(messageId);
-        PendingResponse pendingResponse = new PendingResponse(messageId, clock.millis() + responseTimeoutMillis);
+        PendingResponse pendingResponse = new PendingResponse(messageId, runtime.clock().millis() + responseTimeoutMillis);
         final boolean oneWay = message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE;
         if (!oneWay)
         {
@@ -338,14 +404,14 @@ public class Messaging extends HandlerAdapter implements Startable
         return pendingResponse;
     }
 
-    public void timeoutCleanup()
+    public Task cleanup()
     {
         PendingResponse top = pendingResponsesQueue.peek();
-        if (top != null && top.timeoutAt < clock.millis())
+        if (top != null && top.timeoutAt < runtime.clock().millis())
         {
             for (; (top = pendingResponsesQueue.poll()) != null; )
             {
-                if (top.timeoutAt > clock.millis())
+                if (top.timeoutAt > runtime.clock().millis())
                 {
                     // return the message, if there was a concurrent reception the message will be removed on the next cycle.
                     pendingResponsesQueue.add(top);
@@ -358,11 +424,18 @@ public class Messaging extends HandlerAdapter implements Startable
                 pendingResponseMap.remove(top.messageId);
             }
         }
+        return Task.done();
     }
 
-    public void addStickyHeaders(Collection<String> stickyHeaders)
+    public BasicRuntime getRuntime()
     {
-        this.stickyHeaders.addAll(stickyHeaders);
+        return runtime;
+    }
+
+    public void setRuntime(final BasicRuntime runtime)
+    {
+        this.runtime = runtime;
+        logger = runtime.getLogger(this);
     }
 
 }

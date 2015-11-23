@@ -31,17 +31,22 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.extensions.DefaultLoggerExtension;
 import com.ea.orbit.actors.extensions.LoggerExtension;
+import com.ea.orbit.actors.net.Handler;
 import com.ea.orbit.actors.runtime.RemoteReference;
+import com.ea.orbit.concurrent.ConcurrentHashSet;
 
 import org.slf4j.Logger;
 import org.slf4j.Marker;
+
+import java.text.MessageFormat;
 
 
 public class TestLogger implements LoggerExtension
 {
 
     private ActorBaseTest actorBaseTest;
-    DefaultLoggerExtension defaultLogger = new DefaultLoggerExtension();
+    private DefaultLoggerExtension defaultLogger = new DefaultLoggerExtension();
+    private ConcurrentHashSet<Object> classesToDebug = new ConcurrentHashSet<>();
 
     public TestLogger(final ActorBaseTest actorBaseTest)
     {
@@ -53,12 +58,21 @@ public class TestLogger implements LoggerExtension
     {
         final Logger logger = defaultLogger.getLogger(object);
 
+        final Class targetClass = object == null ? null
+                : object instanceof String ? null
+                : object instanceof Class ? (Class) object
+                : object.getClass();
+
         String target;
         if (object instanceof Actor)
         {
             final RemoteReference reference = RemoteReference.from((Actor) object);
             target = (RemoteReference.getInterfaceClass(reference).getSimpleName()
                     + ":" + RemoteReference.getId(reference)).replaceAll("[\"\\t\\r\\n]", "");
+        }
+        else if (object instanceof Handler)
+        {
+            target = object.getClass().getSimpleName() + ":" + object.hashCode();
         }
         else
         {
@@ -67,11 +81,51 @@ public class TestLogger implements LoggerExtension
         return new LogInterceptor(logger)
         {
             @Override
+            public boolean isDebugEnabled()
+            {
+                if (targetClass != null && classesToDebug.contains(targetClass))
+                {
+                    return true;
+                }
+                return super.isDebugEnabled();
+            }
+
+            @Override
+            public boolean isWarnEnabled()
+            {
+                if (targetClass != null && classesToDebug.contains(targetClass))
+                {
+                    return true;
+                }
+                return super.isWarnEnabled();
+            }
+
+            @Override
+            public boolean isInfoEnabled()
+            {
+                if (targetClass != null && classesToDebug.contains(targetClass))
+                {
+                    return true;
+                }
+                return super.isInfoEnabled();
+            }
+
+            @Override
             protected void message(final String type, final Marker marker, final String format, final Object... arguments)
             {
-                super.message(type, marker, format, arguments);
-                final String message = (!"info".equalsIgnoreCase(type) ? type + ": " : "") +
-                        String.format(format, arguments);
+                String fmtMessage = format;
+                if (arguments != null && arguments.length > 0)
+                {
+                    try
+                    {
+                        fmtMessage = MessageFormat.format(format, arguments);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.error("Error formatting message: {0}", format);
+                    }
+                }
+                final String message = (!"info".equalsIgnoreCase(type) ? type + ": " : "") + fmtMessage;
                 String position = "over";
                 note(position, target, message);
             }
@@ -81,7 +135,7 @@ public class TestLogger implements LoggerExtension
     private void note(final String position, final String target, final String message)
     {
         final StringBuilder note = new StringBuilder("note ");
-        note.append(position).append(" \"").append(target);
+        note.append(position).append(" \"").append(target).append('"');
         if (message.contains("\n"))
         {
             note.append("\r\n");
@@ -91,8 +145,23 @@ public class TestLogger implements LoggerExtension
         }
         else
         {
-            note.append("\": ").append(message);
+            note.append(": ").append(message);
         }
         actorBaseTest.sequenceDiagram.add(note.toString());
+    }
+
+    public void enableDebugFor(Class clazz)
+    {
+        classesToDebug.add(clazz);
+    }
+
+    public void disableDebugFor(Class clazz)
+    {
+        classesToDebug.add(clazz);
+    }
+
+    public void disableDebugForAll()
+    {
+        classesToDebug.clear();
     }
 }

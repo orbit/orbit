@@ -4,11 +4,22 @@ import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @SuppressWarnings("rawtypes")
 public class StatelessThingActor extends AbstractActor implements StatelessThing
 {
     private UUID uuid = UUID.randomUUID();
+    static AtomicInteger activationCount = new AtomicInteger();
+    private String activationId = String.valueOf(activationCount.incrementAndGet());
+
+
+    @Override
+    public Task<String> sayHello()
+    {
+        Thread.yield();
+        return Task.fromValue("hello from " + actorIdentity() + "/" + activationId);
+    }
 
     @Override
     public Task<UUID> getUniqueActivationId()
