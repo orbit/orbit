@@ -90,6 +90,7 @@ public class JGroupsClusterPeer implements ClusterPeer
     @Override
     public NodeAddress localAddress()
     {
+        sync();
         return local.nodeAddress;
     }
 

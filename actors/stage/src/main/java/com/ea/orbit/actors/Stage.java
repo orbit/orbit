@@ -76,7 +76,6 @@ import com.ea.orbit.actors.streams.AsyncObserver;
 import com.ea.orbit.actors.streams.AsyncStream;
 import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
 import com.ea.orbit.actors.streams.simple.SimpleStreamExtension;
-import com.ea.orbit.actors.transactions.Transaction;
 import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
@@ -175,6 +174,7 @@ public class Stage implements Startable, ActorRuntime
     private int concurrentDeactivations = 16;
     @Config("orbit.actors.defaultActorTTL")
     private long defaultActorTTL = TimeUnit.MINUTES.toMillis(10);
+    private Task<Void> startPromise = new Task<>();
 
     public enum StageMode
     {
@@ -420,6 +420,11 @@ public class Stage implements Startable, ActorRuntime
         this.mode = mode;
     }
 
+    public Task<Void> getStartPromise()
+    {
+        return startPromise;
+    }
+
     public Task<?> start()
     {
         startCalled = true;
@@ -625,7 +630,18 @@ public class Stage implements Startable, ActorRuntime
             }
         }, cleanupIntervalMillis, cleanupIntervalMillis);
 
-        return future;
+        future.whenComplete((r, e) -> {
+            if (e != null)
+            {
+                startPromise.completeExceptionally(e);
+            }
+            else
+            {
+                startPromise.complete(r);
+            }
+        });
+
+        return startPromise;
     }
 
     private void configureOrbitContainer()
