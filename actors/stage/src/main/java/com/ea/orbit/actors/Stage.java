@@ -115,6 +115,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -153,6 +154,9 @@ public class Stage implements Startable, ActorRuntime
 
     @Config("orbit.actors.stickyHeaders")
     private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
+
+    @Config("orbit.actors.cleanupInterval")
+    private long cleanupIntervalMillis = TimeUnit.SECONDS.toMillis(10);
 
     private Timer timer = new Timer("Orbit stage timer");
 
@@ -429,7 +433,14 @@ public class Stage implements Startable, ActorRuntime
         {
             extensions.addAll(container.getClasses().stream().filter(c -> ActorExtension.class.isAssignableFrom(c) && c.isAnnotationPresent(Singleton.class))
                     .map(c -> (ActorExtension) container.get(c)).collect(Collectors.toList()));
+
+            // pre create the class descriptors if possible.
+            container.getClasses().stream()
+                    .filter(c -> (c != null && c.isInterface() && Actor.class.isAssignableFrom(c)))
+                    .parallel()
+                    .forEach(c -> DefaultDescriptorFactory.get().getInvoker(c));
         }
+
         if (loggerExtension == null)
         {
             loggerExtension = getFirstExtension(LoggerExtension.class);
@@ -588,6 +599,8 @@ public class Stage implements Startable, ActorRuntime
         hosting.start();
         execution.start();
 
+        await(Task.allOf(extensions.stream().map(Startable::start)));
+
         Task<Void> future = pipeline.connect(null);
         if (mode == StageMode.HOST)
         {
@@ -598,6 +611,19 @@ public class Stage implements Startable, ActorRuntime
         }
 
         future = future.thenRun(() -> bind());
+
+        // schedules the cleanup
+        timer.schedule(new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                if (state == NodeCapabilities.NodeState.RUNNING)
+                {
+                    ForkJoinTask.adapt(() -> cleanup().join()).fork();
+                }
+            }
+        }, cleanupIntervalMillis, cleanupIntervalMillis);
 
         return future;
     }
