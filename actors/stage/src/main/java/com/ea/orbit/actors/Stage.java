@@ -715,7 +715,7 @@ public class Stage implements Startable, ActorRuntime
         await(stopExtensions());
         do
         {
-            Utils.sleep(500);
+            Utils.sleep(100);
         } while (executionSerializer.isBusy());
         logger.debug("closing pipeline");
         await(pipeline.close());
