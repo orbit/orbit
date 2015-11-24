@@ -39,21 +39,21 @@ public class StreamWithClientTest extends ActorBaseTest
     {
         final Stage stage1 = createStage();
         Hello hello = Actor.getReference(Hello.class, "0");
-        hello.doPush("test", "hello").join();
+        hello.doPush("testStream", "hello").join();
 
         final ClientPeer client = createRemoteClient(stage1);
 
-        client.getStream(AsyncStream.DEFAULT_PROVIDER, String.class, "test")
+        client.getStream(AsyncStream.DEFAULT_PROVIDER, String.class, "testStream")
                 .subscribe(d -> {
-                    fakeSync.put("last", d);
+                    fakeSync.deque("received").push(d);
                     return Task.done();
                 });
 
 
         stage1.bind();
-        hello.doPush("test", "hello2").join();
+        hello.doPush("testStream", "hello2").join();
 
-        assertEquals("hello2", fakeSync.get("last").join());
+        assertEquals("hello2", fakeSync.deque("received").pop());
         dumpMessages();
     }
 }
