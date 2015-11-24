@@ -24,12 +24,10 @@
  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */package com.ea.orbit.profiler;
-
-import com.ea.orbit.util.StringUtils;
+ */
+package com.ea.orbit.profiler;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -37,6 +35,7 @@ import java.util.Set;
  * Keys can be threads, application processes, or global for the entire system.
  * <p/>
  * The profile data is not thread safe. The profile collection should be paused while reading it.
+ *
  * @author Daniel Sperry
  */
 public class ProfilerData
@@ -45,87 +44,6 @@ public class ProfilerData
     private final HashMap<MethodInfo, MethodInfo> all = new HashMap<>();
 
     private long currentStamp = (long) (Math.random() * Long.MAX_VALUE);
-
-    public static class MethodInfo
-    {
-        private String declaringClass;
-        private String methodName;
-        private String fileName;
-        private long count;
-        public long stamp;
-
-        public MethodInfo()
-        {
-
-        }
-
-        public MethodInfo(final StackTraceElement e)
-        {
-            if (e != null)
-            {
-                this.declaringClass = e.getClassName();
-                this.methodName = e.getMethodName();
-                this.fileName = e.getFileName();
-            }
-            else
-            {
-                this.declaringClass = "<root>";
-                this.methodName = "<root>";
-                this.fileName = "<root>";
-            }
-        }
-
-        public String getDeclaringClass()
-        {
-            return declaringClass;
-        }
-
-        public String getMethodName()
-        {
-            return methodName;
-        }
-
-        public String getFileName()
-        {
-            return fileName;
-        }
-
-        public long getCount()
-        {
-            return count;
-        }
-
-        @Override
-        public boolean equals(final Object obj)
-        {
-            final MethodInfo other = (MethodInfo) obj;
-            return StringUtils.equals(this.declaringClass, other.declaringClass)
-                    && StringUtils.equals(this.methodName, other.methodName);
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return this.declaringClass.hashCode()
-                    + (this.methodName != null ? this.methodName.hashCode() : 0) * 31;
-        }
-    }
-
-    public static class CallTreeElement
-    {
-        private MethodInfo elementInfo;
-        private Map<MethodInfo, CallTreeElement> children = new HashMap<>();
-        private long count;
-
-        public CallTreeElement()
-        {
-        }
-
-        public CallTreeElement(final MethodInfo elementInfo)
-        {
-            this.elementInfo = elementInfo;
-        }
-    }
 
     public void collect(final StackTraceElement[] stack)
     {
@@ -185,4 +103,7 @@ public class ProfilerData
         return root;
     }
 
+    public long getSampleCount() {
+        return root.count;
+    }
 }

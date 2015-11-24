@@ -27,8 +27,8 @@
  */
 package com.ea.orbit.profiler;
 
-import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 /**
@@ -43,6 +43,7 @@ import java.util.WeakHashMap;
  */
 public class ProfilerCollector
 {
+    public static final String GLOBAL = "global";
     private Map<Object, ProfilerData> collectedData = new WeakHashMap<>();
 
     public ProfilerCollector()
@@ -51,11 +52,8 @@ public class ProfilerCollector
 
     public void collect()
     {
-        collect(Thread.getAllStackTraces().keySet());
-    }
-
-    public void collect(Collection<Thread> threads)
-    {
+        // only sure way to get all threads
+        final Set<Thread> threads = Thread.getAllStackTraces().keySet();
         final Thread currentThread = Thread.currentThread();
 
         for (final Thread thread : threads)
@@ -69,21 +67,24 @@ public class ProfilerCollector
         }
     }
 
+    /**
+     * Override this method to collect based other criteria
+     * <p/>
+     * If the application knows that a certain type of task happens in a certain thread,
+     * it is possible to group the information by that type of task.
+     *
+     * <p/> Example collect the information grouped by request path, api call, or actor.
+     *
+     * <p/>It's advisable to either override this method or to call collectByKey directly
+     *
+     * <p/>Collecting per thread usually produces too much information.
+     * Some idle threads are also irrelevant for instance idle worker threads and skew the data.
+     */
     public void collect(Thread thread)
     {
-        // lets the application decide what to collect and event o edit the stack trace
-        // gets the stack trace again to minimize drift
-        collect(thread, thread.getStackTrace());
-    }
-
-    /**
-     * Override this method for collecting on other criteria
-     */
-    public void collect(Thread thread, final StackTraceElement[] stackTrace)
-    {
-        // default implementation collects information for all threads.
-        collectByKey(thread, stackTrace);
-        collectByKey("global", stackTrace);
+        final StackTraceElement[] stackTrace = thread.getStackTrace();
+        // default implementation just bundles all information together
+        collectByKey(GLOBAL, stackTrace);
     }
 
     public void collectByKey(final Object key, final StackTraceElement[] stackTrace)
@@ -102,4 +103,8 @@ public class ProfilerCollector
         return collectedData;
     }
 
+    public void clear()
+    {
+        collectedData.clear();
+    }
 }
