@@ -69,7 +69,7 @@ public class PeerExecutor extends HandlerAdapter
         LocalObjects.LocalObjectEntry localObjectEntry = objects.findLocalObjectByReference(invocation.getToReference());
         if (localObjectEntry != null)
         {
-            return doLocalInvocation(localObjectEntry, invocation);
+            return scheduleLocalInvocation(localObjectEntry, invocation);
         }
         return ctx.write(invocation);
     }
@@ -94,7 +94,7 @@ public class PeerExecutor extends HandlerAdapter
         LocalObjects.LocalObjectEntry localObjectEntry = objects.findLocalObjectByReference(invocation.getToReference());
         if (localObjectEntry != null)
         {
-            doLocalInvocation(localObjectEntry, invocation);
+            scheduleLocalInvocation(localObjectEntry, invocation);
             return;
         }
         ctx.fireRead(invocation);
@@ -104,29 +104,34 @@ public class PeerExecutor extends HandlerAdapter
      * @return the result of the method called
      */
     @SuppressWarnings("unchecked")
-    public Task doLocalInvocation(final LocalObjects.LocalObjectEntry localObjectEntry, final Invocation invocation)
+    public Task scheduleLocalInvocation(final LocalObjects.LocalObjectEntry localObjectEntry, final Invocation invocation)
     {
         Task completion = new Task();
         ObjectInvoker invoker = runtime.getInvoker(RemoteReference.getInterfaceId(invocation.getToReference()));
         localObjectEntry.run(target -> {
-            Task result = invoker.safeInvoke(target, invocation.getMethodId(), invocation.getParams());
-            try
-            {
-                // must await to hold the execution serializer
-                await(result);
-            }
-            catch (Throwable ex)
-            {
-                // handled bellow;
-            }
-            if (invocation.getCompletion() != null)
-            {
-                Utils.linkFutures(result, invocation.getCompletion());
-            }
-            Utils.linkFutures(result, completion);
-            return Task.done();
+            return performLocalInvocation(invocation, completion, invoker, target);
         });
         return completion;
+    }
+
+    protected Task<Void> performLocalInvocation(final Invocation invocation, final Task completion, final ObjectInvoker invoker, final Object target)
+    {
+        Task result = invoker.safeInvoke(target, invocation.getMethodId(), invocation.getParams());
+        try
+        {
+            // must await to hold the execution serializer
+            await(result);
+        }
+        catch (Throwable ex)
+        {
+            // handled bellow;
+        }
+        if (invocation.getCompletion() != null)
+        {
+            Utils.linkFutures(result, invocation.getCompletion());
+        }
+        Utils.linkFutures(result, completion);
+        return Task.done();
     }
 
 

@@ -55,7 +55,7 @@ public class StreamWithClientTest extends ActorBaseTest
         stage1.bind();
         hello.doPush("testStream", "hello2").join();
 
-        assertEquals("hello2", fakeSync.deque("received").poll(10, TimeUnit.SECONDS));
+        assertEquals("hello2", fakeSync.deque("received").poll(20, TimeUnit.SECONDS));
         dumpMessages();
     }
 
@@ -78,7 +78,7 @@ public class StreamWithClientTest extends ActorBaseTest
 
         // first push
         hello.doPush("testStream", "hello").join();
-        assertEquals("hello", messagesReceived.poll(10, TimeUnit.SECONDS));
+        assertEquals("hello", messagesReceived.poll(20, TimeUnit.SECONDS));
         assertEquals(0, messagesReceived.size());
 
         // client unsubscribes
@@ -97,7 +97,7 @@ public class StreamWithClientTest extends ActorBaseTest
             return Task.done();
         }).join();
 
-        // client subscribes again
+        // another push
         hello.doPush("testStream", "hello3").join();
         assertEquals("hello3", messagesReceived.poll(10, TimeUnit.SECONDS));
         assertEquals(0, messagesReceived.size());

@@ -33,6 +33,7 @@ import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.peer.PeerExecutor;
 import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.LocalObjects;
+import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.Utils;
 import com.ea.orbit.concurrent.Task;
 
@@ -54,7 +55,7 @@ class ServerPeerExecutor extends PeerExecutor
         if (localObjectEntry != null)
         {
             // local to the connection
-            doLocalInvocation(localObjectEntry, invocation);
+            scheduleLocalInvocation(localObjectEntry, invocation);
             return;
         }
 
@@ -68,5 +69,12 @@ class ServerPeerExecutor extends PeerExecutor
         {
             Utils.linkFutures(write, invocation.getCompletion());
         }
+    }
+
+    @Override
+    protected Task<Void> performLocalInvocation(final Invocation invocation, final Task completion, final ObjectInvoker invoker, final Object target)
+    {
+        stage.bind();
+        return super.performLocalInvocation(invocation, completion, invoker, target);
     }
 }
