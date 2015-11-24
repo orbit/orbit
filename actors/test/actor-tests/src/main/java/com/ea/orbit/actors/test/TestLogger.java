@@ -157,7 +157,7 @@ public class TestLogger implements LoggerExtension, PeerExtension
         if (message.contains("\n"))
         {
             note.append("\r\n");
-            note.append(message);
+            note.append(wrap(message, 40, "\r\n", true));
             note.append("\r\n").append("end note");
 
         }
@@ -182,4 +182,48 @@ public class TestLogger implements LoggerExtension, PeerExtension
     {
         classesToDebug.clear();
     }
+
+    static String wrap(final String str, final int width, final String lineBreak, final boolean breakWords)
+    {
+        final int length = str.length();
+        if (length < width)
+        {
+            return str;
+        }
+        StringBuilder sb = new StringBuilder();
+        int start = 0;
+        int pos = 0;
+        for (; length - start > width; )
+        {
+            int possibleBreak = -1;
+            for (; pos - start < width && pos < length; pos++)
+            {
+                char ch = str.charAt(pos);
+                if (!Character.isDigit(ch) && !Character.isAlphabetic(ch))
+                {
+                    possibleBreak = pos;
+                }
+            }
+            if (possibleBreak > 0)
+            {
+                sb.append(str, start, possibleBreak + 1);
+                start = possibleBreak + 1;
+            }
+            else
+            {
+                sb.append(str, start, pos);
+                start = pos;
+            }
+            if (start < length)
+            {
+                sb.append(lineBreak);
+            }
+        }
+        if (start < length)
+        {
+            sb.append(str, start, length);
+        }
+        return sb.toString();
+    }
+
 }

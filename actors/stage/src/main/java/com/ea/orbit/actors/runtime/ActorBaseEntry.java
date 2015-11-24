@@ -65,7 +65,7 @@ public abstract class ActorBaseEntry<T extends AbstractActor> implements LocalOb
     }
 
     @Override
-    public Task<?> run(final TaskFunction<T, ?> function)
+    public Task<Void> run(final TaskFunction<T, Void> function)
     {
         throw new NotImplementedException();
     }

@@ -59,9 +59,9 @@ public class PeerExecutor extends HandlerAdapter
     {
         if (msg instanceof Invocation)
         {
-            writeInvocation(ctx, (Invocation) msg);
+            return writeInvocation(ctx, (Invocation) msg);
         }
-        return super.write(ctx, msg);
+        return ctx.write(msg);
     }
 
     public Task writeInvocation(final HandlerContext ctx, final Invocation invocation) throws Exception
@@ -100,10 +100,10 @@ public class PeerExecutor extends HandlerAdapter
         ctx.fireRead(invocation);
     }
 
-
     /**
      * @return the result of the method called
      */
+    @SuppressWarnings("unchecked")
     public Task doLocalInvocation(final LocalObjects.LocalObjectEntry localObjectEntry, final Invocation invocation)
     {
         Task completion = new Task();
@@ -123,7 +123,7 @@ public class PeerExecutor extends HandlerAdapter
             {
                 Utils.linkFutures(result, invocation.getCompletion());
             }
-            Utils.linkFutures(completion, result);
+            Utils.linkFutures(result, completion);
             return Task.done();
         });
         return completion;

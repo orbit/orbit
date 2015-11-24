@@ -51,6 +51,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import static com.ea.orbit.actors.test.TestLogger.wrap;
+
 
 class TestInvocationLog implements PipelineExtension, PeerExtension
 {
@@ -119,10 +121,10 @@ class TestInvocationLog implements PipelineExtension, PeerExtension
         {
             return ctx.write(message);
         }
-        String from = getFrom(toReference, method);
-        String to = RemoteReference.getInterfaceClass(toReference).getSimpleName()
+        String from = wrap(getFrom(toReference, method), 32, "\\n", false);
+        String to = wrap(RemoteReference.getInterfaceClass(toReference).getSimpleName()
                 + ":"
-                + RemoteReference.getId(toReference);
+                + RemoteReference.getId(toReference), 32, "\\n", false);
 
         String strParams;
         final Object[] params = invocation.getParams();
@@ -131,6 +133,7 @@ class TestInvocationLog implements PipelineExtension, PeerExtension
             try
             {
                 strParams = Arrays.asList(params).stream().map(a -> toString(a)).collect(Collectors.joining(", ", "(", ")"));
+                strParams = wrap(strParams, 30, "\\n", true);
             }
             catch (Exception ex)
             {
@@ -168,7 +171,7 @@ class TestInvocationLog implements PipelineExtension, PeerExtension
                 if (e == null)
                 {
                     final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id + "; "
-                            + timeStr + "us] (response to " + methodName + "): " + toString(r)
+                            + timeStr + "us] " + wrap("(response to " + methodName + "): " + toString(r), 32, "\\n", true)
                             + "\r\n"
                             + "deactivate \"" + to + "\"";
                     actorBaseTest.sequenceDiagram.add(resp);
@@ -198,6 +201,7 @@ class TestInvocationLog implements PipelineExtension, PeerExtension
             return ctx.write(message);
         }
     }
+
 
     private Throwable unwrapException(final Throwable e)
     {

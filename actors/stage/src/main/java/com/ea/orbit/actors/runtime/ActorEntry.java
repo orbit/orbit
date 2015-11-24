@@ -50,7 +50,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
     }
 
     @Override
-    public Task<?> run(final TaskFunction<T, ?> function)
+    public Task<Void> run(final TaskFunction<T, Void> function)
     {
         lastAccess = runtime.clock().millis();
         executionSerializer.offerJob(getRemoteReference(), () -> doRun(function), 1000);

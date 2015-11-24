@@ -60,7 +60,7 @@ public class ObserverEntry<T> implements LocalObjects.LocalObjectEntry<T>
     }
 
     @Override
-    public Task<?> run(final TaskFunction<T, ?> function)
+    public Task<Void> run(final TaskFunction<T, Void> function)
     {
 
         return function.apply(getObject());

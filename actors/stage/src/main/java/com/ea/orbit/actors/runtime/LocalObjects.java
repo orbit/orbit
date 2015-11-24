@@ -95,7 +95,7 @@ public class LocalObjects
 
         T getObject();
 
-        Task<?> run(TaskFunction<T, ?> function);
+        Task<Void> run(TaskFunction<T, Void> function);
     }
 
     public static class NormalObjectEntry<T> implements LocalObjectEntry<T>
@@ -110,7 +110,7 @@ public class LocalObjects
         }
 
         @Override
-        public Task<?> run(final TaskFunction<T, ?> function)
+        public Task<Void> run(final TaskFunction<T, Void> function)
         {
             return function.apply(getObject());
         }
