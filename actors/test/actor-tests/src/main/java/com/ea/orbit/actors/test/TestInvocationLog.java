@@ -30,6 +30,7 @@ package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.extensions.PipelineExtension;
 import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.actors.peer.PeerExtension;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
@@ -51,7 +52,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 
-class TestInvocationLog implements PipelineExtension
+class TestInvocationLog implements PipelineExtension, PeerExtension
 {
     private AtomicLong invocationId = new AtomicLong();
 

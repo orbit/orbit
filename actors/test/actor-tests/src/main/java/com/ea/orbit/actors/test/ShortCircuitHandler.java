@@ -32,10 +32,17 @@ import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.concurrent.Task;
 
+import java.util.concurrent.ExecutorService;
+
 public class ShortCircuitHandler extends HandlerAdapter
 {
     private HandlerContext firstCtx;
     private HandlerContext secondCtx;
+    private ExecutorService executor;
+
+    public ShortCircuitHandler()
+    {
+    }
 
     @Override
     public void onRegistered(final HandlerContext ctx) throws Exception
@@ -62,12 +69,17 @@ public class ShortCircuitHandler extends HandlerAdapter
     {
         if (ctx == firstCtx)
         {
-            secondCtx.fireRead(msg);
+            executor.execute(() -> secondCtx.fireRead(msg));
         }
         else
         {
-            firstCtx.fireRead(msg);
+            executor.execute(() -> firstCtx.fireRead(msg));
         }
         return Task.done();
+    }
+
+    public void setExecutor(final ExecutorService executor)
+    {
+        this.executor = executor;
     }
 }

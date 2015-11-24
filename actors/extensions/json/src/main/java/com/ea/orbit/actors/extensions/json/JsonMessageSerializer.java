@@ -1,11 +1,11 @@
 package com.ea.orbit.actors.extensions.json;
 
 import com.ea.orbit.actors.extensions.MessageSerializer;
-import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.BasicRuntime;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.actors.runtime.Message;
 import com.ea.orbit.actors.runtime.MessageDefinitions;
-import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
+import com.ea.orbit.actors.runtime.ObjectInvoker;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,11 +20,14 @@ import java.util.List;
 
 public class JsonMessageSerializer implements MessageSerializer
 {
-    private ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper();
+    private final ActorReferenceModule actorReferenceModule;
+    private BasicRuntime runtime;
 
     public JsonMessageSerializer()
     {
-        mapper.registerModule(new ActorReferenceModule(DefaultDescriptorFactory.get()));
+        actorReferenceModule = new ActorReferenceModule(DefaultDescriptorFactory.get());
+        mapper.registerModule(actorReferenceModule);
         mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
@@ -33,9 +36,11 @@ public class JsonMessageSerializer implements MessageSerializer
                 .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
     }
 
+
     @Override
     public Message deserializeMessage(final BasicRuntime runtime, final InputStream inputStream) throws Exception
     {
+        ensureInit(runtime);
         final Message message = mapper.readValue(inputStream, Message.class);
 
         // decode payload parameters according to the interface/method
@@ -53,9 +58,25 @@ public class JsonMessageSerializer implements MessageSerializer
         return message;
     }
 
+    private void ensureInit(final BasicRuntime newRuntime)
+    {
+        if (runtime == null && newRuntime != null)
+        {
+            synchronized (actorReferenceModule)
+            {
+                if (runtime == null)
+                {
+                    actorReferenceModule.setDescriptorFactory(newRuntime);
+                    runtime = newRuntime;
+                }
+            }
+        }
+    }
+
     @Override
     public void serializeMessage(final BasicRuntime runtime, final OutputStream out, final Message message) throws Exception
     {
+        ensureInit(runtime);
         if (message.getPayload() instanceof Throwable && message.getMessageType() == MessageDefinitions.RESPONSE_ERROR)
         {
             final StringWriter sw = new StringWriter();
@@ -75,13 +96,21 @@ public class JsonMessageSerializer implements MessageSerializer
         Object[] casted = new Object[genericParameterTypes.length];
         for (int i = 0; i < genericParameterTypes.length; i++)
         {
-            casted[i] = convertValue(args0[0], genericParameterTypes[i]);
+            casted[i] = convertValue(args0[i], genericParameterTypes[i]);
         }
         return casted;
     }
 
     private Object convertValue(final Object o, final Type genericParameterType)
     {
+        if (genericParameterType == String.class)
+        {
+            return o == null ? null : String.valueOf(o);
+        }
+        if (genericParameterType == int.class && o instanceof Number)
+        {
+            return ((Number) o).intValue();
+        }
         return mapper.convertValue(o, mapper.constructType(genericParameterType));
     }
 

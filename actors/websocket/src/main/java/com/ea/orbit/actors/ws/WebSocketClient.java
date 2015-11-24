@@ -30,7 +30,7 @@ package com.ea.orbit.actors.ws;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.client.ClientPeer;
-import com.ea.orbit.actors.runtime.Peer;
+import com.ea.orbit.actors.peer.Peer;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 

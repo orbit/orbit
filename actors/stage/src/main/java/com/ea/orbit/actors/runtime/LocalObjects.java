@@ -33,10 +33,10 @@ import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.concurrent.TaskFunction;
 import com.ea.orbit.exception.NotImplementedException;
 import com.ea.orbit.exception.UncheckedException;
 
-import com.google.common.base.Function;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalCause;
@@ -95,7 +95,7 @@ public class LocalObjects
 
         T getObject();
 
-        Task<?> run(Function<T, Task<?>> function);
+        Task<?> run(TaskFunction<T, ?> function);
     }
 
     public static class NormalObjectEntry<T> implements LocalObjectEntry<T>
@@ -110,7 +110,7 @@ public class LocalObjects
         }
 
         @Override
-        public Task<?> run(final Function<T, Task<?>> function)
+        public Task<?> run(final TaskFunction<T, ?> function)
         {
             return function.apply(getObject());
         }

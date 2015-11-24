@@ -157,7 +157,7 @@ public class DefaultDescriptorFactory implements DescriptorFactory
         final ClassDescriptor descriptor = getDescriptor(interfaceId);
         if (descriptor == null)
         {
-            return null;
+            return getInvoker(DefaultClassDictionary.get().getClassById(interfaceId));
         }
         if (descriptor.invoker == null)
         {

@@ -87,6 +87,8 @@ public class ActorBaseTest
     protected FakeClock clock = new FakeClock();
     protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
     protected List<Stage> stages = new ArrayList<>();
+    protected List<FakeClient> clients = new ArrayList<>();
+
     protected Description testDescription;
 
     protected static final ExecutorService commonPool = new ForwardingExecutorService()
@@ -260,18 +262,26 @@ public class ActorBaseTest
     {
         final JsonMessageSerializer serializer = new JsonMessageSerializer();
         final ShortCircuitHandler network = new ShortCircuitHandler();
+        network.setExecutor(commonPool);
 
+        int connectionId = clients.size();
         final FakeServerPeer serverPeer = new FakeServerPeer();
         serverPeer.setNetworkHandler(network);
         serverPeer.setClock(clock);
         serverPeer.setStage(stage);
         serverPeer.setMessageSerializer(serializer);
+        serverPeer.addExtension(new TestLogger(loggerExtension, "sc" + connectionId));
+        serverPeer.addExtension(new TestInvocationLog(this));
 
         final FakeClient fakeClient = new FakeClient();
+        clients.add(fakeClient);
 
+        fakeClient.getExtensions().add(new TestLogger(loggerExtension, "cc" + connectionId));
         fakeClient.setNetworkHandler(network);
         fakeClient.setClock(clock);
         fakeClient.setMessageSerializer(serializer);
+        fakeClient.addExtension(new TestLogger(loggerExtension, "sc" + connectionId));
+        fakeClient.addExtension(new TestInvocationLog(this));
 
         serverPeer.start();
         fakeClient.start();
@@ -371,7 +381,7 @@ public class ActorBaseTest
 
     protected void installExtensions(final Stage stage)
     {
-        stage.addExtension(loggerExtension);
+        stage.addExtension(new TestLogger(loggerExtension, "s" + stages.size()));
         //stage.addExtension(new TestMessageLog(this, stage));
         stage.addExtension(new TestInvocationLog(this));
     }

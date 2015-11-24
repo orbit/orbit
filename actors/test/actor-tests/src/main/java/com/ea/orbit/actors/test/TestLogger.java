@@ -32,6 +32,7 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.extensions.DefaultLoggerExtension;
 import com.ea.orbit.actors.extensions.LoggerExtension;
 import com.ea.orbit.actors.net.Handler;
+import com.ea.orbit.actors.peer.PeerExtension;
 import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.concurrent.ConcurrentHashSet;
 
@@ -40,16 +41,24 @@ import org.slf4j.Marker;
 import org.slf4j.helpers.MessageFormatter;
 
 
-public class TestLogger implements LoggerExtension
+public class TestLogger implements LoggerExtension, PeerExtension
 {
 
+    private String nodeId = "";
     private ActorBaseTest actorBaseTest;
     private DefaultLoggerExtension defaultLogger = new DefaultLoggerExtension();
-    private ConcurrentHashSet<Object> classesToDebug = new ConcurrentHashSet<>();
+    ConcurrentHashSet<Object> classesToDebug = new ConcurrentHashSet<>();
 
     public TestLogger(final ActorBaseTest actorBaseTest)
     {
         this.actorBaseTest = actorBaseTest;
+    }
+
+    public TestLogger(final TestLogger parentLogger, final String nodeId)
+    {
+        this.actorBaseTest = parentLogger.actorBaseTest;
+        this.classesToDebug = parentLogger.classesToDebug;
+        this.nodeId = nodeId;
     }
 
     @Override
@@ -79,6 +88,16 @@ public class TestLogger implements LoggerExtension
         }
         return new LogInterceptor(logger)
         {
+            @Override
+            public boolean isErrorEnabled()
+            {
+                if (targetClass != null && classesToDebug.contains(targetClass))
+                {
+                    return true;
+                }
+                return super.isErrorEnabled();
+            }
+
             @Override
             public boolean isDebugEnabled()
             {

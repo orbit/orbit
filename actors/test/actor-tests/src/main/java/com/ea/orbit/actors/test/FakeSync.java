@@ -5,12 +5,12 @@ import com.ea.orbit.tuples.Pair;
 
 import javax.inject.Singleton;
 
-import java.util.Deque;
 import java.util.Queue;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 
@@ -24,7 +24,7 @@ public class FakeSync
 
     private LoadingMap<String, Semaphore> semaphores = new LoadingMap<>(() -> new Semaphore(0));
 
-    private LoadingMap<String, Deque> deques = new LoadingMap<>(ConcurrentLinkedDeque::new);
+    private LoadingMap<String, BlockingDeque> deques = new LoadingMap<>(LinkedBlockingDeque::new);
 
     private LoadingMap<String, CompletableFuture> futures = new LoadingMap<>(CompletableFuture::new);
 
@@ -122,7 +122,7 @@ public class FakeSync
         return futures.getOrAdd(name);
     }
 
-    public <T> Deque<T> deque(String name)
+    public <T> BlockingDeque<T> deque(String name)
     {
         return deques.getOrAdd(name);
     }

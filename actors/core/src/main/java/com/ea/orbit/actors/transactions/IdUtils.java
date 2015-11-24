@@ -1,9 +1,11 @@
 package com.ea.orbit.actors.transactions;
 
 import java.security.SecureRandom;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class IdUtils
 {
+    private static AtomicLong nexLongId = new AtomicLong();
 
     private static class Holder
     {
@@ -34,6 +36,14 @@ public class IdUtils
             sb.append(base64URL[ng.nextInt(i > 6 ? 64 : (1 << i))]);
         }
         return sb.toString();
+    }
+
+    /**
+     * Returns long id unique for this jvm instance.
+     */
+    public static long sequentialLongId()
+    {
+        return nexLongId.incrementAndGet();
     }
 
 }

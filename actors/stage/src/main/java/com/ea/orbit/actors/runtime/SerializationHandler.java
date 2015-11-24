@@ -74,7 +74,8 @@ public class SerializationHandler extends HandlerAdapter
             if (messageType != MessageDefinitions.RESPONSE_OK
                     && messageType != MessageDefinitions.RESPONSE_ERROR)
             {
-                return Task.fromException(ex2);
+                //return Task.fromException(ex2);
+                throw new UncheckedException("Error serializing message", ex2);
             }
             baos.reset();
             if (logger.isDebugEnabled())
