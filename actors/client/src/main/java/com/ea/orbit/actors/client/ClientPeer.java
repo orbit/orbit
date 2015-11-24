@@ -49,24 +49,29 @@ import com.ea.orbit.container.Startable;
 
 import java.lang.reflect.Method;
 
+import static com.ea.orbit.async.Await.await;
+
 /**
  * This works as a bridge to perform calls between the server and a client.
  */
 public class ClientPeer extends Peer implements BasicRuntime, Startable, RemoteClient
 {
 
-    public void cleanup(final boolean b)
-    {
+    private Messaging messaging;
 
+    public Task<Void> cleanup()
+    {
+        await(messaging.cleanup());
+        return Task.done();
     }
 
     @Override
     public Task<?> start()
     {
         getPipeline().addLast(DefaultHandlers.EXECUTION, new ClientPeerExecutor());
-        final Messaging handler = new Messaging();
-        handler.setRuntime(this);
-        getPipeline().addLast(DefaultHandlers.MESSAGING, handler);
+        messaging = new Messaging();
+        messaging.setRuntime(this);
+        getPipeline().addLast(DefaultHandlers.MESSAGING, messaging);
         getPipeline().addLast(DefaultHandlers.SERIALIZATION, new SerializationHandler(this, getMessageSerializer()));
         getPipeline().addLast(DefaultHandlers.NETWORK, getNetwork());
         return getPipeline().connect(null);

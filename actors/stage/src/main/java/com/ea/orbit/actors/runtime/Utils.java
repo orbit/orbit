@@ -28,6 +28,11 @@
 
 package com.ea.orbit.actors.runtime;
 
+import java.util.concurrent.CompletableFuture;
+
+/**
+ * Internal utility class. DO NOT use it outside the orbit project.
+ */
 public class Utils
 {
     public static <T> Class<T> classForName(final String className)
@@ -62,5 +67,20 @@ public class Utils
         {
             e.printStackTrace();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static void linkFutures(CompletableFuture source, CompletableFuture target)
+    {
+        ((CompletableFuture<Object>) source).whenComplete((r, e) -> {
+            if (e != null)
+            {
+                target.completeExceptionally(e);
+            }
+            else
+            {
+                target.complete(r);
+            }
+        });
     }
 }

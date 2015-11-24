@@ -32,6 +32,7 @@ import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.Invocation;
+import com.ea.orbit.actors.runtime.Utils;
 import com.ea.orbit.concurrent.Task;
 
 import org.slf4j.Logger;
@@ -60,7 +61,19 @@ class ServerPeerExecutor extends HandlerAdapter
     {
         if (msg instanceof Invocation)
         {
-            stage.getPipeline().write(msg);
+            final Task<Void> write = stage.getPipeline().write(msg);
+            final Invocation invocation = (Invocation) msg;
+            if (invocation.getCompletion() != null)
+            {
+                if (!invocation.isOneWay())
+                {
+                    Utils.linkFutures(write, invocation.getCompletion());
+                }
+                else
+                {
+                    invocation.getCompletion().complete(null);
+                }
+            }
             return;
         }
         ctx.fireRead(msg);
