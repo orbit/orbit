@@ -37,8 +37,7 @@ import com.ea.orbit.concurrent.ConcurrentHashSet;
 
 import org.slf4j.Logger;
 import org.slf4j.Marker;
-
-import java.text.MessageFormat;
+import org.slf4j.helpers.MessageFormatter;
 
 
 public class TestLogger implements LoggerExtension
@@ -118,11 +117,11 @@ public class TestLogger implements LoggerExtension
                 {
                     try
                     {
-                        fmtMessage = MessageFormat.format(format, arguments);
+                        fmtMessage = MessageFormatter.format(format, arguments).getMessage();
                     }
                     catch (Exception ex)
                     {
-                        logger.error("Error formatting message: {0}", format);
+                        logger.error("Error formatting message: {}", format);
                     }
                 }
                 final String message = (!"info".equalsIgnoreCase(type) ? type + ": " : "") + fmtMessage;
