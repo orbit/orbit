@@ -28,18 +28,21 @@
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.Addressable;
+import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.streams.AsyncStream;
 import com.ea.orbit.concurrent.Task;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Method;
+import java.time.Clock;
 
 /**
  * Interface used by the generated code to interact with the orbit actors runtime.
  */
-public interface BasicRuntime
+public interface BasicRuntime extends DescriptorFactory
 {
 
     /**
@@ -52,13 +55,16 @@ public interface BasicRuntime
      * @param params      the method parameters, must all be serializable.
      * @return a future with the return value, or a future with null (if one-way)
      */
-    Task<?> invoke(Addressable toReference, Method m, boolean oneWay, final int methodId, final Object[] params);
+    Task<?> invoke(RemoteReference toReference, Method m, boolean oneWay, final int methodId, final Object[] params);
 
 
     /**
      * Returns an actor reference
      */
-    <T extends Actor> T getReference(final Class<T> iClass, final Object id);
+    default <T> T getReference(final Class<T> iClass, final Object id)
+    {
+        return getReference(null, null, iClass, id);
+    }
 
     /**
      * Installs this observer into this node.
@@ -68,9 +74,26 @@ public interface BasicRuntime
      *                 Can be null if there are no ambiguities.
      * @param observer the object to install
      * @param <T>      The type of reference class returned.
+     * @return a remote reference that can be sent to actors, the runtime will chose one id
+     */
+    default <T extends com.ea.orbit.actors.ActorObserver> T registerObserver(final Class<T> iClass, final T observer)
+    {
+        return registerObserver(iClass, null, observer);
+    }
+
+    /**
+     * Installs this observer into this node.
+     * Can called several times the object is registered only once.
+     *
+     * @param iClass   hint to the framework about which ActorObserver interface this object represents.
+     *                 Can be null if there are no ambiguities.
+     * @param id       the observer id
+     * @param observer the object to install
+     * @param <T>      The type of reference class returned.
      * @return a remote reference that can be sent to actors.
      */
-    <T extends com.ea.orbit.actors.ActorObserver> T registerObserver(final Class<T> iClass, final T observer);
+    <T extends ActorObserver> T registerObserver(Class<T> iClass, String id, T observer);
+
 
     /**
      * Returns an observer reference to an observer in another node.
@@ -86,9 +109,10 @@ public interface BasicRuntime
      * @param <T>     the ActorObserver sub interface
      * @return a remote reference to the observer
      */
-    <T extends com.ea.orbit.actors.ActorObserver> T getRemoteObserverReference(NodeAddress address, final Class<T> iClass, final Object id);
-
-    ObjectInvoker<?> getInvoker(int interfaceId);
+    default <T extends com.ea.orbit.actors.ActorObserver> T getRemoteObserverReference(NodeAddress address, final Class<T> iClass, final Object id)
+    {
+        return DefaultDescriptorFactory.get().getReference(this, address, iClass, id);
+    }
 
     static BasicRuntime getRuntime()
     {
@@ -96,4 +120,19 @@ public interface BasicRuntime
     }
 
     <T> AsyncStream<T> getStream(String provider, Class<T> dataClass, String id);
+
+    /**
+     * Gets the local clock. It's usually the system clock, but it can be changed for testing.
+     *
+     * @return the clock that should be used for checking the time during tests.
+     */
+    Clock clock();
+
+    default Logger getLogger(Object target)
+    {
+        return (target instanceof Class) ? LoggerFactory.getLogger((Class) target)
+                : (target instanceof String) ? LoggerFactory.getLogger((String) target)
+                : (target != null) ? LoggerFactory.getLogger(target.getClass())
+                : LoggerFactory.getLogger("root");
+    }
 }

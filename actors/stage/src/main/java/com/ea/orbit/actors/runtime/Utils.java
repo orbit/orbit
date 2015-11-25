@@ -28,15 +28,21 @@
 
 package com.ea.orbit.actors.runtime;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentMap;
+
+/**
+ * Internal utility class. DO NOT use it outside the orbit project.
+ */
 public class Utils
 {
-    static <T> Class<T> classForName(final String className)
+    public static <T> Class<T> classForName(final String className)
     {
         return classForName(className, false);
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> Class<T> classForName(final String className, boolean ignoreException)
+    public static <T> Class<T> classForName(final String className, boolean ignoreException)
     {
         try
         {
@@ -50,5 +56,61 @@ public class Utils
             }
         }
         return null;
+    }
+
+    public static void sleep(final long millis)
+    {
+        try
+        {
+            Thread.sleep(millis);
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static void linkFutures(CompletableFuture source, CompletableFuture target)
+    {
+        if (source.isDone() && !source.isCompletedExceptionally())
+        {
+            target.complete(source.join());
+        }
+        else
+        {
+            ((CompletableFuture<Object>) source).whenComplete((r, e) -> {
+                if (e != null)
+                {
+                    target.completeExceptionally(e);
+                }
+                else
+                {
+                    target.complete(r);
+                }
+            });
+        }
+    }
+
+    /**
+     * If the specified key is not already associated
+     * with a value, associate it with the given value.
+     * And return the final value stored in the map.
+     *
+     * This is equivalent to
+     * <pre> {@code
+     * if (!map.containsKey(key)) {
+     *   map.put(key, value);
+     *   return value;
+     * } else {
+     *   return map.get(key);
+     * }}</pre>
+     *
+     * except that the action is performed atomically.
+     */
+    public static <K, V> V putIfAbsentAndGet(ConcurrentMap<K, V> map, K key, V newValue)
+    {
+        final V old = map.putIfAbsent(key, newValue);
+        return old != null ? old : newValue;
     }
 }

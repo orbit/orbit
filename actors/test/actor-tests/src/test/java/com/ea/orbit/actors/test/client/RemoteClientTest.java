@@ -34,13 +34,13 @@ import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.RemoteClient;
 import com.ea.orbit.actors.test.ActorBaseTest;
-import com.ea.orbit.actors.test.actors.SomeActor;
+import com.ea.orbit.actors.test.FakeSync;
 import com.ea.orbit.concurrent.Task;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.UUID;
+import javax.inject.Inject;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -53,14 +53,29 @@ public class RemoteClientTest extends ActorBaseTest
     public interface Hello extends Actor
     {
         Task<String> sayHello(String greeting);
+
+        Task<String> releaseThenAcquire(final String acquire, final String release);
     }
 
     public static class HelloActor extends AbstractActor implements Hello
     {
+        @Inject
+        FakeSync sync;
+
         @Override
         public Task<String> sayHello(final String greeting)
         {
             return Task.fromValue(greeting);
+        }
+
+        @Override
+        public Task<String> releaseThenAcquire(final String release, final String acquire)
+        {
+            // lets the client go
+            sync.semaphore(release).release();
+            // blocks waiting for the other side
+            sync.semaphore(acquire).acquire(10, TimeUnit.SECONDS);
+            return Task.fromValue(release + acquire);
         }
     }
 
@@ -77,21 +92,31 @@ public class RemoteClientTest extends ActorBaseTest
 
 
     @Test
-    @Ignore
     public void timeoutTest() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
         clock.stop();
         // make sure the actor is there... remove this later
         RemoteClient client = createRemoteClient(stage);
-        SomeActor someActor = Actor.getReference(SomeActor.class, "1");
-        Task<UUID> res = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
+        Hello someActor = Actor.getReference(Hello.class, "1");
+        Task<String> res = someActor.releaseThenAcquire("aa", "bb");
+
+        // blocks until the server gets the message
+        fakeSync.semaphore("aa").acquireUninterruptibly();
+
+        // forward in time
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
 
-        client.cleanup(true);
+        // run client message cleanup;
+        client.cleanup().join();
+        expectException(() -> res.get(10, TimeUnit.SECONDS));
         assertTrue(res.isDone());
         assertTrue(res.isCompletedExceptionally());
-        expectException(() -> res.join());
+
+        // releases the server
+        fakeSync.semaphore("bb").release();
+
+        dumpMessages();
     }
 
 }

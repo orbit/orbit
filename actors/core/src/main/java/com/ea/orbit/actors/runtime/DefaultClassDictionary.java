@@ -37,8 +37,10 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.net.URL;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 public class DefaultClassDictionary
 {
@@ -150,7 +152,17 @@ public class DefaultClassDictionary
         if (className == null)
         {
             // TODO search ClassPath for class name hash
-            throw new UncheckedException("Class not found classId:" + id);
+            final List<ClassPath.ClassResourceInfo> list = ClassPath.get().getAllClasses().stream()
+                    .filter(c -> c.getClassName().replace('$', '.').hashCode() == classId)
+                    .collect(Collectors.toList());
+            if (list.size() > 0)
+            {
+                className = list.get(0).getClassName();
+            }
+            if (list.size() == 0)
+            {
+                throw new UncheckedException("Class not found classId:" + id);
+            }
         }
         clazz = classForName(className, false);
         classToId.putIfAbsent(clazz, id);

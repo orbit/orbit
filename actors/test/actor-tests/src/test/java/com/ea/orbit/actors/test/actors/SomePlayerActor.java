@@ -11,6 +11,20 @@ public class SomePlayerActor extends AbstractActor<SomePlayerActor.SomePlayerSta
     }
 
     @Override
+    public Task<?> activateAsync()
+    {
+        getLogger().debug("activateAsync");
+        return super.activateAsync();
+    }
+
+    @Override
+    public Task<?> deactivateAsync()
+    {
+        getLogger().debug("deactivateAsync");
+        return super.deactivateAsync();
+    }
+
+    @Override
     public Task<String> getName()
     {
         return null;

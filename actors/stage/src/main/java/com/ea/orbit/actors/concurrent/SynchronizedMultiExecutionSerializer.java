@@ -26,7 +26,7 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.runtime;
+package com.ea.orbit.actors.concurrent;
 
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
@@ -45,19 +45,19 @@ import java.util.function.Supplier;
 /**
  * Ensures that only a single task is executed at each time per key.
  */
-public class ExecutionSerializer<T>
+public class SynchronizedMultiExecutionSerializer<T> implements MultiExecutionSerializer<T>
 {
-    private static final Logger logger = LoggerFactory.getLogger(Execution.class);
+    private static final Logger logger = LoggerFactory.getLogger(SynchronizedMultiExecutionSerializer.class);
     private ExecutorService executorService;
     private Map<Object, Runner> running = new HashMap<>();
     private final Object mutex = new Object();
 
-    public ExecutionSerializer()
+    public SynchronizedMultiExecutionSerializer()
     {
         executorService = ExecutorUtils.newScalingThreadPool(64);
     }
 
-    public ExecutionSerializer(final ExecutorService executor)
+    public SynchronizedMultiExecutionSerializer(final ExecutorService executor)
     {
         this.executorService = executor;
     }
@@ -173,5 +173,11 @@ public class ExecutionSerializer<T>
         {
             Thread.currentThread().interrupt();
         }
+    }
+
+    @Override
+    public boolean isBusy()
+    {
+        return running.size() != 0;
     }
 }

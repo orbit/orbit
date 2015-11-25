@@ -28,21 +28,31 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.ActorObserver;
-
-import java.util.UUID;
+import com.ea.orbit.actors.cluster.NodeAddress;
 
 public interface DescriptorFactory
 {
-    default <T extends Actor> T getReference(Class<T> iClass, Object id)
+    <T> T getReference(BasicRuntime runtime, NodeAddress address, Class<T> iClass, Object id);
+
+    default <T> T getReference(NodeAddress nodeId, Class<T> iClass, Object id)
     {
-        return getReference(null, iClass, id);
+        return getReference(null, nodeId, iClass, id);
     }
 
-    <T extends Actor> T getReference(BasicRuntime runtime, Class<T> iClass, Object id);
+    default <T> T getReference(Class<T> iClass, Object id)
+    {
+        return getReference(null, null, iClass, id);
+    }
 
-    <T extends ActorObserver> T getObserverReference(UUID nodeId, Class<T> iClass, Object id);
+    default ObjectInvoker<?> getInvoker(Class clazz)
+    {
+        return DefaultDescriptorFactory.get().getInvoker(clazz);
+    }
+
+    default ObjectInvoker<?> getInvoker(int classId)
+    {
+        return getInvoker(DefaultClassDictionary.get().getClassById(classId));
+    }
 
 
 }

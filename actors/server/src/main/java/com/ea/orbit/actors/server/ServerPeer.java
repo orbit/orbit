@@ -28,18 +28,23 @@
 
 package com.ea.orbit.actors.server;
 
+import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.net.Pipeline;
+import com.ea.orbit.actors.peer.Peer;
+import com.ea.orbit.actors.runtime.BasicRuntime;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.actors.runtime.DefaultHandlers;
 import com.ea.orbit.actors.runtime.Messaging;
-import com.ea.orbit.actors.runtime.Peer;
 import com.ea.orbit.actors.runtime.SerializationHandler;
+import com.ea.orbit.actors.server.streams.ServerSideStreamProxyImpl;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 
-public class ServerPeer extends Peer implements Startable
+public class ServerPeer extends Peer implements Startable, BasicRuntime
 {
     private Stage stage;
 
@@ -61,11 +66,19 @@ public class ServerPeer extends Peer implements Startable
     public Task<?> start()
     {
         final Pipeline pipeline = getPipeline();
+
+        final ServerSideStreamProxyImpl streamProxy = new ServerSideStreamProxyImpl();
+        streamProxy.setStage(stage);
+        streamProxy.setPeer(this);
+        streamProxy.start();
+
         ServerExtension serverExtension = (ServerExtension) stage.getExtensions().stream()
                 .filter(e -> e instanceof ServerExtension).findFirst().orElse(null);
-        pipeline.addLast(DefaultHandlers.EXECUTION, new ServerPeerExecutor(stage));
+        ServerPeerExecutor executor = new ServerPeerExecutor(stage);
+        executor.setObjects(objects);
+        pipeline.addLast(DefaultHandlers.EXECUTION, executor);
         pipeline.addLast(DefaultHandlers.MESSAGING, new Messaging());
-        pipeline.addLast(DefaultHandlers.SERIALIZATION, new SerializationHandler(stage, getMessageSerializer()));
+        pipeline.addLast(DefaultHandlers.SERIALIZATION, new SerializationHandler(this, getMessageSerializer()));
         pipeline.addLast("serverNotification", new HandlerAdapter()
         {
             @Override
@@ -89,6 +102,40 @@ public class ServerPeer extends Peer implements Startable
             }
         });
         pipeline.addLast(DefaultHandlers.NETWORK, getNetwork());
+        installPipelineExtensions();
         return Task.done();
+    }
+
+
+    @Override
+    public <T extends ActorObserver> T getRemoteObserverReference(final NodeAddress address, final Class<T> iClass, final Object id)
+    {
+        return getReference(address, iClass, id);
+    }
+
+    @Override
+    public <T> T getReference(final BasicRuntime runtime, final NodeAddress address, final Class<T> iClass, final Object id)
+    {
+        if (address != null)
+        {
+            return stage.getReference(address, iClass, id);
+        }
+        else
+        {
+            return DefaultDescriptorFactory.get().getReference(this, address, iClass, id);
+        }
+    }
+
+    @Override
+    public Task<?> stop()
+    {
+        // todo implement this.
+        return super.stop();
+    }
+
+    @Override
+    public String toString()
+    {
+        return "ServerPeer{localIdentity=" + localIdentity + ", stage=" + stage + "}";
     }
 }

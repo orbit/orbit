@@ -54,8 +54,16 @@ public class SomeActorImpl extends AbstractActor implements SomeActor
 
     public Task<?> activateAsync()
     {
+        getLogger().debug("activateAsync");
         activationWasCalled = true;
         return super.activateAsync();
+    }
+
+    @Override
+    public Task<?> deactivateAsync()
+    {
+        getLogger().debug("deactivateAsync");
+        return super.deactivateAsync();
     }
 
     @Override

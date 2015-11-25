@@ -29,12 +29,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.Addressable;
+import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.annotation.PreferLocalPlacement;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.extensions.PipelineExtension;
+import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.annotation.Config;
+import com.ea.orbit.annotation.OnlyIfActivated;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
@@ -45,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,6 +56,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
@@ -60,22 +65,25 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class Hosting implements NodeCapabilities, Startable
+import static com.ea.orbit.async.Await.await;
+
+public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 {
-    private static final Logger logger = LoggerFactory.getLogger(Hosting.class);
+    private Logger logger = LoggerFactory.getLogger(Hosting.class);
     private NodeTypeEnum nodeType;
     private ClusterPeer clusterPeer;
 
     private volatile Map<NodeAddress, NodeInfo> activeNodes = new HashMap<>(0);
     private volatile List<NodeInfo> serverNodes = new ArrayList<>(0);
     private final Object serverNodesUpdateMutex = new Object();
-    private Execution execution;
-    private Cache<ActorKey, NodeAddress> localAddressCache = CacheBuilder.newBuilder()
+    private Stage stage;
+    private Cache<RemoteReference<?>, NodeAddress> localAddressCache = CacheBuilder.newBuilder()
             .maximumSize(10_000)
             .expireAfterWrite(5, TimeUnit.MINUTES)
             .build();
 
-    private volatile ConcurrentMap<ActorKey, NodeAddress> distributedDirectory;
+    // don't use RemoteReferences, better to restrict keys to a small set of classes.
+    private volatile ConcurrentMap<RemoteKey, NodeAddress> distributedDirectory;
     @Config("orbit.actors.timeToWaitForServersMillis")
     private long timeToWaitForServersMillis = 30000;
     private Random random = new Random();
@@ -97,9 +105,10 @@ public class Hosting implements NodeCapabilities, Startable
         this.timeToWaitForServersMillis = timeToWaitForServersMillis;
     }
 
-    public void setExecution(final Execution execution)
+    public void setStage(final Stage stage)
     {
-        this.execution = execution;
+        this.stage = stage;
+        logger = stage.getLogger(this);
     }
 
     public void setNodeType(final NodeTypeEnum nodeType)
@@ -125,7 +134,7 @@ public class Hosting implements NodeCapabilities, Startable
     public Task<?> notifyStateChange()
     {
         return Task.allOf(activeNodes.values().stream().map(info ->
-                info.nodeCapabilities.nodeModeChanged(clusterPeer.localAddress(), execution.getState())));
+                info.nodeCapabilities.nodeModeChanged(clusterPeer.localAddress(), stage.getState())));
     }
 
     public NodeAddress getNodeAddress()
@@ -151,11 +160,11 @@ public class Hosting implements NodeCapabilities, Startable
     @Override
     public Task<Integer> canActivate(String interfaceName)
     {
-        if (nodeType == NodeTypeEnum.CLIENT || execution.getState() != NodeState.RUNNING)
+        if (nodeType == NodeTypeEnum.CLIENT || stage.getState() == NodeState.STOPPED)
         {
             return Task.fromValue(actorSupported_noneSupported);
         }
-        return Task.fromValue(execution.canActivateActor(interfaceName) ? actorSupported_yes
+        return Task.fromValue(stage.canActivateActor(interfaceName) ? actorSupported_yes
                 : actorSupported_no);
     }
 
@@ -175,9 +184,9 @@ public class Hosting implements NodeCapabilities, Startable
         return Task.done();
     }
 
-    public Task<Void> moved(ActorKey actorKey, NodeAddress oldAddress, NodeAddress newAddress)
+    public Task<Void> moved(RemoteReference remoteReference, NodeAddress oldAddress, NodeAddress newAddress)
     {
-        localAddressCache.put(actorKey, newAddress);
+        localAddressCache.put(remoteReference, newAddress);
         return Task.done();
     }
 
@@ -194,6 +203,10 @@ public class Hosting implements NodeCapabilities, Startable
 
     private void onClusterViewChanged(final Collection<NodeAddress> nodes)
     {
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("Cluster view changed " + nodes);
+        }
         HashMap<NodeAddress, NodeInfo> oldNodes = new HashMap<>(activeNodes);
         HashMap<NodeAddress, NodeInfo> newNodes = new HashMap<>(nodes.size());
         List<NodeInfo> justAddedNodes = new ArrayList<>(Math.max(1, nodes.size() - oldNodes.size()));
@@ -206,7 +219,7 @@ public class Hosting implements NodeCapabilities, Startable
             if (nodeInfo == null)
             {
                 nodeInfo = new NodeInfo(a);
-                nodeInfo.nodeCapabilities = execution.createReference(a, NodeCapabilities.class, "");
+                nodeInfo.nodeCapabilities = stage.getRemoteObserverReference(a, NodeCapabilities.class, "");
                 nodeInfo.active = true;
                 activeNodes.put(a, nodeInfo);
                 justAddedNodes.add(nodeInfo);
@@ -244,17 +257,16 @@ public class Hosting implements NodeCapabilities, Startable
         }
     }
 
-    public Task<NodeAddress> locateActor(final Addressable reference, final boolean forceActivation)
+    public Task<NodeAddress> locateActor(final RemoteReference reference, final boolean forceActivation)
     {
         return (forceActivation) ? locateAndActivateActor(reference) : locateActiveActor(reference);
     }
 
 
-    private Task<NodeAddress> locateActiveActor(final Addressable actorReference)
+    private Task<NodeAddress> locateActiveActor(final RemoteReference<?> actorReference)
     {
-        ActorKey addressable = new ActorKey(((RemoteReference) actorReference)._interfaceClass().getName(),
-                String.valueOf(((RemoteReference) actorReference).id));
-        NodeAddress address = localAddressCache.getIfPresent(addressable);
+        // TODO: change this, it's wrong, it should at least try to locate the actor in the distributed directory
+        NodeAddress address = localAddressCache.getIfPresent(actorReference);
         if (address != null && activeNodes.containsKey(address))
         {
             return Task.fromValue(address);
@@ -262,13 +274,12 @@ public class Hosting implements NodeCapabilities, Startable
         return Task.fromValue(null);
     }
 
-    private Task<NodeAddress> locateAndActivateActor(final Addressable actorReference)
+    private Task<NodeAddress> locateAndActivateActor(final RemoteReference<?> actorReference)
     {
-        final ActorKey addressable = new ActorKey(((RemoteReference) actorReference)._interfaceClass().getName(),
+        final RemoteKey remoteKey = new RemoteKey(((RemoteReference) actorReference)._interfaceClass().getName(),
                 String.valueOf(((RemoteReference) actorReference).id));
 
         final Class<?> interfaceClass = ((RemoteReference<?>) actorReference)._interfaceClass();
-        final String interfaceClassName = interfaceClass.getName();
 
         // First we handle Stateless Worker as it's a special case
         if (interfaceClass.isAnnotationPresent(StatelessWorker.class))
@@ -280,12 +291,13 @@ public class Hosting implements NodeCapabilities, Startable
             }
             else
             {
+                final String interfaceClassName = interfaceClass.getName();
                 return Task.fromValue(selectNode(interfaceClassName, true));
             }
         }
 
         // Get the existing activation from the local cache (if any)
-        NodeAddress address = localAddressCache.getIfPresent(addressable);
+        NodeAddress address = localAddressCache.getIfPresent(actorReference);
 
         // Is this actor already activated and in the local cache? If so, we're done
         if (address != null && activeNodes.containsKey(address))
@@ -311,20 +323,20 @@ public class Hosting implements NodeCapabilities, Startable
             }
 
             // Get the existing activation from the distributed cache (if any)
-            nodeAddress = distributedDirectory.get(addressable);
+            nodeAddress = distributedDirectory.get(remoteKey);
             if (nodeAddress != null)
             {
                 // Target node still valid?
                 if (activeNodes.containsKey(nodeAddress))
                 {
                     // Cache locally
-                    localAddressCache.put(addressable, nodeAddress);
+                    localAddressCache.put(actorReference, nodeAddress);
                     return nodeAddress;
                 }
                 else
                 {
                     // Target node is now dead, remove this activation from distributed cache
-                    distributedDirectory.remove(addressable, nodeAddress);
+                    distributedDirectory.remove(remoteKey, nodeAddress);
                 }
             }
             nodeAddress = null;
@@ -339,11 +351,11 @@ public class Hosting implements NodeCapabilities, Startable
             if (nodeAddress == null)
             {
                 // If not, select randomly
-                nodeAddress = selectNode(interfaceClassName, true);
+                nodeAddress = selectNode(interfaceClass.getName(), true);
             }
 
             // Push our selection to the distributed cache (if possible)
-            NodeAddress otherNodeAddress = distributedDirectory.putIfAbsent(addressable, nodeAddress);
+            NodeAddress otherNodeAddress = distributedDirectory.putIfAbsent(remoteKey, nodeAddress);
 
             // Someone else beat us to placement, use that node
             if (otherNodeAddress != null)
@@ -352,11 +364,11 @@ public class Hosting implements NodeCapabilities, Startable
             }
 
             // Add to local cache
-            localAddressCache.put(addressable, nodeAddress);
+            localAddressCache.put(actorReference, nodeAddress);
 
             return nodeAddress;
 
-        }, execution.getExecutor());
+        }, stage.getExecutionPool());
 
         return Task.from(async);
 
@@ -446,7 +458,7 @@ public class Hosting implements NodeCapabilities, Startable
         final String interfaceClassName = interfaceClass.getName();
 
         if (interfaceClass.isAnnotationPresent(PreferLocalPlacement.class) &&
-                nodeType == NodeTypeEnum.SERVER && execution.canActivateActor(interfaceClassName))
+                nodeType == NodeTypeEnum.SERVER && stage.canActivateActor(interfaceClassName))
         {
             final int percentile = interfaceClass.getAnnotation(PreferLocalPlacement.class).percentile();
             if (random.nextInt(100) < percentile)
@@ -504,4 +516,173 @@ public class Hosting implements NodeCapabilities, Startable
         return clusterPeer.localAddress().equals(owner);
     }
 
+    @Override
+    public Task connect(final HandlerContext ctx, final Object param) throws Exception
+    {
+        return ctx.connect(param);
+    }
+
+    @Override
+    public void onActive(final HandlerContext ctx) throws Exception
+    {
+        stage.registerObserver(NodeCapabilities.class, "", this);
+        ctx.fireActive();
+    }
+
+    @Override
+    public void onRead(final HandlerContext ctx, final Object msg) throws Exception
+    {
+        if (msg instanceof Invocation)
+        {
+            onInvocation(ctx, (Invocation) msg);
+        }
+        else
+        {
+            ctx.fireRead(msg);
+        }
+    }
+
+    private void onInvocation(final HandlerContext ctx, final Invocation invocation)
+    {
+        final RemoteReference toReference = invocation.getToReference();
+        final NodeAddress localAddress = getNodeAddress();
+
+        if (Objects.equals(toReference.address, localAddress))
+        {
+            ctx.fireRead(invocation);
+            return;
+        }
+        final NodeAddress cachedAddress = localAddressCache.getIfPresent(toReference);
+        if (Objects.equals(cachedAddress, localAddress))
+        {
+            ctx.fireRead(invocation);
+            return;
+        }
+        if (toReference._interfaceClass().isAnnotationPresent(StatelessWorker.class)
+                && stage.canActivateActor(toReference._interfaceClass().getName()))
+        {
+            // accepting stateless worker call
+            ctx.fireRead(invocation);
+            return;
+        }
+
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("Choosing a new node for the invocation");
+        }
+        locateActor(invocation.getToReference(), true)
+                .whenComplete((r, e) -> {
+                    if (e != null)
+                    {
+                        if (invocation.getCompletion() != null)
+                        {
+                            if (logger.isDebugEnabled())
+                            {
+                                logger.debug("Can't find a location for: " + toReference, e);
+                            }
+                            invocation.getCompletion().completeExceptionally(e);
+                        }
+                        else
+                        {
+                            logger.error("Can't find a location for: " + toReference, e);
+                        }
+                    }
+                    else if (Objects.equals(r, localAddress))
+                    {
+                        // accepts the message
+                        ctx.fireRead(invocation);
+                    }
+                    else if (r != null)
+                    {
+                        if (logger.isDebugEnabled())
+                        {
+                            logger.debug("Choosing a remote node for the invocation");
+                        }
+                        // forwards the message to somewhere else.
+                        invocation.setHops(invocation.getHops() + 1);
+                        invocation.setToNode(r);
+                        ctx.write(invocation);
+                    }
+                    else
+                    {
+                        // don't know what to do with it...
+                        if (logger.isErrorEnabled())
+                        {
+                            logger.error("Can't find a destination for {}", invocation);
+                        }
+                    }
+                });
+    }
+
+    @Override
+    public Task write(final HandlerContext ctx, final Object msg) throws Exception
+    {
+        if (msg instanceof Invocation)
+        {
+            final Invocation invocation = (Invocation) msg;
+            if (invocation.getToNode() == null)
+            {
+                return writeInvocation(ctx, invocation);
+            }
+        }
+        return ctx.write(msg);
+    }
+
+    protected Task<?> writeInvocation(final HandlerContext ctx, Invocation invocation)
+    {
+        final Method method = invocation.getMethod();
+        final RemoteReference<?> toReference = invocation.getToReference();
+        if (method != null && method.isAnnotationPresent(OnlyIfActivated.class))
+        {
+            if (!await(verifyActivated(toReference, method)))
+            {
+                return Task.done();
+            }
+        }
+        final Task<?> task;
+        if (invocation.getToNode() == null)
+        {
+            NodeAddress address;
+            if (toReference instanceof RemoteReference
+                    && (address = RemoteReference.getAddress((RemoteReference) toReference)) != null)
+            {
+                invocation.withToNode(address);
+                task = ctx.write(invocation);
+            }
+            else
+            {
+                // TODO: Ensure that both paths encode exception the same way.
+                address = await(locateActor(toReference, true));
+                task = ctx.write(invocation.withToNode(address));
+            }
+        }
+        else
+        {
+            task = ctx.write(invocation);
+        }
+        return task.whenCompleteAsync((r, e) ->
+                {
+                    // place holder, just to ensure the completion happens in another thread
+                },
+                stage.getExecutionPool());
+    }
+
+    /**
+     * Checks if the method passes an Activated check.
+     * Verify passes on either of:
+     * - method can run only if activated, and the actor is active
+     * - the method is not marked with OnlyIfActivated.
+     */
+    private Task<Boolean> verifyActivated(RemoteReference<?> toReference, Method method)
+    {
+        if (method.isAnnotationPresent(OnlyIfActivated.class))
+        {
+            NodeAddress actorAddress = await(locateActor(toReference, false));
+            if (actorAddress == null)
+            {
+                return Task.fromValue(false);
+            }
+        }
+        return Task.fromValue(true);
+    }
 }

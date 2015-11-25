@@ -1,6 +1,7 @@
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.cluster.NodeAddressImpl;
 import com.ea.orbit.actors.extensions.MessageSerializer;
 
 import java.io.IOException;
@@ -12,6 +13,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * A message serializer that uses java serialization.
@@ -24,10 +26,14 @@ public class JavaMessageSerializer implements MessageSerializer
         final Message message = new Message();
         message.setMessageType(in.readByte());
         message.setMessageId(in.readInt());
+        long most = in.readLong();
+        long least = in.readLong();
+        message.setReferenceAddress(most != 0 && least != 0 ? new NodeAddressImpl(new UUID(most, least)) : null);
         message.setInterfaceId(in.readInt());
         message.setMethodId(in.readInt());
         message.setObjectId(in.readObject());
         message.setHeaders((Map) in.readObject());
+        message.setFromNode((NodeAddress) in.readObject());
         message.setPayload(in.readObject());
         return message;
     }
@@ -37,10 +43,22 @@ public class JavaMessageSerializer implements MessageSerializer
         final ObjectOutput out = createObjectOutput(runtime, outputStream);
         out.writeByte(message.getMessageType());
         out.writeInt(message.getMessageId());
+        if (message.getReferenceAddress() != null)
+        {
+            final UUID uuid = message.getReferenceAddress().asUUID();
+            out.writeLong(uuid.getMostSignificantBits());
+            out.writeLong(uuid.getLeastSignificantBits());
+        }
+        else
+        {
+            out.writeLong(0);
+            out.writeLong(0);
+        }
         out.writeInt(message.getInterfaceId());
         out.writeInt(message.getMethodId());
         out.writeObject(message.getObjectId());
         out.writeObject(message.getHeaders());
+        out.writeObject(message.getFromNode());
         out.writeObject(message.getPayload());
     }
 
@@ -105,7 +123,7 @@ public class JavaMessageSerializer implements MessageSerializer
                 enableResolveObject(true);
             }
 
-            @SuppressWarnings({"unchecked", "rawtypes"})
+            @SuppressWarnings({ "unchecked", "rawtypes" })
             @Override
             protected Object resolveObject(Object obj) throws IOException
             {

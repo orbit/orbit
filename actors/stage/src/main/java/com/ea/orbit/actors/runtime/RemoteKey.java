@@ -31,12 +31,12 @@ package com.ea.orbit.actors.runtime;
 
 import java.io.Serializable;
 
-public class ActorKey implements Serializable
+public class RemoteKey implements Serializable
 {
     private final String iClass;
     private final String id;
 
-    public ActorKey(String iClass, String id)
+    public RemoteKey(String iClass, String id)
     {
         this.iClass = iClass;
         this.id = id;
@@ -45,11 +45,11 @@ public class ActorKey implements Serializable
     @Override
     public boolean equals(Object o)
     {
-        final ActorKey actorKey;
+        final RemoteKey actorKey;
 
         return (this == o) || (o != null
                 && getClass() == o.getClass()
-                && iClass.equals((actorKey = (ActorKey) o).iClass)
+                && iClass.equals((actorKey = (RemoteKey) o).iClass)
                 && id.equals(actorKey.id));
     }
 

@@ -50,6 +50,10 @@ public class ActorTaskContext extends TaskContext
     void setActor(final AbstractActor<?> actor)
     {
         this.actor = actor;
+        if (actor != null)
+        {
+            this.runtime = actor.runtime;
+        }
     }
 
     public AbstractActor<?> getActor()
@@ -60,6 +64,22 @@ public class ActorTaskContext extends TaskContext
     public static ActorTaskContext current()
     {
         TaskContext current = TaskContext.current();
+        if (current instanceof ActorTaskContext)
+        {
+            return (ActorTaskContext) current;
+        }
+        return null;
+    }
+
+    /**
+     * Finds out what task context is active in a certain thread.
+     * This method is is available here for debugging and profiling.
+     *
+     * @return the actor task context associated to the thread
+     */
+    public static ActorTaskContext currentFor(Thread thread)
+    {
+        TaskContext current = TaskContext.currentFor(thread);
         if (current instanceof ActorTaskContext)
         {
             return (ActorTaskContext) current;

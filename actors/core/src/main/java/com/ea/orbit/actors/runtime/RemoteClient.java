@@ -28,8 +28,10 @@
 
 package com.ea.orbit.actors.runtime;
 
+import com.ea.orbit.concurrent.Task;
+
 public interface RemoteClient extends BasicRuntime
 {
-    void cleanup(boolean block);
+    Task<Void> cleanup();
 
 }

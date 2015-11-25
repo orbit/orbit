@@ -28,100 +28,94 @@
 
 package com.ea.orbit.actors.client;
 
-import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.Addressable;
-import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.client.streams.ClientSideStreamProxyImpl;
+import com.ea.orbit.actors.extensions.DefaultLoggerExtension;
+import com.ea.orbit.actors.extensions.LoggerExtension;
+import com.ea.orbit.actors.peer.Peer;
 import com.ea.orbit.actors.runtime.BasicRuntime;
-import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.actors.runtime.DefaultHandlers;
-import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.Messaging;
-import com.ea.orbit.actors.runtime.ObjectInvoker;
-import com.ea.orbit.actors.runtime.Peer;
 import com.ea.orbit.actors.runtime.RemoteClient;
 import com.ea.orbit.actors.runtime.SerializationHandler;
-import com.ea.orbit.actors.streams.AsyncObserver;
 import com.ea.orbit.actors.streams.AsyncStream;
-import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
+import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 
-import java.lang.reflect.Method;
+import org.slf4j.Logger;
+
+import static com.ea.orbit.async.Await.await;
 
 /**
  * This works as a bridge to perform calls between the server and a client.
  */
 public class ClientPeer extends Peer implements BasicRuntime, Startable, RemoteClient
 {
+    private Messaging messaging;
+    private ClientSideStreamProxyImpl clientSideStreamProxy;
+    private LoggerExtension loggerExtension;
+    private Logger logger;
 
-    public void cleanup(final boolean b)
+    public Task<Void> cleanup()
     {
-
+        await(messaging.cleanup());
+        return Task.done();
     }
 
     @Override
-    public Task<?> start()
+    public Task<Void> start()
     {
-        getPipeline().addLast(DefaultHandlers.EXECUTION, new ClientPeerExecutor());
-        getPipeline().addLast(DefaultHandlers.MESSAGING, new Messaging());
+        if (loggerExtension == null)
+        {
+            loggerExtension = getFirstExtension(LoggerExtension.class);
+            if (loggerExtension == null)
+            {
+                loggerExtension = new DefaultLoggerExtension();
+            }
+        }
+        logger = loggerExtension.getLogger(this);
+        ClientPeerExecutor executor = new ClientPeerExecutor();
+        executor.setObjects(objects);
+        executor.setRuntime(this);
+        getPipeline().addLast(DefaultHandlers.EXECUTION, executor);
+        messaging = new Messaging();
+        messaging.setRuntime(this);
+        clientSideStreamProxy = new ClientSideStreamProxyImpl();
+        clientSideStreamProxy.setRuntime(this);
+
+        getPipeline().addLast(DefaultHandlers.MESSAGING, messaging);
         getPipeline().addLast(DefaultHandlers.SERIALIZATION, new SerializationHandler(this, getMessageSerializer()));
         getPipeline().addLast(DefaultHandlers.NETWORK, getNetwork());
-        return getPipeline().connect(null);
+        installPipelineExtensions();
+
+        await(getPipeline().connect(null));
+        await(clientSideStreamProxy.start());
+        return Task.done();
     }
 
     @Override
-    public Task<?> invoke(final Addressable toReference, final Method m, final boolean oneWay, final int methodId, final Object[] params)
+    public Task<Void> stop()
     {
-        final Invocation invocation = new Invocation(toReference, m, oneWay, methodId, params, null);
-        return getPipeline().write(invocation);
-    }
-
-    @Override
-    public <T extends com.ea.orbit.actors.ActorObserver> T registerObserver(final Class<T> iClass, final T observer)
-    {
-        return null;
-    }
-
-    @Override
-    public <T extends com.ea.orbit.actors.ActorObserver> T getRemoteObserverReference(final NodeAddress address, final Class<T> iClass, final Object id)
-    {
-        return null;
-    }
-
-    @Override
-    public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
-    {
-        return DefaultDescriptorFactory.get().getReference(this, iClass, id);
-    }
-
-    @Override
-    public ObjectInvoker<?> getInvoker(final int interfaceId)
-    {
-        return null;
+        await(clientSideStreamProxy.stop());
+        await(getPipeline().close());
+        return Task.done();
     }
 
     @Override
     public <T> AsyncStream<T> getStream(final String provider, final Class<T> dataClass, final String id)
     {
-        return new AsyncStream<T>()
-        {
-            @Override
-            public Task<Void> unSubscribe(final StreamSubscriptionHandle<T> handle)
-            {
-                return null;
-            }
+        return clientSideStreamProxy.getStream(provider, dataClass, id);
+    }
 
-            @Override
-            public Task<StreamSubscriptionHandle<T>> subscribe(final AsyncObserver<T> observer)
-            {
-                return null;
-            }
+    @Override
+    public Logger getLogger(final Object target)
+    {
+        return loggerExtension.getLogger(target);
+    }
 
-            @Override
-            public Task<Void> post(final T data)
-            {
-                return null;
-            }
-        };
+    @Override
+    public String toString()
+    {
+        return "ClientPeer{localIdentity=" + localIdentity + "}";
     }
 }

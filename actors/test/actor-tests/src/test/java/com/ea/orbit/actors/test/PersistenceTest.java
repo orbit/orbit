@@ -37,9 +37,10 @@ import com.ea.orbit.actors.test.actors.SomePlayer;
 
 import org.junit.Test;
 
-import java.lang.ref.Reference;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -60,7 +61,7 @@ public class PersistenceTest extends ActorBaseTest
     }
 
     @Test
-    public void checkReads() throws ExecutionException, InterruptedException
+    public void checkReads() throws ExecutionException, InterruptedException, TimeoutException
     {
         {
             // adding some state and then tearing down the cluster.
@@ -68,9 +69,9 @@ public class PersistenceTest extends ActorBaseTest
             assertEquals(0, fakeDatabase.values().size());
             SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
             SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
-            someMatch.addPlayer(somePlayer).get();
+            someMatch.addPlayer(somePlayer).join();
             assertTrue(fakeDatabase.values().size() > 0);
-            stage1.stop().join();
+            stage1.stop().get(1000, TimeUnit.SECONDS);
         }
         {
             Stage stage2 = createStage();
@@ -79,6 +80,7 @@ public class PersistenceTest extends ActorBaseTest
             assertEquals(1, someMatch_r2.getPlayers().get().size());
             assertEquals(somePlayer_r2, someMatch_r2.getPlayers().get().get(0));
         }
+        dumpMessages();
     }
 
     @Test

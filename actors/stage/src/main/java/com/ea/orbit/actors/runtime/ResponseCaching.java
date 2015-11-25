@@ -235,6 +235,13 @@ public class ResponseCaching
         return super.write(ctx, msg);
     }
 
+    @Override
+    public void onActive(final HandlerContext ctx) throws Exception
+    {
+        runtime.registerObserver(ExecutionCacheFlushObserver.class, "", this);
+        super.onActive(ctx);
+    }
+
     public void setMessageSerializer(MessageSerializer messageSerializer)
     {
         this.messageSerializer = messageSerializer;

@@ -59,5 +59,5 @@ public interface NodeCapabilities extends ActorObserver
     Task<Void> nodeModeChanged(NodeAddress nodeAddress, NodeState newMode);
 
     @OneWay
-    Task<Void> moved(ActorKey actorKey, NodeAddress oldAddress, NodeAddress newAddress);
+    Task<Void> moved(RemoteReference<?> actorKey, NodeAddress oldAddress, NodeAddress newAddress);
 }

@@ -15,14 +15,21 @@ public class Message
 {
     private int messageType;
     private int messageId;
+
     private NodeAddress fromNode;
     private NodeAddress toNode;
+
     private Map<Object, Object> headers;
-    private Object payload;
+
+    // target reference fields
     private int interfaceId;
-    private int methodId;
-    private NodeAddress refNode;
     private Object objectId;
+    private NodeAddress referenceAddress;
+
+    // method fields
+    private int methodId;
+    private Object payload;
+
 
     public Message()
     {
@@ -197,4 +204,19 @@ public class Message
     }
 
 
+    public NodeAddress getReferenceAddress()
+    {
+        return referenceAddress;
+    }
+
+    public void setReferenceAddress(final NodeAddress referenceAddress)
+    {
+        this.referenceAddress = referenceAddress;
+    }
+
+    public Message withReferenceAddress(final NodeAddress referenceAddress)
+    {
+        this.referenceAddress = referenceAddress;
+        return this;
+    }
 }

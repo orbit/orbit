@@ -40,7 +40,6 @@ import javax.inject.Inject;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
@@ -201,7 +200,7 @@ public class TransactionTest extends ActorBaseTest
         dumpMessages();
     }
 
-    @Test
+    @Test(timeout = 20_000L)
     public void failedTransaction() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
@@ -216,13 +215,13 @@ public class TransactionTest extends ActorBaseTest
         expectException(() -> store.buyItem(bank, inventory, "ice cream", 10).join());
 
         // the bank credits must be restored.
-        eventually(() -> assertEquals((Integer) 15, bank.getBalance().join()));
+        eventually(10_000L, () -> assertEquals((Integer) 15, bank.getBalance().join()));
         // no items were given
         assertEquals(0, inventory.getItems().join().size());
         dumpMessages();
     }
 
-    @Test
+    @Test(timeout = 10_000L)
     public void failedTransaction2() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();

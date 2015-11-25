@@ -26,17 +26,20 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.runtime;
+package com.ea.orbit.actors.concurrent;
 
 import com.ea.orbit.concurrent.Task;
 
-/**
- * Optional default implementation of actor observer. It's not necessary to extend this class to create an observer.
- */
-public class ActorObserver
+import java.util.function.Supplier;
+
+public interface ExecutionSerializer
 {
-    public Task<?> ping()
-    {
-        return Task.done();
-    }
+    boolean executeSerialized(Supplier<Task<?>> taskSupplier, int maxQueueSize);
+
+    /**
+     * Checks if the executor is currently running any tasks.
+     *
+     * @return true if there is still work to be done.
+     */
+    boolean isBusy();
 }

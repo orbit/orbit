@@ -37,4 +37,5 @@ public class DefaultHandlers
     public static final String SERIALIZATION = "serialization";
     public static final String NETWORK = "network";
     public static final String TAIL = "tail";
+    public static final String HOSTING = "hosting";
 }

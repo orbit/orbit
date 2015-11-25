@@ -140,7 +140,7 @@ public class DefaultPipeline implements Pipeline
         final DefaultHandlerContext ctx = new DefaultHandlerContext();
         ctx.handler = handler;
         ctx.name = name;
-        addContextBefore(findLastHandlerContext(base), ctx);
+        addContextBefore(findLastHandlerContext(base).outbound, ctx);
     }
 
     @Override

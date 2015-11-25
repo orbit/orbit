@@ -28,60 +28,46 @@
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.extensions.MessageSerializer;
-import com.ea.orbit.actors.net.DefaultPipeline;
-import com.ea.orbit.actors.net.Handler;
-import com.ea.orbit.actors.net.Pipeline;
-import com.ea.orbit.annotation.Wired;
-import com.ea.orbit.container.Startable;
+import com.ea.orbit.actors.concurrent.MultiExecutionSerializer;
+import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.concurrent.TaskFunction;
 
-import java.time.Clock;
+import java.lang.ref.WeakReference;
 
-/**
- * This works as a bridge to perform calls between the server and a client.
- */
-public abstract class Peer implements Startable
+public class ObserverEntry<T> implements LocalObjects.LocalObjectEntry<T>
 {
-    private Pipeline pipeline = new DefaultPipeline();
-    @Wired
-    private Clock clock = Clock.systemUTC();
-    private MessageSerializer messageSerializer;
-    private Handler network;
+    private final RemoteReference<T> reference;
+    private final WeakReference<T> object;
+    private MultiExecutionSerializer<Object> executionSerializer;
 
-    public void setNetworkHandler(Handler network)
+    public ObserverEntry(final RemoteReference reference, final T object)
     {
-        this.network = network;
+
+        this.reference = reference;
+        this.object = new WeakReference<>(object);
     }
 
-    public Handler getNetwork()
+    @Override
+    public RemoteReference<T> getRemoteReference()
     {
-        return network;
+        return reference;
     }
 
-    public void setMessageSerializer(final MessageSerializer messageSerializer)
+    @Override
+    public T getObject()
     {
-        this.messageSerializer = messageSerializer;
+        return object.get();
     }
 
-    public Clock getClock()
+    @Override
+    public Task<Void> run(final TaskFunction<T, Void> function)
     {
-        return clock;
+
+        return function.apply(getObject());
     }
 
-    public MessageSerializer getMessageSerializer()
+    public void setExecutionSerializer(final MultiExecutionSerializer<Object> executionSerializer)
     {
-        return messageSerializer;
+        this.executionSerializer = executionSerializer;
     }
-
-    public void setClock(final Clock clock)
-    {
-        this.clock = clock;
-    }
-
-
-    public Pipeline getPipeline()
-    {
-        return pipeline;
-    }
-
 }

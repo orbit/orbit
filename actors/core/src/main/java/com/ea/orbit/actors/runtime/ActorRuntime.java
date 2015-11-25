@@ -31,13 +31,16 @@ package com.ea.orbit.actors.runtime;
 import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.StreamProvider;
 import com.ea.orbit.concurrent.Task;
 
 import java.lang.ref.WeakReference;
-import java.time.Clock;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Interface used by the generated code to interact with the orbit actors runtime.
@@ -91,13 +94,6 @@ public interface ActorRuntime extends BasicRuntime
 
 
     /**
-     * Gets the local clock. It's usually the system clock, but it can be changed for testing.
-     *
-     * @return the clock that should be used for checking the time during tests.
-     */
-    Clock clock();
-
-    /**
      * Gets a string that represents uniquely the node that currently holds this actor.
      *
      * @return unique identity string
@@ -136,4 +132,22 @@ public interface ActorRuntime extends BasicRuntime
         RuntimeBinder.runtimeCreated(runtimeRef);
     }
 
+    List<ActorExtension> getExtensions();
+
+    @SuppressWarnings("unchecked")
+    default <T extends ActorExtension> List<T> getAllExtensions(Class<T> itemType)
+    {
+        final List<ActorExtension> extensions = getExtensions();
+        return extensions == null ? Collections.emptyList()
+                : (List<T>) extensions.stream().filter(p -> itemType.isInstance(p)).collect(Collectors.toList());
+    }
+
+    @SuppressWarnings("unchecked")
+    default <T extends ActorExtension> T getFirstExtension(Class<T> itemType)
+    {
+        final List<ActorExtension> extensions = getExtensions();
+        return extensions == null ? null :
+                (T) extensions.stream().filter(p -> itemType.isInstance(p)).findFirst().orElse(null);
+
+    }
 }

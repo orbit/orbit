@@ -41,6 +41,7 @@ public class StreamWithActorsTest extends ActorBaseTest
         @Override
         public Task<Void> doSubscribe(final String streamId)
         {
+            getLogger().info("doSubscribe hash:" + hashCode());
             handle = await(AsyncStream.getStream(String.class, streamId)
                     .subscribe(d -> {
                         state().last = d;
@@ -55,8 +56,16 @@ public class StreamWithActorsTest extends ActorBaseTest
         @Override
         public Task<Void> doUnSubscribe(final String streamId)
         {
+            getLogger().info("doUnSubscribe hash:" + hashCode());
             await(AsyncStream.getStream(String.class, streamId).unSubscribe(handle));
             return Task.done();
+        }
+
+        @Override
+        public Task<?> activateAsync()
+        {
+            getLogger().info("activateAsync");
+            return super.activateAsync();
         }
     }
 
@@ -68,7 +77,7 @@ public class StreamWithActorsTest extends ActorBaseTest
 
         AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
         test.post("hello");
-        assertEquals("hello", fakeSync.get("0-last").join());
+        assertEquals("hello", fakeSync.task("0-last").join());
         dumpMessages();
     }
 
@@ -81,7 +90,7 @@ public class StreamWithActorsTest extends ActorBaseTest
         final Stage stage2 = createStage();
         AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
         test.post("hello");
-        assertEquals("hello", fakeSync.get("0-last").join());
+        assertEquals("hello", fakeSync.task("0-last").join());
         dumpMessages();
     }
 
@@ -95,7 +104,7 @@ public class StreamWithActorsTest extends ActorBaseTest
         final Stage stage2 = createStage();
         AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
         test.post("hello").join();
-        assertTrue(fakeSync.get("0-last").isDone());
+        assertTrue(fakeSync.task("0-last").isDone());
         assertEquals("hello", fakeSync.get("0-last").join());
         dumpMessages();
     }
@@ -107,16 +116,30 @@ public class StreamWithActorsTest extends ActorBaseTest
         final Stage stage1 = createStage();
         Hello hello = Actor.getReference(Hello.class, "0");
         hello.doSubscribe("test").join();
+        AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
+        hello.doUnSubscribe("test").join();
+        assertFalse(fakeSync.task("0-last").isDone());
+        test.post("hello").join();
+        assertFalse(fakeSync.task("0-last").isDone());
+        dumpMessages();
+    }
+
+    @Test(timeout = 30_000L)
+    public void testUnSubscribe2()
+    {
+        final Stage stage1 = createStage();
+        Hello hello = Actor.getReference(Hello.class, "0");
+        hello.doSubscribe("test").join();
 
         final Stage stage2 = createStage();
         AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
 
-        hello.doUnSubscribe("test");
+        hello.doUnSubscribe("test").join();
+        assertFalse(fakeSync.task("0-last").isDone());
         test.post("hello").join();
-        assertFalse(fakeSync.get("0-last").isDone());
+        assertFalse(fakeSync.task("0-last").isDone());
         dumpMessages();
     }
-
 
     @Test(timeout = 30_000L)
     public void test2SubscriberActors()
@@ -137,8 +160,8 @@ public class StreamWithActorsTest extends ActorBaseTest
 
         test.post("hello").join();
 
-        assertTrue(fakeSync.get("1-last").isDone());
-        assertTrue(fakeSync.get("2-last").isDone());
+        assertTrue(fakeSync.task("1-last").isDone());
+        assertTrue(fakeSync.task("2-last").isDone());
         dumpMessages();
     }
 
@@ -146,6 +169,8 @@ public class StreamWithActorsTest extends ActorBaseTest
     @Ignore
     public void testDeactivate()
     {
+        // todo this test needs rewriting.
+
         final Stage stage1 = createStage();
         Hello hello = Actor.getReference(Hello.class, "1");
         hello.doSubscribe("test").join();
@@ -160,10 +185,11 @@ public class StreamWithActorsTest extends ActorBaseTest
 
         stage2.stop().join();
 
+        stage3.bind();
         test.post("hello").join();
 
-        assertTrue(fakeSync.get("1-last").isDone());
-        assertFalse(fakeSync.get("2-last").isDone());
+        assertTrue(fakeSync.task("1-last").isDone());
+        assertFalse(fakeSync.task("2-last").isDone());
         dumpMessages();
     }
 

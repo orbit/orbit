@@ -33,7 +33,7 @@ import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
 import com.ea.orbit.actors.net.Handler;
 import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
-import com.ea.orbit.actors.runtime.Peer;
+import com.ea.orbit.actors.peer.Peer;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.tuples.Pair;
 

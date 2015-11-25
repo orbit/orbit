@@ -41,6 +41,8 @@ import org.junit.Test;
 import com.mongodb.DB;
 import com.mongodb.MongoClient;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.assertEquals;
 
 @SuppressWarnings("unused")
@@ -71,7 +73,7 @@ public class MongodbPersistenceTest
             SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
             SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
             someMatch.addPlayer(somePlayer).get();
-            stage1.stop().join();
+            stage1.stop().get(30, TimeUnit.SECONDS);
         }
         assertEquals(1, database.getCollection("SomeMatch").count());
         {

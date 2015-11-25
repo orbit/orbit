@@ -1,0 +1,45 @@
+@startuml
+
+package server {
+    package Stage {
+          object LocalObjects
+          object StreamProvider
+    }
+
+
+    package "connection : ServerPeer"  {
+        object ClientProxies {
+            clientProxies
+        }
+        object ClientSubscriptions
+        ClientProxies o-right- ClientObjectProxy
+    }
+    LocalObjects o-left- ClientObjectProxy
+}
+
+package client {
+    package "connection: ClientPeer" {
+        object ClientObjects
+    }
+
+    ClientObjects o-right- ClientObject
+    ClientObject <|- AsyncObserver
+
+}
+
+ClientObjectProxy --left-- ClientObject
+
+note bottom of AsyncObserver {
+    app code creates asyncObservers
+    and registers them with the server connection
+    the server registers proxies in the Stage
+    the proxies are used to register
+    with the server's stream providers
+    ---
+    on disconnect the client proxies
+    are removed from the stage.
+}
+
+
+
+@enduml

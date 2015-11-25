@@ -31,6 +31,7 @@ package com.ea.orbit.actors.extensions.json;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.cluster.NodeAddressImpl;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.DescriptorFactory;
 import com.ea.orbit.actors.runtime.RemoteReference;
@@ -71,7 +72,11 @@ public class ActorReferenceModule extends Module
     /**
      * Class that will create concrete references to actor interfaces
      */
-    private final DescriptorFactory descriptorFactory;
+    private DescriptorFactory descriptorFactory;
+
+    public ActorReferenceModule()
+    {
+    }
 
     public ActorReferenceModule(final DescriptorFactory descriptorFactory)
     {
@@ -167,7 +172,7 @@ public class ActorReferenceModule extends Module
         {
             final NodeAddress address = RemoteReference.getAddress((RemoteReference<?>) value);
             final Object actorId = RemoteReference.getId((RemoteReference<?>) value);
-            jgen.writeString(address.asUUID() + "/" + actorId);
+            jgen.writeString((address != null ? address.asUUID() : "") + "/" + actorId);
         }
 
         @Override
@@ -242,9 +247,16 @@ public class ActorReferenceModule extends Module
         {
             final String text = jsonParser.getText();
             final int idx = text.indexOf('/');
+            if (idx != 0)
+            {
+                final UUID uuid = UUID.fromString(text.substring(0, idx));
+                return factory.getReference(new NodeAddressImpl(uuid), (Class) iClass, text.substring(idx + 1));
+            }
+            else
+            {
+                return factory.getReference(null, (Class) iClass, text.substring(idx + 1));
 
-            final UUID uuid = UUID.fromString(text.substring(0, idx));
-            return factory.getObserverReference(uuid, (Class) iClass, text.substring(idx + 1));
+            }
         }
 
         @Override
@@ -305,4 +317,13 @@ public class ActorReferenceModule extends Module
         });
     }
 
+    public DescriptorFactory getDescriptorFactory()
+    {
+        return descriptorFactory;
+    }
+
+    public void setDescriptorFactory(final DescriptorFactory descriptorFactory)
+    {
+        this.descriptorFactory = descriptorFactory;
+    }
 }

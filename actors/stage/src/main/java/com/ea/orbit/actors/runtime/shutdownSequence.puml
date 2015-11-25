@@ -1,0 +1,69 @@
+@startuml
+
+title Stage Shutdown Sequence
+
+participant Stage
+box "Pipeline"  #White
+participant Execution
+participant Hosting
+participant Messaging
+participant Network
+participant PipelineTail
+end box
+participant OtherNodes
+[-> Stage : stop
+== Stage stopping ==
+activate Stage
+Stage -> Hosting : stopping (via pipeline)
+deactivate Stage
+activate Hosting
+Hosting  -> OtherNodes : no longer activating
+Hosting  <-- OtherNodes : ack
+note over Hosting
+    refusing new activations
+end note
+Hosting -> PipelineTail : stopping
+deactivate Hosting
+
+Stage <-- PipelineTail : stopping ack (via pipeline fire event)
+activate Stage
+
+note over Stage
+    - await deactivate all actors
+    - then stop timers
+    - then await stop all extensions
+end note
+
+
+Stage -> Hosting: close (via pipeline)
+deactivate Stage
+
+activate Hosting
+Hosting  -> OtherNodes : stop sending new messages
+Hosting  <-- OtherNodes : ack
+deactivate Hosting
+Hosting -> Messaging : close
+note over Messaging
+    - timeout all pending messages
+    - refuse new messages with error
+end note
+activate Messaging
+Messaging -> Network : close
+deactivate Messaging
+activate Network
+note over Network
+    close connection
+end note
+Network -> PipelineTail : close
+deactivate Network
+Stage <-- PipelineTail : close ack (via pipeline fireInactive)
+
+== Stage stopped ==
+
+note over Stage, PipelineTail
+  refusing invocation, messaging
+end note
+
+
+@enduml
+

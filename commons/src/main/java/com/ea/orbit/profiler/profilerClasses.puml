@@ -1,0 +1,90 @@
+@startuml
+
+ProfilerCollector o-- ProfilerData
+ProfilerData o-- MethodInfo
+ProfilerData *-- CallTreeElement
+CallTreeElement *- MethodInfo
+
+CallTreeElement o-- CallTreeElement
+
+class ProfilerCollector {
+    Map<Object,ProfilerData> data
+---
+    collect()
+    collect(Thread)
+    collect(object, StackTrace[])
+}
+note left of ProfilerCollector
+    The profiler collection represents a collection
+    of profiledata collected from stacktraces and
+    grouped according to the application needs.
+end note
+
+
+class ProfilerData {
+    CallTree root
+    Set<MethodInfo> methodInfo
+---
+    collect(StackTrace[])
+}
+
+note right of ProfilerData
+    Profile data comes from stacktraces.
+
+    This is the __most important class__.
+    It can be used alone without the ProfilerCollector.
+
+    The stacktraces can come from any thread
+    and can have their elements edited before collection.
+    For instance to remove irrelevant information.
+end note
+
+
+class CallTreeElement {
+    MethodInfo elementInfo
+    Map[MethodInfo, CallTreeElement] children
+    long count
+}
+
+note left of CallTreeElement
+    It's a node in a call tree.
+
+    The call tree is built as
+    the stack traces are collected.
+
+    A neat trick is to cut and
+    reverse the stacktraces to find
+    what calls a certain method
+end note
+
+
+class MethodInfo {
+    String declaringClass
+    String methodName
+    String fileName
+    long count
+}
+
+note right of MethodInfo
+    Describes a method.
+
+    Contains the number of times that
+    method appeared (uniquely) in the collected stacktraces.
+
+    (if the method appears twice in the
+    same collection it is counted only once)
+end note
+
+
+class ProfilerDump {
+    static textDump()
+    static textDumpCallTree()
+}
+
+note left of ProfilerDump
+    Utility class for dumping
+    profiler the data as text
+end note
+
+
+@enduml

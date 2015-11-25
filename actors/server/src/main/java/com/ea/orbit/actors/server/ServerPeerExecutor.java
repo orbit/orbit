@@ -28,95 +28,53 @@
 
 package com.ea.orbit.actors.server;
 
-import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
-import com.ea.orbit.actors.runtime.DefaultClassDictionary;
-import com.ea.orbit.actors.runtime.Message;
-import com.ea.orbit.actors.runtime.MessageDefinitions;
+import com.ea.orbit.actors.peer.PeerExecutor;
+import com.ea.orbit.actors.runtime.Invocation;
+import com.ea.orbit.actors.runtime.LocalObjects;
+import com.ea.orbit.actors.runtime.ObjectInvoker;
+import com.ea.orbit.actors.runtime.Utils;
 import com.ea.orbit.concurrent.Task;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.Method;
-
-class ServerPeerExecutor extends HandlerAdapter
+class ServerPeerExecutor extends PeerExecutor
 {
-    private static Logger logger = LoggerFactory.getLogger(ServerPeerExecutor.class);
     private final Stage stage;
 
     public ServerPeerExecutor(final Stage stage)
     {
         this.stage = stage;
-    }
-
-    @Override
-    public Task write(final HandlerContext ctx, final Object msg) throws Exception
-    {
-        // TODO: server-to-client invocation ?
-        return super.write(ctx, msg);
+        setRuntime(stage);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void onRead(final HandlerContext ctx, final Object msg) throws Exception
+    protected void onInvoke(final HandlerContext ctx, final Invocation invocation)
     {
-        if (msg instanceof Message)
+        LocalObjects.LocalObjectEntry localObjectEntry = objects.findLocalObjectByReference(invocation.getToReference());
+        if (localObjectEntry != null)
         {
-            final Message message = (Message) msg;
-            final int messageType = message.getMessageType();
-            final NodeAddress fromNode = message.getFromNode();
-            final int messageId = message.getMessageId();
-            switch (messageType)
-            {
-                case MessageDefinitions.ONE_WAY_MESSAGE:
-                case MessageDefinitions.REQUEST_MESSAGE:
-                    final Class<?> clazz = DefaultClassDictionary.get().getClassById(message.getInterfaceId());
-                    final Addressable reference = (Addressable)stage.getReference((Class)clazz, message.getObjectId());
-                    final boolean oneWay = message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE;
-                    final Method method = stage.getInvoker(message.getInterfaceId()).getMethod(message.getMethodId());
-                    final Task<?> res = stage.invoke(reference, method,
-                            oneWay, message.getMethodId(),
-                            (Object[]) message.getPayload());
-                    res.whenComplete((r, e) ->
-                            sendResponseAndLogError(ctx,
-                                    messageType == MessageDefinitions.ONE_WAY_MESSAGE,
-                                    fromNode, messageId, r, e));
-                    break;
-            }
+            // local to the connection
+            scheduleLocalInvocation(localObjectEntry, invocation);
+            return;
+        }
+
+        if (logger.isTraceEnabled())
+        {
+            logger.trace("Forwarding to the server: {}", invocation);
+        }
+        // forward to the server
+        final Task<Void> write = stage.getPipeline().write(invocation);
+        if (invocation.getCompletion() != null)
+        {
+            Utils.linkFutures(write, invocation.getCompletion());
         }
     }
 
-
-    protected void sendResponseAndLogError(HandlerContext ctx, boolean oneway, final NodeAddress from, int messageId, Object result, Throwable exception)
+    @Override
+    protected Task<Void> performLocalInvocation(final Invocation invocation, final Task completion, final ObjectInvoker invoker, final Object target)
     {
-        if (exception != null && logger.isDebugEnabled())
-        {
-            logger.debug("Unknown application error. ", exception);
-        }
-
-        if (!oneway)
-        {
-            if (exception == null)
-            {
-                sendResponse(ctx, from, MessageDefinitions.RESPONSE_OK, messageId, result);
-            }
-            else
-            {
-                sendResponse(ctx, from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
-            }
-        }
-    }
-
-    private Task sendResponse(HandlerContext ctx, NodeAddress to, int messageType, int messageId, Object res)
-    {
-        return ctx.write(new Message()
-                .withToNode(to)
-                .withMessageId(messageId)
-                .withMessageType(messageType)
-                .withPayload(res));
+        stage.bind();
+        return super.performLocalInvocation(invocation, completion, invoker, target);
     }
 }

@@ -10,6 +10,8 @@ import java.util.UUID;
 @StatelessWorker
 public interface StatelessThing extends Actor
 {
+    Task<String> sayHello();
+
     Task<UUID> getUniqueActivationId();
 
     Task<UUID> getUniqueActivationId(long sleepNanos);

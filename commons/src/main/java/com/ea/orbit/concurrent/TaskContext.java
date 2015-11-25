@@ -1,8 +1,10 @@
 package com.ea.orbit.concurrent;
 
-import java.util.LinkedList;
+import java.util.Deque;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -12,9 +14,11 @@ import java.util.function.Supplier;
 
 public class TaskContext
 {
-    // TODO: replace the linked list with a compressed stack (i.e. repeated object == a counter)
-    private static ThreadLocal<LinkedList<TaskContext>> contextStacks = new ThreadLocal<>();
-    private static AtomicLong nextId = new AtomicLong(1);
+    private final static ThreadLocal<Deque<TaskContext>> contextStacks = new ThreadLocal<>();
+    private final static WeakHashMap<Thread, Deque<TaskContext>> contextStacksMap = new WeakHashMap<>();
+    private final static AtomicLong nextId = new AtomicLong(1);
+
+    // human friendly id, for debugging
     private long id = nextId.getAndIncrement();
 
     private ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<>();
@@ -24,11 +28,17 @@ public class TaskContext
      */
     public void push()
     {
-        LinkedList<TaskContext> stack = contextStacks.get();
+        Deque<TaskContext> stack = contextStacks.get();
         if (stack == null)
         {
-            stack = new LinkedList<>();
+            stack = new ConcurrentLinkedDeque<>();
             contextStacks.set(stack);
+            final Thread currentThread = Thread.currentThread();
+            synchronized (contextStacksMap)
+            {
+                // this happens only once per thread, no need to optimize it
+                contextStacksMap.put(currentThread, stack);
+            }
         }
         stack.addLast(this);
     }
@@ -39,7 +49,7 @@ public class TaskContext
      */
     public void pop()
     {
-        LinkedList<TaskContext> stack = contextStacks.get();
+        Deque<TaskContext> stack = contextStacks.get();
         if (stack == null || stack.size() == 0 || stack.getLast() != this)
         {
             throw new IllegalStateException("Invalid execution context stack state: " + stack + " trying to remove: " + this);
@@ -60,12 +70,27 @@ public class TaskContext
      */
     public static TaskContext current()
     {
-        final LinkedList<TaskContext> stack = contextStacks.get();
+        final Deque<TaskContext> stack = contextStacks.get();
         if (stack == null || stack.size() == 0)
         {
             return null;
         }
         return stack.getLast();
+    }
+
+    /**
+     * Enables the application to peek into what is being executed in another thread.
+     * This method is intended for debugging and profiling.
+     */
+    public static TaskContext currentFor(Thread thread)
+    {
+        final Deque<TaskContext> stack;
+        synchronized (contextStacksMap)
+        {
+            // this should not be called very often, it's for profiling
+            stack = contextStacksMap.get(thread);
+        }
+        return (stack != null) ? stack.peekLast() : null;
     }
 
     /**

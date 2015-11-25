@@ -165,7 +165,7 @@ public class NestedTransactionTest extends ActorBaseTest
         eventually(() -> assertEquals(3, (int) jimmy.getBalance().join()));
     }
 
-    @Test
+    @Test(timeout = 10_000L)
     public void nestingFailureInOuter() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
@@ -189,7 +189,7 @@ public class NestedTransactionTest extends ActorBaseTest
         assertEquals(2, (int) other.getBalance().join());
     }
 
-    @Test
+    @Test(timeout = 20_000L)
     public void remoteNestingFailureInNested() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();
@@ -205,7 +205,7 @@ public class NestedTransactionTest extends ActorBaseTest
         dumpMessages();
     }
 
-    @Test
+    @Test(timeout = 20_000L)
     public void remoteNestingFailureInOuter() throws ExecutionException, InterruptedException
     {
         Stage stage = createStage();

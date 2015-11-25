@@ -31,11 +31,13 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.DefaultActorClassFinder;
+import com.ea.orbit.actors.runtime.Execution;
+import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.test.actors.SomeActor;
-import com.ea.orbit.actors.test.actors.SomeMatch;
-import com.ea.orbit.actors.test.actors.SomePlayer;
 import com.ea.orbit.actors.test.actors.SomeActorImpl;
+import com.ea.orbit.actors.test.actors.SomeMatch;
 import com.ea.orbit.actors.test.actors.SomeMatchActor;
+import com.ea.orbit.actors.test.actors.SomePlayer;
 import com.ea.orbit.actors.test.actors.SomePlayerActor;
 import com.ea.orbit.concurrent.Task;
 
@@ -49,9 +51,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * Test nodes that do not contain the same collection of actors.
@@ -60,6 +60,8 @@ import static org.junit.Assert.assertNotNull;
 public class AsymmetricalStagesTest extends ActorBaseTest
 {
 
+
+    private List<Class<?>> excludedClasses;
 
     @Test
     public void asymmetricalNodeTest() throws ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException
@@ -102,6 +104,7 @@ public class AsymmetricalStagesTest extends ActorBaseTest
         assertEquals(1, setP.size());
         // and it's not the same node
         assertNotEquals(setM, setP);
+        dumpMessages();
     }
 
 
@@ -112,33 +115,37 @@ public class AsymmetricalStagesTest extends ActorBaseTest
         f.set(target, value);
     }
 
+    @Override
+    protected void installExtensions(final Stage stage)
+    {
+        super.installExtensions(stage);
+        final List<Class<?>> classes = this.excludedClasses;
+        if (classes != null)
+        {
+            this.excludedClasses = null;
+            stage.addExtension(new DefaultActorClassFinder()
+            {
+                @Override
+                public <T extends Actor> Class<? extends T> findActorImplementation(Class<T> actorInterface)
+                {
+                    Class<? extends T> c = super.findActorImplementation(actorInterface);
+                    return classes.contains(c) ? null : c;
+                }
+            });
+        }
+    }
+
     public Stage createStage(Class<?>... excludedActorClasses) throws ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException
     {
-        Stage stage = new Stage();
-        List<Class<?>> excludedClasses = Arrays.asList(excludedActorClasses);
-        stage.addExtension(new DefaultActorClassFinder()
-        {
-            @Override
-            public <T extends Actor> Class<? extends T> findActorImplementation(Class<T> actorInterface)
-            {
-                Class<? extends T> c = super.findActorImplementation(actorInterface);
-                return excludedClasses.contains(c) ? null : c;
-            }
-        });
-        stage.setMode(Stage.StageMode.HOST);
-        stage.setExecutionPool(commonPool);
-        stage.setMessagingPool(commonPool);
-        stage.addExtension(new FakeStorageExtension(fakeDatabase));
-        stage.setClock(clock);
-        stage.setClusterName(clusterName);
-        stage.setClusterPeer(new FakeClusterPeer());
-        stage.start().get();
-        return stage;
+        this.excludedClasses = Arrays.asList(excludedActorClasses);
+        return createStage();
     }
 
     @Test
     public void waitForNodeTest() throws ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException
     {
+        loggerExtension.enableDebugFor(Messaging.class);
+        loggerExtension.enableDebugFor(Execution.class);
         // Asymmetrical nodes, one has Match other has Player, both have SomeActor
         Stage stage1 = createStage(SomeActorImpl.class, SomePlayerActor.class);
 
@@ -147,6 +154,7 @@ public class AsymmetricalStagesTest extends ActorBaseTest
         Stage stage2 = createStage(SomeActorImpl.class, SomeMatchActor.class);
 
         assertNotNull(test.join());
+        dumpMessages();
     }
 
 }
