@@ -58,7 +58,8 @@ public class ClientSideStreamProxyImpl implements ClientSideStreamProxy, Startab
             observers = Utils.putIfAbsentAndGet(observerMap, streamKey, new ConcurrentHashMap<>());
             ServerSideStreamProxy serverSideStreamProxy = runtime.getRemoteObserverReference(null, ServerSideStreamProxy.class, "0");
             int dataClassId = DefaultClassDictionary.get().getClassId(dataClass);
-            await(serverSideStreamProxy.subscribe(provider, dataClassId, streamId, localReference));
+            Task<StreamSubscriptionHandle<Object>> subscriptionHandleTask = serverSideStreamProxy.subscribe(provider, dataClassId, streamId, localReference);
+            await(subscriptionHandleTask);
         }
         observers = (observers != null) ? observers : Utils.putIfAbsentAndGet(observerMap, streamKey, new ConcurrentHashMap<>());
         Handle handle = new Handle(streamKey, nextId.incrementAndGet());

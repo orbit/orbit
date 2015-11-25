@@ -23,6 +23,8 @@ public class IdUtils
 
     /**
      * Generate a string using base64 url safe characters with numBits bits.
+     * <p/>
+     * This method uses SecureRandom, same as UUID. An 128 bit id generated with this function will be as unique as an UUID
      *
      * @param numBits the number of random bits size of the data
      * @return a random string composed only of url safe characters where each characters represents up to 6 bits fo random data.¶

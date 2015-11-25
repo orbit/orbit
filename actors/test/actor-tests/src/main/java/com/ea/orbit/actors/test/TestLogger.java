@@ -40,24 +40,40 @@ import org.slf4j.Logger;
 import org.slf4j.Marker;
 import org.slf4j.helpers.MessageFormatter;
 
+import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 
 public class TestLogger implements LoggerExtension, PeerExtension
 {
 
     private String nodeId = "";
-    private ActorBaseTest actorBaseTest;
-    private DefaultLoggerExtension defaultLogger = new DefaultLoggerExtension();
-    ConcurrentHashSet<Object> classesToDebug = new ConcurrentHashSet<>();
+    private final DefaultLoggerExtension defaultLogger = new DefaultLoggerExtension();
+    private final ConcurrentHashSet<Object> classesToDebug;
+    private final StringBuilder logText;
+    protected final List<String> sequenceDiagram;
 
-    public TestLogger(final ActorBaseTest actorBaseTest)
+    public TestLogger()
     {
-        this.actorBaseTest = actorBaseTest;
+        classesToDebug = new ConcurrentHashSet<>();
+        logText = new StringBuilder();
+        sequenceDiagram = Collections.synchronizedList(new ArrayList<>());
     }
 
     public TestLogger(final TestLogger parentLogger, final String nodeId)
     {
-        this.actorBaseTest = parentLogger.actorBaseTest;
         this.classesToDebug = parentLogger.classesToDebug;
+        this.sequenceDiagram = parentLogger.sequenceDiagram;
+        this.logText = parentLogger.logText;
         this.nodeId = nodeId;
     }
 
@@ -141,14 +157,29 @@ public class TestLogger implements LoggerExtension, PeerExtension
                     catch (Exception ex)
                     {
                         logger.error("Error formatting message: {}", format);
+                        fmtMessage = "Error formatting message: " + format;
                     }
                 }
                 final String message = (!"info".equalsIgnoreCase(type) ? type + ": " : "") + fmtMessage;
+                write(type + " " + new Date() + " " + target + " " + message);
                 String position = "over";
                 note(position, target, message);
             }
         };
     }
+
+
+    public synchronized void write(final CharSequence buffer)
+    {
+        // truncating the log
+        if (logText.length() > 250e6)
+        {
+            logText.setLength(64000);
+            logText.append("The log was truncated!").append("\r\n");
+        }
+        logText.append(buffer).append("\r\n");
+    }
+
 
     private void note(final String position, final String target, final String message)
     {
@@ -165,7 +196,7 @@ public class TestLogger implements LoggerExtension, PeerExtension
         {
             note.append(": ").append(message);
         }
-        actorBaseTest.sequenceDiagram.add(note.toString());
+        sequenceDiagram.add(note.toString());
     }
 
     public void enableDebugFor(Class clazz)
@@ -226,4 +257,48 @@ public class TestLogger implements LoggerExtension, PeerExtension
         return sb.toString();
     }
 
+    public void clear()
+    {
+        sequenceDiagram.clear();
+    }
+
+    public CharSequence getLogText()
+    {
+        return logText;
+    }
+
+    public void addToSequenceDiagram(final String sequenceEntry)
+    {
+        sequenceDiagram.add(sequenceEntry);
+    }
+
+    public void dumpMessages(final String fileName)
+    {
+        final PrintStream out = System.out;
+        if (sequenceDiagram.size() > 0)
+        {
+            final Path seqUml = Paths.get(fileName);
+            try
+            {
+                Files.createDirectories(seqUml.getParent());
+
+                Files.write(seqUml,
+                        Stream.concat(Stream.concat(
+                                Stream.of("@startuml"),
+                                Stream.of(sequenceDiagram.toArray()).map(o -> (String) o)),
+                                Stream.of("@enduml")
+                        ).collect(Collectors.toList()));
+                out.println("Message sequence diagram written to:");
+                out.println(seqUml.toUri());
+            }
+            catch (Exception ex)
+            {
+                new IOException("error dumping messages: " + ex.getMessage(), ex).printStackTrace();
+            }
+        }
+        else
+        {
+            out.println("No messages to dump");
+        }
+    }
 }

@@ -1,7 +1,6 @@
 package com.ea.orbit.actors.test;
 
-import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.extensions.PipelineExtension;
+import com.ea.orbit.actors.extensions.NamedPipelineExtension;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.DefaultClassDictionary;
@@ -9,73 +8,79 @@ import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.actors.runtime.DefaultHandlers;
 import com.ea.orbit.actors.runtime.Message;
 import com.ea.orbit.actors.runtime.RemoteReference;
+import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.tuples.Pair;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 
-class TestMessageLog implements PipelineExtension
+public class TestMessageLog extends NamedPipelineExtension
 {
-    private AtomicLong invocationId = new AtomicLong();
+    private TestLogger logger;
 
-    private ActorBaseTest actorBaseTest;
-    private Stage stage;
-
-    public TestMessageLog(final ActorBaseTest actorBaseTest, final Stage stage)
+    public TestMessageLog(TestLogger logger)
     {
-        this.actorBaseTest = actorBaseTest;
-        this.stage = stage;
+        this(logger, "test-message-logging", null, DefaultHandlers.MESSAGING);
     }
 
-    @Override
-    public String getName()
+    public TestMessageLog(TestLogger logger, final String name)
     {
-        return "test-message-logging";
+        this(logger, name, null, DefaultHandlers.MESSAGING);
     }
 
-    @Override
-    public String getAfterHandlerName()
+    public TestMessageLog(TestLogger logger, final String name, final String beforeHandlerName, final String afterHandlerName)
     {
-        return DefaultHandlers.MESSAGING;
+        super(name, beforeHandlerName, afterHandlerName);
+        this.logger = logger;
     }
 
-    String toString(Object obj)
-    {
-        if (obj instanceof String)
-        {
-            return (String) obj;
-        }
-        if (obj instanceof AbstractActor)
-        {
-            final RemoteReference ref = RemoteReference.from((AbstractActor) obj);
-            return RemoteReference.getInterfaceClass(ref).getSimpleName() + ":" +
-                    RemoteReference.getId(ref);
-        }
-        if (obj instanceof RemoteReference)
-        {
-            return RemoteReference.getInterfaceClass((RemoteReference<?>) obj).getSimpleName() + ":" +
-                    RemoteReference.getId((RemoteReference<?>) obj);
-        }
-        return String.valueOf(obj);
-    }
 
     @Override
     public void onRead(HandlerContext ctx, Object msg)
     {
-        if (!(msg instanceof Message))
+        if ((msg instanceof Message))
         {
-            ctx.fireRead(msg);
-            return;
+            logMessage((Message) msg, true);
         }
-        final Message message = (Message) msg;
+        else if ((msg instanceof Pair))
+        {
+            //noinspection unchecked
+            logBytes((Pair<Object, byte[]>) msg);
+        }
+        ctx.fireRead(msg);
+    }
+
+    @Override
+    public Task write(final HandlerContext ctx, final Object msg) throws Exception
+    {
+        if ((msg instanceof Message))
+        {
+            logMessage((Message) msg, false);
+        }
+        else if ((msg instanceof Pair))
+        {
+            //noinspection unchecked
+            logBytes((Pair<Object, byte[]>) msg);
+        }
+
+        return ctx.write(msg);
+    }
+
+    private void logBytes(Pair<Object, byte[]> pair)
+    {
+        logger.write(TestUtils.hexDump(32, pair.getRight(), 0, pair.getRight().length));
+    }
+
+    private void logMessage(final Message message, boolean in)
+    {
         long messageId = message.getMessageId();
 
 
-        String from = message.getFromNode() != null ? String.valueOf(message.getFromNode().asUUID().getLeastSignificantBits()) : "QQQ";
+        String from = message.getFromNode() != null ? String.valueOf(message.getFromNode().asUUID().getLeastSignificantBits()) : in ? "IN" : "OUT";
         String to = message.getToNode() != null ? String.valueOf(message.getToNode().asUUID().getLeastSignificantBits())
-                : String.valueOf(stage.getHosting().getNodeAddress().asUUID().getLeastSignificantBits());
+                : in ? "OUT" : "IN";
 
         String strParams = "";
         final Object payload = message.getPayload();
@@ -109,15 +114,32 @@ class TestMessageLog implements PipelineExtension
             }
         }
         final String seqMsg = '"' + from + "\" -> \"" + to + "\" : [" + messageId + "] " + strTarget + " " + strParams;
-        actorBaseTest.sequenceDiagram.add(seqMsg);
-        while (actorBaseTest.sequenceDiagram.size() > 100)
+        logger.sequenceDiagram.add(seqMsg);
+        while (logger.sequenceDiagram.size() > 100)
         {
-            actorBaseTest.sequenceDiagram.remove(0);
+            logger.sequenceDiagram.remove(0);
         }
-        actorBaseTest.hiddenLog.info(seqMsg);
-
-        ctx.fireRead(msg);
+        logger.write(seqMsg);
     }
 
+    String toString(Object obj)
+    {
+        if (obj instanceof String)
+        {
+            return (String) obj;
+        }
+        if (obj instanceof AbstractActor)
+        {
+            final RemoteReference ref = RemoteReference.from((AbstractActor) obj);
+            return RemoteReference.getInterfaceClass(ref).getSimpleName() + ":" +
+                    RemoteReference.getId(ref);
+        }
+        if (obj instanceof RemoteReference)
+        {
+            return RemoteReference.getInterfaceClass((RemoteReference<?>) obj).getSimpleName() + ":" +
+                    RemoteReference.getId((RemoteReference<?>) obj);
+        }
+        return String.valueOf(obj);
+    }
 
 }

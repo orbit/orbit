@@ -33,7 +33,6 @@ import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.client.ClientPeer;
 import com.ea.orbit.actors.concurrent.MultiExecutionSerializer;
 import com.ea.orbit.actors.concurrent.WaitFreeExecutionSerializer;
-import com.ea.orbit.actors.extensions.LengthFieldHandler;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
 import com.ea.orbit.actors.runtime.AbstractActor;
@@ -49,7 +48,6 @@ import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.injection.DependencyRegistry;
 
-import org.apache.commons.logging.impl.SimpleLog;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
@@ -67,7 +65,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -84,7 +81,7 @@ import static org.junit.Assert.fail;
 public class ActorBaseTest
 {
     static final String TEST_NAME_PROP = ActorBaseTest.class.getName() + ".testName";
-    protected TestLogger loggerExtension = new TestLogger(this);
+    protected TestLogger loggerExtension = new TestLogger();
     protected Logger logger = loggerExtension.getLogger(this.getClass());
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
     protected FakeClock clock = new FakeClock();
@@ -128,26 +125,6 @@ public class ActorBaseTest
     };
 
     protected FakeSync fakeSync = new FakeSync();
-    protected final StringBuilder hiddenLogData = new StringBuilder();
-    protected final List<String> sequenceDiagram = Collections.synchronizedList(new ArrayList<>());
-
-    protected final SimpleLog hiddenLog = new SimpleLog("orbit")
-    {
-        private static final long serialVersionUID = 1L;
-
-        @Override
-        protected synchronized void write(final StringBuffer buffer)
-        {
-            // truncating the log
-            if (hiddenLogData.length() > 250e6)
-            {
-                hiddenLogData.setLength(64000);
-                hiddenLogData.append("The log was truncated!").append("\r\n");
-            }
-            hiddenLogData.append(buffer).append("\r\n");
-        }
-    };
-
 
     @Rule
     public TestRule dumpLogs = new TestWatcher()
@@ -184,8 +161,7 @@ public class ActorBaseTest
          */
         protected void succeeded(Description description)
         {
-            sequenceDiagram.clear();
-            hiddenLogData.setLength(0);
+            loggerExtension.clear();
             fakeDatabase.clear();
         }
 
@@ -197,7 +173,7 @@ public class ActorBaseTest
             out.println(">>>>>>>>> Start");
             out.println(">>>>>>>>> Test Dump for " + description);
             out.println(">>>>>>>>> Error: " + e);
-            out.println(hiddenLogData.toString());
+            out.println(loggerExtension.getLogText());
             out.println(">>>>>>>>> Test Dump for " + description);
             out.print(">>>>>>>>> Error: ");
             e.printStackTrace(out);
@@ -208,9 +184,13 @@ public class ActorBaseTest
             out.println(">>>>>>>>> Server Connections: " + serversConnections.size());
             serversConnections.forEach(s -> out.println("    " + s));
             out.println(">>>>>>>>> End");
-            dumpMessages(description);
-            sequenceDiagram.clear();
-            hiddenLogData.setLength(0);
+            String name = description.getClassName();
+            if (description != null && description.getMethodName() != null)
+            {
+                name += "-" + description.getMethodName();
+            }
+            loggerExtension.dumpMessages("target/surefire-reports/" + name + "-error.messages.puml");
+            loggerExtension.clear();
             fakeDatabase.clear();
         }
     };
@@ -224,48 +204,17 @@ public class ActorBaseTest
 
     protected void clearMessages()
     {
-        sequenceDiagram.clear();
+        loggerExtension.sequenceDiagram.clear();
     }
 
     protected void dumpMessages()
     {
-        dumpMessages(testDescription);
-    }
-
-    protected void dumpMessages(Description description)
-    {
-        final PrintStream out = System.out;
-        if (sequenceDiagram.size() > 0)
+        String name = this.getClass().getName();
+        if (testDescription != null && testDescription.getMethodName() != null)
         {
-            String name = ActorBaseTest.this.getClass().getName();
-            if (description != null)
-            {
-                name += "-" + description.getMethodName();
-            }
-
-            final Path seqUml = Paths.get("target/surefire-reports/" + name + ".messages.puml");
-            try
-            {
-                Files.createDirectories(seqUml.getParent());
-
-                Files.write(seqUml,
-                        Stream.concat(Stream.concat(
-                                Stream.of("@startuml"),
-                                Stream.of(sequenceDiagram.toArray()).map(o -> (String) o)),
-                                Stream.of("@enduml")
-                        ).collect(Collectors.toList()));
-                out.println("Message sequence diagram written to:");
-                out.println(seqUml.toUri());
-            }
-            catch (Exception ex)
-            {
-                new IOException("error dumping messages: " + ex.getMessage(), ex).printStackTrace();
-            }
+            name += "-" + testDescription.getMethodName();
         }
-        else
-        {
-            out.println("No messages to dump");
-        }
+        loggerExtension.dumpMessages("target/surefire-reports/" + name + ".messages.puml");
     }
 
     public ClientPeer createRemoteClient(Stage stage)
@@ -281,8 +230,7 @@ public class ActorBaseTest
         serverPeer.setStage(stage);
         serverPeer.setMessageSerializer(serializer);
         serverPeer.addExtension(new TestLogger(loggerExtension, "sc" + connectionId));
-        serverPeer.addExtension(new TestInvocationLog(this));
-        serverPeer.addExtension(new LengthFieldHandler());
+        serverPeer.addExtension(new TestInvocationLog(loggerExtension));
         serversConnections.add(serverPeer);
 
         final FakeClient fakeClient = new FakeClient();
@@ -292,8 +240,7 @@ public class ActorBaseTest
         fakeClient.setClock(clock);
         fakeClient.setMessageSerializer(serializer);
         fakeClient.addExtension(new TestLogger(loggerExtension, "sc" + connectionId));
-        fakeClient.addExtension(new TestInvocationLog(this));
-        fakeClient.addExtension(new LengthFieldHandler());
+        fakeClient.addExtension(new TestInvocationLog(loggerExtension));
 
         serverPeer.start();
         fakeClient.start();
@@ -303,7 +250,7 @@ public class ActorBaseTest
 
     public Stage createClient()
     {
-        hiddenLog.info("Create Client");
+        loggerExtension.write("Create Client");
         DependencyRegistry dr = new DependencyRegistry();
         dr.addSingleton(FakeSync.class, fakeSync);
 
@@ -336,7 +283,7 @@ public class ActorBaseTest
 
     public Stage createStage()
     {
-        hiddenLog.info("Create Stage");
+        loggerExtension.write("Create Stage");
 
         DependencyRegistry dr = initDependencyRegistry();
 
@@ -395,7 +342,7 @@ public class ActorBaseTest
     {
         stage.addExtension(new TestLogger(loggerExtension, "s" + stages.size()));
         //stage.addExtension(new TestMessageLog(this, stage));
-        stage.addExtension(new TestInvocationLog(this));
+        stage.addExtension(new TestInvocationLog(loggerExtension));
     }
 
     protected ExecutionObjectCloner getExecutionObjectCloner()

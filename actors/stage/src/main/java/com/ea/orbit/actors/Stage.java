@@ -75,6 +75,7 @@ import com.ea.orbit.actors.streams.AsyncObserver;
 import com.ea.orbit.actors.streams.AsyncStream;
 import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
 import com.ea.orbit.actors.streams.simple.SimpleStreamExtension;
+import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
@@ -83,7 +84,6 @@ import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
-import com.ea.orbit.metrics.annotations.ExportMetric;
 import com.ea.orbit.util.StringUtils;
 
 import org.slf4j.Logger;
@@ -94,11 +94,9 @@ import javax.inject.Singleton;
 import java.lang.annotation.Annotation;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -109,7 +107,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -162,7 +159,8 @@ public class Stage implements Startable, ActorRuntime
     private Container container;
     private Pipeline pipeline;
 
-    private final String runtimeIdentity;
+    private final String runtimeIdentity = "Orbit[" + IdUtils.urlSafeString(128) + "]";
+
     private ResponseCaching cacheManager;
 
     private MultiExecutionSerializer<Object> executionSerializer;
@@ -198,24 +196,35 @@ public class Stage implements Startable, ActorRuntime
 
     static
     {
-        try
+        if ("true".equals(System.getProperty("orbit-async-init", "true")))
         {
-            Class.forName("com.ea.orbit.async.Async");
             try
             {
-                // async is present in the classpath, let's make sure await is initialized
-                Class.forName("com.ea.orbit.async.Await").getMethod("init").invoke(null);
-            }
-            catch (Exception ex)
-            {
-                // this might be a problem, logging.
-                LoggerFactory.getLogger(Stage.class).error("Error initializing orbit-async", ex);
-            }
+                Class.forName("com.ea.orbit.async.Async");
+                try
+                {
+                    // async is present in the classpath, let's make sure await is initialized
+                    Class.forName("com.ea.orbit.async.Await").getMethod("init").invoke(null);
+                }
+                catch (Throwable ex)
+                {
+                    // this might be a problem, logging.
+                    Logger lg = LoggerFactory.getLogger(Stage.class);
+                    if (lg.isErrorEnabled())
+                    {
+                        lg.error("Error initializing orbit-async", ex);
+                    }
+                    else
+                    {
+                        System.out.println("Error initializing orbit-async " + ex);
+                    }
+                }
 
-        }
-        catch (Exception ex)
-        {
-            // no problem, application doesn't use orbit async.
+            }
+            catch (Throwable ex)
+            {
+                // no problem, application doesn't use orbit async.
+            }
         }
     }
 
@@ -327,7 +336,6 @@ public class Stage implements Startable, ActorRuntime
     public Stage()
     {
         ActorRuntime.runtimeCreated(cachedRef);
-        runtimeIdentity = generateRuntimeIdentity();
     }
 
     public void addStickyHeaders(Collection<String> stickyHeaders)
@@ -882,40 +890,6 @@ public class Stage implements Startable, ActorRuntime
         return state;
     }
 
-    @ExportMetric(name = "localActorCount")
-    public long getLocalActorCount()
-    {
-        long value = 0;
-
-        return value;
-    }
-
-    @ExportMetric(name = "messagesReceived")
-    public long getMessagesReceived()
-    {
-        long value = 0;
-
-        return value;
-    }
-
-    @ExportMetric(name = "messagesHandled")
-    public long getMessagesHandled()
-    {
-        long value = 0;
-
-        return value;
-
-    }
-
-    @ExportMetric(name = "refusedExecutions")
-    public long getRefusedExecutions()
-    {
-        long value = 0;
-
-
-        return value;
-    }
-
     public ActorRuntime getRuntime()
     {
         return this;
@@ -1062,14 +1036,6 @@ public class Stage implements Startable, ActorRuntime
         return runtimeIdentity;
     }
 
-    private String generateRuntimeIdentity()
-    {
-        final UUID uuid = UUID.randomUUID();
-        final String encoded = Base64.getEncoder().encodeToString(
-                ByteBuffer.allocate(16).putLong(uuid.getMostSignificantBits()).putLong(uuid.getLeastSignificantBits()).array());
-        return "Orbit[" + encoded.substring(0, encoded.length() - 2) + "]";
-    }
-
     @Override
     public Task<NodeAddress> locateActor(final Addressable actorReference, final boolean forceActivation)
     {
@@ -1081,36 +1047,14 @@ public class Stage implements Startable, ActorRuntime
     {
         final RemoteReference<T> reference = objects.getOrAddLocalObjectReference(hosting.getNodeAddress(), iClass, id, observer);
         RemoteReference.setRuntime(reference, this);
-        return iClass.cast(reference);
-    }
-
-    @Override
-    public <T extends ActorObserver> T registerObserver(final Class<T> iClass, final T observer)
-    {
-        final RemoteReference<T> reference = objects.getOrAddLocalObjectReference(hosting.getNodeAddress(), iClass, null, observer);
-        RemoteReference.setRuntime(reference, this);
         //noinspection unchecked
         return iClass != null ? iClass.cast(reference) : (T) reference;
-    }
-
-    @Override
-    public <T extends ActorObserver> T getRemoteObserverReference(final NodeAddress address, final Class<T> iClass, final Object id)
-    {
-        return DefaultDescriptorFactory.get().getReference(this, address, iClass, id);
     }
 
     public <T> T getReference(BasicRuntime runtime, NodeAddress address, Class<T> iClass, Object id)
     {
         return DefaultDescriptorFactory.get().getReference(this, address, iClass, id);
     }
-
-
-    @Override
-    public <T> T getReference(final Class<T> iClass, final Object id)
-    {
-        return DefaultDescriptorFactory.get().getReference(this, null, iClass, id);
-    }
-
 
     @Override
     public StreamProvider getStreamProvider(final String name)

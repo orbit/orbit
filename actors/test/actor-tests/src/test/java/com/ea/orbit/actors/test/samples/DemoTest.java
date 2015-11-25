@@ -138,7 +138,7 @@ public class DemoTest extends ActorBaseTest
         assertEquals(100, bank.getBalance().join().intValue());
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(11));
 
-        sequenceDiagram.add("...10 minutes later...");
+        loggerExtension.addToSequenceDiagram("...10 minutes later...");
         stage1.cleanup().join();
         assertEquals(100, bank.getBalance().join().intValue());
 

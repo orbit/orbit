@@ -54,15 +54,15 @@ import java.util.stream.Collectors;
 import static com.ea.orbit.actors.test.TestLogger.wrap;
 
 
-class TestInvocationLog implements PipelineExtension, PeerExtension
+public class TestInvocationLog implements PipelineExtension, PeerExtension
 {
     private AtomicLong invocationId = new AtomicLong();
 
-    private ActorBaseTest actorBaseTest;
+    private TestLogger logger;
 
-    public TestInvocationLog(final ActorBaseTest actorBaseTest)
+    public TestInvocationLog(final TestLogger logger)
     {
-        this.actorBaseTest = actorBaseTest;
+        this.logger = logger;
     }
 
     @Override
@@ -154,12 +154,12 @@ class TestInvocationLog implements PipelineExtension, PeerExtension
             final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + methodName + strParams
                     + "\r\n"
                     + "activate \"" + to + "\"";
-            actorBaseTest.sequenceDiagram.add(msg);
-            while (actorBaseTest.sequenceDiagram.size() > 100)
+            logger.sequenceDiagram.add(msg);
+            while (logger.sequenceDiagram.size() > 100)
             {
-                actorBaseTest.sequenceDiagram.remove(0);
+                logger.sequenceDiagram.remove(0);
             }
-            actorBaseTest.hiddenLog.info(msg);
+            logger.write(msg);
             final long start = System.nanoTime();
 
             @SuppressWarnings("unchecked")
@@ -174,8 +174,8 @@ class TestInvocationLog implements PipelineExtension, PeerExtension
                             + timeStr + "us] " + wrap("(response to " + methodName + "): " + toString(r), 32, "\\n", true)
                             + "\r\n"
                             + "deactivate \"" + to + "\"";
-                    actorBaseTest.sequenceDiagram.add(resp);
-                    actorBaseTest.hiddenLog.info(resp);
+                    logger.sequenceDiagram.add(resp);
+                    logger.write(resp);
                 }
                 else
                 {
@@ -187,8 +187,8 @@ class TestInvocationLog implements PipelineExtension, PeerExtension
                             + (throwable.getMessage() != null ? ": \\n" + throwable.getMessage() : "")
                             + "\r\n"
                             + "deactivate \"" + to + "\"";
-                    actorBaseTest.sequenceDiagram.add(resp);
-                    actorBaseTest.hiddenLog.info(resp);
+                    logger.sequenceDiagram.add(resp);
+                    logger.write(resp);
                 }
             });
 
@@ -196,8 +196,8 @@ class TestInvocationLog implements PipelineExtension, PeerExtension
         else
         {
             final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + methodName + strParams;
-            actorBaseTest.sequenceDiagram.add(msg);
-            actorBaseTest.hiddenLog.info('"' + from + "\" -> \"" + to + "\" : [" + id + "] " + methodName + strParams);
+            logger.sequenceDiagram.add(msg);
+            logger.write('"' + from + "\" -> \"" + to + "\" : [" + id + "] " + methodName + strParams);
             return ctx.write(message);
         }
     }

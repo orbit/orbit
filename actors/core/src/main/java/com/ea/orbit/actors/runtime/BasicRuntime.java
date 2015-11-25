@@ -63,7 +63,7 @@ public interface BasicRuntime extends DescriptorFactory
      */
     default <T> T getReference(final Class<T> iClass, final Object id)
     {
-        return getReference(null, null, iClass, id);
+        return getReference(this, null, iClass, id);
     }
 
     /**
@@ -111,7 +111,7 @@ public interface BasicRuntime extends DescriptorFactory
      */
     default <T extends com.ea.orbit.actors.ActorObserver> T getRemoteObserverReference(NodeAddress address, final Class<T> iClass, final Object id)
     {
-        return DefaultDescriptorFactory.get().getReference(this, address, iClass, id);
+        return getReference(this, address, iClass, id);
     }
 
     static BasicRuntime getRuntime()
@@ -120,6 +120,11 @@ public interface BasicRuntime extends DescriptorFactory
     }
 
     <T> AsyncStream<T> getStream(String provider, Class<T> dataClass, String id);
+
+    default <T> AsyncStream<T> getStream(final Class<T> dataClass, final String streamId)
+    {
+        return getStream(AsyncStream.DEFAULT_PROVIDER, dataClass, streamId);
+    }
 
     /**
      * Gets the local clock. It's usually the system clock, but it can be changed for testing.
