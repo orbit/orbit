@@ -41,6 +41,7 @@ import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.LocalObjects;
 import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.actors.streams.AsyncStream;
+import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.annotation.Wired;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -63,6 +64,7 @@ public abstract class Peer implements Startable, BasicRuntime
     private MessageSerializer messageSerializer;
     private Handler network;
     private List<PeerExtension> extensions = new ArrayList<>();
+    protected final String localIdentity = String.valueOf(IdUtils.sequentialLongId());
 
     public void setNetworkHandler(Handler network)
     {

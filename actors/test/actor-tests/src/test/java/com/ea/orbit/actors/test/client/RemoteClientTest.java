@@ -74,7 +74,7 @@ public class RemoteClientTest extends ActorBaseTest
             // lets the client go
             sync.semaphore(release).release();
             // blocks waiting for the other side
-            sync.semaphore(acquire).acquireUninterruptibly();
+            sync.semaphore(acquire).acquire(10, TimeUnit.SECONDS);
             return Task.fromValue(release + acquire);
         }
     }

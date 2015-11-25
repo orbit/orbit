@@ -41,6 +41,7 @@ import com.ea.orbit.actors.runtime.ActorTaskContext;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
+import com.ea.orbit.actors.server.ServerPeer;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -88,6 +89,7 @@ public class ActorBaseTest
     protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
     protected List<Stage> stages = new ArrayList<>();
     protected List<FakeClient> clients = new ArrayList<>();
+    protected List<ServerPeer> serversConnections = new ArrayList<>();
 
     protected Description testDescription;
 
@@ -197,6 +199,12 @@ public class ActorBaseTest
             out.println(">>>>>>>>> Test Dump for " + description);
             out.print(">>>>>>>>> Error: ");
             e.printStackTrace(out);
+            out.println(">>>>>>>>> Stages: " + stages.size());
+            stages.forEach(s -> out.println("    " + s));
+            out.println(">>>>>>>>> Clients: " + clients.size());
+            clients.forEach(s -> out.println("    " + s));
+            out.println(">>>>>>>>> Server Connections: " + serversConnections.size());
+            serversConnections.forEach(s -> out.println("    " + s));
             out.println(">>>>>>>>> End");
             dumpMessages(description);
             sequenceDiagram.clear();
@@ -272,6 +280,7 @@ public class ActorBaseTest
         serverPeer.setMessageSerializer(serializer);
         serverPeer.addExtension(new TestLogger(loggerExtension, "sc" + connectionId));
         serverPeer.addExtension(new TestInvocationLog(this));
+        serversConnections.add(serverPeer);
 
         final FakeClient fakeClient = new FakeClient();
         clients.add(fakeClient);

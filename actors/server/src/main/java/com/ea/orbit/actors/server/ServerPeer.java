@@ -132,4 +132,10 @@ public class ServerPeer extends Peer implements Startable, BasicRuntime
         // todo implement this.
         return super.stop();
     }
+
+    @Override
+    public String toString()
+    {
+        return "ServerPeer{localIdentity=" + localIdentity + ", stage=" + stage + "}";
+    }
 }

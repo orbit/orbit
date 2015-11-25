@@ -1,6 +1,7 @@
 package com.ea.orbit.actors.test;
 
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.tuples.Pair;
 
 import javax.inject.Singleton;
@@ -12,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -22,7 +24,7 @@ public class FakeSync
 {
     private LoadingMap<Object, Task> tasks = new LoadingMap<>(Task::new);
 
-    private LoadingMap<String, Semaphore> semaphores = new LoadingMap<>(() -> new Semaphore(0));
+    private LoadingMap<String, UncheckedSemaphore> semaphores = new LoadingMap<>(() -> new UncheckedSemaphore(0));
 
     private LoadingMap<String, BlockingDeque> deques = new LoadingMap<>(LinkedBlockingDeque::new);
 
@@ -107,7 +109,7 @@ public class FakeSync
     }
 
 
-    public Semaphore semaphore(String semaphoreName)
+    public UncheckedSemaphore semaphore(String semaphoreName)
     {
         return semaphores.getOrAdd(semaphoreName);
     }
@@ -146,6 +148,83 @@ public class FakeSync
                 return oldValue != null ? oldValue : newValue;
             }
             return value;
+        }
+
+    }
+
+    public static class UncheckedSemaphore extends Semaphore
+    {
+        private UncheckedSemaphore(final int permits)
+        {
+            super(permits);
+        }
+
+        @Override
+        public void acquire()
+        {
+            try
+            {
+                super.acquire();
+            }
+            catch (InterruptedException e)
+            {
+                throw new UncheckedException(e);
+            }
+        }
+
+        @Override
+        public void acquire(final int permits)
+        {
+            try
+            {
+                super.acquire(permits);
+            }
+            catch (InterruptedException e)
+            {
+                throw new UncheckedException(e);
+            }
+        }
+
+        public void acquire(final long timeout, final TimeUnit unit)
+        {
+            try
+            {
+                if (!super.tryAcquire(timeout, unit))
+                {
+                    throw new UncheckedException("timeout");
+                }
+            }
+            catch (InterruptedException e)
+            {
+                throw new UncheckedException(e);
+            }
+        }
+
+
+        @Override
+        public boolean tryAcquire(final long timeout, final TimeUnit unit)
+        {
+            try
+            {
+                return super.tryAcquire(timeout, unit);
+            }
+            catch (InterruptedException e)
+            {
+                throw new UncheckedException(e);
+            }
+        }
+
+        @Override
+        public boolean tryAcquire(final int permits, final long timeout, final TimeUnit unit)
+        {
+            try
+            {
+                return super.tryAcquire(permits, timeout, unit);
+            }
+            catch (InterruptedException e)
+            {
+                throw new UncheckedException(e);
+            }
         }
     }
 }

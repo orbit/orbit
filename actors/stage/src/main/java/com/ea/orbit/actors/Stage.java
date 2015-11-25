@@ -414,7 +414,7 @@ public class Stage implements Startable, ActorRuntime
     {
         if (startCalled)
         {
-            throw new IllegalStateException("Stage mode cannot be changed after startup.");
+            throw new IllegalStateException("Stage mode cannot be changed after startup. " + this.toString());
         }
         this.mode = mode;
     }
@@ -429,7 +429,7 @@ public class Stage implements Startable, ActorRuntime
         startCalled = true;
         if (state != null)
         {
-            throw new IllegalStateException("Can't start the stage at this state=" + state);
+            throw new IllegalStateException("Can't start the stage at this state. " + this.toString());
         }
         state = NodeCapabilities.NodeState.RUNNING;
 
@@ -639,8 +639,12 @@ public class Stage implements Startable, ActorRuntime
                 startPromise.complete(r);
             }
         });
-
-        return startPromise;
+        await(startPromise);
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("Stage started [{}]", runtimeIdentity());
+        }
+        return Task.done();
     }
 
     private void configureOrbitContainer()
@@ -931,7 +935,7 @@ public class Stage implements Startable, ActorRuntime
     {
         if (state == NodeCapabilities.NodeState.STOPPED)
         {
-            throw new IllegalStateException("Stage is stopped");
+            throw new IllegalStateException("Stage is stopped. " + this.toString());
         }
         final Invocation invocation = new Invocation(toReference, m, oneWay, methodId, params, null);
         // copy stick context valued to the message headers headers
@@ -1267,5 +1271,14 @@ public class Stage implements Startable, ActorRuntime
     public Set<String> getStickyHeaders()
     {
         return stickyHeaders;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Stage{" +
+                "state=" + state +
+                ", runtimeIdentity='" + runtimeIdentity + '\'' +
+                '}';
     }
 }

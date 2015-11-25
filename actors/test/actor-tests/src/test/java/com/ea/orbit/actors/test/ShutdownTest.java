@@ -32,6 +32,7 @@ package com.ea.orbit.actors.test;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.concurrent.Task;
 
@@ -40,6 +41,7 @@ import org.junit.Test;
 import javax.inject.Inject;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -62,13 +64,15 @@ public class ShutdownTest extends ActorBaseTest
 
         public Task<Void> doSomething()
         {
+            getLogger().info("doSomething: " + ActorRuntime.getRuntime());
             return Task.done();
         }
 
         public Task<Void> doSomethingBlocking()
         {
-            fakeSync.put("executing", true);
-            fakeSync.get("canFinish").join();
+            getLogger().info("releasing executing");
+            fakeSync.semaphore("executing").release();
+            fakeSync.semaphore("canFinish").acquire(10, TimeUnit.SECONDS);
             return Task.done();
         }
     }
@@ -77,10 +81,13 @@ public class ShutdownTest extends ActorBaseTest
     public void basicShutdownTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
+        logger.info("stage1: " + stage1);
         Stage client = createClient();
+        logger.info("client1: " + client);
 
         Actor.getReference(Shut.class, "0").doSomething().join();
         Stage stage2 = createStage();
+        logger.info("stage2: " + stage2);
 
         stage1.stop().join();
         Actor.getReference(Shut.class, "0").doSomething().join();
@@ -94,16 +101,18 @@ public class ShutdownTest extends ActorBaseTest
         Stage client = createClient();
 
         Task<Void> methodCall = Actor.getReference(Shut.class, "0").doSomethingBlocking();
-        // is blocked in the doSomethingBlocking
-        assertEquals(true, fakeSync.get("executing").join());
+
+        // wait the server start processing
+        fakeSync.semaphore("executing").acquire();
+        logger.info("released");
         Stage stage2 = createStage();
         assertFalse(methodCall.isDone());
         final Task<?> stopFuture = Task.runAsync(() -> stage1.stop().join());
         waitFor(() -> stage1.getState() == NodeCapabilities.NodeState.STOPPING);
 
         // release doSomethingTo finish
-        System.out.printf("can finish");
-        fakeSync.put("canFinish", true);
+        logger.info("releasing canFinish");
+        fakeSync.semaphore("canFinish").release();
         stopFuture.join();
 
         // tries to ensure that the current running methods finish before the shutdown.

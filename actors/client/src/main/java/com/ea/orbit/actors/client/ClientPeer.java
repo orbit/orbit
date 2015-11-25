@@ -38,6 +38,7 @@ import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.RemoteClient;
 import com.ea.orbit.actors.runtime.SerializationHandler;
 import com.ea.orbit.actors.streams.AsyncStream;
+import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 
@@ -110,5 +111,11 @@ public class ClientPeer extends Peer implements BasicRuntime, Startable, RemoteC
     public Logger getLogger(final Object target)
     {
         return loggerExtension.getLogger(target);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "ClientPeer{localIdentity=" + localIdentity + "}";
     }
 }
