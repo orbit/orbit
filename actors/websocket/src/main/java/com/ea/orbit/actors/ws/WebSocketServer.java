@@ -29,23 +29,11 @@
 package com.ea.orbit.actors.ws;
 
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.client.ClientPeer;
-import com.ea.orbit.actors.extensions.MessageSerializer;
-import com.ea.orbit.actors.net.HandlerContext;
-import com.ea.orbit.actors.runtime.Peer;
+import com.ea.orbit.actors.peer.Peer;
 import com.ea.orbit.actors.server.ServerPeer;
 import com.ea.orbit.annotation.Wired;
-import com.ea.orbit.concurrent.Task;
 
-import javax.websocket.ClientEndpoint;
-import javax.websocket.CloseReason;
-import javax.websocket.OnClose;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
 import javax.websocket.Session;
-import javax.websocket.server.ServerEndpoint;
-
-import java.nio.ByteBuffer;
 
 
 public class WebSocketServer extends AbstractWebSocket

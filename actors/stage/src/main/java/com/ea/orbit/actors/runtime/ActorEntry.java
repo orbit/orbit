@@ -29,8 +29,7 @@
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.concurrent.Task;
-
-import com.google.common.base.Function;
+import com.ea.orbit.concurrent.TaskFunction;
 
 import static com.ea.orbit.async.Await.await;
 
@@ -51,7 +50,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
     }
 
     @Override
-    public Task<?> run(final Function<T, Task<?>> function)
+    public Task<Void> run(final TaskFunction<T, Void> function)
     {
         lastAccess = runtime.clock().millis();
         executionSerializer.offerJob(getRemoteReference(), () -> doRun(function), 1000);
@@ -109,7 +108,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
         return Task.done();
     }
 
-    private Task<?> doRun(final Function<T, Task<?>> function)
+    private Task<?> doRun(final TaskFunction<T, ?> function)
     {
         runtime.bind();
         final ActorTaskContext actorTaskContext = ActorTaskContext.pushNew();

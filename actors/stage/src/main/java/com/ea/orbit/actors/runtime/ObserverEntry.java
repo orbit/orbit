@@ -30,8 +30,7 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.concurrent.MultiExecutionSerializer;
 import com.ea.orbit.concurrent.Task;
-
-import com.google.common.base.Function;
+import com.ea.orbit.concurrent.TaskFunction;
 
 import java.lang.ref.WeakReference;
 
@@ -61,7 +60,7 @@ public class ObserverEntry<T> implements LocalObjects.LocalObjectEntry<T>
     }
 
     @Override
-    public Task<?> run(final Function<T, Task<?>> function)
+    public Task<Void> run(final TaskFunction<T, Void> function)
     {
 
         return function.apply(getObject());

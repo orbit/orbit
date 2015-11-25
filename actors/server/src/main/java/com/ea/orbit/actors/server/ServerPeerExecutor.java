@@ -29,53 +29,52 @@
 package com.ea.orbit.actors.server;
 
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.actors.peer.PeerExecutor;
 import com.ea.orbit.actors.runtime.Invocation;
+import com.ea.orbit.actors.runtime.LocalObjects;
+import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.Utils;
 import com.ea.orbit.concurrent.Task;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-class ServerPeerExecutor extends HandlerAdapter
+class ServerPeerExecutor extends PeerExecutor
 {
-    private static Logger logger = LoggerFactory.getLogger(ServerPeerExecutor.class);
     private final Stage stage;
 
     public ServerPeerExecutor(final Stage stage)
     {
         this.stage = stage;
-    }
-
-    @Override
-    public Task write(final HandlerContext ctx, final Object msg) throws Exception
-    {
-        // TODO: server-to-client invocation ?
-        return super.write(ctx, msg);
+        setRuntime(stage);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void onRead(final HandlerContext ctx, final Object msg) throws Exception
+    protected void onInvoke(final HandlerContext ctx, final Invocation invocation)
     {
-        if (msg instanceof Invocation)
+        LocalObjects.LocalObjectEntry localObjectEntry = objects.findLocalObjectByReference(invocation.getToReference());
+        if (localObjectEntry != null)
         {
-            final Task<Void> write = stage.getPipeline().write(msg);
-            final Invocation invocation = (Invocation) msg;
-            if (invocation.getCompletion() != null)
-            {
-                if (!invocation.isOneWay())
-                {
-                    Utils.linkFutures(write, invocation.getCompletion());
-                }
-                else
-                {
-                    invocation.getCompletion().complete(null);
-                }
-            }
+            // local to the connection
+            scheduleLocalInvocation(localObjectEntry, invocation);
             return;
         }
-        ctx.fireRead(msg);
+
+        if (logger.isTraceEnabled())
+        {
+            logger.trace("Forwarding to the server: {}", invocation);
+        }
+        // forward to the server
+        final Task<Void> write = stage.getPipeline().write(invocation);
+        if (invocation.getCompletion() != null)
+        {
+            Utils.linkFutures(write, invocation.getCompletion());
+        }
+    }
+
+    @Override
+    protected Task<Void> performLocalInvocation(final Invocation invocation, final Task completion, final ObjectInvoker invoker, final Object target)
+    {
+        stage.bind();
+        return super.performLocalInvocation(invocation, completion, invoker, target);
     }
 }

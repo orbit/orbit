@@ -32,6 +32,7 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.extensions.DefaultLoggerExtension;
 import com.ea.orbit.actors.extensions.LoggerExtension;
 import com.ea.orbit.actors.net.Handler;
+import com.ea.orbit.actors.peer.PeerExtension;
 import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.concurrent.ConcurrentHashSet;
 
@@ -40,16 +41,24 @@ import org.slf4j.Marker;
 import org.slf4j.helpers.MessageFormatter;
 
 
-public class TestLogger implements LoggerExtension
+public class TestLogger implements LoggerExtension, PeerExtension
 {
 
+    private String nodeId = "";
     private ActorBaseTest actorBaseTest;
     private DefaultLoggerExtension defaultLogger = new DefaultLoggerExtension();
-    private ConcurrentHashSet<Object> classesToDebug = new ConcurrentHashSet<>();
+    ConcurrentHashSet<Object> classesToDebug = new ConcurrentHashSet<>();
 
     public TestLogger(final ActorBaseTest actorBaseTest)
     {
         this.actorBaseTest = actorBaseTest;
+    }
+
+    public TestLogger(final TestLogger parentLogger, final String nodeId)
+    {
+        this.actorBaseTest = parentLogger.actorBaseTest;
+        this.classesToDebug = parentLogger.classesToDebug;
+        this.nodeId = nodeId;
     }
 
     @Override
@@ -79,6 +88,16 @@ public class TestLogger implements LoggerExtension
         }
         return new LogInterceptor(logger)
         {
+            @Override
+            public boolean isErrorEnabled()
+            {
+                if (targetClass != null && classesToDebug.contains(targetClass))
+                {
+                    return true;
+                }
+                return super.isErrorEnabled();
+            }
+
             @Override
             public boolean isDebugEnabled()
             {
@@ -138,7 +157,7 @@ public class TestLogger implements LoggerExtension
         if (message.contains("\n"))
         {
             note.append("\r\n");
-            note.append(message);
+            note.append(wrap(message, 40, "\r\n", true));
             note.append("\r\n").append("end note");
 
         }
@@ -163,4 +182,48 @@ public class TestLogger implements LoggerExtension
     {
         classesToDebug.clear();
     }
+
+    static String wrap(final String str, final int width, final String lineBreak, final boolean breakWords)
+    {
+        final int length = str.length();
+        if (length < width)
+        {
+            return str;
+        }
+        StringBuilder sb = new StringBuilder();
+        int start = 0;
+        int pos = 0;
+        for (; length - start > width; )
+        {
+            int possibleBreak = -1;
+            for (; pos - start < width && pos < length; pos++)
+            {
+                char ch = str.charAt(pos);
+                if (!Character.isDigit(ch) && !Character.isAlphabetic(ch))
+                {
+                    possibleBreak = pos;
+                }
+            }
+            if (possibleBreak > 0)
+            {
+                sb.append(str, start, possibleBreak + 1);
+                start = possibleBreak + 1;
+            }
+            else
+            {
+                sb.append(str, start, pos);
+                start = pos;
+            }
+            if (start < length)
+            {
+                sb.append(lineBreak);
+            }
+        }
+        if (start < length)
+        {
+            sb.append(str, start, length);
+        }
+        return sb.toString();
+    }
+
 }

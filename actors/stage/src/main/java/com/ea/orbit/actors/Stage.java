@@ -49,9 +49,9 @@ import com.ea.orbit.actors.runtime.ActorBaseEntry;
 import com.ea.orbit.actors.runtime.ActorEntry;
 import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
+import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.actors.runtime.ClusterHandler;
 import com.ea.orbit.actors.runtime.DefaultActorClassFinder;
-import com.ea.orbit.actors.runtime.DefaultClassDictionary;
 import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.actors.runtime.DefaultHandlers;
 import com.ea.orbit.actors.runtime.Execution;
@@ -61,7 +61,6 @@ import com.ea.orbit.actors.runtime.JavaMessageSerializer;
 import com.ea.orbit.actors.runtime.LocalObjects;
 import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
-import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.ObserverEntry;
 import com.ea.orbit.actors.runtime.Registration;
 import com.ea.orbit.actors.runtime.ReminderController;
@@ -1095,17 +1094,18 @@ public class Stage implements Startable, ActorRuntime
         return DefaultDescriptorFactory.get().getReference(this, address, iClass, id);
     }
 
+    public <T> T getReference(BasicRuntime runtime, NodeAddress address, Class<T> iClass, Object id)
+    {
+        return DefaultDescriptorFactory.get().getReference(this, address, iClass, id);
+    }
+
+
     @Override
-    public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
+    public <T> T getReference(final Class<T> iClass, final Object id)
     {
         return DefaultDescriptorFactory.get().getReference(this, null, iClass, id);
     }
 
-    @Override
-    public ObjectInvoker<?> getInvoker(final int interfaceId)
-    {
-        return DefaultDescriptorFactory.get().getInvoker(DefaultClassDictionary.get().getClassById(interfaceId));
-    }
 
     @Override
     public StreamProvider getStreamProvider(final String name)

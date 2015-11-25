@@ -6,11 +6,14 @@ import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.client.ClientPeer;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.streams.AsyncStream;
+import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.concurrent.Task;
 
-import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
@@ -34,8 +37,7 @@ public class StreamWithClientTest extends ActorBaseTest
     }
 
     @Test(timeout = 30_000L)
-    @Ignore
-    public void test()
+    public void test() throws InterruptedException
     {
         final Stage stage1 = createStage();
         Hello hello = Actor.getReference(Hello.class, "0");
@@ -43,17 +45,63 @@ public class StreamWithClientTest extends ActorBaseTest
 
         final ClientPeer client = createRemoteClient(stage1);
 
-        client.getStream(AsyncStream.DEFAULT_PROVIDER, String.class, "testStream")
-                .subscribe(d -> {
-                    fakeSync.deque("received").push(d);
-                    return Task.done();
-                });
+        AsyncStream<String> testStream = client.getStream(AsyncStream.DEFAULT_PROVIDER, String.class, "testStream");
+        testStream.subscribe(d -> {
+            fakeSync.deque("received").add(d);
+            return Task.done();
+        }).join();
 
 
         stage1.bind();
         hello.doPush("testStream", "hello2").join();
 
-        assertEquals("hello2", fakeSync.deque("received").pop());
+        assertEquals("hello2", fakeSync.deque("received").poll(20, TimeUnit.SECONDS));
+        dumpMessages();
+    }
+
+
+    @Test(timeout = 30_000L)
+    public void testUnsubscribe() throws InterruptedException
+    {
+        final Stage stage1 = createStage();
+        Hello hello = Actor.getReference(Hello.class, "0");
+
+        // client subscribes
+        logger.info("subscribing");
+        final ClientPeer client = createRemoteClient(stage1);
+        AsyncStream<String> testStream = client.getStream(AsyncStream.DEFAULT_PROVIDER, String.class, "testStream");
+        BlockingQueue<Object> messagesReceived = fakeSync.deque("received");
+        final StreamSubscriptionHandle<String> handle = testStream.subscribe(d -> {
+            messagesReceived.add(d);
+            return Task.done();
+        }).join();
+
+        // first push
+        hello.doPush("testStream", "hello").join();
+        assertEquals("hello", messagesReceived.poll(20, TimeUnit.SECONDS));
+        assertEquals(0, messagesReceived.size());
+
+        // client unsubscribes
+        logger.info("unsubscribing");
+        testStream.unSubscribe(handle).join();
+        assertEquals(0, messagesReceived.size());
+
+        // second push
+        hello.doPush("testStream", "hello2").join();
+        // nothing should be sent
+
+        // client subscribes again
+        logger.info("subscribing again");
+        testStream.subscribe(d -> {
+            messagesReceived.add(d);
+            return Task.done();
+        }).join();
+
+        // another push
+        hello.doPush("testStream", "hello3").join();
+        assertEquals("hello3", messagesReceived.poll(10, TimeUnit.SECONDS));
+        assertEquals(0, messagesReceived.size());
+
         dumpMessages();
     }
 }

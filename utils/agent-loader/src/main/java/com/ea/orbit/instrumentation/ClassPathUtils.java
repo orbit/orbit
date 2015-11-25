@@ -60,14 +60,24 @@ public class ClassPathUtils
         {
             final URL url = getClassFile(clazz);
             String urlString = url.toString();
-            final int idx = urlString.toLowerCase().indexOf(".jar!");
-            if (idx > 0)
+            final int endIndex = urlString.toLowerCase().indexOf("!");
+            if (endIndex > 0)
             {
-                final int idx2 = urlString.lastIndexOf("file:/");
-                return new URL(urlString.substring(idx2 >= 0 ? idx2 : 0, idx + 4));
+                // assuming it's something inside a jar
+                int beginIndex = urlString.lastIndexOf("file:/");
+                if (beginIndex >= 0)
+                {
+                    return new URL(urlString.substring(beginIndex, endIndex));
+                }
+                beginIndex = urlString.lastIndexOf("[a-zA-Z]+://");
+                if (beginIndex > 0)
+                {
+                    return new URL(urlString.substring(beginIndex, endIndex));
+                }
             }
             else
             {
+                // assuming it's a file
                 File dir = new File(url.toURI()).getParentFile();
                 if (clazz.getPackage() != null)
                 {
@@ -80,6 +90,7 @@ public class ClassPathUtils
                 }
                 return dir.toURI().toURL();
             }
+            throw new RuntimeException("Error locating classpath entry for: " + clazz.getName() + " url: " + url);
         }
         catch (Exception e)
         {

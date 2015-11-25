@@ -29,8 +29,7 @@
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.concurrent.Task;
-
-import com.google.common.base.Function;
+import com.ea.orbit.concurrent.TaskFunction;
 
 import java.lang.ref.SoftReference;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -51,7 +50,7 @@ public class StatelessActorEntry<T extends AbstractActor> extends ActorBaseEntry
     }
 
     @Override
-    public Task<?> run(final Function<T, Task<?>> function)
+    public Task<Void> run(final TaskFunction<T, Void> function)
     {
         lastAccess = runtime.clock().millis();
         T actor = tryPop();
@@ -141,7 +140,7 @@ public class StatelessActorEntry<T extends AbstractActor> extends ActorBaseEntry
         activations.push(new SoftReference<>(value));
     }
 
-    private Task<?> doRun(T actor, final Function<T, Task<?>> function)
+    private Task<?> doRun(T actor, final TaskFunction<T, ?> function)
     {
         runtime.bind();
         final ActorTaskContext actorTaskContext = ActorTaskContext.pushNew();

@@ -28,7 +28,6 @@
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.streams.AsyncStream;
@@ -43,7 +42,7 @@ import java.time.Clock;
 /**
  * Interface used by the generated code to interact with the orbit actors runtime.
  */
-public interface BasicRuntime
+public interface BasicRuntime extends DescriptorFactory
 {
 
     /**
@@ -62,7 +61,10 @@ public interface BasicRuntime
     /**
      * Returns an actor reference
      */
-    <T extends Actor> T getReference(final Class<T> iClass, final Object id);
+    default <T> T getReference(final Class<T> iClass, final Object id)
+    {
+        return getReference(null, null, iClass, id);
+    }
 
     /**
      * Installs this observer into this node.
@@ -74,7 +76,10 @@ public interface BasicRuntime
      * @param <T>      The type of reference class returned.
      * @return a remote reference that can be sent to actors, the runtime will chose one id
      */
-    <T extends com.ea.orbit.actors.ActorObserver> T registerObserver(final Class<T> iClass, final T observer);
+    default <T extends com.ea.orbit.actors.ActorObserver> T registerObserver(final Class<T> iClass, final T observer)
+    {
+        return registerObserver(iClass, null, observer);
+    }
 
     /**
      * Installs this observer into this node.
@@ -104,9 +109,10 @@ public interface BasicRuntime
      * @param <T>     the ActorObserver sub interface
      * @return a remote reference to the observer
      */
-    <T extends com.ea.orbit.actors.ActorObserver> T getRemoteObserverReference(NodeAddress address, final Class<T> iClass, final Object id);
-
-    ObjectInvoker<?> getInvoker(int interfaceId);
+    default <T extends com.ea.orbit.actors.ActorObserver> T getRemoteObserverReference(NodeAddress address, final Class<T> iClass, final Object id)
+    {
+        return DefaultDescriptorFactory.get().getReference(this, address, iClass, id);
+    }
 
     static BasicRuntime getRuntime()
     {

@@ -33,12 +33,11 @@ import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.LoggerExtension;
 import com.ea.orbit.actors.extensions.StorageExtension;
 import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.concurrent.TaskFunction;
 import com.ea.orbit.exception.NotImplementedException;
 import com.ea.orbit.exception.UncheckedException;
 
 import org.slf4j.Logger;
-
-import com.google.common.base.Function;
 
 import static com.ea.orbit.async.Await.await;
 
@@ -66,7 +65,7 @@ public abstract class ActorBaseEntry<T extends AbstractActor> implements LocalOb
     }
 
     @Override
-    public Task<?> run(final Function<T, Task<?>> function)
+    public Task<Void> run(final TaskFunction<T, Void> function)
     {
         throw new NotImplementedException();
     }
