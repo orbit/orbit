@@ -36,7 +36,7 @@ class TestMessageLog implements PipelineExtension
     }
 
     @Override
-    public String afterHandlerName()
+    public String getAfterHandlerName()
     {
         return DefaultHandlers.MESSAGING;
     }

@@ -32,6 +32,8 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.client.ClientPeer;
 import com.ea.orbit.actors.concurrent.MultiExecutionSerializer;
+import com.ea.orbit.actors.concurrent.WaitFreeExecutionSerializer;
+import com.ea.orbit.actors.extensions.LengthFieldHandler;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.json.JsonMessageSerializer;
 import com.ea.orbit.actors.runtime.AbstractActor;
@@ -270,7 +272,7 @@ public class ActorBaseTest
     {
         final JsonMessageSerializer serializer = new JsonMessageSerializer();
         final ShortCircuitHandler network = new ShortCircuitHandler();
-        network.setExecutor(commonPool);
+        network.setExecutor(new WaitFreeExecutionSerializer(commonPool));
 
         int connectionId = clients.size();
         final FakeServerPeer serverPeer = new FakeServerPeer();
@@ -280,17 +282,18 @@ public class ActorBaseTest
         serverPeer.setMessageSerializer(serializer);
         serverPeer.addExtension(new TestLogger(loggerExtension, "sc" + connectionId));
         serverPeer.addExtension(new TestInvocationLog(this));
+        serverPeer.addExtension(new LengthFieldHandler());
         serversConnections.add(serverPeer);
 
         final FakeClient fakeClient = new FakeClient();
         clients.add(fakeClient);
 
-        fakeClient.getExtensions().add(new TestLogger(loggerExtension, "cc" + connectionId));
         fakeClient.setNetworkHandler(network);
         fakeClient.setClock(clock);
         fakeClient.setMessageSerializer(serializer);
         fakeClient.addExtension(new TestLogger(loggerExtension, "sc" + connectionId));
         fakeClient.addExtension(new TestInvocationLog(this));
+        fakeClient.addExtension(new LengthFieldHandler());
 
         serverPeer.start();
         fakeClient.start();

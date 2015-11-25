@@ -47,12 +47,12 @@ import com.ea.orbit.concurrent.Task;
 public interface PipelineExtension extends Handler, ActorExtension
 {
 
-    default String beforeHandlerName()
+    default String getBeforeHandlerName()
     {
         return null;
     }
 
-    default String afterHandlerName()
+    default String getAfterHandlerName()
     {
         return null;
     }

@@ -72,7 +72,7 @@ class TestInvocationLog implements PipelineExtension, PeerExtension
     }
 
     @Override
-    public String afterHandlerName()
+    public String getAfterHandlerName()
     {
         return DefaultHandlers.HEAD;
     }

@@ -426,6 +426,7 @@ public class Stage implements Startable, ActorRuntime
 
     public Task<?> start()
     {
+        extensions = new ArrayList<>(extensions);
         startCalled = true;
         if (state != null)
         {
@@ -573,13 +574,13 @@ public class Stage implements Startable, ActorRuntime
         extensions.stream().filter(extension -> extension instanceof PipelineExtension)
                 .map(extension -> (PipelineExtension) extension)
                 .forEach(extension -> {
-                    if (extension.beforeHandlerName() != null)
+                    if (extension.getBeforeHandlerName() != null)
                     {
-                        pipeline.addHandlerBefore(extension.beforeHandlerName(), extension.getName(), extension);
+                        pipeline.addHandlerBefore(extension.getBeforeHandlerName(), extension.getName(), extension);
                     }
-                    else if (extension.afterHandlerName() != null)
+                    else if (extension.getAfterHandlerName() != null)
                     {
-                        pipeline.addHandlerAfter(extension.afterHandlerName(), extension.getName(), extension);
+                        pipeline.addHandlerAfter(extension.getAfterHandlerName(), extension.getName(), extension);
                     }
                     else
                     {

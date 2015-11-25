@@ -43,7 +43,7 @@ public class SecurityFilter implements PipelineExtension
     }
 
     @Override
-    public String beforeHandlerName()
+    public String getBeforeHandlerName()
     {
         return DefaultHandlers.SERIALIZATION;
     }

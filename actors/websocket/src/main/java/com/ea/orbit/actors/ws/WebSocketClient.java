@@ -31,6 +31,7 @@ package com.ea.orbit.actors.ws;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.client.ClientPeer;
 import com.ea.orbit.actors.peer.Peer;
+import com.ea.orbit.actors.streams.AsyncStream;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 
@@ -73,18 +74,5 @@ public class WebSocketClient extends AbstractWebSocket
     public <T extends Actor> T getReference(final Class<T> iClass, final Object id)
     {
         return peer.getReference(iClass, id);
-    }
-
-    /**
-     * Register a object locally without notifying the cluster about it's location.
-     *
-     * @param remoteInterface the implemented remote interface class (T.class)
-     * @param implementation  a implementation of the remote interface
-     * @param <T>             the remote interface type
-     */
-
-    public <T> void registerLocalObject(final Class<T> remoteInterface, final T interfaceImplementation)
-    {
-
     }
 }

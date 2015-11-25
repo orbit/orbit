@@ -31,6 +31,7 @@ package com.ea.orbit.actors.ws.test;
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.test.FakeClusterPeer;
+import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.actors.ws.WebSocketClient;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
@@ -55,7 +56,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class WsTest
+public class SimpleWsTest
 {
     public interface HelloWebApi
     {
@@ -96,29 +97,31 @@ public class WsTest
     }
 
     @Test(timeout = 30_000L)
-    @Ignore
     public void test() throws Exception
     {
+        // init server
         Map<String, Object> properties = new HashMap<>();
 
         properties.put("orbit.http.port", 0);
-        properties.put("orbit.actors.clusterName", "cluster");
-        properties.put("orbit.components", Arrays.asList(
-                com.ea.orbit.actors.server.ServerModule.class,
-                SFakePeer.class,
-                HelloActor.class,
-                Hello.class,
-                HelloWebHandler.class,
-                EmbeddedHttpServer.class,
-                MyWebSocketServer.class));
+        properties.put("orbit.http.metricsEnabled", false);
+        properties.put("orbit.actors.clusterName", "cluster" + IdUtils.sequentialLongId());
+        properties.put("orbit.components",
+                Arrays.asList(
+                        com.ea.orbit.actors.server.ServerModule.class,
+                        SFakePeer.class,
+                        HelloActor.class,
+                        Hello.class,
+                        HelloWebHandler.class,
+                        EmbeddedHttpServer.class,
+                        MyWebSocketServer.class));
 
         final Container container = new Container();
         container.setProperties(properties);
         container.start();
 
         final int localPort = container.get(EmbeddedHttpServer.class).getLocalPort();
-        final WebSocketContainer wsContainer = ContainerProvider.getWebSocketContainer();
 
+        // init client
         final URI endpointURI = new URI("ws://localhost:" + localPort + "/websocket/con");
         final WebSocketClient clientEndPoint = new WebSocketClient();
         clientEndPoint.connect(endpointURI);

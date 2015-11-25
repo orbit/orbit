@@ -34,15 +34,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 /**
  * Ensures that only a single task is executed at each time.
+ *
  * @author Daniel Sperry
  */
-public class WaitFreeExecutionSerializer implements ExecutionSerializer
+public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executor
 {
     private static final Logger logger = LoggerFactory.getLogger(WaitFreeExecutionSerializer.class);
     private ExecutorService executorService;
@@ -181,5 +183,14 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer
         // double take:
         // try executing again, in case some new data arrived
         tryExecute(true);
+    }
+
+    @Override
+    public void execute(final Runnable command)
+    {
+        executeSerialized(() -> {
+            command.run();
+            return Task.done();
+        }, Integer.MAX_VALUE);
     }
 }

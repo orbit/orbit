@@ -32,13 +32,14 @@ import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.concurrent.Task;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 public class ShortCircuitHandler extends HandlerAdapter
 {
     private HandlerContext firstCtx;
     private HandlerContext secondCtx;
-    private ExecutorService executor;
+    private Executor executor;
 
     public ShortCircuitHandler()
     {
@@ -78,7 +79,7 @@ public class ShortCircuitHandler extends HandlerAdapter
         return Task.done();
     }
 
-    public void setExecutor(final ExecutorService executor)
+    public void setExecutor(final Executor executor)
     {
         this.executor = executor;
     }

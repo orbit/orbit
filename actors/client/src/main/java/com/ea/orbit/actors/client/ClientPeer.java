@@ -102,9 +102,9 @@ public class ClientPeer extends Peer implements BasicRuntime, Startable, RemoteC
     }
 
     @Override
-    public <T> AsyncStream<T> getStream(final String provider, final Class<T> dataClass, final String id)
+    public <T> AsyncStream<T> getStream(final String provider, final Class<T> dataClass, final String streamId)
     {
-        return clientSideStreamProxy.getStream(provider, dataClass, id);
+        return clientSideStreamProxy.getStream(provider, dataClass, streamId);
     }
 
     @Override
