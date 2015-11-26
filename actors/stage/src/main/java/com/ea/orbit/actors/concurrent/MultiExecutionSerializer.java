@@ -42,7 +42,7 @@ public interface MultiExecutionSerializer<T>
      *
      * @return true if the task was accepted.
      */
-    boolean offerJob(T key, Supplier<Task<?>> job, int maxQueueSize);
+    <R> Task<R> offerJob(T key, Supplier<Task<R>> job, int maxQueueSize);
 
     void shutdown();
 

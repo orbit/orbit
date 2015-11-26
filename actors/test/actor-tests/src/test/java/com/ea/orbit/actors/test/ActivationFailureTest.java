@@ -34,9 +34,10 @@ public class ActivationFailureTest extends ActorBaseTest
     @Test(timeout = 30_000L)
     public void test()
     {
-        expectException(() -> Actor.getReference(Hello.class, "0").sayHello());
+        createStage();
+        expectException(() -> Actor.getReference(Hello.class, "0").sayHello().join());
         // second time also since the actor can't have been activated.
-        expectException(() -> Actor.getReference(Hello.class, "0").sayHello());
+        expectException(() -> Actor.getReference(Hello.class, "0").sayHello().join());
         dumpMessages();
     }
 }

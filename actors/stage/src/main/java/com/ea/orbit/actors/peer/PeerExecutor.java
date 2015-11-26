@@ -106,15 +106,14 @@ public class PeerExecutor extends HandlerAdapter
     @SuppressWarnings("unchecked")
     public Task scheduleLocalInvocation(final LocalObjects.LocalObjectEntry localObjectEntry, final Invocation invocation)
     {
-        Task completion = new Task();
         ObjectInvoker invoker = runtime.getInvoker(RemoteReference.getInterfaceId(invocation.getToReference()));
-        localObjectEntry.run(target -> {
-            return performLocalInvocation(invocation, completion, invoker, target);
-        });
-        return completion;
+        return localObjectEntry.run(target ->
+            performLocalInvocation(invocation, invoker, target)
+        );
+
     }
 
-    protected Task<Void> performLocalInvocation(final Invocation invocation, final Task completion, final ObjectInvoker invoker, final Object target)
+    protected Task<Object> performLocalInvocation(final Invocation invocation, final ObjectInvoker invoker, final Object target)
     {
         Task result = invoker.safeInvoke(target, invocation.getMethodId(), invocation.getParams());
         try
@@ -130,8 +129,7 @@ public class PeerExecutor extends HandlerAdapter
         {
             Utils.linkFutures(result, invocation.getCompletion());
         }
-        Utils.linkFutures(result, completion);
-        return Task.done();
+        return result;
     }
 
 

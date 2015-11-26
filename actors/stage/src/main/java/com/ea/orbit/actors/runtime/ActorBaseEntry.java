@@ -65,7 +65,7 @@ public abstract class ActorBaseEntry<T extends AbstractActor> implements LocalOb
     }
 
     @Override
-    public Task<Void> run(final TaskFunction<T, Void> function)
+    public <R> Task<R> run(final TaskFunction<T, R> function)
     {
         throw new NotImplementedException();
     }
@@ -156,7 +156,25 @@ public abstract class ActorBaseEntry<T extends AbstractActor> implements LocalOb
     /**
      * This must not fail. If errors it should log them instead of throwing
      */
-    public abstract Task deactivate();
+    public Task deactivate()
+    {
+        try
+        {
+            if (isDeactivated())
+            {
+                return Task.done();
+            }
+            return executionSerializer.offerJob(getRemoteReference(), () -> doDeactivate(), 1000);
+        }
+        catch (Throwable ex)
+        {
+            // this should never happen, but deactivate must't fail.
+            ex.printStackTrace();
+            return Task.done();
+        }
+    }
+
+    protected abstract Task<?> doDeactivate();
 
     protected Task<Void> deactivate(final T actor)
     {

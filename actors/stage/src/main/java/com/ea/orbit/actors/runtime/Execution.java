@@ -91,13 +91,20 @@ public class Execution extends AbstractExecution implements Startable
         final LocalObjects.LocalObjectEntry entry = objects.findLocalObjectByReference(toReference);
         if (entry != null)
         {
-            entry.run(target -> performInvocation(ctx, invocation, entry, target));
+            final Task<Object> result = Utils.safeInvoke(() -> entry.run(target -> performInvocation(ctx, invocation, entry, target)));
+            // this has to be done here because of exceptions that can occur before performInvocation is even called.
+            if (invocation.getCompletion() != null)
+            {
+                Utils.linkFutures(result, invocation.getCompletion());
+            }
         }
         else
         {
             if (toReference instanceof Actor)
             {
-                executionSerializer.offerJob(toReference, () -> onActivate(ctx, invocation), maxQueueSize);
+                // on activate will handle the completion;
+                Utils.safeInvoke(() -> executionSerializer.offerJob(toReference,
+                        () -> onActivate(ctx, invocation), maxQueueSize));
             }
             else
             {
@@ -108,8 +115,7 @@ public class Execution extends AbstractExecution implements Startable
         }
     }
 
-
-    private Task<?> onActivate(HandlerContext ctx, final Invocation invocation)
+    private Task<Void> onActivate(HandlerContext ctx, final Invocation invocation)
     {
         // this must run serialized by the remote reference key.
         LocalObjects.LocalObjectEntry entry = objects.findLocalObjectByReference(invocation.getToReference());
@@ -120,12 +126,17 @@ public class Execution extends AbstractExecution implements Startable
         }
         // queues the invocation
         final LocalObjects.LocalObjectEntry theEntry = entry;
-        entry.run(target -> performInvocation(ctx, invocation, theEntry, target));
+        final Task result = entry.run(target -> performInvocation(ctx, invocation, theEntry, target));
+        if (invocation.getCompletion() != null)
+        {
+            Utils.linkFutures(result, invocation.getCompletion());
+        }
+        // yielding since we blocked the entry before running on activate (serialized execution)
         return Task.done();
     }
 
     @SuppressWarnings("unchecked")
-    protected <T> Task<?> performInvocation(HandlerContext ctx, final Invocation invocation, final LocalObjects.LocalObjectEntry entry, final T target)
+    protected <T> Task<Object> performInvocation(HandlerContext ctx, final Invocation invocation, final LocalObjects.LocalObjectEntry entry, final T target)
     {
         if (logger.isDebugEnabled())
         {
@@ -148,11 +159,7 @@ public class Execution extends AbstractExecution implements Startable
                     }
                 }
             }
-            Object res = await(invoker.safeInvoke(target, invocation.getMethodId(), invocation.getParams()));
-            if (!invocation.isOneWay() && invocation.getCompletion() != null)
-            {
-                invocation.getCompletion().complete(res);
-            }
+            return invoker.safeInvoke(target, invocation.getMethodId(), invocation.getParams());
         }
         catch (Throwable exception)
         {
@@ -164,8 +171,8 @@ public class Execution extends AbstractExecution implements Startable
             {
                 invocation.getCompletion().completeExceptionally(exception);
             }
+            return Task.fromException(exception);
         }
-        return Task.done();
     }
 
     public void setObjects(final LocalObjects objects)

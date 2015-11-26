@@ -28,8 +28,11 @@
 
 package com.ea.orbit.actors.runtime;
 
+import com.ea.orbit.concurrent.Task;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 
 /**
  * Internal utility class. DO NOT use it outside the orbit project.
@@ -154,4 +157,16 @@ public class Utils
         return hex.toString();
     }
 
+    public static <R> Task<R> safeInvoke(Supplier<Task<R>> supplier)
+    {
+        try
+        {
+            final Task<R> task = supplier.get();
+            return task == null ? Task.fromValue(null) : task;
+        }
+        catch (Throwable ex)
+        {
+            return Task.fromException(ex);
+        }
+    }
 }

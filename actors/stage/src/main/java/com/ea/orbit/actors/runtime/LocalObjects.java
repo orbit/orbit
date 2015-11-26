@@ -95,7 +95,7 @@ public class LocalObjects
 
         T getObject();
 
-        Task<Void> run(TaskFunction<T, Void> function);
+        <R> Task<R> run(TaskFunction<T, R> function);
     }
 
     public static class NormalObjectEntry<T> implements LocalObjectEntry<T>
@@ -110,7 +110,7 @@ public class LocalObjects
         }
 
         @Override
-        public Task<Void> run(final TaskFunction<T, Void> function)
+        public <R> Task<R> run(final TaskFunction<T, R> function)
         {
             return function.apply(getObject());
         }
@@ -168,7 +168,7 @@ public class LocalObjects
             {
                 throw new IllegalArgumentException("Called twice with different ids: " + objectId + " != " + ((RemoteReference<?>) ref).id);
             }
-            if (address != null &&!java.util.Objects.equals(ref.address, address))
+            if (address != null && !java.util.Objects.equals(ref.address, address))
             {
                 throw new IllegalArgumentException("Called twice with different addresses: " + address + " != " + ((RemoteReference<?>) ref).address);
             }
