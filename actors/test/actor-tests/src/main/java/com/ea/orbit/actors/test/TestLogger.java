@@ -61,6 +61,7 @@ public class TestLogger implements LoggerExtension, PeerExtension
     private final ConcurrentHashSet<Object> classesToDebug;
     private final StringBuilder logText;
     protected final List<String> sequenceDiagram;
+    private boolean visible;
 
     public TestLogger()
     {
@@ -178,6 +179,10 @@ public class TestLogger implements LoggerExtension, PeerExtension
             logText.append("The log was truncated!").append("\r\n");
         }
         logText.append(buffer).append("\r\n");
+        if (visible)
+        {
+            System.out.println(buffer);
+        }
     }
 
 
@@ -300,5 +305,15 @@ public class TestLogger implements LoggerExtension, PeerExtension
         {
             out.println("No messages to dump");
         }
+    }
+
+    public boolean isVisible()
+    {
+        return visible;
+    }
+
+    public void setVisible(final boolean visible)
+    {
+        this.visible = visible;
     }
 }

@@ -11,7 +11,11 @@ import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.tuples.Pair;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -70,6 +74,20 @@ public class TestMessageLog extends NamedPipelineExtension
 
     private void logBytes(Pair<Object, byte[]> pair)
     {
+        ObjectMapper objectMapper = new ObjectMapper();
+        String buffer = new String(pair.getRight(), 4, pair.getRight().length - 4, StandardCharsets.UTF_8);
+        logger.write(buffer);
+
+        try
+        {
+            logger.write(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMapper.readValue(buffer, Object.class)));
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+
         logger.write(TestUtils.hexDump(32, pair.getRight(), 0, pair.getRight().length));
     }
 
