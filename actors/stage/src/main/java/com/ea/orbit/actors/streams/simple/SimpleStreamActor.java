@@ -42,7 +42,10 @@ public class SimpleStreamActor extends AbstractActor<SimpleStreamActor.State> im
     @Override
     public Task<?> activateAsync()
     {
-        getLogger().info("Activating");
+        if (getLogger().isDebugEnabled())
+        {
+            getLogger().debug("Activating stream: {}", actorIdentity());
+        }
         await(super.activateAsync());
 
         int size = state().subscribers.size();
