@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
+import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.annotation.PreferLocalPlacement;
 import com.ea.orbit.actors.annotation.StatelessWorker;
@@ -259,6 +260,12 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     public Task<NodeAddress> locateActor(final RemoteReference reference, final boolean forceActivation)
     {
+        NodeAddress address = RemoteReference.getAddress(reference);
+        if (address != null)
+        {
+            // TODO: call the node to check.
+            return activeNodes.containsKey(address) ? Task.fromValue(address) : Task.fromValue(null);
+        }
         return (forceActivation) ? locateAndActivateActor(reference) : locateActiveActor(reference);
     }
 

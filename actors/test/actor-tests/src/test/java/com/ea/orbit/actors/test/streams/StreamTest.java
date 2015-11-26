@@ -9,7 +9,11 @@ import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -32,6 +36,36 @@ public class StreamTest extends ActorBaseTest
         assertEquals("hello", push.join());
         dumpMessages();
     }
+
+    @SuppressWarnings("Duplicates")
+    @Test(timeout = 30_000L)
+    public void testStreamPersistence() throws InterruptedException
+    {
+        final Stage stage1 = createStage();
+        // forces the stream to be created in the fist stage.
+        AsyncStream.getStream(String.class, "test")
+                .post("data").join();
+
+        // create a second stage from which the stream is going to be used
+        createStage();
+        AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
+        BlockingQueue queue = new LinkedBlockingQueue<>();
+        test.subscribe(msg -> {
+            queue.add(msg);
+            return Task.done();
+        }).join();
+        test.post("hello");
+        assertEquals("hello", queue.poll(10, TimeUnit.SECONDS));
+
+        // Stopping the first stage, the stream should migrate on the next post.
+        stage1.stop().join();
+
+        test.post("hello2");
+        assertEquals("hello2", queue.poll(5, TimeUnit.SECONDS));
+
+        dumpMessages();
+    }
+
 
     @Test(timeout = 30_000L)
     public void test2Stages()

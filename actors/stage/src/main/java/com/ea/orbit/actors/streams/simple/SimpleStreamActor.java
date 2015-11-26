@@ -14,8 +14,6 @@ import static com.ea.orbit.async.Await.await;
 
 public class SimpleStreamActor extends AbstractActor<SimpleStreamActor.State> implements SimpleStream
 {
-    ActorRuntime runtime;
-
     public static class State
     {
         Map<String, SimpleStreamProxy> subscribers = new LinkedHashMap<>();
@@ -44,6 +42,7 @@ public class SimpleStreamActor extends AbstractActor<SimpleStreamActor.State> im
     @Override
     public Task<?> activateAsync()
     {
+        getLogger().info("Activating");
         await(super.activateAsync());
 
         int size = state().subscribers.size();
@@ -61,6 +60,8 @@ public class SimpleStreamActor extends AbstractActor<SimpleStreamActor.State> im
 
     private Task<Boolean> checkAlive(final String handle, final SimpleStreamProxy subscriber)
     {
+        final ActorRuntime runtime = ActorRuntime.getRuntime();
+
         final NodeAddress r = await(runtime.locateActor((Addressable) subscriber, false));
         if (r == null)
         {
