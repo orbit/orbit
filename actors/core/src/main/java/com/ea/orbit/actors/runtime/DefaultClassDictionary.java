@@ -178,7 +178,7 @@ public class DefaultClassDictionary
             return id;
         }
         ensureLoaded();
-        final String className = clazz.getName();
+        final String className = clazz.getName().replace('$', '.');
 
         id = nameToId.get(className);
         if (id == null)
