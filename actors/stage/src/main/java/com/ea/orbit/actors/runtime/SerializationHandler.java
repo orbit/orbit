@@ -71,9 +71,10 @@ public class SerializationHandler extends HandlerAdapter
         catch (Exception ex2)
         {
             final int messageType = message.getMessageType();
-            if (messageType != MessageDefinitions.RESPONSE_OK
-                    && messageType != MessageDefinitions.RESPONSE_ERROR)
+            if (messageType == MessageDefinitions.REQUEST_MESSAGE
+                    || messageType == MessageDefinitions.ONE_WAY_MESSAGE)
             {
+                logger.error("Error serializing message", ex2);
                 //return Task.fromException(ex2);
                 throw new UncheckedException("Error serializing message", ex2);
             }
@@ -149,9 +150,12 @@ public class SerializationHandler extends HandlerAdapter
             }
             ctx.fireRead(msg1);
         }
-        catch (Exception e)
+        catch (Throwable e)
         {
             logger.error("Error deserializing message", e);
+            logger.error(Utils.hexDump(32, message.getRight(), 0, message.getRight().length));
         }
     }
+
+
 }
