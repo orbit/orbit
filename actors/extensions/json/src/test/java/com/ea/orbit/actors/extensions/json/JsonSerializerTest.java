@@ -3,7 +3,6 @@ package com.ea.orbit.actors.extensions.json;
 import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.actors.runtime.Message;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -16,18 +15,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-public class ActorReferenceModuleTest
+public class JsonSerializerTest
 {
-    public static class SomeObject
-    {
-        int x = 5;
-    }
+
+    // {"messageType":1,"messageId":1,"headers":{},"interfaceId":769874740,"objectId":"0","methodId":-448819364,"payload":["default",1590615529,"mec:all:master","/kiQzyGrgIffiGbscC3NibD"]}
 
     @Test
-    @Ignore
     public void test() throws IOException
     {
         final ActorReferenceModule actorReferenceModule = new ActorReferenceModule(DefaultDescriptorFactory.get());
@@ -41,26 +39,61 @@ public class ActorReferenceModuleTest
                 .withSetterVisibility(JsonAutoDetect.Visibility.NONE)
                 .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        //mapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_CONCRETE_AND_ARRAYS, JsonTypeInfo.As.PROPERTY);
 
         TypeResolverBuilder<?> typer = new ClassIdTypeResolverBuilder(ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT);
-//        TypeResolverBuilder<?> typer = new ObjectMapper.DefaultTypeResolverBuilder(ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT);
-
-
-
-        // we'll always use full class name, when using defaulting
         typer = typer.init(JsonTypeInfo.Id.NAME, null);
         typer = typer.inclusion(JsonTypeInfo.As.PROPERTY);
         mapper.setDefaultTyping(typer);
 
-        String json0 = mapper.writeValueAsString(new Object[]{ new Object[]{ Arrays.asList(new SomeObject()) } });
-        System.out.println(json0);
-        assertEquals("[{\"@type\":\"1761130608\",\"x\":5}]", json0);
-        assertEquals("{\"x\":5}", mapper.writeValueAsString(new SomeObject()));
 
-        final String json = "{ \"@type\":1761130608, \"x\": 5 }";
-        final Object obj = mapper.readValue(json, Object.class);
-        assertEquals(5, ((SomeObject) obj).x);
+        {
+            String str = "{\"payload\":[{\"@type\":\"1728891334\",\"payload\":5}]}";
+            SomeObject obj = mapper.readValue(str, SomeObject.class);
+            assertEquals(str, mapper.writeValueAsString(obj));
+        }
+
+        {
+            String str = "{\"payload\":[\"test\",{\"@type\":\"1728891334\",\"payload\":5}]}";
+            SomeObject obj = mapper.readValue(str, SomeObject.class);
+            assertEquals(str, mapper.writeValueAsString(obj));
+        }
+
+        {
+            String str = "{\"payload\":[\"test\",{\"@type\":\"1728891334\",\"payload\":5}],\"headers\":{}}";
+            SomeObject obj = mapper.readValue(str, SomeObject.class);
+            assertEquals(str, mapper.writeValueAsString(obj));
+        }
+
+            assertEquals("{\"payload\":{\"@type\":\"1728891334\",\"payload\":5}}",
+                mapper.writeValueAsString(new SomeObject(new SomeObject(5))));
+
+        mapper.readValue("{\"payload\":[\"tes\"]}", SomeObject.class);
+
+
+
+
+
+        final String json = "[[{\"@type\":\"1728891334\",\"payload\":5}]]";
+        final Object obj = mapper.readValue(json, Object[].class);
+
+
+
+
+        assertEquals("[[]]",
+                mapper.writeValueAsString(new Object[]{ new Object[]{} }));
+
+
+        assertEquals("[{\"@type\":\"1728891334\",\"payload\":5}]",
+                mapper.writeValueAsString(new Object[]{ new SomeObject(5) }));
+        assertEquals("[[{\"@type\":\"1728891334\",\"payload\":5}]]",
+                mapper.writeValueAsString(new Object[]{ new Object[]{ new SomeObject(5) } }));
+
+
+
+
+        Object o0 = ((Object[]) obj)[0];
+        Object o1 = ((List) o0).get(0);
+        assertEquals(5, ((SomeObject) o1).payload);
     }
 
     @Test
@@ -86,6 +119,40 @@ public class ActorReferenceModuleTest
         System.out.println(new String(out.toByteArray()));
 
     }
+}
 
+class SomeObject
+{
+    Object payload;
 
+    private Map<Object, Object> headers;
+
+    public SomeObject()
+    {
+    }
+
+    public SomeObject(final Object payload)
+    {
+        this.payload = payload;
+    }
+
+    public Object getPayload()
+    {
+        return payload;
+    }
+
+    public void setPayload(final Object payload)
+    {
+        this.payload = payload;
+    }
+
+    public Map<Object, Object> getHeaders()
+    {
+        return headers;
+    }
+
+    public void setHeaders(final Map<Object, Object> headers)
+    {
+        this.headers = headers;
+    }
 }
