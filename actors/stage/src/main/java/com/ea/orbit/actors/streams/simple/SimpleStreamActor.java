@@ -9,6 +9,8 @@ import com.ea.orbit.concurrent.Task;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.ea.orbit.async.Await.await;
 
@@ -16,7 +18,7 @@ public class SimpleStreamActor extends AbstractActor<SimpleStreamActor.State> im
 {
     public static class State
     {
-        Map<String, SimpleStreamProxy> subscribers = new LinkedHashMap<>();
+        ConcurrentHashMap<String, SimpleStreamProxy> subscribers = new ConcurrentHashMap<>();
     }
 
     @Override
