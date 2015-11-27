@@ -2,9 +2,11 @@ The json message serializer is meant to be used by client connections.
 One sample usage is websocket based connections.
 
 Limitations:
+
  * No support for serializing object graphs.
 
 Features:
+
  * Adds the field "@type" with to objects whose type is ambiguous during serialization.
     * "@type" by default will contain the orbit classId of the object: <br/>
       Usually `object.getClass().getName().replace('$','.').hashcode()`.
@@ -13,7 +15,8 @@ Features:
 
 Message format
 ----
-```
+
+```json
 {
   "messageType" : int8       // 0 = oneWay; 1 = request; 2,3,4 - responses
   "messageId"   : int32,     // unique messageId (required for responses and requests)
@@ -36,7 +39,8 @@ Message types:
 
 
 One way messages:
-```
+
+```json
 {
   "messageType" : 0          // 0 = one way
   "messageId"   : int32,     // unique messageId, optional, recommended.
@@ -49,7 +53,8 @@ One way messages:
 ```
 
 Request way messages:
-```
+
+```json
 {
   "messageType" : 1          // 1 = request
   "messageId"   : int32,     // unique messageId
@@ -62,7 +67,8 @@ Request way messages:
 ```
 
 Response Messages
-```
+
+```json
 {
   "messageType" : 2          // 2,3,4 = responses
   "messageId"   : int32,     // original request messageId
