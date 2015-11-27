@@ -53,9 +53,15 @@ public class ProfilerData
         currentStamp++;
 
         MethodInfo probe = new MethodInfo();
-        for (int i = stack.length, k = 0; --i >= 0 && k < 256; k++)
+        for (int i = stack.length, k = 0; --i >= 0 && k < 256; )
         {
             final StackTraceElement s = stack[i];
+            if (s == null)
+            {
+                // ignore stack elements that were filtered out
+                continue;
+            }
+            k++;
 
             probe.declaringClass = s.getClassName();
             probe.methodName = s.getMethodName();
@@ -103,7 +109,8 @@ public class ProfilerData
         return root;
     }
 
-    public long getSampleCount() {
+    public long getSampleCount()
+    {
         return root.count;
     }
 }

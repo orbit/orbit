@@ -1,7 +1,9 @@
 package com.ea.orbit.concurrent;
 
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -91,6 +93,17 @@ public class TaskContext
             stack = contextStacksMap.get(thread);
         }
         return (stack != null) ? stack.peekLast() : null;
+    }
+
+    /**
+     * @return all threads that have active contexts
+     */
+    public static Set<Thread> activeThreads()
+    {
+        synchronized (contextStacksMap)
+        {
+            return new HashSet<>(contextStacksMap.keySet());
+        }
     }
 
     /**
