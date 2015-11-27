@@ -149,17 +149,21 @@ public class JsonMessageSerializer implements MessageSerializer
 
     private Object convertValue(final Object o, final Type genericParameterType)
     {
+        if (o == null || genericParameterType == o.getClass() || genericParameterType == Object.class)
+        {
+            return o;
+        }
         if (genericParameterType == String.class)
         {
-            return o == null ? null : String.valueOf(o);
+            return String.valueOf(o);
         }
-        if (genericParameterType == int.class && o instanceof Number)
+        if ((genericParameterType == int.class || genericParameterType == Integer.class) && o instanceof Number)
         {
             return ((Number) o).intValue();
         }
-        if (genericParameterType == Object.class)
+        if ((genericParameterType == long.class || genericParameterType == Long.class) && o instanceof Number)
         {
-            return o;
+            return ((Number) o).longValue();
         }
         try
         {
@@ -374,7 +378,8 @@ class ClassIdAsPropertyTypeSerializer extends AsPropertyTypeSerializer
     }
 
     @Override
-    public AsPropertyTypeSerializer forProperty(BeanProperty prop) {
+    public AsPropertyTypeSerializer forProperty(BeanProperty prop)
+    {
         return (_property == prop) ? this : new ClassIdAsPropertyTypeSerializer(this._idResolver, prop, this._typePropertyName);
     }
 
