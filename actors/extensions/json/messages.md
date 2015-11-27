@@ -25,13 +25,13 @@ Features
 Message format
 ----
 
-```json
+```
 {
-  "messageType" : int8       // 0 = oneWay; 1 = request; 2,3,4 - responses
+  "messageType" : int8,      // 0 = oneWay; 1 = request; 2,3,4 - responses
   "messageId"   : int32,     // unique messageId (required for responses and requests)
   "interfaceId" : int32,     // target actor interface Id (required for oneway and requests)
   "headers"     : { },       // map with the message headers, optional
-  "objectId"    : string     // actor Id (required for oneway and requests, may be null depending of the target)
+  "objectId"    : string,    // actor Id (required for oneway and requests, may be null depending of the target)
   "methodId"    : int32,     // target method id (required for oneway and requests)
   "payload"     : any        // array, map, number, string, boolean, null (required may be null)
 }
@@ -52,9 +52,9 @@ Message types:
 One way messages represent remote method invocations where no return is expected.
 They need to specify the target object and the parameters.
 
-```json
+```
 {
-  "messageType" : 0          // 0 = one way
+  "messageType" : 0,         // 0 = one way
   "messageId"   : int32,     // unique messageId, optional, recommended.
   "interfaceId" : int32,     // target actor interface Id
   "headers"     : { },       // map with the message headers, optional
@@ -73,9 +73,9 @@ They need to specify the target object, the parameters, and a message id.
 The response will be matched to the request by the messageId.
 
 
-```json
+```
 {
-  "messageType" : 1          // 1 = request
+  "messageType" : 1,         // 1 = request
   "messageId"   : int32,     // unique messageId
   "interfaceId" : int32,     // target actor interface Id
   "headers"     : { },       // map with the message headers, optional
@@ -93,9 +93,9 @@ a failure, (2=application error, 3=protocol error).
 The payload of the response will contain the serialized value returned by the application.
 or a json representation of the error that occurred.
 
-```json
+```
 {
-  "messageType" : 2          // 2,3,4 = responses
+  "messageType" : 2,         // 2,3,4 = responses
   "messageId"   : int32,     // original request messageId
   "headers"     : { },       // map with the message headers, optional
   "payload"     : any        // required, unless null. may be: string, number, boolean, null, array, map
@@ -110,7 +110,7 @@ Limitations
  * Ambiguous array types will be deserialized as ArrayList.
    that's because the @type field is never added to, nor expected in, arrays.
 
-     ```
+     ```java
      class SomeData
      {
         Object a;
@@ -122,7 +122,7 @@ Limitations
 
      The array type won't be ambiguous if:
 
-     ```
+     ```java
      class SomeData
      {
         int[] a;
