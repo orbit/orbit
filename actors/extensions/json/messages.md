@@ -1,7 +1,7 @@
 Json Message Serializer
 ====
 
-The json message serializer is a actor pipeline handler that
+The json message serializer is an actor pipeline handler that
 converts message objects into json.
 
 Uses
