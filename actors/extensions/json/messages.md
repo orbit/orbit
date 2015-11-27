@@ -2,15 +2,15 @@ Json Message Serializer
 ====
 
 The json message serializer is a actor pipeline handler that
-convert message objects into json.
+converts message objects into json.
 
 Uses
 ---
 
-The json message serializer is s meant to be used with client connections.
+The json message serializer is meant to be used with client connections.
 One example usage are websocket based connections.
 
-It can be uses as the cluster communication protocol, tough it imposes limitations to the message payload.
+It can also be used as the cluster communication protocol, tough it imposes limitations to the message payload.
 
 Features
 ---
