@@ -45,6 +45,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public class JsonMessageSerializer implements MessageSerializer
 {
@@ -127,6 +128,10 @@ public class JsonMessageSerializer implements MessageSerializer
                 pw.flush();
             }
             message.withPayload(sw.toString());
+        }
+        if (message.getHeaders() != null && message.getHeaders().size() == 0)
+        {
+            message.setHeaders(null);
         }
         mapper.writeValue(out, message);
     }
@@ -267,16 +272,28 @@ class ClassIdResolver extends ClassNameIdResolver
     @Override
     public String idFromValueAndType(Object value, Class<?> type)
     {
-        if (type.isArray())
+        int id = intIdFromValueAndType(value, type);
+        return id != 0 ? String.valueOf(id) : null;
+    }
+
+
+    public int intIdFromValueAndType(Object value, Class<?> type)
+    {
+        if (type != null && type.isArray())
         {
-            return null;
+            return 0;
         }
         if (value != null)
         {
-            return String.valueOf(DefaultClassDictionary.get().getClassId(value.getClass()));
+            if (value.getClass().isArray() || value instanceof Collection || value instanceof Map)
+            {
+                return 0;
+            }
+            return DefaultClassDictionary.get().getClassId(value.getClass());
         }
-        return String.valueOf(DefaultClassDictionary.get().getClassId(type));
+        return DefaultClassDictionary.get().getClassId(type);
     }
+
 
     @Override
     protected JavaType _typeFromId(final String id, final TypeFactory typeFactory)
@@ -351,6 +368,16 @@ class ClassIdAsPropertyTypeSerializer extends AsPropertyTypeSerializer
         super(idRes, null, _typeProperty);
     }
 
+    public ClassIdAsPropertyTypeSerializer(final TypeIdResolver idResolver, final BeanProperty prop, final String typePropertyName)
+    {
+        super(idResolver, prop, typePropertyName);
+    }
+
+    @Override
+    public AsPropertyTypeSerializer forProperty(BeanProperty prop) {
+        return (_property == prop) ? this : new ClassIdAsPropertyTypeSerializer(this._idResolver, prop, this._typePropertyName);
+    }
+
     @Override
     public void writeTypePrefixForArray(final Object value, final JsonGenerator jgen) throws IOException
     {
@@ -361,5 +388,65 @@ class ClassIdAsPropertyTypeSerializer extends AsPropertyTypeSerializer
     public void writeTypeSuffixForArray(final Object value, final JsonGenerator jgen) throws IOException
     {
         jgen.writeEndArray();
+    }
+
+    @Override
+    public void writeTypePrefixForObject(Object value, JsonGenerator jgen) throws IOException
+    {
+        writeTypePrefixForObject(value, jgen, value != null ? value.getClass() : null);
+    }
+
+    @Override
+    public void writeTypePrefixForObject(Object value, JsonGenerator jgen, Class<?> type) throws IOException
+    {
+        final String typeId = idFromValueAndType(value, type);
+        if (typeId == null)
+        {
+            jgen.writeStartObject();
+        }
+        else if (jgen.canWriteTypeId())
+        {
+            jgen.writeTypeId(typeId);
+            jgen.writeStartObject();
+        }
+        else
+        {
+            jgen.writeStartObject();
+            jgen.writeFieldName(_typePropertyName);
+            jgen.writeNumber(typeId);
+        }
+    }
+
+    @Override
+    public void writeTypeSuffixForObject(Object value, JsonGenerator jgen) throws IOException
+    {
+        // always need to close, regardless of whether its native type id or not
+        jgen.writeEndObject();
+    }
+
+    @Override
+    public void writeCustomTypePrefixForObject(Object value, JsonGenerator jgen, String typeId) throws IOException
+    {
+        if (typeId == null)
+        {
+            jgen.writeStartObject();
+        }
+        else if (jgen.canWriteTypeId())
+        {
+            jgen.writeTypeId(typeId);
+            jgen.writeStartObject();
+        }
+        else
+        {
+            jgen.writeStartObject();
+            jgen.writeFieldName(_typePropertyName);
+            jgen.writeNumber(typeId);
+        }
+    }
+
+    @Override
+    public void writeCustomTypeSuffixForObject(Object value, JsonGenerator jgen, String typeId) throws IOException
+    {
+        jgen.writeEndObject();
     }
 }

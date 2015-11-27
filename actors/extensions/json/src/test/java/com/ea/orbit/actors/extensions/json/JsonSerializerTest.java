@@ -15,6 +15,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,55 +46,78 @@ public class JsonSerializerTest
         typer = typer.inclusion(JsonTypeInfo.As.PROPERTY);
         mapper.setDefaultTyping(typer);
 
-
         {
             String str = "{\"payload\":[{\"@type\":\"1728891334\",\"payload\":5}]}";
+            String str2 = "{\"payload\":[{\"@type\":1728891334,\"payload\":5}]}";
             SomeObject obj = mapper.readValue(str, SomeObject.class);
-            assertEquals(str, mapper.writeValueAsString(obj));
+            assertEquals(str2, mapper.writeValueAsString(obj));
         }
 
         {
-            String str = "{\"payload\":[\"test\",{\"@type\":\"1728891334\",\"payload\":5}]}";
-            SomeObject obj = mapper.readValue(str, SomeObject.class);
+            String str = "[{\"@type\":1728891334,\"payload\":5}]";
+            assertEquals(str, mapper.writeValueAsString(new Object[]{ new SomeObject(5) }));
+        }
+
+        {
+            String str = "[{\"@type\":1728891334,\"payload\":5}]";
+            Object obj = mapper.readValue(str, Object.class);
             assertEquals(str, mapper.writeValueAsString(obj));
+        }
+
+
+        {
+            String str = "{\"payload\":[\"test\",{\"@type\":\"1728891334\",\"payload\":5}]}";
+            String str2 = "{\"payload\":[\"test\",{\"@type\":1728891334,\"payload\":5}]}";
+            SomeObject obj = mapper.readValue(str, SomeObject.class);
+            assertEquals(str2, mapper.writeValueAsString(obj));
         }
 
         {
             String str = "{\"payload\":[\"test\",{\"@type\":\"1728891334\",\"payload\":5}],\"headers\":{}}";
+            String str2 = "{\"payload\":[\"test\",{\"@type\":1728891334,\"payload\":5}],\"headers\":{}}";
+            SomeObject obj = mapper.readValue(str, SomeObject.class);
+            SomeObject obj2 = mapper.readValue(str, SomeObject.class);
+            assertEquals(str2, mapper.writeValueAsString(obj));
+            assertEquals(str2, mapper.writeValueAsString(obj2));
+        }
+        {
+            String str = "{\"payload\":[\"test\",{\"@type\":1728891334,\"payload\":5}],\"headers\":{}}";
             SomeObject obj = mapper.readValue(str, SomeObject.class);
             assertEquals(str, mapper.writeValueAsString(obj));
         }
 
-            assertEquals("{\"payload\":{\"@type\":\"1728891334\",\"payload\":5}}",
+            assertEquals("{\"payload\":{\"@type\":1728891334,\"payload\":5}}",
                 mapper.writeValueAsString(new SomeObject(new SomeObject(5))));
 
         mapper.readValue("{\"payload\":[\"tes\"]}", SomeObject.class);
 
 
-
-
-
-        final String json = "[[{\"@type\":\"1728891334\",\"payload\":5}]]";
-        final Object obj = mapper.readValue(json, Object[].class);
-
+        {
+            final String json = "[[{\"@type\":\"1728891334\",\"payload\":5}]]";
+            final Object obj = mapper.readValue(json, Object[].class);
+        }
+        {
+            final String json = "[[{\"@type\":1728891334,\"payload\":5}]]";
+            final Object obj = mapper.readValue(json, Object[].class);
+        }
 
 
 
         assertEquals("[[]]",
                 mapper.writeValueAsString(new Object[]{ new Object[]{} }));
+        assertEquals("[[[]]]",
+                mapper.writeValueAsString(new Object[]{ new Object[]{new ArrayList<Object>()} }));
+        assertEquals("[[{}]]",
+                mapper.writeValueAsString(new Object[]{ new Object[]{new HashMap()} }));
 
 
-        assertEquals("[{\"@type\":\"1728891334\",\"payload\":5}]",
+        assertEquals("[{\"@type\":1728891334,\"payload\":5}]",
                 mapper.writeValueAsString(new Object[]{ new SomeObject(5) }));
-        assertEquals("[[{\"@type\":\"1728891334\",\"payload\":5}]]",
+        assertEquals("[[{\"@type\":1728891334,\"payload\":5}]]",
                 mapper.writeValueAsString(new Object[]{ new Object[]{ new SomeObject(5) } }));
 
 
 
-
-        Object o0 = ((Object[]) obj)[0];
-        Object o1 = ((List) o0).get(0);
-        assertEquals(5, ((SomeObject) o1).payload);
     }
 
     @Test
