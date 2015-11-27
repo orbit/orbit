@@ -126,8 +126,8 @@ public class TreeTransactionTest extends ActorBaseTest
         assertEquals((Integer) 5, Actor.getReference(TtTransactionTree.class, "a").treeInc(5).join());
         expectException(() -> tree2.treeTransaction(1).join());
         eventually(() -> assertEquals((Integer) 5, Actor.getReference(TtTransactionTree.class, "a").currentValue().join()));
-        assertEquals((Integer) 0, Actor.getReference(TtTransactionTree.class, "b").currentValue().join());
-        assertEquals((Integer) 0, Actor.getReference(TtTransactionTree.class, "c").currentValue().join());
+        eventually(() -> assertEquals((Integer) 0, Actor.getReference(TtTransactionTree.class, "b").currentValue().join()));
+        eventually(() -> assertEquals((Integer) 0, Actor.getReference(TtTransactionTree.class, "c").currentValue().join()));
         dumpMessages();
     }
 
