@@ -63,7 +63,15 @@ public class InternalUtils
         return null;
     }
 
-    public static void sleep(final long millis)
+    /**
+     * Invokes Thread.sleep(). If sleep() is interrupted, interrupted-state will be
+     * asserted again, in order to support cancellation.
+     *
+     * For explanation of cancellation in this context, see: http://g.oswego.edu/dl/cpj/cancel.html
+     *
+     * @param millis
+     */
+    public static void sleep(long millis)
     {
         try
         {
@@ -71,7 +79,8 @@ public class InternalUtils
         }
         catch (InterruptedException e)
         {
-            e.printStackTrace();
+            // re-assert interrupted-state
+            Thread.currentThread().interrupt();
         }
     }
 
