@@ -26,58 +26,49 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.web.diagnostics;
+package com.ea.orbit.web.provider;
 
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.container.Container;
 
-import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.ext.Provider;
+import javax.ws.rs.ext.WriterInterceptor;
+import javax.ws.rs.ext.WriterInterceptorContext;
 
-import java.util.Date;
+import java.io.IOException;
+import java.util.concurrent.CompletionException;
 
-@Path("/orbit/diagnostics")
-public class DiagnosticsHandler
+@Provider
+public class TaskProvider implements WriterInterceptor
 {
-    @Inject
-    Container orbitContainer;
-
-    public static class HealthcheckResult
+    @Override
+    public void aroundWriteTo(final WriterInterceptorContext context) throws IOException, WebApplicationException
     {
-        private Boolean alive = true;
-        private Date serverTime = new Date();
+        final Object entity = context.getEntity();
 
-        public Boolean getAlive()
+        if(entity instanceof Task)
         {
-            return alive;
+            Object result = entity;
+
+            try
+            {
+                result = ((Task<?>)entity).join();
+            }
+            catch(CompletionException e)
+            {
+                // We need to get the actual exception and rethrow it
+                throw (RuntimeException) ((e.getCause() != null) ? e.getCause() : e);
+            }
+
+            context.setGenericType(null);
+
+            // Set the actual type
+            context.setType(result.getClass());
+
+            // Replace the entity
+            context.setEntity(result);
         }
 
-        public void setAlive(Boolean alive)
-        {
-            this.alive = alive;
-        }
-
-        public Date getServerTime()
-        {
-            return serverTime;
-        }
-
-        public void setServerTime(Date serverTime)
-        {
-            this.serverTime = serverTime;
-        }
-    }
-
-    @GET
-    @Path("/healthcheck")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Task<HealthcheckResult> getHealthCheck()
-    {
-        final HealthcheckResult healthcheckResult = new HealthcheckResult();
-        healthcheckResult.setAlive(orbitContainer.getContainerState() == Container.ContainerState.STARTED);
-        return Task.fromValue(healthcheckResult);
+        context.proceed();
     }
 }

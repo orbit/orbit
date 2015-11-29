@@ -32,6 +32,8 @@ import com.ea.orbit.container.Container;
 import com.ea.orbit.util.NetUtils;
 import com.ea.orbit.web.WebModule;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.websocket.ClientEndpoint;
@@ -41,6 +43,8 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.core.MediaType;
 
 import java.io.IOException;
 import java.net.URI;
@@ -54,8 +58,11 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
-public class WebSocketTest
+public class WebTest
 {
+    private static Container container;
+    private static String serverPath = null;
+
     @ClientEndpoint
     public static class AClientEndpoint
     {
@@ -75,20 +82,115 @@ public class WebSocketTest
         }
     }
 
-    @Test
-    public void test() throws URISyntaxException, IOException, DeploymentException, InterruptedException
+
+
+    @BeforeClass
+    public static void setupServer() throws URISyntaxException, IOException, DeploymentException, InterruptedException
     {
-        final Container container = new Container();
+        container = new Container();
         final int port = NetUtils.findFreePort();
-        Map<String,Object> props = new HashMap<>();
+        Map<String, Object> props = new HashMap<>();
         props.put("orbit.http.port", port);
         props.put("orbit.components", Arrays.asList(WebModule.class, Module1.class));
         container.setProperties(props);
         container.start();
+        serverPath = "localhost:" + port;
+    }
 
+    @AfterClass
+    public static void stopServer()
+    {
+        container.stop();
+    }
+
+    private static String getHttpPath()
+    {
+        return "http://" + serverPath;
+    }
+
+    private static String getWsPath()
+    {
+        return "ws://" + serverPath;
+    }
+
+    @Test
+    public void rawTest()
+    {
+        assert(ClientBuilder.newClient().target(getHttpPath())
+                .path("test/helloRaw").request(MediaType.APPLICATION_JSON)
+                .get().getStatus() == 200);
+    }
+
+    @Test
+    public void taskTest()
+    {
+        assert(ClientBuilder.newClient().target(getHttpPath())
+                .path("test/helloTask").request(MediaType.APPLICATION_JSON)
+                .get().getStatus() == 200);
+    }
+
+    @Test
+    public void notFoundTest()
+    {
+        assert(ClientBuilder.newClient().target(getHttpPath())
+                .path("test/noResource").request(MediaType.APPLICATION_JSON)
+                .get().getStatus() == 404);
+    }
+
+    @Test
+    public void serverErrorRaw()
+    {
+        assert(ClientBuilder.newClient().target(getHttpPath())
+                .path("test/serverErrorRaw").request(MediaType.APPLICATION_JSON)
+                .get().getStatus() == 500);
+    }
+
+    @Test
+    public void serverErrorTask()
+    {
+        assert(ClientBuilder.newClient().target(getHttpPath())
+                .path("test/serverErrorTask").request(MediaType.APPLICATION_JSON)
+                .get().getStatus() == 500);
+    }
+
+    @Test
+    public void serverErrorNestedTask()
+    {
+        assert(ClientBuilder.newClient().target(getHttpPath())
+                .path("test/serverErrorNestedTask").request(MediaType.APPLICATION_JSON)
+                .get().getStatus() == 500);
+    }
+
+    @Test
+    public void forbiddenRaw()
+    {
+        assert(ClientBuilder.newClient().target(getHttpPath())
+                .path("test/forbiddenRaw").request(MediaType.APPLICATION_JSON)
+                .get().getStatus() == 403);
+    }
+
+    @Test
+    public void forbiddenTask()
+    {
+        assert(ClientBuilder.newClient().target(getHttpPath())
+                .path("test/forbiddenTask").request(MediaType.APPLICATION_JSON)
+                .get().getStatus() == 403);
+    }
+
+    @Test
+    public void listTask()
+    {
+        assert(ClientBuilder.newClient().target(getHttpPath())
+                .path("test/listTask").request(MediaType.APPLICATION_JSON)
+                .get().getStatus() == 200);
+    }
+
+    @Test
+    public void webSocketTest() throws URISyntaxException, IOException, DeploymentException, InterruptedException
+    {
         final AClientEndpoint client = new AClientEndpoint();
         WebSocketContainer socketContainer = ContainerProvider.getWebSocketContainer();
-        socketContainer.connectToServer(client, new URI("ws://localhost:" + port + "/echo"));
+        socketContainer.connectToServer(client, new URI(getWsPath() + "/echo"));
 
         // sends some messages to the server
         client.session.getBasicRemote().sendText("test1");
@@ -98,8 +200,5 @@ public class WebSocketTest
         assertEquals("test1", client.messages.poll(10, TimeUnit.SECONDS));
         assertEquals("test2", client.messages.poll(10, TimeUnit.SECONDS));
         client.session.close();
-        container.stop();
-
     }
-
 }
