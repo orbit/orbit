@@ -28,15 +28,35 @@
 
 package com.ea.orbit.web.test;
 
+import com.ea.orbit.concurrent.Task;
+import com.ea.orbit.exception.UncheckedException;
+
 import javax.inject.Singleton;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 
 @Singleton
-@Path("hello")
+@Path("/test")
 public class Hello
 {
+    public static class HelloResult
+    {
+        private int helloCount;
+
+        public int getHelloCount()
+        {
+            return helloCount;
+        }
+
+        public void setHelloCount(int helloCount)
+        {
+            this.helloCount = helloCount;
+        }
+    }
+
     private int count = 0;
 
     public Hello()
@@ -45,9 +65,65 @@ public class Hello
     }
 
     @GET
-    @Produces("text/plain")
-    public String getHello()
+    @Path("/helloRaw")
+    @Produces(MediaType.APPLICATION_JSON)
+    public HelloResult getHelloRaw()
     {
-        return "hello world " + (++count);
+        HelloResult result = new HelloResult();
+        result.setHelloCount(++count);
+        return result;
     }
+
+    @GET
+    @Path("/helloTask")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Task<HelloResult> getHelloTask()
+    {
+        HelloResult result = new HelloResult();
+        result.setHelloCount(++count);
+        return Task.fromValue(result);
+    }
+
+    @GET
+    @Path("/serverErrorRaw")
+    @Produces(MediaType.APPLICATION_JSON)
+    public HelloResult getServerErrorRaw()
+    {
+        throw new UncheckedException("serverError");
+    }
+
+    @GET
+    @Path("/serverErrorTask")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Task<HelloResult> getServerErrorTask()
+    {
+        throw new UncheckedException("serverError");
+    }
+
+    @GET
+    @Path("/serverErrorNestedTask")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Task<HelloResult> getServerErrorNestedTask()
+    {
+        return Task.supplyAsync(() -> {throw new UncheckedException("serverError"); });
+
+    }
+
+    @GET
+    @Path("/forbiddenRaw")
+    @Produces(MediaType.APPLICATION_JSON)
+    public HelloResult getForbiddenRaw()
+    {
+        throw new ForbiddenException("forbidden");
+    }
+
+    @GET
+    @Path("/forbiddenTask")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Task<HelloResult> getForbiddenTask()
+    {
+        return Task.supplyAsync(() -> {throw new ForbiddenException("forbidden"); });
+    }
+
+
 }
