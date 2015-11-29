@@ -29,7 +29,6 @@
 package com.ea.orbit.web.provider;
 
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.exception.UncheckedException;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.ext.Provider;
@@ -38,13 +37,11 @@ import javax.ws.rs.ext.WriterInterceptorContext;
 
 import java.io.IOException;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.CompletionStage;
 
 @Provider
 public class TaskProvider implements WriterInterceptor
 {
     @Override
-
     public void aroundWriteTo(final WriterInterceptorContext context) throws IOException, WebApplicationException
     {
         final Object entity = context.getEntity();
@@ -60,7 +57,7 @@ public class TaskProvider implements WriterInterceptor
             catch(CompletionException e)
             {
                 // We need to get the actual exception and rethrow it
-                throw (RuntimeException) e.getCause();
+                throw (RuntimeException) ((e.getCause() != null) ? e.getCause() : e);
             }
 
             // Set generic type to null
