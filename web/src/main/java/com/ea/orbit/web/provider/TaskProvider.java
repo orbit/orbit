@@ -60,8 +60,6 @@ public class TaskProvider implements WriterInterceptor
                 throw (RuntimeException) ((e.getCause() != null) ? e.getCause() : e);
             }
 
-            // Set generic type to null
-            // do we need to do anything special for wrapped types?
             context.setGenericType(null);
 
             // Set the actual type

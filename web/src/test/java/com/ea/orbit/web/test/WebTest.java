@@ -178,6 +178,14 @@ public class WebTest
     }
 
     @Test
+    public void listTask()
+    {
+        assert(ClientBuilder.newClient().target(getHttpPath())
+                .path("test/listTask").request(MediaType.APPLICATION_JSON)
+                .get().getStatus() == 200);
+    }
+
+    @Test
     public void webSocketTest() throws URISyntaxException, IOException, DeploymentException, InterruptedException
     {
         final AClientEndpoint client = new AClientEndpoint();

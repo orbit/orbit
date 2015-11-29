@@ -38,6 +38,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Singleton
 @Path("/test")
 public class Hello
@@ -123,6 +126,22 @@ public class Hello
     public Task<HelloResult> getForbiddenTask()
     {
         return Task.supplyAsync(() -> {throw new ForbiddenException("forbidden"); });
+    }
+
+    @GET
+    @Path("/listTask")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Task<List<HelloResult>> getListTask()
+    {
+        List<HelloResult> results = new ArrayList<>();
+        HelloResult helloResult = new HelloResult();
+        helloResult.setHelloCount(++count);
+        results.add(helloResult);
+        helloResult = new HelloResult();
+        helloResult.setHelloCount(++count);
+        results.add(helloResult);
+        
+        return Task.fromValue(results);
     }
 
 
