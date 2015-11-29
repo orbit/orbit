@@ -30,13 +30,9 @@ package com.ea.orbit.web.diagnostics;
 
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
-import com.ea.orbit.exception.UncheckedException;
-
-import org.omg.CosNaming.NamingContextPackage.NotFound;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;

@@ -62,7 +62,6 @@ public class WebTest
 {
     private static Container container;
     private static String serverPath = null;
-    private static String httpPath = null;
 
     @ClientEndpoint
     public static class AClientEndpoint
