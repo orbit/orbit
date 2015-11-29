@@ -209,10 +209,10 @@ public class Stage implements Startable, ActorRuntime
                 catch (Throwable ex)
                 {
                     // this might be a problem, logging.
-                    Logger lg = LoggerFactory.getLogger(Stage.class);
-                    if (lg.isErrorEnabled())
+                    Logger asyncInitLogger = LoggerFactory.getLogger(Stage.class);
+                    if (asyncInitLogger.isErrorEnabled())
                     {
-                        lg.error("Error initializing orbit-async", ex);
+                        asyncInitLogger.error("Error initializing orbit-async", ex);
                     }
                     else
                     {
