@@ -132,7 +132,7 @@ public class StatelessActorEntry<T extends AbstractActor> extends ActorBaseEntry
     {
         try
         {
-            Task<R> res = Utils.safeInvoke(() -> function.apply(actor));
+            Task<R> res = InternalUtils.safeInvoke(() -> function.apply(actor));
             await(res);
             return res;
         }

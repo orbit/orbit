@@ -68,7 +68,7 @@ import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.actors.runtime.ResponseCaching;
 import com.ea.orbit.actors.runtime.SerializationHandler;
 import com.ea.orbit.actors.runtime.StatelessActorEntry;
-import com.ea.orbit.actors.runtime.Utils;
+import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.actors.streams.AsyncObserver;
@@ -209,10 +209,10 @@ public class Stage implements Startable, ActorRuntime
                 catch (Throwable ex)
                 {
                     // this might be a problem, logging.
-                    Logger lg = LoggerFactory.getLogger(Stage.class);
-                    if (lg.isErrorEnabled())
+                    Logger asyncInitLogger = LoggerFactory.getLogger(Stage.class);
+                    if (asyncInitLogger.isErrorEnabled())
                     {
-                        lg.error("Error initializing orbit-async", ex);
+                        asyncInitLogger.error("Error initializing orbit-async", ex);
                     }
                     else
                     {
@@ -547,7 +547,6 @@ public class Stage implements Startable, ActorRuntime
 
         hosting.setNodeType(mode == StageMode.HOST ? NodeCapabilities.NodeTypeEnum.SERVER : NodeCapabilities.NodeTypeEnum.CLIENT);
         execution.setRuntime(this);
-        execution.setExecutor(executionPool);
         execution.setObjects(objects);
         execution.setExecutionSerializer(executionSerializer);
 
@@ -727,7 +726,7 @@ public class Stage implements Startable, ActorRuntime
         await(stopExtensions());
         do
         {
-            Utils.sleep(100);
+            InternalUtils.sleep(100);
         } while (executionSerializer.isBusy());
         logger.debug("closing pipeline");
         await(pipeline.close());
@@ -1193,7 +1192,7 @@ public class Stage implements Startable, ActorRuntime
                 return false;
             }
         }
-        Class<Actor> aInterface = Utils.classForName(interfaceName, true);
+        Class<Actor> aInterface = InternalUtils.classForName(interfaceName, true);
         if (aInterface == null)
         {
             return false;

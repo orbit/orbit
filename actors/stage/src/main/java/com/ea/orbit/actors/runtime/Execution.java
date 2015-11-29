@@ -35,16 +35,11 @@ import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-
-import static com.ea.orbit.async.Await.await;
 
 public class Execution extends AbstractExecution implements Startable
 {
-    private NodeCapabilities.NodeState state;
     private Stage runtime;
     private LocalObjects objects;
-    private ExecutorService executor;
 
     @Override
     public Task<Void> cleanup()
@@ -52,22 +47,11 @@ public class Execution extends AbstractExecution implements Startable
         return Task.done();
     }
 
-    public NodeCapabilities.NodeState getState()
-    {
-        return state;
-    }
-
     public void setRuntime(final Stage runtime)
     {
         this.runtime = runtime;
         this.logger = runtime.getLogger(this);
     }
-
-    public void setExecutor(final ExecutorService executor)
-    {
-        this.executor = executor;
-    }
-
 
     @Override
     public Task write(final HandlerContext ctx, final Object msg) throws Exception
@@ -91,11 +75,11 @@ public class Execution extends AbstractExecution implements Startable
         final LocalObjects.LocalObjectEntry entry = objects.findLocalObjectByReference(toReference);
         if (entry != null)
         {
-            final Task<Object> result = Utils.safeInvoke(() -> entry.run(target -> performInvocation(ctx, invocation, entry, target)));
+            final Task<Object> result = InternalUtils.safeInvoke(() -> entry.run(target -> performInvocation(ctx, invocation, entry, target)));
             // this has to be done here because of exceptions that can occur before performInvocation is even called.
             if (invocation.getCompletion() != null)
             {
-                Utils.linkFutures(result, invocation.getCompletion());
+                InternalUtils.linkFutures(result, invocation.getCompletion());
             }
         }
         else
@@ -103,7 +87,7 @@ public class Execution extends AbstractExecution implements Startable
             if (toReference instanceof Actor)
             {
                 // on activate will handle the completion;
-                Utils.safeInvoke(() -> executionSerializer.offerJob(toReference,
+                InternalUtils.safeInvoke(() -> executionSerializer.offerJob(toReference,
                         () -> onActivate(ctx, invocation), maxQueueSize));
             }
             else
@@ -129,7 +113,7 @@ public class Execution extends AbstractExecution implements Startable
         final Task result = entry.run(target -> performInvocation(ctx, invocation, theEntry, target));
         if (invocation.getCompletion() != null)
         {
-            Utils.linkFutures(result, invocation.getCompletion());
+            InternalUtils.linkFutures(result, invocation.getCompletion());
         }
         // yielding since we blocked the entry before running on activate (serialized execution)
         return Task.done();

@@ -39,7 +39,7 @@ import java.util.function.Supplier;
  *
  * This class is not part of the public orbit api and its api may change from version to version.
  */
-public class Utils
+public class InternalUtils
 {
     public static <T> Class<T> classForName(final String className)
     {
@@ -63,7 +63,15 @@ public class Utils
         return null;
     }
 
-    public static void sleep(final long millis)
+    /**
+     * Invokes Thread.sleep(). If sleep() is interrupted, interrupted-state will be
+     * asserted again, in order to support cancellation.
+     *
+     * For explanation of cancellation in this context, see: http://g.oswego.edu/dl/cpj/cancel.html
+     *
+     * @param millis
+     */
+    public static void sleep(long millis)
     {
         try
         {
@@ -71,7 +79,8 @@ public class Utils
         }
         catch (InterruptedException e)
         {
-            e.printStackTrace();
+            // re-assert interrupted-state
+            Thread.currentThread().interrupt();
         }
     }
 

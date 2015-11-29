@@ -153,7 +153,7 @@ public class SerializationHandler extends HandlerAdapter
         catch (Throwable e)
         {
             logger.error("Error deserializing message", e);
-            logger.error(Utils.hexDump(32, message.getRight(), 0, message.getRight().length));
+            logger.error(InternalUtils.hexDump(32, message.getRight(), 0, message.getRight().length));
         }
     }
 

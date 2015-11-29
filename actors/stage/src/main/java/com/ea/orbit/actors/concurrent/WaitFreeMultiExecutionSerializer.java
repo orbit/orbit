@@ -28,7 +28,7 @@
 
 package com.ea.orbit.actors.concurrent;
 
-import com.ea.orbit.actors.runtime.Utils;
+import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
@@ -93,22 +94,33 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
         // todo remove this.
         if (key == null)
         {
-            executorService.execute(() -> Utils.safeInvoke(job));
+            executorService.execute(() -> InternalUtils.safeInvoke(job));
         }
-        return getSerializer(key).executeSerialized(() -> Utils.safeInvoke(job), maxQueueSize);
+        return getSerializer(key).executeSerialized(() -> InternalUtils.safeInvoke(job), maxQueueSize);
     }
 
     public void shutdown()
     {
-        executorService.shutdown();
+        executorService.shutdown(); // Disable new tasks from being submitted
         try
         {
-            executorService.awaitTermination(60, TimeUnit.SECONDS);
+            // Wait a while for existing tasks to terminate
+            if (!executorService.awaitTermination(60, TimeUnit.SECONDS))
+            {
+                logger.info("Timeout elapsed before termination, forcing shutdown");
+                List<Runnable> tasksAwaitingExecution = executorService.shutdownNow(); // Cancel currently executing tasks
+                logger.info("Tasks awaiting execution after forced shutdown: " + tasksAwaitingExecution.size());
+            }
         }
-        catch (InterruptedException e)
+        catch (InterruptedException ie)
         {
+            logger.error("Exception occurred while shutting down thread pool", ie);
+            // (Re-)Cancel if current thread also interrupted
+            executorService.shutdownNow();
+            // Preserve interrupt status
             Thread.currentThread().interrupt();
         }
+        logger.info("Thread pool shutdown complete");
     }
 
     public boolean isBusy()

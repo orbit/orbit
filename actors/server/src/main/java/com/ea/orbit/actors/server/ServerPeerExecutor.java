@@ -34,7 +34,7 @@ import com.ea.orbit.actors.peer.PeerExecutor;
 import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.LocalObjects;
 import com.ea.orbit.actors.runtime.ObjectInvoker;
-import com.ea.orbit.actors.runtime.Utils;
+import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.concurrent.Task;
 
 class ServerPeerExecutor extends PeerExecutor
@@ -67,7 +67,7 @@ class ServerPeerExecutor extends PeerExecutor
         final Task<Void> write = stage.getPipeline().write(invocation);
         if (invocation.getCompletion() != null)
         {
-            Utils.linkFutures(write, invocation.getCompletion());
+            InternalUtils.linkFutures(write, invocation.getCompletion());
         }
     }
 
