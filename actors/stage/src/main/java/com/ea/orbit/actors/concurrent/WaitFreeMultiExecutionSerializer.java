@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
@@ -100,15 +101,26 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
 
     public void shutdown()
     {
-        executorService.shutdown();
+        executorService.shutdown(); // Disable new tasks from being submitted
         try
         {
-            executorService.awaitTermination(60, TimeUnit.SECONDS);
+            // Wait a while for existing tasks to terminate
+            if (!executorService.awaitTermination(60, TimeUnit.SECONDS))
+            {
+                logger.info("Timeout elapsed before termination, forcing shutdown");
+                List<Runnable> tasksAwaitingExecution = executorService.shutdownNow(); // Cancel currently executing tasks
+                logger.info("Tasks awaiting execution after forced shutdown: " + tasksAwaitingExecution.size());
+            }
         }
-        catch (InterruptedException e)
+        catch (InterruptedException ie)
         {
+            logger.error("Exception occurred while shutting down thread pool", ie);
+            // (Re-)Cancel if current thread also interrupted
+            executorService.shutdownNow();
+            // Preserve interrupt status
             Thread.currentThread().interrupt();
         }
+        logger.info("Thread pool shutdown complete");
     }
 
     public boolean isBusy()
