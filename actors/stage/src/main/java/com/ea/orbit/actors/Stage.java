@@ -547,7 +547,6 @@ public class Stage implements Startable, ActorRuntime
 
         hosting.setNodeType(mode == StageMode.HOST ? NodeCapabilities.NodeTypeEnum.SERVER : NodeCapabilities.NodeTypeEnum.CLIENT);
         execution.setRuntime(this);
-        execution.setExecutor(executionPool);
         execution.setObjects(objects);
         execution.setExecutionSerializer(executionSerializer);
 
