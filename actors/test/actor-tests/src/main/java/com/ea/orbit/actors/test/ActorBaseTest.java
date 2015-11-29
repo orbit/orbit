@@ -39,6 +39,7 @@ import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.AbstractExecution;
 import com.ea.orbit.actors.runtime.ActorFactoryGenerator;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
+import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
@@ -57,13 +58,9 @@ import org.slf4j.Logger;
 
 import com.google.common.util.concurrent.ForwardingExecutorService;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -72,7 +69,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.fail;
@@ -378,11 +374,12 @@ public class ActorBaseTest
         return null;
     }
 
-    private Object getField(Object target, Class<?> clazz, String name) throws IllegalAccessException, NoSuchFieldException
+    @SuppressWarnings("unchecked")
+    private <T> T getField(Object target, Class<?> targetClazz, String name) throws IllegalAccessException, NoSuchFieldException
     {
-        final Field f = clazz.getDeclaredField(name);
+        final Field f = targetClazz.getDeclaredField(name);
         f.setAccessible(true);
-        return f.get(target);
+        return (T) f.get(target);
     }
 
     /**
@@ -401,7 +398,6 @@ public class ActorBaseTest
         }
         catch (Exception e)
         {
-
             throw new UncheckedException(e);
         }
     }
@@ -417,8 +413,8 @@ public class ActorBaseTest
         {
             // this is very ad hoc, but should work for our tests, until execution changes.
             // for starters access to this map should be synchronized.
-            MultiExecutionSerializer executionSerializer = (MultiExecutionSerializer) getField(getField(stage, Stage.class, "execution"), AbstractExecution.class,
-                    "executionSerializer");
+            Execution execution = getField(stage, Stage.class, "execution");
+            MultiExecutionSerializer executionSerializer = getField(execution, AbstractExecution.class, "executionSerializer");
 
             return !executionSerializer.isBusy();
         }
@@ -436,7 +432,7 @@ public class ActorBaseTest
 
     protected void eventually(long timeoutMillis, Runnable runnable)
     {
-        eventuallyTrue(60_000, () -> {
+        eventuallyTrue(timeoutMillis, () -> {
             try
             {
                 runnable.run();
