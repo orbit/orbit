@@ -35,7 +35,7 @@ import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.LocalObjects;
 import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.RemoteReference;
-import com.ea.orbit.actors.runtime.Utils;
+import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.concurrent.Task;
 
 import org.slf4j.Logger;
@@ -127,7 +127,7 @@ public class PeerExecutor extends HandlerAdapter
         }
         if (invocation.getCompletion() != null)
         {
-            Utils.linkFutures(result, invocation.getCompletion());
+            InternalUtils.linkFutures(result, invocation.getCompletion());
         }
         return result;
     }

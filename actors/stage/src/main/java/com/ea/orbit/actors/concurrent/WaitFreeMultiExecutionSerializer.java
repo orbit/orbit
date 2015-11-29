@@ -28,7 +28,7 @@
 
 package com.ea.orbit.actors.concurrent;
 
-import com.ea.orbit.actors.runtime.Utils;
+import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -94,9 +94,9 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
         // todo remove this.
         if (key == null)
         {
-            executorService.execute(() -> Utils.safeInvoke(job));
+            executorService.execute(() -> InternalUtils.safeInvoke(job));
         }
-        return getSerializer(key).executeSerialized(() -> Utils.safeInvoke(job), maxQueueSize);
+        return getSerializer(key).executeSerialized(() -> InternalUtils.safeInvoke(job), maxQueueSize);
     }
 
     public void shutdown()

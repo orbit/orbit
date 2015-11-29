@@ -28,7 +28,7 @@
 
 package com.ea.orbit.actors.concurrent;
 
-import com.ea.orbit.actors.runtime.Utils;
+import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.concurrent.Task;
 
 import org.slf4j.Logger;
@@ -62,8 +62,8 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
     {
         Task<R> completion = new Task<>();
         if (queue.size() >= maxQueueSize || !queue.add(() -> {
-                    Task<R> source = Utils.safeInvoke(taskSupplier);
-                    Utils.linkFutures(source, completion);
+                    Task<R> source = InternalUtils.safeInvoke(taskSupplier);
+                    InternalUtils.linkFutures(source, completion);
                     return source;
                 }
         ))

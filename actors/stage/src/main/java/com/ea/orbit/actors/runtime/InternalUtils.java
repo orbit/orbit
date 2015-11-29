@@ -39,7 +39,7 @@ import java.util.function.Supplier;
  *
  * This class is not part of the public orbit api and its api may change from version to version.
  */
-public class Utils
+public class InternalUtils
 {
     public static <T> Class<T> classForName(final String className)
     {

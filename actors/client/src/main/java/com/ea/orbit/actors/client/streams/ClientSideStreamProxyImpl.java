@@ -5,7 +5,7 @@ import com.ea.orbit.actors.peer.streams.ClientSideStreamProxy;
 import com.ea.orbit.actors.peer.streams.ServerSideStreamProxy;
 import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.actors.runtime.DefaultClassDictionary;
-import com.ea.orbit.actors.runtime.Utils;
+import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.actors.streams.AsyncObserver;
 import com.ea.orbit.actors.streams.AsyncStream;
 import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
@@ -55,13 +55,13 @@ public class ClientSideStreamProxyImpl implements ClientSideStreamProxy, Startab
         ConcurrentMap<Handle, AsyncObserver> observers = observerMap.get(streamKey);
         if (observers == null)
         {
-            observers = Utils.putIfAbsentAndGet(observerMap, streamKey, new ConcurrentHashMap<>());
+            observers = InternalUtils.putIfAbsentAndGet(observerMap, streamKey, new ConcurrentHashMap<>());
             ServerSideStreamProxy serverSideStreamProxy = runtime.getRemoteObserverReference(null, ServerSideStreamProxy.class, "0");
             int dataClassId = DefaultClassDictionary.get().getClassId(dataClass);
             Task<StreamSubscriptionHandle<Object>> subscriptionHandleTask = serverSideStreamProxy.subscribe(provider, dataClassId, streamId, localReference);
             await(subscriptionHandleTask);
         }
-        observers = (observers != null) ? observers : Utils.putIfAbsentAndGet(observerMap, streamKey, new ConcurrentHashMap<>());
+        observers = (observers != null) ? observers : InternalUtils.putIfAbsentAndGet(observerMap, streamKey, new ConcurrentHashMap<>());
         Handle handle = new Handle(streamKey, nextId.incrementAndGet());
         observers.put(handle, observer);
         return Task.fromValue(handle);

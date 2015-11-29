@@ -75,11 +75,11 @@ public class Execution extends AbstractExecution implements Startable
         final LocalObjects.LocalObjectEntry entry = objects.findLocalObjectByReference(toReference);
         if (entry != null)
         {
-            final Task<Object> result = Utils.safeInvoke(() -> entry.run(target -> performInvocation(ctx, invocation, entry, target)));
+            final Task<Object> result = InternalUtils.safeInvoke(() -> entry.run(target -> performInvocation(ctx, invocation, entry, target)));
             // this has to be done here because of exceptions that can occur before performInvocation is even called.
             if (invocation.getCompletion() != null)
             {
-                Utils.linkFutures(result, invocation.getCompletion());
+                InternalUtils.linkFutures(result, invocation.getCompletion());
             }
         }
         else
@@ -87,7 +87,7 @@ public class Execution extends AbstractExecution implements Startable
             if (toReference instanceof Actor)
             {
                 // on activate will handle the completion;
-                Utils.safeInvoke(() -> executionSerializer.offerJob(toReference,
+                InternalUtils.safeInvoke(() -> executionSerializer.offerJob(toReference,
                         () -> onActivate(ctx, invocation), maxQueueSize));
             }
             else
@@ -113,7 +113,7 @@ public class Execution extends AbstractExecution implements Startable
         final Task result = entry.run(target -> performInvocation(ctx, invocation, theEntry, target));
         if (invocation.getCompletion() != null)
         {
-            Utils.linkFutures(result, invocation.getCompletion());
+            InternalUtils.linkFutures(result, invocation.getCompletion());
         }
         // yielding since we blocked the entry before running on activate (serialized execution)
         return Task.done();
