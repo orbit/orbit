@@ -55,6 +55,9 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
 {
     private static final Logger logger = LoggerFactory.getLogger(WaitFreeMultiExecutionSerializer.class);
     private ExecutorService executorService;
+
+    // while running, the WaitFreeExecutionSerializer is held alive by references from the executorService
+    // and from anyone holding the promises (Tasks) it returns.
     private Cache<T, WaitFreeExecutionSerializer> serializers = CacheBuilder.newBuilder().weakValues().build();
 
     public WaitFreeMultiExecutionSerializer()
