@@ -94,9 +94,7 @@ public class ClassPath
         private ClassResourceInfo(final String resourceName, final ClassLoader loader)
         {
             super(resourceName, loader);
-            className = resourceName
-                    .substring(0, resourceName.length() - CLASS_FILE_EXTENSION.length())
-                    .replace('/', '.');
+
         }
 
         public Class<?> load() throws ClassNotFoundException
@@ -106,7 +104,10 @@ public class ClassPath
 
         public String getClassName()
         {
-            return className;
+            return className != null ? className
+                    : (className = resourceName
+                    .substring(0, resourceName.length() - CLASS_FILE_EXTENSION.length())
+                    .replace('/', '.').intern());
         }
     }
 

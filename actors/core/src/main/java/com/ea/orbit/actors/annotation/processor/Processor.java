@@ -30,6 +30,10 @@ package com.ea.orbit.actors.annotation.processor;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
+import com.ea.orbit.actors.annotation.IdStrategy;
+import com.ea.orbit.actors.annotation.IdGenerationStrategy;
+
+import org.omg.CORBA.MARSHAL;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -37,8 +41,10 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -47,6 +53,8 @@ import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 
 import java.io.PrintWriter;
+import java.lang.annotation.Annotation;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -100,11 +108,26 @@ public class Processor extends AbstractProcessor
             final FileObject resource = processingEnv.getFiler().createResource(
                     StandardLocation.CLASS_OUTPUT, "",
                     "META-INF/services/orbit/classes/" + elementUtils.getBinaryName(e) + ".yml", e);
+            int classId = getClassId(e);
             try (final PrintWriter writer = new PrintWriter(resource.openWriter()))
             {
-                writer.append("classId: ").println(getClassId(e));
+                writer.append("classId: ").println(classId);
                 writer.append("isActor: ").println(typeUtils.isSubtype(e.asType(), actorTypeMirror));
                 writer.append("isObserver: ").println(typeUtils.isSubtype(e.asType(), actorObserverTypeMirror));
+                writer.flush();
+                writer.close();
+            }
+            String fileName = "META-INF/services/orbit/classId/"
+                    + (Math.abs(classId) % 10)
+                    + "/" + (Math.abs(classId / 10) % 10)
+                    + ((classId < 0) ? "/m" : "/") + Math.abs(classId) + ".name";
+
+            final FileObject classIdResource = processingEnv.getFiler().createResource(
+                    StandardLocation.CLASS_OUTPUT, "",
+                    fileName, e);
+            try (final PrintWriter writer = new PrintWriter(classIdResource.openWriter()))
+            {
+                writer.append(elementUtils.getBinaryName(e));
                 writer.flush();
                 writer.close();
             }
@@ -115,8 +138,30 @@ public class Processor extends AbstractProcessor
         }
     }
 
+    @SuppressWarnings("unchecked")
     private int getClassId(final TypeElement e)
     {
-        return elementUtils.getBinaryName(e).toString().replace('$', '.').hashCode();
+        List<? extends AnnotationMirror> annotationMirrors = e.getAnnotationMirrors();
+        String classBinaryName = elementUtils.getBinaryName(e).toString();
+        try
+        {
+            for (AnnotationMirror annotationMirror : annotationMirrors)
+            {
+                DeclaredType annotationType = annotationMirror.getAnnotationType();
+                IdStrategy strategyAnn = annotationType.asElement().getAnnotation(IdStrategy.class);
+                if (strategyAnn != null)
+                {
+                    TypeElement element = (TypeElement) annotationType.asElement();
+                    final Annotation sourceAnnotation = e.getAnnotation((Class<Annotation>) Class.forName(elementUtils.getBinaryName(element).toString()));
+                    IdGenerationStrategy idGenerationStrategy = sourceAnnotation.annotationType().getAnnotation(IdStrategy.class).value().newInstance();
+                    return idGenerationStrategy.generateIdForClass(sourceAnnotation, classBinaryName);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Error processing the class id for: ");
+        }
+        return classBinaryName.hashCode();
     }
 }

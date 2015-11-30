@@ -93,7 +93,7 @@ public class ActorFactoryGenerator
     {
         final String interfaceFullName = aInterface.getName().replace('$', '.');
 
-        final int interfaceId = interfaceFullName.hashCode();
+        final int interfaceId = DefaultClassDictionary.get().getClassId(aInterface);
         final String referenceFullName = aInterface.getName() + "$Reference";
         try
         {

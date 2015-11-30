@@ -28,14 +28,21 @@
 
 package com.ea.orbit.actors.runtime;
 
+import com.ea.orbit.actors.annotation.IdGenerationStrategy;
+import com.ea.orbit.actors.annotation.IdStrategy;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.util.ClassPath;
+import com.ea.orbit.util.IOUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -147,11 +154,34 @@ public class DefaultClassDictionary
             return clazz;
         }
 
-        ensureLoaded();
+
         String className = idToName.get(id);
         if (className == null)
         {
-            // TODO search ClassPath for class name hash
+            // reading the class name saved in the file system by the annotation processor
+            String fileName = "/META-INF/services/orbit/classId/"
+                    + (Math.abs(classId) % 10)
+                    + "/" + (Math.abs(classId / 10) % 10)
+                    + ((classId < 0) ? "/m" : "/") + Math.abs(classId) + ".name";
+
+            InputStream resourceAsStream = getClass().getResourceAsStream(fileName);
+            if (resourceAsStream != null)
+            {
+                try
+                {
+                    className = IOUtils.toString(resourceAsStream, StandardCharsets.UTF_8);
+                }
+                catch (IOException e)
+                {
+                    logger.error("Error loading resource: " + fileName);
+                }
+            }
+        }
+
+        ensureLoaded();
+
+        if (className == null)
+        {
             final List<ClassPath.ClassResourceInfo> list = ClassPath.get().getAllClasses().stream()
                     .filter(c -> c.getClassName().replace('$', '.').hashCode() == classId)
                     .collect(Collectors.toList());
@@ -177,14 +207,38 @@ public class DefaultClassDictionary
         {
             return id;
         }
-        ensureLoaded();
-        final String className = clazz.getName().replace('$', '.');
+        //ensureLoaded();
+        final String className = clazz.getName();
 
         id = nameToId.get(className);
         if (id == null)
         {
-            // TODO: try first clazz.getAnnotation(ClassId.class)
-            id = className.hashCode();
+            for (Annotation ann : clazz.getAnnotations())
+            {
+                IdStrategy idStrategy = ann.annotationType().getAnnotation(IdStrategy.class);
+                if (idStrategy != null)
+                {
+                    IdGenerationStrategy idGenerationStrategy;
+                    try
+                    {
+                        idGenerationStrategy = idStrategy.value().newInstance();
+                        id = idGenerationStrategy.generateIdForClass(ann, className);
+                        if (id != 0)
+                        {
+                            break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new UncheckedException("Error generating id for " + className, ex);
+                    }
+                }
+            }
+            if (id == null || id == 0)
+            {
+                // fall back to hashCode
+                id = className.hashCode();
+            }
             nameToId.putIfAbsent(className, id);
             idToName.putIfAbsent(id, className);
         }
@@ -193,3 +247,4 @@ public class DefaultClassDictionary
         return id;
     }
 }
+
