@@ -253,6 +253,32 @@ public class Task<T> extends CompletableFuture<T>
         return t;
     }
 
+
+    /**
+     * Returns a new task that will fail if the original is not completed withing the given timeout.
+     * This doesn't modify the original task in any way.
+     *
+     * @param time     the time from now
+     * @param timeUnit the time unit of the timeout parameter
+     * @return a new task
+     */
+    public static Task<Void> sleep(final long time, final TimeUnit timeUnit)
+    {
+        final Task<Void> t = new Task<>();
+
+        // TODO: find a way to inject time for testing
+        // also consider letting the application override this with the TaskContext
+        final ScheduledFuture<?> rr = schedulerExecutor.schedule(
+                () -> {
+                    if (!t.isDone())
+                    {
+                        t.internalComplete(null);
+                    }
+                }, time, timeUnit);
+
+        return t;
+    }
+
     static class TaskFutureAdapter<T> implements Runnable
     {
         Task<T> task;

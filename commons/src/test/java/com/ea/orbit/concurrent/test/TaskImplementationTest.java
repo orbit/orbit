@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
@@ -104,8 +105,8 @@ public class TaskImplementationTest
         CTask t3 = new CTask();
         CompletableFuture c4 = new CompletableFuture();
         Task all_regular = CTask.allOf(t1, t2, t3);
-        Task all_array = CTask.allOf(new CompletableFuture[]{t1, t2, t3});
-        Task all_array2 = CTask.allOf(new CTask[]{t1, t2, t3});
+        Task all_array = CTask.allOf(new CompletableFuture[]{ t1, t2, t3 });
+        Task all_array2 = CTask.allOf(new CTask[]{ t1, t2, t3 });
         Task all_collection = CTask.allOf(Arrays.asList(t1, t2, t3));
         Task all_stream = CTask.allOf(Arrays.asList(t1, t2, t3).stream());
         Stream<CTask> stream = Arrays.asList(t1, t2, t3).stream();
@@ -139,8 +140,8 @@ public class TaskImplementationTest
         CTask<?> t3 = new CTask<>();
         CompletableFuture c4 = new CompletableFuture();
         Task group_regular = CTask.anyOf(t1, t2, t3);
-        Task group_array = CTask.anyOf(new CompletableFuture[]{t1, t2, t3});
-        Task group_array2 = CTask.anyOf(new CTask[]{t1, t2, t3});
+        Task group_array = CTask.anyOf(new CompletableFuture[]{ t1, t2, t3 });
+        Task group_array2 = CTask.anyOf(new CTask[]{ t1, t2, t3 });
         Task group_collection = CTask.anyOf(Arrays.asList(t1, t2, t3));
         Task group_stream = CTask.anyOf(Arrays.asList(t1, t2, t3).stream());
         Stream<CTask> stream = Arrays.asList(t1, t2, t3).stream();
@@ -261,5 +262,16 @@ public class TaskImplementationTest
         assertTrue(t1.isDone());
         assertEquals("bla", t1.join());
         assertEquals("bla", t1.get());
+    }
+
+    @Test
+    public void testSleep()
+    {
+        long start = System.currentTimeMillis();
+        final Task<Void> sleep = Task.sleep(20, TimeUnit.MILLISECONDS);
+        assertFalse(sleep.isDone());
+        final Task<Long> completionTime = sleep.thenApply(x -> System.currentTimeMillis());
+        assertTrue(completionTime.join() - start >= 20);
+        assertTrue(sleep.isDone());
     }
 }
