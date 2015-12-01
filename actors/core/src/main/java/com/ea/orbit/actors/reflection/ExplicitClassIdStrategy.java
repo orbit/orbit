@@ -26,22 +26,33 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.annotation;
+package com.ea.orbit.actors.reflection;
 
-import com.ea.orbit.actors.reflection.ExplicitClassIdStrategy;
+import com.ea.orbit.actors.annotation.ClassId;
+import com.ea.orbit.exception.NotImplementedException;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.Annotation;
 
-/**
- * Defines a fixed value for the classId
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-@ClassIdStrategy(ExplicitClassIdStrategy.class)
-public @interface ClassId
+
+public class ExplicitClassIdStrategy implements ClassIdGenerationStrategy
 {
-    int value();
+    @Override
+    public int generateIdForClass(final Annotation annotation, final String classBinaryName)
+    {
+        return ((ClassId) annotation).value();
+    }
+
+    @Override
+    public int generateIdForMethod(final Annotation annotation, final String methodSignature)
+    {
+        // TODO: return ((MethodId) annotation).value();
+        throw new NotImplementedException("generateIdForMethod");
+    }
+
+    @Override
+    public int generateIdForField(final Annotation annotation, final String fieldSignature)
+    {
+        // TODO: return ((FieldId) annotation).value();
+        throw new NotImplementedException("generateIdForField");
+    }
 }

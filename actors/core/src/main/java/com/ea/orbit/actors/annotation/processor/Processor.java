@@ -30,8 +30,8 @@ package com.ea.orbit.actors.annotation.processor;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
-import com.ea.orbit.actors.annotation.IdGenerationStrategy;
-import com.ea.orbit.actors.annotation.IdStrategy;
+import com.ea.orbit.actors.annotation.ClassIdStrategy;
+import com.ea.orbit.actors.reflection.ClassIdGenerationStrategy;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -146,12 +146,12 @@ public class Processor extends AbstractProcessor
             for (AnnotationMirror annotationMirror : annotationMirrors)
             {
                 DeclaredType annotationType = annotationMirror.getAnnotationType();
-                IdStrategy strategyAnn = annotationType.asElement().getAnnotation(IdStrategy.class);
+                ClassIdStrategy strategyAnn = annotationType.asElement().getAnnotation(ClassIdStrategy.class);
                 if (strategyAnn != null)
                 {
                     TypeElement element = (TypeElement) annotationType.asElement();
                     final Annotation sourceAnnotation = e.getAnnotation((Class<Annotation>) Class.forName(elementUtils.getBinaryName(element).toString()));
-                    IdGenerationStrategy idGenerationStrategy = sourceAnnotation.annotationType().getAnnotation(IdStrategy.class).value().newInstance();
+                    ClassIdGenerationStrategy idGenerationStrategy = sourceAnnotation.annotationType().getAnnotation(ClassIdStrategy.class).value().newInstance();
                     return idGenerationStrategy.generateIdForClass(sourceAnnotation, classBinaryName);
                 }
             }

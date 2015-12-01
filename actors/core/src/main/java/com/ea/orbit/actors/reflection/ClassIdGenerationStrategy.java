@@ -26,22 +26,15 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.annotation;
+package com.ea.orbit.actors.reflection;
 
-import com.ea.orbit.actors.reflection.ExplicitClassIdStrategy;
+import java.lang.annotation.Annotation;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-/**
- * Defines a fixed value for the classId
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-@ClassIdStrategy(ExplicitClassIdStrategy.class)
-public @interface ClassId
+public interface ClassIdGenerationStrategy
 {
-    int value();
+    int generateIdForClass(Annotation annotation, String classBinaryName);
+
+    int generateIdForMethod(Annotation annotation, String methodSignature);
+
+    int generateIdForField(Annotation annotation, String fieldSignature);
 }

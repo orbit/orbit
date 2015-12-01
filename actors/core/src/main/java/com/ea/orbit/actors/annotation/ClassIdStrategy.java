@@ -28,20 +28,16 @@
 
 package com.ea.orbit.actors.annotation;
 
-import com.ea.orbit.actors.reflection.ExplicitClassIdStrategy;
+import com.ea.orbit.actors.reflection.ClassIdGenerationStrategy;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Defines a fixed value for the classId
- */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-@ClassIdStrategy(ExplicitClassIdStrategy.class)
-public @interface ClassId
+public @interface ClassIdStrategy
 {
-    int value();
+    Class<? extends ClassIdGenerationStrategy> value();
 }

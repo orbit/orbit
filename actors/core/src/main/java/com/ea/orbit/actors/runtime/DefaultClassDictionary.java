@@ -28,8 +28,8 @@
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.annotation.IdGenerationStrategy;
-import com.ea.orbit.actors.annotation.IdStrategy;
+import com.ea.orbit.actors.reflection.ClassIdGenerationStrategy;
+import com.ea.orbit.actors.annotation.ClassIdStrategy;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.util.ClassPath;
 import com.ea.orbit.util.IOUtils;
@@ -215,10 +215,10 @@ public class DefaultClassDictionary
         {
             for (Annotation ann : clazz.getAnnotations())
             {
-                IdStrategy idStrategy = ann.annotationType().getAnnotation(IdStrategy.class);
+                ClassIdStrategy idStrategy = ann.annotationType().getAnnotation(ClassIdStrategy.class);
                 if (idStrategy != null)
                 {
-                    IdGenerationStrategy idGenerationStrategy;
+                    ClassIdGenerationStrategy idGenerationStrategy;
                     try
                     {
                         idGenerationStrategy = idStrategy.value().newInstance();
