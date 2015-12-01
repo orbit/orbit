@@ -30,10 +30,8 @@ package com.ea.orbit.actors.annotation.processor;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
-import com.ea.orbit.actors.annotation.IdStrategy;
 import com.ea.orbit.actors.annotation.IdGenerationStrategy;
-
-import org.omg.CORBA.MARSHAL;
+import com.ea.orbit.actors.annotation.IdStrategy;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
