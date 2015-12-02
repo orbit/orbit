@@ -256,7 +256,7 @@ public class MetricsManager
 
         if (obj != null)
         {
-            for (Field field : obj.getClass().getDeclaredFields())
+            for (Field field : obj.getClass().getFields())
             {
                 if (field.isAnnotationPresent(ExportMetric.class))
                 {
@@ -274,7 +274,7 @@ public class MetricsManager
 
         if (obj != null)
         {
-            for (Method method : obj.getClass().getDeclaredMethods())
+            for (Method method : obj.getClass().getMethods())
             {
                 if (method.isAnnotationPresent(ExportMetric.class))
                 {

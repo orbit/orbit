@@ -85,6 +85,7 @@ import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
+import com.ea.orbit.metrics.annotations.ExportMetric;
 import com.ea.orbit.util.StringUtils;
 
 import org.slf4j.Logger;
@@ -1236,5 +1237,11 @@ public class Stage implements Startable, ActorRuntime
                 "state=" + state +
                 ", runtimeIdentity='" + runtimeIdentity + '\'' +
                 '}';
+    }
+
+    @ExportMetric(name="localActorCount")
+    public int getLocalActorCount()
+    {
+        return objects.getLocalObjectCount();
     }
 }
