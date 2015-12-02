@@ -31,13 +31,17 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ActorProfiler;
 import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.injection.DependencyRegistry;
+import com.ea.orbit.profiler.ProfileDump;
+import com.ea.orbit.profiler.ProfilerData;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -49,7 +53,10 @@ import org.openjdk.jmh.annotations.Threads;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 
@@ -59,6 +66,13 @@ public class SingleNodeBenchmark
 {
 
     private Stage stage;
+
+    // actor profiling
+    private ActorProfiler actorProfiler;
+    private ScheduledFuture<?> scheduledFuture;
+    private ScheduledThreadPoolExecutor scheduledExecutorService;
+    int iteration = 0;
+    boolean profile = false;
 
     public interface Hello extends Actor
     {
@@ -79,19 +93,67 @@ public class SingleNodeBenchmark
     {
         System.out.println("Create stage");
         stage = createStage();
+        if(profile)
+        {
+            actorProfiler = new ActorProfiler();
+            scheduledExecutorService = new ScheduledThreadPoolExecutor(2);
+            scheduledFuture = scheduledExecutorService.scheduleAtFixedRate(() -> {
+                try
+                {
+                    actorProfiler.collect();
+                }
+                catch (Exception ex)
+                {
+                    ex.printStackTrace();
+                }
+            }, 1, 1, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    @Setup(Level.Iteration)
+    public void setupIteration()
+    {
+        if(profile)
+        {
+            iteration++;
+            if (iteration < 5)
+            {
+                actorProfiler.clear();
+            }
+        }
     }
 
     @TearDown
     public void tearDown()
     {
         stage.stop().join();
+        if(profile)
+        {
+            scheduledFuture.cancel(false);
+            scheduledExecutorService.shutdownNow();
+            final long collectionCount = actorProfiler.getCollectionCount();
+            final Map<Object, ProfilerData> profilerSnapshot = actorProfiler.getProfilerSnapshot();
+            System.out.printf("collectionCount " + collectionCount);
+            for (Map.Entry<Object, ProfilerData> e : profilerSnapshot.entrySet())
+            {
+                System.out.println("%%%%%%%%%%%%%%%%%%%%");
+                System.out.println(e.getKey());
+                System.out.println("%%%%%%%%%%%%%%%%%%%%");
+                System.out.println(ProfileDump.textMethodInfo(e.getValue(), collectionCount));
+                System.out.println("%%%%%%%%%%%%%%%%%%%%");
+                System.out.println(e.getKey());
+                System.out.println("%%%%%%%%%%%%%%%%%%%%");
+                System.out.println(ProfileDump.textDumpCallTree(e.getValue().getCallTree(), collectionCount));
+                System.out.println();
+            }
+        }
     }
 
-    static final int OPI = 100;
+    static final int OPI = 500;
 
     @Benchmark()
-    // one thread per cpu
-    @Threads(-1)
+    // just two threads work best for a 8 cpu i7, must experiment with different hardware
+    @Threads(2)
     @BenchmarkMode({ Mode.Throughput })
     @OperationsPerInvocation(OPI)
     public void requestThroughput()

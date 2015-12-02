@@ -32,7 +32,6 @@ import com.ea.orbit.io.StringBuilderWriter;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 
 
@@ -43,44 +42,54 @@ public class ProfileDump
 
     }
 
-    public static String textDump(Collection<MethodInfo> data, long sampleCount)
+    public static String textMethodInfo(ProfilerData data, long globalCount)
     {
         StringBuilderWriter sw = new StringBuilderWriter();
         PrintWriter pw = new PrintWriter(sw);
-
+        float limit = 5;
         // obs: can't have it changing during the dump
-        ArrayList<MethodInfo> methods = new ArrayList<>(data);
+        ArrayList<MethodInfo> methods = new ArrayList<>(data.getMethods());
 
         // this might go wrong if the data is changing meanwhile.
+        long sampleCount = data.getSampleCount();
         Collections.sort(methods, (a, b) -> -Long.compare(a.count, b.count));
         for (MethodInfo m : methods)
         {
+            if (sampleCount != 0 && limit > (m.count * 100.0 / sampleCount))
+            {
+                break;
+            }
+            if (globalCount != 0)
+            {
+                pw.print(String.format("%.2f", m.count * 100.0 / globalCount));
+                pw.print("\t");
+            }
+            if (sampleCount != 0)
+            {
+                pw.print(String.format("%.2f", m.count * 100.0 / sampleCount));
+                pw.print("\t");
+            }
+            pw.print(m.count);
+            pw.print("\t");
             pw.print(m.declaringClass);
             pw.print(".");
             pw.print(m.methodName);
-            pw.print("\t");
-            pw.print(m.count);
-            if (sampleCount != 0)
-            {
-                pw.print("\t");
-                pw.print(String.format("%.2f", m.count * 100.0 / sampleCount));
-            }
             pw.println();
         }
         return sw.toString();
     }
 
-    public static String textDumpCallTree(CallTreeElement root)
+    public static String textDumpCallTree(CallTreeElement root, long globalCount)
     {
         StringBuilderWriter sw = new StringBuilderWriter();
         PrintWriter pw = new PrintWriter(sw);
 
-        textDumpCallTree(64, pw, "", root, root.count);
+        textDumpCallTree(64, pw, "", root, root.count, globalCount);
 
         return sw.toString();
     }
 
-    public static void textDumpCallTree(int depthLimit, PrintWriter pw, String prefix, CallTreeElement start, long sampleCount)
+    public static void textDumpCallTree(int depthLimit, PrintWriter pw, String prefix, CallTreeElement start, long sampleCount, long globalCount)
     {
         float limit = 5;
         ArrayList<CallTreeElement> methods = new ArrayList<>(start.children.values());
@@ -88,10 +97,13 @@ public class ProfileDump
         for (int i = 0; i < methods.size(); i++)
         {
             CallTreeElement m = methods.get(i);
+            float percTotalGlobal = m.count * 100f / globalCount;
             float percTotal = m.count * 100f / sampleCount;
             if (percTotal > limit)
             {
                 float percMethod = m.elementInfo.count * 100f / sampleCount;
+                pw.print(String.format("%6.2f%%", percTotalGlobal));
+                pw.print("\t");
                 pw.print(String.format("%6.2f%%", percTotal));
                 pw.print("\t");
                 pw.print(String.format("%6.2f%%", percMethod));
@@ -111,7 +123,7 @@ public class ProfileDump
                 }
                 if (depthLimit > 0)
                 {
-                    textDumpCallTree(--depthLimit, pw, hasMore ? (prefix + "|  ") : prefix + "   ", m, sampleCount);
+                    textDumpCallTree(--depthLimit, pw, hasMore ? (prefix + "|  ") : prefix + "   ", m, sampleCount, globalCount);
                 }
             }
         }
