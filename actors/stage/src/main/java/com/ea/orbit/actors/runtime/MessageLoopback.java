@@ -33,6 +33,9 @@ import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.concurrent.Task;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Objects;
 
 /**
@@ -41,6 +44,7 @@ import java.util.Objects;
  */
 public class MessageLoopback extends NamedPipelineExtension
 {
+    private static Logger logger = LoggerFactory.getLogger(MessageLoopback.class);
     private ExecutionObjectCloner cloner;
     private ActorRuntime runtime;
 
@@ -58,7 +62,20 @@ public class MessageLoopback extends NamedPipelineExtension
             if (Objects.equals(message.getToNode(), runtime.getLocalAddress()) && cloner != null)
             {
                 final Object originalPayload = message.getPayload();
-                final Object clonedPayload = cloner.clone(originalPayload);
+                final Object clonedPayload;
+                try
+                {
+                    clonedPayload = cloner.clone(originalPayload);
+                }
+                catch (Exception e)
+                {
+                    // ignoring clone errors
+                    if (logger.isDebugEnabled())
+                    {
+                        logger.debug("Error cloning message: " + message, e);
+                    }
+                    return ctx.write(msg);
+                }
                 message.setPayload(clonedPayload);
                 // short circuits the message back
                 ctx.fireRead(message);
