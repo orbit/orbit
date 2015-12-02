@@ -72,6 +72,7 @@ public class SingleNodeBenchmark
     private ScheduledFuture<?> scheduledFuture;
     private ScheduledThreadPoolExecutor scheduledExecutorService;
     int iteration = 0;
+    int cpuCount = Runtime.getRuntime().availableProcessors();
     boolean profile = false;
 
     public interface Hello extends Actor
@@ -93,7 +94,7 @@ public class SingleNodeBenchmark
     {
         System.out.println("Create stage");
         stage = createStage();
-        if(profile)
+        if (profile)
         {
             actorProfiler = new ActorProfiler();
             scheduledExecutorService = new ScheduledThreadPoolExecutor(2);
@@ -113,7 +114,7 @@ public class SingleNodeBenchmark
     @Setup(Level.Iteration)
     public void setupIteration()
     {
-        if(profile)
+        if (profile)
         {
             iteration++;
             if (iteration < 5)
@@ -127,7 +128,7 @@ public class SingleNodeBenchmark
     public void tearDown()
     {
         stage.stop().join();
-        if(profile)
+        if (profile)
         {
             scheduledFuture.cancel(false);
             scheduledExecutorService.shutdownNow();
@@ -149,47 +150,75 @@ public class SingleNodeBenchmark
         }
     }
 
-    static final int OPI = 500;
+    static final int THROUGHPUT_BENCH_BATCH_SIZE = 500;
 
     @Benchmark()
-    // just two threads work best for a 8 cpu i7, must experiment with different hardware
-    @Threads(2)
+    @Threads(-1)
     @BenchmarkMode({ Mode.Throughput })
-    @OperationsPerInvocation(OPI)
+    @OperationsPerInvocation(THROUGHPUT_BENCH_BATCH_SIZE)
     public void requestThroughput()
     {
         // use a different actor per thread, ideally one actor per core for this test
         Hello hello = Actor.getReference(Hello.class, "hello" + Thread.currentThread().getId());
-        List<Task<String>> results = new ArrayList<>(OPI);
+        List<Task<String>> results = new ArrayList<>(THROUGHPUT_BENCH_BATCH_SIZE);
+
         // doing a batch of operations reduces latency since the worker threads don't stop processing requests.
-        // if just a single message were sent then join invoked, we'd be measuring more context switching than anything else
-        for (int i = 0; i < OPI; i++)
+        // if just a single message were sent then join invoked
+        // we'd be measuring context switching more than anything else
+        for (int i = 0; i < THROUGHPUT_BENCH_BATCH_SIZE; i++)
         {
             results.add(hello.sayHello("test"));
         }
-        Task.allOf(results).join();
+        Task<Void> result = Task.allOf(results);
+        result.join();
     }
-
-    static final int OPI2 = 500;
 
     @Benchmark()
     @BenchmarkMode(Mode.AverageTime)
     // just one thread
     @Threads(1)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    @OperationsPerInvocation(OPI2)
-    public void requestLatency()
+    public void avgRequestTime_singleThread()
     {
+
         // using a single actor minimizes the context switching between actor threads.
         Hello hello = Actor.getReference(Hello.class, "hello");
-        List<Task<String>> results = new ArrayList<>(OPI2);
+        Task<String> result = hello.sayHello("test");
+        if (cpuCount > 2)
+        {
+            // this takes one cpu but reduces latency by reducing context switching
+            while (!result.isDone())
+            {
+
+            }
+        }
+        result.join();
+    }
+
+
+    static final int REQ_TIME_BENCH_BATCH_SIZE = 500;
+
+    @Benchmark()
+    @BenchmarkMode(Mode.AverageTime)
+    // just one thread
+    @Threads(1)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    @OperationsPerInvocation(REQ_TIME_BENCH_BATCH_SIZE)
+    public void avgRequestTime_batched()
+    {
+
+        // using a single actor minimizes the context switching between actor threads.
+        Hello hello = Actor.getReference(Hello.class, "hello");
+        List<Task<String>> results = new ArrayList<>(REQ_TIME_BENCH_BATCH_SIZE);
+
         // doing a batch of operations reduces latency since the worker threads don't stop processing requests.
-        // if just a single message were sent then join invoked, we'd be measuring more context switching than anything else
-        for (int i = 0; i < OPI2; i++)
+        // context switching plays a big role in the result when a single message is sent.
+        for (int i = 0; i < REQ_TIME_BENCH_BATCH_SIZE; i++)
         {
             results.add(hello.sayHello("test"));
         }
-        Task.allOf(results).join();
+        Task<Void> result = Task.allOf(results);
+        result.join();
     }
 
     public Stage createStage()
