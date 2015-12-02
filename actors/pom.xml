@@ -57,6 +57,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>extensions/memcached</module>
         <module>extensions/metrics</module>
         <module>test/actor-tests</module>
+        <module>test/benchmarks</module>
         <module>actors-all</module>
     </modules>
 
