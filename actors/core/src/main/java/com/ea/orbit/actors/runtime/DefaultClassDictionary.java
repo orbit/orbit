@@ -195,6 +195,13 @@ public class DefaultClassDictionary
             }
         }
         clazz = classForName(className, false);
+        int actualClassId = getClassId(clazz);
+        // double check if the application is not using a hash based id when the correct one is stored somewhere else
+        if (actualClassId != classId)
+        {
+            logger.error("Using invalid class id for {} {}!={}, should be {}", className, classId, actualClassId, actualClassId);
+            throw new IllegalArgumentException(String.format("Using invalid class id for %s %d!=%d, should be %d", className, classId, actualClassId, actualClassId));
+        }
         classToId.putIfAbsent(clazz, id);
         idToClass.putIfAbsent(id, clazz);
         return clazz;
