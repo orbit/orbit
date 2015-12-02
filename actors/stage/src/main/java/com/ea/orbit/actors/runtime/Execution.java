@@ -66,6 +66,10 @@ public class Execution extends AbstractExecution implements Startable
         {
             onInvocation(ctx, (Invocation) msg);
         }
+        else
+        {
+            ctx.fireRead(msg);
+        }
     }
 
     @SuppressWarnings("unchecked")
