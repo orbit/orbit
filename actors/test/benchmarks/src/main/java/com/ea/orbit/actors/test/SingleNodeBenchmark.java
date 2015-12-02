@@ -39,6 +39,7 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -46,6 +47,7 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 
 @State(Scope.Benchmark)
@@ -98,6 +100,7 @@ public class SingleNodeBenchmark
     @BenchmarkMode(Mode.AverageTime)
     // just one thread to really measure the best possible latency time
     @Threads(1)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
     public void requestLatency()
     {
         Hello hello = Actor.getReference(Hello.class, "hello" + Thread.currentThread().getId());
