@@ -33,9 +33,10 @@ public class DefaultHandlers
     public static final String HEAD = "head";
     public static final String CACHING = "caching";
     public static final String EXECUTION = "execution";
+    public static final String HOSTING = "hosting";
     public static final String MESSAGING = "messaging";
+    public static final String MESSAGE_LOOPBACK = "message-loopback";
     public static final String SERIALIZATION = "serialization";
     public static final String NETWORK = "network";
     public static final String TAIL = "tail";
-    public static final String HOSTING = "hosting";
 }

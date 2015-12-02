@@ -50,7 +50,7 @@ public class MessageLoopback extends NamedPipelineExtension
 
     public MessageLoopback()
     {
-        super("local-message-handler", null, DefaultHandlers.MESSAGING);
+        super(DefaultHandlers.MESSAGE_LOOPBACK, null, DefaultHandlers.MESSAGING);
     }
 
     @Override
