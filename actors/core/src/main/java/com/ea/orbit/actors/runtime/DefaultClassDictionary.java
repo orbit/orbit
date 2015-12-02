@@ -28,8 +28,8 @@
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.reflection.ClassIdGenerationStrategy;
 import com.ea.orbit.actors.annotation.ClassIdStrategy;
+import com.ea.orbit.actors.reflection.ClassIdGenerationStrategy;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.util.ClassPath;
 import com.ea.orbit.util.IOUtils;
@@ -183,7 +183,7 @@ public class DefaultClassDictionary
         if (className == null)
         {
             final List<ClassPath.ClassResourceInfo> list = ClassPath.get().getAllClasses().stream()
-                    .filter(c -> c.getClassName().replace('$', '.').hashCode() == classId)
+                    .filter(c -> c.getClassName().hashCode() == classId)
                     .collect(Collectors.toList());
             if (list.size() > 0)
             {
