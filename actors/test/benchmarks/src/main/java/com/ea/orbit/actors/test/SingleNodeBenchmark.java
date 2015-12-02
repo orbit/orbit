@@ -39,6 +39,7 @@ import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
@@ -46,6 +47,8 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -84,16 +87,23 @@ public class SingleNodeBenchmark
         stage.stop().join();
     }
 
+    static final int OPI = 100;
+
     @Benchmark()
     // should use as many threads as possible, or issue concurrent requests
-    @Threads(100)
+    @Threads(-1)
     @BenchmarkMode(Mode.Throughput)
+    @OperationsPerInvocation(OPI)
     public void requestThroughput()
     {
-        // todo keep a list of tasks and issue x concurrent requests
         // use a different actor per thread
         Hello hello = Actor.getReference(Hello.class, "hello" + Thread.currentThread().getId());
-        hello.sayHello("test").join();
+        List<Task<String>> results = new ArrayList<>(OPI);
+        for (int i = 0; i < OPI; i++)
+        {
+            results.add(hello.sayHello("test"));
+        }
+        Task.allOf(results).join();
     }
 
     @Benchmark()
