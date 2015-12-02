@@ -313,5 +313,8 @@ public class LocalObjects
         return localObjects.values().stream();
     }
 
-
+    public int getLocalObjectCount()
+    {
+        return localObjects.size();
+    }
 }

@@ -48,6 +48,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         </dependency>
         <dependency>
             <groupId>com.ea.orbit</groupId>
+            <artifactId>orbit-actors-stage</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ea.orbit</groupId>
             <artifactId>orbit-metrics</artifactId>
             <version>${project.version}</version>
         </dependency>

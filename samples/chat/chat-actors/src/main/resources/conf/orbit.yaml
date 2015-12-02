@@ -35,6 +35,7 @@ orbit.actors.extensions:
     port: 27017
     database: chat
   - !!com.ea.orbit.actors.extensions.metrics.MetricsLifetimeExtension {}
+  - !!com.ea.orbit.actors.extensions.metrics.MetricsPipelineExtension {}
 
 orbit.chat.maxMessages: 500
 
