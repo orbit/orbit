@@ -164,9 +164,4 @@ public class Execution extends AbstractExecution implements Startable
         this.objects = objects;
     }
 
-    public int getObjectCount()
-    {
-        return objects.getLocalObjectCount();
-    }
-
 }

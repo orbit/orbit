@@ -108,7 +108,9 @@ public class MetricsPipelineExtension extends NamedPipelineExtension
             Meter messageMeter = receiveMeters.get(messageType);
 
             if (messageMeter != null)
+            {
                 messageMeter.mark();
+            }
         }
 
         ctx.fireRead(message);
@@ -126,14 +128,16 @@ public class MetricsPipelineExtension extends NamedPipelineExtension
             Meter messageMeter = sendMeters.get(messageType);
 
             if (messageMeter != null)
+            {
                 messageMeter.mark();
+            }
         }
 
-        return super.write(ctx, message);
+        return ctx.write(message);
     }
 
     @ExportMetric(name="messagesReceived")
-    public int getMessagesRecievedCount()
+    public int getMessagesReceivedCount()
     {
         return messagesReceived.intValue();
     }

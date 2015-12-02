@@ -1230,12 +1230,6 @@ public class Stage implements Startable, ActorRuntime
     @ExportMetric(name="localActorCount")
     public int getLocalActorCount()
     {
-        int value = 0;
-        if (execution != null)
-        {
-            value = execution.getObjectCount();
-        }
-
-        return value;
+        return objects.getLocalObjectCount();
     }
 }
