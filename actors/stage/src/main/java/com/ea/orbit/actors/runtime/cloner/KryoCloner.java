@@ -28,9 +28,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime.cloner;
 
-import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.ActorObserver;
+import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.ActorRuntime;
+import com.ea.orbit.actors.runtime.RemoteReference;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.pool.KryoFactory;
 import com.esotericsoftware.kryo.pool.KryoPool;
 import com.esotericsoftware.kryo.serializers.CollectionSerializer;
@@ -105,7 +111,65 @@ public class KryoCloner implements ExecutionObjectCloner
                     }
                 });
 
-                kryo.addDefaultSerializer(Actor.class, new ImmutableObjectSerializer<Actor>(true, true));
+                kryo.addDefaultSerializer(RemoteReference.class, new ImmutableObjectSerializer<RemoteReference>(true, true));
+                kryo.addDefaultSerializer(AbstractActor.class, new Serializer<Object>(true, true)
+                {
+
+                    @Override
+                    public void write(final Kryo kryo, final Output output, final Object object)
+                    {
+
+                    }
+
+                    @Override
+                    public RemoteReference read(final Kryo kryo, final Input input, final Class<Object> type)
+                    {
+                        return null;
+                    }
+
+                    @Override
+                    public Object copy(final Kryo kryo, final Object original)
+                    {
+                        if (original instanceof AbstractActor)
+                        {
+                            return RemoteReference.from((AbstractActor) original);
+                        }
+                        if (original instanceof RemoteReference)
+                        {
+                            return original;
+                        }
+                        if (original == null)
+                        {
+                            return null;
+                        }
+                        throw new IllegalArgumentException("Invalid type for " + original);
+                    }
+                });
+                kryo.addDefaultSerializer(ActorObserver.class, new Serializer<ActorObserver>(true, true)
+                {
+
+                    @Override
+                    public void write(final Kryo kryo, final Output output, final ActorObserver object)
+                    {
+
+                    }
+
+                    @Override
+                    public ActorObserver read(final Kryo kryo, final Input input, final Class<ActorObserver> type)
+                    {
+                        return null;
+                    }
+
+                    @Override
+                    public ActorObserver copy(final Kryo kryo, final ActorObserver original)
+                    {
+                        if (original instanceof RemoteReference)
+                        {
+                            return original;
+                        }
+                        return ActorRuntime.getRuntime().registerObserver(null, original);
+                    }
+                });
                 kryo.addDefaultSerializer(UUID.class, new ImmutableObjectSerializer<UUID>(true, true));
 
                 return kryo;

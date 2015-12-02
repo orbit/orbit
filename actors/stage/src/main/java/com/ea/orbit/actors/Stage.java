@@ -56,9 +56,11 @@ import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.actors.runtime.DefaultHandlers;
 import com.ea.orbit.actors.runtime.Execution;
 import com.ea.orbit.actors.runtime.Hosting;
+import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.JavaMessageSerializer;
 import com.ea.orbit.actors.runtime.LocalObjects;
+import com.ea.orbit.actors.runtime.MessageLoopback;
 import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.NodeCapabilities;
 import com.ea.orbit.actors.runtime.ObserverEntry;
@@ -68,7 +70,6 @@ import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.actors.runtime.ResponseCaching;
 import com.ea.orbit.actors.runtime.SerializationHandler;
 import com.ea.orbit.actors.runtime.StatelessActorEntry;
-import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.actors.streams.AsyncObserver;
@@ -572,6 +573,10 @@ public class Stage implements Startable, ActorRuntime
         // handles invocation messages and request-response matching
         pipeline.addLast(DefaultHandlers.MESSAGING, messaging);
 
+        final MessageLoopback messageLoopback = new MessageLoopback();
+        messageLoopback.setCloner(objectCloner);
+        pipeline.addLast(messageLoopback.getName(), messageLoopback);
+
         // message serializer handler
         pipeline.addLast(DefaultHandlers.SERIALIZATION, new SerializationHandler(this, messageSerializer));
 
@@ -979,14 +984,14 @@ public class Stage implements Startable, ActorRuntime
                             {
                                 if (!canceled)
                                 {
-                                    return (Task)taskCallable.call();
+                                    return (Task) taskCallable.call();
                                 }
                             }
                             catch (Exception ex)
                             {
                                 logger.warn("Error calling timer", ex);
                             }
-                            return (Task)Task.done();
+                            return (Task) Task.done();
                         }, 1000);
             }
 
@@ -1039,6 +1044,12 @@ public class Stage implements Startable, ActorRuntime
     public Task<NodeAddress> locateActor(final Addressable actorReference, final boolean forceActivation)
     {
         return hosting.locateActor((RemoteReference<?>) actorReference, forceActivation);
+    }
+
+    @Override
+    public NodeAddress getLocalAddress()
+    {
+        return hosting.getNodeAddress();
     }
 
     @Override

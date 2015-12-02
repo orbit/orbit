@@ -92,6 +92,13 @@ public interface ActorRuntime extends BasicRuntime
      */
     Task<NodeAddress> locateActor(final Addressable actorReference, final boolean forceActivation);
 
+    /**
+     * Gets the current node address in the cluster.
+     *
+     * @return the current node address
+     */
+    NodeAddress getLocalAddress();
+
 
     /**
      * Gets a string that represents uniquely the node that currently holds this actor.
@@ -150,4 +157,5 @@ public interface ActorRuntime extends BasicRuntime
                 (T) extensions.stream().filter(p -> itemType.isInstance(p)).findFirst().orElse(null);
 
     }
+
 }

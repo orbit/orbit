@@ -29,7 +29,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.annotation.PreferLocalPlacement;
 import com.ea.orbit.actors.annotation.StatelessWorker;
@@ -481,8 +480,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     {
         try
         {
-            MessageDigest md = null;
-            md = MessageDigest.getInstance("SHA-256");
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(key.getBytes("UTF-8"));
             byte[] digest = md.digest();
             return String.format("%064x", new java.math.BigInteger(1, digest));
@@ -496,7 +494,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     /**
      * Uses consistent hashing to determine the "owner" of a certain key.
      *
-     * @param key
+     * @param key the key whose owner node will be determined
      * @return the NodeAddress of the node that's supposed to own the key.
      */
     public NodeAddress getConsistentHashOwner(final String key)
@@ -514,7 +512,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     /**
      * Uses consistent hashing to determine this node is the "owner" of a certain key.
      *
-     * @param key
+     * @param key the key whose owner node will be determined
      * @return true if this node is assigned to "own" the key.
      */
     public boolean isConsistentHashOwner(final String key)
@@ -627,6 +625,11 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         if (msg instanceof Invocation)
         {
             final Invocation invocation = (Invocation) msg;
+            if (invocation.getFromNode() == null)
+            {
+                // used by subsequent filters
+                invocation.setFromNode(stage.getLocalAddress());
+            }
             if (invocation.getToNode() == null)
             {
                 return writeInvocation(ctx, invocation);

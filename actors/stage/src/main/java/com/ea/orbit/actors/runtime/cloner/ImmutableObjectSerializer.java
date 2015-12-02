@@ -47,6 +47,7 @@ class ImmutableObjectSerializer<T> extends Serializer
     @Override
     public void write(Kryo kryo, Output output, Object object)
     {
+
     }
 
     @Override

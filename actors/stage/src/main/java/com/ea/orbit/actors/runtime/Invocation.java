@@ -165,4 +165,40 @@ public class Invocation
     {
         this.fromNode = fromNode;
     }
+
+    public Invocation withToReference(final RemoteReference toReference)
+    {
+        this.toReference = toReference;
+        return this;
+    }
+
+    public Invocation withMethod(final Method method)
+    {
+        this.method = method;
+        return this;
+    }
+
+    public Invocation withOneWay(final boolean oneWay)
+    {
+        this.oneWay = oneWay;
+        return this;
+    }
+
+    public Invocation withMethodId(final int methodId)
+    {
+        this.methodId = methodId;
+        return this;
+    }
+
+    public Invocation withParams(final Object[] params)
+    {
+        this.params = params;
+        return this;
+    }
+
+    public Invocation withHeaders(final Map<?, ?> headers)
+    {
+        this.headers = headers;
+        return this;
+    }
 }

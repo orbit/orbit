@@ -31,11 +31,13 @@ package com.ea.orbit.actors.server;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.peer.PeerExecutor;
+import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.LocalObjects;
 import com.ea.orbit.actors.runtime.ObjectInvoker;
-import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.concurrent.Task;
+
+import java.util.LinkedHashMap;
 
 class ServerPeerExecutor extends PeerExecutor
 {
@@ -64,7 +66,19 @@ class ServerPeerExecutor extends PeerExecutor
             logger.trace("Forwarding to the server: {}", invocation);
         }
         // forward to the server
-        final Task<Void> write = stage.getPipeline().write(invocation);
+        final Invocation forwardedInvocation = new Invocation()
+                .withToReference(invocation.getToReference())
+                .withMethod(invocation.getMethod())
+                .withOneWay(invocation.isOneWay())
+                .withMethodId(invocation.getMethodId())
+                .withParams(invocation.getParams())
+                .withHeaders(invocation.getHeaders() != null ? new LinkedHashMap<>(invocation.getHeaders()) : null);
+
+        //don't copy the completion
+        //don't copy toNode
+        //don't copy fromNode
+
+        final Task<Void> write = stage.getPipeline().write(forwardedInvocation);
         if (invocation.getCompletion() != null)
         {
             InternalUtils.linkFutures(write, invocation.getCompletion());

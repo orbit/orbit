@@ -31,7 +31,6 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.injection.DependencyRegistry;
@@ -124,7 +123,6 @@ public class SingleNodeBenchmark
         Stage stage = new Stage.Builder()
                 .extensions(lifetimeExtension, new FakeStorageExtension(fakeDatabase))
                 .mode(Stage.StageMode.HOST)
-                .objectCloner(new KryoCloner())
                 .clusterName(IdUtils.urlSafeString(32))
                 // uncomment this to remove jgroups from the equation
                 //.clusterPeer(new FakeClusterPeer())

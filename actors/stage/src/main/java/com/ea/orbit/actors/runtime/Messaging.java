@@ -353,12 +353,7 @@ public class Messaging extends HandlerAdapter implements Startable
     public Task<?> writeMessage(HandlerContext ctx, Message message)
     {
         int messageId = message.getMessageId();
-        if (messageId == 0)
-        {
-            messageId = messageIdGen.incrementAndGet();
-            message.setMessageId(messageId);
-        }
-        else if (message.getFromNode() != null)
+        if (messageId != 0)
         {
             // forwarding message somewhere, hosting's doing, likely
             // occurs when the object ownership changes
@@ -368,6 +363,9 @@ public class Messaging extends HandlerAdapter implements Startable
             }
             return ctx.write(message);
         }
+
+        messageId = messageIdGen.incrementAndGet();
+        message.setMessageId(messageId);
         if (logger.isTraceEnabled())
         {
             logger.trace("sending message " + messageId);

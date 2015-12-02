@@ -121,6 +121,11 @@ public class StreamWithClientTest extends ActorBaseTest
         int x;
         Object obj;
 
+        public SomeData()
+        {
+            // required by the serializer
+        }
+
         public SomeData(final int x, final Object obj)
         {
             this.x = x;
