@@ -480,7 +480,8 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     {
         try
         {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            MessageDigest md = null;
+            md = MessageDigest.getInstance("SHA-256");
             md.update(key.getBytes("UTF-8"));
             byte[] digest = md.digest();
             return String.format("%064x", new java.math.BigInteger(1, digest));
@@ -494,7 +495,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     /**
      * Uses consistent hashing to determine the "owner" of a certain key.
      *
-     * @param key the key whose owner node will be determined
+     * @param key
      * @return the NodeAddress of the node that's supposed to own the key.
      */
     public NodeAddress getConsistentHashOwner(final String key)
@@ -512,7 +513,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     /**
      * Uses consistent hashing to determine this node is the "owner" of a certain key.
      *
-     * @param key the key whose owner node will be determined
+     * @param key
      * @return true if this node is assigned to "own" the key.
      */
     public boolean isConsistentHashOwner(final String key)
