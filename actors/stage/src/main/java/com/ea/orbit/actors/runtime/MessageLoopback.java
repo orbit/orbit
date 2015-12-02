@@ -42,6 +42,7 @@ import java.util.Objects;
 public class MessageLoopback extends NamedPipelineExtension
 {
     private ExecutionObjectCloner cloner;
+    private ActorRuntime runtime;
 
     public MessageLoopback()
     {
@@ -54,7 +55,7 @@ public class MessageLoopback extends NamedPipelineExtension
         if (msg instanceof Message)
         {
             Message message = (Message) msg;
-            if (Objects.equals(message.getToNode(), message.getFromNode()) && cloner != null)
+            if (Objects.equals(message.getToNode(), runtime.getLocalAddress()) && cloner != null)
             {
                 final Object originalPayload = message.getPayload();
                 final Object clonedPayload = cloner.clone(originalPayload);
@@ -75,5 +76,15 @@ public class MessageLoopback extends NamedPipelineExtension
     public void setCloner(final ExecutionObjectCloner cloner)
     {
         this.cloner = cloner;
+    }
+
+    public ActorRuntime getRuntime()
+    {
+        return runtime;
+    }
+
+    public void setRuntime(final ActorRuntime runtime)
+    {
+        this.runtime = runtime;
     }
 }

@@ -575,6 +575,7 @@ public class Stage implements Startable, ActorRuntime
 
         final MessageLoopback messageLoopback = new MessageLoopback();
         messageLoopback.setCloner(objectCloner);
+        messageLoopback.setRuntime(this);
         pipeline.addLast(messageLoopback.getName(), messageLoopback);
 
         // message serializer handler
