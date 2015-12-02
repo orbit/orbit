@@ -29,7 +29,8 @@ public class ServerSideStreamProxyImpl implements ServerSideStreamProxy, Startab
     @SuppressWarnings("unchecked")
     public <T> Task<StreamSubscriptionHandle<T>> subscribe(final String provider, final int dataClassId, final String streamId, final ClientSideStreamProxy proxy)
     {
-        AsyncStream<?> stream = stage.getStream(provider, DefaultClassDictionary.get().getClassById(dataClassId), streamId);
+        Class<?> dataClass = DefaultClassDictionary.get().getClassById(dataClassId);
+        AsyncStream<?> stream = stage.getStream(provider, dataClass, streamId);
 
         Task<? extends StreamSubscriptionHandle<?>> subscription = stream.subscribe(new AsyncObserver()
         {
