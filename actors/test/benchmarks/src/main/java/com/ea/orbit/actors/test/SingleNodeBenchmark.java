@@ -90,15 +90,17 @@ public class SingleNodeBenchmark
     static final int OPI = 100;
 
     @Benchmark()
-    // should use as many threads as possible, or issue concurrent requests
+    // one thread per cpu
     @Threads(-1)
-    @BenchmarkMode(Mode.Throughput)
+    @BenchmarkMode({ Mode.Throughput })
     @OperationsPerInvocation(OPI)
     public void requestThroughput()
     {
-        // use a different actor per thread
+        // use a different actor per thread, ideally one actor per core for this test
         Hello hello = Actor.getReference(Hello.class, "hello" + Thread.currentThread().getId());
         List<Task<String>> results = new ArrayList<>(OPI);
+        // doing a batch of operations reduces latency since the worker threads don't stop processing requests.
+        // if just a single message were sent then join invoked, we'd be measuring more context switching than anything else
         for (int i = 0; i < OPI; i++)
         {
             results.add(hello.sayHello("test"));
@@ -106,15 +108,26 @@ public class SingleNodeBenchmark
         Task.allOf(results).join();
     }
 
+    static final int OPI2 = 500;
+
     @Benchmark()
     @BenchmarkMode(Mode.AverageTime)
-    // just one thread to really measure the best possible latency time
+    // just one thread
     @Threads(1)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    @OperationsPerInvocation(OPI2)
     public void requestLatency()
     {
-        Hello hello = Actor.getReference(Hello.class, "hello" + Thread.currentThread().getId());
-        hello.sayHello("test").join();
+        // using a single actor minimizes the context switching between actor threads.
+        Hello hello = Actor.getReference(Hello.class, "hello");
+        List<Task<String>> results = new ArrayList<>(OPI2);
+        // doing a batch of operations reduces latency since the worker threads don't stop processing requests.
+        // if just a single message were sent then join invoked, we'd be measuring more context switching than anything else
+        for (int i = 0; i < OPI2; i++)
+        {
+            results.add(hello.sayHello("test"));
+        }
+        Task.allOf(results).join();
     }
 
     public Stage createStage()
