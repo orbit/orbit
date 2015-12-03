@@ -91,22 +91,24 @@ public class Processor extends AbstractProcessor
         if (e instanceof TypeElement)
         {
             final TypeMirror t1 = e.asType();
-            if (typeUtils.isSubtype(t1, actorTypeMirror) || typeUtils.isSubtype(t1, actorObserverTypeMirror))
+            TypeElement typeElement = (TypeElement) e;
+            int idFromStrategy = getIdFromStrategy(typeElement);
+            if (idFromStrategy != 0 || typeUtils.isSubtype(t1, actorTypeMirror) || typeUtils.isSubtype(t1, actorObserverTypeMirror))
             {
-                writeClassInfo((TypeElement) e);
+                writeClassInfo(typeElement, idFromStrategy);
             }
         }
         e.getEnclosedElements().forEach(this::processElement);
     }
 
-    private void writeClassInfo(final TypeElement e)
+    private void writeClassInfo(final TypeElement e, int idFromStrategy)
     {
         try
         {
             final FileObject resource = processingEnv.getFiler().createResource(
                     StandardLocation.CLASS_OUTPUT, "",
                     "META-INF/services/orbit/classes/" + elementUtils.getBinaryName(e) + ".yml", e);
-            int classId = getClassId(e);
+            int classId = idFromStrategy == 0 ? getIdFromHash(e) : idFromStrategy;
             try (final PrintWriter writer = new PrintWriter(resource.openWriter()))
             {
                 writer.append("classId: ").println(classId);
@@ -137,10 +139,20 @@ public class Processor extends AbstractProcessor
     }
 
     @SuppressWarnings("unchecked")
-    private int getClassId(final TypeElement e)
+    private int getIdFromHash(final TypeElement e)
+    {
+        String classBinaryName = elementUtils.getBinaryName(e).toString();
+        return classBinaryName.hashCode();
+    }
+
+    @SuppressWarnings("unchecked")
+    private int getIdFromStrategy(final TypeElement e)
     {
         List<? extends AnnotationMirror> annotationMirrors = e.getAnnotationMirrors();
-        String classBinaryName = elementUtils.getBinaryName(e).toString();
+        if (annotationMirrors == null || annotationMirrors.size() == 0)
+        {
+            return 0;
+        }
         try
         {
             for (AnnotationMirror annotationMirror : annotationMirrors)
@@ -149,6 +161,7 @@ public class Processor extends AbstractProcessor
                 ClassIdStrategy strategyAnn = annotationType.asElement().getAnnotation(ClassIdStrategy.class);
                 if (strategyAnn != null)
                 {
+                    String classBinaryName = elementUtils.getBinaryName(e).toString();
                     TypeElement element = (TypeElement) annotationType.asElement();
                     final Annotation sourceAnnotation = e.getAnnotation((Class<Annotation>) Class.forName(elementUtils.getBinaryName(element).toString()));
                     ClassIdGenerationStrategy idGenerationStrategy = sourceAnnotation.annotationType().getAnnotation(ClassIdStrategy.class).value().newInstance();
@@ -160,6 +173,6 @@ public class Processor extends AbstractProcessor
         {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Error processing the class id for: ");
         }
-        return classBinaryName.hashCode();
+        return 0;
     }
 }
