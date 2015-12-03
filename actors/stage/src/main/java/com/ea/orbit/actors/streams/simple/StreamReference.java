@@ -48,7 +48,7 @@ public class StreamReference<T> implements AsyncStream<T>
     }
 
     @Override
-    public Task<Void> unSubscribe(final StreamSubscriptionHandle<T> handle)
+    public Task<Void> unsubscribe(final StreamSubscriptionHandle<T> handle)
     {
         SimpleStreamProxyObject<Object> subscriber = provider.getSubscriber(streamActorRef);
         return subscriber.unsubscribe(((SimpleHandle<T>) handle).getId());
@@ -63,9 +63,9 @@ public class StreamReference<T> implements AsyncStream<T>
     }
 
     @Override
-    public Task<Void> post(final T data)
+    public Task<Void> publish(final T data)
     {
-        return streamActorRef.post(data);
+        return streamActorRef.publish(data);
     }
 
 }

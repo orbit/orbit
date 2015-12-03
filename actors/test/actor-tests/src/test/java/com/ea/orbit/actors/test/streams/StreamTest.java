@@ -13,11 +13,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class StreamTest extends ActorBaseTest
 {
@@ -28,11 +26,11 @@ public class StreamTest extends ActorBaseTest
         createStage();
         CompletableFuture<String> push = new Task<>();
         AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
-        test.subscribe(d -> {
+        test.subscribe((d,t) -> {
             push.complete(d);
             return Task.done();
         }).join();
-        test.post("hello");
+        test.publish("hello");
         assertEquals("hello", push.join());
         dumpMessages();
     }
@@ -44,23 +42,23 @@ public class StreamTest extends ActorBaseTest
         final Stage stage1 = createStage();
         // forces the stream to be created in the fist stage.
         AsyncStream.getStream(String.class, "test")
-                .post("data").join();
+                .publish("data").join();
 
         // create a second stage from which the stream is going to be used
         createStage();
         AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
         BlockingQueue queue = new LinkedBlockingQueue<>();
-        test.subscribe(msg -> {
+        test.subscribe((msg,t) -> {
             queue.add(msg);
             return Task.done();
         }).join();
-        test.post("hello");
+        test.publish("hello");
         assertEquals("hello", queue.poll(10, TimeUnit.SECONDS));
 
         // Stopping the first stage, the stream should migrate on the next post.
         stage1.stop().join();
 
-        test.post("hello2");
+        test.publish("hello2");
         assertEquals("hello2", queue.poll(5, TimeUnit.SECONDS));
 
         dumpMessages();
@@ -74,7 +72,7 @@ public class StreamTest extends ActorBaseTest
         final Stage stage1 = createStage();
         {
             AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
-            test.subscribe(d -> {
+            test.subscribe((d,t) -> {
                 push1.complete(d);
                 return Task.done();
             }).join();
@@ -84,7 +82,7 @@ public class StreamTest extends ActorBaseTest
         {
             stage2.bind();
             AsyncStream<String> test2 = AsyncStream.getStream(String.class, "test");
-            test2.post("hello");
+            test2.publish("hello");
         }
         assertEquals("hello", push1.join());
         dumpMessages();
@@ -100,7 +98,7 @@ public class StreamTest extends ActorBaseTest
         final Stage stage3 = createStage();
         {
             AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
-            test.subscribe(d -> {
+            test.subscribe((d,t) -> {
                 push1.complete(d);
                 return Task.done();
             }).join();
@@ -108,7 +106,7 @@ public class StreamTest extends ActorBaseTest
         CompletableFuture<String> push2 = new Task<>();
         {
             AsyncStream<String> test2 = AsyncStream.getStream(String.class, "test");
-            test2.subscribe(d -> {
+            test2.subscribe((d,t) -> {
                 push2.complete(d);
                 return Task.done();
             }).join();
@@ -117,7 +115,7 @@ public class StreamTest extends ActorBaseTest
         {
             stage3.bind();
             AsyncStream<String> test3 = AsyncStream.getStream(String.class, "test");
-            test3.post("hello");
+            test3.publish("hello");
         }
         assertEquals("hello", push1.join());
         assertEquals("hello", push2.join());
@@ -132,7 +130,7 @@ public class StreamTest extends ActorBaseTest
         final Stage stage1 = createStage();
         {
             AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
-            test.subscribe(d -> {
+            test.subscribe((d,t) -> {
                 push1.complete(d);
                 return Task.done();
             }).join();
@@ -141,7 +139,7 @@ public class StreamTest extends ActorBaseTest
         final Stage stage2 = createStage();
         {
             AsyncStream<String> test2 = AsyncStream.getStream(String.class, "test");
-            test2.subscribe(d -> {
+            test2.subscribe((d,t) -> {
                 push2.complete(d);
                 return Task.done();
             }).join();
@@ -153,7 +151,7 @@ public class StreamTest extends ActorBaseTest
         {
             stage3.bind();
             AsyncStream<String> test3 = AsyncStream.getStream(String.class, "test");
-            test3.post("hello");
+            test3.publish("hello");
         }
         assertEquals("hello", push1.join());
         assertEquals("hello", push2.join());
@@ -167,7 +165,7 @@ public class StreamTest extends ActorBaseTest
         CompletableFuture<String> push1 = new Task<>();
         final Stage stage1 = createStage();
         final AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
-        final StreamSubscriptionHandle<String> handle1 = test.subscribe(d -> {
+        final StreamSubscriptionHandle<String> handle1 = test.subscribe((d,t) -> {
             push1.complete(d);
             return Task.done();
         }).join();
@@ -181,13 +179,13 @@ public class StreamTest extends ActorBaseTest
 
         stage2.bind();
         final AsyncStream<String> test2 = AsyncStream.getStream(String.class, "test");
-        test2.subscribe(d -> {
+        test2.subscribe((d,t) -> {
             push2.complete(d);
             return Task.done();
         }).join();
-        test.unSubscribe(handle1).join();
+        test.unsubscribe(handle1).join();
 
-        test3.post("hello2").join();
+        test3.publish("hello2").join();
 
         assertEquals("hello2", push2.join());
         assertFalse(push1.isDone());

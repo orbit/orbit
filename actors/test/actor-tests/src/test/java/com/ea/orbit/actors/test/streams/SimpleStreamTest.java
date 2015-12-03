@@ -48,11 +48,11 @@ public class SimpleStreamTest extends ActorBaseTest
         createStage();
         CompletableFuture<String> push = new Task<>();
         AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
-        test.subscribe(d -> {
+        test.subscribe((d,t) -> {
             push.complete(d);
             return Task.done();
         }).join();
-        test.post("hello");
+        test.publish("hello");
         assertEquals("hello", push.join());
         dumpMessages();
     }

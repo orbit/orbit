@@ -74,6 +74,7 @@ import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.actors.streams.AsyncObserver;
 import com.ea.orbit.actors.streams.AsyncStream;
+import com.ea.orbit.actors.streams.StreamSequenceToken;
 import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
 import com.ea.orbit.actors.streams.simple.SimpleStreamExtension;
 import com.ea.orbit.actors.transactions.IdUtils;
@@ -1088,9 +1089,9 @@ public class Stage implements Startable, ActorRuntime
                     return new AsyncStream<T>()
                     {
                         @Override
-                        public Task<Void> unSubscribe(final StreamSubscriptionHandle<T> handle)
+                        public Task<Void> unsubscribe(final StreamSubscriptionHandle<T> handle)
                         {
-                            return stream.unSubscribe(handle);
+                            return stream.unsubscribe(handle);
                         }
 
                         @Override
@@ -1099,10 +1100,10 @@ public class Stage implements Startable, ActorRuntime
                             return stream.subscribe(new AsyncObserver<T>()
                             {
                                 @Override
-                                public Task<Void> onNext(final T data)
+                                public Task<Void> onNext(final T data, final StreamSequenceToken sequenceToken)
                                 {
                                     // TODO use actor executor, when available
-                                    return observer.onNext(data);
+                                    return observer.onNext(data, null);
                                 }
 
                                 @Override
@@ -1116,9 +1117,9 @@ public class Stage implements Startable, ActorRuntime
                         }
 
                         @Override
-                        public Task<Void> post(final T data)
+                        public Task<Void> publish(final T data)
                         {
-                            return stream.post(data);
+                            return stream.publish(data);
                         }
                     };
                 }

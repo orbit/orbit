@@ -38,7 +38,7 @@ public class ClientStreamProxy
         subscription.handle = runtime.getStream(provider, dataClass, streamId).subscribe(new AsyncObserver()
         {
             @Override
-            public Task<Void> onNext(final Object data)
+            public Task<Void> onNext(final Object data, final StreamSequenceToken sequenceToken)
             {
                 if (subscription.valid && peer.getPipeline().isActive())
                 {
@@ -53,7 +53,7 @@ public class ClientStreamProxy
     }
 
     @SuppressWarnings("unchecked")
-    public Task<Void> unSubscribe(String handle)
+    public Task<Void> unsubscribe(String handle)
     {
         StreamSubscription subscription = observerMap.remove(handle);
         // no more messages
@@ -62,7 +62,7 @@ public class ClientStreamProxy
             subscription.valid = false;
             await(subscription.handle);
             await(runtime.getStream(subscription.provider, subscription.dataClass, subscription.streamId)
-                    .unSubscribe(subscription.handle.join()));
+                    .unsubscribe(subscription.handle.join()));
             observerMap.remove(handle);
         }
         return Task.done();

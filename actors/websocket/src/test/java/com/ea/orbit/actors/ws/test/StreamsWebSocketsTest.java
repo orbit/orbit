@@ -29,11 +29,8 @@
 package com.ea.orbit.actors.ws.test;
 
 import com.ea.orbit.actors.Actor;
-import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.client.ClientPeer;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.streams.AsyncStream;
-import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
 import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.actors.test.FakeClusterPeer;
 import com.ea.orbit.actors.test.FakeStorageExtension;
@@ -48,8 +45,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.inject.Singleton;
-import javax.websocket.ContainerProvider;
-import javax.websocket.WebSocketContainer;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -105,7 +100,7 @@ public class StreamsWebSocketsTest extends ActorBaseTest
         public Task<Void> doPush(final String streamId, final String message)
         {
             return AsyncStream.getStream(String.class, streamId)
-                    .post(message);
+                    .publish(message);
         }
 
         public Task<String> hello(String msg)
@@ -180,7 +175,7 @@ public class StreamsWebSocketsTest extends ActorBaseTest
         BlockingQueue<String> queue = new LinkedBlockingDeque<>();
 
         AsyncStream<String> testStream = client.getPeer().getStream(AsyncStream.DEFAULT_PROVIDER, String.class, "testStream");
-        testStream.subscribe(d -> {
+        testStream.subscribe((d,t) -> {
             queue.add(d);
             return Task.done();
         }).join();

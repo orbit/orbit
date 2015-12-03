@@ -5,7 +5,8 @@ import com.ea.orbit.concurrent.Task;
 
 public interface AsyncObserver<T>
 {
-    Task<Void> onNext(T data);
+    /// add sequence token
+    Task<Void> onNext(T data, final StreamSequenceToken sequenceToken);
 
     default Task<Void> onError(Exception ex)
     {

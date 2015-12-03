@@ -1,6 +1,7 @@
 package com.ea.orbit.actors.streams.simple;
 
 import com.ea.orbit.actors.streams.AsyncObserver;
+import com.ea.orbit.actors.streams.StreamSequenceToken;
 import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
 import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.concurrent.Task;
@@ -25,13 +26,13 @@ public class SimpleStreamProxyObject<T> implements SimpleStreamProxy<T>
     }
 
     @Override
-    public Task<Void> onNext(final T data)
+    public Task<Void> onNext(final T data, final StreamSequenceToken sequenceToken)
     {
         await(Task.allOf(observerMap.values().stream()
                 .map(v -> {
                     try
                     {
-                        return v.onNext(data);
+                        return v.onNext(data, null);
                     }
                     catch (Throwable ex)
                     {

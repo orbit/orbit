@@ -14,5 +14,5 @@ public interface SimpleStream extends Actor
 
     <T> Task<String> subscribe(SimpleStreamProxy<T> subscriber);
 
-    <T> Task<Void> post(T data);
+    <T> Task<Void> publish(T data);
 }

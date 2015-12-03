@@ -8,6 +8,7 @@ import com.ea.orbit.actors.runtime.DefaultClassDictionary;
 import com.ea.orbit.actors.server.ServerPeer;
 import com.ea.orbit.actors.streams.AsyncObserver;
 import com.ea.orbit.actors.streams.AsyncStream;
+import com.ea.orbit.actors.streams.StreamSequenceToken;
 import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
 import com.ea.orbit.actors.streams.simple.StreamReference;
 import com.ea.orbit.actors.transactions.IdUtils;
@@ -35,7 +36,7 @@ public class ServerSideStreamProxyImpl implements ServerSideStreamProxy, Startab
         Task<? extends StreamSubscriptionHandle<?>> subscription = stream.subscribe(new AsyncObserver()
         {
             @Override
-            public Task<Void> onNext(final Object data)
+            public Task<Void> onNext(final Object data, final StreamSequenceToken sequenceToken)
             {
                 return proxy.onNext(provider, streamId, data);
             }
@@ -56,7 +57,7 @@ public class ServerSideStreamProxyImpl implements ServerSideStreamProxy, Startab
             throw new IllegalArgumentException("Not subscribed " + handle);
         }
 
-        return subscriptionInfo.stream.unSubscribe(subscriptionInfo.actualHandle);
+        return subscriptionInfo.stream.unsubscribe(subscriptionInfo.actualHandle);
     }
 
     @Override
@@ -70,7 +71,7 @@ public class ServerSideStreamProxyImpl implements ServerSideStreamProxy, Startab
     @SuppressWarnings("unchecked")
     public Task<?> stop()
     {
-        return Task.allOf(handleMap.values().stream().map(s -> s.stream.unSubscribe(s.actualHandle)));
+        return Task.allOf(handleMap.values().stream().map(s -> s.stream.unsubscribe(s.actualHandle)));
     }
 
     public void setStage(final Stage stage)

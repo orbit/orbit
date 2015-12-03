@@ -34,7 +34,7 @@ public class StreamWithClientTest extends ActorBaseTest
         public Task<Void> doPush(final String streamId, final String message)
         {
             return AsyncStream.getStream(String.class, streamId)
-                    .post(message);
+                    .publish(message);
         }
 
         @Override
@@ -42,7 +42,7 @@ public class StreamWithClientTest extends ActorBaseTest
         {
             final Class aClass = message.getClass();
             return AsyncStream.getStream(aClass, streamId)
-                    .post(message);
+                    .publish(message);
         }
     }
 
@@ -56,7 +56,7 @@ public class StreamWithClientTest extends ActorBaseTest
         final ClientPeer client = createRemoteClient(stage1);
 
         AsyncStream<String> testStream = client.getStream(AsyncStream.DEFAULT_PROVIDER, String.class, "testStream");
-        testStream.subscribe(d -> {
+        testStream.subscribe((d,t) -> {
             fakeSync.deque("received").add(d);
             return Task.done();
         }).join();
@@ -81,7 +81,7 @@ public class StreamWithClientTest extends ActorBaseTest
         final ClientPeer client = createRemoteClient(stage1);
         AsyncStream<String> testStream = client.getStream(AsyncStream.DEFAULT_PROVIDER, String.class, "testStream");
         BlockingQueue<Object> messagesReceived = fakeSync.deque("received");
-        final StreamSubscriptionHandle<String> handle = testStream.subscribe(d -> {
+        final StreamSubscriptionHandle<String> handle = testStream.subscribe((d,t) -> {
             messagesReceived.add(d);
             return Task.done();
         }).join();
@@ -93,7 +93,7 @@ public class StreamWithClientTest extends ActorBaseTest
 
         // client unsubscribes
         logger.info("unsubscribing");
-        testStream.unSubscribe(handle).join();
+        testStream.unsubscribe(handle).join();
         assertEquals(0, messagesReceived.size());
 
         // second push
@@ -102,7 +102,7 @@ public class StreamWithClientTest extends ActorBaseTest
 
         // client subscribes again
         logger.info("subscribing again");
-        testStream.subscribe(d -> {
+        testStream.subscribe((d,t) -> {
             messagesReceived.add(d);
             return Task.done();
         }).join();
@@ -143,7 +143,7 @@ public class StreamWithClientTest extends ActorBaseTest
         final ClientPeer client = createRemoteClient(stage1);
 
         AsyncStream<SomeData> testStream = client.getStream(AsyncStream.DEFAULT_PROVIDER, SomeData.class, "testStream");
-        testStream.subscribe(d -> {
+        testStream.subscribe((d,t) -> {
             fakeSync.deque("received").add(d);
             return Task.done();
         }).join();
@@ -168,7 +168,7 @@ public class StreamWithClientTest extends ActorBaseTest
         final ClientPeer client = createRemoteClient(stage1);
 
         AsyncStream<SomeData> testStream = client.getStream(AsyncStream.DEFAULT_PROVIDER, SomeData.class, "testStream");
-        testStream.subscribe(d -> {
+        testStream.subscribe((d,t) -> {
             fakeSync.deque("received").add(d);
             return Task.done();
         }).join();

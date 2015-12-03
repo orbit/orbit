@@ -7,10 +7,7 @@ import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.concurrent.Task;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static com.ea.orbit.async.Await.await;
 
@@ -77,10 +74,10 @@ public class SimpleStreamActor extends AbstractActor<SimpleStreamActor.State> im
     }
 
     @Override
-    public <T> Task<Void> post(final T data)
+    public <T> Task<Void> publish(final T data)
     {
         return Task.allOf(state().subscribers.entrySet().stream()
-                .map(entry -> entry.getValue().onNext(data)
+                .map(entry -> entry.getValue().onNext(data, null)
                         .exceptionally(r -> {
                             checkAlive(entry.getKey(), entry.getValue());
                             return null;

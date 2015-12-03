@@ -7,11 +7,12 @@ public interface AsyncStream<T>
 {
     String DEFAULT_PROVIDER = "default";
 
-    Task<Void> unSubscribe(StreamSubscriptionHandle<T> handle);
+    Task<Void> unsubscribe(StreamSubscriptionHandle<T> handle);
 
     Task<StreamSubscriptionHandle<T>> subscribe(AsyncObserver<T> observer);
 
-    Task<Void> post(T data);
+    Task<Void> publish(T data);
+
 
     static <DATA> AsyncStream<DATA> getStream(Class<DATA> dataClass, String id)
     {

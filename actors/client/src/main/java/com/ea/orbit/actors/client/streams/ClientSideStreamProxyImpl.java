@@ -32,12 +32,12 @@ public class ClientSideStreamProxyImpl implements ClientSideStreamProxy, Startab
         final Map<Handle, AsyncObserver> subscribers = observerMap.get(new StreamKey(provider, message.getClass(), streamId));
         if (subscribers != null)
         {
-            subscribers.values().forEach(s -> s.onNext(message));
+            subscribers.values().forEach(s -> s.onNext(message, null));
         }
         return Task.done();
     }
 
-    public <T> Task<Void> unSubscribe(final StreamSubscriptionHandle<T> handle)
+    public <T> Task<Void> unsubscribe(final StreamSubscriptionHandle<T> handle)
     {
         ConcurrentMap<Handle, AsyncObserver> observers = observerMap.get(((Handle) handle).key);
         if (observers == null || observers.remove(handle) == null)
@@ -90,9 +90,9 @@ public class ClientSideStreamProxyImpl implements ClientSideStreamProxy, Startab
         return new AsyncStream<T>()
         {
             @Override
-            public Task<Void> unSubscribe(final StreamSubscriptionHandle<T> handle)
+            public Task<Void> unsubscribe(final StreamSubscriptionHandle<T> handle)
             {
-                return ClientSideStreamProxyImpl.this.unSubscribe(handle);
+                return ClientSideStreamProxyImpl.this.unsubscribe(handle);
             }
 
             @Override
@@ -102,7 +102,7 @@ public class ClientSideStreamProxyImpl implements ClientSideStreamProxy, Startab
             }
 
             @Override
-            public Task<Void> post(final T data)
+            public Task<Void> publish(final T data)
             {
                 return null;
             }
