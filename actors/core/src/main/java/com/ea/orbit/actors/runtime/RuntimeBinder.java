@@ -38,12 +38,13 @@ public class RuntimeBinder
     /**
      * Last created runtime or at least the last surviving one to call setRuntime.
      */
-    private static WeakReference<ActorRuntime> lastRuntime;
+    private static WeakReference<? extends BasicRuntime> lastRuntime;
 
     /**
      * Last runtime to touch the current thread.
      */
-    private static final ThreadLocal<WeakReference<ActorRuntime>> currentRuntime = new ThreadLocal<>();
+    private static final ThreadLocal<WeakReference<? extends BasicRuntime>> currentRuntime = new ThreadLocal<>();
+
 
     private RuntimeBinder()
     {
@@ -56,7 +57,41 @@ public class RuntimeBinder
      *
      * @return the closest runtime to the current thread.
      */
-    public static ActorRuntime getRuntime()
+    public static ActorRuntime getActorRuntime()
+    {
+        BasicRuntime runtime = getBasicRuntime();
+        if (runtime instanceof ActorRuntime)
+        {
+            return (ActorRuntime) runtime;
+        }
+
+        WeakReference<? extends BasicRuntime> runtimeRef = currentRuntime.get();
+        if (runtimeRef != null)
+        {
+            runtime = runtimeRef.get();
+            if (runtime instanceof ActorRuntime)
+            {
+                return (ActorRuntime) runtime;
+            }
+        }
+        if (lastRuntime != null)
+        {
+            runtime = lastRuntime.get();
+            if (runtime instanceof ActorRuntime)
+            {
+                return (ActorRuntime) runtime;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Gets the current runtime, first looking at a thread local,
+     * then at a global variable that contains the lasted runtime created
+     *
+     * @return the closest runtime to the current thread.
+     */
+    public static BasicRuntime getBasicRuntime()
     {
         final ActorTaskContext context = ActorTaskContext.current();
         if (context != null)
@@ -67,12 +102,25 @@ public class RuntimeBinder
                 return runtime;
             }
         }
-        final WeakReference<ActorRuntime> runtimeRef = currentRuntime.get();
-        ActorRuntime runtime;
-
-        return (runtimeRef != null && (runtime = runtimeRef.get()) != null) ? runtime
-                : (lastRuntime != null) ? lastRuntime.get()
-                : null;
+        final WeakReference<? extends BasicRuntime> runtimeRef = currentRuntime.get();
+        BasicRuntime runtime;
+        if (runtimeRef != null)
+        {
+            runtime = runtimeRef.get();
+            if (runtime != null)
+            {
+                return runtime;
+            }
+        }
+        if (lastRuntime != null)
+        {
+            runtime = lastRuntime.get();
+            if (runtime != null)
+            {
+                return runtime;
+            }
+        }
+        return null;
     }
 
     /**
@@ -89,28 +137,18 @@ public class RuntimeBinder
      *
      * @param runtimeRef a reference to the runtime
      */
-    public static void setRuntime(final WeakReference<ActorRuntime> runtimeRef)
+    public static void setRuntime(final WeakReference<? extends BasicRuntime> runtimeRef)
     {
-        final ActorTaskContext context = ActorTaskContext.current();
-        if (context != null)
+        if (runtimeRef.get() instanceof ActorRuntime)
         {
-            context.setRuntime(runtimeRef.get());
+            final ActorTaskContext context = ActorTaskContext.current();
+            if (context != null)
+            {
+                context.setRuntime((ActorRuntime) runtimeRef.get());
+            }
         }
         currentRuntime.set(runtimeRef);
-        if (lastRuntime == null || lastRuntime.get() == null)
-        {
-            lastRuntime = runtimeRef;
-        }
+        lastRuntime = runtimeRef;
     }
 
-    /**
-     * Sets a static reference to the last created runtime.
-     *
-     * @param runtimeRef a reference to the runtime
-     */
-    public static void runtimeCreated(final WeakReference<ActorRuntime> runtimeRef)
-    {
-        lastRuntime = runtimeRef;
-        setRuntime(runtimeRef);
-    }
 }

@@ -113,12 +113,6 @@ public interface ActorRuntime extends BasicRuntime
 
     StreamProvider getStreamProvider(String name);
 
-    static ActorRuntime getRuntime()
-    {
-        return RuntimeBinder.getRuntime();
-    }
-
-
     /**
      * Sets a static reference to the last created runtime.
      *
@@ -129,14 +123,9 @@ public interface ActorRuntime extends BasicRuntime
         RuntimeBinder.setRuntime(runtimeRef);
     }
 
-    /**
-     * Sets a static reference to the last created runtime.
-     *
-     * @param runtimeRef a reference to the runtime
-     */
-    static void runtimeCreated(final WeakReference<ActorRuntime> runtimeRef)
+    static ActorRuntime getRuntime()
     {
-        RuntimeBinder.runtimeCreated(runtimeRef);
+        return RuntimeBinder.getActorRuntime();
     }
 
     List<ActorExtension> getExtensions();

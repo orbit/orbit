@@ -67,7 +67,7 @@ public class AsyncStreamReference<T> implements AsyncStream<T>, Serializable
         {
             if (runtime == null)
             {
-                runtime = ActorRuntime.getRuntime();
+                runtime = BasicRuntime.getRuntime();
             }
             if (runtime == null)
             {

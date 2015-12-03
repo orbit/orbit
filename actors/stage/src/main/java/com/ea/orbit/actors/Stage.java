@@ -339,7 +339,7 @@ public class Stage implements Startable, ActorRuntime
 
     public Stage()
     {
-        ActorRuntime.runtimeCreated(cachedRef);
+        ActorRuntime.setRuntime(cachedRef);
     }
 
     public void addStickyHeaders(Collection<String> stickyHeaders)

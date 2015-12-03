@@ -99,7 +99,7 @@ public abstract class RemoteReference<T> implements Serializable, Addressable
     @SuppressWarnings("unchecked")
     protected <R> Task<R> invoke(final Method method, final boolean oneWay, final int methodId, final Object[] params)
     {
-        return (Task<R>) (runtime != null ? runtime : ActorRuntime.getRuntime()).invoke(this, method, oneWay, methodId, params);
+        return (Task<R>) (runtime != null ? runtime : BasicRuntime.getRuntime()).invoke(this, method, oneWay, methodId, params);
     }
 
     @Override

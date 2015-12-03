@@ -36,6 +36,7 @@ import com.ea.orbit.concurrent.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.time.Clock;
 
@@ -114,9 +115,19 @@ public interface BasicRuntime extends DescriptorFactory
         return getReference(this, address, iClass, id);
     }
 
+    /**
+     * Sets a static reference to the last created runtime.
+     *
+     * @param runtimeRef a reference to the runtime
+     */
+    static void setRuntime(final WeakReference<? extends BasicRuntime> runtimeRef)
+    {
+        RuntimeBinder.setRuntime(runtimeRef);
+    }
+
     static BasicRuntime getRuntime()
     {
-        return RuntimeBinder.getRuntime();
+        return RuntimeBinder.getBasicRuntime();
     }
 
     <T> AsyncStream<T> getStream(String provider, Class<T> dataClass, String id);

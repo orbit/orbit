@@ -45,20 +45,22 @@ public class StreamReferenceTest extends ActorBaseTest
     public void testStreamReferenceWithRemoteClient() throws InterruptedException
     {
         final Stage stage1 = createStage();
-        Hello hello = Actor.getReference(Hello.class, "0");
 
 
         final ClientPeer client = createRemoteClient(stage1);
 
-        AsyncStream<String> testStream = hello.getStreamReference().join();
         BlockingDeque<Object> received = fakeSync.deque("received");
 
+        client.bind();
+        AsyncStream<String> testStream = client.getReference(Hello.class, "0").getStreamReference().join();
         testStream.subscribe((d, t) -> {
             received.add(d);
             return Task.done();
         }).join();
 
+
         stage1.bind();
+        Hello hello = Actor.getReference(Hello.class, "0");
         hello.sayHello("hello2").join();
 
         assertEquals("hello2", received.poll(20, TimeUnit.SECONDS));

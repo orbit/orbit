@@ -38,11 +38,12 @@ import com.ea.orbit.actors.runtime.Messaging;
 import com.ea.orbit.actors.runtime.RemoteClient;
 import com.ea.orbit.actors.runtime.SerializationHandler;
 import com.ea.orbit.actors.streams.AsyncStream;
-import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 
 import org.slf4j.Logger;
+
+import java.lang.ref.WeakReference;
 
 import static com.ea.orbit.async.Await.await;
 
@@ -55,6 +56,12 @@ public class ClientPeer extends Peer implements BasicRuntime, Startable, RemoteC
     private ClientSideStreamProxyImpl clientSideStreamProxy;
     private LoggerExtension loggerExtension;
     private Logger logger;
+    private final WeakReference<BasicRuntime> cachedRef = new WeakReference<>(this);
+
+    public ClientPeer()
+    {
+        BasicRuntime.setRuntime(cachedRef);
+    }
 
     public Task<Void> cleanup()
     {
@@ -117,5 +124,11 @@ public class ClientPeer extends Peer implements BasicRuntime, Startable, RemoteC
     public String toString()
     {
         return "ClientPeer{localIdentity=" + localIdentity + "}";
+    }
+
+
+    public void bind()
+    {
+        BasicRuntime.setRuntime(cachedRef);
     }
 }
