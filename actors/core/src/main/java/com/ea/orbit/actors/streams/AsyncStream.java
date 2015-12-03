@@ -9,7 +9,12 @@ public interface AsyncStream<T>
 
     Task<Void> unsubscribe(StreamSubscriptionHandle<T> handle);
 
-    Task<StreamSubscriptionHandle<T>> subscribe(AsyncObserver<T> observer);
+    default Task<StreamSubscriptionHandle<T>> subscribe(AsyncObserver<T> observer)
+    {
+        return subscribe(observer, null);
+    }
+
+    Task<StreamSubscriptionHandle<T>> subscribe(AsyncObserver<T> observer, final StreamSequenceToken token);
 
     Task<Void> publish(T data);
 

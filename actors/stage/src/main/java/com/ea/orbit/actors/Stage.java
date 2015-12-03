@@ -49,6 +49,7 @@ import com.ea.orbit.actors.runtime.ActorBaseEntry;
 import com.ea.orbit.actors.runtime.ActorEntry;
 import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.actors.runtime.ActorTaskContext;
+import com.ea.orbit.actors.runtime.AsyncStreamReference;
 import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.actors.runtime.ClusterHandler;
 import com.ea.orbit.actors.runtime.DefaultActorClassFinder;
@@ -1070,11 +1071,11 @@ public class Stage implements Startable, ActorRuntime
     }
 
     @Override
-    public StreamProvider getStreamProvider(final String name)
+    public StreamProvider getStreamProvider(final String providerName)
     {
         StreamProvider streamProvider = getAllExtensions(StreamProvider.class).stream()
-                .filter(p -> StringUtils.equals(p.getName(), name))
-                .findFirst().orElseThrow(() -> new UncheckedException(String.format("Provider: %s not found", name)));
+                .filter(p -> StringUtils.equals(p.getName(), providerName))
+                .findFirst().orElseThrow(() -> new UncheckedException(String.format("Provider: %s not found", providerName)));
 
         final AbstractActor<?> actor = ActorTaskContext.currentActor();
         if (actor != null)
@@ -1086,7 +1087,7 @@ public class Stage implements Startable, ActorRuntime
                 public <T> AsyncStream<T> getStream(final Class<T> dataClass, final String id)
                 {
                     final AsyncStream<T> stream = streamProvider.getStream(dataClass, id);
-                    return new AsyncStream<T>()
+                    return new AsyncStreamReference<>(providerName, dataClass, id, new AsyncStream<T>()
                     {
                         @Override
                         public Task<Void> unsubscribe(final StreamSubscriptionHandle<T> handle)
@@ -1095,7 +1096,7 @@ public class Stage implements Startable, ActorRuntime
                         }
 
                         @Override
-                        public Task<StreamSubscriptionHandle<T>> subscribe(final AsyncObserver<T> observer)
+                        public Task<StreamSubscriptionHandle<T>> subscribe(final AsyncObserver<T> observer, StreamSequenceToken sequenceToken)
                         {
                             return stream.subscribe(new AsyncObserver<T>()
                             {
@@ -1112,7 +1113,7 @@ public class Stage implements Startable, ActorRuntime
                                     // TODO use actor executor, when available
                                     return observer.onError(ex);
                                 }
-                            });
+                            }, sequenceToken);
                             // TODO unsubscribe automatically on deactivation
                         }
 
@@ -1121,7 +1122,7 @@ public class Stage implements Startable, ActorRuntime
                         {
                             return stream.publish(data);
                         }
-                    };
+                    });
                 }
 
                 @Override

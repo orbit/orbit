@@ -40,7 +40,7 @@ public class ServerSideStreamProxyImpl implements ServerSideStreamProxy, Startab
             {
                 return proxy.onNext(provider, streamId, data);
             }
-        });
+        }, null);
         await(subscription);
         final StreamReference.SimpleStreamHandle<T> handle = new StreamReference.SimpleStreamHandle<>(String.valueOf(IdUtils.sequentialLongId()));
         handleMap.putIfAbsent(handle, new SubscriptionInfo(stream, subscription.join(), proxy));

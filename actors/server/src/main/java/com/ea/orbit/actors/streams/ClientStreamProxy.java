@@ -46,7 +46,7 @@ public class ClientStreamProxy
                 }
                 return Task.done();
             }
-        });
+        }, null);
         observerMap.put(handle, subscription);
         await(subscription.handle);
         return Task.fromValue(handle);

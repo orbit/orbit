@@ -4,6 +4,7 @@ import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.runtime.DefaultClassDictionary;
 import com.ea.orbit.actors.streams.AsyncObserver;
 import com.ea.orbit.actors.streams.AsyncStream;
+import com.ea.orbit.actors.streams.StreamSequenceToken;
 import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
 import com.ea.orbit.concurrent.Task;
 
@@ -55,7 +56,7 @@ public class StreamReference<T> implements AsyncStream<T>
     }
 
     @Override
-    public Task<StreamSubscriptionHandle<T>> subscribe(final AsyncObserver<T> observer)
+    public Task<StreamSubscriptionHandle<T>> subscribe(final AsyncObserver<T> observer, final StreamSequenceToken token)
     {
 
         SimpleStreamProxyObject<T> subscriber = provider.getSubscriber(streamActorRef);

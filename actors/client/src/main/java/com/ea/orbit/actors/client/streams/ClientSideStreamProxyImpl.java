@@ -8,6 +8,7 @@ import com.ea.orbit.actors.runtime.DefaultClassDictionary;
 import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.actors.streams.AsyncObserver;
 import com.ea.orbit.actors.streams.AsyncStream;
+import com.ea.orbit.actors.streams.StreamSequenceToken;
 import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -96,7 +97,7 @@ public class ClientSideStreamProxyImpl implements ClientSideStreamProxy, Startab
             }
 
             @Override
-            public Task<StreamSubscriptionHandle<T>> subscribe(AsyncObserver<T> observer)
+            public Task<StreamSubscriptionHandle<T>> subscribe(AsyncObserver<T> observer, final StreamSequenceToken token)
             {
                 return ClientSideStreamProxyImpl.this.subscribe(provider, dataClass, id, observer);
             }
