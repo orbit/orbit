@@ -112,7 +112,7 @@ public class MessagingTest extends ActorBaseTest
      * Ensures that the use of thenRun, thenCompose, whenDone, etc with a
      * response object won't block the reception of new messages.
      */
-    @Test
+    @Test(timeout = 10_000L)
     public void blockingReceptionTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
@@ -140,7 +140,7 @@ public class MessagingTest extends ActorBaseTest
      * This is possible when Messaging is processing responses.
      * then the Task.complete() method may trigger the execution of actor code.
      */
-    @Test
+    @Test(timeout = 10_000L)
     public void blockingReceptionTestWithABunch() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
