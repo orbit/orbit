@@ -536,6 +536,11 @@ public class Task<T> extends CompletableFuture<T>
         return Task.from(CompletableFuture.runAsync(TaskContext.wrap(runnable), executor));
     }
 
+    public static <U> Task<U> supplyAsync(TaskSupplier<U> supplier)
+    {
+        return Task.from(CompletableFuture.supplyAsync(TaskContext.wrap(supplier))).thenCompose(t -> t);
+    }
+
     public static <U> Task<U> supplyAsync(Supplier<U> supplier)
     {
         return Task.from(CompletableFuture.supplyAsync(TaskContext.wrap(supplier)));
@@ -544,6 +549,11 @@ public class Task<T> extends CompletableFuture<T>
     public static <U> Task<U> supplyAsync(Supplier<U> supplier, Executor executor)
     {
         return Task.from(CompletableFuture.supplyAsync(TaskContext.wrap(supplier), executor));
+    }
+
+    public static <U> Task<U> supplyAsync(TaskSupplier<U> supplier, Executor executor)
+    {
+        return Task.from(CompletableFuture.supplyAsync(TaskContext.wrap(supplier), executor).thenCompose(t -> t));
     }
 
     @Override
