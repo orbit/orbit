@@ -56,7 +56,7 @@ public class Execution extends AbstractExecution implements Startable
     @Override
     public Task write(final HandlerContext ctx, final Object msg) throws Exception
     {
-        return super.write(ctx, msg);
+        return ctx.write(msg);
     }
 
     @Override
