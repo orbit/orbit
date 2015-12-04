@@ -34,12 +34,10 @@ import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.actors.runtime.RemoteReference;
 
 import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Serializer;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.pool.KryoFactory;
 import com.esotericsoftware.kryo.pool.KryoPool;
 import com.esotericsoftware.kryo.serializers.CollectionSerializer;
+import com.esotericsoftware.kryo.serializers.DefaultSerializers;
 import com.esotericsoftware.kryo.serializers.MapSerializer;
 
 import java.util.ArrayList;
@@ -111,22 +109,9 @@ public class KryoCloner implements ExecutionObjectCloner
                     }
                 });
 
-                kryo.addDefaultSerializer(RemoteReference.class, new ImmutableObjectSerializer<RemoteReference>(true, true));
-                kryo.addDefaultSerializer(AbstractActor.class, new Serializer<Object>(true, true)
+                kryo.addDefaultSerializer(RemoteReference.class, new DefaultSerializers.VoidSerializer());
+                kryo.addDefaultSerializer(AbstractActor.class, new DefaultSerializers.VoidSerializer()
                 {
-
-                    @Override
-                    public void write(final Kryo kryo, final Output output, final Object object)
-                    {
-
-                    }
-
-                    @Override
-                    public RemoteReference read(final Kryo kryo, final Input input, final Class<Object> type)
-                    {
-                        return null;
-                    }
-
                     @Override
                     public Object copy(final Kryo kryo, final Object original)
                     {
@@ -145,32 +130,19 @@ public class KryoCloner implements ExecutionObjectCloner
                         throw new IllegalArgumentException("Invalid type for " + original);
                     }
                 });
-                kryo.addDefaultSerializer(ActorObserver.class, new Serializer<ActorObserver>(true, true)
+                kryo.addDefaultSerializer(ActorObserver.class, new DefaultSerializers.VoidSerializer()
                 {
-
                     @Override
-                    public void write(final Kryo kryo, final Output output, final ActorObserver object)
-                    {
-
-                    }
-
-                    @Override
-                    public ActorObserver read(final Kryo kryo, final Input input, final Class<ActorObserver> type)
-                    {
-                        return null;
-                    }
-
-                    @Override
-                    public ActorObserver copy(final Kryo kryo, final ActorObserver original)
+                    public Object copy(final Kryo kryo, final Object original)
                     {
                         if (original instanceof RemoteReference)
                         {
                             return original;
                         }
-                        return ActorRuntime.getRuntime().registerObserver(null, original);
+                        return ActorRuntime.getRuntime().registerObserver(null, (ActorObserver) original);
                     }
                 });
-                kryo.addDefaultSerializer(UUID.class, new ImmutableObjectSerializer<UUID>(true, true));
+                kryo.addDefaultSerializer(UUID.class, new DefaultSerializers.VoidSerializer());
 
                 return kryo;
             }
