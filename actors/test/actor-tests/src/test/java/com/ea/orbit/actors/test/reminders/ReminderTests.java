@@ -26,7 +26,7 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.test;
+package com.ea.orbit.actors.test.reminders;
 
 
 import com.ea.orbit.actors.Actor;
@@ -35,6 +35,7 @@ import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ReminderControllerActor;
 import com.ea.orbit.actors.runtime.TickStatus;
+import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.concurrent.Task;
 
 import org.junit.Test;
