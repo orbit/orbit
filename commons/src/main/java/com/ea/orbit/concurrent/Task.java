@@ -256,7 +256,6 @@ public class Task<T> extends CompletableFuture<T>
 
     /**
      * Returns a new task that will fail if the original is not completed withing the given timeout.
-     * This doesn't modify the original task in any way.
      *
      * @param time     the time from now
      * @param timeUnit the time unit of the timeout parameter
