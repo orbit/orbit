@@ -119,6 +119,10 @@ public class RestClientTest
         @GET
         Task<String> getPathParam(@PathParam("p1") String p1);
 
+        @Path("/taskVoidReturnWithException")
+        @POST
+        Task<Void> taskVoidReturnWithException(@PathParam("p1") String p1);
+
         @Path("/genericReturn")
         @POST
         @Produces(MediaType.APPLICATION_JSON)
@@ -157,6 +161,7 @@ public class RestClientTest
 
         /**
          * Test method that redirects to redirectEnd
+         *
          * @return
          */
         @Path("/redirect/start")
@@ -167,6 +172,7 @@ public class RestClientTest
 
         /**
          * Test method redirected to from redirectStart
+         *
          * @return
          */
         @Path("/redirect/end")
@@ -230,6 +236,14 @@ public class RestClientTest
             response.original = message;
             response.resp = p1 + ":" + h1 + ":" + q1 + ":" + q2 + ":" + message.data;
             return response;
+        }
+
+
+        @Path("/taskVoidReturnWithException")
+        @POST
+        public void taskVoidReturnWithException(@PathParam("p1") String p1)
+        {
+            throw new WebApplicationException(409);
         }
 
 
@@ -327,6 +341,27 @@ public class RestClientTest
 
         assertEquals("home", hello.getHome());
     }
+
+
+    @Test
+    public void testTaskVoidReturnWithException()
+    {
+        WebTarget webTarget = getWebTarget();
+
+        final Hello hello = new RestClient(webTarget).get(Hello.class);
+
+        try
+        {
+            Task<Void> voidTask = hello.taskVoidReturnWithException("blah");
+            voidTask.join();
+        }
+        catch (Exception e)
+        {
+            return;
+        }
+        fail();
+    }
+
 
     @Test
     public void testParams()
