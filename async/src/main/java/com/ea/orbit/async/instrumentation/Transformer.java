@@ -103,6 +103,9 @@ public class Transformer implements ClassFileTransformer
     public static final String AWAIT_METHOD_DESC = "(Ljava/util/concurrent/CompletableFuture;)Ljava/lang/Object;";
     public static final String AWAIT_METHOD_NAME = "await";
 
+    public static final String AWAIT_INIT_METHOD_DESC = "()V";
+    public static final String AWAIT_INIT_METHOD_NAME = "init";
+
     private static final String COMPLETABLE_FUTURE_DESCRIPTOR = "Ljava/util/concurrent/CompletableFuture;";
     private static final Type COMPLETABLE_FUTURE_TYPE = Type.getType(COMPLETABLE_FUTURE_DESCRIPTOR);
     private static final String COMPLETABLE_FUTURE_RET = ")Ljava/util/concurrent/CompletableFuture;";
@@ -117,6 +120,9 @@ public class Transformer implements ClassFileTransformer
     private static final String TASK_RET = ")Lcom/ea/orbit/concurrent/Task;";
     private static final String TASK_NAME = "com/ea/orbit/concurrent/Task";
     private static final Type TASK_TYPE = Type.getType("Lcom/ea/orbit/concurrent/Task;");
+
+    public static final String JOIN_METHOD_NAME = "join";
+    public static final String JOIN_METHOD_DESC = "()Ljava/lang/Object;";
 
     @Override
     public byte[] transform(final ClassLoader loader, final String className, final Class<?> classBeingRedefined, final ProtectionDomain protectionDomain, final byte[] classfileBuffer) throws IllegalClassFormatException
@@ -481,6 +487,11 @@ public class Transformer implements ClassFileTransformer
                     // passing 'this' here could create problems if the transformAwait starts adding calls to Await.await()
                     transformAwait(this, switchEntries.get(awaitIndex++), lambdaDesc, arguments, mv == continued, isTaskRet, handle);
                 }
+                else if (isAwaitInitCall(opcode, owner, name, desc))
+                {
+                    // replaces all references to Await.init with NOP
+                    super.visitInsn(NOP);
+                }
                 else
                 {
                     super.visitMethodInsn(opcode, owner, name, desc, itf);
@@ -582,7 +593,7 @@ public class Transformer implements ClassFileTransformer
         {
             // "this" must be in the first argument
             continued.visitLabel(thisMonitorEnd);
-            continued.visitFrame(F_FULL, 1, new Object[]{classNode.name}, 1, new Object[]{Type.getType(Throwable.class).getInternalName()});
+            continued.visitFrame(F_FULL, 1, new Object[]{ classNode.name }, 1, new Object[]{ Type.getType(Throwable.class).getInternalName() });
             continued.visitVarInsn(ALOAD, 0);
             continued.visitInsn(MONITOREXIT);
             continued.visitInsn(ATHROW);
@@ -1028,7 +1039,7 @@ public class Transformer implements ClassFileTransformer
         // code: futureIsDone:
         mv.visitLabel(futureIsDoneLabel);
         fullFrame(mv, switchEntry.frame);
-        mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, "join", "()Ljava/lang/Object;", false);
+        mv.visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, JOIN_METHOD_NAME, JOIN_METHOD_DESC, false);
         // changing back the instruction list
         // end of instruction loop
     }
@@ -1102,6 +1113,19 @@ public class Transformer implements ClassFileTransformer
                 && AWAIT_METHOD_NAME.equals(name)
                 && AWAIT_NAME.equals(owner)
                 && AWAIT_METHOD_DESC.equals(desc);
+    }
+
+    private boolean isAwaitInitCall(final MethodInsnNode methodIns)
+    {
+        return isAwaitInitCall(methodIns.getOpcode(), methodIns.owner, methodIns.name, methodIns.desc);
+    }
+
+    private boolean isAwaitInitCall(int opcode, String owner, String name, String desc)
+    {
+        return opcode == Opcodes.INVOKESTATIC
+                && AWAIT_INIT_METHOD_NAME.equals(name)
+                && AWAIT_NAME.equals(owner)
+                && AWAIT_INIT_METHOD_DESC.equals(desc);
     }
 
     private void saveStack(final MethodVisitor mv, final SwitchEntry se)
