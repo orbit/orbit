@@ -34,6 +34,7 @@ import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.util.StringUtils;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -57,6 +58,8 @@ public class BaseTest
     {
         Await.init();
     }
+
+    private static final String AWAIT_NAME = "com/ea/orbit/async/Await";
 
     // pairs of completable futures and the future completions.
     protected Queue<Pair<CompletableFuture, Object>> blockedFutures = new LinkedList<>();
@@ -222,5 +225,56 @@ public class BaseTest
     public interface AsyncBiFunction<T, U, R>
     {
         Task<R> apply(T t, U u) throws Exception;
+    }
+
+    public boolean mentionsAwait(ClassReader cr)
+    {
+        for (int i = 1, c = cr.getItemCount(); i < c; i++)
+        {
+            final int address = cr.getItem(i);
+            if (address > 0
+                    && cr.readByte(address - 1) == 7
+                    && equalsUtf8(cr, address, AWAIT_NAME))
+            {
+                // CONSTANT_Class_info {
+                //    u1 tag; = 7
+                //    u2 name_index; -> utf8
+                // }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean equalsUtf8(final ClassReader cr, final int pointerToUtf8Index, final String str)
+    {
+        int utf8_index = cr.readUnsignedShort(pointerToUtf8Index);
+        if (utf8_index == 0)
+        {
+            return false;
+        }
+
+        //  CONSTANT_Utf8_info {
+        //    u1 tag;  = 1
+        //    u2 length;
+        //    u1 bytes[length];
+        // }
+
+        int utf8_address = cr.getItem(utf8_index);
+        final int utf8_length = cr.readUnsignedShort(utf8_address);
+        if (utf8_length == str.length())
+        {
+            // assuming the str is utf8 "safe", no special chars
+            int idx = utf8_address + 2;
+            for (int ic = 0; ic < utf8_length; ic++, idx++)
+            {
+                if (str.charAt(ic) != (char) cr.readByte(idx))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 }
