@@ -151,6 +151,7 @@ public abstract class AbstractAsyncMojo extends AbstractMojo
             }
             final Iterator<PlexusIoResource> it = getFiles(contentDirectory);
             final Transformer transformer = new Transformer();
+            transformer.setErrorListener(error -> getLog().error(error));
             int instrumentedCount = 0;
             while (it.hasNext())
             {
