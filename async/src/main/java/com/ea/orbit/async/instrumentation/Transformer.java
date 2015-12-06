@@ -124,6 +124,8 @@ public class Transformer implements ClassFileTransformer
     public static final String JOIN_METHOD_NAME = "join";
     public static final String JOIN_METHOD_DESC = "()Ljava/lang/Object;";
 
+    private Consumer<String> errorListener;
+
     @Override
     public byte[] transform(final ClassLoader loader, final String className, final Class<?> classBeingRedefined, final ProtectionDomain protectionDomain, final byte[] classfileBuffer) throws IllegalClassFormatException
     {
@@ -217,48 +219,95 @@ public class Transformer implements ClassFileTransformer
 
         Map<String, Integer> nameUseCount = new HashMap<>();
 
-        // TODO: also remove calls to `Await.init()`
         for (MethodNode original : (List<MethodNode>) new ArrayList(classNode.methods))
         {
             Integer countOriginalUses = nameUseCount.get(original.name);
             nameUseCount.put(original.name, countOriginalUses == null ? 1 : countOriginalUses + 1);
 
-            boolean taskReturn = original.desc.endsWith(TASK_RET);
-            if (!taskReturn && !original.desc.endsWith(COMPLETABLE_FUTURE_RET) && !original.desc.endsWith(COMPLETION_STAGE_RET))
-            {
-                // method must return completable future or task
-                continue;
-            }
             boolean hasAwaitCall = false;
-            // checks if the method has a call to await()
+            boolean hasAwaitInitCall = false;
             for (Iterator it = original.instructions.iterator(); it.hasNext(); )
             {
                 Object o = it.next();
-                if (o instanceof MethodInsnNode && isAwaitCall((MethodInsnNode) o))
+                if (o instanceof MethodInsnNode)
                 {
-                    hasAwaitCall = true;
-                    break;
+                    if (!hasAwaitCall)
+                    {
+                        hasAwaitCall = isAwaitCall((MethodInsnNode) o);
+                    }
+                    if (!hasAwaitInitCall)
+                    {
+                        hasAwaitInitCall = isAwaitInitCall((MethodInsnNode) o);
+                    }
                 }
             }
-            if (!hasAwaitCall)
-            {
-                continue;
-            }
-            if (!taskReturn && !original.name.contains("$") && (original.visibleAnnotations == null
-                    || !original.visibleAnnotations.stream().anyMatch(new Predicate<AnnotationNode>()
-            {
-                @Override
-                public boolean test(final AnnotationNode a)
-                {
-                    return ((AnnotationNode) a).desc.equals(ASYNC_DESCRIPTOR);
-                }
-            })))
+
+            if (!hasAwaitCall && !hasAwaitInitCall)
             {
                 continue;
             }
             countInstrumented++;
 
-            transformAsyncMethod(classNode, original, nameUseCount);
+            boolean taskReturn = original.desc.endsWith(TASK_RET);
+            if (taskReturn
+                    || original.desc.endsWith(COMPLETABLE_FUTURE_RET)
+                    || original.desc.endsWith(COMPLETION_STAGE_RET)
+                    || original.name.contains("$")
+                    || (original.visibleAnnotations != null && original.visibleAnnotations.stream()
+                    .anyMatch(new Predicate<AnnotationNode>()
+                              {
+                                  @Override
+                                  public boolean test(final AnnotationNode a)
+                                  {
+                                      return ((AnnotationNode) a).desc.equals(ASYNC_DESCRIPTOR);
+                                  }
+                              }
+                    )))
+            {
+                // async method
+                transformAsyncMethod(classNode, original, nameUseCount);
+            }
+            else
+            {
+                // non async method
+                // Removing calls to `Await.init()`
+                // and advising on wrong uses of Await.await
+
+                final MethodNode replacement = new MethodNode(original.access,
+                        original.name, original.desc, original.signature, (String[]) original.exceptions.toArray(new String[original.exceptions.size()]));
+
+                class MyMethodVisitor extends MethodVisitor
+                {
+                    public MyMethodVisitor(final MethodNode mv)
+                    {
+                        super(Opcodes.ASM5, mv);
+                    }
+
+                    @Override
+                    public void visitMethodInsn(final int opcode, final String owner, final String name, final String desc, final boolean itf)
+                    {
+                        if (isAwaitCall(opcode, owner, name, desc))
+                        {
+                            // replaces invalid awaits with the join
+                            notifyError("Invalid use of await ", cr.getClassName(), original.name);
+                            visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, JOIN_METHOD_NAME, JOIN_METHOD_DESC, false);
+                        }
+                        else if (isAwaitInitCall(opcode, owner, name, desc))
+                        {
+                            // replaces all references to Await.init with NOP
+                            super.visitInsn(NOP);
+                        }
+                        else
+                        {
+                            super.visitMethodInsn(opcode, owner, name, desc, itf);
+                        }
+                    }
+                }
+                original.accept(new MyMethodVisitor(replacement));
+                classNode.methods.remove(original);
+                // adding replacement
+                replacement.accept(classNode);
+            }
         }
         // no changes.
         if (countInstrumented == 0)
@@ -1416,5 +1465,22 @@ public class Transformer implements ClassFileTransformer
             // ignoring
         }
         return false;
+    }
+
+    /**
+     * Sets an error listener that gets called for invalid uses of await.
+     * @param errorListener the error listener
+     */
+    public void setErrorListener(final Consumer<String> errorListener)
+    {
+        this.errorListener = errorListener;
+    }
+
+    private void notifyError(final String message, String className, String methodName)
+    {
+        if (errorListener != null)
+        {
+            errorListener.accept(message + " at " + className + "." + methodName);
+        }
     }
 }
