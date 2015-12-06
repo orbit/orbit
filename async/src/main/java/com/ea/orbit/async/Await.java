@@ -74,6 +74,11 @@ import java.util.concurrent.CompletableFuture;
  */
 public class Await
 {
+    /**
+     * Ensure that if no pre instrumentation was done, that the Async runtime instrumentation is running.
+     * <p/>
+     * Attention! The build time instrumentation will remove calls to this method.
+     */
     public static void init()
     {
         InitializeAsync.init();
