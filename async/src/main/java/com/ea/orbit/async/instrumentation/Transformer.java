@@ -144,7 +144,6 @@ public class Transformer implements ClassFileTransformer
         }
         catch (Exception | Error e)
         {
-            // TODO: better formatting.
             // Avoid using slf4j or any dependency here.
             // this is supposed to be a critical error.
             // it should be ok to write directly to the syserr.
@@ -289,7 +288,7 @@ public class Transformer implements ClassFileTransformer
                         if (isAwaitCall(opcode, owner, name, desc))
                         {
                             // replaces invalid awaits with the join
-                            notifyError("Invalid use of await ", cr.getClassName(), original.name);
+                            notifyError("Invalid use of await at %s.%s", cr.getClassName(), original.name);
                             visitMethodInsn(INVOKEVIRTUAL, COMPLETABLE_FUTURE_NAME, JOIN_METHOD_NAME, JOIN_METHOD_DESC, false);
                         }
                         else if (isAwaitInitCall(opcode, owner, name, desc))
@@ -534,7 +533,7 @@ public class Transformer implements ClassFileTransformer
                 if (isAwaitCall(opcode, owner, name, desc))
                 {
                     // passing 'this' here could create problems if the transformAwait starts adding calls to Await.await()
-                    transformAwait(this, switchEntries.get(awaitIndex++), lambdaDesc, arguments, mv == continued, isTaskRet, handle);
+                    transformAwait(classNode, original, this, switchEntries.get(awaitIndex++), lambdaDesc, arguments, mv == continued, isTaskRet, handle);
                 }
                 else if (isAwaitInitCall(opcode, owner, name, desc))
                 {
@@ -594,7 +593,7 @@ public class Transformer implements ClassFileTransformer
         // original entry point
         continued.visitLabel(entryPoint.resumeLabel);
         continued.visitFrame(F_FULL, defaultFrame.length, defaultFrame, 0, new Object[0]);
-        restoreStackAndLocals(continued, entryPoint, arguments);
+        restoreStackAndLocals(classNode, original, continued, entryPoint, arguments);
 
         original.accept(new MyMethodVisitor(continued));
 
@@ -609,7 +608,7 @@ public class Transformer implements ClassFileTransformer
 
             // code:    restoreStack;
             // code:    restoreLocals;
-            restoreStackAndLocals(continued, se, arguments);
+            restoreStackAndLocals(classNode, original, continued, se, arguments);
             if (!Modifier.isStatic(original.access))
             {
                 if (lastRestorePoint != null)
@@ -962,12 +961,16 @@ public class Transformer implements ClassFileTransformer
     /**
      * Replaces calls to Await.await with returing a promise or with a join().
      *
+     * @param classNode
+     * @param original
      * @param mv          the method node whose instructions are being modified
      * @param lambdaDesc
      * @param isContinued if this is the continuation method
      * @param handle      @return a list of switch entries to finish the continuation state machine
      */
     private void transformAwait(
+            final ClassNode classNode,
+            final MethodNode original,
             final MethodVisitor mv,
             final SwitchEntry switchEntry,
             final String lambdaDesc,
@@ -1080,7 +1083,7 @@ public class Transformer implements ClassFileTransformer
                 }
                 else
                 {
-                    // TODO: warn or error
+                    notifyError("Error restoring monitors in synchronized method. monitorLocal=%d, at %s.%s", monitorLocal, classNode.name, original.name);
                 }
             }
         }
@@ -1251,7 +1254,7 @@ public class Transformer implements ClassFileTransformer
         }
     }
 
-    private void restoreStackAndLocals(final MethodVisitor mv, SwitchEntry se, List<Argument> lambdaArguments)
+    private void restoreStackAndLocals(final ClassNode classNode, final MethodNode original, final MethodVisitor mv, SwitchEntry se, List<Argument> lambdaArguments)
     {
         // restore the stack: just push in the right order.
         // restore the locals: push all that changed place then load
@@ -1320,7 +1323,7 @@ public class Transformer implements ClassFileTransformer
             }
             else
             {
-                // TODO: warn or error
+                notifyError("Error restoring monitors in synchronized method. monitorLocal=%d, at %s.%s", monitorLocal, classNode.name, original.name);
             }
         }
     }
@@ -1469,6 +1472,7 @@ public class Transformer implements ClassFileTransformer
 
     /**
      * Sets an error listener that gets called for invalid uses of await.
+     *
      * @param errorListener the error listener
      */
     public void setErrorListener(final Consumer<String> errorListener)
@@ -1476,11 +1480,20 @@ public class Transformer implements ClassFileTransformer
         this.errorListener = errorListener;
     }
 
-    private void notifyError(final String message, String className, String methodName)
+    private void notifyError(final String format, Object arg1, Object arg2)
     {
         if (errorListener != null)
         {
-            errorListener.accept(message + " at " + className + "." + methodName);
+            errorListener.accept(String.format(format, arg1, arg2));
         }
     }
+
+    private void notifyError(final String format, Object arg1, Object arg2, Object arg3)
+    {
+        if (errorListener != null)
+        {
+            errorListener.accept(String.format(format, arg1, arg2, arg3));
+        }
+    }
+
 }
