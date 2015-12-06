@@ -1286,6 +1286,8 @@ public class Transformer implements ClassFileTransformer
 
             // https://docs.oracle.com/javase/specs/jvms/se8/jvms8.pdf
 
+            boolean hasAwaitCall = false;
+            boolean hasAwait = false;
             for (int i = 1, c = cr.getItemCount(); i < c; i++)
             {
                 final int address = cr.getItem(i);
@@ -1297,7 +1299,60 @@ public class Transformer implements ClassFileTransformer
                     //    u1 tag; = 7
                     //    u2 name_index; -> utf8
                     // }
-                    return true;
+                    hasAwait = true;
+                    break;
+                }
+            }
+            // failing fast, no references to Await implies nothing to do.
+            if (!hasAwait)
+            {
+                return false;
+            }
+
+            // now checking for method references to Await.await
+            for (int i = 1, c = cr.getItemCount(); i < c; i++)
+            {
+                final int address = cr.getItem(i);
+                if (address > 0)
+                {
+                    // CONSTANT_Methodref_info | CONSTANT_InterfaceMethodref_info {
+                    //    u1 tag; = 10 or 11
+                    //    u2 class_index; -> class info
+                    //    u2 name_and_type_index;
+                    //}
+                    // CONSTANT_Class_info {
+                    //    u1 tag;
+                    //    u2 name_index; -> utf8
+                    // }
+                    // CONSTANT_NameAndType_info {
+                    //    u1 tag;
+                    //    u2 name_index; -> utf8
+                    //    u2 descriptor_index;; -> utf8
+                    // }
+                    int tag = cr.readByte(address - 1);
+                    if (tag == 11 || tag == 10)
+                    {
+                        int classIndex = cr.readUnsignedShort(address);
+                        if (classIndex == 0) continue;
+                        int classAddress = cr.getItem(classIndex);
+
+                        int ntIndex = cr.readUnsignedShort(address + 2);
+                        if (ntIndex == 0) continue;
+                        int ntAddress = cr.getItem(ntIndex);
+
+                        if (equalsUtf8(cr, classAddress, AWAIT_NAME)
+                                && equalsUtf8(cr, ntAddress, AWAIT_METHOD_NAME)
+                                && equalsUtf8(cr, ntAddress + 2, AWAIT_METHOD_DESC))
+                        {
+                            return true;
+                        }
+                        if (equalsUtf8(cr, classAddress, AWAIT_NAME)
+                                && equalsUtf8(cr, ntAddress, AWAIT_INIT_METHOD_NAME)
+                                && equalsUtf8(cr, ntAddress + 2, AWAIT_INIT_METHOD_DESC))
+                        {
+                            return true;
+                        }
+                    }
                 }
             }
             return false;
