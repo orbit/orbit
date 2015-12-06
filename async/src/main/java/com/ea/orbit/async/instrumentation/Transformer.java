@@ -252,326 +252,7 @@ public class Transformer implements ClassFileTransformer
             }
             countInstrumented++;
 
-            final List<SwitchEntry> switchEntries = new ArrayList<>();
-            SwitchEntry entryPoint;
-            List<Argument> arguments = new ArrayList<>();
-            final List<Label> switchLabels = new ArrayList<>();
-            Analyzer analyzer = new FrameAnalyzer();
-            Frame[] frames = analyzer.analyze(classNode.name, original);
-
-            entryPoint = new SwitchEntry(0, (FrameAnalyzer.ExtendedFrame) frames[0], 0);
-            switchLabels.add(entryPoint.resumeLabel);
-            int ii = 0;
-            int count = 0;
-
-            for (Iterator it = original.instructions.iterator(); it.hasNext(); ii++)
-            {
-                Object o = it.next();
-                if ((o instanceof MethodInsnNode && isAwaitCall((MethodInsnNode) o)))
-                {
-                    SwitchEntry se = new SwitchEntry(++count, (FrameAnalyzer.ExtendedFrame) frames[ii], ii);
-                    switchLabels.add(se.resumeLabel);
-                    switchEntries.add(se);
-                }
-            }
-            // compute variable mapping
-            // map stack->new locals
-            // map (locals + new locals) -> parameters
-            // result:
-            //    stackToNewLocal mapping (stack_index, local_index)
-            //        - original stack to new local
-            //        - as an int array: int[stack_index] = local_index
-            //    localToArgumentMapping (parameter,local_index)
-            //       - in this order, the push order
-            //       - as an int array: int[parameter_index] = local_index
-            int newMaxLocals = 0;
-            Set<AbstractInsnNode> uninitializedObjects = new HashSet<>();
-            for (SwitchEntry se : switchEntries)
-            {
-                // clear the used state
-                arguments.forEach(new Consumer<Argument>()
-                {
-                    @Override
-                    public void accept(final Argument p)
-                    {
-                        p.tmpLocalMapping = -1;
-                    }
-                });
-                se.stackToNewLocal = new int[se.frame.getStackSize()];
-                Arrays.fill(se.stackToNewLocal, -1);
-                int iNewLocal = original.maxLocals;
-                for (int j = 0; j < se.frame.getStackSize(); j++)
-                {
-                    final BasicValue value = se.frame.getStack(j);
-                    if (value != null && !isUninitialized(value))
-                    {
-                        se.stackToNewLocal[j] = iNewLocal;
-                        iNewLocal += valueSize(se.frame.getStack(j));
-                    }
-                    else
-                    {
-                        se.stackToNewLocal[j] = -1;
-                    }
-                    // marks uninitialized objects
-                    if (isUninitialized(value))
-                    {
-                        uninitializedObjects.add(((FrameAnalyzer.ExtendedValue) value).insnNode);
-                    }
-                }
-
-                newMaxLocals = Math.max(iNewLocal, newMaxLocals);
-                se.localToiArgument = new int[newMaxLocals];
-                Arrays.fill(se.localToiArgument, -1);
-                // maps the locals to arguments
-                for (int iLocal = 0; iLocal < se.frame.getLocals(); iLocal += valueSize(se.frame.getLocal(iLocal)))
-                {
-                    final BasicValue value = se.frame.getLocal(iLocal);
-                    if (value != null && !isUninitialized(value) && value.getType() != null)
-                    {
-                        mapLocalToLambdaArgument(original, se, arguments, iLocal, value);
-                    }
-                    // marks uninitialized objects
-                    if (isUninitialized(value))
-                    {
-                        uninitializedObjects.add(((FrameAnalyzer.ExtendedValue) value).insnNode);
-                    }
-                }
-                // maps the stack locals to arguments
-                for (int j = 0; j < se.frame.getStackSize(); j++)
-                {
-                    final int iLocal = se.stackToNewLocal[j];
-                    if (iLocal >= 0)
-                    {
-                        mapLocalToLambdaArgument(original, se, arguments, iLocal, se.frame.getStack(j));
-                    }
-                }
-                // extract local-to-argument mapping
-                se.argumentToLocal = new int[arguments.size()];
-                for (int j = 0; j < arguments.size(); j++)
-                {
-                    se.argumentToLocal[j] = arguments.get(j).tmpLocalMapping;
-                    if (se.argumentToLocal[j] >= 0)
-                    {
-                        se.localToiArgument[se.argumentToLocal[j]] = arguments.get(j).iArgumentLocal;
-                    }
-                }
-            }
-            // only replaces object initialization
-            // if uninitialized objects are present in the stack during a await call.
-            if (uninitializedObjects.size() > 0)
-            {
-                replaceObjectInitialization(original, frames, uninitializedObjects);
-            }
-            original.maxLocals = Math.max(original.maxLocals, newMaxLocals);
-
-            arguments.forEach(new Consumer<Argument>()
-            {
-                @Override
-                public void accept(final Argument p)
-                {
-                    p.tmpLocalMapping = -2;
-                }
-            });
-            final Argument stateArgument = mapLocalToLambdaArgument(original, null, arguments, 0, BasicValue.INT_VALUE);
-            final Argument lambdaArgument = mapLocalToLambdaArgument(original, null, arguments, 0, BasicValue.REFERENCE_VALUE);
-            stateArgument.name = "async$state";
-            lambdaArgument.name = "async$input";
-            final Object[] defaultFrame = arguments.stream().map(new Function<Argument, Object>()
-            {
-                @Override
-                public Object apply(final Argument a)
-                {
-                    return Transformer.this.toFrameType(a.value);
-                }
-            }).toArray();
-            final Type[] typeArguments = arguments.stream().map(new Function<Argument, Type>()
-            {
-                @Override
-                public Type apply(final Argument a)
-                {
-                    return a.value.getType();
-                }
-            }).toArray(new IntFunction<Type[]>()
-            {
-                @Override
-                public Type[] apply(final int s)
-                {
-                    return new Type[s];
-                }
-            });
-            final String lambdaDesc = Type.getMethodDescriptor(Type.getType(Function.class), Arrays.copyOf(typeArguments, typeArguments.length - 1));
-
-            // adding the switch entries and restore code
-            // the local variable restoration has to occur outside
-            // the try-catch blocks to avoid problems with the
-            // local-frame analysis
-            //
-            // Where the jvm is unsure of the actual type of a local var
-            // when inside the exception handler because the var has changed.
-            // for development use: printMethod(cn, mn);
-
-            final MethodNode replacement = new MethodNode(original.access,
-                    original.name, original.desc, original.signature, (String[]) original.exceptions.toArray(new String[original.exceptions.size()]));
-
-            final boolean staticSynchronized = ((original.access & ACC_SYNCHRONIZED) != 0 && (original.access & ACC_STATIC) != 0);
-            final boolean instanceSynchronized = ((original.access & ACC_SYNCHRONIZED) != 0 && (original.access & ACC_STATIC) == 0);
-            final MethodNode continued = new MethodNode(Opcodes.ACC_PRIVATE | ACC_STATIC | (staticSynchronized ? ACC_SYNCHRONIZED : 0),
-                    original.name, original.desc, original.signature, (String[]) original.exceptions.toArray(new String[original.exceptions.size()]));
-
-            String continuedName = "async$" + original.name;
-            Integer countUses = nameUseCount.get(continuedName);
-            nameUseCount.put(continuedName, countUses == null ? 1 : countUses + 1);
-
-            continued.name = (countUses == null) ? continuedName : (continuedName + "$" + countUses);
-            continued.desc = Type.getMethodDescriptor(COMPLETABLE_FUTURE_TYPE, typeArguments);
-            continued.signature = null;
-            final Handle handle = new Handle(Opcodes.H_INVOKESTATIC, classNode.name, continued.name, continued.desc);
-
-            final boolean isTaskRet = original.desc.endsWith(TASK_RET);
-
-            // embedding this class here because it has so many captured vars
-            class MyMethodVisitor extends MethodVisitor
-            {
-                int awaitIndex;
-
-                public MyMethodVisitor(final MethodNode mv)
-                {
-                    super(Opcodes.ASM5, mv);
-                }
-
-                @Override
-                public void visitMethodInsn(final int opcode, final String owner, final String name, final String desc, final boolean itf)
-                {
-                    if (isAwaitCall(opcode, owner, name, desc))
-                    {
-                        // passing 'this' here could create problems if the transformAwait starts adding calls to Await.await()
-                        transformAwait(this, switchEntries.get(awaitIndex++), lambdaDesc, arguments, mv == continued, isTaskRet, handle);
-                    }
-                    else
-                    {
-                        super.visitMethodInsn(opcode, owner, name, desc, itf);
-                    }
-                }
-
-                @Override
-                public void visitFrame(final int type, final int nLocal, final Object[] local, final int nStack, final Object[] stack)
-                {
-                    // the use of EXPAND_FRAMES adds F_NEW which creates problems if not removed.
-                    super.visitFrame((type == F_NEW) ? F_FULL : type, nLocal, local, nStack, stack);
-                }
-
-                @Override
-                public void visitInsn(final int opcode)
-                {
-                    if (opcode == ARETURN && mv == continued && instanceSynchronized)
-                    {
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitInsn(MONITOREXIT);
-                    }
-                    super.visitInsn(opcode);
-                }
-            }
-            original.accept(new MyMethodVisitor(replacement));
-
-
-            // if instanceSynchronized all exit paths must release the lock on "this"
-            // the exception path is easy, a global exception handler can do it.
-            // the return path demands a release before each return
-
-            Label thisMonitorStart = null;
-            Label thisMonitorEnd = null;
-            if (instanceSynchronized)
-            {
-                // "this" must be in the first argument
-                thisMonitorStart = new Label();
-                thisMonitorEnd = new Label();
-                continued.visitVarInsn(ALOAD, 0);
-                continued.visitInsn(MONITORENTER);
-                continued.visitLabel(thisMonitorStart);
-                continued.visitTryCatchBlock(thisMonitorStart, thisMonitorEnd, thisMonitorEnd, null);
-            }
-
-            // get pos
-            continued.visitVarInsn(ILOAD, stateArgument.iArgumentLocal);
-
-            final Label defaultLabel = new Label();
-            continued.visitTableSwitchInsn(0, switchLabels.size() - 1, defaultLabel, switchLabels.toArray(new Label[switchLabels.size()]));
-
-            // original entry point
-            continued.visitLabel(entryPoint.resumeLabel);
-            continued.visitFrame(F_FULL, defaultFrame.length, defaultFrame, 0, new Object[0]);
-            restoreStackAndLocals(continued, entryPoint, arguments);
-
-            original.accept(new MyMethodVisitor(continued));
-
-
-            // add switch entries for the continuation state machine
-            Label lastRestorePoint = null;
-            for (SwitchEntry se : switchEntries)
-            {
-                // code: resumeLabel:
-                continued.visitLabel(se.resumeLabel);
-                continued.visitFrame(F_FULL, defaultFrame.length, defaultFrame, 0, new Object[0]);
-
-                // code:    restoreStack;
-                // code:    restoreLocals;
-                restoreStackAndLocals(continued, se, arguments);
-                if (!Modifier.isStatic(original.access))
-                {
-                    if (lastRestorePoint != null)
-                    {
-                        continued.visitLocalVariable(_THIS, "L" + classNode.name + ";", null, lastRestorePoint, se.resumeLabel, 0);
-                    }
-                    lastRestorePoint = new Label();
-                    continued.visitLabel(lastRestorePoint);
-                }
-                continued.visitJumpInsn(GOTO, se.futureIsDoneLabel);
-            }
-
-            // last switch case
-            continued.visitLabel(defaultLabel);
-            continued.visitFrame(F_FULL, defaultFrame.length, defaultFrame, 0, new Object[0]);
-            continued.visitTypeInsn(NEW, "java/lang/IllegalArgumentException");
-            continued.visitInsn(DUP);
-            continued.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "()V", false);
-            continued.visitInsn(ATHROW);
-            if (!Modifier.isStatic(original.access))
-            {
-                if (lastRestorePoint != null)
-                {
-                    Label endLabel = new Label();
-                    continued.visitLabel(endLabel);
-                    continued.visitLocalVariable(_THIS, "L" + classNode.name + ";", null, lastRestorePoint, endLabel, 0);
-                }
-            }
-            if (instanceSynchronized)
-            {
-                // "this" must be in the first argument
-                continued.visitLabel(thisMonitorEnd);
-                continued.visitFrame(F_FULL, 1, new Object[]{classNode.name}, 1, new Object[]{Type.getType(Throwable.class).getInternalName()});
-                continued.visitVarInsn(ALOAD, 0);
-                continued.visitInsn(MONITOREXIT);
-                continued.visitInsn(ATHROW);
-            }
-
-            // removing original method
-            classNode.methods.remove(original);
-            replacement.maxStack = Math.max(16, replacement.maxStack + 16);
-            // adding replacement
-            replacement.accept(classNode);
-
-
-            continued.maxLocals = Math.max(16, continued.maxLocals + 16);
-            continued.maxStack = Math.max(16, continued.maxStack + 16);
-            // adding the continuation method
-            continued.accept(classNode);
-
-            // for development use: printMethod(classNode, replacement);
-            // for development use: printMethod(classNode, classNode.methods.get(classNode.methods.size() - 2));
-            // for development use: printMethod(classNode, continued);
-
-            //final AbstractInsnNode[] in = replacement.instructions.toArray();
-            //System.out.println(in);
+            transformAsyncMethod(classNode, original, nameUseCount);
         }
         // no changes.
         if (countInstrumented == 0)
@@ -601,6 +282,330 @@ public class Transformer implements ClassFileTransformer
         // for development use: DevDebug.debugSave(classNode, bytes);
         // for development use: DevDebug.debugSaveTrace(classNode.name + ".1", bytes);
         return bytes;
+    }
+
+    private void transformAsyncMethod(final ClassNode classNode, final MethodNode original, final Map<String, Integer> nameUseCount) throws AnalyzerException
+    {
+        final List<SwitchEntry> switchEntries = new ArrayList<>();
+        SwitchEntry entryPoint;
+        List<Argument> arguments = new ArrayList<>();
+        final List<Label> switchLabels = new ArrayList<>();
+        Analyzer analyzer = new FrameAnalyzer();
+        Frame[] frames = analyzer.analyze(classNode.name, original);
+
+        entryPoint = new SwitchEntry(0, (FrameAnalyzer.ExtendedFrame) frames[0], 0);
+        switchLabels.add(entryPoint.resumeLabel);
+        int ii = 0;
+        int count = 0;
+
+        for (Iterator it = original.instructions.iterator(); it.hasNext(); ii++)
+        {
+            Object o = it.next();
+            if ((o instanceof MethodInsnNode && isAwaitCall((MethodInsnNode) o)))
+            {
+                SwitchEntry se = new SwitchEntry(++count, (FrameAnalyzer.ExtendedFrame) frames[ii], ii);
+                switchLabels.add(se.resumeLabel);
+                switchEntries.add(se);
+            }
+        }
+        // compute variable mapping
+        // map stack->new locals
+        // map (locals + new locals) -> parameters
+        // result:
+        //    stackToNewLocal mapping (stack_index, local_index)
+        //        - original stack to new local
+        //        - as an int array: int[stack_index] = local_index
+        //    localToArgumentMapping (parameter,local_index)
+        //       - in this order, the push order
+        //       - as an int array: int[parameter_index] = local_index
+        int newMaxLocals = 0;
+        Set<AbstractInsnNode> uninitializedObjects = new HashSet<>();
+        for (SwitchEntry se : switchEntries)
+        {
+            // clear the used state
+            arguments.forEach(new Consumer<Argument>()
+            {
+                @Override
+                public void accept(final Argument p)
+                {
+                    p.tmpLocalMapping = -1;
+                }
+            });
+            se.stackToNewLocal = new int[se.frame.getStackSize()];
+            Arrays.fill(se.stackToNewLocal, -1);
+            int iNewLocal = original.maxLocals;
+            for (int j = 0; j < se.frame.getStackSize(); j++)
+            {
+                final BasicValue value = se.frame.getStack(j);
+                if (value != null && !isUninitialized(value))
+                {
+                    se.stackToNewLocal[j] = iNewLocal;
+                    iNewLocal += valueSize(se.frame.getStack(j));
+                }
+                else
+                {
+                    se.stackToNewLocal[j] = -1;
+                }
+                // marks uninitialized objects
+                if (isUninitialized(value))
+                {
+                    uninitializedObjects.add(((FrameAnalyzer.ExtendedValue) value).insnNode);
+                }
+            }
+
+            newMaxLocals = Math.max(iNewLocal, newMaxLocals);
+            se.localToiArgument = new int[newMaxLocals];
+            Arrays.fill(se.localToiArgument, -1);
+            // maps the locals to arguments
+            for (int iLocal = 0; iLocal < se.frame.getLocals(); iLocal += valueSize(se.frame.getLocal(iLocal)))
+            {
+                final BasicValue value = se.frame.getLocal(iLocal);
+                if (value != null && !isUninitialized(value) && value.getType() != null)
+                {
+                    mapLocalToLambdaArgument(original, se, arguments, iLocal, value);
+                }
+                // marks uninitialized objects
+                if (isUninitialized(value))
+                {
+                    uninitializedObjects.add(((FrameAnalyzer.ExtendedValue) value).insnNode);
+                }
+            }
+            // maps the stack locals to arguments
+            for (int j = 0; j < se.frame.getStackSize(); j++)
+            {
+                final int iLocal = se.stackToNewLocal[j];
+                if (iLocal >= 0)
+                {
+                    mapLocalToLambdaArgument(original, se, arguments, iLocal, se.frame.getStack(j));
+                }
+            }
+            // extract local-to-argument mapping
+            se.argumentToLocal = new int[arguments.size()];
+            for (int j = 0; j < arguments.size(); j++)
+            {
+                se.argumentToLocal[j] = arguments.get(j).tmpLocalMapping;
+                if (se.argumentToLocal[j] >= 0)
+                {
+                    se.localToiArgument[se.argumentToLocal[j]] = arguments.get(j).iArgumentLocal;
+                }
+            }
+        }
+        // only replaces object initialization
+        // if uninitialized objects are present in the stack during a await call.
+        if (uninitializedObjects.size() > 0)
+        {
+            replaceObjectInitialization(original, frames, uninitializedObjects);
+        }
+        original.maxLocals = Math.max(original.maxLocals, newMaxLocals);
+
+        arguments.forEach(new Consumer<Argument>()
+        {
+            @Override
+            public void accept(final Argument p)
+            {
+                p.tmpLocalMapping = -2;
+            }
+        });
+        final Argument stateArgument = mapLocalToLambdaArgument(original, null, arguments, 0, BasicValue.INT_VALUE);
+        final Argument lambdaArgument = mapLocalToLambdaArgument(original, null, arguments, 0, BasicValue.REFERENCE_VALUE);
+        stateArgument.name = "async$state";
+        lambdaArgument.name = "async$input";
+        final Object[] defaultFrame = arguments.stream().map(new Function<Argument, Object>()
+        {
+            @Override
+            public Object apply(final Argument a)
+            {
+                return Transformer.this.toFrameType(a.value);
+            }
+        }).toArray();
+        final Type[] typeArguments = arguments.stream().map(new Function<Argument, Type>()
+        {
+            @Override
+            public Type apply(final Argument a)
+            {
+                return a.value.getType();
+            }
+        }).toArray(new IntFunction<Type[]>()
+        {
+            @Override
+            public Type[] apply(final int s)
+            {
+                return new Type[s];
+            }
+        });
+        final String lambdaDesc = Type.getMethodDescriptor(Type.getType(Function.class), Arrays.copyOf(typeArguments, typeArguments.length - 1));
+
+        // adding the switch entries and restore code
+        // the local variable restoration has to occur outside
+        // the try-catch blocks to avoid problems with the
+        // local-frame analysis
+        //
+        // Where the jvm is unsure of the actual type of a local var
+        // when inside the exception handler because the var has changed.
+        // for development use: printMethod(cn, mn);
+
+        final MethodNode replacement = new MethodNode(original.access,
+                original.name, original.desc, original.signature, (String[]) original.exceptions.toArray(new String[original.exceptions.size()]));
+
+        final boolean staticSynchronized = ((original.access & ACC_SYNCHRONIZED) != 0 && (original.access & ACC_STATIC) != 0);
+        final boolean instanceSynchronized = ((original.access & ACC_SYNCHRONIZED) != 0 && (original.access & ACC_STATIC) == 0);
+        final MethodNode continued = new MethodNode(Opcodes.ACC_PRIVATE | ACC_STATIC | (staticSynchronized ? ACC_SYNCHRONIZED : 0),
+                original.name, original.desc, original.signature, (String[]) original.exceptions.toArray(new String[original.exceptions.size()]));
+
+        String continuedName = "async$" + original.name;
+        Integer countUses = nameUseCount.get(continuedName);
+        nameUseCount.put(continuedName, countUses == null ? 1 : countUses + 1);
+
+        continued.name = (countUses == null) ? continuedName : (continuedName + "$" + countUses);
+        continued.desc = Type.getMethodDescriptor(COMPLETABLE_FUTURE_TYPE, typeArguments);
+        continued.signature = null;
+        final Handle handle = new Handle(Opcodes.H_INVOKESTATIC, classNode.name, continued.name, continued.desc);
+
+        final boolean isTaskRet = original.desc.endsWith(TASK_RET);
+
+        // embedding this class here because it has so many captured vars
+        class MyMethodVisitor extends MethodVisitor
+        {
+            int awaitIndex;
+
+            public MyMethodVisitor(final MethodNode mv)
+            {
+                super(Opcodes.ASM5, mv);
+            }
+
+            @Override
+            public void visitMethodInsn(final int opcode, final String owner, final String name, final String desc, final boolean itf)
+            {
+                if (isAwaitCall(opcode, owner, name, desc))
+                {
+                    // passing 'this' here could create problems if the transformAwait starts adding calls to Await.await()
+                    transformAwait(this, switchEntries.get(awaitIndex++), lambdaDesc, arguments, mv == continued, isTaskRet, handle);
+                }
+                else
+                {
+                    super.visitMethodInsn(opcode, owner, name, desc, itf);
+                }
+            }
+
+            @Override
+            public void visitFrame(final int type, final int nLocal, final Object[] local, final int nStack, final Object[] stack)
+            {
+                // the use of EXPAND_FRAMES adds F_NEW which creates problems if not removed.
+                super.visitFrame((type == F_NEW) ? F_FULL : type, nLocal, local, nStack, stack);
+            }
+
+            @Override
+            public void visitInsn(final int opcode)
+            {
+                if (opcode == ARETURN && mv == continued && instanceSynchronized)
+                {
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitInsn(MONITOREXIT);
+                }
+                super.visitInsn(opcode);
+            }
+        }
+        original.accept(new MyMethodVisitor(replacement));
+
+
+        // if instanceSynchronized all exit paths must release the lock on "this"
+        // the exception path is easy, a global exception handler can do it.
+        // the return path demands a release before each return
+
+        Label thisMonitorStart = null;
+        Label thisMonitorEnd = null;
+        if (instanceSynchronized)
+        {
+            // "this" must be in the first argument
+            thisMonitorStart = new Label();
+            thisMonitorEnd = new Label();
+            continued.visitVarInsn(ALOAD, 0);
+            continued.visitInsn(MONITORENTER);
+            continued.visitLabel(thisMonitorStart);
+            continued.visitTryCatchBlock(thisMonitorStart, thisMonitorEnd, thisMonitorEnd, null);
+        }
+
+        // get pos
+        continued.visitVarInsn(ILOAD, stateArgument.iArgumentLocal);
+
+        final Label defaultLabel = new Label();
+        continued.visitTableSwitchInsn(0, switchLabels.size() - 1, defaultLabel, switchLabels.toArray(new Label[switchLabels.size()]));
+
+        // original entry point
+        continued.visitLabel(entryPoint.resumeLabel);
+        continued.visitFrame(F_FULL, defaultFrame.length, defaultFrame, 0, new Object[0]);
+        restoreStackAndLocals(continued, entryPoint, arguments);
+
+        original.accept(new MyMethodVisitor(continued));
+
+
+        // add switch entries for the continuation state machine
+        Label lastRestorePoint = null;
+        for (SwitchEntry se : switchEntries)
+        {
+            // code: resumeLabel:
+            continued.visitLabel(se.resumeLabel);
+            continued.visitFrame(F_FULL, defaultFrame.length, defaultFrame, 0, new Object[0]);
+
+            // code:    restoreStack;
+            // code:    restoreLocals;
+            restoreStackAndLocals(continued, se, arguments);
+            if (!Modifier.isStatic(original.access))
+            {
+                if (lastRestorePoint != null)
+                {
+                    continued.visitLocalVariable(_THIS, "L" + classNode.name + ";", null, lastRestorePoint, se.resumeLabel, 0);
+                }
+                lastRestorePoint = new Label();
+                continued.visitLabel(lastRestorePoint);
+            }
+            continued.visitJumpInsn(GOTO, se.futureIsDoneLabel);
+        }
+
+        // last switch case
+        continued.visitLabel(defaultLabel);
+        continued.visitFrame(F_FULL, defaultFrame.length, defaultFrame, 0, new Object[0]);
+        continued.visitTypeInsn(NEW, "java/lang/IllegalArgumentException");
+        continued.visitInsn(DUP);
+        continued.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "()V", false);
+        continued.visitInsn(ATHROW);
+        if (!Modifier.isStatic(original.access))
+        {
+            if (lastRestorePoint != null)
+            {
+                Label endLabel = new Label();
+                continued.visitLabel(endLabel);
+                continued.visitLocalVariable(_THIS, "L" + classNode.name + ";", null, lastRestorePoint, endLabel, 0);
+            }
+        }
+        if (instanceSynchronized)
+        {
+            // "this" must be in the first argument
+            continued.visitLabel(thisMonitorEnd);
+            continued.visitFrame(F_FULL, 1, new Object[]{classNode.name}, 1, new Object[]{Type.getType(Throwable.class).getInternalName()});
+            continued.visitVarInsn(ALOAD, 0);
+            continued.visitInsn(MONITOREXIT);
+            continued.visitInsn(ATHROW);
+        }
+
+        // removing original method
+        classNode.methods.remove(original);
+        replacement.maxStack = Math.max(16, replacement.maxStack + 16);
+        // adding replacement
+        replacement.accept(classNode);
+
+
+        continued.maxLocals = Math.max(16, continued.maxLocals + 16);
+        continued.maxStack = Math.max(16, continued.maxStack + 16);
+        // adding the continuation method
+        continued.accept(classNode);
+
+        // for development use: printMethod(classNode, replacement);
+        // for development use: printMethod(classNode, classNode.methods.get(classNode.methods.size() - 2));
+        // for development use: printMethod(classNode, continued);
+
+        //final AbstractInsnNode[] in = replacement.instructions.toArray();
+        //System.out.println(in);
     }
 
     private Argument mapLocalToLambdaArgument(final MethodNode originalMethod, SwitchEntry se, final List<Argument> arguments, final int local, final BasicValue value)
