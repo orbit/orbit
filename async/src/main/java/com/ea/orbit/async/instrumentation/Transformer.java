@@ -1340,17 +1340,20 @@ public class Transformer implements ClassFileTransformer
                         if (ntIndex == 0) continue;
                         int ntAddress = cr.getItem(ntIndex);
 
-                        if (equalsUtf8(cr, classAddress, AWAIT_NAME)
-                                && equalsUtf8(cr, ntAddress, AWAIT_METHOD_NAME)
-                                && equalsUtf8(cr, ntAddress + 2, AWAIT_METHOD_DESC))
+                        if (equalsUtf8(cr, classAddress, AWAIT_NAME))
                         {
-                            return true;
-                        }
-                        if (equalsUtf8(cr, classAddress, AWAIT_NAME)
-                                && equalsUtf8(cr, ntAddress, AWAIT_INIT_METHOD_NAME)
-                                && equalsUtf8(cr, ntAddress + 2, AWAIT_INIT_METHOD_DESC))
-                        {
-                            return true;
+                            // has Await.await
+                            if (equalsUtf8(cr, ntAddress, AWAIT_METHOD_NAME)
+                                    && equalsUtf8(cr, ntAddress + 2, AWAIT_METHOD_DESC))
+                            {
+                                return true;
+                            }
+                            // has Await.init
+                            if (equalsUtf8(cr, ntAddress, AWAIT_INIT_METHOD_NAME)
+                                    && equalsUtf8(cr, ntAddress + 2, AWAIT_INIT_METHOD_DESC))
+                            {
+                                return true;
+                            }
                         }
                     }
                 }
