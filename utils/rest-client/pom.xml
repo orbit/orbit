@@ -33,7 +33,7 @@
     <parent>
         <groupId>com.ea.orbit</groupId>
         <artifactId>orbit-parent</artifactId>
-        <version>0.6.0</version>
+        <version>0.6.1-SNAPSHOT</version>
         <relativePath>../..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
