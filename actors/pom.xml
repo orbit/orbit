@@ -80,7 +80,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <plugin>
                 <groupId>com.ea.orbit</groupId>
                 <!-- this version is to avoid mvn clean failures -->
-                <version>0.5.2</version>
+                <version>0.6.0</version>
                 <artifactId>orbit-async-maven-plugin</artifactId>
                 <executions>
                     <execution>
