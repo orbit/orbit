@@ -82,6 +82,7 @@ import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
+import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
@@ -200,36 +201,9 @@ public class Stage implements Startable, ActorRuntime
 
     static
     {
-        if ("true".equals(System.getProperty("orbit-async-init", "true")))
-        {
-            try
-            {
-                Class.forName("com.ea.orbit.async.Async");
-                try
-                {
-                    // async is present in the classpath, let's make sure await is initialized
-                    Class.forName("com.ea.orbit.async.Await").getMethod("init").invoke(null);
-                }
-                catch (Throwable ex)
-                {
-                    // this might be a problem, logging.
-                    Logger asyncInitLogger = LoggerFactory.getLogger(Stage.class);
-                    if (asyncInitLogger.isErrorEnabled())
-                    {
-                        asyncInitLogger.error("Error initializing orbit-async", ex);
-                    }
-                    else
-                    {
-                        System.out.println("Error initializing orbit-async " + ex);
-                    }
-                }
-
-            }
-            catch (Throwable ex)
-            {
-                // no problem, application doesn't use orbit async.
-            }
-        }
+        // this is here to help people testing the orbit source code.
+        // because Await.init is removed by the build time bytecode instrumentation.
+        Await.init();
     }
 
     public static class Builder
@@ -1241,7 +1215,7 @@ public class Stage implements Startable, ActorRuntime
                 '}';
     }
 
-    @ExportMetric(name="localActorCount")
+    @ExportMetric(name = "localActorCount")
     public int getLocalActorCount()
     {
         return objects.getLocalObjectCount();
