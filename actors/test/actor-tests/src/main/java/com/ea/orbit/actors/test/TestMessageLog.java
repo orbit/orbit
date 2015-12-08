@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 public class TestMessageLog extends NamedPipelineExtension
 {
     private TestLogger logger;
+    private String name;
 
     public TestMessageLog(TestLogger logger)
     {
@@ -38,6 +39,7 @@ public class TestMessageLog extends NamedPipelineExtension
     {
         super(name, beforeHandlerName, afterHandlerName);
         this.logger = logger;
+        this.name = name;
     }
 
 
@@ -131,7 +133,7 @@ public class TestMessageLog extends NamedPipelineExtension
                 strTarget = clazz.getSimpleName() + ":" + message.getObjectId() + "." + method.getName();
             }
         }
-        final String seqMsg = '"' + from + "\" -> \"" + to + "\" : [" + messageId + "] " + strTarget + " " + strParams;
+        final String seqMsg = '"' + from + "\" -> \"" + to + "\" : [" + name + ":" + messageId + "] " + strTarget + " " + strParams;
         logger.sequenceDiagram.add(seqMsg);
         while (logger.sequenceDiagram.size() > 100)
         {

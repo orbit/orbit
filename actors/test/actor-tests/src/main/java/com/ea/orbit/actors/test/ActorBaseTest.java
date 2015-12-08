@@ -226,7 +226,7 @@ public class ActorBaseTest
         serverPeer.setStage(stage);
         serverPeer.setMessageSerializer(serializer);
         serverPeer.addExtension(new TestLogger(loggerExtension, "sc" + connectionId));
-        serverPeer.addExtension(new TestInvocationLog(loggerExtension));
+        serverPeer.addExtension(new TestInvocationLog(loggerExtension, "sc" + connectionId));
         serversConnections.add(serverPeer);
 
         final FakeClient fakeClient = new FakeClient();
@@ -235,8 +235,8 @@ public class ActorBaseTest
         fakeClient.setNetworkHandler(network);
         fakeClient.setClock(clock);
         fakeClient.setMessageSerializer(serializer);
-        fakeClient.addExtension(new TestLogger(loggerExtension, "sc" + connectionId));
-        fakeClient.addExtension(new TestInvocationLog(loggerExtension));
+        fakeClient.addExtension(new TestLogger(loggerExtension, "cc" + connectionId));
+        fakeClient.addExtension(new TestInvocationLog(loggerExtension, "cc" + connectionId));
 
         serverPeer.start();
         fakeClient.start();
@@ -305,6 +305,7 @@ public class ActorBaseTest
                 .build();
 
         dr.addSingleton(Stage.class, stage);
+        stages.add(stage);
         installExtensions(stage);
 
         stage.start().join();
@@ -338,7 +339,8 @@ public class ActorBaseTest
     {
         stage.addExtension(new TestLogger(loggerExtension, "s" + stages.size()));
         //stage.addExtension(new TestMessageLog(this, stage));
-        stage.addExtension(new TestInvocationLog(loggerExtension));
+        stage.addExtension(new TestInvocationLog(loggerExtension, "s" + stages.size()));
+        stage.addExtension(new TestLifecycleLog(loggerExtension, "s" + stages.size()));
     }
 
     protected ExecutionObjectCloner getExecutionObjectCloner()

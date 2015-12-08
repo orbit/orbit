@@ -59,10 +59,12 @@ public class TestInvocationLog implements PipelineExtension, PeerExtension
     private AtomicLong invocationId = new AtomicLong();
 
     private TestLogger logger;
+    private String name;
 
-    public TestInvocationLog(final TestLogger logger)
+    public TestInvocationLog(final TestLogger logger, String name)
     {
         this.logger = logger;
+        this.name = name;
     }
 
     @Override
@@ -151,7 +153,7 @@ public class TestInvocationLog implements PipelineExtension, PeerExtension
         if (!invocation.isOneWay())
         {
 
-            final String msg = '"' + from + "\" -> \"" + to + "\" : [" + id + "] " + methodName + strParams
+            final String msg = '"' + from + "\" -> \"" + to + "\" : [" + name + ":m" + id + "] " + methodName + strParams
                     + "\r\n"
                     + "activate \"" + to + "\"";
             logger.sequenceDiagram.add(msg);
@@ -170,7 +172,7 @@ public class TestInvocationLog implements PipelineExtension, PeerExtension
                 final String timeStr = NumberFormat.getNumberInstance(Locale.US).format(timeUS);
                 if (e == null)
                 {
-                    final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id + "; "
+                    final String resp = '"' + to + "\" --> \"" + from + "\" : [" + name + ":r" + id + "; "
                             + timeStr + "us] " + wrap("(response to " + methodName + "): " + toString(r), 32, "\\n", true)
                             + "\r\n"
                             + "deactivate \"" + to + "\"";
@@ -181,7 +183,7 @@ public class TestInvocationLog implements PipelineExtension, PeerExtension
                 {
                     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
                     final Throwable throwable = unwrapException(e);
-                    final String resp = '"' + to + "\" --> \"" + from + "\" : [" + id
+                    final String resp = '"' + to + "\" --> \"" + from + "\" : [" + name + ":r" + id
                             + "; " + timeStr + "us] (exception at " + methodName + "):\\n"
                             + throwable.getClass().getName()
                             + (throwable.getMessage() != null ? ": \\n" + throwable.getMessage() : "")
