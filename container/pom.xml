@@ -72,6 +72,25 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>com.ea.orbit</groupId>
+                <!-- this version is to avoid mvn clean failures -->
+                <version>0.6.0</version>
+                <artifactId>orbit-async-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <!-- instruments main classes -->
+                            <goal>instrument</goal>
+                            <!-- instruments test classes -->
+                            <goal>instrument-test</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <verbose>true</verbose>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
