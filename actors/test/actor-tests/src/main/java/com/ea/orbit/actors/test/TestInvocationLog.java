@@ -61,6 +61,11 @@ public class TestInvocationLog implements PipelineExtension, PeerExtension
     private TestLogger logger;
     private String name;
 
+    public TestInvocationLog(final TestLogger logger)
+    {
+        this(logger, "");
+    }
+
     public TestInvocationLog(final TestLogger logger, String name)
     {
         this.logger = logger;
