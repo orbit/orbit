@@ -133,73 +133,73 @@ public class WebTest
     @Test
     public void rawTest()
     {
-        assert(ClientBuilder.newClient().target(getHttpPath())
+        assertEquals(200, ClientBuilder.newClient().target(getHttpPath())
                 .path("test/helloRaw").request(MediaType.APPLICATION_JSON)
-                .get().getStatus() == 200);
+                .get().getStatus());
     }
 
     @Test
     public void taskTest()
     {
-        assert(ClientBuilder.newClient().target(getHttpPath())
+        assertEquals(200, ClientBuilder.newClient().target(getHttpPath())
                 .path("test/helloTask").request(MediaType.APPLICATION_JSON)
-                .get().getStatus() == 200);
+                .get().getStatus());
     }
 
     @Test
     public void notFoundTest()
     {
-        assert(ClientBuilder.newClient().target(getHttpPath())
+        assertEquals(404, ClientBuilder.newClient().target(getHttpPath())
                 .path("test/noResource").request(MediaType.APPLICATION_JSON)
-                .get().getStatus() == 404);
+                .get().getStatus());
     }
 
     @Test
     public void serverErrorRaw()
     {
-        assert(ClientBuilder.newClient().target(getHttpPath())
+        assertEquals(500, ClientBuilder.newClient().target(getHttpPath())
                 .path("test/serverErrorRaw").request(MediaType.APPLICATION_JSON)
-                .get().getStatus() == 500);
+                .get().getStatus());
     }
 
     @Test
     public void serverErrorTask()
     {
-        assert(ClientBuilder.newClient().target(getHttpPath())
+        assertEquals(500, ClientBuilder.newClient().target(getHttpPath())
                 .path("test/serverErrorTask").request(MediaType.APPLICATION_JSON)
-                .get().getStatus() == 500);
+                .get().getStatus());
     }
 
     @Test
     public void serverErrorNestedTask()
     {
-        assert(ClientBuilder.newClient().target(getHttpPath())
+        assertEquals(500, ClientBuilder.newClient().target(getHttpPath())
                 .path("test/serverErrorNestedTask").request(MediaType.APPLICATION_JSON)
-                .get().getStatus() == 500);
+                .get().getStatus());
     }
 
     @Test
     public void forbiddenRaw()
     {
-        assert(ClientBuilder.newClient().target(getHttpPath())
+        assertEquals(403, ClientBuilder.newClient().target(getHttpPath())
                 .path("test/forbiddenRaw").request(MediaType.APPLICATION_JSON)
-                .get().getStatus() == 403);
+                .get().getStatus());
     }
 
     @Test
     public void forbiddenTask()
     {
-        assert(ClientBuilder.newClient().target(getHttpPath())
+        assertEquals(403, ClientBuilder.newClient().target(getHttpPath())
                 .path("test/forbiddenTask").request(MediaType.APPLICATION_JSON)
-                .get().getStatus() == 403);
+                .get().getStatus());
     }
 
     @Test
     public void listTask()
     {
-        assert(ClientBuilder.newClient().target(getHttpPath())
+        assertEquals(200, ClientBuilder.newClient().target(getHttpPath())
                 .path("test/listTask").request(MediaType.APPLICATION_JSON)
-                .get().getStatus() == 200);
+                .get().getStatus());
     }
 
     @Test
