@@ -102,6 +102,26 @@ public class StatelessActorTest extends ActorBaseTest
         dumpMessages();
     }
 
+
+    @Test
+    public void simpleStatelessThreeStages() throws ExecutionException, InterruptedException, TimeoutException
+    {
+        final Stage stage1 = createStage();
+        StatelessThing actor = Actor.getReference(StatelessThing.class, "1000");
+        stage1.bind();
+        assertNotNull(actor.sayHello().get(10, TimeUnit.SECONDS));
+        final Stage stage2 = createStage();
+        stage2.bind();
+        assertNotNull(actor.sayHello().get(10, TimeUnit.SECONDS));
+        final Stage stage3 = createStage();
+        stage1.stop().join();
+        stage2.stop().join();
+        stage3.bind();
+        assertNotNull(actor.sayHello().get(10, TimeUnit.SECONDS));
+        Thread.sleep(500);
+        stage3.stop().join();
+        dumpMessages();
+    }
     @Test
     public void simpleStatelessTestConcurrentTwoStages() throws ExecutionException, InterruptedException, TimeoutException
     {
