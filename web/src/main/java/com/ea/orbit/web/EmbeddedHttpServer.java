@@ -55,6 +55,7 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.servlet.ServletProperties;
 
 import javax.inject.Singleton;
+import javax.servlet.Servlet;
 import javax.websocket.server.ServerContainer;
 import javax.websocket.server.ServerEndpoint;
 import javax.websocket.server.ServerEndpointConfig;
@@ -93,7 +94,7 @@ public class EmbeddedHttpServer implements Startable
         providers.addAll(classes);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public Task<Void> start()
     {
 
@@ -143,6 +144,7 @@ public class EmbeddedHttpServer implements Startable
             }
         }
 
+
         final WebAppContext webAppContext = new WebAppContext();
         final ProtectionDomain protectionDomain = EmbeddedHttpServer.class.getProtectionDomain();
         final URL location = protectionDomain.getCodeSource().getLocation();
@@ -157,14 +159,27 @@ public class EmbeddedHttpServer implements Startable
         final ContextHandler resourceContext = new ContextHandler();
         ResourceHandler resourceHandler = new ResourceHandler();
         resourceHandler.setDirectoriesListed(true);
-        resourceHandler.setWelcomeFiles(new String[]{"index.html"});
+        resourceHandler.setWelcomeFiles(new String[]{ "index.html" });
         resourceHandler.setBaseResource(Resource.newClassPathResource("/web"));
 
         resourceContext.setHandler(resourceHandler);
         resourceContext.setInitParameter("useFileMappedBuffer", "false");
         final ContextHandlerCollection contexts = new ContextHandlerCollection();
+        for (final Class c : classes)
+        {
+            if (c.isAnnotationPresent(javax.ws.rs.Path.class) && Servlet.class.isAssignableFrom(c))
+            {
+                javax.ws.rs.Path path = (javax.ws.rs.Path) c.getAnnotation(javax.ws.rs.Path.class);
+                webAppContext.addServlet(c, path.value());
+                resourceConfig.register(c);
+            }
+        }
 
-        contexts.setHandlers(new Handler[]{wrapHandlerWithMetrics(resourceContext, "resourceContext"), wrapHandlerWithMetrics(webAppContext, "webAppContext")});
+        List<Handler> handlers = new ArrayList<>(3);
+        handlers.add(wrapHandlerWithMetrics(resourceContext, "resourceContext"));
+        handlers.add(wrapHandlerWithMetrics(webAppContext, "webAppContext"));
+
+        contexts.setHandlers(handlers.toArray(new Handler[handlers.size()]));
 
         server = new Server(port);
         server.setHandler(contexts);
@@ -210,11 +225,11 @@ public class EmbeddedHttpServer implements Startable
         return Task.done();
     }
 
-        /**
-         * Gets the actual tcp port for the first server connector
-         *
-         * @return the actual port available only after start.
-         */
+    /**
+     * Gets the actual tcp port for the first server connector
+     *
+     * @return the actual port available only after start.
+     */
 
     public int getLocalPort()
     {
@@ -247,7 +262,8 @@ public class EmbeddedHttpServer implements Startable
 
     private Handler wrapHandlerWithMetrics(Handler handlerToWrap, String handlerName)
     {
-        if(!metricsEnabled) {
+        if (!metricsEnabled)
+        {
             return handlerToWrap;
         }
         try
