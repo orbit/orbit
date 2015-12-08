@@ -26,11 +26,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package com.ea.orbit.actors.test;
+package com.ea.orbit.actors.test.storage;
 
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.actors.test.actors.ReferenceMapStorage;
 import com.ea.orbit.actors.test.actors.SomeMatch;
 import com.ea.orbit.actors.test.actors.SomePlayer;

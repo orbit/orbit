@@ -26,10 +26,12 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.test;
+package com.ea.orbit.actors.test.storage;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.test.ActorBaseTest;
+import com.ea.orbit.actors.test.FakeStorageExtension;
 import com.ea.orbit.actors.test.actors.Storage1;
 import com.ea.orbit.actors.test.actors.Storage2;
 
@@ -43,14 +45,13 @@ import static org.junit.Assert.assertEquals;
 @SuppressWarnings("unused")
 public class MultipleStorageTest extends ActorBaseTest
 {
-    protected ConcurrentHashMap<Object, Object> fakeDatabase1 = new ConcurrentHashMap<>();
     protected ConcurrentHashMap<Object, Object> fakeDatabase2 = new ConcurrentHashMap<>();
 
     @Test
     public void checkWritesTest() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();
-        assertEquals(0, fakeDatabase1.values().size());
+        assertEquals(0, fakeDatabase.values().size());
         assertEquals(0, fakeDatabase2.values().size());
 
         Storage1 storage1A = Actor.getReference(Storage1.class, "301");
@@ -64,14 +65,15 @@ public class MultipleStorageTest extends ActorBaseTest
         storage1B.put("am").join();
         storage1C.put("testing").join();
         storage1D.put("something").join();
-        assertEquals(4, fakeDatabase1.values().size());
+        assertEquals(4, fakeDatabase.values().size());
         assertEquals(0, fakeDatabase2.values().size());
         storage2A.put("really").join();
         storage2B.put("cool").join();
 
-        assertEquals(4, fakeDatabase1.values().size());
+        assertEquals(4, fakeDatabase.values().size());
         assertEquals(2, fakeDatabase2.values().size());
 
+        stage1.stop().join();
         Stage stage2 = createStage();
 
         Storage1 storage1AA = Actor.getReference(Storage1.class, "301");
@@ -87,23 +89,14 @@ public class MultipleStorageTest extends ActorBaseTest
         assertEquals("something", storage1DD.get().join());
         assertEquals("really", storage2AA.get().join());
         assertEquals("cool", storage2BB.get().join());
+        dumpMessages();
 
     }
 
     @Override
-    public Stage createStage()
+    protected void installExtensions(final Stage stage)
     {
-        Stage stage = new Stage();
-        stage.setMode(Stage.StageMode.HOST);
-        stage.setExecutionPool(commonPool);
-        stage.setMessagingPool(commonPool);
-        stage.addExtension(new FakeStorageExtension("default", fakeDatabase1));
+        super.installExtensions(stage);
         stage.addExtension(new FakeStorageExtension("fake2", fakeDatabase2));
-        stage.setClock(clock);
-        stage.setClusterName(clusterName);
-        stage.setClusterPeer(new FakeClusterPeer());
-        stage.start().join();
-        stage.bind();
-        return stage;
     }
 }
