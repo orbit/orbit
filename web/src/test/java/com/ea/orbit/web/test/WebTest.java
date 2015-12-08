@@ -29,6 +29,7 @@
 package com.ea.orbit.web.test;
 
 import com.ea.orbit.container.Container;
+import com.ea.orbit.util.IOUtils;
 import com.ea.orbit.util.NetUtils;
 import com.ea.orbit.web.WebModule;
 
@@ -36,6 +37,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.websocket.ClientEndpoint;
 import javax.websocket.ContainerProvider;
 import javax.websocket.DeploymentException;
@@ -43,10 +48,13 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
+import javax.ws.rs.Path;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -82,6 +90,15 @@ public class WebTest
         }
     }
 
+    @Path("/servlet1")
+    public static class Servlet1 extends HttpServlet
+    {
+        @Override
+        protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException
+        {
+            resp.getOutputStream().print("hello");
+        }
+    }
 
 
     @BeforeClass
@@ -200,5 +217,17 @@ public class WebTest
         assertEquals("test1", client.messages.poll(10, TimeUnit.SECONDS));
         assertEquals("test2", client.messages.poll(10, TimeUnit.SECONDS));
         client.session.close();
+    }
+
+    @Test
+    public void servletTest() throws IOException
+    {
+        // IDK anyone would use servlets now days, but there you go.
+
+        Response servlet1 = ClientBuilder.newClient().target(getHttpPath())
+                .path("servlet1").request(MediaType.TEXT_PLAIN)
+                .get();
+        assertEquals(200, servlet1.getStatus());
+        assertEquals("hello", IOUtils.toString((InputStream) servlet1.getEntity()));
     }
 }
