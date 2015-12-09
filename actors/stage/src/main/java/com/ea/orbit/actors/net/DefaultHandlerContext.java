@@ -190,7 +190,10 @@ public class DefaultHandlerContext implements HandlerContext
         @Override
         public Task write(final Object msg)
         {
-            // TODO: logger.warn("Unprocessed write " + msg);
+            if (logger.isWarnEnabled())
+            {
+                logger.warn("Unprocessed write " + msg);
+            }
             return Task.done();
         }
     }
