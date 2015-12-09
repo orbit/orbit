@@ -104,7 +104,6 @@ public class AsymmetricalStagesTest extends ActorBaseTest
         assertEquals(1, setP.size());
         // and it's not the same node
         assertNotEquals(setM, setP);
-        dumpMessages();
     }
 
 
