@@ -13,6 +13,7 @@ artifact Stage {
         agent Caching #LightBlue
         agent Execution #LightBlue
         agent Hosting #LightBlue
+        agent MessageLoopback #LightBlue
         agent Messaging #LightBlue
         agent MessageSerializer
         agent ClusterPeer
@@ -22,6 +23,7 @@ artifact Stage {
             Tracks responses,
             Adds messageId
         }
+        note right of MessageLoopback : Bounces up local messages.
         note right of MessageSerializer : Serialization, Replaceable
         note right of ClusterPeer : JGroupsClusterPeer, Replaceable
         note right of Hosting : Group coordination, locates actors
@@ -58,13 +60,15 @@ Head --> Caching : [ write ]
 Caching --> Execution : [ write ]
 Execution --> Hosting  : [ write ]
 Hosting --> Messaging  : [ write ]
-Messaging --> MessageSerializer  : [ write ]
+Messaging --> MessageLoopback  : [ write ]
+MessageLoopback --> MessageSerializer  : [ write ]
 MessageSerializer --> ClusterPeer : [ write ]
 ClusterPeer --> Network : [ send group message (bytes) ]
 
 Network --> ClusterPeer : [ receive group message (bytes) ]
 ClusterPeer --> MessageSerializer : [ onRead  ]
-MessageSerializer --> Messaging  : [ onRead  ]
+MessageSerializer --> MessageLoopback  : [ onRead  ]
+MessageLoopback --> Messaging  : [ onRead  ]
 Hosting --> Execution  : [ onRead  ]
 Messaging --> Hosting  : [ onRead (ClusterView) ]
 Execution --> Caching : [ response ]
