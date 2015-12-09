@@ -74,10 +74,11 @@ public abstract class AbstractActor<T>
      * The recommended way to log from an actor.
      *
      * @return this actor's slf4j logger
+     * @deprecated get the runtime and ask for a logger instead.
      */
+    @Deprecated
     protected Logger getLogger(String name)
     {
-        // TODO wrap the logger to add some context about the actor and the current call
         return LoggerFactory.getLogger(name);
     }
 
