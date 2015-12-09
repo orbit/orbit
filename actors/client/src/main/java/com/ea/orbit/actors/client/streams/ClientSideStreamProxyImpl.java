@@ -68,12 +68,6 @@ public class ClientSideStreamProxyImpl implements ClientSideStreamProxy, Startab
         return Task.fromValue(handle);
     }
 
-    public <T> Task<Void> post(String provider, Class<T> dataClass, String streamId, final T data)
-    {
-        // TODO: call server
-        return Task.done();
-    }
-
     public void setRuntime(final BasicRuntime runtime)
     {
         this.runtime = runtime;
