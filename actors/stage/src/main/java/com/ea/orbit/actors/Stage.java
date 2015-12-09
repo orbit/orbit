@@ -1103,6 +1103,9 @@ public class Stage implements Startable, ActorRuntime
         final AbstractActor<?> actor = ActorTaskContext.currentActor();
         if (actor != null)
         {
+            @SuppressWarnings("unchecked")
+            ActorEntry<AbstractActor> actorEntry = (ActorEntry<AbstractActor>) objects.findLocalActor((Actor) actor);
+
             // wraps the stream provider to ensure sequential execution
             return new StreamProvider()
             {
@@ -1115,29 +1118,35 @@ public class Stage implements Startable, ActorRuntime
                         @Override
                         public Task<Void> unsubscribe(final StreamSubscriptionHandle<T> handle)
                         {
+                            // removes the subscription reminder from the actor entry.
+                            actorEntry.removeStreamSubscription(handle, stream);
                             return stream.unsubscribe(handle);
                         }
 
                         @Override
                         public Task<StreamSubscriptionHandle<T>> subscribe(final AsyncObserver<T> observer, StreamSequenceToken sequenceToken)
                         {
-                            return stream.subscribe(new AsyncObserver<T>()
+
+                            Task<StreamSubscriptionHandle<T>> subscriptionTask = stream.subscribe(new AsyncObserver<T>()
                             {
                                 @Override
                                 public Task<Void> onNext(final T data, final StreamSequenceToken sequenceToken)
                                 {
-                                    // TODO use actor executor, when available
-                                    return observer.onNext(data, null);
+                                    // runs with the actor execution serialization concerns
+                                    return actorEntry.run(entry -> observer.onNext(data, null));
                                 }
 
                                 @Override
                                 public Task<Void> onError(final Exception ex)
                                 {
-                                    // TODO use actor executor, when available
-                                    return observer.onError(ex);
+                                    // runs with the actor execution serialization concerns
+                                    return actorEntry.run(entry -> observer.onError(ex));
                                 }
                             }, sequenceToken);
-                            // TODO unsubscribe automatically on deactivation
+
+                            // this allows the actor to unsubscribe automatically on deactivation
+                            actorEntry.addStreamSubscription(await(subscriptionTask), stream);
+                            return subscriptionTask;
                         }
 
                         @Override

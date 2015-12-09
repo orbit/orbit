@@ -29,10 +29,15 @@
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.extensions.LifetimeExtension;
+import com.ea.orbit.actors.streams.AsyncStream;
+import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.concurrent.TaskFunction;
 import com.ea.orbit.exception.UncheckedException;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
 
@@ -43,6 +48,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
     private T actor;
     private Object key;
     private WeakHashMap<Registration, Object> timers;
+    private Map<StreamSubscriptionHandle, AsyncStream> streamSubscriptions;
 
     public ActorEntry(final RemoteReference reference)
     {
@@ -82,7 +88,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
 
     private <R> Task<R> doRunInternal(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function, final ActorTaskContext actorTaskContext)
     {
-        if (actor == null)
+        if (actor == null && !isDeactivated())
         {
             this.actor = await(activate());
             runtime.bind();
@@ -206,6 +212,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
             getLogger().error("Error on actor " + reference + " deactivation", ex);
         }
         clearTimers();
+        await(clearStreamSubscriptions());
         await(Task.allOf(runtime.getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postDeactivation(actor))));
         return Task.done();
     }
@@ -240,6 +247,40 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
             timers.clear();
             timers = null;
         }
+    }
+
+    public synchronized <T> void addStreamSubscription(final StreamSubscriptionHandle<T> subscription, AsyncStream<T> stream)
+    {
+        if (streamSubscriptions == null)
+        {
+            streamSubscriptions = new HashMap<>();
+        }
+        streamSubscriptions.put(subscription, stream);
+    }
+
+    public synchronized <T> void removeStreamSubscription(final StreamSubscriptionHandle<T> subscription, AsyncStream<T> stream)
+    {
+        if (streamSubscriptions != null)
+        {
+            streamSubscriptions.remove(subscription, stream);
+        }
+    }
+
+    public Task<Void> clearStreamSubscriptions()
+    {
+        if (streamSubscriptions != null)
+        {
+            final ArrayList<Map.Entry<StreamSubscriptionHandle, AsyncStream>> list;
+            synchronized (this)
+            {
+                list = new ArrayList<>(streamSubscriptions.size());
+                list.addAll(streamSubscriptions.entrySet());
+                streamSubscriptions.clear();
+                streamSubscriptions = null;
+            }
+            return Task.allOf(list.stream().map(e -> e.getValue().unsubscribe(e.getKey())));
+        }
+        return Task.done();
     }
 
 }

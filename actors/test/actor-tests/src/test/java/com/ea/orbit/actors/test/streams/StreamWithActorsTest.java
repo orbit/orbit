@@ -10,7 +10,6 @@ import com.ea.orbit.actors.test.ActorBaseTest;
 import com.ea.orbit.actors.test.FakeSync;
 import com.ea.orbit.concurrent.Task;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.inject.Inject;
@@ -156,8 +155,6 @@ public class StreamWithActorsTest extends ActorBaseTest
         final Stage stage3 = createStage();
         AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
 
-        //stage2.stop().join();
-
         test.publish("hello").join();
 
         assertTrue(fakeSync.task("1-last").isDone());
@@ -165,37 +162,6 @@ public class StreamWithActorsTest extends ActorBaseTest
         dumpMessages();
     }
 
-    @Test(timeout = 30_000L)
-    @Ignore
-    public void testDeactivate()
-    {
-        // todo this test needs rewriting.
-
-        final Stage stage1 = createStage();
-        Hello hello = Actor.getReference(Hello.class, "1");
-        hello.doSubscribe("test").join();
-
-        final Stage stage2 = createStage();
-        Hello hello2 = Actor.getReference(Hello.class, "2");
-        hello2.doSubscribe("test").join();
-
-
-        final Stage stage3 = createStage();
-        AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
-
-        stage2.stop().join();
-
-        stage3.bind();
-        test.publish("hello").join();
-
-        assertTrue(fakeSync.task("1-last").isDone());
-        assertFalse(fakeSync.task("2-last").isDone());
-        dumpMessages();
-    }
-
-    // TODO test actor deactivation
-    // TODO test actor unSubscription
     // TODO test stage crash (forceful removal from the network)
-    // TODO test stream persistence
 
 }
