@@ -63,6 +63,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -185,6 +186,7 @@ public class ActorBaseTest
             {
                 name += "-" + description.getMethodName();
             }
+            out.println("Message sequence diagram written to:");
             loggerExtension.dumpMessages("target/surefire-reports/" + name + "-error.messages.puml");
             loggerExtension.clear();
             fakeDatabase.clear();
@@ -209,6 +211,18 @@ public class ActorBaseTest
         if (testDescription != null && testDescription.getMethodName() != null)
         {
             name += "-" + testDescription.getMethodName();
+
+            final StackTraceElement trace = Stream.of(new Exception().getStackTrace()).filter(x -> Objects.equals(x.getClassName(), testDescription.getClassName()))
+                    .findFirst().orElse(null);
+            final PrintStream out = System.out;
+            if (trace != null)
+            {
+                out.println("Message sequence diagram for " + trace);
+            }
+            else
+            {
+                out.println("Message sequence diagram written to:");
+            }
         }
         loggerExtension.dumpMessages("target/surefire-reports/" + name + ".messages.puml");
     }
