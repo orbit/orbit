@@ -73,7 +73,6 @@ public class JavaMessageSerializer implements MessageSerializer
 
     protected ObjectOutput createObjectOutput(final BasicRuntime runtime, final OutputStream outputStream) throws IOException
     {
-        // TODO: move message serialization to a provider (IMessageSerializationProvider)
         // Message(messageId, type, reference, params) and Message(messageId, type, object)
         return new ObjectOutputStream(outputStream)
         {
