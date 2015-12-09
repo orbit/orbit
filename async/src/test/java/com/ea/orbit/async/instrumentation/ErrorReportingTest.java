@@ -44,7 +44,7 @@ import static org.junit.Assert.*;
 
 public class ErrorReportingTest extends BaseTest
 {
-    public static class InvalidAwaitCall
+      public static class InvalidAwaitCall
     {
         public void invalidAwaitCall(Task task)
         {
