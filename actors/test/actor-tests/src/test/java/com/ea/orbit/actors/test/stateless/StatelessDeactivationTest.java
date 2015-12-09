@@ -91,7 +91,7 @@ public class StatelessDeactivationTest extends ActorBaseTest
         final Stage stage1 = createStage();
         StatelessHello actor1 = Actor.getReference(StatelessHello.class, "1000");
         assertEquals("hello", actor1.sayHello("hello").join());
-        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
+        clock.incrementTime(60, TimeUnit.MINUTES);
         stage1.cleanup().join();
         fakeSync.semaphore("deactivation").acquire(1, TimeUnit.SECONDS);
         dumpMessages();

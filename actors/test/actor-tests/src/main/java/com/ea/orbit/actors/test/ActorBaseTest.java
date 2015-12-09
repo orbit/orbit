@@ -81,13 +81,21 @@ public class ActorBaseTest
     protected TestLogger loggerExtension = new TestLogger();
     protected Logger logger = loggerExtension.getLogger(this.getClass());
     protected String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
-    protected FakeClock clock = new FakeClock();
+    protected FakeClock clock = new FakeClock()
+    {
+        @Override
+        public long incrementTime(final long time, final TimeUnit timeUnit)
+        {
+            return super.incrementTime(time, timeUnit);
+        }
+    };
     protected ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
     protected List<Stage> stages = new ArrayList<>();
     protected List<FakeClient> clients = new ArrayList<>();
     protected List<ServerPeer> serversConnections = new ArrayList<>();
 
     protected Description testDescription;
+
 
     protected static final ExecutorService commonPool = new ForwardingExecutorService()
     {

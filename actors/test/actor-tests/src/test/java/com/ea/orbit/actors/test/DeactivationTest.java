@@ -60,7 +60,7 @@ public class DeactivationTest extends ClientTest
         SomeActor actor1 = Actor.getReference(SomeActor.class, "1000");
 
         final UUID id = actor1.getUniqueActivationId().join();
-        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(20));
+        clock.incrementTime(20, TimeUnit.MINUTES);
         stage.cleanup().join();
         assertNotEquals(id, actor1.getUniqueActivationId().join());
         dumpMessages();
@@ -75,7 +75,7 @@ public class DeactivationTest extends ClientTest
 
         StatelessThing actor1 = Actor.getReference(StatelessThing.class, "1000");
         final UUID id = actor1.getUniqueActivationId().join();
-        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(20));
+        clock.incrementTime(20, TimeUnit.MINUTES);
         stage.cleanup().join();
         assertNotEquals(id, actor1.getUniqueActivationId().join());
         dumpMessages();
@@ -105,7 +105,7 @@ public class DeactivationTest extends ClientTest
         assertEquals(1, set.size());
 
         waitFor(() -> isIdle(stage));
-        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(20));
+        clock.incrementTime(20, TimeUnit.MINUTES);
         stage.cleanup().join();
         client.bind();
         set.add(actor1.getUniqueActivationId().join());
@@ -141,13 +141,13 @@ public class DeactivationTest extends ClientTest
 
         // increment the clock
         waitFor(() -> isIdle(stage1));
-        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(8));
+        clock.incrementTime(8, TimeUnit.MINUTES);
 
         // touch a single activation (that will probably not be collected)
         UUID theSurviving = actor5.getUniqueActivationId().get();
 
         waitFor(() -> isIdle(stage1));
-        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(8));
+        clock.incrementTime(8, TimeUnit.MINUTES);
 
 
         // THE CLEANUP
@@ -215,7 +215,7 @@ public class DeactivationTest extends ClientTest
 
         // increment the clock
         waitFor(() -> isIdle(stage1));
-        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(20));
+        clock.incrementTime(20, TimeUnit.MINUTES);
 
         waitFor(() -> isIdle(stage1));
 

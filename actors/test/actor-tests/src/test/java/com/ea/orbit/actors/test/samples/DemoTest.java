@@ -137,7 +137,7 @@ public class DemoTest extends ActorBaseTest
         final Inventory inventory = Actor.getReference(Inventory.class, "ak");
         inventory.buy(900, "food").join();
         assertEquals(100, bank.getBalance().join().intValue());
-        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(11));
+        clock.incrementTime(11, TimeUnit.MINUTES);
 
         loggerExtension.addToSequenceDiagram("...10 minutes later...");
         stage2.cleanup().join();

@@ -105,7 +105,7 @@ public class RemoteClientTest extends ActorBaseTest
         fakeSync.semaphore("aa").acquireUninterruptibly();
 
         // forward in time
-        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
+        clock.incrementTime(60, TimeUnit.MINUTES);
 
         // run client message cleanup;
         client.cleanup().join();

@@ -59,7 +59,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         UUID uuid = someActor.getUniqueActivationId(0).get();
         assertEquals(uuid, someActor.getUniqueActivationId().get());
         Task<UUID> call = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
-        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
+        clock.incrementTime(60, TimeUnit.MINUTES);
         client.cleanup();
         expectException(() -> call.join());
     }
@@ -79,7 +79,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         // first
         Task<UUID> first = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
         // speeding up the time.
-        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
+        clock.incrementTime(60, TimeUnit.MINUTES);
         // later call
         Task<UUID> second = someActor.getUniqueActivationId(TimeUnit.SECONDS.toNanos(200));
 
@@ -98,7 +98,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         assertFalse(second.isDone());
         // second call is still good
         // however if the time speeds up
-        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
+        clock.incrementTime(60, TimeUnit.MINUTES);
         assertFalse(second.isDone());
         // and cleanup runs
         client.cleanup();
@@ -121,7 +121,7 @@ public class MessageTimeoutTest extends ActorBaseTest
         assertEquals(uuid, actor.getUniqueActivationId(0).join());
 
         final Task<UUID> timeoutCall = actor.getUniqueActivationId(TimeUnit.MINUTES.toNanos(2));
-        clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(60));
+        clock.incrementTime(60, TimeUnit.MINUTES);
         // not calling stage.cleanup, to make sure the timeout cleanup is being called
         eventuallyTrue(() -> timeoutCall.isCompletedExceptionally());
     }
