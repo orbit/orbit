@@ -262,7 +262,8 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         NodeAddress address = RemoteReference.getAddress(reference);
         if (address != null)
         {
-            // TODO: call the node to check.
+            // don't need to call the node call the node to check.
+            // checks should be explicit.
             return activeNodes.containsKey(address) ? Task.fromValue(address) : Task.fromValue(null);
         }
         return (forceActivation) ? locateAndActivateActor(reference) : locateActiveActor(reference);
@@ -271,13 +272,14 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     private Task<NodeAddress> locateActiveActor(final RemoteReference<?> actorReference)
     {
-        // TODO: change this, it's wrong, it should at least try to locate the actor in the distributed directory
         NodeAddress address = localAddressCache.getIfPresent(actorReference);
         if (address != null && activeNodes.containsKey(address))
         {
             return Task.fromValue(address);
         }
-        return Task.fromValue(null);
+        // try to locate the actor in the distributed directory
+        // this can be expensive, less that activating the actor, though
+        return Task.fromValue(distributedDirectory.get(createRemoteKey(actorReference)));
     }
 
     public void actorDeactivated(RemoteReference remoteReference)
