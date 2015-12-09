@@ -54,8 +54,11 @@ public class TestLifecycleLog implements LifetimeExtension
             return Task.done();
         }
         String to = toString(actor);
-        //logger.sequenceDiagram.add("hnote over \"" + to + "\" : [" + name + "] activate");
-        logger.sequenceDiagram.add("\"" + to + "\" --> \"" + to + "\" : [" + name + "] activate");
+        logger.sequenceDiagram.add("hnote over \"" + to + "\" #white : [" + name + "] activate");
+        ///logger.sequenceDiagram.add("rnote right of \"" + to + "\" #white : [" + name + "] activate");
+        //logger.sequenceDiagram.add("\"" + to + "\" --> \"" + to + "\" : [" + name + "] activate");
+        //logger.sequenceDiagram.add("]--> \"" + to + "\" : [" + name + "] activate");
+        //logger.sequenceDiagram.add("\"" + to + "\" -->o \"" + to + "\" : [" + name + "] activate");
         return Task.done();
     }
 
@@ -67,7 +70,10 @@ public class TestLifecycleLog implements LifetimeExtension
             return Task.done();
         }
         String to = toString(actor);
-        logger.sequenceDiagram.add("destroy \"" + to + "\"");
+        logger.sequenceDiagram.add("hnote over \"" + to + "\" #white : [" + name + "] deactivate");
+        //logger.sequenceDiagram.add("rnote right of \"" + to + "\" #white : [" + name + "] deactivate");
+        //logger.sequenceDiagram.add("destroy \"" + to + "\"");
+        //logger.sequenceDiagram.add("\"" + to + "\" -->x \"" + to + "\" : [" + name + "] deactivate");
         return Task.done();
     }
 
