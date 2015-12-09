@@ -258,7 +258,9 @@ public abstract class AbstractActor<T>
     {
         StreamProvider provider = runtime.getStreamProvider(name);
 
-        // TODO: wrap StreamProvider to use an actor executor for call backs
+        // obs.: the actor runtime wraps the StreamProvider
+        // to use an actor executor for call backs
+        // and to ensure that the actor unsubscribes on deactivation.
         return provider;
     }
 }
