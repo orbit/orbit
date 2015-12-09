@@ -357,7 +357,7 @@ public class Container
                 {
                     if (logger.isDebugEnabled())
                     {
-                        logger.debug("Adding Component: {0}", service.toString());
+                        logger.debug("Adding Component: {}", service.toString());
                     }
 
                     add((service instanceof Class) ? (Class<?>) service : Class.forName(String.valueOf(service)));
