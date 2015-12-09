@@ -957,17 +957,28 @@ public class Stage implements Startable, ActorRuntime
         final Object key = actor.getClass().isAnnotationPresent(StatelessWorker.class)
                 ? actor : RemoteReference.from(actor);
 
-        final ActorBaseEntry localActor = (ActorBaseEntry) objects.findLocalActor((Actor) actor);
+        final ActorEntry localActor = (ActorEntry) objects.findLocalActor((Actor) actor);
 
         if (localActor == null || localActor.isDeactivated())
         {
-            // could throw Illegal state exception instead...
-            return () -> {
-                // do nothing;
-            };
+            throw new IllegalStateException("Actor is deactivated");
         }
 
-        // TODO: handle deactivation: add the timers to a localActor list for cancelation
+        class MyRegistration implements Registration
+        {
+            TimerTask task;
+
+            @Override
+            public void dispose()
+            {
+                if (task != null)
+                {
+                    task.cancel();
+                }
+                task = null;
+            }
+        }
+
         final TimerTask timerTask = new TimerTask()
         {
             boolean canceled;
@@ -985,18 +996,21 @@ public class Stage implements Startable, ActorRuntime
                         () -> {
                             if (localActor.isDeactivated())
                             {
-                                bind();
+                                cancel();
                             }
-                            try
+                            else
                             {
-                                if (!canceled)
+                                try
                                 {
-                                    return (Task) taskCallable.call();
+                                    if (!canceled)
+                                    {
+                                        return (Task) taskCallable.call();
+                                    }
                                 }
-                            }
-                            catch (Exception ex)
-                            {
-                                logger.warn("Error calling timer", ex);
+                                catch (Exception ex)
+                                {
+                                    logger.warn("Error calling timer", ex);
+                                }
                             }
                             return (Task) Task.done();
                         }, 1000);
@@ -1010,6 +1024,12 @@ public class Stage implements Startable, ActorRuntime
             }
         };
 
+        MyRegistration registration = new MyRegistration();
+        registration.task = timerTask;
+
+        // this ensures that the timers get removed during deactivation
+        localActor.addTimer(registration);
+
         if (period > 0)
         {
             timer.schedule(timerTask, timeUnit.toMillis(dueTime), timeUnit.toMillis(period));
@@ -1019,7 +1039,7 @@ public class Stage implements Startable, ActorRuntime
             timer.schedule(timerTask, timeUnit.toMillis(dueTime));
         }
 
-        return timerTask::cancel;
+        return registration;
     }
 
 

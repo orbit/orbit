@@ -53,6 +53,7 @@ public abstract class AbstractActor<T>
     RemoteReference<?> reference;
     Logger logger;
     ActorRuntime runtime;
+    Object activation;
 
     protected AbstractActor()
     {
@@ -153,18 +154,35 @@ public abstract class AbstractActor<T>
     }
 
     /**
-     * Registers a timer for the current actor. The timer disappears on deactivation.
-     * The timer calls do not keep the actor active.
+     * Registers a timer for the current actor. The timer is automatically disposed ondeactivation.
+     * The timer calls will keep the actor active. Timer calls are serialized according to the actor policy.
+     * Each stateless actor activation has it's on set of timers.
      *
      * @param futureCallable a callable that returns a Task
      * @param dueTime        Time to the first timer call
-     * @param period         Interval between calls
+     * @param period         Interval between calls, if period <= 0 then the timer will be single shot.
      * @param timeUnit       Time unit for dueTime and period
      * @return A registration object that allows the actor to cancel the timer.
      */
     protected Registration registerTimer(Callable<Task<?>> futureCallable, long dueTime, long period, TimeUnit timeUnit)
     {
         return runtime.registerTimer(this, futureCallable, dueTime, period, timeUnit);
+    }
+
+    /**
+     * Registers a single shot timer for the current actor. The timer is automatically disposed on deactivation.
+     * The timer calls will keep the actor active. Timer calls are serialized according to the actor policy.
+     * Each stateless actor activation has it's on set of timers.
+     *
+     * @param futureCallable a callable that returns a Task
+     * @param dueTime        Time to the first timer call
+     * @param period         Interval between calls, if period <= 0 then the timer will be single shot.
+     * @param timeUnit       Time unit for dueTime and period
+     * @return A registration object that allows the actor to cancel the timer.
+     */
+    protected Registration registerTimer(Callable<Task<?>> futureCallable, long dueTime, TimeUnit timeUnit)
+    {
+        return registerTimer(futureCallable, dueTime, 0L, timeUnit);
     }
 
     /**

@@ -140,6 +140,10 @@ public class LocalObjects
 
     public LocalObjectEntry findLocalActor(Actor actor)
     {
+        if (actor instanceof AbstractActor)
+        {
+            return (LocalObjectEntry) ((AbstractActor) actor).activation;
+        }
         return localObjects.get(RemoteReference.from(actor));
     }
 

@@ -34,6 +34,7 @@ import com.ea.orbit.concurrent.TaskFunction;
 import com.ea.orbit.exception.UncheckedException;
 
 import java.util.Objects;
+import java.util.WeakHashMap;
 
 import static com.ea.orbit.async.Await.await;
 
@@ -41,6 +42,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
 {
     private T actor;
     private Object key;
+    private WeakHashMap<Registration, Object> timers;
 
     public ActorEntry(final RemoteReference reference)
     {
@@ -120,6 +122,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
         actor.runtime = runtime;
         actor.stateExtension = storageExtension;
         actor.logger = loggerExtension.getLogger(actor);
+        actor.activation = this;
 
         await(Task.allOf(runtime.getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preActivation(actor))));
 
@@ -202,6 +205,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
         {
             getLogger().error("Error on actor " + reference + " deactivation", ex);
         }
+        clearTimers();
         await(Task.allOf(runtime.getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postDeactivation(actor))));
         return Task.done();
     }
@@ -216,4 +220,26 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
     {
         this.key = key;
     }
+
+    public synchronized void addTimer(final Registration registration)
+    {
+        if (timers == null)
+        {
+            timers = new WeakHashMap<>();
+        }
+        timers.put(registration, Boolean.TRUE);
+    }
+
+    public synchronized void clearTimers()
+    {
+        if (timers != null)
+        {
+            timers.keySet().stream()
+                    .filter(r -> r != null)
+                    .forEach(Registration::dispose);
+            timers.clear();
+            timers = null;
+        }
+    }
+
 }
