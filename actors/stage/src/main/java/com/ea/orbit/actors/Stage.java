@@ -957,7 +957,7 @@ public class Stage implements Startable, ActorRuntime
         final Object key = actor.getClass().isAnnotationPresent(StatelessWorker.class)
                 ? actor : RemoteReference.from(actor);
 
-        final ActorEntry localActor = (ActorEntry) objects.findLocalActor((Actor) actor);
+        final ActorBaseEntry localActor = (ActorBaseEntry) objects.findLocalActor((Actor) actor);
 
         if (localActor == null || localActor.isDeactivated())
         {
