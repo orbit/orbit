@@ -31,6 +31,7 @@ package com.ea.orbit.actors.test;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class FakeClock extends Clock
@@ -78,6 +79,10 @@ public class FakeClock extends Clock
         return this.millis.addAndGet(offsetMillis);
     }
 
+    public long incrementTime(long time, TimeUnit timeUnit)
+    {
+        return incrementTimeMillis(timeUnit.toMillis(time));
+    }
 
     /**
      * Detaches the FakeClock from the system clock.
