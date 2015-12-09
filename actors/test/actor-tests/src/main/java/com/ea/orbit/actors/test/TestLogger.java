@@ -293,7 +293,6 @@ public class TestLogger implements LoggerExtension, PeerExtension
                                 Stream.of(sequenceDiagram.toArray()).map(o -> (String) o)),
                                 Stream.of("@enduml")
                         ).collect(Collectors.toList()));
-                out.println("Message sequence diagram written to:");
                 out.println(seqUml.toUri());
             }
             catch (Exception ex)
@@ -303,7 +302,7 @@ public class TestLogger implements LoggerExtension, PeerExtension
         }
         else
         {
-            out.println("No messages to dump");
+            out.println("No messages to dump!");
         }
     }
 
