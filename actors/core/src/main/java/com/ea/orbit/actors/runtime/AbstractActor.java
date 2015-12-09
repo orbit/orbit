@@ -131,6 +131,10 @@ public abstract class AbstractActor<T>
      */
     protected Task<Void> writeState()
     {
+        if (stateExtension == null)
+        {
+            throw new IllegalStateException("Storage extension not available");
+        }
         return stateExtension.writeState(reference, state);
     }
 
@@ -141,6 +145,10 @@ public abstract class AbstractActor<T>
      */
     protected Task<Boolean> readState()
     {
+        if (stateExtension == null)
+        {
+            throw new IllegalStateException("Storage extension not available");
+        }
         return stateExtension.readState(reference, state);
     }
 
@@ -151,6 +159,10 @@ public abstract class AbstractActor<T>
      */
     protected Task<Void> clearState()
     {
+        if (stateExtension == null)
+        {
+            throw new IllegalStateException("Storage extension not available");
+        }
         return stateExtension.clearState(reference, state).thenRun(this::createDefaultState);
     }
 
