@@ -43,6 +43,7 @@ import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalNotification;
 
 import java.util.ConcurrentModificationException;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -51,7 +52,7 @@ import java.util.stream.Stream;
 
 public class LocalObjects
 {
-    private ConcurrentMap<RemoteReference<?>, LocalObjectEntry> localObjects = new ConcurrentHashMap<>();
+    private ConcurrentMap<Object, LocalObjectEntry> localObjects = new ConcurrentHashMap<>();
     private Cache<Object, LocalObjectEntry> objectMap = CacheBuilder.newBuilder().weakKeys()
             .removalListener(this::onRemoval).build();
 
@@ -93,9 +94,14 @@ public class LocalObjects
     {
         RemoteReference<T> getRemoteReference();
 
+        default boolean isDeactivated()
+        {
+            return false;
+        }
+
         T getObject();
 
-        <R> Task<R> run(TaskFunction<T, R> function);
+        <R> Task<R> run(TaskFunction<LocalObjectEntry<T>, R> function);
     }
 
     public static class NormalObjectEntry<T> implements LocalObjectEntry<T>
@@ -110,9 +116,9 @@ public class LocalObjects
         }
 
         @Override
-        public <R> Task<R> run(final TaskFunction<T, R> function)
+        public <R> Task<R> run(final TaskFunction<LocalObjectEntry<T>, R> function)
         {
-            return function.apply(getObject());
+            return function.apply(this);
         }
 
         @Override
@@ -207,6 +213,12 @@ public class LocalObjects
 
         RemoteReference reference = createReference(address, iClass, actualObjectId);
         return registerLocalObject(reference, object);
+    }
+
+    void registerEntry(Object key, LocalObjectEntry entry)
+    {
+        // used for stateless activations, for instance.
+        objectMap.put(key, entry);
     }
 
 
@@ -308,13 +320,19 @@ public class LocalObjects
         }
     }
 
-    public Stream<LocalObjectEntry> stream()
+    public Stream<Map.Entry<Object, LocalObjectEntry>> stream()
     {
-        return localObjects.values().stream();
+        return localObjects.entrySet().stream();
     }
 
     public int getLocalObjectCount()
     {
         return localObjects.size();
     }
+
+    public void remove(Object key, Object object)
+    {
+        localObjects.remove(key, object);
+    }
+
 }

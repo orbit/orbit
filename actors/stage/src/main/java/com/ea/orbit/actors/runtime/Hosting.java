@@ -280,10 +280,16 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         return Task.fromValue(null);
     }
 
+    public void actorDeactivated(RemoteReference remoteReference)
+    {
+        // removing the reference form the cluster directory
+        localAddressCache.invalidate(remoteReference);
+        distributedDirectory.remove(createRemoteKey(remoteReference), clusterPeer.localAddress());
+    }
+
     private Task<NodeAddress> locateAndActivateActor(final RemoteReference<?> actorReference)
     {
-        final RemoteKey remoteKey = new RemoteKey(((RemoteReference) actorReference)._interfaceClass().getName(),
-                String.valueOf(((RemoteReference) actorReference).id));
+        final RemoteKey remoteKey = createRemoteKey(actorReference);
 
         final Class<?> interfaceClass = ((RemoteReference<?>) actorReference)._interfaceClass();
 
@@ -378,6 +384,12 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
         return Task.from(async);
 
+    }
+
+    private RemoteKey createRemoteKey(final RemoteReference actorReference)
+    {
+        return new RemoteKey(actorReference._interfaceClass().getName(),
+                String.valueOf(actorReference.id));
     }
 
     private NodeAddress selectNode(final String interfaceClassName, boolean allowToBlock)

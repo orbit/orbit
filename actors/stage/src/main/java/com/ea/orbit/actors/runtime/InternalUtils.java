@@ -106,6 +106,20 @@ public class InternalUtils
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public static void linkFuturesOnError(CompletableFuture source, CompletableFuture target)
+    {
+        if (source != null && (!source.isDone() || source.isCompletedExceptionally()))
+        {
+            ((CompletableFuture<Object>) source).whenComplete((r, e) -> {
+                if (e != null)
+                {
+                    target.completeExceptionally(e);
+                }
+            });
+        }
+    }
+
     /**
      * If the specified key is not already associated
      * with a value, associate it with the given value.

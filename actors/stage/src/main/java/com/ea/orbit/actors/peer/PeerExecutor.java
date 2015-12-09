@@ -31,11 +31,11 @@ package com.ea.orbit.actors.peer;
 import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.BasicRuntime;
+import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.actors.runtime.Invocation;
 import com.ea.orbit.actors.runtime.LocalObjects;
 import com.ea.orbit.actors.runtime.ObjectInvoker;
 import com.ea.orbit.actors.runtime.RemoteReference;
-import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.concurrent.Task;
 
 import org.slf4j.Logger;
@@ -104,7 +104,7 @@ public class PeerExecutor extends HandlerAdapter
      * @return the result of the method called
      */
     @SuppressWarnings("unchecked")
-    public Task scheduleLocalInvocation(final LocalObjects.LocalObjectEntry localObjectEntry, final Invocation invocation)
+    public Task scheduleLocalInvocation(final LocalObjects.LocalObjectEntry<Object> localObjectEntry, final Invocation invocation)
     {
         ObjectInvoker invoker = runtime.getInvoker(RemoteReference.getInterfaceId(invocation.getToReference()));
         return localObjectEntry.run(target ->
@@ -113,9 +113,9 @@ public class PeerExecutor extends HandlerAdapter
 
     }
 
-    protected Task<Object> performLocalInvocation(final Invocation invocation, final ObjectInvoker invoker, final Object target)
+    protected Task<Object> performLocalInvocation(final Invocation invocation, final ObjectInvoker invoker, final LocalObjects.LocalObjectEntry target)
     {
-        Task result = invoker.safeInvoke(target, invocation.getMethodId(), invocation.getParams());
+        Task result = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
         try
         {
             // must await to hold the execution serializer

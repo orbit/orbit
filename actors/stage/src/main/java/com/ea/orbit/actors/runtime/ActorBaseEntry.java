@@ -29,26 +29,22 @@
 package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.concurrent.MultiExecutionSerializer;
-import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.LoggerExtension;
 import com.ea.orbit.actors.extensions.StorageExtension;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.concurrent.TaskFunction;
 import com.ea.orbit.exception.NotImplementedException;
-import com.ea.orbit.exception.UncheckedException;
 
 import org.slf4j.Logger;
 
-import static com.ea.orbit.async.Await.await;
-
 public abstract class ActorBaseEntry<T extends AbstractActor> implements LocalObjects.LocalObjectEntry<T>
 {
-    private final RemoteReference<T> reference;
+    final RemoteReference<T> reference;
     Class<T> concreteClass;
     protected ActorRuntime runtime;
     MultiExecutionSerializer<Object> executionSerializer;
-    private LoggerExtension loggerExtension;
-    private StorageExtension storageExtension;
+    LoggerExtension loggerExtension;
+    StorageExtension storageExtension;
     private boolean deactivated;
     private Logger logger;
     protected long lastAccess;
@@ -65,56 +61,9 @@ public abstract class ActorBaseEntry<T extends AbstractActor> implements LocalOb
     }
 
     @Override
-    public <R> Task<R> run(final TaskFunction<T, R> function)
+    public <R> Task<R> run(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function)
     {
         throw new NotImplementedException();
-    }
-
-
-    protected Task<T> activate()
-    {
-        lastAccess = runtime.clock().millis();
-        Object newInstance;
-        try
-        {
-            newInstance = concreteClass.newInstance();
-        }
-        catch (Exception ex)
-        {
-            getLogger().error("Error creating instance of " + concreteClass, ex);
-            throw new UncheckedException(ex);
-        }
-        if (!AbstractActor.class.isInstance(newInstance))
-        {
-            throw new IllegalArgumentException(String.format("%s is not an actor class", concreteClass));
-        }
-        final AbstractActor<?> actor = (AbstractActor<?>) newInstance;
-        ActorTaskContext.current().setActor(actor);
-        actor.reference = reference;
-        actor.runtime = runtime;
-        actor.stateExtension = storageExtension;
-        actor.logger = loggerExtension.getLogger(actor);
-
-        await(Task.allOf(runtime.getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preActivation(actor))));
-
-        if (actor.stateExtension != null)
-        {
-            try
-            {
-                await(actor.readState());
-            }
-            catch (Exception ex)
-            {
-                if (actor.logger.isErrorEnabled())
-                {
-                    actor.logger.error("Error reading actor state for: " + reference, ex);
-                }
-                throw ex;
-            }
-        }
-        await(actor.activateAsync());
-        await(Task.allOf(runtime.getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postActivation(actor))));
-        return Task.fromValue((T) actor);
     }
 
     protected Logger getLogger()
@@ -156,40 +105,9 @@ public abstract class ActorBaseEntry<T extends AbstractActor> implements LocalOb
     /**
      * This must not fail. If errors it should log them instead of throwing
      */
-    public Task deactivate()
-    {
-        try
-        {
-            if (isDeactivated())
-            {
-                return Task.done();
-            }
-            return executionSerializer.offerJob(getRemoteReference(), () -> doDeactivate(), 1000);
-        }
-        catch (Throwable ex)
-        {
-            // this should never happen, but deactivate must't fail.
-            ex.printStackTrace();
-            return Task.done();
-        }
-    }
 
-    protected abstract Task<?> doDeactivate();
+    public abstract Task deactivate();
 
-    protected Task<Void> deactivate(final T actor)
-    {
-        await(Task.allOf(runtime.getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preDeactivation(actor))));
-        try
-        {
-            await(actor.deactivateAsync());
-        }
-        catch (Throwable ex)
-        {
-            getLogger().error("Error on actor " + reference + " deactivation", ex);
-        }
-        await(Task.allOf(runtime.getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postDeactivation(actor))));
-        return Task.done();
-    }
 
     protected void setDeactivated(final boolean deactivated)
     {

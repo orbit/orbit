@@ -66,7 +66,6 @@ public abstract class AbstractActor<T>
      */
     protected Logger getLogger()
     {
-        // TODO wrap the logger to add some context about the actor and the current call
         return logger != null ? logger : (logger = LoggerFactory.getLogger(getClass()));
     }
 

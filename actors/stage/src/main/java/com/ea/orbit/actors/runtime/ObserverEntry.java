@@ -60,9 +60,9 @@ public class ObserverEntry<T> implements LocalObjects.LocalObjectEntry<T>
     }
 
     @Override
-    public <R> Task<R> run(final TaskFunction<T, R> function)
+    public <R> Task<R> run(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function)
     {
-        return function.apply(getObject());
+        return function.apply(this);
     }
 
     public void setExecutionSerializer(final MultiExecutionSerializer<Object> executionSerializer)

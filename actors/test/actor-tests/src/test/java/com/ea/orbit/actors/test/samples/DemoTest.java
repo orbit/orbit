@@ -129,6 +129,7 @@ public class DemoTest extends ActorBaseTest
     {
         clock.stop();
         Stage stage1 = createStage();
+        Stage stage2 = createStage();
         Bank bank = Actor.getReference(Bank.class, "ak");
         bank.add(1000).join();
         assertEquals(1000, bank.getBalance().join().intValue());
@@ -139,7 +140,9 @@ public class DemoTest extends ActorBaseTest
         clock.incrementTimeMillis(TimeUnit.MINUTES.toMillis(11));
 
         loggerExtension.addToSequenceDiagram("...10 minutes later...");
+        stage2.cleanup().join();
         stage1.cleanup().join();
+        stage1.stop().join();
         assertEquals(100, bank.getBalance().join().intValue());
 
         dumpMessages();

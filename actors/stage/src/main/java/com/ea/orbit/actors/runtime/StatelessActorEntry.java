@@ -31,18 +31,23 @@ package com.ea.orbit.actors.runtime;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.concurrent.TaskFunction;
 
-import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static com.ea.orbit.async.Await.await;
 
 public class StatelessActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
 {
-    private ConcurrentLinkedDeque<SoftReference<T>> activations = new ConcurrentLinkedDeque<>();
+    private final LocalObjects localObjects;
+    private final RemoteReference reference;
+    private ConcurrentLinkedDeque<ActorEntry<T>> activations = new ConcurrentLinkedDeque<>();
 
-    public StatelessActorEntry(final RemoteReference reference)
+    public StatelessActorEntry(LocalObjects localObjects, final RemoteReference reference)
     {
         super(reference);
+        this.localObjects = localObjects;
+        this.reference = reference;
     }
 
     @Override
@@ -52,93 +57,85 @@ public class StatelessActorEntry<T extends AbstractActor> extends ActorBaseEntry
     }
 
     @Override
-    public <R> Task<R> run(final TaskFunction<T, R> function)
+    public <R> Task<R> run(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function)
     {
         lastAccess = runtime.clock().millis();
-        T actor = tryPop();
-        if (actor == null)
+        ActorEntry<T> actorEntry = tryPop();
+        if (actorEntry == null)
         {
-            final ActorTaskContext context = ActorTaskContext.pushNew();
-            try
-            {
-                // it's ok to call activate here since no one else can access this actor instance.
-                return activate().thenCompose(newActor ->
-                        executionSerializer.offerJob(newActor, () -> doRun(newActor, function), 1000));
-            }
-            finally
-            {
-                context.pop();
-            }
+            actorEntry = new ActorEntry<>(reference);
+            actorEntry.setExecutionSerializer(executionSerializer);
+            actorEntry.setLoggerExtension(loggerExtension);
+            actorEntry.setRuntime(runtime);
+            actorEntry.setConcreteClass(concreteClass);
+            actorEntry.setStorageExtension(storageExtension);
+            actorEntry.setKey(actorEntry);
+
+            localObjects.registerEntry(actorEntry, actorEntry);
         }
-        else
-        {
-            return executionSerializer.offerJob(actor, () -> doRun(actor, function), 1000);
-        }
+        final ActorEntry<T> theEntry = actorEntry;
+        return actorEntry.run(entry -> doRunInternal(theEntry, entry, function));
     }
 
-    @Override
-    public boolean isDeactivated()
+    private <R> Task<R> doRunInternal(
+            ActorEntry<T> entry1,
+            LocalObjects.LocalObjectEntry<T> entry2,
+            final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function)
     {
-        return false;
-    }
 
-    protected Task<?> doDeactivate()
-    {
-        // not calling deactivation for stateless
-        setDeactivated(true);
-        activations.clear();
-        return Task.done();
-    }
-
-    T tryPop()
-    {
-        while (true)
-        {
-            final SoftReference<T> ref = activations.pollFirst();
-            if (ref == null)
-            {
-                return null;
-            }
-            T value = ref.get();
-            if (value != null)
-            {
-                return value;
-            }
-        }
-    }
-
-    void push(T value)
-    {
-        activations.push(new SoftReference<>(value));
-    }
-
-    private <R> Task<R> doRun(T actor, final TaskFunction<T, R> function)
-    {
-        runtime.bind();
-        final ActorTaskContext actorTaskContext = ActorTaskContext.pushNew();
         try
         {
-            actorTaskContext.setActor(actor);
-            // separating to ensure actorTaskContext.pop() happens in the same thread
-            return doRunInternal(actor, function);
-        }
-        finally
-        {
-            actorTaskContext.pop();
-        }
-    }
-
-    private <R> Task<R> doRunInternal(final T actor, final TaskFunction<T, R> function)
-    {
-        try
-        {
-            Task<R> res = InternalUtils.safeInvoke(() -> function.apply(actor));
+            Task<R> res = InternalUtils.safeInvoke(() -> function.apply(entry2));
+            // the await here is to ensure that the finally block executed at the right time.
             await(res);
             return res;
         }
         finally
         {
-            push(actor);
+            if (isDeactivated() || entry1 != entry2)
+            {
+                await(entry1.deactivate());
+            }
+            else
+            {
+                push(entry1);
+            }
         }
     }
+
+    public Task deactivate()
+    {
+        List<Task<Void>> tasks = new ArrayList<>();
+        for (ActorEntry<T> actorEntry; null != (actorEntry = tryPop()); )
+        {
+            tasks.add(actorEntry.deactivate());
+        }
+        await(Task.allOf(tasks));
+        setDeactivated(true);
+        return Task.done();
+    }
+
+
+    ActorEntry<T> tryPop()
+    {
+        while (true)
+        {
+            final ActorEntry<T> actorEntry = activations.pollFirst();
+            if (actorEntry == null)
+            {
+                return null;
+            }
+            // ignore deactivated entries
+            if (!actorEntry.isDeactivated())
+            {
+                return actorEntry;
+            }
+        }
+    }
+
+    void push(ActorEntry<T> value)
+    {
+        activations.push(value);
+    }
+
 }

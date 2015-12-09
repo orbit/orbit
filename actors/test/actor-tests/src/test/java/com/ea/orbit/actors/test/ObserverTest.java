@@ -159,7 +159,7 @@ public class ObserverTest extends ActorBaseTest
         assertEquals("bla", m2.getRight());
     }
 
-    @Test
+    @Test(timeout = 15_000L)
     public void observerGarbageCollection() throws ExecutionException, InterruptedException
     {
         Stage stage1 = createStage();

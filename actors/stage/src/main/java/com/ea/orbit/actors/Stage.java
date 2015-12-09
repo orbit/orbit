@@ -109,6 +109,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -737,28 +738,29 @@ public class Stage implements Startable, ActorRuntime
 
     private Task<Void> cleanupActors(long maxAge)
     {
-        // sort by last access (older first)
-        final Iterator<ActorBaseEntry> iterator = objects.stream()
-                .filter(o -> o instanceof ActorBaseEntry)
-                .map(o -> (ActorBaseEntry) o)
-                .sorted((a, b) -> Long.compare(a.getLastAccess(), b.getLastAccess()))
+        // avoid sorting since lastAccess changes
+        // and O(N) is still smaller than O(N Log N)
+        final Iterator<Map.Entry<Object, LocalObjects.LocalObjectEntry>> iterator = objects.stream()
+                .filter(e -> e.getValue() instanceof ActorBaseEntry)
                 .iterator();
 
-        final List<Task> pending = new ArrayList<>();
+        final List<Task<ActorBaseEntry>> pending = new ArrayList<>();
 
         // ensure that certain number of concurrent deactivations is happening at each moment
         while (iterator.hasNext())
         {
             while (pending.size() < concurrentDeactivations && iterator.hasNext())
             {
-                final ActorBaseEntry<?> actor = iterator.next();
-                if (clock().millis() - actor.getLastAccess() > maxAge)
+                final Map.Entry<Object, LocalObjects.LocalObjectEntry> entryEntry = iterator.next();
+                final ActorBaseEntry<?> actorEntry = (ActorBaseEntry<?>) entryEntry.getValue();
+                if (clock().millis() - actorEntry.getLastAccess() > maxAge)
                 {
                     if (logger.isTraceEnabled())
                     {
-                        logger.trace("deactivating " + actor.getRemoteReference());
+                        logger.trace("deactivating {}", actorEntry.getRemoteReference());
                     }
-                    pending.add(actor.deactivate());
+                    pending.add(actorEntry.deactivate().thenRun(
+                            () -> objects.remove(entryEntry.getKey(), entryEntry.getValue())));
                 }
             }
             if (pending.size() > 0)
@@ -1122,7 +1124,7 @@ public class Stage implements Startable, ActorRuntime
         return extensions;
     }
 
-    private <T> LocalObjects.LocalObjectEntry createLocalObjectEntry(final RemoteReference<T> reference, final T object)
+     <T> LocalObjects.LocalObjectEntry createLocalObjectEntry(final RemoteReference<T> reference, final T object)
     {
         final Class<T> interfaceClass = RemoteReference.getInterfaceClass(reference);
         if (Actor.class.isAssignableFrom(interfaceClass))
@@ -1130,7 +1132,7 @@ public class Stage implements Startable, ActorRuntime
             final ActorBaseEntry actorEntry;
             if (interfaceClass.isAnnotationPresent(StatelessWorker.class))
             {
-                actorEntry = new StatelessActorEntry<>(reference);
+                actorEntry = new StatelessActorEntry<>(objects, reference);
             }
             else
             {

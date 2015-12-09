@@ -28,18 +28,25 @@
 
 package com.ea.orbit.actors.runtime;
 
+import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.concurrent.TaskFunction;
+import com.ea.orbit.exception.UncheckedException;
+
+import java.util.Objects;
 
 import static com.ea.orbit.async.Await.await;
 
 public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
 {
     private T actor;
+    private Object key;
 
     public ActorEntry(final RemoteReference reference)
     {
         super(reference);
+        this.key = reference;
     }
 
     @SuppressWarnings("unchecked")
@@ -50,10 +57,112 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
     }
 
     @Override
-    public <R> Task<R> run(final TaskFunction<T, R> function)
+    public <R> Task<R> run(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function)
     {
         lastAccess = runtime.clock().millis();
-        return executionSerializer.offerJob(getRemoteReference(), () -> doRun(function), 1000);
+        return executionSerializer.offerJob(key, () -> doRun(function), 1000);
+    }
+
+    private <R> Task<R> doRun(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function)
+    {
+        runtime.bind();
+        final ActorTaskContext actorTaskContext = ActorTaskContext.pushNew();
+        try
+        {
+            // using await makes the actorTaskContext.pop() run in the wrong thread.
+            // the the internal par is separated
+            return doRunInternal(function, actorTaskContext);
+        }
+        finally
+        {
+            actorTaskContext.pop();
+        }
+    }
+
+    private <R> Task<R> doRunInternal(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function, final ActorTaskContext actorTaskContext)
+    {
+        if (actor == null)
+        {
+            this.actor = await(activate());
+            runtime.bind();
+        }
+        actorTaskContext.setActor(this.getObject());
+        return function.apply(this);
+    }
+
+    protected Task<T> activate()
+    {
+        lastAccess = runtime.clock().millis();
+        if (key == reference)
+        {
+            if (!Objects.equals(runtime.getLocalAddress(), await(runtime.locateActor(reference, true))))
+            {
+                return Task.fromValue(null);
+            }
+        }
+        Object newInstance;
+        try
+        {
+            newInstance = concreteClass.newInstance();
+        }
+        catch (Exception ex)
+        {
+            getLogger().error("Error creating instance of " + concreteClass, ex);
+            throw new UncheckedException(ex);
+        }
+        if (!AbstractActor.class.isInstance(newInstance))
+        {
+            throw new IllegalArgumentException(String.format("%s is not an actor class", concreteClass));
+        }
+        final AbstractActor<?> actor = (AbstractActor<?>) newInstance;
+        ActorTaskContext.current().setActor(actor);
+        actor.reference = reference;
+        actor.runtime = runtime;
+        actor.stateExtension = storageExtension;
+        actor.logger = loggerExtension.getLogger(actor);
+
+        await(Task.allOf(runtime.getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preActivation(actor))));
+
+        if (actor.stateExtension != null)
+        {
+            try
+            {
+                await(actor.readState());
+            }
+            catch (Exception ex)
+            {
+                if (actor.logger.isErrorEnabled())
+                {
+                    actor.logger.error("Error reading actor state for: " + reference, ex);
+                }
+                throw ex;
+            }
+        }
+        await(actor.activateAsync());
+        await(Task.allOf(runtime.getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postActivation(actor))));
+        return Task.fromValue((T) actor);
+    }
+
+    /**
+     * This must not fail. If errors it should log them instead of throwing
+     */
+    @Override
+    public Task deactivate()
+    {
+        try
+        {
+            if (isDeactivated())
+            {
+                return Task.done();
+            }
+            return executionSerializer.offerJob(key, () -> doDeactivate(), 1000);
+        }
+        catch (Throwable ex)
+        {
+            // this should never happen, but deactivate must't fail.
+            ex.printStackTrace();
+            return Task.done();
+        }
     }
 
     protected Task<?> doDeactivate()
@@ -62,7 +171,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
         {
             try
             {
-                await(super.deactivate(getObject()));
+                await(deactivate(getObject()));
                 actor = null;
             }
             catch (Throwable ex)
@@ -82,31 +191,34 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
         return Task.done();
     }
 
-    private <R> Task<R> doRun(final TaskFunction<T, R> function)
+    protected Task<Void> deactivate(final T actor)
     {
-        runtime.bind();
-        final ActorTaskContext actorTaskContext = ActorTaskContext.pushNew();
+        await(Task.allOf(runtime.getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preDeactivation(actor))));
         try
         {
-            // using await makes the actorTaskContext.pop() run in the wrong thread.
-            // the the internal par is separated
-            return doRunInternal(function, actorTaskContext);
+            await(actor.deactivateAsync());
         }
-        finally
+        catch (Throwable ex)
         {
-            actorTaskContext.pop();
+            getLogger().error("Error on actor " + reference + " deactivation", ex);
         }
+        await(Task.allOf(runtime.getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postDeactivation(actor))));
+        if (key == reference)
+        {
+            // removing non stateless actor from the distributed directory
+            ((Stage) runtime).getHosting().actorDeactivated(reference);
+        }
+        return Task.done();
     }
 
-    private <R> Task<R> doRunInternal(final TaskFunction<T, R> function, final ActorTaskContext actorTaskContext)
+
+    public Object getKey()
     {
-        if (actor == null)
-        {
-            this.actor = await(activate());
-            runtime.bind();
-        }
-        actorTaskContext.setActor(getObject());
-        return function.apply(actor);
+        return key;
     }
 
+    public void setKey(final Object key)
+    {
+        this.key = key;
+    }
 }

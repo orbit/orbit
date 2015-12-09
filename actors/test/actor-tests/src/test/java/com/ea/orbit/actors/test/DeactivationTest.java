@@ -67,7 +67,7 @@ public class DeactivationTest extends ClientTest
     }
 
     @SuppressWarnings("unused")
-    @Test
+    @Test(timeout = 15_000L)
     public void simpleStatelessWorkerDeactivationTest() throws ExecutionException, InterruptedException, TimeoutException
     {
         clock.stop();
@@ -188,7 +188,7 @@ public class DeactivationTest extends ClientTest
     }
 
     @SuppressWarnings("unused")
-    @Test
+    @Test(timeout = 15_000L)
     public void statelessWorkerDeactivationTest() throws ExecutionException, InterruptedException, TimeoutException
     {
         clock.stop();

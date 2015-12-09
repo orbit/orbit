@@ -76,14 +76,15 @@ public class Execution extends AbstractExecution implements Startable
     protected void onInvocation(final HandlerContext ctx, final Invocation invocation)
     {
         final RemoteReference toReference = invocation.getToReference();
-        final LocalObjects.LocalObjectEntry entry = objects.findLocalObjectByReference(toReference);
+        final LocalObjects.LocalObjectEntry<Object> entry = objects.findLocalObjectByReference(toReference);
         if (entry != null)
         {
-            final Task<Object> result = InternalUtils.safeInvoke(() -> entry.run(target -> performInvocation(ctx, invocation, entry, target)));
+            final Task<Object> result = InternalUtils.safeInvoke(() -> entry.run(
+                    target -> performInvocation(ctx, invocation, entry, target)));
             // this has to be done here because of exceptions that can occur before performInvocation is even called.
             if (invocation.getCompletion() != null)
             {
-                InternalUtils.linkFutures(result, invocation.getCompletion());
+                InternalUtils.linkFuturesOnError(result, invocation.getCompletion());
             }
         }
         else
@@ -106,25 +107,29 @@ public class Execution extends AbstractExecution implements Startable
     private Task<Void> onActivate(HandlerContext ctx, final Invocation invocation)
     {
         // this must run serialized by the remote reference key.
-        LocalObjects.LocalObjectEntry entry = objects.findLocalObjectByReference(invocation.getToReference());
+        LocalObjects.LocalObjectEntry<Object> entry = objects.findLocalObjectByReference(invocation.getToReference());
         if (entry == null)
         {
             objects.registerLocalObject(invocation.getToReference(), null);
             entry = objects.findLocalObjectByReference(invocation.getToReference());
         }
         // queues the invocation
-        final LocalObjects.LocalObjectEntry theEntry = entry;
+        final LocalObjects.LocalObjectEntry<Object> theEntry = entry;
         final Task result = entry.run(target -> performInvocation(ctx, invocation, theEntry, target));
         if (invocation.getCompletion() != null)
         {
-            InternalUtils.linkFutures(result, invocation.getCompletion());
+            InternalUtils.linkFuturesOnError(result, invocation.getCompletion());
         }
         // yielding since we blocked the entry before running on activate (serialized execution)
         return Task.done();
     }
 
     @SuppressWarnings("unchecked")
-    protected <T> Task<Object> performInvocation(HandlerContext ctx, final Invocation invocation, final LocalObjects.LocalObjectEntry entry, final T target)
+    protected Task<Object> performInvocation(
+            HandlerContext ctx,
+            final Invocation invocation,
+            final LocalObjects.LocalObjectEntry entry,
+            final LocalObjects.LocalObjectEntry target)
     {
         if (logger.isDebugEnabled())
         {
@@ -133,8 +138,22 @@ public class Execution extends AbstractExecution implements Startable
         try
         {
             runtime.bind();
-            // TODO: if entry is deactivated, forward the message back to the net.
-            final ObjectInvoker invoker = DefaultDescriptorFactory.get().getInvoker(target.getClass());
+            if (target == null || target.isDeactivated())
+            {
+                // if the entry is deactivated, forward the message back to the net.
+                ctx.write(invocation);
+                return Task.fromValue(null);
+            }
+            if (target.getObject() == null)
+            {
+                if (target instanceof ObserverEntry)
+                {
+                    return Task.fromException(new IllegalStateException("Not found"));
+                }
+                ctx.write(invocation);
+                return Task.fromValue(null);
+            }
+            final ObjectInvoker invoker = DefaultDescriptorFactory.get().getInvoker(target.getObject().getClass());
 
             final ActorTaskContext context = ActorTaskContext.current();
             if (invocation.getHeaders() != null && invocation.getHeaders().size() > 0 && runtime.getStickyHeaders() != null)
@@ -147,7 +166,12 @@ public class Execution extends AbstractExecution implements Startable
                     }
                 }
             }
-            return invoker.safeInvoke(target, invocation.getMethodId(), invocation.getParams());
+            final Task result = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
+            if (invocation.getCompletion() != null)
+            {
+                InternalUtils.linkFutures(result, invocation.getCompletion());
+            }
+            return result;
         }
         catch (Throwable exception)
         {
@@ -155,7 +179,7 @@ public class Execution extends AbstractExecution implements Startable
             {
                 logger.debug("Unknown application error. ", exception);
             }
-            if (!invocation.isOneWay() && invocation.getCompletion() != null)
+            if (invocation.getCompletion() != null)
             {
                 invocation.getCompletion().completeExceptionally(exception);
             }

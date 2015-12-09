@@ -86,7 +86,7 @@ class ServerPeerExecutor extends PeerExecutor
     }
 
     @Override
-    protected Task<Object> performLocalInvocation(final Invocation invocation, final ObjectInvoker invoker, final Object target)
+    protected Task<Object> performLocalInvocation(final Invocation invocation, final ObjectInvoker invoker, final LocalObjects.LocalObjectEntry target)
     {
         stage.bind();
         return super.performLocalInvocation(invocation, invoker, target);
