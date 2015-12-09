@@ -177,6 +177,9 @@ public class Stage implements Startable, ActorRuntime
     private int concurrentDeactivations = 16;
     @Config("orbit.actors.defaultActorTTL")
     private long defaultActorTTL = TimeUnit.MINUTES.toMillis(10);
+    @Config("orbit.actors.deactivationTimeoutMillis")
+    private long deactivationTimeoutMillis = TimeUnit.MINUTES.toMillis(2);
+
     private Task<Void> startPromise = new Task<>();
 
     public enum StageMode
@@ -744,7 +747,7 @@ public class Stage implements Startable, ActorRuntime
                 .filter(e -> e.getValue() instanceof ActorBaseEntry)
                 .iterator();
 
-        final List<Task<ActorBaseEntry>> pending = new ArrayList<>();
+        final List<Task<Void>> pending = new ArrayList<>();
 
         // ensure that certain number of concurrent deactivations is happening at each moment
         while (iterator.hasNext())
@@ -753,14 +756,38 @@ public class Stage implements Startable, ActorRuntime
             {
                 final Map.Entry<Object, LocalObjects.LocalObjectEntry> entryEntry = iterator.next();
                 final ActorBaseEntry<?> actorEntry = (ActorBaseEntry<?>) entryEntry.getValue();
+                if (actorEntry.isDeactivated())
+                {
+                    // this might happen if the deactivation is called outside this loop,
+                    // for instance by the stateless worker that owns the objects
+                    objects.remove(entryEntry.getKey(), entryEntry.getValue());
+                }
                 if (clock().millis() - actorEntry.getLastAccess() > maxAge)
                 {
                     if (logger.isTraceEnabled())
                     {
                         logger.trace("deactivating {}", actorEntry.getRemoteReference());
                     }
-                    pending.add(actorEntry.deactivate().thenRun(
-                            () -> objects.remove(entryEntry.getKey(), entryEntry.getValue())));
+                    pending.add(actorEntry.deactivate().failAfter(deactivationTimeoutMillis, TimeUnit.MILLISECONDS)
+                            .whenComplete((r, e) -> {
+                                // ensures removal
+                                if (e != null)
+                                {
+                                    // error occurred
+                                    if (logger.isErrorEnabled())
+                                    {
+                                        logger.error("Error during the deactivation of " + actorEntry.getRemoteReference(), e);
+                                    }
+                                    // forcefully setting the entry to deactivated
+                                    actorEntry.setDeactivated(true);
+                                }
+                                objects.remove(entryEntry.getKey(), entryEntry.getValue());
+                                if (entryEntry.getKey() == actorEntry.getRemoteReference())
+                                {
+                                    // removing non stateless actor from the distributed directory
+                                    getHosting().actorDeactivated(actorEntry.getRemoteReference());
+                                }
+                            }));
                 }
             }
             if (pending.size() > 0)
@@ -1124,7 +1151,7 @@ public class Stage implements Startable, ActorRuntime
         return extensions;
     }
 
-     <T> LocalObjects.LocalObjectEntry createLocalObjectEntry(final RemoteReference<T> reference, final T object)
+    <T> LocalObjects.LocalObjectEntry createLocalObjectEntry(final RemoteReference<T> reference, final T object)
     {
         final Class<T> interfaceClass = RemoteReference.getInterfaceClass(reference);
         if (Actor.class.isAssignableFrom(interfaceClass))

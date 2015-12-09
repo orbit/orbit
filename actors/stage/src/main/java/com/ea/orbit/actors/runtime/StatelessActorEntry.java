@@ -103,7 +103,7 @@ public class StatelessActorEntry<T extends AbstractActor> extends ActorBaseEntry
         }
     }
 
-    public Task deactivate()
+    public Task<Void> deactivate()
     {
         List<Task<Void>> tasks = new ArrayList<>();
         for (ActorEntry<T> actorEntry; null != (actorEntry = tryPop()); )

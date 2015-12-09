@@ -106,10 +106,10 @@ public abstract class ActorBaseEntry<T extends AbstractActor> implements LocalOb
      * This must not fail. If errors it should log them instead of throwing
      */
 
-    public abstract Task deactivate();
+    public abstract Task<Void> deactivate();
 
 
-    protected void setDeactivated(final boolean deactivated)
+    public void setDeactivated(final boolean deactivated)
     {
         this.deactivated = deactivated;
     }

@@ -28,7 +28,6 @@
 
 package com.ea.orbit.actors.runtime;
 
-import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.concurrent.TaskFunction;
@@ -95,6 +94,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
         lastAccess = runtime.clock().millis();
         if (key == reference)
         {
+            // double checks that this actor really should be activated here.
             if (!Objects.equals(runtime.getLocalAddress(), await(runtime.locateActor(reference, true))))
             {
                 return Task.fromValue(null);
@@ -147,7 +147,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
      * This must not fail. If errors it should log them instead of throwing
      */
     @Override
-    public Task deactivate()
+    public Task<Void> deactivate()
     {
         try
         {
@@ -165,7 +165,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
         }
     }
 
-    protected Task<?> doDeactivate()
+    protected Task<Void> doDeactivate()
     {
         if (actor != null)
         {
@@ -203,11 +203,6 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
             getLogger().error("Error on actor " + reference + " deactivation", ex);
         }
         await(Task.allOf(runtime.getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postDeactivation(actor))));
-        if (key == reference)
-        {
-            // removing non stateless actor from the distributed directory
-            ((Stage) runtime).getHosting().actorDeactivated(reference);
-        }
         return Task.done();
     }
 
