@@ -64,7 +64,7 @@ public class StatelessWithTimersTest extends ActorBaseTest
             registerTimer(() -> {
                 sync.task("name").complete(msg);
                 return Task.done();
-            }, 100, 100, TimeUnit.MILLISECONDS);
+            }, 100, TimeUnit.MILLISECONDS);
             return Task.fromValue(msg);
         }
 
