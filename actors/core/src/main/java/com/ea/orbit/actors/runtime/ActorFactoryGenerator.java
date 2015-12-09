@@ -157,7 +157,7 @@ public class ActorFactoryGenerator
                 final String methodReferenceField = methodName + "_" + count;
                 cc.addField(CtField.make("private static java.lang.reflect.Method " + methodReferenceField + " = null;", cc));
 
-                // TODO: move this to a static initializer
+                // could move this to a static initializer so save a few cylces
                 final String lazyMethodReferenceInit = "(" + methodReferenceField + "!=null) ? " + methodReferenceField + " : ( "
                         + methodReferenceField + "=" + aInterface.getName() + ".class.getMethod(\"" + methodName + "\",$sig) )";
 
