@@ -76,11 +76,6 @@ public class Task<T> extends CompletableFuture<T>
     // of one application request.
     // Including logs, stats, exception and timing information.
 
-    // TODO: add here or elsewhere a method to wrap a task with timeout
-    // example: Task result = aTask.timeout(60, TimeUnit.SECONDS);
-
-    // TODO: consider implementing CompletionStage instead of deriving from CompletableFuture.
-
     // TODO: consider creating a public class CTask = "Completable Task"
 
     /**
@@ -212,6 +207,9 @@ public class Task<T> extends CompletableFuture<T>
     /**
      * Returns a new task that will fail if the original is not completed withing the given timeout.
      * This doesn't modify the original task in any way.
+     * <p/>
+     * Example:
+     * <pre><code>Task&lt;String> result = aTask.failAfter(60, TimeUnit.SECONDS);</code></pre>
      *
      * @param timeout  the time from now
      * @param timeUnit the time unit of the timeout parameter
