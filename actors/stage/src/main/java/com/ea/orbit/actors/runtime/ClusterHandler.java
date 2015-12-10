@@ -35,8 +35,12 @@ import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.tuples.Pair;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ClusterHandler extends HandlerAdapter
 {
+    private static Logger logger = LoggerFactory.getLogger(ClusterHandler.class);
     private ClusterPeer clusterPeer;
     private String clusterName;
     private String nodeName;
@@ -65,7 +69,16 @@ public class ClusterHandler extends HandlerAdapter
     {
         clusterPeer.registerMessageReceiver((n, m) -> ctx.fireRead(Pair.of(n, m)));
         return clusterPeer.join(clusterName, nodeName).thenRun(() ->
-                ctx.fireActive()
+                {
+                    try
+                    {
+                        ctx.fireActive();
+                    }
+                    catch (Throwable ex)
+                    {
+                        logger.error("Error handling message", ex);
+                    }
+                }
         );
     }
 
