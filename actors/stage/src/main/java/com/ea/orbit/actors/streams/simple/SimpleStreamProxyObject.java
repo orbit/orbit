@@ -6,14 +6,14 @@ import com.ea.orbit.actors.streams.StreamSubscriptionHandle;
 import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.concurrent.Task;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.ea.orbit.async.Await.await;
 
 public class SimpleStreamProxyObject<T> implements SimpleStreamProxy<T>
 {
-    private Map<String, AsyncObserver<T>> observerMap = new LinkedHashMap<>();
+    private Map<String, AsyncObserver<T>> observerMap = new ConcurrentHashMap<>();
     private volatile Task<String> sharedHandle;
     private final Object mutex = new Object();
     private SimpleStreamExtension provider;
@@ -62,16 +62,13 @@ public class SimpleStreamProxyObject<T> implements SimpleStreamProxy<T>
     public Task<StreamSubscriptionHandle<T>> subscribe(final AsyncObserver<T> observer)
     {
         String handle = IdUtils.urlSafeString(128);
-        provider.getHardRefs().add(this);
         observerMap.put(handle, observer);
-        if (sharedHandle == null)
+        synchronized (mutex)
         {
-            synchronized (mutex)
+            if (sharedHandle == null)
             {
-                if (sharedHandle == null)
-                {
-                    sharedHandle = streamActorRef.subscribe(this);
-                }
+                sharedHandle = streamActorRef.subscribe(this);
+                provider.getHardRefs().add(this);
             }
         }
         await(sharedHandle);
@@ -81,11 +78,20 @@ public class SimpleStreamProxyObject<T> implements SimpleStreamProxy<T>
     public Task<Void> unsubscribe(String handle)
     {
         observerMap.remove(handle);
-        if (sharedHandle != null && observerMap.size() == 0)
+        if (sharedHandle != null)
         {
-            // await(sharedHandle);
-            // TODO unSubscribe from the stream
-            provider.getHardRefs().remove(this);
+            Task<String> sharedHandle = this.sharedHandle;
+            final String actualHandle = await(sharedHandle);
+            synchronized (mutex)
+            {
+                if (this.sharedHandle == sharedHandle && observerMap.size() == 0)
+                {
+                    this.sharedHandle = null;
+                    provider.getHardRefs().remove(this);
+                    // unsubscribe from the stream
+                    return streamActorRef.unsubscribe(actualHandle);
+                }
+            }
         }
         return Task.done();
     }
