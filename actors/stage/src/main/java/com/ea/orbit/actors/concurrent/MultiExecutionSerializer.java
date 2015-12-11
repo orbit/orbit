@@ -44,7 +44,7 @@ public interface MultiExecutionSerializer<T>
      */
     <R> Task<R> offerJob(T key, Supplier<Task<R>> job, int maxQueueSize);
 
-    void shutdownNow();
+    void shutdown();
 
     boolean isBusy();
 }

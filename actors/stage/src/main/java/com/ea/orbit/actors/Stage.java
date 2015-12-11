@@ -719,7 +719,7 @@ public class Stage implements Startable, ActorRuntime
         await(pipeline.close());
 
         logger.debug("stopping execution serializer");
-        executionSerializer.shutdownNow();
+        executionSerializer.shutdown();
 
         state = NodeCapabilities.NodeState.STOPPED;
         logger.debug("stop done");
