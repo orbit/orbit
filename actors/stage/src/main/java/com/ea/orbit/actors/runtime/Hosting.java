@@ -717,6 +717,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         }
         // benchmarks pointed out that calling method.isAnnotationPresent was expensive.
         // so we cache that result locally
+        // Johno Crawford had suggested this optimization in the PR: https://github.com/electronicarts/orbit/pull/79/files
         Boolean only = onlyIfActivate.get(method);
         if (only != null)
         {
