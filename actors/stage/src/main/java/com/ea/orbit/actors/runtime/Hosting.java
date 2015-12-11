@@ -281,14 +281,14 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         }
         // try to locate the actor in the distributed directory
         // this can be expensive, less that activating the actor, though
-        return Task.fromValue(distributedDirectory.get(createRemoteKey(actorReference)));
+        return Task.fromValue(getDistributedDirectory().get(createRemoteKey(actorReference)));
     }
 
     public void actorDeactivated(RemoteReference remoteReference)
     {
         // removing the reference form the cluster directory
         localAddressCache.invalidate(remoteReference);
-        distributedDirectory.remove(createRemoteKey(remoteReference), clusterPeer.localAddress());
+        getDistributedDirectory().remove(createRemoteKey(remoteReference), clusterPeer.localAddress());
     }
 
     private Task<NodeAddress> locateAndActivateActor(final RemoteReference<?> actorReference)
@@ -327,16 +327,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             NodeAddress nodeAddress = null;
 
             // Get the distributed cache if needed
-            if (distributedDirectory == null)
-            {
-                synchronized (this)
-                {
-                    if (distributedDirectory == null)
-                    {
-                        distributedDirectory = clusterPeer.getCache("distributedDirectory");
-                    }
-                }
-            }
+            ConcurrentMap<RemoteKey, NodeAddress> distributedDirectory = getDistributedDirectory();
 
             // Get the existing activation from the distributed cache (if any)
             nodeAddress = distributedDirectory.get(remoteKey);
@@ -388,6 +379,21 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
         return Task.from(async);
 
+    }
+
+    private ConcurrentMap<RemoteKey, NodeAddress> getDistributedDirectory()
+    {
+        if (distributedDirectory == null)
+        {
+            synchronized (this)
+            {
+                if (distributedDirectory == null)
+                {
+                    distributedDirectory = clusterPeer.getCache("distributedDirectory");
+                }
+            }
+        }
+        return distributedDirectory;
     }
 
     private RemoteKey createRemoteKey(final RemoteReference actorReference)
