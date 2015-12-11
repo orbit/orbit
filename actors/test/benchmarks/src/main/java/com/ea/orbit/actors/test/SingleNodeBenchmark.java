@@ -245,6 +245,9 @@ public class SingleNodeBenchmark
                 //.clusterPeer(new FakeClusterPeer())
                 .build();
 
+        // decreases context switching
+        stage.setExecutionPoolSize(Math.max(1, Runtime.getRuntime().availableProcessors() / 2));
+
         dr.addSingleton(Stage.class, stage);
 
         stage.start().join();
