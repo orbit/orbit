@@ -52,11 +52,20 @@ public class TaskContext
     public void pop()
     {
         Deque<TaskContext> stack = contextStacks.get();
-        if (stack == null || stack.size() == 0 || stack.getLast() != this)
+        if (stack == null)
         {
             throw new IllegalStateException("Invalid execution context stack state: " + stack + " trying to remove: " + this);
         }
-        stack.removeLast();
+        final TaskContext last = stack.pollLast();
+        if (last != this)
+        {
+            if (last != null)
+            {
+                // returning it to the stack
+                stack.addLast(last);
+            }
+            throw new IllegalStateException("Invalid execution context stack state: " + stack + " trying to remove: " + this + " but got: " + last);
+        }
     }
 
     @Override
@@ -73,11 +82,11 @@ public class TaskContext
     public static TaskContext current()
     {
         final Deque<TaskContext> stack = contextStacks.get();
-        if (stack == null || stack.size() == 0)
+        if (stack == null)
         {
             return null;
         }
-        return stack.getLast();
+        return stack.peekLast();
     }
 
     /**
