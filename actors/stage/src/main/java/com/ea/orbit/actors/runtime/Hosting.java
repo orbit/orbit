@@ -90,6 +90,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     private TreeMap<String, NodeInfo> consistentHashNodeTree = new TreeMap<>();
     private ConcurrentMap<Method, Boolean> onlyIfActivate = new ConcurrentHashMap<>();
+    private CompletableFuture<Void> hostingActive = new Task<>();
 
     public Hosting()
     {
@@ -547,6 +548,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     public void onActive(final HandlerContext ctx) throws Exception
     {
         stage.registerObserver(NodeCapabilities.class, "", this);
+        hostingActive.complete(null);
         ctx.fireActive();
     }
 
@@ -640,6 +642,8 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     {
         if (msg instanceof Invocation)
         {
+            // await checks isDone()
+            await(hostingActive);
             final Invocation invocation = (Invocation) msg;
             if (invocation.getFromNode() == null)
             {
@@ -695,6 +699,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     /**
      * Checks if a method is annotated with OnlyIfActivated.
+     *
      * @param method the method to check
      * @return true if the method is annotated with OnlyIfActivated.
      */
@@ -724,4 +729,6 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         NodeAddress actorAddress = await(locateActor(toReference, false));
         return Task.fromValue(actorAddress != null);
     }
+
+
 }
