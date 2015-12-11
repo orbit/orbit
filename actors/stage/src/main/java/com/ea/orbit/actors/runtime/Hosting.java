@@ -89,6 +89,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private Random random = new Random();
 
     private TreeMap<String, NodeInfo> consistentHashNodeTree = new TreeMap<>();
+    private ConcurrentMap<Method, Boolean> onlyIfActivate = new ConcurrentHashMap<>();
 
     public Hosting()
     {
@@ -657,9 +658,9 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     {
         final Method method = invocation.getMethod();
         final RemoteReference<?> toReference = invocation.getToReference();
-        if (method != null && method.isAnnotationPresent(OnlyIfActivated.class))
+        if (isOnlyIfActivated(method))
         {
-            if (!await(verifyActivated(toReference, method)))
+            if (!await(verifyActivated(toReference)))
             {
                 return Task.done();
             }
@@ -693,21 +694,34 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     }
 
     /**
-     * Checks if the method passes an Activated check.
-     * Verify passes on either of:
-     * - method can run only if activated, and the actor is active
-     * - the method is not marked with OnlyIfActivated.
+     * Checks if a method is annotated with OnlyIfActivated.
+     * @param method the method to check
+     * @return true if the method is annotated with OnlyIfActivated.
      */
-    private Task<Boolean> verifyActivated(RemoteReference<?> toReference, Method method)
+    private boolean isOnlyIfActivated(final Method method)
     {
-        if (method.isAnnotationPresent(OnlyIfActivated.class))
+        if (method == null)
         {
-            NodeAddress actorAddress = await(locateActor(toReference, false));
-            if (actorAddress == null)
-            {
-                return Task.fromValue(false);
-            }
+            return false;
         }
-        return Task.fromValue(true);
+        // benchmarks pointed out that calling method.isAnnotationPresent was expensive.
+        // so we cache that result locally
+        Boolean only = onlyIfActivate.get(method);
+        if (only != null)
+        {
+            return only;
+        }
+        boolean annotationPresent = method.isAnnotationPresent(OnlyIfActivated.class);
+        onlyIfActivate.putIfAbsent(method, annotationPresent);
+        return annotationPresent;
+    }
+
+    /**
+     * Checks if the object is activated.
+     */
+    private Task<Boolean> verifyActivated(RemoteReference<?> toReference)
+    {
+        NodeAddress actorAddress = await(locateActor(toReference, false));
+        return Task.fromValue(actorAddress != null);
     }
 }
