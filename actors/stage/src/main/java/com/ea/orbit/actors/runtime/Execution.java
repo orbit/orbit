@@ -176,6 +176,10 @@ public class Execution extends AbstractExecution implements Startable
             {
                 context.setRuntime(runtime);
             }
+            else
+            {
+                runtime.bind();
+            }
             final Task result = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
             if (invocation.getCompletion() != null)
             {
