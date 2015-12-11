@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 /**
@@ -51,6 +52,8 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
     private ExecutorService executorService;
     private ConcurrentLinkedQueue<Supplier<Task<?>>> queue = new ConcurrentLinkedQueue<>();
     private AtomicBoolean lock = new AtomicBoolean();
+    private AtomicInteger size = new AtomicInteger();
+
 
     public WaitFreeExecutionSerializer(final ExecutorService executorService)
     {
@@ -61,7 +64,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
     public <R> Task<R> executeSerialized(Supplier<Task<R>> taskSupplier, int maxQueueSize)
     {
         Task<R> completion = new Task<>();
-        if (queue.size() >= maxQueueSize || !queue.add(() -> {
+        if (size.get() >= maxQueueSize || !queue.add(() -> {
                     Task<R> source = InternalUtils.safeInvoke(taskSupplier);
                     InternalUtils.linkFutures(source, completion);
                     return source;
@@ -70,6 +73,8 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
         {
             throw new IllegalStateException(String.format("Queue full %d > %d", queue.size(), maxQueueSize));
         }
+        // managing the size like this to avoid using ConcurrentLinkedQueue.size()
+        size.incrementAndGet();
         tryExecute(false);
         return completion;
     }
@@ -77,7 +82,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
     @Override
     public boolean isBusy()
     {
-        return lock.get() || queue.size() > 0;
+        return lock.get() || !queue.isEmpty();
     }
 
     /**
@@ -97,6 +102,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
             final Supplier<Task<?>> toRun = queue.poll();
             if (toRun != null)
             {
+                size.decrementAndGet();
                 try
                 {
                     Task<?> taskFuture;
