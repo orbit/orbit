@@ -34,20 +34,17 @@ import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.concurrent.TaskContext;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
@@ -62,7 +59,6 @@ public class Messaging extends HandlerAdapter implements Startable
 
     private final AtomicInteger messageIdGen = new AtomicInteger();
     private final Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
-    private final PriorityBlockingQueue<PendingResponse> pendingResponsesQueue = new PriorityBlockingQueue<>(50, new PendingResponseComparator());
 
     @Config("orbit.actors.defaultMessageTimeout")
     private long responseTimeoutMillis = 30_000;
@@ -72,22 +68,6 @@ public class Messaging extends HandlerAdapter implements Startable
     private static Timer timer = new Timer("Messaging timer");
     private BasicRuntime runtime;
 
-    /**
-     * The messageId is used only to break a tie between messages that timeout at the same ms.
-     */
-    static class PendingResponseComparator implements Comparator<PendingResponse>
-    {
-        @Override
-        public int compare(final PendingResponse o1, final PendingResponse o2)
-        {
-            int cmp = Long.compare(o1.timeoutAt, o2.timeoutAt);
-            if (cmp == 0)
-            {
-                return o1.messageId - o2.messageId;
-            }
-            return cmp;
-        }
-    }
 
     /**
      * The case of the messageId cycling back was considered during design. It should not be a problem
@@ -223,7 +203,6 @@ public class Messaging extends HandlerAdapter implements Startable
                     }
                     if (pendingResponse != null)
                     {
-                        pendingResponsesQueue.remove(pendingResponse);
                         Object res;
                         try
                         {
@@ -381,7 +360,6 @@ public class Messaging extends HandlerAdapter implements Startable
         {
 
             pendingResponseMap.put(messageId, pendingResponse);
-            pendingResponsesQueue.add(pendingResponse);
         }
         try
         {
@@ -394,7 +372,6 @@ public class Messaging extends HandlerAdapter implements Startable
         catch (Exception ex)
         {
             pendingResponseMap.remove(messageId);
-            pendingResponsesQueue.remove(pendingResponse);
             pendingResponse.internalCompleteExceptionally(ex);
         }
         return pendingResponse;
@@ -402,24 +379,26 @@ public class Messaging extends HandlerAdapter implements Startable
 
     public Task cleanup()
     {
-        PendingResponse top = pendingResponsesQueue.peek();
-        if (top != null && top.timeoutAt < runtime.clock().millis())
-        {
-            for (; (top = pendingResponsesQueue.poll()) != null; )
-            {
-                if (top.timeoutAt > runtime.clock().millis())
-                {
-                    // return the message, if there was a concurrent reception the message will be removed on the next cycle.
-                    pendingResponsesQueue.add(top);
-                    break;
-                }
-                if (!top.isDone())
-                {
-                    top.internalCompleteExceptionally(new TimeoutException("Response timeout"));
-                }
-                pendingResponseMap.remove(top.messageId);
-            }
-        }
+        // The benchmarks showed that it's faster to iterate over all pending messages
+        // than to keep a priority queue ordered by timeout.
+
+        // The priority queue forces the application to pay the price of keeping the queue ordered
+        // plus the synchronization cost of adding and removing elements.
+
+        pendingResponseMap.values()
+                .forEach(top -> {
+                    if (top.timeoutAt > runtime.clock().millis())
+                    {
+                        // return the message, if there was a concurrent reception the message will be removed on the next cycle.
+                        return;
+                    }
+                    if (!top.isDone())
+                    {
+                        // todo: do this in the application executor, not critical as hosting is already taking care of it
+                        top.internalCompleteExceptionally(new TimeoutException("Response timeout"));
+                    }
+                    pendingResponseMap.remove(top.messageId);
+                });
         return Task.done();
     }
 
