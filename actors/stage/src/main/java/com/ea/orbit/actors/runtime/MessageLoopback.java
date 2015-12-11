@@ -36,7 +36,10 @@ import com.ea.orbit.concurrent.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Local messages traverse the protocol stack just beyond Messaging and then are bounced back.
@@ -53,36 +56,107 @@ public class MessageLoopback extends NamedPipelineExtension
         super(DefaultHandlers.MESSAGE_LOOPBACK, null, DefaultHandlers.MESSAGING);
     }
 
+    private static final Set<Class> immutables = new HashSet<>(Arrays.asList(
+            java.lang.String.class,
+            java.lang.Integer.class,
+            java.lang.Byte.class,
+            java.lang.Character.class,
+            java.lang.Short.class,
+            java.lang.Boolean.class,
+            java.lang.Long.class,
+            java.lang.Double.class,
+            java.lang.Float.class,
+            java.lang.StackTraceElement.class,
+            java.math.BigInteger.class,
+            java.math.BigDecimal.class,
+            java.io.File.class,
+            java.util.Locale.class,
+            java.util.UUID.class,
+            java.util.Collections.class,
+            java.net.URL.class,
+            java.net.URI.class,
+            java.net.Inet4Address.class,
+            java.net.Inet6Address.class,
+            java.net.InetSocketAddress.class
+    ));
+
     @Override
     public Task write(final HandlerContext ctx, final Object msg) throws Exception
     {
         if (msg instanceof Message)
         {
             Message message = (Message) msg;
-            if (Objects.equals(message.getToNode(), runtime.getLocalAddress()) && cloner != null)
+            if (Objects.equals(message.getToNode(), runtime.getLocalAddress()))
             {
-                final Object originalPayload = message.getPayload();
-                final Object clonedPayload;
-                try
+                if (needsCloning(message))
                 {
-                    clonedPayload = cloner.clone(originalPayload);
-                }
-                catch (Exception e)
-                {
-                    // ignoring clone errors
-                    if (logger.isDebugEnabled())
+                    if (cloner == null)
                     {
-                        logger.debug("Error cloning message: " + message, e);
+                        return ctx.write(msg);
                     }
-                    return ctx.write(msg);
+                    final Object originalPayload = message.getPayload();
+                    final Object clonedPayload;
+                    try
+                    {
+                        clonedPayload = cloner.clone(originalPayload);
+                    }
+                    catch (Exception e)
+                    {
+                        // ignoring clone errors
+                        if (logger.isDebugEnabled())
+                        {
+                            logger.debug("Error cloning message: " + message, e);
+                        }
+                        return ctx.write(msg);
+                    }
+                    message.setPayload(clonedPayload);
                 }
-                message.setPayload(clonedPayload);
                 // short circuits the message back
                 ctx.fireRead(message);
                 return Task.done();
             }
         }
         return ctx.write(msg);
+    }
+
+    protected boolean needsCloning(final Message message)
+    {
+        // this can be improved by looking into the
+        // argument/return types of ClassId.MethodId and caching the decision.
+
+        final Object payload = message.getPayload();
+        if (payload == null)
+        {
+            return false;
+        }
+        switch (message.getMessageType())
+        {
+            case MessageDefinitions.ONE_WAY_MESSAGE:
+            case MessageDefinitions.REQUEST_MESSAGE:
+                if (payload instanceof Object[])
+                {
+                    Object[] arr = (Object[]) payload;
+                    for (int i = arr.length; --i >= 0; )
+                    {
+                        Object obj = arr[i];
+                        if (obj != null && !immutables.contains(obj.getClass()))
+                        {
+                            return true;
+                        }
+                    }
+                    // no cloning required, true also fir arr.length = 0
+                    return false;
+                }
+                break;
+            case MessageDefinitions.RESPONSE_OK:
+                // already test for null in the beginning of the method.
+                if (immutables.contains(payload.getClass()))
+                {
+                    return false;
+                }
+                break;
+        }
+        return true;
     }
 
     public ExecutionObjectCloner getCloner()
