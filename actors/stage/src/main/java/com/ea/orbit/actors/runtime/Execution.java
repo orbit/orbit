@@ -141,7 +141,6 @@ public class Execution extends AbstractExecution implements Startable
         }
         try
         {
-            runtime.bind();
             if (target == null || target.isDeactivated())
             {
                 // if the entry is deactivated, forward the message back to the net.
@@ -173,6 +172,10 @@ public class Execution extends AbstractExecution implements Startable
             // todo: it would be nice to separate this last part into another handler (InvocationHandler)
             // to be able intercept the invocation right before it actually happens, good for logging and metrics
 
+            if (context != null)
+            {
+                context.setRuntime(runtime);
+            }
             final Task result = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
             if (invocation.getCompletion() != null)
             {
