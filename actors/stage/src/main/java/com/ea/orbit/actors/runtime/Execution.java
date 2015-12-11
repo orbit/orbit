@@ -30,6 +30,7 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.exceptions.ObserverNotFound;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
@@ -97,9 +98,12 @@ public class Execution extends AbstractExecution implements Startable
             }
             else
             {
+                // missing actor observer
                 invocation.setHops(invocation.getHops() + 1);
-                // return the message to hosting, hosting is responsible for activating the actor locally.
-                ctx.write(invocation);
+                if (invocation.getCompletion() != null)
+                {
+                    invocation.getCompletion().completeExceptionally(new ObserverNotFound());
+                }
             }
         }
     }
@@ -148,7 +152,7 @@ public class Execution extends AbstractExecution implements Startable
             {
                 if (target instanceof ObserverEntry)
                 {
-                    return Task.fromException(new IllegalStateException("Not found"));
+                    return Task.fromException(new ObserverNotFound());
                 }
                 ctx.write(invocation);
                 return Task.fromValue(null);

@@ -170,9 +170,35 @@ public class ObserverTest extends ActorBaseTest
         ref1.receiveMessage(null, "hello").join();
         observer1 = null;
         System.gc();
-        // this fails because the garbage collector will have disposed of the observer
 
+        // this fails because the garbage collector will have disposed of the observer
         expectException(() -> ref1.receiveMessage(null, "hello").join());
     }
+
+
+    @Test(timeout = 15_000L)
+    public void observerGarbageCollectionAndCleanup() throws ExecutionException, InterruptedException
+    {
+        Stage stage1 = createStage();
+
+        SomeChatObserver observer1 = new SomeChatObserver();
+        final com.ea.orbit.actors.test.actors.SomeChatObserver ref1 = stage1.registerObserver(null, observer1);
+
+        ref1.receiveMessage(null, "hello").join();
+        // releasing the reference.
+        observer1 = null;
+        System.gc();
+
+        // with just gc it might take some time for the jvm to cleanup
+        // the references and remove the observerEntry form the map.
+        // calling stage.cleanup speeds things up.
+
+        stage1.cleanup().join();
+
+        // this fails because the garbage collector will have disposed of the observer
+        expectException(() -> ref1.receiveMessage(null, "hello").join());
+        dumpMessages();
+    }
+
 
 }

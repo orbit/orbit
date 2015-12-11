@@ -734,9 +734,19 @@ public class Stage implements Startable, ActorRuntime
         return Task.done();
     }
 
+    @Deprecated
     public Task<Void> cleanupActors()
     {
         return cleanupActors(defaultActorTTL);
+    }
+
+
+    private Task<Void> cleanupObservers()
+    {
+        objects.stream()
+                .filter(e -> e.getValue() instanceof ObserverEntry && e.getValue().getObject() == null)
+                .forEach(e -> objects.remove(e.getKey(), e.getValue()));
+        return Task.done();
     }
 
     private Task<Void> cleanupActors(long maxAge)
@@ -854,6 +864,7 @@ public class Stage implements Startable, ActorRuntime
     {
         await(execution.cleanup());
         await(cleanupActors(defaultActorTTL));
+        await(cleanupObservers());
         await(messaging.cleanup());
         return Task.done();
     }

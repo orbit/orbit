@@ -141,19 +141,23 @@ public class SerializationHandler extends HandlerAdapter
     {
         Pair<NodeAddress, byte[]> message = (Pair<NodeAddress, byte[]>) msg;
         final ByteArrayInputStream bais = new ByteArrayInputStream(message.getRight());
+        Message msg1 = null;
         try
         {
-            final Message msg1 = messageSerializer.deserializeMessage(runtime, bais);
+            msg1 = messageSerializer.deserializeMessage(runtime, bais);
             if (msg1.getFromNode() == null)
             {
                 msg1.setFromNode(message.getLeft());
             }
-            ctx.fireRead(msg1);
         }
         catch (Throwable e)
         {
             logger.error("Error deserializing message", e);
             logger.error(InternalUtils.hexDump(32, message.getRight(), 0, message.getRight().length));
+        }
+        if (msg1 != null)
+        {
+            ctx.fireRead(msg1);
         }
     }
 
