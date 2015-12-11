@@ -687,7 +687,7 @@ public class Stage implements Startable, ActorRuntime
     {
         if (getState() != NodeCapabilities.NodeState.RUNNING)
         {
-            throw new IllegalStateException("Stage is not in the running mode, mode: " + mode);
+            throw new IllegalStateException("Stage node state is not running, state: " + getState());
         }
 
         state = NodeCapabilities.NodeState.STOPPING;
@@ -717,6 +717,9 @@ public class Stage implements Startable, ActorRuntime
         } while (executionSerializer.isBusy());
         logger.debug("closing pipeline");
         await(pipeline.close());
+
+        logger.debug("stopping execution serializer");
+        executionSerializer.shutdown();
 
         state = NodeCapabilities.NodeState.STOPPED;
         logger.debug("stop done");

@@ -326,8 +326,6 @@ public class Messaging extends HandlerAdapter implements Startable
         {
             actualHeaders.putAll(invocation.getHeaders());
         }
-        final TaskContext context = TaskContext.current();
-
 
         final Message message = new Message()
                 .withMessageType(invocation.isOneWay() ? MessageDefinitions.ONE_WAY_MESSAGE : MessageDefinitions.REQUEST_MESSAGE)
