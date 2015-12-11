@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
@@ -102,28 +101,13 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
         return getSerializer(key).executeSerialized(() -> InternalUtils.safeInvoke(job), maxQueueSize);
     }
 
-    public void shutdown()
+    public void shutdownNow()
     {
-        executorService.shutdown(); // Disable new tasks from being submitted
-        try
+        List<Runnable> tasksAwaitingExecution = executorService.shutdownNow();
+        if (!tasksAwaitingExecution.isEmpty())
         {
-            // Wait a while for existing tasks to terminate
-            if (!executorService.awaitTermination(60, TimeUnit.SECONDS))
-            {
-                logger.info("Timeout elapsed before termination, forcing shutdown");
-                List<Runnable> tasksAwaitingExecution = executorService.shutdownNow(); // Cancel currently executing tasks
-                logger.info("Tasks awaiting execution after forced shutdown: " + tasksAwaitingExecution.size());
-            }
+            logger.warn("Tasks awaiting execution after shutdown: " + tasksAwaitingExecution.size());
         }
-        catch (InterruptedException ie)
-        {
-            logger.error("Exception occurred while shutting down thread pool", ie);
-            // (Re-)Cancel if current thread also interrupted
-            executorService.shutdownNow();
-            // Preserve interrupt status
-            Thread.currentThread().interrupt();
-        }
-        logger.info("Thread pool shutdown complete");
     }
 
     public boolean isBusy()
