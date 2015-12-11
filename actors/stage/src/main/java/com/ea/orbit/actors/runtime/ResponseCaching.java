@@ -53,6 +53,8 @@ import java.math.BigInteger;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 public class ResponseCaching
@@ -63,6 +65,7 @@ public class ResponseCaching
     private static Ticker defaultCacheTicker = null;
     private MessageSerializer messageSerializer;
     private BasicRuntime runtime;
+    private ConcurrentMap<Method, Boolean> methods = new ConcurrentHashMap<>();
 
     private static class NullOutputStream extends OutputStream
     {
@@ -114,6 +117,7 @@ public class ResponseCaching
 
     private Cache<Pair<Addressable, String>, Task> getIfPresent(Method method)
     {
+        // todo: cache this
         CacheResponse cacheResponse = method.getAnnotation(CacheResponse.class);
         if (cacheResponse == null)
         {
@@ -129,6 +133,7 @@ public class ResponseCaching
      */
     private Cache<Pair<Addressable, String>, Task> getCache(Method method)
     {
+        // todo: cache this
         CacheResponse cacheResponse = method.getAnnotation(CacheResponse.class);
         if (cacheResponse == null)
         {
@@ -226,13 +231,30 @@ public class ResponseCaching
         if (msg instanceof Invocation)
         {
             final Invocation invocation = (Invocation) msg;
-            if (invocation.getMethod() != null
-                    && invocation.getMethod().isAnnotationPresent(CacheResponse.class))
+            if (needsCaching(invocation))
             {
                 return cacheResponseInvoke(ctx, invocation);
             }
         }
         return super.write(ctx, msg);
+    }
+
+    protected boolean needsCaching(final Invocation invocation)
+    {
+        if (invocation.getMethod() != null)
+        {
+            // According to the micro benchmarks, getting the annotation is expensive.
+            // Therefore we cache that as well
+            Boolean needsCaching = methods.get(invocation.getMethod());
+            if (needsCaching != null)
+            {
+                return needsCaching;
+            }
+            boolean annotationPresent = invocation.getMethod().isAnnotationPresent(CacheResponse.class);
+            methods.putIfAbsent(invocation.getMethod(), annotationPresent);
+            return annotationPresent;
+        }
+        return false;
     }
 
     @Override
