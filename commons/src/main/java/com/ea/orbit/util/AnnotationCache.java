@@ -59,6 +59,9 @@ public class AnnotationCache<T extends Annotation>
 
     public boolean isAnnotated(Method method)
     {
+        if (method == null) {
+            return false;
+        }
         Annotation annotation = methodToAnnotationCache.get(method);
         if (annotation != null)
         {
@@ -72,6 +75,9 @@ public class AnnotationCache<T extends Annotation>
     @SuppressWarnings("unchecked")
     public T getAnnotation(Method method)
     {
+        if (method == null) {
+            return null;
+        }
         Annotation annotation = methodToAnnotationCache.get(method);
         if (annotation != null)
         {
