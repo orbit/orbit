@@ -38,6 +38,7 @@ import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.tuples.Pair;
+import com.ea.orbit.util.AnnotationCache;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,8 +54,6 @@ import java.math.BigInteger;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 public class ResponseCaching
@@ -65,7 +64,7 @@ public class ResponseCaching
     private static Ticker defaultCacheTicker = null;
     private MessageSerializer messageSerializer;
     private BasicRuntime runtime;
-    private ConcurrentMap<Method, Boolean> methods = new ConcurrentHashMap<>();
+    private AnnotationCache<CacheResponse> cacheResponseCache = new AnnotationCache<>(CacheResponse.class);
 
     private static class NullOutputStream extends OutputStream
     {
@@ -117,8 +116,7 @@ public class ResponseCaching
 
     private Cache<Pair<Addressable, String>, Task> getIfPresent(Method method)
     {
-        // todo: cache this
-        CacheResponse cacheResponse = method.getAnnotation(CacheResponse.class);
+        CacheResponse cacheResponse = cacheResponseCache.getAnnotation(method);
         if (cacheResponse == null)
         {
             throw new IllegalArgumentException("Passed non-CacheResponse method.");
@@ -133,8 +131,7 @@ public class ResponseCaching
      */
     private Cache<Pair<Addressable, String>, Task> getCache(Method method)
     {
-        // todo: cache this
-        CacheResponse cacheResponse = method.getAnnotation(CacheResponse.class);
+        CacheResponse cacheResponse = cacheResponseCache.getAnnotation(method);
         if (cacheResponse == null)
         {
             throw new IllegalArgumentException("Passed non-CacheResponse method.");
@@ -231,30 +228,12 @@ public class ResponseCaching
         if (msg instanceof Invocation)
         {
             final Invocation invocation = (Invocation) msg;
-            if (needsCaching(invocation))
+            if (cacheResponseCache.isAnnotated(invocation.getMethod()))
             {
                 return cacheResponseInvoke(ctx, invocation);
             }
         }
         return super.write(ctx, msg);
-    }
-
-    protected boolean needsCaching(final Invocation invocation)
-    {
-        if (invocation.getMethod() != null)
-        {
-            // According to the micro benchmarks, getting the annotation is expensive.
-            // Therefore we cache that as well
-            Boolean needsCaching = methods.get(invocation.getMethod());
-            if (needsCaching != null)
-            {
-                return needsCaching;
-            }
-            boolean annotationPresent = invocation.getMethod().isAnnotationPresent(CacheResponse.class);
-            methods.putIfAbsent(invocation.getMethod(), annotationPresent);
-            return annotationPresent;
-        }
-        return false;
     }
 
     @Override
