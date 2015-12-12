@@ -41,6 +41,7 @@ import com.ea.orbit.annotation.OnlyIfActivated;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
+import com.ea.orbit.util.AnnotationCache;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,7 +90,8 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private Random random = new Random();
 
     private TreeMap<String, NodeInfo> consistentHashNodeTree = new TreeMap<>();
-    private ConcurrentMap<Method, Boolean> onlyIfActivate = new ConcurrentHashMap<>();
+    private AnnotationCache<OnlyIfActivated> onlyIfActivateCache = new AnnotationCache<>(OnlyIfActivated.class);
+
     private CompletableFuture<Void> hostingActive = new Task<>();
 
     public Hosting()
@@ -668,7 +670,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     {
         final Method method = invocation.getMethod();
         final RemoteReference<?> toReference = invocation.getToReference();
-        if (isOnlyIfActivated(method))
+        if (onlyIfActivateCache.isAnnotated(method))
         {
             if (!await(verifyActivated(toReference)))
             {
@@ -701,31 +703,6 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                     // place holder, just to ensure the completion happens in another thread
                 },
                 stage.getExecutionPool());
-    }
-
-    /**
-     * Checks if a method is annotated with OnlyIfActivated.
-     *
-     * @param method the method to check
-     * @return true if the method is annotated with OnlyIfActivated.
-     */
-    private boolean isOnlyIfActivated(final Method method)
-    {
-        if (method == null)
-        {
-            return false;
-        }
-        // benchmarks pointed out that calling method.isAnnotationPresent was expensive.
-        // so we cache that result locally
-        // Johno Crawford had suggested this optimization in the PR: https://github.com/electronicarts/orbit/pull/79/files
-        Boolean only = onlyIfActivate.get(method);
-        if (only != null)
-        {
-            return only;
-        }
-        boolean annotationPresent = method.isAnnotationPresent(OnlyIfActivated.class);
-        onlyIfActivate.putIfAbsent(method, annotationPresent);
-        return annotationPresent;
     }
 
     /**
