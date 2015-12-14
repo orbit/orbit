@@ -40,6 +40,7 @@ import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.injection.DependencyRegistry;
 import com.ea.orbit.reflect.ClassCache;
 import com.ea.orbit.reflect.FieldDescriptor;
+import com.ea.orbit.util.IOUtils;
 
 import org.yaml.snakeyaml.Yaml;
 
@@ -47,10 +48,9 @@ import javax.annotation.PostConstruct;
 import javax.inject.Singleton;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -442,11 +442,11 @@ public class Container
         return a.order - b.order;
     }
 
-    private void readConfig(final Set<String> activeProfiles, final InputStream in) throws UnsupportedEncodingException
+    private void readConfig(final Set<String> activeProfiles, final InputStream in) throws IOException
     {
-        final Reader reader = new InputStreamReader(in, "UTF-8");
+        String inputStreamString = IOUtils.toString(new InputStreamReader(in, "UTF-8"));
         Yaml yaml = new Yaml();
-        final Iterable<Object> iter = yaml.loadAll(reader);
+        final Iterable<Object> iter = yaml.loadAll(substituteVariables(inputStreamString));
         final Map<String, Object> newProperties = new LinkedHashMap<>();
         iter.forEach(item -> {
             final Map<String, Object> section = (Map<String, Object>) item;
@@ -458,6 +458,74 @@ public class Container
             }
         });
         setProperties(newProperties);
+    }
+
+    /**
+     * Variable substitution for the Orbit config file. <br>
+     * Usage:
+     * <ul>
+     * <li>orbit.http.port: ${http.port} -> name of the system property</li>
+     * <li>orbit.http.port: ${http.port:1337} -> name of the system property and a default value separated by a colon ':'</li>
+     * </ul>
+     */
+    private String substituteVariables(String input)
+    {
+        StringBuilder sb = new StringBuilder(input);
+        int endIndex = -1;
+        int startIndex = sb.indexOf("${");
+        while (startIndex > -1)
+        {
+            endIndex = sb.indexOf("}", startIndex);
+            if (endIndex == -1)
+            {
+                logger.warn(
+                        "Invalid config file. Could not find a closing curly bracket '}' for variable at line {}: '{}...'",
+                        sb.substring(0, startIndex).split("\n").length, 
+                        sb.substring(startIndex, Math.min(startIndex + 20, sb.length())));
+                break;
+            }
+
+            String propertyString = sb.substring(startIndex + 2, endIndex);
+            if (propertyString.indexOf('\n') > -1)
+            {
+                logger.warn(
+                        "Invalid config file. File contains multi-line variable, possibly missing curly bracket '}' at line {}: '{}...'",
+                        sb.substring(0, startIndex).split("\n").length, 
+                        sb.substring(startIndex, Math.min(startIndex + 20, sb.length())));
+                break;
+            }
+
+            String variableReplacement = getProperty(propertyString);
+            if (variableReplacement != null)
+            {
+                sb.replace(startIndex, endIndex + 1, variableReplacement);
+                endIndex = startIndex + variableReplacement.length();
+            } else
+            {
+                logger.warn("Could not find a value for property '{}'", propertyString);
+            }
+            startIndex = sb.indexOf("${", endIndex);
+        }
+        
+        return sb.toString();
+    }
+
+    private String getProperty(String propertyString)
+    {
+        int index = propertyString.indexOf(':');
+        if (index > -1)
+        {
+            String propertyName = propertyString.substring(0, index);
+            String defaultValue = propertyString.substring(index + 1);
+            if (defaultValue != null && !defaultValue.isEmpty())
+            {
+                defaultValue = defaultValue.trim();
+            }
+
+            return System.getProperty(propertyName, defaultValue);
+        }
+
+        return System.getProperty(propertyString);
     }
 
     public void stop()
