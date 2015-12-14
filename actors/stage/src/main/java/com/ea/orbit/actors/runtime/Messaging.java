@@ -168,16 +168,18 @@ public class Messaging extends HandlerAdapter implements Startable
                 case MessageDefinitions.ONE_WAY_MESSAGE:
                     // forwards the message to the next inbound handler
 
-                    final Class classById = DefaultClassDictionary.get().getClassById(message.getInterfaceId());
+                    int classId = message.getInterfaceId();
+                    final Class classById = DefaultClassDictionary.get().getClassById(classId);
                     final RemoteReference reference = (RemoteReference) DefaultDescriptorFactory.get().getReference(
                             runtime,
                             message.getReferenceAddress(),
                             classById, message.getObjectId());
 
                     // todo: defer the payload decoding, in the object thread, preferably
+                    int methodId = message.getMethodId();
                     final Invocation invocation = new Invocation(reference, null,
                             messageType == MessageDefinitions.ONE_WAY_MESSAGE,
-                            message.getMethodId(), (Object[]) message.getPayload(), null);
+                            methodId, (Object[]) message.getPayload(), null);
                     invocation.setHeaders(message.getHeaders());
                     invocation.setFromNode(message.getFromNode());
                     invocation.setMessageId(messageId);
@@ -185,7 +187,7 @@ public class Messaging extends HandlerAdapter implements Startable
                     if (!invocation.isOneWay())
                     {
                         Task<Object> completion = new Task<>();
-                        completion.whenComplete((r, e) -> sendResponseAndLogError(ctx, fromNode, messageId, r, e));
+                        completion.whenComplete((r, e) -> sendResponseAndLogError(ctx, fromNode, messageId,classId, methodId, r, e));
                         invocation.setCompletion(completion);
                     }
                     ctx.fireRead(invocation);
@@ -259,23 +261,25 @@ public class Messaging extends HandlerAdapter implements Startable
         }
     }
 
-    protected void sendResponseAndLogError(HandlerContext ctx, final NodeAddress from, int messageId, Object result, Throwable exception)
+    protected void sendResponseAndLogError(HandlerContext ctx, final NodeAddress from, int messageId, final int classId, final int methodId, Object result, Throwable exception)
     {
         if (exception == null)
         {
-            sendResponse(ctx, from, MessageDefinitions.RESPONSE_OK, messageId, result);
+            sendResponse(ctx, from, MessageDefinitions.RESPONSE_OK, messageId, classId, methodId, result);
         }
         else
         {
-            sendResponse(ctx, from, MessageDefinitions.RESPONSE_ERROR, messageId, exception);
+            sendResponse(ctx, from, MessageDefinitions.RESPONSE_ERROR, messageId, classId, methodId, exception);
         }
     }
 
-    private Task sendResponse(HandlerContext ctx, NodeAddress to, int messageType, int messageId, Object res)
+    private Task sendResponse(HandlerContext ctx, NodeAddress to, int messageType, int messageId, final int classId, final int methodId, Object res)
     {
         return ctx.write(new Message()
                 .withToNode(to)
                 .withMessageId(messageId)
+                .withInterfaceId(classId)
+                .withMethodId(methodId)
                 .withMessageType(messageType)
                 .withPayload(res));
     }
@@ -358,7 +362,6 @@ public class Messaging extends HandlerAdapter implements Startable
         final boolean oneWay = message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE;
         if (!oneWay)
         {
-
             pendingResponseMap.put(messageId, pendingResponse);
         }
         try
