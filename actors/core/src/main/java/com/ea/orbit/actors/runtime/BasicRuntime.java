@@ -151,4 +151,6 @@ public interface BasicRuntime extends DescriptorFactory
                 : (target != null) ? LoggerFactory.getLogger(target.getClass())
                 : LoggerFactory.getLogger("root");
     }
+
+    void bind();
 }
