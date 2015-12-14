@@ -47,6 +47,7 @@ import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.NotImplementedException;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -65,6 +66,7 @@ public abstract class Peer implements Startable, BasicRuntime
     private Handler network;
     private List<PeerExtension> extensions = new ArrayList<>();
     protected final String localIdentity = String.valueOf(IdUtils.sequentialLongId());
+    private final WeakReference<BasicRuntime> cachedRef = new WeakReference<>(this);
 
     public void setNetworkHandler(Handler network)
     {
@@ -167,5 +169,10 @@ public abstract class Peer implements Startable, BasicRuntime
     public void addExtension(PeerExtension extension)
     {
         this.extensions.add(extension);
+    }
+
+    public void bind()
+    {
+        BasicRuntime.setRuntime(cachedRef);
     }
 }
