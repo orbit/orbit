@@ -2,11 +2,11 @@ package com.ea.orbit.concurrent;
 
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -33,7 +33,9 @@ public class TaskContext
         Deque<TaskContext> stack = contextStacks.get();
         if (stack == null)
         {
-            stack = new ConcurrentLinkedDeque<>();
+            // Attention! Do not use a concurrent collection for the stack
+            // it has been measured that concurrent collections decrease the TaskContext's performance.
+            stack = new LinkedList<>();
             contextStacks.set(stack);
             final Thread currentThread = Thread.currentThread();
             synchronized (contextStacksMap)
@@ -101,7 +103,9 @@ public class TaskContext
             // this should not be called very often, it's for profiling
             stack = contextStacksMap.get(thread);
         }
-        return (stack != null) ? stack.peekLast() : null;
+        // beware: this is peeking in a non synchronized LinkedList
+        // just peeking is safe enough for profiling.
+        return (stack != null) ? stack.peek() : null;
     }
 
     /**
