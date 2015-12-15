@@ -96,6 +96,7 @@ public class MessageLoopback extends NamedPipelineExtension
                     }
                     final Object originalPayload = message.getPayload();
                     final Object clonedPayload;
+                    runtime.bind();
                     try
                     {
                         clonedPayload = cloner.clone(originalPayload);
