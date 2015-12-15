@@ -29,20 +29,50 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.ea.orbit.actors.test;
 
 import com.ea.orbit.actors.Actor;
+import com.ea.orbit.actors.Remindable;
 import com.ea.orbit.actors.Stage;
 import com.ea.orbit.actors.extensions.ActorExtension;
+import com.ea.orbit.actors.extensions.StorageExtension;
+import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.TickStatus;
+import com.ea.orbit.concurrent.Task;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import java.util.concurrent.TimeUnit;
 
-public abstract class StorageBaseTest
+import static org.junit.Assert.assertEquals;
+
+public abstract class StorageBaseTest extends ActorBaseTest
 {
 
-    private String clusterName = "cluster." + Math.random();
+    public interface Timed extends Actor, Remindable
+    {
+        Task<Void> startReminder();
+    }
+
+    public static class TimedActor extends AbstractActor implements Timed
+    {
+        @javax.inject.Inject
+        FakeSync sync;
+
+        @Override
+        public Task<Void> startReminder()
+        {
+            registerReminder("hey", 1, 1, TimeUnit.SECONDS);
+            return Task.done();
+        }
+
+        @Override
+        public Task<?> receiveReminder(final String reminderName, final TickStatus status)
+        {
+            unregisterReminder("hey");
+            sync.semaphore("reminderReceived").release(1);
+            return Task.done();
+        }
+    }
 
     @Test
     public void checkWritesTest() throws Exception
@@ -120,38 +150,22 @@ public abstract class StorageBaseTest
         assertEquals(readState("300").lastName(), "Peem Peem");
     }
 
-    @Test
+    @Test(timeout = 30_000L)
     public void checkReminderTest() throws Exception
     {
-        Stage stage = createStage();
+        createStage();
         assertEquals(0, count());
-        ReminderTest actor = Actor.getReference(ReminderTest.class, "999");
+        Timed actor = Actor.getReference(Timed.class, "999");
         actor.startReminder().join();
-        int count = 0;
-        while (ReminderTestActor.waiting)
-        {
-            Thread.sleep(100);
-            count++;
-            if (count > 15)
-            {
-                fail("timeout");
-            }
-        }
-        if (count < 10)
-        {
-            fail("too early");
-        }
+        // check if the reminder is called
+        fakeSync.semaphore("reminderReceived").tryAcquire(1, 10, TimeUnit.SECONDS);
     }
 
-    public Stage createStage() throws Exception
+    @Override
+    protected void installExtensions(final Stage stage)
     {
-        Stage stage = new Stage();
+        stage.getExtensions().removeAll(stage.getAllExtensions(StorageExtension.class));
         stage.addExtension(getStorageExtension());
-        stage.setClusterName(clusterName);
-        stage.setClusterPeer(new FakeClusterPeer());
-        stage.start().get();
-        stage.bind();
-        return stage;
     }
 
     @Before
@@ -161,8 +175,10 @@ public abstract class StorageBaseTest
     }
 
     @After
-    public void cleanup() throws Exception
+    @Override
+    public void after()
     {
+        super.after();
         closeStorage();
     }
 
