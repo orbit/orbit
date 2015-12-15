@@ -46,9 +46,6 @@ import com.ea.orbit.util.AnnotationCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-
 import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -63,7 +60,6 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.ea.orbit.async.Await.await;
@@ -78,13 +74,13 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private volatile List<NodeInfo> serverNodes = new ArrayList<>(0);
     private final Object serverNodesUpdateMutex = new Object();
     private Stage stage;
-    private Cache<RemoteReference<?>, NodeAddress> localAddressCache = CacheBuilder.newBuilder()
-            .maximumSize(10_000)
-            .expireAfterWrite(5, TimeUnit.MINUTES)
-            .build();
+
+    // according to the micro benchmarks, a guava cache is much slower than using a ConcurrentHashMap here.
+    private Map<RemoteReference<?>, NodeAddress> localAddressCache = new ConcurrentHashMap<>();
 
     // don't use RemoteReferences, better to restrict keys to a small set of classes.
     private volatile ConcurrentMap<RemoteKey, NodeAddress> distributedDirectory;
+
     @Config("orbit.actors.timeToWaitForServersMillis")
     private long timeToWaitForServersMillis = 30000;
     private Random random = new Random();
@@ -93,6 +89,9 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private AnnotationCache<OnlyIfActivated> onlyIfActivateCache = new AnnotationCache<>(OnlyIfActivated.class);
 
     private CompletableFuture<Void> hostingActive = new Task<>();
+
+    @Config("orbit.actors.maxLocalAddressCacheCount")
+    private int maxLocalAddressCacheCount = 10_000;
 
     public Hosting()
     {
@@ -190,7 +189,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     public Task<Void> moved(RemoteReference remoteReference, NodeAddress oldAddress, NodeAddress newAddress)
     {
-        localAddressCache.put(remoteReference, newAddress);
+        setCachedAddress(remoteReference, newAddress);
         return Task.done();
     }
 
@@ -276,7 +275,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     private Task<NodeAddress> locateActiveActor(final RemoteReference<?> actorReference)
     {
-        NodeAddress address = localAddressCache.getIfPresent(actorReference);
+        NodeAddress address = getCachedAddress(actorReference);
         if (address != null && activeNodes.containsKey(address))
         {
             return Task.fromValue(address);
@@ -286,10 +285,15 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         return Task.fromValue(getDistributedDirectory().get(createRemoteKey(actorReference)));
     }
 
+    private NodeAddress getCachedAddress(final RemoteReference<?> actorReference)
+    {
+        return localAddressCache.get(actorReference);
+    }
+
     public void actorDeactivated(RemoteReference remoteReference)
     {
         // removing the reference form the cluster directory
-        localAddressCache.invalidate(remoteReference);
+        localAddressCache.remove(remoteReference);
         getDistributedDirectory().remove(createRemoteKey(remoteReference), clusterPeer.localAddress());
     }
 
@@ -315,7 +319,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         }
 
         // Get the existing activation from the local cache (if any)
-        NodeAddress address = localAddressCache.getIfPresent(actorReference);
+        NodeAddress address = getCachedAddress(actorReference);
 
         // Is this actor already activated and in the local cache? If so, we're done
         if (address != null && activeNodes.containsKey(address))
@@ -339,7 +343,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 if (activeNodes.containsKey(nodeAddress))
                 {
                     // Cache locally
-                    localAddressCache.put(actorReference, nodeAddress);
+                    setCachedAddress(actorReference, nodeAddress);
                     return nodeAddress;
                 }
                 else
@@ -373,7 +377,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             }
 
             // Add to local cache
-            localAddressCache.put(actorReference, nodeAddress);
+            setCachedAddress(actorReference, nodeAddress);
 
             return nodeAddress;
 
@@ -381,6 +385,12 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
         return Task.from(async);
 
+    }
+
+    private void setCachedAddress(final RemoteReference<?> actorReference, final NodeAddress nodeAddress)
+    {
+        cleanup();
+        localAddressCache.put(actorReference, nodeAddress);
     }
 
     private ConcurrentMap<RemoteKey, NodeAddress> getDistributedDirectory()
@@ -504,8 +514,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     {
         try
         {
-            MessageDigest md = null;
-            md = MessageDigest.getInstance("SHA-256");
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(key.getBytes("UTF-8"));
             byte[] digest = md.digest();
             return String.format("%064x", new java.math.BigInteger(1, digest));
@@ -583,7 +592,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             ctx.fireRead(invocation);
             return;
         }
-        final NodeAddress cachedAddress = localAddressCache.getIfPresent(toReference);
+        final NodeAddress cachedAddress = getCachedAddress(toReference);
         if (Objects.equals(cachedAddress, localAddress))
         {
             ctx.fireRead(invocation);
@@ -714,5 +723,27 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         return Task.fromValue(actorAddress != null);
     }
 
+    public void cleanup()
+    {
+        if (localAddressCache.size() > maxLocalAddressCacheCount)
+        {
+            // randomly removes local references
+            List<RemoteReference<?>> remoteReferences = new ArrayList<>(localAddressCache.keySet());
+            Collections.shuffle(remoteReferences);
+            for (int c = remoteReferences.size() - maxLocalAddressCacheCount / 2; --c >= 0; )
+            {
+                localAddressCache.remove(remoteReferences.get(c));
+            }
+        }
+    }
 
+    public int getMaxLocalAddressCacheCount()
+    {
+        return maxLocalAddressCacheCount;
+    }
+
+    public void setMaxLocalAddressCacheCount(final int maxLocalAddressCacheCount)
+    {
+        this.maxLocalAddressCacheCount = maxLocalAddressCacheCount;
+    }
 }
