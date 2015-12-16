@@ -30,8 +30,8 @@ package com.ea.orbit.actors.extensions.dynamodb;
 
 import com.ea.orbit.actors.extensions.StorageExtension;
 import com.ea.orbit.actors.extensions.json.ActorReferenceModule;
-import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
+import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.util.ExceptionUtils;
@@ -75,7 +75,7 @@ public class DynamoDBStorageExtension implements StorageExtension
     private ObjectMapper mapper;
     private String name = "default";
 
-    private String endpoint = "http://localhost:8000";
+    private String endpoint = "http://localhost:8000/";
     private AmazonCredentialType credentialType = AmazonCredentialType.DEFAULT_PROVIDER_CHAIN;
     private String accessKey;
     private String secretKey;
