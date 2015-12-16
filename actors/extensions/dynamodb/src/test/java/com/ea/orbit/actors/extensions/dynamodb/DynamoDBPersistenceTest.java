@@ -88,7 +88,7 @@ public class DynamoDBPersistenceTest extends StorageBaseTest
                 .withCreatorVisibility(JsonAutoDetect.Visibility.NONE));
 
         dynamoClient = new AmazonDynamoDBClient(new BasicAWSCredentials("dummy", "dummy"));
-        dynamoClient.setEndpoint("http://localhost:8000");
+        dynamoClient.setEndpoint("http://localhost:8000/");
         dynamoDB = new DynamoDB(dynamoClient);
 
         closeStorage();
