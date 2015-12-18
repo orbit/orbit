@@ -34,6 +34,7 @@ import com.ea.orbit.actors.annotation.PreferLocalPlacement;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.exceptions.ObserverNotFound;
 import com.ea.orbit.actors.extensions.PipelineExtension;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.annotation.Config;
@@ -705,6 +706,10 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                     && (address = RemoteReference.getAddress((RemoteReference) toReference)) != null)
             {
                 invocation.withToNode(address);
+                if (!activeNodes.containsKey(address))
+                {
+                    return Task.fromException(new ObserverNotFound("Node no longer active"));
+                }
                 task = ctx.write(invocation);
             }
             else

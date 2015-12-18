@@ -29,56 +29,24 @@
 package com.ea.orbit.actors.test;
 
 
-import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.Stage;
-import com.ea.orbit.actors.runtime.AbstractActor;
+import com.ea.orbit.actors.runtime.cloner.KryoCloner;
 import com.ea.orbit.concurrent.Task;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import static com.ea.orbit.async.Await.await;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @SuppressWarnings("unused")
 public class ObserverDownTest extends ActorBaseTest
 {
     String clusterName = "cluster." + Math.random() + "." + getClass().getSimpleName();
 
-    public interface Hello extends Actor
-    {
-        Task<Void> setObserver(SomeObserver observer);
-
-        Task<String> sayHello(String greeting);
-    }
-
-    public static class HelloActor extends AbstractActor implements Hello
-    {
-        SomeObserver observer;
-
-        @Override
-        public Task<Void> setObserver(final SomeObserver observer)
-        {
-            this.observer = observer;
-            return Task.done();
-        }
-
-        @Override
-        public Task<String> sayHello(final String greeting)
-        {
-            if (observer != null)
-            {
-                await(observer.receiveMessage(greeting));
-            }
-            return Task.fromValue(greeting);
-        }
-    }
 
     public interface SomeObserver extends ActorObserver
     {
@@ -87,33 +55,34 @@ public class ObserverDownTest extends ActorBaseTest
 
     public static class SomeObserverImpl implements SomeObserver
     {
-        BlockingQueue<String> messagesReceived = new LinkedBlockingQueue<>();
-
         public Task<Void> receiveMessage(final String message)
         {
-            messagesReceived.add(message);
             return Task.done();
         }
     }
 
     @Test
-    @Ignore
-    public void deadNodeTest() throws ExecutionException, InterruptedException
+    public void deadNodeTest() throws ExecutionException, InterruptedException, TimeoutException
     {
         Stage stage1 = createStage();
-        Hello hello = Actor.getReference(Hello.class, "0");
-        hello.sayHello("hi 1");
-        SomeObserverImpl observer1 = new SomeObserverImpl();
         Stage stage2 = createStage();
-        SomeObserver observerRef = stage2.registerObserver(SomeObserver.class, observer1);
-        hello.setObserver(observerRef).join();
-        hello.sayHello("hi 2");
-        assertEquals("hi 2", observer1.messagesReceived.poll(10, TimeUnit.SECONDS));
-        stage2.stop().join();
-        stage1.bind();
-        Throwable bu = expectException(() -> hello.sayHello("bu").join());
-        System.out.println(bu);
-        bu.printStackTrace();
+
+        SomeObserverImpl observer1 = new SomeObserverImpl();
+        final KryoCloner cloner = new KryoCloner();
+        SomeObserver observerRef = cloner.clone(stage1.registerObserver(SomeObserver.class, observer1));
+
+        // should respond immediately
+        stage2.bind();
+        observerRef.receiveMessage("bla").get(10, TimeUnit.SECONDS);
+
+        // shutdown the stage.
+        stage1.stop().join();
+
+
+        // should fail immediately instead of timing out
+        stage2.bind();
+        final Throwable exception = observerRef.receiveMessage("bla").handle((r, e) -> e).get(10, TimeUnit.SECONDS);
+        assertNotNull(exception);
     }
 
 
