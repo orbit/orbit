@@ -31,6 +31,7 @@ package com.ea.orbit.actors.runtime.cloner;
 import com.ea.orbit.actors.ActorObserver;
 import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorRuntime;
+import com.ea.orbit.actors.runtime.DefaultDescriptorFactory;
 import com.ea.orbit.actors.runtime.RemoteReference;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -109,7 +110,24 @@ public class KryoCloner implements ExecutionObjectCloner
                     }
                 });
 
-                kryo.addDefaultSerializer(RemoteReference.class, new DefaultSerializers.VoidSerializer());
+                kryo.addDefaultSerializer(RemoteReference.class, new DefaultSerializers.VoidSerializer()
+                {
+                    @Override
+                    public Object copy(final Kryo kryo, final Object original)
+                    {
+                        if (original instanceof RemoteReference)
+                        {
+                            final RemoteReference<?> remoteReference = (RemoteReference<?>) original;
+                            if (RemoteReference.getRuntime(remoteReference) != null)
+                            {
+                                return DefaultDescriptorFactory.get().getReference(null, RemoteReference.getAddress(remoteReference),
+                                        RemoteReference.getInterfaceClass(remoteReference),
+                                        RemoteReference.getId(remoteReference));
+                            }
+                        }
+                        return original;
+                    }
+                });
                 kryo.addDefaultSerializer(AbstractActor.class, new DefaultSerializers.VoidSerializer()
                 {
                     @Override
@@ -121,6 +139,14 @@ public class KryoCloner implements ExecutionObjectCloner
                         }
                         if (original instanceof RemoteReference)
                         {
+
+                            final RemoteReference<?> remoteReference = (RemoteReference<?>) original;
+                            if (RemoteReference.getRuntime(remoteReference) != null)
+                            {
+                                return DefaultDescriptorFactory.get().getReference(null, RemoteReference.getAddress(remoteReference),
+                                        RemoteReference.getInterfaceClass(remoteReference),
+                                        RemoteReference.getId(remoteReference));
+                            }
                             return original;
                         }
                         if (original == null)
@@ -137,6 +163,13 @@ public class KryoCloner implements ExecutionObjectCloner
                     {
                         if (original instanceof RemoteReference)
                         {
+                            final RemoteReference<?> remoteReference = (RemoteReference<?>) original;
+                            if (RemoteReference.getRuntime(remoteReference) != null)
+                            {
+                                return DefaultDescriptorFactory.get().getReference(null, RemoteReference.getAddress(remoteReference),
+                                        RemoteReference.getInterfaceClass(remoteReference),
+                                        RemoteReference.getId(remoteReference));
+                            }
                             return original;
                         }
                         return ActorRuntime.getRuntime().registerObserver(null, (ActorObserver) original);
