@@ -35,7 +35,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
     <parent>
         <groupId>com.ea.orbit</groupId>
         <artifactId>orbit-actors-parent</artifactId>
-        <version>0.6.2</version>
+        <version>0.6.3-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
