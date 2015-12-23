@@ -261,6 +261,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     <artifactId>maven-scala-plugin</artifactId>
                     <version>2.15.2</version>
                 </plugin>
+                
+                <plugin>
+                    <groupId>com.ea.async</groupId>
+                     <artifactId>ea-async-maven-plugin</artifactId>
+                    <version>0.9.0</version>
+                </plugin>
 
             </plugins>
         </pluginManagement>
