@@ -42,7 +42,7 @@ import javax.inject.Inject;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 import static org.junit.Assert.assertEquals;
 
 public class StatelessStateTest extends ActorBaseTest

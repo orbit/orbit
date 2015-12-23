@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 
 public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
 {

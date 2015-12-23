@@ -10,7 +10,7 @@ import com.ea.orbit.concurrent.Task;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 
 public class ClientStreamProxy
 {

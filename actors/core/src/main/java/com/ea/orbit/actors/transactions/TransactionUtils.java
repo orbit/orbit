@@ -9,7 +9,7 @@ import com.ea.orbit.concurrent.TaskContext;
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 
 public class TransactionUtils
 {

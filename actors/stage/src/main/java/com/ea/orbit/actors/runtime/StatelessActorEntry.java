@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 
 public class StatelessActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
 {

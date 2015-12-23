@@ -82,7 +82,6 @@ import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.actors.transactions.TransactionUtils;
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Wired;
-import com.ea.orbit.async.Await;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.container.Container;
@@ -90,6 +89,8 @@ import com.ea.orbit.container.Startable;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.metrics.annotations.ExportMetric;
 import com.ea.orbit.util.StringUtils;
+
+import com.ea.async.Async;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,7 +121,7 @@ import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 
 @Singleton
 public class Stage implements Startable, ActorRuntime
@@ -207,7 +208,7 @@ public class Stage implements Startable, ActorRuntime
     {
         // this is here to help people testing the orbit source code.
         // because Await.init is removed by the build time bytecode instrumentation.
-        Await.init();
+        Async.init();
     }
 
     public static class Builder

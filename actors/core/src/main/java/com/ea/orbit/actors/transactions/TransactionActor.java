@@ -35,7 +35,7 @@ import com.ea.orbit.concurrent.Task;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 
 /**
  * Represents a transaction

@@ -40,7 +40,7 @@ import org.junit.Test;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 import static org.jgroups.util.Util.assertEquals;
 
 @SuppressWarnings("unused")

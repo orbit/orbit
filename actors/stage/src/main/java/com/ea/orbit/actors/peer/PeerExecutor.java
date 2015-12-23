@@ -41,7 +41,7 @@ import com.ea.orbit.concurrent.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 
 public class PeerExecutor extends HandlerAdapter
 {

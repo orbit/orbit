@@ -14,7 +14,7 @@ import org.junit.Test;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.TimeUnit;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 import static org.junit.Assert.assertEquals;
 
 public class StreamReferenceTest extends ActorBaseTest

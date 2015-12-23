@@ -44,7 +44,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 import static com.ea.orbit.actors.transactions.TransactionUtils.transaction;
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 import static org.junit.Assert.*;
 
 /**

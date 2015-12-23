@@ -54,7 +54,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 import static org.junit.Assert.*;
 
 @SuppressWarnings("unused")

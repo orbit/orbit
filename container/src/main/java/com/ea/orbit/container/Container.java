@@ -30,7 +30,7 @@ package com.ea.orbit.container;
 
 import com.ea.orbit.annotation.Config;
 import com.ea.orbit.annotation.Order;
-import com.ea.orbit.async.Await;
+import com.ea.async.Async;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.configuration.ContainerConfig;
 import com.ea.orbit.configuration.ContainerConfigImpl;
@@ -84,7 +84,7 @@ public class Container
     {
         // this is here to help people testing the orbit source code.
         // because Await.init is removed by the build time bytecode instrumentation.
-        Await.init();
+        Async.init();
     }
 
     private final DependencyRegistry registry = new DependencyRegistry()

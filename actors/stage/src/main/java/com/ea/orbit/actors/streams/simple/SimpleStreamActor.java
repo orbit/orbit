@@ -9,7 +9,7 @@ import com.ea.orbit.concurrent.Task;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 
 public class SimpleStreamActor extends AbstractActor<SimpleStreamActor.State> implements SimpleStream
 {

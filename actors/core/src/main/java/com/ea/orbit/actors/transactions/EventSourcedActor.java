@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 
 public class EventSourcedActor<T extends TransactionalState> extends AbstractActor<T> implements Transactional, Actor
 {

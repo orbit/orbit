@@ -6,7 +6,7 @@ import com.ea.orbit.concurrent.Task;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 /**
  * Created by jefft on 11/18/2015.
  */

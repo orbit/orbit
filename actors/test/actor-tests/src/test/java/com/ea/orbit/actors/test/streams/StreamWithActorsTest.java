@@ -14,7 +14,7 @@ import org.junit.Test;
 
 import javax.inject.Inject;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 import static org.junit.Assert.*;
 
 public class StreamWithActorsTest extends ActorBaseTest

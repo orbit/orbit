@@ -43,7 +43,7 @@ import com.ea.orbit.container.Startable;
 
 import org.slf4j.Logger;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 
 /**
  * This works as a bridge to perform calls between the server and a client.

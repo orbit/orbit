@@ -28,7 +28,7 @@
 
 package com.ea.orbit.rest.async;
 
-import com.ea.orbit.instrumentation.ClassPathUtils;
+import com.ea.agentloader.ClassPathUtils;
 
 import org.junit.Test;
 import org.objectweb.asm.ClassReader;

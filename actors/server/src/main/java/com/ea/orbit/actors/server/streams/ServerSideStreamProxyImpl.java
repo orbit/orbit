@@ -18,7 +18,7 @@ import com.ea.orbit.container.Startable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.ea.orbit.async.Await.await;
+import static com.ea.async.Async.await;
 
 public class ServerSideStreamProxyImpl implements ServerSideStreamProxy, Startable
 {

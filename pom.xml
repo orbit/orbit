@@ -32,7 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.ea.orbit</groupId>
     <artifactId>orbit-parent</artifactId>
-    <version>0.6.3-SNAPSHOT</version>
+    <version>0.7.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Orbit Parent</name>
     <description>Orbit is a JVM framework that makes it easier to build distributed and scalable online services.
@@ -54,18 +54,25 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>actors</module>
         <module>commons</module>
         <module>container</module>
-        <module>async</module>
-        <module>async/maven-plugin</module>
         <module>web</module>
         <module>samples</module>
         <module>packaging/all-docs</module>
-        <module>utils/agent-loader</module>
         <module>utils/metrics</module>
         <module>utils/rest-client</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.ea.async</groupId>
+                <artifactId>ea-async</artifactId>
+                <version>0.9.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ea.agentloader</groupId>
+                <artifactId>ea-agent-loader</artifactId>
+                <version>0.9.0</version>
+            </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
