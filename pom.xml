@@ -48,8 +48,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <jackson.version>2.6.3</jackson.version>
         <jersey.version>2.22.1</jersey.version>
         <jetty.version>9.3.6.v20151106</jetty.version>
-        <ea.async.version>0.9.1</ea.async.version>
-        <ea.agentloader.version>0.9.0</ea.agentloader.version>
+        <ea.async.version>1.0.0</ea.async.version>
+        <ea.agentloader.version>1.0.0</ea.agentloader.version>
     </properties>
 
     <modules>
