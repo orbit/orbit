@@ -33,15 +33,13 @@ import com.ea.orbit.actors.Addressable;
 import com.ea.orbit.actors.extensions.MessageSerializer;
 import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
+import com.ea.orbit.actors.runtime.cloner.CloneHelper;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.annotation.CacheResponse;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.tuples.Pair;
 import com.ea.orbit.util.AnnotationCache;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
@@ -60,7 +58,6 @@ public class ResponseCaching
         extends HandlerAdapter
         implements ExecutionCacheFlushObserver
 {
-    private static final Logger logger = LoggerFactory.getLogger(ExecutionCacheFlushObserver.class);
     private static Ticker defaultCacheTicker = null;
     private MessageSerializer messageSerializer;
     private BasicRuntime runtime;
@@ -198,7 +195,12 @@ public class ResponseCaching
             put(method, key, cached);
         }
 
-        return cached.thenApply(objectCloner::clone);
+        return cached.thenApply((object) -> {
+            if (!CloneHelper.needsCloning(object)) {
+                return object;
+            }
+            return objectCloner.clone(object);
+        });
     }
 
     private String generateParameterHash(Object[] params)

@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2015 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -28,19 +28,53 @@
 
 package com.ea.orbit.actors.runtime.cloner;
 
+import com.ea.orbit.actors.annotation.Immutable;
+import com.ea.orbit.actors.runtime.Message;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 /**
- * No-op execution object cloner, developer is responsible for caching immutable objects.
- *
- * @deprecated see {@link com.ea.orbit.actors.annotation.Immutable}.
- *
  * @author Johno Crawford (johno@sulake.com)
  */
-@Deprecated
-public class NoOpCloner implements ExecutionObjectCloner
+public class CloneHelperTest
 {
 
-    @Override
-    public <T> T clone(T object) {
-        return object;
+    @Test
+    public void testImmutableClasses() throws Exception
+    {
+        assertFalse(CloneHelper.needsCloning("string"));
+        assertFalse(CloneHelper.needsCloning(1337L));
+        assertFalse(CloneHelper.needsCloning(new ImmutableClass("huuhaa")));
+    }
+
+    @Test
+    public void testMutableClasses() throws Exception
+    {
+        assertTrue(CloneHelper.needsCloning(new MutableClass()));
+    }
+
+    @Test
+    public void testMessageWithObjectArrayPayload() throws Exception
+    {
+        assertFalse(CloneHelper.needsCloning(new Message().withPayload(new Object[]{1337L, "string"})));
+        assertTrue(CloneHelper.needsCloning(new Message().withPayload(new Object[]{new ImmutableClass("huuhaa"), new MutableClass()})));
+        assertFalse(CloneHelper.needsCloning(new Message().withPayload(new Object[]{new ImmutableClass("huuhaa"), new ImmutableClass("huuhaa")})));
+    }
+
+    @Immutable
+    private class ImmutableClass {
+        private final String id;
+
+        public ImmutableClass(final String id)
+        {
+            this.id = id;
+        }
+    }
+
+    private class MutableClass {
+        private String id;
     }
 }
