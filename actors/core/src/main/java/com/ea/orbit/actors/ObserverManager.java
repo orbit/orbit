@@ -102,7 +102,6 @@ public class ObserverManager<T extends ActorObserver> implements Serializable
      * It's not recommended to wait on this task since it might take a while to finish the
      * cleanup process and ObserverManager is thread safe.
      */
-    @SuppressWarnings("unchecked")
     public Task<?> cleanup() {
         // TODO: replace ping for a single batch call for each node containing observers from this list.
         // TODO: add a observer validation function to the runtime. ActorRuntime
