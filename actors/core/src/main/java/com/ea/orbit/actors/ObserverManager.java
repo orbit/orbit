@@ -28,6 +28,8 @@
 
 package com.ea.orbit.actors;
 
+import com.ea.orbit.actors.cluster.NodeAddress;
+import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.concurrent.ConcurrentHashSet;
 import com.ea.orbit.concurrent.Task;
@@ -37,6 +39,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+
+import static com.ea.async.Async.await;
 
 /**
  * ObserverManager is an optional thread safe collection that can be used by actors which need to call observers.
@@ -98,22 +102,33 @@ public class ObserverManager<T extends ActorObserver> implements Serializable
      * It's not recommended to wait on this task since it might take a while to finish the
      * cleanup process and ObserverManager is thread safe.
      */
-    public Task<?> cleanup()
-    {
+    @SuppressWarnings("unchecked")
+    public Task<?> cleanup() {
         // TODO: replace ping for a single batch call for each node containing observers from this list.
         // TODO: add a observer validation function to the runtime. ActorRuntime
-        final Stream<Task<?>> stream = observers.stream()
-                .map(o ->
-                        ((Task<?>) (o).ping()).whenComplete((final Object pr, final Throwable pe) ->
-                        {
-                            if (pe != null)
+        Stream stream = this.observers.stream()
+                .map(observer ->
+                        (observer.ping()).handle((Object result, Throwable ex) -> {
+                            if (ex != null)
                             {
-                                // beware: this might run in parallel with other calls the actor.
-                                // this shouldn't be a problem.
-                                observers.remove(o);
-                            }
-                        }));
+                                return checkAlive(observer).thenAccept(alive -> {
+                                    if (!alive)
+                                    {
+                                        // beware: this might run in parallel with other calls the actor.
+                                        // this shouldn't be a problem.
+                                        observers.remove(observer);
+                                    }
+                                });
+            }
+            return null;
+        }));
         return Task.allOf(stream);
+    }
+
+    private Task<Boolean> checkAlive(final ActorObserver observer)
+    {
+        final NodeAddress nodeAddress = await(ActorRuntime.getRuntime().locateActor((Addressable) observer, false));
+        return nodeAddress == null ? Task.fromValue(Boolean.FALSE) : Task.fromValue(Boolean.TRUE);
     }
 
     /**
@@ -129,22 +144,26 @@ public class ObserverManager<T extends ActorObserver> implements Serializable
      */
     public void notifyObservers(final Consumer<T> callable)
     {
-        final List<T> fail = new ArrayList<>(0);
-        observers.forEach(o -> {
+        List<T> fail = null;
+        for (T observer : observers)
+        {
             try
             {
-                callable.accept(o);
+                callable.accept(observer);
             }
             catch (final Exception ex)
             {
-                fail.add(o);
+                if (fail == null) {
+                    fail = new ArrayList<>();
+                }
+                fail.add(observer);
                 if (logger.isDebugEnabled())
                 {
                     logger.debug("Removing observer due to exception", ex);
                 }
             }
-        });
-        if (fail.size() > 0)
+        }
+        if (fail != null && fail.size() > 0)
         {
             observers.removeAll(fail);
         }
