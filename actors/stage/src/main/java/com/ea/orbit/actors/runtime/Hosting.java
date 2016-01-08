@@ -622,6 +622,11 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         {
             logger.debug("Choosing a new node for the invocation");
         }
+
+        // over here the actor address is not the localAddress.
+        // since we received this message someone thinks that this node is the right one.
+        // so we remove that entry from the local cache and query the global cache again
+        localAddressCache.remove(toReference);
         locateActor(invocation.getToReference(), true)
                 .whenComplete((r, e) -> {
                     if (e != null)
