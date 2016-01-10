@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2015 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -26,21 +26,20 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.runtime.cloner;
+package com.ea.orbit.actors.annotation;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * No-op execution object cloner, developer is responsible for caching immutable objects.
- *
- * @deprecated see {@link com.ea.orbit.actors.annotation.Immutable}.
+ * Defines whether an object is considered immutable and can be excluded from being cloned.
  *
  * @author Johno Crawford (johno@sulake.com)
  */
-@Deprecated
-public class NoOpCloner implements ExecutionObjectCloner
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface Immutable
 {
-
-    @Override
-    public <T> T clone(T object) {
-        return object;
-    }
 }

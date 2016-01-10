@@ -68,7 +68,6 @@ public class CacheResponseCloneTest extends ActorBaseTest
         return Arrays.asList(
                new KryoCloner(),
                new JavaSerializationCloner()
-               //new NoOpCloner()
         );
     }
 
