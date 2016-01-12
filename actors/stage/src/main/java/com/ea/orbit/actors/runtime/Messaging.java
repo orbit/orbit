@@ -40,6 +40,10 @@ import com.ea.orbit.exception.UncheckedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Timer;
@@ -245,8 +249,19 @@ public class Messaging extends HandlerAdapter implements Startable
                     else
                     {
                         // missing counterpart
-                        logger.warn("Missing counterpart (pending message) for message with id: {} and type: {}.",
-                                messageId, messageType);
+                        logger.warn("Received response for pending request which timed out (took > " + responseTimeoutMillis + "ms) message id: {}, type: {} for {}.", messageId, messageType, getInvokedClassAndMethodName(message));
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Headers for message #" + messageId + " " + message.getHeaders());
+                        }
+                        if (logger.isTraceEnabled()) {
+                            try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                                 ObjectOutput out = new ObjectOutputStream(bos))
+                            {
+                                out.writeObject(message.getPayload());
+                                byte[] raw = bos.toByteArray();
+                                logger.trace("Payload for message #" + messageId + InternalUtils.hexDump(32, raw, 0, raw.length));
+                            }
+                        }
                     }
                     break;
                 }
@@ -257,8 +272,21 @@ public class Messaging extends HandlerAdapter implements Startable
         }
         catch (Exception ex)
         {
-            logger.error("Error processing   message. ", ex);
+            logger.error("Error processing message. ", ex);
         }
+    }
+
+    private String getInvokedClassAndMethodName(Message message) {
+        if (message.getInterfaceId() != 0)
+        {
+            final Class clazz = DefaultClassDictionary.get().getClassById(message.getInterfaceId());
+            if (clazz != null)
+            {
+                final Method method = DefaultDescriptorFactory.get().getInvoker(clazz).getMethod(message.getMethodId());
+                return clazz.getSimpleName() + "." + method.getName();
+            }
+        }
+        return null;
     }
 
     protected void sendResponseAndLogError(HandlerContext ctx, final NodeAddress from, int messageId, final int classId, final int methodId, Object result, Throwable exception)
@@ -304,9 +332,10 @@ public class Messaging extends HandlerAdapter implements Startable
         RemoteReference<?> actorReference = (RemoteReference<?>) toReference;
         NodeAddress toNode = invocation.getToNode();
 
-        final LinkedHashMap<Object, Object> actualHeaders = new LinkedHashMap<>();
+        LinkedHashMap<Object, Object> actualHeaders = null;
         if (invocation.getHeaders() != null)
         {
+            actualHeaders = new LinkedHashMap<>();
             actualHeaders.putAll(invocation.getHeaders());
         }
 
