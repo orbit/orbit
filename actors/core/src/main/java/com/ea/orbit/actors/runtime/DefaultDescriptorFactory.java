@@ -134,7 +134,7 @@ public class DefaultDescriptorFactory implements DescriptorFactory
 
     private Class findClassById(final int interfaceId)
     {
-        return null;
+        return DefaultClassDictionary.get().getClassById(interfaceId);
     }
 
     @Override
@@ -215,6 +215,7 @@ public class DefaultDescriptorFactory implements DescriptorFactory
         return factory;
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends Actor> T ref(int interfaceId, String id)
     {
         final Class classById = instance.findClassById(interfaceId);
