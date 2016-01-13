@@ -212,7 +212,14 @@ public class DynamoDBStorageExtension implements StorageExtension
                                                 new AttributeDefinition("_id", ScalarAttributeType.S)),
                                         new ProvisionedThroughput(10L, 10L));
 
-
+                                try
+                                {
+                                    newTable.waitForActive();
+                                }
+                                catch(Exception ex)
+                                {
+                                    throw new UncheckedException(ex);
+                                }
 
                                 tableHashMap.putIfAbsent(tableName, newTable);
                                 return newTable;
