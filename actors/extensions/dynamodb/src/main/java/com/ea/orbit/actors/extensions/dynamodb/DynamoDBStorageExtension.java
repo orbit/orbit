@@ -81,7 +81,6 @@ public class DynamoDBStorageExtension implements StorageExtension
     private String secretKey;
     private String sessionToken;
     private boolean shouldCreateTables = true;
-    private String dbPrefix = "orbit";
 
 
     public DynamoDBStorageExtension()
@@ -190,10 +189,8 @@ public class DynamoDBStorageExtension implements StorageExtension
         }
     }
 
-    private Task<Table> getOrCreateTable(final String inputName)
+    private Task<Table> getOrCreateTable(final String tableName)
     {
-        final String tableName = getDbPrefix() + "_" + inputName.toLowerCase();
-
         final Table table = tableHashMap.get(tableName);
         if (table != null)
         {
@@ -215,14 +212,7 @@ public class DynamoDBStorageExtension implements StorageExtension
                                                 new AttributeDefinition("_id", ScalarAttributeType.S)),
                                         new ProvisionedThroughput(10L, 10L));
 
-                                try
-                                {
-                                    newTable.waitForActive();
-                                }
-                                catch(Exception ex)
-                                {
-                                    throw new UncheckedException(ex);
-                                }
+
 
                                 tableHashMap.putIfAbsent(tableName, newTable);
                                 return newTable;
@@ -298,16 +288,6 @@ public class DynamoDBStorageExtension implements StorageExtension
     public void setShouldCreateTables(boolean shouldCreateTables)
     {
         this.shouldCreateTables = shouldCreateTables;
-    }
-
-    public String getDbPrefix()
-    {
-        return dbPrefix;
-    }
-
-    public void setDbPrefix(String dbPrefix)
-    {
-        this.dbPrefix = dbPrefix;
     }
 
 }
