@@ -81,6 +81,7 @@ public class DynamoDBStorageExtension implements StorageExtension
     private String secretKey;
     private String sessionToken;
     private boolean shouldCreateTables = true;
+    private String dbPrefix = "orbit";
 
 
     public DynamoDBStorageExtension()
@@ -189,8 +190,10 @@ public class DynamoDBStorageExtension implements StorageExtension
         }
     }
 
-    private Task<Table> getOrCreateTable(final String tableName)
+    private Task<Table> getOrCreateTable(final String inputName)
     {
+        final String tableName = getDbPrefix() + "_" + inputName.toLowerCase();
+
         final Table table = tableHashMap.get(tableName);
         if (table != null)
         {
@@ -203,21 +206,31 @@ public class DynamoDBStorageExtension implements StorageExtension
                     .thenApply(descriptor -> dynamoDB.getTable(descriptor.getTableName()))
                     .exceptionally(e ->
                     {
-                        if (shouldCreateTables && ExceptionUtils.isCauseInChain(ResourceNotFoundException.class, e))
-                        {
-                            final Table newTable = dynamoDB.createTable(tableName,
-                                    Collections.singletonList(
-                                            new KeySchemaElement("_id", KeyType.HASH)),
-                                    Collections.singletonList(
-                                            new AttributeDefinition("_id", ScalarAttributeType.S)),
-                                    new ProvisionedThroughput(10L, 10L));
-                            tableHashMap.putIfAbsent(tableName, newTable);
-                            return newTable;
-                        }
-                        else
-                        {
-                            throw new UncheckedException(e);
-                        }
+                            if (shouldCreateTables && ExceptionUtils.isCauseInChain(ResourceNotFoundException.class, e))
+                            {
+                                final Table newTable = dynamoDB.createTable(tableName,
+                                        Collections.singletonList(
+                                                new KeySchemaElement("_id", KeyType.HASH)),
+                                        Collections.singletonList(
+                                                new AttributeDefinition("_id", ScalarAttributeType.S)),
+                                        new ProvisionedThroughput(10L, 10L));
+
+                                try
+                                {
+                                    newTable.waitForActive();
+                                }
+                                catch(Exception ex)
+                                {
+                                    throw new UncheckedException(ex);
+                                }
+
+                                tableHashMap.putIfAbsent(tableName, newTable);
+                                return newTable;
+                            }
+                            else
+                            {
+                                throw new UncheckedException(e);
+                            }
                     });
         }
     }
@@ -285,6 +298,16 @@ public class DynamoDBStorageExtension implements StorageExtension
     public void setShouldCreateTables(boolean shouldCreateTables)
     {
         this.shouldCreateTables = shouldCreateTables;
+    }
+
+    public String getDbPrefix()
+    {
+        return dbPrefix;
+    }
+
+    public void setDbPrefix(String dbPrefix)
+    {
+        this.dbPrefix = dbPrefix;
     }
 
 }
