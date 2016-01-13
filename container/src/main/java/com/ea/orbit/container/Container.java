@@ -522,10 +522,27 @@ public class Container
                 defaultValue = defaultValue.trim();
             }
 
-            return System.getProperty(propertyName, defaultValue);
+            return getSystemOrEnvironmentVar(propertyName, defaultValue);
         }
 
-        return System.getProperty(propertyString);
+        return getSystemOrEnvironmentVar(propertyString, null);
+    }
+
+    private String getSystemOrEnvironmentVar(String propertyName, String defaultValue)
+    {
+        String returnValue = System.getProperty(propertyName);
+
+        if(returnValue == null)
+        {
+            returnValue = System.getenv(propertyName);
+        }
+
+        if(returnValue == null)
+        {
+            returnValue = defaultValue;
+        }
+
+        return returnValue;
     }
 
     public void stop()
