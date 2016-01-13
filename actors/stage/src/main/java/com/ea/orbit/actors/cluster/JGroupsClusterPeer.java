@@ -146,14 +146,17 @@ public class JGroupsClusterPeer implements ClusterPeer
                         udp.setMulticastPort(udp.getMulticastPort() + ((clusterName.hashCode() & 0x8fff_ffff) % portRangeLength));
                     }
 
-
-                    ProtocolStack stack = baseChannel.getProtocolStack();
-                    FORK fork = (FORK) stack.findProtocol(FORK.class);
-                    if (fork == null)
-                    {
-                        stack.insertProtocol(fork = new FORK(), ProtocolStack.ABOVE, FRAG2.class);
+                    // TODO: Remove when using JGroups 3.6.7.Final see https://github.com/belaban/JGroups/pull/241
+                    synchronized (baseChannel) {
+                        ProtocolStack stack = baseChannel.getProtocolStack();
+                        FORK fork = (FORK) stack.findProtocol(FORK.class);
+                        if (fork == null)
+                        {
+                            fork = new FORK();
+                            fork.setProtocolStack(stack);
+                            stack.insertProtocol(fork, ProtocolStack.ABOVE, FRAG2.class);
+                        }
                     }
-                    fork.setProtocolStack(stack);
 
                     channel = new ForkChannel(baseChannel,
                             "hijack-stack",
