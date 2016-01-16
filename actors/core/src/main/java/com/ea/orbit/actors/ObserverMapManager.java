@@ -28,8 +28,6 @@
 
 package com.ea.orbit.actors;
 
-import com.ea.orbit.actors.cluster.NodeAddress;
-import com.ea.orbit.actors.runtime.ActorRuntime;
 import com.ea.orbit.actors.runtime.RemoteReference;
 import com.ea.orbit.concurrent.Task;
 
@@ -40,8 +38,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
-import static com.ea.async.Async.await;
 
 /**
  * {@link ObserverMapManager} is an optional thread safe "map" that can be used by actors which need to
@@ -57,28 +53,16 @@ public class ObserverMapManager<K, V extends ActorObserver> implements Serializa
 
     private final ConcurrentHashMap<K, V> observers = new ConcurrentHashMap<>();
 
-    @SuppressWarnings("unchecked")
     public Task<?> cleanup() {
         Stream stream = this.observers.entrySet().stream().map(entry -> {
             ActorObserver observer = entry.getValue();
-            return (observer.ping()).handle((Object result, Throwable throwable) -> {
+            return (observer.ping()).whenComplete((Object result, Throwable throwable) -> {
                 if (throwable != null) {
-                    return checkAlive(observer).thenAccept(alive -> {
-                        if (!alive) {
-                            remove(entry.getKey());
-                        }
-                    });
+                    remove(entry.getKey());
                 }
-                return null;
             });
         });
         return Task.allOf(stream);
-    }
-
-    private Task<Boolean> checkAlive(final ActorObserver observer)
-    {
-        final NodeAddress nodeAddress = await(ActorRuntime.getRuntime().locateActor((Addressable) observer, false));
-        return nodeAddress == null ? Task.fromValue(Boolean.FALSE) : Task.fromValue(Boolean.TRUE);
     }
 
     /**
