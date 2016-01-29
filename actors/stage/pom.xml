@@ -90,7 +90,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-embedded</artifactId>
-            <version>8.0.2.Final</version>
+            <version>8.1.0.Final</version>
         </dependency>
 
         <dependency>
