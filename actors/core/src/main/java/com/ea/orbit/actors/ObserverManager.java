@@ -129,22 +129,26 @@ public class ObserverManager<T extends ActorObserver> implements Serializable
      */
     public void notifyObservers(final Consumer<T> callable)
     {
-        final List<T> fail = new ArrayList<>(0);
-        observers.forEach(o -> {
+        List<T> fail = null;
+        for (T observer : observers)
+        {
             try
             {
-                callable.accept(o);
+                callable.accept(observer);
             }
             catch (final Exception ex)
             {
-                fail.add(o);
+                if (fail == null) {
+                    fail = new ArrayList<>();
+                }
+                fail.add(observer);
                 if (logger.isDebugEnabled())
                 {
                     logger.debug("Removing observer due to exception", ex);
                 }
             }
-        });
-        if (fail.size() > 0)
+        }
+        if (fail != null && fail.size() > 0)
         {
             observers.removeAll(fail);
         }
