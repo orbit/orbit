@@ -183,7 +183,7 @@ public class StreamMessageDispatcher
         return true;
     }
 
-    public void destroy()
+    public void dispose()
     {
         invokersByMessageClass.clear();
     }

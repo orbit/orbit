@@ -82,7 +82,7 @@ public class StreamMessageDispatcherTest extends ActorBaseTest
         }
         finally
         {
-            messageDispatcher.destroy();
+            messageDispatcher.dispose();
         }
     }
 
