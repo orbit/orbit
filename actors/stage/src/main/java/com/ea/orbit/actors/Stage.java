@@ -199,7 +199,6 @@ public class Stage implements Startable, ActorRuntime
     private boolean startCalled;
     private Clock clock;
     private ExecutorService executionPool;
-    private ExecutorService messagingPool;
     private ExecutionObjectCloner objectCloner;
     private MessageSerializer messageSerializer;
     private final WeakReference<ActorRuntime> cachedRef = new WeakReference<>(this);
@@ -216,7 +215,6 @@ public class Stage implements Startable, ActorRuntime
 
         private Clock clock;
         private ExecutorService executionPool;
-        private ExecutorService messagingPool;
         private ExecutionObjectCloner objectCloner;
         private ClusterPeer clusterPeer;
 
@@ -239,12 +237,6 @@ public class Stage implements Startable, ActorRuntime
         public Builder executionPool(ExecutorService executionPool)
         {
             this.executionPool = executionPool;
-            return this;
-        }
-
-        public Builder messagingPool(ExecutorService messagingPool)
-        {
-            this.messagingPool = messagingPool;
             return this;
         }
 
@@ -301,7 +293,6 @@ public class Stage implements Startable, ActorRuntime
             Stage stage = new Stage();
             stage.setClock(clock);
             stage.setExecutionPool(executionPool);
-            stage.setMessagingPool(messagingPool);
             stage.setObjectCloner(objectCloner);
             stage.setClusterName(clusterName);
             stage.setClusterPeer(clusterPeer);
@@ -344,16 +335,6 @@ public class Stage implements Startable, ActorRuntime
     public ExecutorService getExecutionPool()
     {
         return executionPool;
-    }
-
-    public void setMessagingPool(final ExecutorService messagingPool)
-    {
-        this.messagingPool = messagingPool;
-    }
-
-    public ExecutorService getMessagingPool()
-    {
-        return messagingPool;
     }
 
     public int getExecutionPoolSize()
@@ -457,20 +438,12 @@ public class Stage implements Startable, ActorRuntime
             setNodeName(getClusterName());
         }
 
-        if (executionPool == null || messagingPool == null)
+        if (executionPool == null)
         {
             final ExecutorService newService = ExecutorUtils.newScalingThreadPool(executionPoolSize);
-
-            if (executionPool == null)
-            {
-                executionPool = newService;
-            }
-
-            if (messagingPool == null)
-            {
-                messagingPool = newService;
-            }
+            executionPool = newService;
         }
+
         executionSerializer = new WaitFreeMultiExecutionSerializer<>(executionPool);
 
         if (hosting == null)
