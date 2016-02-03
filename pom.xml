@@ -32,7 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.ea.orbit</groupId>
     <artifactId>orbit-parent</artifactId>
-    <version>0.7.0</version>
+    <version>0.8.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Orbit Parent</name>
     <description>Orbit is a JVM framework that makes it easier to build distributed and scalable online services.
