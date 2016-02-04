@@ -47,8 +47,10 @@ import com.ea.orbit.actors.server.ServerPeer;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
-import com.ea.orbit.injection.DependencyRegistry;
 
+import org.glassfish.hk2.api.ServiceLocator;
+import org.glassfish.hk2.api.ServiceLocatorFactory;
+import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
@@ -64,6 +66,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -95,6 +98,15 @@ public class ActorBaseTest
     protected List<ServerPeer> serversConnections = new ArrayList<>();
 
     protected Description testDescription;
+
+    protected ServiceLocator serviceLocator;
+
+    public ActorBaseTest()
+    {
+        ServiceLocatorFactory factory = ServiceLocatorFactory.getInstance();
+        serviceLocator = factory.create(UUID.randomUUID().toString());
+        ServiceLocatorUtilities.addOneConstant(serviceLocator, fakeSync);
+    }
 
 
     protected static final ExecutorService commonPool = new ForwardingExecutorService()
@@ -269,15 +281,13 @@ public class ActorBaseTest
     public Stage createClient()
     {
         loggerExtension.write("Create Client");
-        DependencyRegistry dr = new DependencyRegistry();
-        dr.addSingleton(FakeSync.class, fakeSync);
 
         LifetimeExtension lifetimeExtension = new LifetimeExtension()
         {
             @Override
             public Task<?> preActivation(final AbstractActor<?> actor)
             {
-                dr.inject(actor);
+                serviceLocator.inject(actor);
                 return Task.done();
             }
         };
@@ -302,14 +312,12 @@ public class ActorBaseTest
     {
         loggerExtension.write("Create Stage");
 
-        DependencyRegistry dr = initDependencyRegistry();
-
         LifetimeExtension lifetimeExtension = new LifetimeExtension()
         {
             @Override
             public Task<?> preActivation(final AbstractActor<?> actor)
             {
-                dr.inject(actor);
+                serviceLocator.inject(actor);
                 return Task.done();
             }
         };
@@ -324,7 +332,7 @@ public class ActorBaseTest
                 .clusterPeer(new FakeClusterPeer())
                 .build();
 
-        dr.addSingleton(Stage.class, stage);
+
         stages.add(stage);
         installExtensions(stage);
 
@@ -348,12 +356,6 @@ public class ActorBaseTest
         return stage;
     }
 
-    protected DependencyRegistry initDependencyRegistry()
-    {
-        DependencyRegistry dr = new DependencyRegistry();
-        dr.addSingleton(FakeSync.class, fakeSync);
-        return dr;
-    }
 
     protected void installExtensions(final Stage stage)
     {

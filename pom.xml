@@ -44,10 +44,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <project.source.jdk>1.8</project.source.jdk>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <asm.version>5.0.4</asm.version>
-        <jackson.version>2.6.3</jackson.version>
-        <jersey.version>2.22.1</jersey.version>
-        <jetty.version>9.3.6.v20151106</jetty.version>
         <ea.async.version>1.0.1</ea.async.version>
         <ea.agentloader.version>1.0.0</ea.agentloader.version>
     </properties>
@@ -55,12 +51,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <modules>
         <module>actors</module>
         <module>commons</module>
-        <module>container</module>
-        <module>web</module>
-        <module>samples</module>
-        <module>packaging/all-docs</module>
-        <module>utils/metrics</module>
-        <module>utils/rest-client</module>
     </modules>
 
     <dependencyManagement>
@@ -86,21 +76,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <version>1.7.13</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
                 <version>3.20.0-GA</version>
@@ -114,11 +89,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
-            </dependency>
-            <dependency>
-                <groupId>org.ow2.asm</groupId>
-                <artifactId>asm</artifactId>
-                <version>${asm.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.googlecode.gentyref</groupId>
@@ -258,12 +228,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     <version>1.4.0</version>
                 </plugin>
 
-                <plugin>
-                    <groupId>org.scala-tools</groupId>
-                    <artifactId>maven-scala-plugin</artifactId>
-                    <version>2.15.2</version>
-                </plugin>
-                
                 <plugin>
                     <groupId>com.ea.async</groupId>
                      <artifactId>ea-async-maven-plugin</artifactId>

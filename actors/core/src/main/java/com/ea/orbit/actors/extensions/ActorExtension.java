@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.extensions;
 
-import com.ea.orbit.container.Startable;
+import com.ea.orbit.lifecycle.Startable;
 
 /**
  * Base interface for actor extensions.

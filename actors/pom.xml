@@ -40,25 +40,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <packaging>pom</packaging>
     <name>Orbit Actors</name>
 
+    <properties>
+        <asm.version>5.0.4</asm.version>
+    </properties>
+
+
     <modules>
         <module>core</module>
-        <module>stage</module>
-        <module>client</module>
-        <module>server</module>
-        <module>websocket</module>
-        <module>extensions/jpa</module>
-        <module>extensions/json</module>
-        <module>extensions/mongodb</module>
-        <module>extensions/dynamodb</module>
-        <module>extensions/redis</module>
-        <module>extensions/ldap</module>
-        <module>extensions/postgresql</module>
-        <module>extensions/spring</module>
-        <module>extensions/memcached</module>
-        <module>extensions/metrics</module>
+        <module>runtime</module>
+        <module>json</module>
         <module>test/actor-tests</module>
         <module>test/benchmarks</module>
-        <module>actors-all</module>
     </modules>
 
     <dependencies>
@@ -67,13 +59,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <artifactId>orbit-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-container</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>${asm.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>

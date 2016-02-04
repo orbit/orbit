@@ -34,7 +34,6 @@ import com.ea.orbit.actors.runtime.AbstractActor;
 import com.ea.orbit.actors.runtime.ActorProfiler;
 import com.ea.orbit.actors.transactions.IdUtils;
 import com.ea.orbit.concurrent.Task;
-import com.ea.orbit.injection.DependencyRegistry;
 import com.ea.orbit.profiler.ProfileDump;
 import com.ea.orbit.profiler.ProfilerData;
 
@@ -225,20 +224,8 @@ public class SingleNodeBenchmark
     {
         ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
 
-        DependencyRegistry dr = new DependencyRegistry();
-
-        LifetimeExtension lifetimeExtension = new LifetimeExtension()
-        {
-            @Override
-            public Task<?> preActivation(final AbstractActor<?> actor)
-            {
-                dr.inject(actor);
-                return Task.done();
-            }
-        };
-
         Stage stage = new Stage.Builder()
-                .extensions(lifetimeExtension, new FakeStorageExtension(fakeDatabase))
+                .extensions(new FakeStorageExtension(fakeDatabase))
                 .mode(Stage.StageMode.HOST)
                 .clusterName(IdUtils.urlSafeString(32))
                 // uncomment this to remove jgroups from the equation
@@ -247,8 +234,6 @@ public class SingleNodeBenchmark
 
         // decreases context switching
         stage.setExecutionPoolSize(Math.max(1, Runtime.getRuntime().availableProcessors() / 2));
-
-        dr.addSingleton(Stage.class, stage);
 
         stage.start().join();
 
