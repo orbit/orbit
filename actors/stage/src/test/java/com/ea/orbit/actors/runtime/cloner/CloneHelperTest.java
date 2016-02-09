@@ -47,6 +47,8 @@ public class CloneHelperTest
     {
         assertFalse(CloneHelper.needsCloning("string"));
         assertFalse(CloneHelper.needsCloning(1337L));
+        assertFalse(CloneHelper.needsCloning(ImmutableEnum.TEST));
+        assertFalse(CloneHelper.needsCloning(null));
         assertFalse(CloneHelper.needsCloning(new ImmutableClass("huuhaa")));
     }
 
@@ -62,6 +64,11 @@ public class CloneHelperTest
         assertFalse(CloneHelper.needsCloning(new Message().withPayload(new Object[]{1337L, "string"})));
         assertTrue(CloneHelper.needsCloning(new Message().withPayload(new Object[]{new ImmutableClass("huuhaa"), new MutableClass()})));
         assertFalse(CloneHelper.needsCloning(new Message().withPayload(new Object[]{new ImmutableClass("huuhaa"), new ImmutableClass("huuhaa")})));
+        assertFalse(CloneHelper.needsCloning(new Message().withPayload(new Object[]{CloneHelperTest.ImmutableEnum.TEST})));
+    }
+
+    private enum ImmutableEnum {
+        TEST
     }
 
     @Immutable
