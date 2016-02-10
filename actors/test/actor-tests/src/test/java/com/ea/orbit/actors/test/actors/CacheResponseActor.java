@@ -28,21 +28,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors.test.actors;
 
+import com.ea.orbit.actors.cache.ExecutionCacheFlushManager;
 import com.ea.orbit.actors.runtime.AbstractActor;
-import com.ea.orbit.actors.runtime.ExecutionCacheFlushController;
 import com.ea.orbit.actors.test.dto.TestDto1;
 import com.ea.orbit.concurrent.Task;
 
-import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
 @SuppressWarnings("rawtypes")
 public class CacheResponseActor extends AbstractActor implements CacheResponse
 {
-    @Inject
-    private ExecutionCacheFlushController executionCacheFlusher;
-
     public static int accessCount = 0;
     private Map<Integer, Long> indexTally = new HashMap<>();
     private TestDto1 testDto1;
@@ -73,8 +69,6 @@ public class CacheResponseActor extends AbstractActor implements CacheResponse
 
     public Task<Void> flush()
     {
-        executionCacheFlusher.flushAll(this).join();
-
-        return Task.done();
+        return ExecutionCacheFlushManager.flushAll(this);
     }
 }

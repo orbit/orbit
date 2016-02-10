@@ -6,46 +6,31 @@ Orbit Framework
 [![Build Status](https://img.shields.io/travis/electronicarts/orbit.svg)](https://travis-ci.org/electronicarts/orbit)
 [![Gitter](https://img.shields.io/badge/style-Join_Chat-ff69b4.svg?style=flat&label=gitter)](https://gitter.im/electronicarts/orbit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-Orbit is a modern framework for JVM languages that makes it easier to build and maintain distributed and scalable online services.
-It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com). For the latest news, follow us on [Twitter](https://twitter.com/OrbitFramework). 
+Orbit Actors is a JVM based framework to write distributed systems using virtual actors.
+A virtual actor is an object that interacts with the world using asynchronous messages.
 
-Orbit is primarily made up of the following components:
+At any time an actor may be active or inactive. Usually the state of an inactive actor will reside in the database.
+When a message is sent to an inactive actor it will be activated somewhere in the pool of backend servers.
+During the activation process the actor's state is read from the database.
 
--  [Orbit Actors](actors/), a framework to write distributed systems using virtual actors.
--  [Orbit Async](async/), async-await methods for the JVM.
--  [Orbit Container](container/), a minimal inversion of control container for building online services.
--  [Orbit Utils](utils/), a set of utils to help simplify various tasks on the JVM.
--  [Orbit Web](web/), a lightweight HTTP and Websockets container for Orbit, powered by Jetty.
--  [Orbit Commons](commons/), various common utilities used by Orbit.
+Actors are deactivated based on timeout and on server resource usage.
+
+It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com). For the latest news, follow us on [Twitter](https://twitter.com/OrbitFramework).
 
 Documentation
 =======
 Documentation is located [here](http://orbit.bioware.com/). <br />
-See the [Hello World](samples/hello) sample.
 
-License
-=======
-Orbit is licensed under the [BSD 3-Clause License](LICENSE).
 
-The Orbit Team
+Simple Example
 =======
-* [Joe Hegarty](https://github.com/JoeHegarty) - Maintainer
-* [Daniel Sperry](https://github.com/DanielSperry) - Maintainer
-* [Blake Grant](https://github.com/aybarasan)
-* [Chris Christou](https://github.com/BioChristou)
-* [Owen Borstad](https://github.com/OwenBorstad)
-* [Jerome Lee](https://github.com/JLeeChan)
-* [Jeff Theriault](https://github.com/fieldflux)
-
-Simple Examples
-=======
-#### Actors - Java
+#### Java
 ```java
 public interface Hello extends Actor
 {
     Task<String> sayHello(String greeting);
 }
- 
+
 public class HelloActor extends AbstractActor implements Hello
 {
     public Task<String> sayHello(String greeting)
@@ -54,11 +39,11 @@ public class HelloActor extends AbstractActor implements Hello
         return Task.fromValue("Hello There");
     }
 }
- 
+
 Actor.getReference(Hello.class, "0").sayHello("Meep Meep");
 ```
 
-#### Actors - Scala
+#### Scala
 ```scala
 trait Hello extends Actor {
   def sayHello(greeting: String): Task[String]
@@ -73,3 +58,7 @@ class HelloActor extends AbstractActor[AnyRef] with Hello {
 
 Actor.getReference(classOf[Hello], "0").sayHello("Meep Meep")
 ```
+
+License
+=======
+Orbit is licensed under the [BSD 3-Clause License](LICENSE).

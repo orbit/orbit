@@ -1,24 +1,6 @@
 language: java		
 jdk: oraclejdk8
 
-install:
-  - mkdir /tmp/dynamodb
-  - wget -O - http://dynamodb-local.s3-website-us-west-2.amazonaws.com/dynamodb_local_latest | tar xz --directory /tmp/dynamodb
-
-services:
-  - mongodb
-  - redis-server
-  - memcached
-
-addons:
-  postgresql: "9.3"
-
-before_script:
-  - psql -c 'create database orbit;' -U postgres
-  - java -Djava.library.path=/tmp/dynamodb/DynamoDBLocal_lib -jar /tmp/dynamodb/DynamoDBLocal.jar -inMemory &
-
-script: "mvn test -P withMongoTests,withDynamoDBTests,withPostgresTests,withRedisTests,withMemcachedTests,withScala,withLDAPTests"
-
 notifications:
   webhooks:
     urls:
