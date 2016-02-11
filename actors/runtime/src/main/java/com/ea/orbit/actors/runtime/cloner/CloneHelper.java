@@ -74,14 +74,21 @@ public class CloneHelper
             java.net.InetSocketAddress.class
     ));
 
-    public static boolean needsCloning(Object payload) {
-        if (payload instanceof Message) {
-            return needsCloning((Message) payload);
+    public static boolean needsCloning(Object object)
+    {
+        if (object == null)
+        {
+            return false;
         }
-        return !payload.getClass().isAnnotationPresent(Immutable.class) && !IMMUTABLES.contains(payload.getClass());
+        if (object instanceof Message)
+        {
+            return needsCloning((Message) object);
+        }
+        return !isObjectConsideredImmutable(object);
     }
 
-    private static boolean needsCloning(Message message) {
+    private static boolean needsCloning(Message message)
+    {
         // this can be improved by looking into the
         // argument/return types of ClassId.MethodId and caching the decision.
 
@@ -100,7 +107,7 @@ public class CloneHelper
                     for (int i = arr.length; --i >= 0; )
                     {
                         Object obj = arr[i];
-                        if (obj != null && !obj.getClass().isAnnotationPresent(Immutable.class) && !IMMUTABLES.contains(obj.getClass()))
+                        if (!isObjectConsideredImmutable(obj))
                         {
                             return true;
                         }
@@ -111,12 +118,33 @@ public class CloneHelper
                 break;
             case MessageDefinitions.RESPONSE_OK:
                 // already test for null in the beginning of the method.
-                if (payload.getClass().isAnnotationPresent(Immutable.class) || IMMUTABLES.contains(payload.getClass()))
+                if (isObjectConsideredImmutable(payload))
                 {
                     return false;
                 }
                 break;
         }
         return true;
+    }
+
+    private static boolean isObjectConsideredImmutable(Object object)
+    {
+        if (object == null)
+        {
+            return true;
+        }
+        if (object.getClass().isAnnotationPresent(Immutable.class))
+        {
+            return true;
+        }
+        if (IMMUTABLES.contains(object.getClass()))
+        {
+            return true;
+        }
+        if (object.getClass().isEnum())
+        {
+            return true;
+        }
+        return false;
     }
 }
