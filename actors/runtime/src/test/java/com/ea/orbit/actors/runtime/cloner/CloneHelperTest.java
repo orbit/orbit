@@ -54,18 +54,27 @@ public class CloneHelperTest
     public void testMutableClasses() throws Exception
     {
         assertTrue(CloneHelper.needsCloning(new MutableClass()));
+        assertFalse(CloneHelper.needsCloning(ImmutableEnum.TEST));
+        assertFalse(CloneHelper.needsCloning(null));
     }
 
     @Test
     public void testMessageWithObjectArrayPayload() throws Exception
     {
-        assertFalse(CloneHelper.needsCloning(new Message().withPayload(new Object[]{1337L, "string"})));
-        assertTrue(CloneHelper.needsCloning(new Message().withPayload(new Object[]{new ImmutableClass("huuhaa"), new MutableClass()})));
-        assertFalse(CloneHelper.needsCloning(new Message().withPayload(new Object[]{new ImmutableClass("huuhaa"), new ImmutableClass("huuhaa")})));
+        assertFalse(CloneHelper.needsCloning(new Message().withPayload(new Object[]{ 1337L, "string" })));
+        assertTrue(CloneHelper.needsCloning(new Message().withPayload(new Object[]{ new ImmutableClass("huuhaa"), new MutableClass() })));
+        assertFalse(CloneHelper.needsCloning(new Message().withPayload(new Object[]{ new ImmutableClass("huuhaa"), new ImmutableClass("huuhaa") })));
+        assertFalse(CloneHelper.needsCloning(new Message().withPayload(new Object[]{ CloneHelperTest.ImmutableEnum.TEST })));
+    }
+
+    private enum ImmutableEnum
+    {
+        TEST
     }
 
     @Immutable
-    private class ImmutableClass {
+    private class ImmutableClass
+    {
         private final String id;
 
         public ImmutableClass(final String id)
@@ -74,7 +83,8 @@ public class CloneHelperTest
         }
     }
 
-    private class MutableClass {
+    private class MutableClass
+    {
         private String id;
     }
 }
