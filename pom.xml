@@ -44,7 +44,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <project.source.jdk>1.8</project.source.jdk>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <ea.async.version>1.0.1</ea.async.version>
+        <ea.async.version>1.0.2</ea.async.version>
         <ea.agentloader.version>1.0.0</ea.agentloader.version>
     </properties>
 
