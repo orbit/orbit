@@ -15,7 +15,7 @@ During the activation process the actor's state is read from the database.
 
 Actors are deactivated based on timeout and on server resource usage.
 
-It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com). For the latest news, follow us on [Twitter](https://twitter.com/OrbitFramework).
+It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com) and is heavily inspired by the [Microsoft Orleans](https://github.com/dotnet/Orleans) project. For the latest news, follow us on [Twitter](https://twitter.com/OrbitFramework).
 
 Documentation
 =======
