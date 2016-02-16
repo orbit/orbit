@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors;
 
+import com.ea.orbit.actors.annotation.NoDeactivate;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.JGroupsClusterPeer;
@@ -37,7 +38,6 @@ import com.ea.orbit.actors.concurrent.WaitFreeMultiExecutionSerializer;
 import com.ea.orbit.actors.extensions.ActorClassFinder;
 import com.ea.orbit.actors.extensions.ActorExtension;
 import com.ea.orbit.actors.extensions.DefaultLoggerExtension;
-import com.ea.orbit.actors.extensions.LifetimeExtension;
 import com.ea.orbit.actors.extensions.LoggerExtension;
 import com.ea.orbit.actors.extensions.MessageSerializer;
 import com.ea.orbit.actors.extensions.PipelineExtension;
@@ -113,7 +113,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static com.ea.async.Async.await;
 
@@ -138,7 +137,7 @@ public class Stage implements Startable, ActorRuntime
     private int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
     private List<ActorExtension> extensions = new CopyOnWriteArrayList<>();
     private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
-    private long cleanupIntervalMillis = TimeUnit.SECONDS.toMillis(10);
+    private long pulseIntervalMillis = TimeUnit.SECONDS.toMillis(10);
     private Timer timer = new Timer("Orbit stage timer");
     private Pipeline pipeline;
 
@@ -521,13 +520,13 @@ public class Stage implements Startable, ActorRuntime
         {
             future = future.thenRun(() -> {
                 this.bind();
-                getReference(ReminderController.class, "0").ensureStart();
+                Actor.getReference(ReminderController.class).ensureStart();
             });
         }
 
         future = future.thenRun(() -> bind());
 
-        // schedules the cleanup
+        // schedules the pulse
         timer.schedule(new TimerTask()
         {
             @Override
@@ -535,10 +534,10 @@ public class Stage implements Startable, ActorRuntime
             {
                 if (state == NodeCapabilities.NodeState.RUNNING)
                 {
-                    ForkJoinTask.adapt(() -> cleanup().join()).fork();
+                    ForkJoinTask.adapt(() -> pulse().join()).fork();
                 }
             }
-        }, cleanupIntervalMillis, cleanupIntervalMillis);
+        }, pulseIntervalMillis, pulseIntervalMillis);
 
         future.whenComplete((r, e) -> {
             if (e != null)
@@ -663,6 +662,7 @@ public class Stage implements Startable, ActorRuntime
         {
             while (pending.size() < concurrentDeactivations && iterator.hasNext())
             {
+
                 final Map.Entry<Object, LocalObjects.LocalObjectEntry> entryEntry = iterator.next();
                 final ActorBaseEntry<?> actorEntry = (ActorBaseEntry<?>) entryEntry.getValue();
                 if (actorEntry.isDeactivated())
@@ -671,6 +671,10 @@ public class Stage implements Startable, ActorRuntime
                     // for instance by the stateless worker that owns the objects
                     objects.remove(entryEntry.getKey(), entryEntry.getValue());
                 }
+
+                // Skip this actor if it is marked NoDeactivate
+                if(RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NoDeactivate.class)) continue;
+
                 if (clock().millis() - actorEntry.getLastAccess() > maxAge)
                 {
                     if (logger.isTraceEnabled())
@@ -759,12 +763,20 @@ public class Stage implements Startable, ActorRuntime
         return clusterPeer != null ? clusterPeer : (clusterPeer = new JGroupsClusterPeer());
     }
 
+    public Task pulse()
+    {
+        Actor.getReference(ReminderController.class).ensureStart();
+        return cleanup();
+    }
+
+
     public Task cleanup()
     {
         await(execution.cleanup());
         await(cleanupActors(defaultActorTTL));
         await(cleanupObservers());
         await(messaging.cleanup());
+
         return Task.done();
     }
 
@@ -963,13 +975,13 @@ public class Stage implements Startable, ActorRuntime
     @Override
     public Task<?> registerReminder(final Remindable actor, final String reminderName, final long dueTime, final long period, final TimeUnit timeUnit)
     {
-        return getReference(ReminderController.class, "0").registerOrUpdateReminder(actor, reminderName, new Date(clock.millis() + timeUnit.toMillis(dueTime)), period, timeUnit);
+        return Actor.getReference(ReminderController.class).registerOrUpdateReminder(actor, reminderName, new Date(clock.millis() + timeUnit.toMillis(dueTime)), period, timeUnit);
     }
 
     @Override
     public Task<?> unregisterReminder(final Remindable actor, final String reminderName)
     {
-        return getReference(ReminderController.class, "0").unregisterReminder(actor, reminderName);
+        return Actor.getReference(ReminderController.class).unregisterReminder(actor, reminderName);
     }
 
     @Override

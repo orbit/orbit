@@ -30,12 +30,16 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Remindable;
+import com.ea.orbit.actors.annotation.NoDeactivate;
+import com.ea.orbit.actors.annotation.NoIdentity;
 import com.ea.orbit.concurrent.Task;
 
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+@NoDeactivate
+@NoIdentity
 public interface ReminderController extends Actor
 {
     /**
