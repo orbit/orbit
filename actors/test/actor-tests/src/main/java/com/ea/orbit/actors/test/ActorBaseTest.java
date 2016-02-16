@@ -293,7 +293,7 @@ public class ActorBaseTest
         };
 
         Stage client = new Stage.Builder()
-                .mode(Stage.StageMode.FRONT_END)
+                .mode(Stage.StageMode.CLIENT)
                 .executionPool(commonPool)
                 .clock(clock)
                 .clusterName(clusterName)

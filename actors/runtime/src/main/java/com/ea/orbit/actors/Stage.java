@@ -91,6 +91,8 @@ import com.ea.async.Async;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Singleton;
+
 import java.lang.annotation.Annotation;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
@@ -116,6 +118,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.ea.async.Async.await;
 
+@Singleton
 public class Stage implements Startable, ActorRuntime
 {
     private Logger logger = LoggerFactory.getLogger(Stage.class);
@@ -157,7 +160,7 @@ public class Stage implements Startable, ActorRuntime
 
     public enum StageMode
     {
-        FRONT_END, // no activations
+        CLIENT, // no activations
         HOST // allows activations
     }
 
