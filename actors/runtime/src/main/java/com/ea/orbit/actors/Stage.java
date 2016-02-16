@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors;
 
-import com.ea.orbit.actors.annotation.NoDeactivate;
+import com.ea.orbit.actors.annotation.NeverDeactivate;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.JGroupsClusterPeer;
@@ -672,8 +672,8 @@ public class Stage implements Startable, ActorRuntime
                     objects.remove(entryEntry.getKey(), entryEntry.getValue());
                 }
 
-                // Skip this actor if it is marked NoDeactivate
-                if(RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NoDeactivate.class)) continue;
+                // Skip this actor if it is marked NeverDeactivate
+                if(RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class)) continue;
 
                 if (clock().millis() - actorEntry.getLastAccess() > maxAge)
                 {

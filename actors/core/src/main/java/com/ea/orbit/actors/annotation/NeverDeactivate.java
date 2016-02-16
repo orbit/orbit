@@ -35,6 +35,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface NoDeactivate
+public @interface NeverDeactivate
 {
 }
