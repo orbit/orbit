@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.ea.orbit.actors;
 
+import com.ea.orbit.actors.annotation.NeverDeactivate;
 import com.ea.orbit.actors.annotation.StatelessWorker;
 import com.ea.orbit.actors.cluster.ClusterPeer;
 import com.ea.orbit.actors.cluster.JGroupsClusterPeer;
@@ -158,7 +159,7 @@ public class Stage implements Startable, ActorRuntime
     private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
 
     @Config("orbit.actors.cleanupInterval")
-    private long cleanupIntervalMillis = TimeUnit.SECONDS.toMillis(10);
+    private long pulseIntervalMillis = TimeUnit.SECONDS.toMillis(10);
 
     private Timer timer = new Timer("Orbit stage timer");
 
@@ -579,13 +580,13 @@ public class Stage implements Startable, ActorRuntime
         {
             future = future.thenRun(() -> {
                 this.bind();
-                getReference(ReminderController.class, "0").ensureStart();
+                Actor.getReference(ReminderController.class).ensureStart();
             });
         }
 
         future = future.thenRun(() -> bind());
 
-        // schedules the cleanup
+        // schedules the pulse
         timer.schedule(new TimerTask()
         {
             @Override
@@ -593,10 +594,10 @@ public class Stage implements Startable, ActorRuntime
             {
                 if (state == NodeCapabilities.NodeState.RUNNING)
                 {
-                    ForkJoinTask.adapt(() -> cleanup().join()).fork();
+                    ForkJoinTask.adapt(() -> pulse().join()).fork();
                 }
             }
-        }, cleanupIntervalMillis, cleanupIntervalMillis);
+        }, pulseIntervalMillis, pulseIntervalMillis);
 
         future.whenComplete((r, e) -> {
             if (e != null)
@@ -749,6 +750,10 @@ public class Stage implements Startable, ActorRuntime
                     // for instance by the stateless worker that owns the objects
                     objects.remove(entryEntry.getKey(), entryEntry.getValue());
                 }
+
+                // Skip if this actor should never deactivate
+                if(RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class)) continue;
+
                 if (clock().millis() - actorEntry.getLastAccess() > maxAge)
                 {
                     if (logger.isTraceEnabled())
@@ -835,6 +840,12 @@ public class Stage implements Startable, ActorRuntime
     public ClusterPeer getClusterPeer()
     {
         return clusterPeer != null ? clusterPeer : (clusterPeer = new JGroupsClusterPeer());
+    }
+
+    public Task pulse()
+    {
+        Actor.getReference(ReminderController.class).ensureStart();
+        return cleanup();
     }
 
     public Task cleanup()
@@ -1040,13 +1051,13 @@ public class Stage implements Startable, ActorRuntime
     @Override
     public Task<?> registerReminder(final Remindable actor, final String reminderName, final long dueTime, final long period, final TimeUnit timeUnit)
     {
-        return getReference(ReminderController.class, "0").registerOrUpdateReminder(actor, reminderName, new Date(clock.millis() + timeUnit.toMillis(dueTime)), period, timeUnit);
+        return Actor.getReference(ReminderController.class).registerOrUpdateReminder(actor, reminderName, new Date(clock.millis() + timeUnit.toMillis(dueTime)), period, timeUnit);
     }
 
     @Override
     public Task<?> unregisterReminder(final Remindable actor, final String reminderName)
     {
-        return getReference(ReminderController.class, "0").unregisterReminder(actor, reminderName);
+        return Actor.getReference(ReminderController.class).unregisterReminder(actor, reminderName);
     }
 
     @Override
