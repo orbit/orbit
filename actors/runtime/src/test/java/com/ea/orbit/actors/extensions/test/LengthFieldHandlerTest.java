@@ -135,6 +135,7 @@ public class LengthFieldHandlerTest
 
         public MockContext(final Queue<Pair<String, byte[]>> queue)
         {
+            super(null);
             this.queue = queue;
         }
 
