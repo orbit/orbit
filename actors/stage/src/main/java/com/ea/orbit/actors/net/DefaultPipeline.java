@@ -28,6 +28,8 @@
 
 package com.ea.orbit.actors.net;
 
+import com.ea.orbit.actors.peer.Peer;
+import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.actors.runtime.DefaultHandlers;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
@@ -41,11 +43,12 @@ public class DefaultPipeline implements Pipeline
 {
     private final DefaultHandlerContext.HeadContext head;
     private final DefaultHandlerContext tail;
+    private BasicRuntime runtime;
 
     public DefaultPipeline()
     {
-        head = new DefaultHandlerContext.HeadContext();
-        tail = new DefaultHandlerContext.TailContext();
+        head = new DefaultHandlerContext.HeadContext(this);
+        tail = new DefaultHandlerContext.TailContext(this);
 
         head.handler = new HandlerAdapter();
         head.name = DefaultHandlers.HEAD;
@@ -54,6 +57,17 @@ public class DefaultPipeline implements Pipeline
         tail.handler = new HandlerAdapter();
         tail.name = DefaultHandlers.TAIL;
         tail.inbound = head;
+    }
+
+    public DefaultPipeline(final BasicRuntime runtime)
+    {
+        this();
+        this.runtime = runtime;
+    }
+
+    public BasicRuntime getRuntime()
+    {
+        return runtime;
     }
 
     void addContextBefore(DefaultHandlerContext base, DefaultHandlerContext newContext)
@@ -85,7 +99,7 @@ public class DefaultPipeline implements Pipeline
     @Override
     public void addFirst(final String name, final Handler handler)
     {
-        final DefaultHandlerContext ctx = new DefaultHandlerContext();
+        final DefaultHandlerContext ctx = new DefaultHandlerContext(this);
         ctx.handler = handler;
         ctx.name = name;
         addContextBefore(head.outbound, ctx);
@@ -94,7 +108,7 @@ public class DefaultPipeline implements Pipeline
     @Override
     public void addLast(final String name, final Handler handler)
     {
-        final DefaultHandlerContext ctx = new DefaultHandlerContext();
+        final DefaultHandlerContext ctx = new DefaultHandlerContext(this);
         ctx.handler = handler;
         ctx.name = name;
         addContextBefore(tail, ctx);
@@ -128,7 +142,7 @@ public class DefaultPipeline implements Pipeline
     @Override
     public void addHandlerBefore(final String base, final String name, final Handler handler)
     {
-        final DefaultHandlerContext ctx = new DefaultHandlerContext();
+        final DefaultHandlerContext ctx = new DefaultHandlerContext(this);
         ctx.handler = handler;
         ctx.name = name;
         addContextBefore(findFirstHandlerContext(base), ctx);
@@ -137,7 +151,7 @@ public class DefaultPipeline implements Pipeline
     @Override
     public void addHandlerAfter(final String base, final String name, final Handler handler)
     {
-        final DefaultHandlerContext ctx = new DefaultHandlerContext();
+        final DefaultHandlerContext ctx = new DefaultHandlerContext(this);
         ctx.handler = handler;
         ctx.name = name;
         addContextBefore(findLastHandlerContext(base).outbound, ctx);

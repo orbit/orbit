@@ -59,7 +59,7 @@ import java.util.List;
 public abstract class Peer implements Startable, BasicRuntime
 {
     protected LocalObjects objects = new LocalObjects();
-    private Pipeline pipeline = new DefaultPipeline();
+    private Pipeline pipeline = new DefaultPipeline(this);
     @Wired
     private Clock clock = Clock.systemUTC();
     private MessageSerializer messageSerializer;
