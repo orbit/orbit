@@ -28,6 +28,7 @@
 
 package com.ea.orbit.actors.net;
 
+import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.concurrent.Task;
 
 import org.slf4j.Logger;
@@ -40,6 +41,18 @@ public class DefaultHandlerContext implements HandlerContext
     DefaultHandlerContext outbound;
     DefaultHandlerContext inbound;
     String name;
+    DefaultPipeline pipeline;
+
+    public DefaultHandlerContext(final DefaultPipeline pipeline)
+    {
+        this.pipeline = pipeline;
+    }
+
+    @Override
+    public BasicRuntime getRuntime()
+    {
+        return pipeline.getRuntime();
+    }
 
     @Override
     public HandlerContext fireExceptionCaught(final Throwable cause)
@@ -169,6 +182,11 @@ public class DefaultHandlerContext implements HandlerContext
 
     static final class TailContext extends DefaultHandlerContext
     {
+        public TailContext(final DefaultPipeline pipeline)
+        {
+            super(pipeline);
+        }
+
         @Override
         public Task connect(final Object param)
         {
@@ -202,6 +220,11 @@ public class DefaultHandlerContext implements HandlerContext
     {
         static Logger logger = org.slf4j.LoggerFactory.getLogger(HeadContext.class);
         private boolean active;
+
+        public HeadContext(final DefaultPipeline pipeline)
+        {
+            super(pipeline);
+        }
 
         @Override
         public HandlerContext fireExceptionCaught(final Throwable cause)

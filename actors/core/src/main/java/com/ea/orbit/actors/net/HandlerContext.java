@@ -28,6 +28,7 @@
 
 package com.ea.orbit.actors.net;
 
+import com.ea.orbit.actors.runtime.BasicRuntime;
 import com.ea.orbit.concurrent.Task;
 
 public interface HandlerContext
@@ -50,4 +51,5 @@ public interface HandlerContext
 
     Task write(Object msg);
 
+    BasicRuntime getRuntime();
 }
