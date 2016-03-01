@@ -10,6 +10,7 @@ public class SomeActorImpl extends AbstractActor implements SomeActor
 {
     private UUID uniqueActivationId = UUID.randomUUID();
     private boolean activationWasCalled;
+    private boolean canBeRemoved = true;
 
     @Override
     public Task<String> sayHello(final String greeting)
@@ -70,5 +71,22 @@ public class SomeActorImpl extends AbstractActor implements SomeActor
     public Task<String> getNodeId()
     {
         return Task.fromValue(runtimeIdentity());
+    }
+
+    @Override
+    public Task setCanBeRemoved(final boolean canBeRemoved)
+    {
+        this.canBeRemoved = canBeRemoved;
+        return Task.done();
+    }
+
+    @Override
+    public Task<Boolean> canBeRemoved(final boolean ttlExpired)
+    {
+        if (!canBeRemoved)
+        {
+            return Task.fromValue(false);
+        }
+        return Task.fromValue(ttlExpired);
     }
 }

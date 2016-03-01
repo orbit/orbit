@@ -164,13 +164,34 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
             {
                 return Task.done();
             }
-            return executionSerializer.offerJob(key, () -> doDeactivate(), 1000);
+            return executionSerializer.offerJob(key, () -> doDeactivate(), 10000);
         }
         catch (Throwable ex)
         {
             // this should never happen, but deactivate must't fail.
             ex.printStackTrace();
             return Task.done();
+        }
+    }
+
+    @Override
+    public Task<Boolean> canBeRemoved()
+    {
+        try
+        {
+            if (isDeactivated())
+            {
+                return Task.fromValue(true);
+            }
+            return executionSerializer.offerJob(key, () -> {
+                return actor.canBeRemoved(hasTTLExpired());
+            }, 10000);
+        }
+        catch (Throwable ex)
+        {
+            // this should never happen, but canBeRemoved must't fail.
+            ex.printStackTrace();
+            return Task.fromValue(true);
         }
     }
 

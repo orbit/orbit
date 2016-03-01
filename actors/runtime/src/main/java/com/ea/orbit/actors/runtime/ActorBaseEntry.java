@@ -108,6 +108,13 @@ public abstract class ActorBaseEntry<T extends AbstractActor> implements LocalOb
 
     public abstract Task<Void> deactivate();
 
+    /**
+     * Checks if this actor has "expired" and can be removed from the system.
+     *
+     * @return {@code true} if this actor has expired and can be removed
+     * from the system
+     */
+    public abstract Task<Boolean> canBeRemoved();
 
     public void setDeactivated(final boolean deactivated)
     {
@@ -117,5 +124,10 @@ public abstract class ActorBaseEntry<T extends AbstractActor> implements LocalOb
     public long getLastAccess()
     {
         return lastAccess;
+    }
+
+    public boolean hasTTLExpired()
+    {
+        return runtime.clock().millis() - getLastAccess() > runtime.getDefaultActorTTL();
     }
 }
