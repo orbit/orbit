@@ -16,4 +16,6 @@ public interface SomeActor extends Actor
     Task<Boolean> getActivationWasCalled();
 
     Task<String> getNodeId();
+
+    Task setCanBeRemoved(boolean canBeRemoved);
 }

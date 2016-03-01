@@ -149,4 +149,6 @@ public interface ActorRuntime extends BasicRuntime
 
     List<NodeAddress> getAllNodes();
 
+    long getDefaultActorTTL();
+
 }

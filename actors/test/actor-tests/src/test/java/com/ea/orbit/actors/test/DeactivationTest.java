@@ -66,6 +66,26 @@ public class DeactivationTest extends ClientTest
         dumpMessages();
     }
 
+    @Test
+    public void customCleanupTest() throws ExecutionException, InterruptedException
+    {
+        loggerExtension.enableDebugFor(Stage.class);
+        clock.stop();
+        Stage stage = createStage();
+        SomeActor actor1 = Actor.getReference(SomeActor.class, "1000");
+
+        final UUID id = actor1.getUniqueActivationId().join();
+        actor1.setCanBeRemoved(false).join();
+        clock.incrementTime(20, TimeUnit.MINUTES);
+        stage.cleanup().join();
+        assertEquals(id, actor1.getUniqueActivationId().join());
+        actor1.setCanBeRemoved(true).join();
+        clock.incrementTime(20, TimeUnit.MINUTES);
+        stage.cleanup().join();
+        assertNotEquals(id, actor1.getUniqueActivationId().join());
+        dumpMessages();
+    }
+
     @SuppressWarnings("unused")
     @Test(timeout = 15_000L)
     public void simpleStatelessWorkerDeactivationTest() throws ExecutionException, InterruptedException, TimeoutException

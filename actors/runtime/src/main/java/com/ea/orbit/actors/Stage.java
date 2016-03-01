@@ -629,8 +629,7 @@ public class Stage implements Startable, ActorRuntime
     {
         for (int passes = 0; passes < 2; passes++)
         {
-            // using negative age meaning all actors, regardless of age
-            cleanupActors(Long.MIN_VALUE);
+            cleanupActors(true);
         }
         return Task.done();
     }
@@ -638,7 +637,7 @@ public class Stage implements Startable, ActorRuntime
     @Deprecated
     public Task<Void> cleanupActors()
     {
-        return cleanupActors(defaultActorTTL);
+        return cleanupActors(false);
     }
 
 
@@ -650,7 +649,7 @@ public class Stage implements Startable, ActorRuntime
         return Task.done();
     }
 
-    private Task<Void> cleanupActors(long maxAge)
+    private Task<Void> cleanupActors(boolean force)
     {
         // avoid sorting since lastAccess changes
         // and O(N) is still smaller than O(N Log N)
@@ -676,35 +675,32 @@ public class Stage implements Startable, ActorRuntime
                 }
 
                 // Skip this actor if it is marked NeverDeactivate
-                if(RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class)) continue;
-
-                if (clock().millis() - actorEntry.getLastAccess() > maxAge)
+                if (RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class))
                 {
-                    if (logger.isTraceEnabled())
-                    {
-                        logger.trace("deactivating {}", actorEntry.getRemoteReference());
-                    }
-                    pending.add(actorEntry.deactivate().failAfter(deactivationTimeoutMillis, TimeUnit.MILLISECONDS)
-                            .whenComplete((r, e) -> {
-                                // ensures removal
-                                if (e != null)
-                                {
-                                    // error occurred
-                                    if (logger.isErrorEnabled())
-                                    {
-                                        logger.error("Error during the deactivation of " + actorEntry.getRemoteReference(), e);
-                                    }
-                                    // forcefully setting the entry to deactivated
-                                    actorEntry.setDeactivated(true);
-                                }
-                                objects.remove(entryEntry.getKey(), entryEntry.getValue());
-                                if (entryEntry.getKey() == actorEntry.getRemoteReference())
-                                {
-                                    // removing non stateless actor from the distributed directory
-                                    getHosting().actorDeactivated(actorEntry.getRemoteReference());
-                                }
-                            }));
+                    continue;
                 }
+
+                if (force)
+                {
+                    pending.add(doDeactivate(entryEntry));
+                }
+                else
+                {
+                    pending.add(actorEntry.canBeRemoved().thenCompose((result) -> {
+                        if (result)
+                        {
+                            return doDeactivate(entryEntry);
+                        }
+                        return Task.done();
+                    }).exceptionally(throwable -> {
+                        if (actorEntry.hasTTLExpired())
+                        { // fall back to TTL check
+                            pending.add(doDeactivate(entryEntry));
+                        }
+                        return null;
+                    }));
+                }
+
             }
             if (pending.size() > 0)
             {
@@ -725,6 +721,37 @@ public class Stage implements Startable, ActorRuntime
             await(Task.allOf(pending));
         }
         return Task.done();
+    }
+
+    private Task<Void> doDeactivate(final Map.Entry<Object, LocalObjects.LocalObjectEntry> entryEntry)
+    {
+        final ActorBaseEntry<?> actorEntry = (ActorBaseEntry<?>) entryEntry.getValue();
+
+        if (logger.isTraceEnabled())
+        {
+            logger.trace("deactivating {}", actorEntry.getRemoteReference());
+        }
+
+        return actorEntry.deactivate().failAfter(deactivationTimeoutMillis, TimeUnit.MILLISECONDS)
+                .whenComplete((r, e) -> {
+                    // ensures removal
+                    if (e != null)
+                    {
+                        // error occurred
+                        if (logger.isErrorEnabled())
+                        {
+                            logger.error("Error during the deactivation of " + actorEntry.getRemoteReference(), e);
+                        }
+                        // forcefully setting the entry to deactivated
+                        actorEntry.setDeactivated(true);
+                    }
+                    objects.remove(entryEntry.getKey(), entryEntry.getValue());
+                    if (entryEntry.getKey() == actorEntry.getRemoteReference())
+                    {
+                        // removing non stateless actor from the distributed directory
+                        getHosting().actorDeactivated(actorEntry.getRemoteReference());
+                    }
+                });
     }
 
     private Task<Void> stopTimers()
@@ -776,7 +803,7 @@ public class Stage implements Startable, ActorRuntime
     public Task cleanup()
     {
         await(execution.cleanup());
-        await(cleanupActors(defaultActorTTL));
+        await(cleanupActors(false));
         await(cleanupObservers());
         await(messaging.cleanup());
 
@@ -798,6 +825,7 @@ public class Stage implements Startable, ActorRuntime
      * This method writes a weak reference to the runtime in a thread local.
      * No cleanup is necessary, so none is available.
      */
+    @Override
     public void bind()
     {
         ActorRuntime.setRuntime(this.cachedRef);
@@ -811,6 +839,12 @@ public class Stage implements Startable, ActorRuntime
             return Collections.emptyList();
         }
         return hosting.getAllNodes();
+    }
+
+    @Override
+    public long getDefaultActorTTL()
+    {
+        return defaultActorTTL;
     }
 
     public List<NodeAddress> getServerNodes()
@@ -1130,7 +1164,7 @@ public class Stage implements Startable, ActorRuntime
         }
         if (ActorObserver.class.isAssignableFrom(interfaceClass))
         {
-            final ObserverEntry observerEntry = new ObserverEntry(reference, object);
+            final ObserverEntry observerEntry = new ObserverEntry<>(reference, object);
             observerEntry.setExecutionSerializer(executionSerializer);
             return observerEntry;
         }

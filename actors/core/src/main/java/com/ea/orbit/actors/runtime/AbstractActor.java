@@ -189,7 +189,6 @@ public abstract class AbstractActor<T>
      *
      * @param futureCallable a callable that returns a Task
      * @param dueTime        Time to the first timer call
-     * @param period         Interval between calls, if period <= 0 then the timer will be single shot.
      * @param timeUnit       Time unit for dueTime and period
      * @return A registration object that allows the actor to cancel the timer.
      */
@@ -264,6 +263,18 @@ public abstract class AbstractActor<T>
     public Task<?> deactivateAsync()
     {
         return Task.done();
+    }
+
+    /**
+     * Checks if this actor has "expired" and can be removed from the system.
+     *
+     * @param ttlExpired if the actors last access ttl has expired
+     * @return {@code true} if this actor has expired and can be removed
+     * from the system
+     */
+    public Task<Boolean> canBeRemoved(boolean ttlExpired)
+    {
+        return Task.fromValue(ttlExpired);
     }
 
     protected StreamProvider getStreamProvider(String name)

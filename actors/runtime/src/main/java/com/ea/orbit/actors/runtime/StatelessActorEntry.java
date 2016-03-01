@@ -115,6 +115,11 @@ public class StatelessActorEntry<T extends AbstractActor> extends ActorBaseEntry
         return Task.done();
     }
 
+    @Override
+    public Task<Boolean> canBeRemoved()
+    {
+        return Task.fromValue(hasTTLExpired());
+    }
 
     ActorEntry<T> tryPop()
     {
