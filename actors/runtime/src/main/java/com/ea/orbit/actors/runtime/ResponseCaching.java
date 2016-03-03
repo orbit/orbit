@@ -36,7 +36,7 @@ import com.ea.orbit.actors.net.HandlerAdapter;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.actors.runtime.cloner.CloneHelper;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
-import com.ea.orbit.annotation.CacheResponse;
+import com.ea.orbit.actors.annotation.CacheResponse;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
 import com.ea.orbit.tuples.Pair;

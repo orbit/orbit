@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2015 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -26,18 +26,25 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.ea.orbit.actors.test.actors;
+package com.ea.orbit.actors.annotation;
 
-import com.ea.orbit.actors.Actor;
-import com.ea.orbit.concurrent.Task;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.concurrent.TimeUnit;
 
-public interface OnlyIfActivated extends Actor
+/**
+ * Caches responses from annotated Actor methods.
+ * Annotation defines the cache's maximum size and time to live.
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface CacheResponse
 {
+    long maxEntries();
 
-    @com.ea.orbit.actors.annotation.OnlyIfActivated
-    Task<Void> doSomethingSpecial(String greeting);
+    int ttlDuration();
 
-    Task<Void> makeActiveNow();
-
+    TimeUnit ttlUnit();
 }
-

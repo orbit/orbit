@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2015 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -33,9 +33,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Created by joe@bioware.com on 3/3/2016.
+ */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface OnlyIfActivated
+@Target(ElementType.FIELD)
+public @interface Config
 {
-
+    String value();
 }

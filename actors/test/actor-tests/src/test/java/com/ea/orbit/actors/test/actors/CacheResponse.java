@@ -38,19 +38,19 @@ public interface CacheResponse extends Actor
 {
     int INDEX_TALLY_DURATION_MILLIS = 100;
 
-    @com.ea.orbit.annotation.CacheResponse(maxEntries = 100, ttlDuration = 5, ttlUnit = TimeUnit.SECONDS)
+    @com.ea.orbit.actors.annotation.CacheResponse(maxEntries = 100, ttlDuration = 5, ttlUnit = TimeUnit.SECONDS)
     Task<Long> getNow(String greeting);
 
     /**
      * Used to test CacheResponse Time to Live.
      * Returns a count of the number of times an id was accessed.
      */
-    @com.ea.orbit.annotation.CacheResponse(maxEntries = 1000, ttlDuration = INDEX_TALLY_DURATION_MILLIS, ttlUnit = TimeUnit.MILLISECONDS)
+    @com.ea.orbit.actors.annotation.CacheResponse(maxEntries = 1000, ttlDuration = INDEX_TALLY_DURATION_MILLIS, ttlUnit = TimeUnit.MILLISECONDS)
     Task<Long> getIndexTally(int id);
 
     Task<Void> setDto1(TestDto1 dto1);
 
-    @com.ea.orbit.annotation.CacheResponse(maxEntries = 100, ttlDuration = 5, ttlUnit = TimeUnit.SECONDS)
+    @com.ea.orbit.actors.annotation.CacheResponse(maxEntries = 100, ttlDuration = 5, ttlUnit = TimeUnit.SECONDS)
     Task<TestDto1> getDto1();
 
     Task<Void> flush();

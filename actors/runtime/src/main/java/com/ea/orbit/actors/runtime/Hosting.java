@@ -37,7 +37,7 @@ import com.ea.orbit.actors.cluster.NodeAddress;
 import com.ea.orbit.actors.exceptions.ObserverNotFound;
 import com.ea.orbit.actors.extensions.PipelineExtension;
 import com.ea.orbit.actors.net.HandlerContext;
-import com.ea.orbit.annotation.OnlyIfActivated;
+import com.ea.orbit.actors.annotation.OnlyIfActivated;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.lifecycle.Startable;
 import com.ea.orbit.exception.UncheckedException;
