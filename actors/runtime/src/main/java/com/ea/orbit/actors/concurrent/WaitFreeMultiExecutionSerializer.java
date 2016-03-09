@@ -32,12 +32,10 @@ import com.ea.orbit.actors.runtime.InternalUtils;
 import com.ea.orbit.concurrent.ExecutorUtils;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.exception.UncheckedException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -54,7 +52,7 @@ import java.util.function.Supplier;
 public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerializer<T>
 {
     private static final Logger logger = LoggerFactory.getLogger(WaitFreeMultiExecutionSerializer.class);
-    private ExecutorService executorService;
+    private final ExecutorService executorService;
 
     // while running, the WaitFreeExecutionSerializer is held alive by references from the executorService
     // and from anyone holding the promises (Tasks) it returns.
@@ -62,7 +60,7 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
 
     public WaitFreeMultiExecutionSerializer()
     {
-        executorService = ExecutorUtils.newScalingThreadPool(ForkJoinPool.getCommonPoolParallelism());
+        this(ExecutorUtils.newScalingThreadPool(ForkJoinPool.getCommonPoolParallelism()));
     }
 
     public WaitFreeMultiExecutionSerializer(final ExecutorService executor)
@@ -77,7 +75,7 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
         {
             try
             {
-                return serializers.get(key, () -> new WaitFreeExecutionSerializer(executorService));
+                return serializers.get(key, () -> new WaitFreeExecutionSerializer(executorService, key));
             }
             catch (ExecutionException e)
             {
@@ -92,6 +90,7 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
      *
      * @return true if the task was accepted.
      */
+    @Override
     public <R> Task<R> offerJob(T key, Supplier<Task<R>> job, int maxQueueSize)
     {
         // todo remove this.
@@ -102,6 +101,7 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
         return getSerializer(key).executeSerialized(() -> InternalUtils.safeInvoke(job), maxQueueSize);
     }
 
+    @Override
     public void shutdown()
     {
         executorService.shutdown(); // Disable new tasks from being submitted
@@ -126,6 +126,7 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
         logger.info("Thread pool shutdown complete");
     }
 
+    @Override
     public boolean isBusy()
     {
         for (WaitFreeExecutionSerializer serializer : serializers.asMap().values())

@@ -78,6 +78,21 @@ public class Task<T> extends CompletableFuture<T>
 
     // TODO: consider creating a public class CTask = "Completable Task"
 
+    final Executor defaultExecutor;
+
+    public Task()
+    {
+        TaskContext context = TaskContext.current();
+        if (context != null)
+        {
+            this.defaultExecutor = context.getDefaultExecutor();
+        }
+        else
+        {
+            this.defaultExecutor = null;
+        }
+    }
+
     /**
      * Creates an already completed task from the given value.
      *
@@ -297,6 +312,7 @@ public class Task<T> extends CompletableFuture<T>
             this.waitTimeoutUnit = waitTimeoutUnit;
         }
 
+        @Override
         public void run()
         {
             try
@@ -369,19 +385,33 @@ public class Task<T> extends CompletableFuture<T>
     public <U> Task<U> thenApply(final Function<? super T, ? extends U> fn)
     {
         final Function<? super T, ? extends U> wrap = TaskContext.wrap(fn);
+        if (defaultExecutor != null)
+        {
+            return from(super.thenApplyAsync(wrap, defaultExecutor));
+        }
         return from(super.thenApply(wrap));
     }
 
     @Override
     public Task<Void> thenAccept(final Consumer<? super T> action)
     {
-        return from(super.thenAccept(TaskContext.wrap(action)));
+        final Consumer<? super T> wrap = TaskContext.wrap(action);
+        if (defaultExecutor != null)
+        {
+            return from(super.thenAcceptAsync(wrap, defaultExecutor));
+        }
+        return from(super.thenAccept(wrap));
     }
 
     @Override
     public Task<T> whenComplete(final BiConsumer<? super T, ? super Throwable> action)
     {
-        return from(super.whenComplete(TaskContext.wrap(action)));
+        final BiConsumer<? super T, ? super Throwable> wrap = TaskContext.wrap(action);
+        if (defaultExecutor != null)
+        {
+            return from(super.whenCompleteAsync(wrap, defaultExecutor));
+        }
+        return from(super.whenComplete(wrap));
     }
 
     /**
@@ -400,12 +430,20 @@ public class Task<T> extends CompletableFuture<T>
     {
         // must be separated otherwise the execution of the wrap could happen in another thread
         final Supplier<U> wrap = TaskContext.wrap(supplier);
+        if (defaultExecutor != null)
+        {
+            return from(super.thenApplyAsync(x -> wrap.get(), defaultExecutor));
+        }
         return from(super.thenApply(x -> wrap.get()));
     }
 
     public <U> Task<U> thenCompose(Function<? super T, ? extends CompletionStage<U>> fn)
     {
         final Function<? super T, ? extends CompletionStage<U>> wrap = TaskContext.wrap(fn);
+        if (defaultExecutor != null)
+        {
+            return Task.from(super.thenComposeAsync(wrap, defaultExecutor));
+        }
         return Task.from(super.thenCompose(wrap));
     }
 
@@ -413,6 +451,10 @@ public class Task<T> extends CompletableFuture<T>
     {
         // must be separated otherwise the execution of the wrap could happen in another thread
         final Supplier<? extends CompletionStage<U>> wrap = TaskContext.wrap(fn);
+        if (defaultExecutor != null)
+        {
+            return Task.from(super.thenComposeAsync((T x) -> wrap.get(), defaultExecutor));
+        }
         return Task.from(super.thenCompose((T x) -> wrap.get()));
     }
 
@@ -420,6 +462,10 @@ public class Task<T> extends CompletableFuture<T>
     public <U> Task<U> handle(final BiFunction<? super T, Throwable, ? extends U> fn)
     {
         final BiFunction<? super T, Throwable, ? extends U> wrap = TaskContext.wrap(fn);
+        if (defaultExecutor != null)
+        {
+            return from(super.handleAsync(wrap, defaultExecutor));
+        }
         return from(super.handle(wrap));
     }
 
@@ -432,13 +478,22 @@ public class Task<T> extends CompletableFuture<T>
     @Override
     public Task<Void> thenRun(final Runnable action)
     {
-        return from(super.thenRun(TaskContext.wrap(action)));
+        final Runnable wrap = TaskContext.wrap(action);
+        if (defaultExecutor != null)
+        {
+            return from(super.thenRunAsync(wrap, defaultExecutor));
+        }
+        return from(super.thenRun(wrap));
     }
 
     @Override
     public Task<java.lang.Void> acceptEither(CompletionStage<? extends T> completionStage, Consumer<? super T> consumer)
     {
         final Consumer<? super T> wrap = TaskContext.wrap(consumer);
+        if (defaultExecutor != null)
+        {
+            return Task.from(super.acceptEitherAsync(completionStage, wrap, defaultExecutor));
+        }
         return Task.from(super.acceptEither(completionStage, wrap));
     }
 
@@ -458,7 +513,12 @@ public class Task<T> extends CompletableFuture<T>
     @Override
     public <U> Task<U> applyToEither(CompletionStage<? extends T> completionStage, Function<? super T, U> function)
     {
-        return Task.from(super.applyToEither(completionStage, TaskContext.wrap(function)));
+        final Function<? super T, U> wrap = TaskContext.wrap(function);
+        if (defaultExecutor != null)
+        {
+            return Task.from(super.applyToEitherAsync(completionStage, wrap, defaultExecutor));
+        }
+        return Task.from(super.applyToEither(completionStage, wrap));
     }
 
     @Override
@@ -490,7 +550,12 @@ public class Task<T> extends CompletableFuture<T>
     @Override
     public Task<java.lang.Void> runAfterBoth(CompletionStage<?> completionStage, Runnable runnable)
     {
-        return Task.from(super.runAfterBoth(completionStage, TaskContext.wrap(runnable)));
+        final Runnable wrap = TaskContext.wrap(runnable);
+        if (defaultExecutor != null)
+        {
+            return Task.from(super.runAfterBothAsync(completionStage, wrap, defaultExecutor));
+        }
+        return Task.from(super.runAfterBoth(completionStage, wrap));
     }
 
     @Override
@@ -508,7 +573,12 @@ public class Task<T> extends CompletableFuture<T>
     @Override
     public Task<java.lang.Void> runAfterEither(CompletionStage<?> completionStage, Runnable runnable)
     {
-        return Task.from(super.runAfterEither(completionStage, TaskContext.wrap(runnable)));
+        final Runnable wrap = TaskContext.wrap(runnable);
+        if (defaultExecutor != null)
+        {
+            return Task.from(super.runAfterEitherAsync(completionStage, wrap, defaultExecutor));
+        }
+        return Task.from(super.runAfterEither(completionStage, wrap));
     }
 
     @Override
@@ -568,7 +638,12 @@ public class Task<T> extends CompletableFuture<T>
     @Override
     public <U> Task<java.lang.Void> thenAcceptBoth(CompletionStage<? extends U> completionStage, BiConsumer<? super T, ? super U> biConsumer)
     {
-        return Task.from(super.thenAcceptBoth(completionStage, TaskContext.wrap(biConsumer)));
+        final BiConsumer<? super T, ? super U> wrap = TaskContext.wrap(biConsumer);
+        if (defaultExecutor != null)
+        {
+            return Task.from(super.thenAcceptBothAsync(completionStage, wrap, defaultExecutor));
+        }
+        return Task.from(super.thenAcceptBoth(completionStage, wrap));
     }
 
     @Override
@@ -601,6 +676,10 @@ public class Task<T> extends CompletableFuture<T>
     public <U, V> Task<V> thenCombine(CompletionStage<? extends U> completionStage, BiFunction<? super T, ? super U, ? extends V> biFunction)
     {
         final BiFunction<? super T, ? super U, ? extends V> wrap = TaskContext.wrap(biFunction);
+        if (defaultExecutor != null)
+        {
+            return Task.from(super.thenCombineAsync(completionStage, wrap, defaultExecutor));
+        }
         return Task.from(super.thenCombine(completionStage, wrap));
     }
 

@@ -73,6 +73,7 @@ import com.ea.orbit.actors.runtime.SerializationHandler;
 import com.ea.orbit.actors.runtime.StatelessActorEntry;
 import com.ea.orbit.actors.runtime.cloner.ExecutionObjectCloner;
 import com.ea.orbit.actors.runtime.cloner.KryoCloner;
+import com.ea.orbit.actors.runtime.cloner.NoOpCloner;
 import com.ea.orbit.actors.streams.AsyncObserver;
 import com.ea.orbit.actors.streams.AsyncStream;
 import com.ea.orbit.actors.streams.StreamSequenceToken;
@@ -329,6 +330,11 @@ public class Stage implements Startable, ActorRuntime
         this.objectCloner = objectCloner;
     }
 
+    @SuppressWarnings("unused")
+    public long getLocalObjectCount() {
+        return objects.getLocalObjectCount();
+    }
+
     public String getClusterName()
     {
         return clusterName;
@@ -473,7 +479,7 @@ public class Stage implements Startable, ActorRuntime
         pipeline.addLast(DefaultHandlers.MESSAGING, messaging);
 
         final MessageLoopback messageLoopback = new MessageLoopback();
-        messageLoopback.setCloner(objectCloner);
+        messageLoopback.setCloner(objectCloner instanceof NoOpCloner ? new KryoCloner() : objectCloner);
         messageLoopback.setRuntime(this);
         pipeline.addLast(messageLoopback.getName(), messageLoopback);
 
