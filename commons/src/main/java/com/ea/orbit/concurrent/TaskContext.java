@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -24,6 +25,18 @@ public class TaskContext
     private long id = nextId.getAndIncrement();
 
     private ConcurrentHashMap<String, Object> properties = new ConcurrentHashMap<>();
+
+    private Executor defaultExecutor = null;
+
+    public Executor getDefaultExecutor()
+    {
+        return defaultExecutor;
+    }
+
+    public void setDefaultExecutor(Executor defaultExecutor)
+    {
+        this.defaultExecutor = defaultExecutor;
+    }
 
     /**
      * Adds this execution context to the top of the context stack for the current thread.

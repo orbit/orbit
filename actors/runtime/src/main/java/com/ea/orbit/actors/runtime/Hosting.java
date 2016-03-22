@@ -76,7 +76,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private Stage stage;
 
     // according to the micro benchmarks, a guava cache is much slower than using a ConcurrentHashMap here.
-    private Map<RemoteReference<?>, Task<NodeAddress>> localAddressCache = new ConcurrentHashMap<>();
+    private final Map<RemoteReference<?>, Task<NodeAddress>> localAddressCache = new ConcurrentHashMap<>();
 
     // don't use RemoteReferences, better to restrict keys to a small set of classes.
     private volatile ConcurrentMap<RemoteKey, NodeAddress> distributedDirectory;
@@ -85,7 +85,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private Random random = new Random();
 
     private TreeMap<String, NodeInfo> consistentHashNodeTree = new TreeMap<>();
-    private AnnotationCache<OnlyIfActivated> onlyIfActivateCache = new AnnotationCache<>(OnlyIfActivated.class);
+    private final AnnotationCache<OnlyIfActivated> onlyIfActivateCache = new AnnotationCache<>(OnlyIfActivated.class);
 
     private CompletableFuture<Void> hostingActive = new Task<>();
 

@@ -30,17 +30,22 @@ package com.ea.orbit.actors.runtime;
 
 import com.ea.orbit.actors.Actor;
 import com.ea.orbit.actors.Stage;
+import com.ea.orbit.actors.annotation.Reentrant;
 import com.ea.orbit.actors.exceptions.ObserverNotFound;
 import com.ea.orbit.actors.net.HandlerContext;
 import com.ea.orbit.concurrent.Task;
 import com.ea.orbit.lifecycle.Startable;
+import com.ea.orbit.util.AnnotationCache;
 
+import java.lang.reflect.Method;
 import java.util.Map;
 
 public class Execution extends AbstractExecution implements Startable
 {
     private Stage runtime;
     private LocalObjects objects;
+
+    private final AnnotationCache<Reentrant> reentrantCache = new AnnotationCache<>(Reentrant.class);
 
     @Override
     public Task<Void> cleanup()
@@ -158,33 +163,52 @@ public class Execution extends AbstractExecution implements Startable
             }
             final ObjectInvoker invoker = DefaultDescriptorFactory.get().getInvoker(target.getObject().getClass());
 
-            final ActorTaskContext context = ActorTaskContext.current();
-            if (invocation.getHeaders() != null && invocation.getHeaders().size() > 0 && runtime.getStickyHeaders() != null)
-            {
-                for (Map.Entry e : invocation.getHeaders().entrySet())
-                {
-                    if (runtime.getStickyHeaders().contains(e.getKey()))
-                    {
-                        context.setProperty(String.valueOf(e.getKey()), e.getValue());
-                    }
-                }
-            }
             // todo: it would be nice to separate this last part into another handler (InvocationHandler)
             // to be able intercept the invocation right before it actually happens, good for logging and metrics
 
+            boolean reentrant = false;
+
+            final ActorTaskContext context = ActorTaskContext.current();
             if (context != null)
             {
+                if (invocation.getHeaders() != null && invocation.getHeaders().size() > 0 && runtime.getStickyHeaders() != null)
+                {
+                    for (Map.Entry e : invocation.getHeaders().entrySet())
+                    {
+                        if (runtime.getStickyHeaders().contains(e.getKey()))
+                        {
+                            context.setProperty(String.valueOf(e.getKey()), e.getValue());
+                        }
+                    }
+                }
+                Method method = invoker.getMethod(invocation.getMethodId());
+                if (reentrantCache.isAnnotated(method))
+                {
+                    reentrant = true;
+                    context.setDefaultExecutor(r -> entry.run(o -> {
+                        r.run();
+                        return Task.done();
+                    }));
+                }
                 context.setRuntime(runtime);
             }
             else
             {
                 runtime.bind();
             }
+
             final Task result = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
             if (invocation.getCompletion() != null)
             {
                 InternalUtils.linkFutures(result, invocation.getCompletion());
             }
+
+            if (reentrant)
+            {
+                // let the execution serializer proceed if actor method blocks on a task
+                return Task.fromValue(null);
+            }
+
             return result;
         }
         catch (Throwable exception)

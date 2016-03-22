@@ -62,7 +62,7 @@ public class ResponseCaching
     private static Ticker defaultCacheTicker = null;
     private MessageSerializer messageSerializer;
     private BasicRuntime runtime;
-    private AnnotationCache<CacheResponse> cacheResponseCache = new AnnotationCache<>(CacheResponse.class);
+    private final AnnotationCache<CacheResponse> cacheResponseCache = new AnnotationCache<>(CacheResponse.class);
 
     private static class NullOutputStream extends OutputStream
     {

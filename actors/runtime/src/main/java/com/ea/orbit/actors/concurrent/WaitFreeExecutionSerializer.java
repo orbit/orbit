@@ -49,33 +49,50 @@ import java.util.function.Supplier;
 public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executor
 {
     private static final Logger logger = LoggerFactory.getLogger(WaitFreeExecutionSerializer.class);
-    private ExecutorService executorService;
-    private ConcurrentLinkedQueue<Supplier<Task<?>>> queue = new ConcurrentLinkedQueue<>();
-    private AtomicBoolean lock = new AtomicBoolean();
-    private AtomicInteger size = new AtomicInteger();
+    private static final boolean DEBUG_ENABLED = logger.isDebugEnabled();
 
+    private final ExecutorService executorService;
+    private final ConcurrentLinkedQueue<Supplier<Task<?>>> queue = new ConcurrentLinkedQueue<>();
+    private final AtomicBoolean lock = new AtomicBoolean();
+    private final AtomicInteger size = new AtomicInteger();
+    private final Object key;
 
     public WaitFreeExecutionSerializer(final ExecutorService executorService)
     {
+        this(executorService, null);
+    }
+
+    public WaitFreeExecutionSerializer(final ExecutorService executorService, Object key)
+    {
         this.executorService = executorService;
+        this.key = key;
     }
 
     @Override
     public <R> Task<R> executeSerialized(Supplier<Task<R>> taskSupplier, int maxQueueSize)
     {
-        Task<R> completion = new Task<>();
-        if (size.get() >= maxQueueSize || !queue.add(() -> {
+        final Task<R> completion = new Task<>();
+
+        int queueSize = size.get();
+        if (DEBUG_ENABLED && queueSize >= maxQueueSize / 10)
+        {
+            logger.debug("Queued " + queueSize + " / " + maxQueueSize + " for " + key);
+        }
+
+        if (queueSize >= maxQueueSize || !queue.add(() -> {
                     Task<R> source = InternalUtils.safeInvoke(taskSupplier);
                     InternalUtils.linkFutures(source, completion);
                     return source;
-                }
-        ))
+                }))
         {
-            throw new IllegalStateException(String.format("Queue full %d > %d", queue.size(), maxQueueSize));
+            throw new IllegalStateException(String.format("Queue full for %s (%d > %d)", key, queue.size(), maxQueueSize));
         }
+
         // managing the size like this to avoid using ConcurrentLinkedQueue.size()
         size.incrementAndGet();
+
         tryExecute(false);
+
         return completion;
     }
 
@@ -106,6 +123,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
                 try
                 {
                     Task<?> taskFuture;
+                    // isDone() must be checked in same thread after toRun is executed to avoid race condition
                     if (local)
                     {
                         taskFuture = toRun.get();
@@ -113,9 +131,26 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
                     else
                     {
                         // execute in another thread
-                        final Task<?> task = taskFuture = new Task<>();
-                        executorService.execute(() -> wrapExecution(toRun, task));
+                        final Task<?> task = new Task<>();
+                        executorService.execute(() -> {
+                            wrapExecution(toRun, task);
+                            // When a method is reentrant, Execution returns Task.fromValue(null); instead of result and WaitFreeExecutionSerializer should continue with other tasks.
+                            // However, when tryExecute(false) is invoked the call to task.isDone() is done after executing the task (in a separate thread).
+                            // This causes a race condition where the task execution in separated thread might not finish before the isDone() check, WaitFreeExecutionSerializer is blocked
+                            // waiting for task completion, while the continuation is actually queued to the serializer and will never run because of the wait.
+                            if (!task.isDone())
+                            {
+                                // this will run whenComplete in another thread
+                                task.whenCompleteAsync(WaitFreeExecutionSerializer.this::whenCompleteAsync, executorService);
+                                // returning without unlocking, onComplete will do it;
+                                return;
+                            }
+                            unlock();
+                            tryExecute(true);
+                        });
+                        return;
                     }
+
                     if (taskFuture != null && !taskFuture.isDone())
                     {
                         // this will run whenComplete in another thread
@@ -148,7 +183,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
         try
         {
             final Task<?> task = (Task) toRun.get();
-            if (task == null)
+            if (task == null || task.isDone())
             {
                 taskFuture.complete(null);
             }
