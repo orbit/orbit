@@ -58,6 +58,8 @@ public class ReentrantTest extends ActorBaseTest
         Task<Void> doSomething2(String goStr);
 
         Task<Void> doSomething3();
+
+        Task<Void> doSomething4();
     }
 
     public static class ReentrantActorImpl extends AbstractActor implements ReentrantActor
@@ -87,6 +89,13 @@ public class ReentrantTest extends ActorBaseTest
 
         @Override
         public Task<Void> doSomething3()
+        {
+            return Task.done();
+        }
+
+        @Override
+        @Reentrant
+        public Task<Void> doSomething4()
         {
             return Task.done();
         }
@@ -162,7 +171,7 @@ public class ReentrantTest extends ActorBaseTest
         try
         {
             ReentrantActor actor = Actor.getReference(ReentrantActor.class, "1");
-            Task task1 = actor.doSomething3().thenCompose(x -> {
+            Task task1 = actor.doSomething4().thenCompose(x -> {
                 return actor.doSomething3();
             });
             task1.get(5, TimeUnit.SECONDS);
