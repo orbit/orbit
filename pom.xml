@@ -63,6 +63,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
             </dependency>
+
         </dependencies>
     </dependencyManagement>
 

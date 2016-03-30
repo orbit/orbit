@@ -62,7 +62,12 @@ THE POSSIBILITY OF SUCH DAMAGE.
         </dependency>
         <dependency>
             <groupId>cloud.orbit</groupId>
-            <artifactId>orbit-actor-tests</artifactId>
+            <artifactId>orbit-runtime</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cloud.orbit</groupId>
+            <artifactId>orbit-json</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
