@@ -15,12 +15,15 @@ During the activation process the actor's state is read from the database.
 
 Actors are deactivated based on timeout and on server resource usage.
 
-It was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com) and is heavily inspired by the [Microsoft Orleans](https://github.com/dotnet/Orleans) project. For the latest news, follow us on [Twitter](https://twitter.com/OrbitFramework).
+It is heavily inspired by the [Microsoft Orleans](https://github.com/dotnet/Orleans) project. For the latest news, follow us on [Twitter](https://twitter.com/OrbitFramework).
+
+Developer & License
+======
+This project was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com) and is licensed under the [BSD 3-Clause License](LICENSE).
 
 Documentation
 =======
 Documentation is located [here](http://orbit.bioware.com/). <br />
-
 
 Simple Example
 =======
@@ -58,7 +61,3 @@ class HelloActor extends AbstractActor[AnyRef] with Hello {
 
 Actor.getReference(classOf[Hello], "0").sayHello("Meep Meep")
 ```
-
-License
-=======
-Orbit is licensed under the [BSD 3-Clause License](LICENSE).
