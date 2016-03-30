@@ -30,7 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>com.ea.orbit</groupId>
+        <groupId>cloud.orbit</groupId>
         <artifactId>orbit-actors-parent</artifactId>
         <version>0.8.0-SNAPSHOT</version>
     </parent>
@@ -69,19 +69,19 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             <relocations>
                                 <relocation>
                                     <pattern>org.yaml.</pattern>
-                                    <shadedPattern>com.ea.orbit.actors.core.shaded.org.yaml.</shadedPattern>
+                                    <shadedPattern>cloud.orbit.core.shaded.org.yaml.</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.googlecode.</pattern>
-                                    <shadedPattern>com.ea.orbit.actors.core.shaded.com.googlecode.</shadedPattern>
+                                    <shadedPattern>cloud.orbit.core.shaded.com.googlecode.</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>javassist.</pattern>
-                                    <shadedPattern>com.ea.orbit.actors.core.shaded.javassist.</shadedPattern>
+                                    <shadedPattern>cloud.orbit.core.shaded.javassist.</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.objectweb.</pattern>
-                                    <shadedPattern>com.ea.orbit.actors.core.shaded.org.objectweb.</shadedPattern>
+                                    <shadedPattern>cloud.orbit.core.shaded.org.objectweb.</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
@@ -92,7 +92,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     </build>
     <dependencies>
         <dependency>
-            <groupId>com.ea.orbit</groupId>
+            <groupId>cloud.orbit</groupId>
             <artifactId>orbit-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -101,16 +101,19 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <artifactId>ea-async</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.googlecode.gentyref</groupId>
-            <artifactId>gentyref</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <version>1.7.13</version>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.gentyref</groupId>
+            <artifactId>gentyref</artifactId>
+            <version>1.2.0</version>
         </dependency>
         <dependency>
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
+            <version>3.20.0-GA</version>
         </dependency>
         <dependency>
             <groupId>org.ow2.asm</groupId>
@@ -119,6 +122,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
+            <version>1.16</version>
         </dependency>
     </dependencies>
 </project>

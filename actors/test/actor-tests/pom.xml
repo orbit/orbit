@@ -30,10 +30,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>com.ea.orbit</groupId>
+        <groupId>cloud.orbit</groupId>
         <artifactId>orbit-actors-parent</artifactId>
         <version>0.8.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../..</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -43,24 +43,25 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     <dependencies>
         <dependency>
+            <groupId>cloud.orbit</groupId>
+            <artifactId>orbit-runtime</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cloud.orbit</groupId>
+            <artifactId>orbit-json</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>18.0</version>
         </dependency>
         <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-runtime</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.ea.orbit</groupId>
-            <artifactId>orbit-json</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <scope>test</scope>
+            <version>1.1.3</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -69,6 +70,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+            <version>3.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>

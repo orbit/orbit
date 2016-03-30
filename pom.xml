@@ -30,22 +30,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.ea.orbit</groupId>
-    <artifactId>orbit-parent</artifactId>
+	
+	<parent>
+		<groupId>cloud.orbit</groupId>
+		<artifactId>orbit-java-parent</artifactId>
+		<version>1</version>
+	</parent>
+	
+    <artifactId>orbit-internal-parent</artifactId>
     <version>0.8.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>Orbit Parent</name>
-    <description>Orbit is a JVM framework that makes it easier to build distributed and scalable online services.
-    </description>
-    <url>http://orbit.bioware.com/</url>
+    <name>Orbit Internal Parent</name>
 
     <properties>
-        <project.target.jdk>1.8</project.target.jdk>
-        <project.source.jdk>1.8</project.source.jdk>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <ea.async.version>1.0.2</ea.async.version>
-        <ea.agentloader.version>1.0.0</ea.agentloader.version>
     </properties>
 
     <modules>
@@ -61,49 +59,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <version>${ea.async.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.ea.agentloader</groupId>
-                <artifactId>ea-agent-loader</artifactId>
-                <version>${ea.agentloader.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>1.1.3</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>1.7.13</version>
-            </dependency>
-            <dependency>
-                <groupId>org.javassist</groupId>
-                <artifactId>javassist</artifactId>
-                <version>3.20.0-GA</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>3.4</version>
-            </dependency>
-            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
-            </dependency>
-            <dependency>
-                <groupId>com.googlecode.gentyref</groupId>
-                <artifactId>gentyref</artifactId>
-                <version>1.2.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yaml</groupId>
-                <artifactId>snakeyaml</artifactId>
-                <version>1.16</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.inject</groupId>
-                <artifactId>javax.inject</artifactId>
-                <version>1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -116,25 +74,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         </dependency>
     </dependencies>
 
-    <licenses>
-        <license>
-            <name>The BSD 3-Clause License</name>
-            <url>http://opensource.org/licenses/BSD-3-Clause</url>
-        </license>
-    </licenses>
-
-    <developers>
-        <developer>
-            <name>Electronic Arts Inc</name>
-            <url>http://www.ea.com</url>
-        </developer>
-    </developers>
-	
-    <organization>
-        <name>Electronic Arts Inc</name>
-        <url>http://www.ea.com</url>
-    </organization>
-
     <scm>
         <url>https://github.com/electronicarts/orbit</url>
         <connection>scm:git:git://github.com/electronicarts/orbit.git</connection>
@@ -146,86 +85,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.3</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>2.6</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>2.4</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.7</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-pmd-plugin</artifactId>
-                    <version>3.5</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>2.10.3</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jxr-plugin</artifactId>
-                    <version>2.5</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-gpg-plugin</artifactId>
-                    <version>1.6</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.10</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.18.1</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>2.4.1</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-assembly-plugin</artifactId>
-                    <version>2.5.5</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>build-helper-maven-plugin</artifactId>
-                    <version>1.9.1</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>exec-maven-plugin</artifactId>
-                    <version>1.4.0</version>
                 </plugin>
 
                 <plugin>
@@ -237,127 +98,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </plugins>
         </pluginManagement>
 
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <target>${project.target.jdk}</target>
-                    <source>${project.source.jdk}</source>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
     </build>
 
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-pmd-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jxr-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </reporting>
-
-    <profiles>
-        <profile>
-            <id>public-deploy</id>
-            <activation>
-                <property>
-                    <name>!internalDeploy</name>
-                </property>
-            </activation>
-            <distributionManagement>
-                <snapshotRepository>
-                    <id>ossrh</id>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-                </snapshotRepository>
-                <repository>
-                    <id>ossrh</id>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                </repository>
-            </distributionManagement>
-        </profile>
-        <profile>
-            <id>internal-deploy</id>
-            <activation>
-                <property>
-                    <name>internalDeploy</name>
-                    <value>true</value>
-                </property>
-            </activation>
-            <distributionManagement>
-                <snapshotRepository>
-                    <id>${internalSnapshotRepo.id}</id>
-                    <url>${internalSnapshotRepo.url}</url>
-                </snapshotRepository>
-                <repository>
-                    <id>${internalReleaseRepo.id}</id>
-                    <url>${internalReleaseRepo.url}</url>
-                </repository>
-            </distributionManagement>
-        </profile>
-        <profile>
-            <id>stageRelease</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <configuration>
-                            <failOnError>false</failOnError>
-                            <additionalparam>-Xdoclint:none</additionalparam>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <configuration>
-                                    <failOnError>false</failOnError>
-                                    <additionalparam>-Xdoclint:none</additionalparam>
-                                </configuration>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>attach-javadocs-2</id>
-                                <goals>
-                                    <goal>aggregate</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
+	<profiles>
         <profile>
             <id>withoutTests</id>
             <properties>

@@ -31,8 +31,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>com.ea.orbit</groupId>
-        <artifactId>orbit-parent</artifactId>
+        <groupId>cloud.orbit</groupId>
+        <artifactId>orbit-internal-parent</artifactId>
         <version>0.8.0-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
