@@ -39,6 +39,7 @@ import cloud.orbit.concurrent.Task;
 import cloud.orbit.exception.UncheckedException;
 
 import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class InMemoryJSONStorageExtension implements StorageExtension
@@ -50,6 +51,11 @@ public class InMemoryJSONStorageExtension implements StorageExtension
     public String getName()
     {
         return name;
+    }
+
+    public InMemoryJSONStorageExtension()
+    {
+        this(new ConcurrentHashMap<>());
     }
 
     public InMemoryJSONStorageExtension(final ConcurrentMap<Object, Object> database)
