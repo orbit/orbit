@@ -1,10 +1,10 @@
 Orbit Framework
 =======
-[![Release](https://img.shields.io/github/tag/electronicarts/orbit.svg?label=release)](https://github.com/electronicarts/orbit/releases)
-[![Maven Central](https://img.shields.io/maven-central/v/com.ea.orbit/orbit-core.svg)](https://repo1.maven.org/maven2/com/ea/orbit/)
-[![Javadocs](https://img.shields.io/maven-central/v/com.ea.orbit/orbit-core.svg?label=Javadocs)](http://www.javadoc.io/doc/com.ea.orbit/orbit-all-docs)
-[![Build Status](https://img.shields.io/travis/electronicarts/orbit.svg)](https://travis-ci.org/electronicarts/orbit)
-[![Gitter](https://img.shields.io/badge/style-Join_Chat-ff69b4.svg?style=flat&label=gitter)](https://gitter.im/electronicarts/orbit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Release](https://img.shields.io/github/release/orbit/orbit.svg)](https://github.com/orbit/orbit/releases)
+[![Maven Central](https://img.shields.io/maven-central/v/cloud.orbit/orbit-runtime.svg)](https://repo1.maven.org/maven2/com/ea/orbit/)
+[![Javadocs](https://img.shields.io/maven-central/v/cloud.orbit/orbit-runtime.svg?label=Javadocs)](http://www.javadoc.io/doc/cloud.orbit/orbit-runtime)
+[![Build Status](https://img.shields.io/travis/orbit/orbit.svg)](https://travis-ci.org/orbit/orbit)
+[![Gitter](https://img.shields.io/badge/style-Join_Chat-ff69b4.svg?style=flat&label=gitter)](https://gitter.im/orbit/orbit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 Orbit Actors is a JVM based framework to write distributed systems using virtual actors.
 A virtual actor is an object that interacts with the world using asynchronous messages.
