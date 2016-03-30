@@ -76,9 +76,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     </dependencies>
 
     <scm>
-        <url>https://github.com/electronicarts/orbit</url>
-        <connection>scm:git:git://github.com/electronicarts/orbit.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/electronicarts/orbit.git</developerConnection>
+        <url>https://github.com/orbit/orbit</url>
+        <connection>scm:git:git://github.com/orbit/orbit.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/orbit/orbit.git</developerConnection>
     </scm>
 
     <build>
