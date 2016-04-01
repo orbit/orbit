@@ -82,14 +82,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     <dependencies>
         <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-embedded</artifactId>
-            <version>8.1.0.Final</version>
+            <groupId>cloud.orbit</groupId>
+            <artifactId>orbit-core</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>cloud.orbit</groupId>
-            <artifactId>orbit-core</artifactId>
+            <artifactId>orbit-infinispan-cluster</artifactId>
             <version>${project.version}</version>
         </dependency>
 

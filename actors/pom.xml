@@ -49,6 +49,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <module>core</module>
         <module>runtime</module>
         <module>json</module>
+        <module>infinispan-cluster</module>
         <module>test/actor-tests</module>
         <module>test/benchmarks</module>
     </modules>
