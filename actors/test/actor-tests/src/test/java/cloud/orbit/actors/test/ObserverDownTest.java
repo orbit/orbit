@@ -31,7 +31,7 @@ package cloud.orbit.actors.test;
 
 import cloud.orbit.actors.ActorObserver;
 import cloud.orbit.actors.Stage;
-import cloud.orbit.actors.runtime.cloner.KryoCloner;
+import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.concurrent.Task;
 
 import org.junit.Test;

@@ -26,7 +26,7 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.runtime.cloner;
+package cloud.orbit.actors.cloner;
 
 import cloud.orbit.actors.annotation.Immutable;
 import cloud.orbit.actors.runtime.Message;

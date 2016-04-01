@@ -28,7 +28,7 @@
 
 package cloud.orbit.actors.runtime;
 
-import cloud.orbit.actors.runtime.cloner.KryoCloner;
+import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.profiler.ProfilerData;
 
 import java.util.HashMap;

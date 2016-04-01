@@ -26,9 +26,38 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.server;
+package cloud.orbit.actors.cloner;
 
-public interface ServerMessageFilter
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+/**
+ * Java serialization based object cloning implementation.
+ */
+public class JavaSerializationCloner implements ExecutionObjectCloner
 {
-    void filter(MessageContext messageContext);
+    @Override
+    public <T> T clone(T object)
+    {
+        try
+        {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream outputStream = new ObjectOutputStream(byteArrayOutputStream);
+            outputStream.writeObject(object);
+
+            byte[] bytes = byteArrayOutputStream.toByteArray();
+
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+            ObjectInputStream inputStream = new ObjectInputStream(byteArrayInputStream);
+
+            return (T) inputStream.readObject();
+        } catch (IOException | ClassNotFoundException e)
+        {
+            throw new IllegalArgumentException(e);
+        }
+    }
 }
+

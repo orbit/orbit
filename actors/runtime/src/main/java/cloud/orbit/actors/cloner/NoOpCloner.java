@@ -26,12 +26,23 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.runtime.cloner;
+package cloud.orbit.actors.cloner;
+
+import cloud.orbit.actors.annotation.Immutable;
 
 /**
- * Used by Execution to clone objects
+ * No-op execution object cloner, developer is responsible for caching immutable objects.
+ *
+ * @deprecated see {@link Immutable}.
+ *
+ * @author Johno Crawford (johno@sulake.com)
  */
-public interface ExecutionObjectCloner
+@Deprecated
+public class NoOpCloner implements ExecutionObjectCloner
 {
-    <T> T clone(final T object);
+
+    @Override
+    public <T> T clone(T object) {
+        return object;
+    }
 }
