@@ -28,26 +28,23 @@
 
 package cloud.orbit.actors.streams.simple;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.extensions.ActorExtension;
 import cloud.orbit.actors.extensions.StreamProvider;
 import cloud.orbit.actors.streams.AsyncStream;
 import cloud.orbit.concurrent.ConcurrentHashSet;
-import cloud.orbit.exception.UncheckedException;
-
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-
-import java.util.concurrent.ExecutionException;
 
 public class SimpleStreamExtension implements ActorExtension, StreamProvider
 {
     private String name;
-    private Cache<Actor, SimpleStreamProxyObject> weakCache = CacheBuilder.newBuilder()
+    private final Cache<Actor, SimpleStreamProxyObject> weakCache = Caffeine.newBuilder()
             .weakValues()
             .build();
 
-    private ConcurrentHashSet<SimpleStreamProxyObject> hardRefs = new ConcurrentHashSet<>();
+    private final ConcurrentHashSet<SimpleStreamProxyObject> hardRefs = new ConcurrentHashSet<>();
 
 
     public SimpleStreamExtension()
@@ -78,15 +75,8 @@ public class SimpleStreamExtension implements ActorExtension, StreamProvider
 
     public <T> SimpleStreamProxyObject<T> getSubscriber(final SimpleStream streamActorRef)
     {
-        try
-        {
-            //noinspection unchecked
-            return weakCache.get(streamActorRef, () -> new SimpleStreamProxyObject<T>(this, streamActorRef));
-        }
-        catch (ExecutionException e)
-        {
-            throw new UncheckedException(e);
-        }
+        //noinspection unchecked
+        return weakCache.get(streamActorRef, o -> new SimpleStreamProxyObject<T>(this, streamActorRef));
     }
 
     ConcurrentHashSet<SimpleStreamProxyObject> getHardRefs()

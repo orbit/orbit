@@ -66,8 +66,7 @@ public class Task<T> extends CompletableFuture<T>
     private static Void NIL = null;
 
     private static Executor commonPool = ExecutorUtils.newScalingThreadPool(100);
-    private static final ScheduledExecutorService schedulerExecutor =
-            Executors.newScheduledThreadPool(10);
+    private static ScheduledExecutorService schedulerExecutor = Executors.newScheduledThreadPool(10);
 
     // TODO: make all callbacks async by default and using the current executor
     // what "current executor' means will have to be defined.

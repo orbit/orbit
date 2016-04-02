@@ -28,6 +28,12 @@
 
 package cloud.orbit.actors.test;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.github.benmanes.caffeine.cache.Ticker;
+
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.runtime.NodeCapabilities;
@@ -35,12 +41,6 @@ import cloud.orbit.actors.runtime.ResponseCaching;
 import cloud.orbit.actors.test.actors.CacheResponse;
 import cloud.orbit.actors.test.actors.CacheResponseActor;
 import cloud.orbit.exception.UncheckedException;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.google.common.base.Ticker;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -55,7 +55,7 @@ public class CacheResponseTest extends ActorBaseTest
     /**
      * A Ticker which does not progress time unless called with advanceMillis
      */
-    private class CacheResponseTestTicker extends Ticker
+    private class CacheResponseTestTicker implements Ticker
     {
         private long elapsedMillis;
 
@@ -218,6 +218,7 @@ public class CacheResponseTest extends ActorBaseTest
     @Before
     public void initializeCacheManager()
     {
+        ResponseCaching.setCacheExecutor(Runnable::run);
         ResponseCaching.setDefaultCacheTicker(null);
     }
 

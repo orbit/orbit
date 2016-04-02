@@ -28,6 +28,10 @@
 
 package cloud.orbit.actors.runtime;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.ActorObserver;
 import cloud.orbit.actors.cluster.NodeAddress;
@@ -35,25 +39,18 @@ import cloud.orbit.actors.transactions.IdUtils;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.concurrent.TaskFunction;
 import cloud.orbit.exception.NotImplementedException;
-import cloud.orbit.exception.UncheckedException;
-
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.RemovalCause;
-import com.google.common.cache.RemovalNotification;
 
 import java.util.ConcurrentModificationException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 public class LocalObjects
 {
-    private ConcurrentMap<Object, LocalObjectEntry> localObjects = new ConcurrentHashMap<>();
-    private Cache<Object, LocalObjectEntry> objectMap = CacheBuilder.newBuilder().weakKeys()
+    private final ConcurrentMap<Object, LocalObjectEntry> localObjects = new ConcurrentHashMap<>();
+    private final Cache<Object, LocalObjectEntry> objectMap = Caffeine.newBuilder().weakKeys()
             .removalListener(this::onRemoval).build();
 
 
@@ -245,24 +242,17 @@ public class LocalObjects
             throw new IllegalArgumentException("Object clashes with a pre-existing object: " + reference);
         }
         LocalObjectEntry localObject = createLocalObjectEntry(reference, object);
-        try
+        if (object != null)
         {
-            if (object != null)
+            final LocalObjectEntry other = objectMap.get(object, o -> localObject);
+            if (localObject != other)
             {
-                final LocalObjectEntry other = objectMap.get(object, () -> localObject);
-                if (localObject != other)
+                if (!Objects.equals(reference, other.getRemoteReference()))
                 {
-                    if (!Objects.equals(reference, other.getRemoteReference()))
-                    {
-                        throw new ConcurrentModificationException();
-                    }
-                    return (RemoteReference) other.getRemoteReference();
+                    throw new ConcurrentModificationException();
                 }
+                return (RemoteReference) other.getRemoteReference();
             }
-        }
-        catch (ExecutionException e)
-        {
-            throw new UncheckedException(e);
         }
         final LocalObjectEntry previous = localObjects.putIfAbsent(reference, localObject);
         if (previous != null && localObject != previous)
@@ -312,14 +302,13 @@ public class LocalObjects
         return localObject;
     }
 
-    private void onRemoval(final RemovalNotification<Object, LocalObjectEntry> objectObjectRemovalNotification)
+    private void onRemoval(final Object key, final LocalObjectEntry value, final RemovalCause removalCause)
     {
-        if (objectObjectRemovalNotification.getCause() == RemovalCause.COLLECTED)
+        if (removalCause == RemovalCause.COLLECTED)
         {
-            final LocalObjectEntry objectEntry = objectObjectRemovalNotification.getValue();
-            if (objectEntry != null && objectEntry.getRemoteReference() != null)
+            if (value != null && value.getRemoteReference() != null)
             {
-                localObjects.remove(objectEntry.getRemoteReference());
+                localObjects.remove(value.getRemoteReference());
             }
         }
     }

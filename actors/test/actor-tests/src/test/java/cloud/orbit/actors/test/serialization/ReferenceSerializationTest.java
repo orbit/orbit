@@ -43,10 +43,9 @@ import cloud.orbit.concurrent.Task;
 
 import org.junit.Test;
 
-import com.google.common.collect.Sets;
-
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -163,8 +162,7 @@ public class ReferenceSerializationTest extends ActorBaseTest
         SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
         somePlayer.joinMatch(someMatch).join();
 
-
-        Set<Class<?>> validClasses = Sets.newHashSet(RemoteKey.class, NodeAddressImpl.class, String.class);
+        Set<Class<?>> validClasses = new HashSet<>(Arrays.asList(RemoteKey.class, NodeAddressImpl.class, String.class));
 
         for (Map.Entry e : FakeGroup.get(clusterName).getCaches().entrySet())
         {
