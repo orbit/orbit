@@ -67,7 +67,7 @@ public class Messaging extends HandlerAdapter implements Startable
 
     private final LongAdder networkMessagesReceived = new LongAdder();
     private final LongAdder responsesReceived = new LongAdder();
-    private static Timer timer = new Timer("Messaging timer");
+    private static Timer timer = new Timer("Messaging timer", true);
     private BasicRuntime runtime;
 
 

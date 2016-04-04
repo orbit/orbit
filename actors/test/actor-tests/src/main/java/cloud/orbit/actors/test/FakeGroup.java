@@ -37,9 +37,9 @@ import cloud.orbit.exception.UncheckedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,7 +50,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
@@ -58,7 +57,7 @@ public class FakeGroup
 {
     private static final Logger logger = LoggerFactory.getLogger(FakeGroup.class);
 
-    private static LoadingCache<String, FakeGroup> groups = CacheBuilder.newBuilder()
+    private static final LoadingCache<String, FakeGroup> groups = Caffeine.newBuilder()
             .weakValues()
             .build(new CacheLoader<String, FakeGroup>()
             {
@@ -69,11 +68,11 @@ public class FakeGroup
                 }
             });
 
-    private Map<NodeAddress, FakeClusterPeer> currentChannels = new HashMap<>();
+    private final Map<NodeAddress, FakeClusterPeer> currentChannels = new HashMap<>();
 
     private final Object topologyMutex = new Object();
     @SuppressWarnings("rawtypes")
-    private LoadingCache<String, ConcurrentMap> maps = CacheBuilder.newBuilder()
+    private final LoadingCache<String, ConcurrentMap> maps = Caffeine.newBuilder()
             .build(new CacheLoader<String, ConcurrentMap>()
             {
                 @Override
@@ -149,27 +148,13 @@ public class FakeGroup
 
     public static FakeGroup get(final String clusterName)
     {
-        try
-        {
-            return groups.get(clusterName);
-        }
-        catch (ExecutionException e)
-        {
-            throw new UncheckedException(e);
-        }
+        return groups.get(clusterName);
     }
 
     @SuppressWarnings("unchecked")
     public <K, V> ConcurrentMap<K, V> getCache(final String name)
     {
-        try
-        {
-            return maps.get(name);
-        }
-        catch (ExecutionException e)
-        {
-            throw new UncheckedException(e);
-        }
+        return maps.get(name);
     }
 
     public Map<String, ConcurrentMap> getCaches()

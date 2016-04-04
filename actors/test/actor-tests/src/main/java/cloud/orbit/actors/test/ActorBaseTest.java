@@ -28,9 +28,21 @@
 
 package cloud.orbit.actors.test;
 
+import org.glassfish.hk2.api.ServiceLocator;
+import org.glassfish.hk2.api.ServiceLocatorFactory;
+import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
+import org.junit.After;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
+import org.slf4j.Logger;
+
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.client.ClientPeer;
+import cloud.orbit.actors.cloner.ExecutionObjectCloner;
+import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.concurrent.MultiExecutionSerializer;
 import cloud.orbit.actors.concurrent.WaitFreeExecutionSerializer;
 import cloud.orbit.actors.extensions.LifetimeExtension;
@@ -42,24 +54,11 @@ import cloud.orbit.actors.runtime.ActorFactoryGenerator;
 import cloud.orbit.actors.runtime.ActorTaskContext;
 import cloud.orbit.actors.runtime.Execution;
 import cloud.orbit.actors.runtime.NodeCapabilities;
-import cloud.orbit.actors.cloner.ExecutionObjectCloner;
-import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.server.ServerPeer;
 import cloud.orbit.concurrent.ExecutorUtils;
+import cloud.orbit.concurrent.ForwardingExecutorService;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.exception.UncheckedException;
-
-import org.glassfish.hk2.api.ServiceLocator;
-import org.glassfish.hk2.api.ServiceLocatorFactory;
-import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
-import org.junit.After;
-import org.junit.Rule;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
-import org.slf4j.Logger;
-
-import com.google.common.util.concurrent.ForwardingExecutorService;
 
 import java.io.PrintStream;
 import java.lang.reflect.Field;
@@ -109,17 +108,7 @@ public class ActorBaseTest
         ServiceLocatorUtilities.addOneConstant(serviceLocator, fakeSync);
     }
 
-
-    protected static final ExecutorService commonPool = new ForwardingExecutorService()
-    {
-        ExecutorService delegate = ExecutorUtils.newScalingThreadPool(200);
-
-        @Override
-        protected ExecutorService delegate()
-        {
-            return delegate;
-        }
-
+    protected static final ExecutorService commonPool = new ForwardingExecutorService<ExecutorService>(ExecutorUtils.newScalingThreadPool(200)) {
         @Override
         public boolean awaitTermination(final long timeout, final TimeUnit unit) throws InterruptedException
         {
@@ -130,15 +119,7 @@ public class ActorBaseTest
         @Override
         public void shutdown()
         {
-            try
-            {
-                // Attention: intentionally not calling delegate.shutdown() to keep reusing it for other tests.
-                delegate.awaitTermination(0, TimeUnit.SECONDS);
-            }
-            catch (InterruptedException e)
-            {
-                throw new UncheckedException(e);
-            }
+            // Attention: intentionally not calling delegate.shutdown() to keep reusing it for other tests.
         }
     };
 
