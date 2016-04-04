@@ -38,6 +38,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
@@ -66,8 +67,11 @@ public class Task<T> extends CompletableFuture<T>
     private static Void NIL = null;
 
     private static Executor commonPool = ExecutorUtils.newScalingThreadPool(100);
-    private static final ScheduledExecutorService schedulerExecutor =
-            Executors.newScheduledThreadPool(10);
+    private static ScheduledExecutorService schedulerExecutor = new ScheduledThreadPoolExecutor(10, runnable -> {
+        Thread thread = Executors.defaultThreadFactory().newThread(runnable);
+        thread.setDaemon(true);
+        return thread;
+    });
 
     // TODO: make all callbacks async by default and using the current executor
     // what "current executor' means will have to be defined.
