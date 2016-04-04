@@ -91,6 +91,8 @@ public class SingleNodeBenchmark
     @Setup
     public void setup()
     {
+        System.setProperty("java.net.preferIPv4Stack", "true");
+
         System.out.println("Create stage");
         stage = createStage();
         if (profile)

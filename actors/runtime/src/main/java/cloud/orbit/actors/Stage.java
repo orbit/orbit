@@ -115,6 +115,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
@@ -450,7 +451,6 @@ public class Stage implements Startable, ActorRuntime
             finder.start().join();
         }
 
-
         cacheManager = new ResponseCaching();
 
         hosting.setNodeType(mode == StageMode.HOST ? NodeCapabilities.NodeTypeEnum.SERVER : NodeCapabilities.NodeTypeEnum.CLIENT);
@@ -684,7 +684,9 @@ public class Stage implements Startable, ActorRuntime
                 }
 
                 // Skip this actor if it is marked NeverDeactivate
-                if(RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class)) continue;
+                if (RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class)) {
+                    continue;
+                }
 
                 if (clock().millis() - actorEntry.getLastAccess() > maxAge)
                 {

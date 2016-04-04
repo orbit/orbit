@@ -42,9 +42,9 @@ import cloud.orbit.exception.UncheckedException;
 import cloud.orbit.tuples.Pair;
 import cloud.orbit.util.AnnotationCache;
 
-import com.google.common.base.Ticker;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Ticker;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -53,6 +53,7 @@ import java.math.BigInteger;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 public class ResponseCaching
@@ -60,6 +61,7 @@ public class ResponseCaching
         implements ExecutionCacheFlushObserver
 {
     private static Ticker defaultCacheTicker = null;
+    private static Executor cacheExecutor = null;
     private MessageSerializer messageSerializer;
     private BasicRuntime runtime;
     private final AnnotationCache<CacheResponse> cacheResponseCache = new AnnotationCache<>(CacheResponse.class);
@@ -82,15 +84,16 @@ public class ResponseCaching
      * Key: Pairing of the Actor address, and a hash of the parameters being passed into the method
      * Value: The method result corresponding with the actor's call to the method with provided parameters
      */
-    private Cache<Method, Cache<Pair<Addressable, String>, Task>> masterCache = CacheBuilder.newBuilder().build();
+    private final Cache<Method, Cache<Pair<Addressable, String>, Task>> masterCache = Caffeine.newBuilder().build();
 
     public static void setDefaultCacheTicker(Ticker defaultCacheTicker)
     {
         ResponseCaching.defaultCacheTicker = defaultCacheTicker;
     }
 
-    public ResponseCaching()
+    public static void setCacheExecutor(final Executor cacheExecutor)
     {
+        ResponseCaching.cacheExecutor = cacheExecutor;
     }
 
     /**
@@ -138,7 +141,11 @@ public class ResponseCaching
         Cache<Pair<Addressable, String>, Task> cache = masterCache.getIfPresent(method);
         if (cache == null)
         {
-            cache = CacheBuilder.newBuilder()
+            Caffeine<Object, Object> builder = Caffeine.newBuilder();
+            if (cacheExecutor != null) {
+                builder.executor(cacheExecutor);
+            }
+            cache = builder
                     .ticker(defaultCacheTicker == null ? Ticker.systemTicker() : defaultCacheTicker)
                     .maximumSize(cacheResponse.maxEntries())
                     .expireAfterWrite(cacheResponse.ttlDuration(), cacheResponse.ttlUnit())

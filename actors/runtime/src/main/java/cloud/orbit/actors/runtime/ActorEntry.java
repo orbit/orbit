@@ -164,7 +164,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
             {
                 return Task.done();
             }
-            return executionSerializer.offerJob(key, () -> doDeactivate(), 1000);
+            return executionSerializer.offerJob(key, () -> doDeactivate(), 10000);
         }
         catch (Throwable ex)
         {

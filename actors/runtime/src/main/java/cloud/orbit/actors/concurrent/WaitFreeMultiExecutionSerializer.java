@@ -28,17 +28,17 @@
 
 package cloud.orbit.actors.concurrent;
 
-import cloud.orbit.actors.runtime.InternalUtils;
-import cloud.orbit.concurrent.ExecutorUtils;
-import cloud.orbit.concurrent.Task;
-import cloud.orbit.exception.UncheckedException;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+
+import cloud.orbit.actors.runtime.InternalUtils;
+import cloud.orbit.concurrent.ExecutorUtils;
+import cloud.orbit.concurrent.Task;
+
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
@@ -52,11 +52,12 @@ import java.util.function.Supplier;
 public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerializer<T>
 {
     private static final Logger logger = LoggerFactory.getLogger(WaitFreeMultiExecutionSerializer.class);
+
     private final ExecutorService executorService;
 
     // while running, the WaitFreeExecutionSerializer is held alive by references from the executorService
     // and from anyone holding the promises (Tasks) it returns.
-    private Cache<T, WaitFreeExecutionSerializer> serializers = CacheBuilder.newBuilder().weakValues().build();
+    private final Cache<T, WaitFreeExecutionSerializer> serializers = Caffeine.newBuilder().weakValues().build();
 
     public WaitFreeMultiExecutionSerializer()
     {
@@ -73,14 +74,7 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
         final WaitFreeExecutionSerializer serializer = serializers.getIfPresent(key);
         if (serializer == null)
         {
-            try
-            {
-                return serializers.get(key, () -> new WaitFreeExecutionSerializer(executorService, key));
-            }
-            catch (ExecutionException e)
-            {
-                throw new UncheckedException(e);
-            }
+            return serializers.get(key, o -> new WaitFreeExecutionSerializer(executorService, key));
         }
         return serializer;
     }
