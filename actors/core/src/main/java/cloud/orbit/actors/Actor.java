@@ -30,6 +30,7 @@ package cloud.orbit.actors;
 
 import cloud.orbit.actors.annotation.NoIdentity;
 import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
+import cloud.orbit.util.StringUtils;
 
 /**
  * Interface marker for orbit actors.
@@ -75,6 +76,10 @@ public interface Actor
         if (actorInterface.isAnnotationPresent(NoIdentity.class))
         {
             throw new IllegalArgumentException("Shouldn't supply ids for Actors annotated with " + NoIdentity.class);
+        }
+        else if(StringUtils.isBlank(id))
+        {
+            throw new IllegalArgumentException("Actor ids may not be null or \"\".");
         }
         return DefaultDescriptorFactory.ref(actorInterface, id);
     }
