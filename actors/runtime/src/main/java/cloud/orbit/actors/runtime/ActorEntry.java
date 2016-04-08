@@ -147,7 +147,18 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
                 throw ex;
             }
         }
-        await(actor.activateAsync());
+        try
+        {
+            await(actor.activateAsync());
+        }
+        catch (Exception ex)
+        {
+            if (actor.logger.isErrorEnabled())
+            {
+                actor.logger.error("Error activating actor for: " + reference, ex);
+            }
+            throw ex;
+        }
         await(Task.allOf(runtime.getAllExtensions(LifetimeExtension.class).stream().map(v -> v.postActivation(actor))));
         return Task.fromValue((T) actor);
     }
