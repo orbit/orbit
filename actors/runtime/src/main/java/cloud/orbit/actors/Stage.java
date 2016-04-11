@@ -615,8 +615,6 @@ public class Stage implements Startable, ActorRuntime
         await(stopActors());
         logger.debug("stopping timers");
         await(stopTimers());
-        logger.debug("stopping extensions");
-        await(stopExtensions());
         do
         {
             InternalUtils.sleep(100);
@@ -626,6 +624,9 @@ public class Stage implements Startable, ActorRuntime
 
         logger.debug("stopping execution serializer");
         executionSerializer.shutdown();
+
+        logger.debug("stopping extensions");
+        await(stopExtensions());
 
         state = NodeCapabilities.NodeState.STOPPED;
         logger.debug("stop done");

@@ -31,7 +31,6 @@ activate Stage
 note over Stage
     - await deactivate all actors
     - then stop timers
-    - then await stop all extensions
 end note
 
 
@@ -57,6 +56,10 @@ end note
 Network -> PipelineTail : close
 deactivate Network
 Stage <-- PipelineTail : close ack (via pipeline fireInactive)
+
+note over Stage
+    - await stop all extensions
+end note
 
 == Stage stopped ==
 
