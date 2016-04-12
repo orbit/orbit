@@ -81,6 +81,7 @@ import cloud.orbit.actors.streams.StreamSubscriptionHandle;
 import cloud.orbit.actors.streams.simple.SimpleStreamExtension;
 import cloud.orbit.actors.transactions.IdUtils;
 import cloud.orbit.actors.transactions.TransactionUtils;
+import cloud.orbit.annotation.Config;
 import cloud.orbit.concurrent.ExecutorUtils;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.lifecycle.Startable;
@@ -138,12 +139,25 @@ public class Stage implements Startable, ActorRuntime
         }
     };
 
+    @Config("orbit.actors.clusterName")
     private String clusterName;
+
+    @Config("orbit.actors.nodeName")
     private String nodeName;
+
+    @Config("orbit.actors.stageMode")
     private StageMode mode = StageMode.HOST;
+
+    @Config("orbit.actors.executionPoolSize")
     private int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
+
+    @Config("orbit.actors.extensions")
     private List<ActorExtension> extensions = new CopyOnWriteArrayList<>();
+
+    @Config("orbit.actors.stickyHeaders")
     private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
+
+    @Config("orbit.actors.pulseInterval")
     private long pulseIntervalMillis = TimeUnit.SECONDS.toMillis(10);
     private Timer timer = new Timer("Orbit stage timer");
     private Pipeline pipeline;
@@ -156,8 +170,14 @@ public class Stage implements Startable, ActorRuntime
     private ActorClassFinder finder;
     private LoggerExtension loggerExtension;
     private NodeCapabilities.NodeState state;
+
+    @Config("orbit.actors.concurrentDeactivations")
     private int concurrentDeactivations = 16;
+
+    @Config("orbit.actors.defaultActorTTL")
     private long defaultActorTTL = TimeUnit.MINUTES.toMillis(10);
+
+    @Config("orbit.actors.deactivationTimeoutMillis")
     private long deactivationTimeoutMillis = TimeUnit.MINUTES.toMillis(2);
 
     private Task<Void> startPromise = new Task<>();
