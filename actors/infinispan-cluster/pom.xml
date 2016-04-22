@@ -45,12 +45,13 @@
             <groupId>cloud.orbit</groupId>
             <artifactId>orbit-core</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core</artifactId>
-            <version>8.1.3.Final</version>
+            <artifactId>infinispan-embedded</artifactId>
+            <version>8.2.1.Final</version>
         </dependency>
     </dependencies>
 </project>
