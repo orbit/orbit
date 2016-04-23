@@ -45,6 +45,7 @@
             <groupId>cloud.orbit</groupId>
             <artifactId>orbit-core</artifactId>
             <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
