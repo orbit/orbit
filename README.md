@@ -23,7 +23,7 @@ This project was developed by [BioWare](http://www.bioware.com), a division of [
 
 Documentation
 =======
-Documentation is located [here](http://orbit.bioware.com/). <br />
+Documentation is located [here](https://github.com/orbit/orbit/wiki). <br />
 
 Simple Example
 =======
