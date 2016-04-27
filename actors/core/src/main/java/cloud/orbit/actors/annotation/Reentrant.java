@@ -39,7 +39,7 @@ import java.lang.annotation.Target;
  *
  * An activation cannot process a new request until all of the dependencies of the returned tasks are complete.
  *
- * Actor implementation classes may be marked with the {@link Reentrant} annotation to indicate that an activation
+ * Actor implementation methods may be marked with the {@link Reentrant} annotation to indicate that an activation
  * may process another request while waiting for other tasks to complete.
  *
  * Created by shenj on 07/03/2016.
