@@ -5,21 +5,13 @@
 [![Javadocs](https://img.shields.io/maven-central/v/cloud.orbit/orbit-runtime.svg?label=javadocs)](http://www.javadoc.io/doc/cloud.orbit/orbit-runtime)
 [![Build Status](https://img.shields.io/travis/orbit/orbit.svg)](https://travis-ci.org/orbit/orbit)
 [![Gitter](https://img.shields.io/badge/style-Join_Chat-ff69b4.svg?style=flat&label=gitter)](https://gitter.im/orbit/orbit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Twitter Follow](https://img.shields.io/twitter/follow/OrbitFramework.svg?style=social&maxAge=2592000)](https://twitter.com/orbitframework)
 
-Orbit Actors is a JVM based framework to write distributed systems using virtual actors.
-A virtual actor is an object that interacts with the world using asynchronous messages.
+Orbit is a framework to write distributed systems using virtual actors on the JVM. It allows developers to write highly distributed and scalable applications without worrying about clustering, discovery, networking or actor lifetime.
 
-At any time an actor may be active or inactive. Usually the state of an inactive actor will reside in the database.
-When a message is sent to an inactive actor it will be activated somewhere in the pool of backend servers.
-During the activation process the actor's state is read from the database.
-
-Actors are deactivated based on timeout and on server resource usage.
-
-It is heavily inspired by the [Microsoft Orleans](https://github.com/dotnet/Orleans) project. For the latest news, follow us on [Twitter](https://twitter.com/OrbitFramework).
-
-Documentation
+Full Documentation
 =======
-Documentation is located [here](https://github.com/orbit/orbit/wiki) on the GitHub wiki. 
+See the [Wiki](https://github.com/orbit/orbit/wiki) for full documentation, examples and other information.
 
 Developer & License
 ======
