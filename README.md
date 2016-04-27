@@ -4,7 +4,7 @@
 [![Maven Central](https://img.shields.io/maven-central/v/cloud.orbit/orbit-runtime.svg)](https://repo1.maven.org/maven2/cloud/orbit/)
 [![Javadocs](https://img.shields.io/maven-central/v/cloud.orbit/orbit-runtime.svg?label=javadocs)](http://www.javadoc.io/doc/cloud.orbit/orbit-runtime)
 [![Build Status](https://img.shields.io/travis/orbit/orbit.svg)](https://travis-ci.org/orbit/orbit)
-[![Gitter](https://img.shields.io/badge/style-Join_Chat-ff69b4.svg?style=flat&label=gitter)](https://gitter.im/orbit/orbit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Gitter](https://img.shields.io/badge/style-Join_Chat-ff69b4.svg?style=flat&label=gitter)](https://gitter.im/orbit/orbit)
 [![Twitter Follow](https://img.shields.io/twitter/follow/OrbitFramework.svg?style=social&maxAge=2592000)](https://twitter.com/orbitframework)
 
 Orbit is a framework to write distributed systems using virtual actors on the JVM. It allows developers to write highly distributed and scalable applications without worrying about clustering, discovery, networking or actor lifetime.
