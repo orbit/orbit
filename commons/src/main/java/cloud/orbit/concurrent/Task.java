@@ -614,12 +614,12 @@ public class Task<T> extends CompletableFuture<T>
 
     public static <U> Task<U> supplyAsync(Supplier<U> supplier)
     {
-        return Task.from(supplyAsync(TaskContext.wrap(supplier)));
+        return Task.from(CompletableFuture.supplyAsync(TaskContext.wrap(supplier)));
     }
 
     public static <U> Task<U> supplyAsync(Supplier<U> supplier, Executor executor)
     {
-        return Task.from(supplyAsync(TaskContext.wrap(supplier), executor));
+        return Task.from(CompletableFuture.supplyAsync(TaskContext.wrap(supplier), executor));
     }
 
     public static <U> Task<U> supplyAsync(TaskSupplier<U> supplier, Executor executor)
