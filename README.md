@@ -17,13 +17,13 @@ Actors are deactivated based on timeout and on server resource usage.
 
 It is heavily inspired by the [Microsoft Orleans](https://github.com/dotnet/Orleans) project. For the latest news, follow us on [Twitter](https://twitter.com/OrbitFramework).
 
+Documentation
+=======
+Documentation is located [here](https://github.com/orbit/orbit/wiki) on the GitHub wiki. 
+
 Developer & License
 ======
 This project was developed by [BioWare](http://www.bioware.com), a division of [Electronic Arts](http://www.ea.com) and is licensed under the [BSD 3-Clause License](LICENSE).
-
-Documentation
-=======
-Documentation is located [here](https://github.com/orbit/orbit/wiki). <br />
 
 Simple Example
 =======
