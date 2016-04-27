@@ -1,4 +1,4 @@
-Orbit Framework
+<img src="http://www.orbit.cloud/img/orbit-logo-black.png" alt="Orbit Logo" width="150px"/>
 =======
 [![Release](https://img.shields.io/github/release/orbit/orbit.svg)](https://github.com/orbit/orbit/releases)
 [![Maven Central](https://img.shields.io/maven-central/v/cloud.orbit/orbit-runtime.svg)](https://repo1.maven.org/maven2/cloud/orbit/)
