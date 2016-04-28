@@ -37,7 +37,7 @@ import org.junit.Test;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Supplier;
 
-import static org.jgroups.util.Util.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class ExecutionSerializerTest
 {

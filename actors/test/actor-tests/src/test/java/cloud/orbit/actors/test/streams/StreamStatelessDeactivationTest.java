@@ -47,7 +47,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static com.ea.async.Async.await;
-import static org.jgroups.util.Util.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class StreamStatelessDeactivationTest extends ActorBaseTest
 {
