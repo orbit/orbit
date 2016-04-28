@@ -69,6 +69,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <artifactId>asm</artifactId>
                 <version>${asm.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.ea.async</groupId>
+                <artifactId>ea-async</artifactId>
+                <version>${ea.async.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
