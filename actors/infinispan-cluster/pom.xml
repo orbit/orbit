@@ -40,6 +40,41 @@
     <name>Orbit Default Cluster</name>
     <artifactId>orbit-infinispan-cluster</artifactId>
 
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
+
+                            <artifactSet>
+                                <includes>
+                                    <include>org.infinispan:*</include>
+                                </includes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>infinispan.</pattern>
+                                    <shadedPattern>cloud.orbit.infinispan.shaded.infinispan.infinispan.</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.</pattern>
+                                    <shadedPattern>cloud.orbit.infinispan.shaded.infinispan.org.</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
     <dependencies>
         <dependency>
             <groupId>cloud.orbit</groupId>

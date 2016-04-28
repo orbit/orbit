@@ -51,6 +51,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
                             <artifactSet>
                                 <includes>
                                     <include>com.esotericsoftware:*</include>
@@ -58,7 +59,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                     <include>org.ow2.asm:asm</include>
                                 </includes>
                             </artifactSet>
-                            <keepDependenciesWithProvidedScope>true</keepDependenciesWithProvidedScope>
                             <relocations>
                                 <relocation>
                                     <pattern>com.esotericsoftware.</pattern>
