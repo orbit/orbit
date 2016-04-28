@@ -60,6 +60,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <artifactId>orbit-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.ea.async</groupId>
+            <artifactId>ea-async</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
@@ -68,11 +73,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
                 <version>${asm.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.ea.async</groupId>
-                <artifactId>ea-async</artifactId>
-                <version>${ea.async.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -59,7 +59,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
             </dependency>
-
+            <dependency>
+                <groupId>com.ea.async</groupId>
+                <artifactId>ea-async</artifactId>
+                <version>${ea.async.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -68,11 +72,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.ea.async</groupId>
-            <artifactId>ea-async</artifactId>
-            <optional>true</optional>
         </dependency>
     </dependencies>
 
