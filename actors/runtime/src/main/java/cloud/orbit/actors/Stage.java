@@ -158,7 +158,7 @@ public class Stage implements Startable, ActorRuntime
 
     @Config("orbit.actors.pulseInterval")
     private long pulseIntervalMillis = TimeUnit.SECONDS.toMillis(10);
-    private Timer timer = new Timer("Orbit stage timer");
+    private Timer timer;
     private Pipeline pipeline;
 
     private final String runtimeIdentity = "Orbit[" + IdUtils.urlSafeString(128) + "]";
@@ -223,6 +223,8 @@ public class Stage implements Startable, ActorRuntime
         private List<ActorExtension> extensions = new ArrayList<>();
         private Set<String> stickyHeaders = new HashSet<>();
 
+        private Timer timer;
+
         public Builder clock(Clock clock)
         {
             this.clock = clock;
@@ -283,6 +285,12 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
+        public Builder timer(Timer timer)
+        {
+            this.timer = timer;
+            return this;
+        }
+
         public Stage build()
         {
             Stage stage = new Stage();
@@ -294,6 +302,7 @@ public class Stage implements Startable, ActorRuntime
             stage.setNodeName(nodeName);
             stage.setMode(mode);
             stage.setExecutionPoolSize(executionPoolSize);
+            stage.setTimer(timer);
             extensions.forEach(stage::addExtension);
             stage.setMessaging(messaging);
             stage.addStickyHeaders(stickyHeaders);
@@ -391,6 +400,11 @@ public class Stage implements Startable, ActorRuntime
         this.mode = mode;
     }
 
+    public void setTimer(final Timer timer)
+    {
+        this.timer = timer;
+    }
+
     public Task<Void> getStartPromise()
     {
         return startPromise;
@@ -405,6 +419,11 @@ public class Stage implements Startable, ActorRuntime
             throw new IllegalStateException("Can't start the stage at this state. " + this.toString());
         }
         state = NodeCapabilities.NodeState.RUNNING;
+
+        if(timer == null)
+        {
+            timer = new Timer("orbit-stage-timer");
+        }
 
         if (loggerExtension == null)
         {
