@@ -60,6 +60,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <artifactId>orbit-commons</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.ea.async</groupId>
+            <artifactId>ea-async</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>

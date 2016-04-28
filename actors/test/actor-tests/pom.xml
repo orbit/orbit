@@ -73,6 +73,5 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <scope>test</scope>
             <version>1.7.21</version>
         </dependency>
-
     </dependencies>
 </project>

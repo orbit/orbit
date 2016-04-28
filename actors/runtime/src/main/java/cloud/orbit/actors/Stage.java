@@ -201,7 +201,7 @@ public class Stage implements Startable, ActorRuntime
     static
     {
         // this is here to help people testing the orbit source code.
-        // because Await.init is removed by the build time bytecode instrumentation.
+        // because Async.init is removed by the build time bytecode instrumentation.
         Async.init();
     }
 

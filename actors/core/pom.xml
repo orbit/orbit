@@ -97,10 +97,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.ea.async</groupId>
-            <artifactId>ea-async</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.21</version>
