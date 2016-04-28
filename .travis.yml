@@ -1,10 +1,11 @@
-language: java		
+language: java
 jdk: oraclejdk8
-
 notifications:
   webhooks:
     urls:
-      - https://webhooks.gitter.im/e/066a8197f92d460e8530
+    - https://webhooks.gitter.im/e/066a8197f92d460e8530
     on_success: always
-    on_failure: always  
-    on_start: false  
+    on_failure: always
+    on_start: false
+  slack:
+    secure: JtekPPtbMPNxHIo8nz+EwfJdts/D/9iMrXzy2b43teixnvRlO8sfh3lO5ZNai0pnwsdvOE1g0eIeW59bCJmea7SVvYpnu0fm0BXB1fboxGduYRMHN+4liVChMBmQ9QkBZkVNiF6KOh1RKrajHLHwJTKtExGVjuDPTqBISaJRu8A=
