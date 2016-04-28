@@ -52,7 +52,7 @@
                         </goals>
                         <configuration>
                             <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
-
+                            <minimizeJar>true</minimizeJar>
                             <artifactSet>
                                 <includes>
                                     <include>org.infinispan:*</include>
