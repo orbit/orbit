@@ -9,3 +9,5 @@ notifications:
     on_start: false
   slack:
     secure: JtekPPtbMPNxHIo8nz+EwfJdts/D/9iMrXzy2b43teixnvRlO8sfh3lO5ZNai0pnwsdvOE1g0eIeW59bCJmea7SVvYpnu0fm0BXB1fboxGduYRMHN+4liVChMBmQ9QkBZkVNiF6KOh1RKrajHLHwJTKtExGVjuDPTqBISaJRu8A=
+    on_success: change
+    on_failure: always
