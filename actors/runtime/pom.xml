@@ -51,12 +51,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
+
                             <artifactSet>
                                 <includes>
                                     <include>com.esotericsoftware:*</include>
                                     <include>org.objenesis:*</include>
                                     <include>org.ow2.asm:asm</include>
+                                    <include>com.github.ben-manes.caffeine:caffeine</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -71,6 +72,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                 <relocation>
                                     <pattern>org.objectweb.</pattern>
                                     <shadedPattern>cloud.orbit.runtime.shaded.org.objectweb.</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.github.benmanes.caffeine.</pattern>
+                                    <shadedPattern>cloud.orbit.runtime.shaded.com.github.benmanes.caffeine.</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
