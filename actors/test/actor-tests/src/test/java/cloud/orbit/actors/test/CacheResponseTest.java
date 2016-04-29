@@ -32,8 +32,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.github.benmanes.caffeine.cache.Ticker;
-
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.runtime.NodeCapabilities;
@@ -45,56 +43,43 @@ import cloud.orbit.exception.UncheckedException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.*;
 
 public class CacheResponseTest extends ActorBaseTest
 {
-    /**
-     * A Ticker which does not progress time unless called with advanceMillis
-     */
-    private class CacheResponseTestTicker implements Ticker
-    {
-        private long elapsedMillis;
-
-        @Override
-        public long read()
-        {
-            return TimeUnit.MILLISECONDS.toNanos(elapsedMillis);
-        }
-
-        public void advanceMillis(long millis)
-        {
-            elapsedMillis += millis;
-        }
-    }
-
     private Stage stage;
+    private FakeClock clock;
+
+    @Before
+    public void setUp() throws Exception
+    {
+        clock = new FakeClock();
+        clock.stop();
+    }
 
     @Test
     public void testCacheDuration()
     {
-        CacheResponseTestTicker ticker = new CacheResponseTestTicker();
-        ResponseCaching.setDefaultCacheTicker(ticker);
+        ResponseCaching.setClock(clock);
 
         CacheResponse actor = Actor.getReference(CacheResponse.class, UUID.randomUUID().toString());
 
         assertEquals((long) 1, (long) actor.getIndexTally(1).join()); // New access
         assertEquals((long) 1, (long) actor.getIndexTally(1).join()); // Cached access
 
-        ticker.advanceMillis(CacheResponseActor.INDEX_TALLY_DURATION_MILLIS / 2);
+        clock.incrementTimeMillis(CacheResponseActor.INDEX_TALLY_DURATION_MILLIS / 2);
         assertEquals((long) 1, (long) actor.getIndexTally(1).join()); // Still a cached access
 
         // Advance a Duration cycle
-        ticker.advanceMillis(CacheResponseActor.INDEX_TALLY_DURATION_MILLIS);
+        clock.incrementTimeMillis(CacheResponseActor.INDEX_TALLY_DURATION_MILLIS);
         assertEquals((long) 2, (long) actor.getIndexTally(1).join()); // Non-cached access
 
-        ticker.advanceMillis(CacheResponseActor.INDEX_TALLY_DURATION_MILLIS - 1);
+        clock.incrementTimeMillis(CacheResponseActor.INDEX_TALLY_DURATION_MILLIS - 1);
         assertEquals((long) 2, (long) actor.getIndexTally(1).join()); // Still a cached access
 
-        ticker.advanceMillis(1);
+        clock.incrementTimeMillis(1);
         assertEquals((long) 3, (long) actor.getIndexTally(1).join()); // Non-cached access
     }
 
@@ -141,8 +126,7 @@ public class CacheResponseTest extends ActorBaseTest
     @Test(timeout = 10_000L)
     public void testCacheFlush()
     {
-        CacheResponseTestTicker ticker = new CacheResponseTestTicker();
-        ResponseCaching.setDefaultCacheTicker(ticker);
+        ResponseCaching.setClock(clock);
 
         CacheResponse actor = Actor.getReference(CacheResponse.class, UUID.randomUUID().toString());
 
@@ -219,7 +203,7 @@ public class CacheResponseTest extends ActorBaseTest
     public void initializeCacheManager()
     {
         ResponseCaching.setCacheExecutor(Runnable::run);
-        ResponseCaching.setDefaultCacheTicker(null);
+        ResponseCaching.setClock(null);
     }
 
     @After

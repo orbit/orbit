@@ -66,7 +66,7 @@ public class FakeClock extends Clock
     {
         if (stopped)
         {
-            return millis.incrementAndGet();
+            return millis.get();
         }
         else
         {
