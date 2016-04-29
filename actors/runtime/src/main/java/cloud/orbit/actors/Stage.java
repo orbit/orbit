@@ -73,7 +73,6 @@ import cloud.orbit.actors.runtime.SerializationHandler;
 import cloud.orbit.actors.runtime.StatelessActorEntry;
 import cloud.orbit.actors.cloner.ExecutionObjectCloner;
 import cloud.orbit.actors.cloner.KryoCloner;
-import cloud.orbit.actors.cloner.NoOpCloner;
 import cloud.orbit.actors.streams.AsyncObserver;
 import cloud.orbit.actors.streams.AsyncStream;
 import cloud.orbit.actors.streams.StreamSequenceToken;
@@ -195,6 +194,7 @@ public class Stage implements Startable, ActorRuntime
     private Clock clock;
     private ExecutorService executionPool;
     private ExecutionObjectCloner objectCloner;
+    private ExecutionObjectCloner messageLoopbackObjectCloner;
     private MessageSerializer messageSerializer;
     private final WeakReference<ActorRuntime> cachedRef = new WeakReference<>(this);
 
@@ -211,6 +211,7 @@ public class Stage implements Startable, ActorRuntime
         private Clock clock;
         private ExecutorService executionPool;
         private ExecutionObjectCloner objectCloner;
+        private ExecutionObjectCloner messageLoopbackObjectCloner;
         private ClusterPeer clusterPeer;
 
         private String clusterName;
@@ -246,6 +247,12 @@ public class Stage implements Startable, ActorRuntime
         public Builder objectCloner(ExecutionObjectCloner objectCloner)
         {
             this.objectCloner = objectCloner;
+            return this;
+        }
+
+        public Builder messageLoopbackObjectCloner(ExecutionObjectCloner messageLoopbackObjectCloner)
+        {
+            this.messageLoopbackObjectCloner = messageLoopbackObjectCloner;
             return this;
         }
 
@@ -297,6 +304,7 @@ public class Stage implements Startable, ActorRuntime
             stage.setClock(clock);
             stage.setExecutionPool(executionPool);
             stage.setObjectCloner(objectCloner);
+            stage.setMessageLoopbackObjectCloner(messageLoopbackObjectCloner);
             stage.setClusterName(clusterName);
             stage.setClusterPeer(clusterPeer);
             stage.setNodeName(nodeName);
@@ -356,7 +364,12 @@ public class Stage implements Startable, ActorRuntime
         return objectCloner;
     }
 
-    public void setObjectCloner(ExecutionObjectCloner objectCloner)
+    public void setMessageLoopbackObjectCloner(final ExecutionObjectCloner messageLoopbackObjectCloner)
+    {
+        this.messageLoopbackObjectCloner = messageLoopbackObjectCloner;
+    }
+
+    public void setObjectCloner(final ExecutionObjectCloner objectCloner)
     {
         this.objectCloner = objectCloner;
     }
@@ -519,7 +532,7 @@ public class Stage implements Startable, ActorRuntime
         pipeline.addLast(DefaultHandlers.MESSAGING, messaging);
 
         final MessageLoopback messageLoopback = new MessageLoopback();
-        messageLoopback.setCloner(objectCloner instanceof NoOpCloner ? new KryoCloner() : objectCloner);
+        messageLoopback.setCloner(messageLoopbackObjectCloner != null ? messageLoopbackObjectCloner : new KryoCloner());
         messageLoopback.setRuntime(this);
         pipeline.addLast(messageLoopback.getName(), messageLoopback);
 
