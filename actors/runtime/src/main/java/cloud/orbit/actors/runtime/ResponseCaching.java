@@ -52,15 +52,17 @@ import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
+import java.time.Clock;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ResponseCaching
         extends HandlerAdapter
         implements ExecutionCacheFlushObserver
 {
-    private static Ticker defaultCacheTicker = null;
+    private static Clock clock = null;
     private static Executor cacheExecutor = null;
     private MessageSerializer messageSerializer;
     private BasicRuntime runtime;
@@ -86,14 +88,14 @@ public class ResponseCaching
      */
     private final Cache<Method, Cache<Pair<Addressable, String>, Task>> masterCache = Caffeine.newBuilder().build();
 
-    public static void setDefaultCacheTicker(Ticker defaultCacheTicker)
-    {
-        ResponseCaching.defaultCacheTicker = defaultCacheTicker;
-    }
-
     public static void setCacheExecutor(final Executor cacheExecutor)
     {
         ResponseCaching.cacheExecutor = cacheExecutor;
+    }
+
+    public static void setClock(final Clock clock)
+    {
+        ResponseCaching.clock = clock;
     }
 
     /**
@@ -146,7 +148,7 @@ public class ResponseCaching
                 builder.executor(cacheExecutor);
             }
             cache = builder
-                    .ticker(defaultCacheTicker == null ? Ticker.systemTicker() : defaultCacheTicker)
+                    .ticker(clock == null ? Ticker.systemTicker() : () -> TimeUnit.MILLISECONDS.toNanos(clock.millis()))
                     .maximumSize(cacheResponse.maxEntries())
                     .expireAfterWrite(cacheResponse.ttlDuration(), cacheResponse.ttlUnit())
                     .build();

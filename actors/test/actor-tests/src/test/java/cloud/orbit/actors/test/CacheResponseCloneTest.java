@@ -167,7 +167,7 @@ public class CacheResponseCloneTest extends ActorBaseTest
     @Before
     public void initializeCacheManager()
     {
-        ResponseCaching.setDefaultCacheTicker(null);
+        ResponseCaching.setClock(null);
     }
 
     @After
