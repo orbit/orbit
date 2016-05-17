@@ -189,7 +189,6 @@ public abstract class AbstractActor<T>
      *
      * @param futureCallable a callable that returns a Task
      * @param dueTime        Time to the first timer call
-     * @param period         Interval between calls, if period <= 0 then the timer will be single shot.
      * @param timeUnit       Time unit for dueTime and period
      * @return A registration object that allows the actor to cancel the timer.
      */

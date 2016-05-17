@@ -28,16 +28,19 @@
 
 package cloud.orbit.actors.cloner;
 
+import cloud.orbit.actors.runtime.BasicRuntime;
+import cloud.orbit.actors.runtime.JavaMessageSerializer;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
 /**
  * Java serialization based object cloning implementation.
  */
-public class JavaSerializationCloner implements ExecutionObjectCloner
+public class JavaSerializationCloner extends JavaMessageSerializer implements ExecutionObjectCloner
 {
     @Override
     public <T> T clone(T object)
@@ -45,13 +48,13 @@ public class JavaSerializationCloner implements ExecutionObjectCloner
         try
         {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            ObjectOutputStream outputStream = new ObjectOutputStream(byteArrayOutputStream);
+            ObjectOutput outputStream = createObjectOutput(BasicRuntime.getRuntime(), byteArrayOutputStream);
             outputStream.writeObject(object);
 
             byte[] bytes = byteArrayOutputStream.toByteArray();
 
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
-            ObjectInputStream inputStream = new ObjectInputStream(byteArrayInputStream);
+            ObjectInput inputStream = createObjectInput(BasicRuntime.getRuntime(), byteArrayInputStream);
 
             return (T) inputStream.readObject();
         } catch (IOException | ClassNotFoundException e)
