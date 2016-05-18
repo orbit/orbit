@@ -28,31 +28,40 @@
 
 package cloud.orbit.actors.cloner;
 
+import org.objenesis.strategy.StdInstantiatorStrategy;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.pool.KryoFactory;
+import com.esotericsoftware.kryo.pool.KryoPool;
+import com.esotericsoftware.kryo.serializers.DefaultSerializers;
+
 import cloud.orbit.actors.ActorObserver;
 import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.runtime.ActorRuntime;
 import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
 import cloud.orbit.actors.runtime.RemoteReference;
+import de.javakaffee.kryoserializers.ArraysAsListSerializer;
+import de.javakaffee.kryoserializers.CollectionsEmptyListSerializer;
+import de.javakaffee.kryoserializers.CollectionsEmptyMapSerializer;
+import de.javakaffee.kryoserializers.CollectionsEmptySetSerializer;
+import de.javakaffee.kryoserializers.CollectionsSingletonListSerializer;
+import de.javakaffee.kryoserializers.CollectionsSingletonMapSerializer;
+import de.javakaffee.kryoserializers.CollectionsSingletonSetSerializer;
+import de.javakaffee.kryoserializers.GregorianCalendarSerializer;
+import de.javakaffee.kryoserializers.JdkProxySerializer;
+import de.javakaffee.kryoserializers.SynchronizedCollectionsSerializer;
+import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.pool.KryoFactory;
-import com.esotericsoftware.kryo.pool.KryoPool;
-import com.esotericsoftware.kryo.serializers.CollectionSerializer;
-import com.esotericsoftware.kryo.serializers.DefaultSerializers;
-import com.esotericsoftware.kryo.serializers.MapSerializer;
-
-import java.util.ArrayList;
-import java.util.Collection;
+import java.lang.reflect.InvocationHandler;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
+import java.util.GregorianCalendar;
 import java.util.UUID;
 
 /**
  * Kyro based object cloning implementation.
+ *
+ * @author Johno Crawford (johno@sulake.com)
  */
 public class KryoCloner implements ExecutionObjectCloner
 {
@@ -62,53 +71,27 @@ public class KryoCloner implements ExecutionObjectCloner
     {
         KryoFactory factory = new KryoFactory()
         {
+            @Override
             public Kryo create()
             {
                 Kryo kryo = new Kryo();
 
-                // Adding support to clone unmodifiable collections as modifiable
-                // collections.
+                // Configure Kryo to first try to find and use a no-arg constructor and if it fails to do so,
+                // fallback to StdInstantiatorStrategy (no constructor is invoked!).
 
-                // It has to be noted that this might not be the expected behavior
-                // in some cases.
+                kryo.setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
 
-                // Without this the unmodifiable collections cause kryo to throw an
-                // exception.. Class cannot be created (missing no-arg constructor).
-
-                kryo.addDefaultSerializer(Collection.class, new CollectionSerializer()
-                {
-                    final Class<?> unmodifiableCollectionClazz = Collections.unmodifiableCollection(new ArrayList()).getClass();
-                    final Class<?> unmodifiableListClazz = Collections.unmodifiableList(new ArrayList()).getClass();
-                    final Class<?> unmodifiableSetClazz = Collections.unmodifiableSet(new HashSet()).getClass();
-
-                    @Override
-                    protected Collection createCopy(Kryo kryo, Collection original)
-                    {
-                        if (original.getClass() == unmodifiableListClazz || original.getClass() == unmodifiableCollectionClazz)
-                        {
-                            return new ArrayList();
-                        }
-                        if (original.getClass() == unmodifiableSetClazz)
-                        {
-                            return new LinkedHashSet();
-                        }
-                        return super.createCopy(kryo, original);
-                    }
-                });
-                kryo.addDefaultSerializer(Map.class, new MapSerializer()
-                {
-                    final Class<?> unmodifiableMapClazz = Collections.unmodifiableMap(new HashMap()).getClass();
-
-                    @Override
-                    protected Map createCopy(Kryo kryo, Map original)
-                    {
-                        if (original.getClass() == unmodifiableMapClazz)
-                        {
-                            return new LinkedHashMap<>();
-                        }
-                        return super.createCopy(kryo, original);
-                    }
-                });
+                kryo.register(Arrays.asList("").getClass(), new ArraysAsListSerializer());
+                kryo.register(Collections.EMPTY_LIST.getClass(), new CollectionsEmptyListSerializer());
+                kryo.register(Collections.EMPTY_MAP.getClass(), new CollectionsEmptyMapSerializer());
+                kryo.register(Collections.EMPTY_SET.getClass(), new CollectionsEmptySetSerializer());
+                kryo.register(Collections.singletonList("").getClass(), new CollectionsSingletonListSerializer());
+                kryo.register(Collections.singleton("").getClass(), new CollectionsSingletonSetSerializer());
+                kryo.register(Collections.singletonMap("", "").getClass(), new CollectionsSingletonMapSerializer());
+                kryo.register(GregorianCalendar.class, new GregorianCalendarSerializer());
+                kryo.register(InvocationHandler.class, new JdkProxySerializer());
+                UnmodifiableCollectionsSerializer.registerSerializers(kryo);
+                SynchronizedCollectionsSerializer.registerSerializers(kryo);
 
                 kryo.addDefaultSerializer(RemoteReference.class, new DefaultSerializers.VoidSerializer()
                 {

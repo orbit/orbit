@@ -36,8 +36,6 @@ import cloud.orbit.concurrent.Task;
 
 import org.junit.Test;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -52,8 +50,6 @@ public class ExceptionalTest extends ActorBaseTest
         Task<String> justRespond();
 
         Task<String> justThrowAnException();
-
-        Task<String> justThrowANonSerializableException();
     }
 
     @SuppressWarnings("rawtypes")
@@ -67,15 +63,6 @@ public class ExceptionalTest extends ActorBaseTest
         public Task<String> justThrowAnException()
         {
             throw new RuntimeException("as requested, one exception!");
-        }
-
-        @Override
-        public Task<String> justThrowANonSerializableException()
-        {
-            throw new RuntimeException()
-            {
-                NonSerializableThing a = new NonSerializableThing();
-            };
         }
     }
 
@@ -135,22 +122,6 @@ public class ExceptionalTest extends ActorBaseTest
         //assertEquals(RuntimeException.class, ex.getClass());
         assertTrue(ex instanceof RuntimeException);
         assertTrue(ex.getMessage(), ex.getMessage().endsWith("as requested, one exception!"));
-    }
-
-    @Test(timeout = 30_000L)
-    public void checkingNonSerializable() throws ExecutionException, InterruptedException
-    {
-        // checks if exceptions with stuff that's not serializable get their stacktrace sent back to the caller.
-        Stage stage1 = createStage();
-        final ExceptionalThing ref = Actor.getReference(ExceptionalThing.class, "0");
-
-        final Throwable ex = expectException(() -> ref.justThrowANonSerializableException());
-
-        final StringWriter stringWriter = new StringWriter();
-        ex.printStackTrace(new PrintWriter(stringWriter));
-        assertTrue(stringWriter.toString().contains("ExceptionalTest.java:"));
-        assertTrue(stringWriter.toString().contains("NonSerializableThing"));
-        assertTrue(stringWriter.toString().contains("justThrowANonSerializableException"));
     }
 
     //@Test

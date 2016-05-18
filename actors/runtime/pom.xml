@@ -55,12 +55,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             <artifactSet>
                                 <includes>
                                     <include>com.esotericsoftware:*</include>
+                                    <include>de.javakaffee:kryo-serializers</include>
                                     <include>org.objenesis:*</include>
                                     <include>org.ow2.asm:asm</include>
                                     <include>com.github.ben-manes.caffeine:caffeine</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
+                                <relocation>
+                                    <pattern>de.javakaffee.</pattern>
+                                    <shadedPattern>cloud.orbit.runtime.shaded.de.javakaffee.</shadedPattern>
+                                </relocation>
                                 <relocation>
                                     <pattern>com.esotericsoftware.</pattern>
                                     <shadedPattern>cloud.orbit.runtime.shaded.com.esotericsoftware.</shadedPattern>
@@ -108,6 +113,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>
             <version>3.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>de.javakaffee</groupId>
+            <artifactId>kryo-serializers</artifactId>
+            <version>0.37</version>
         </dependency>
 
         <dependency>
