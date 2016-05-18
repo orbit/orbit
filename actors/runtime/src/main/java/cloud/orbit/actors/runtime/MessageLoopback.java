@@ -77,10 +77,10 @@ public class MessageLoopback extends NamedPipelineExtension
                     }
                     catch (Exception e)
                     {
-                        // ignoring clone errors
-                        if (logger.isDebugEnabled())
+                        // Log clone errors as warnings
+                        if (logger.isWarnEnabled())
                         {
-                            logger.debug("Error cloning message: " + message, e);
+                            logger.warn("Unable to clone message: " + message, e);
                         }
                         return ctx.write(msg);
                     }
