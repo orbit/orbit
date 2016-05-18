@@ -40,12 +40,15 @@ Actor.getReference(Hello.class, "0").sayHello("Meep Meep");
 
 #### Scala
 ```scala
-trait Hello extends Actor {
+trait Hello extends Actor 
+{
   def sayHello(greeting: String): Task[String]
 }
 
-class HelloActor extends AbstractActor[AnyRef] with Hello {
-  def sayHello(greeting: String): Task[String] = {
+class HelloActor extends AbstractActor[AnyRef] with Hello 
+{
+  def sayHello(greeting: String): Task[String] = 
+  {
     getLogger.info("Here: " + greeting)
     Task.fromValue("Hello There")
   }
