@@ -28,23 +28,23 @@
 
 package cloud.orbit.actors.runtime;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Ticker;
+
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Addressable;
+import cloud.orbit.actors.annotation.CacheResponse;
 import cloud.orbit.actors.cache.ExecutionCacheFlushObserver;
+import cloud.orbit.actors.cloner.CloneHelper;
+import cloud.orbit.actors.cloner.ExecutionObjectCloner;
 import cloud.orbit.actors.extensions.MessageSerializer;
 import cloud.orbit.actors.net.HandlerAdapter;
 import cloud.orbit.actors.net.HandlerContext;
-import cloud.orbit.actors.cloner.CloneHelper;
-import cloud.orbit.actors.cloner.ExecutionObjectCloner;
-import cloud.orbit.actors.annotation.CacheResponse;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.exception.UncheckedException;
 import cloud.orbit.tuples.Pair;
 import cloud.orbit.util.AnnotationCache;
-
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.Ticker;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -53,10 +53,8 @@ import java.math.BigInteger;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.time.Clock;
-import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class ResponseCaching
         extends HandlerAdapter
@@ -140,23 +138,19 @@ public class ResponseCaching
             throw new IllegalArgumentException("Passed non-CacheResponse method.");
         }
 
-        Cache<Pair<Addressable, String>, Task> cache = masterCache.getIfPresent(method);
-        if (cache == null)
-        {
+        // if cached, return; otherwise create, cache and return
+        return masterCache.get(method, key -> {
             Caffeine<Object, Object> builder = Caffeine.newBuilder();
-            if (cacheExecutor != null) {
+            if (cacheExecutor != null)
+            {
                 builder.executor(cacheExecutor);
             }
-            cache = builder
+            return builder
                     .ticker(clock == null ? Ticker.systemTicker() : () -> TimeUnit.MILLISECONDS.toNanos(clock.millis()))
                     .maximumSize(cacheResponse.maxEntries())
                     .expireAfterWrite(cacheResponse.ttlDuration(), cacheResponse.ttlUnit())
                     .build();
-
-            masterCache.put(method, cache);
-        }
-
-        return cache;
+        });
     }
 
     @Override
@@ -165,17 +159,12 @@ public class ResponseCaching
         RemoteReference actorReference = (RemoteReference) actor;
         Class interfaceClass = RemoteReference.getInterfaceClass(actorReference);
 
-        masterCache.asMap().entrySet().stream()
-                .filter(e -> interfaceClass.equals(e.getKey().getDeclaringClass()))
-                .map(e -> e.getValue())
-                .forEach(cache -> {
-                    List<Pair<Addressable, String>> keys = cache.asMap().keySet().stream()
-                            .filter(cacheKey -> cacheKey.getLeft().equals(actorReference))
-                            .collect(Collectors.toList());
-
-                    cache.invalidateAll(keys);
-                });
-
+        masterCache.asMap().entrySet().forEach(entry -> {
+            if (interfaceClass.equals(entry.getKey().getDeclaringClass()))
+            {
+                entry.getValue().asMap().keySet().removeIf(addressablePair -> addressablePair.getLeft().equals(actorReference));
+            }
+        });
         return Task.done();
     }
 
