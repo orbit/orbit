@@ -72,7 +72,7 @@ public class StreamStatelessDeactivationTest extends ActorBaseTest
             handle = await(AsyncStream.getStream(String.class, streamId)
                     .subscribe((d, t) -> {
                         // test framework trick
-                        testSync.deque(actorIdentity() + "-last").add(d);
+                        testSync.deque(getIdentity() + "-last").add(d);
                         return Task.done();
                     }));
             return Task.done();

@@ -59,7 +59,7 @@ public class TransactionActor extends AbstractActor<TransactionActor.Transaction
         {
             // fires the cancellation back to this actor without waiting for the return
             // important!: waiting could cause a deadlock
-            Actor.cast(Transactional.class, actor).cancelTransaction(this.actorIdentity());
+            Actor.cast(Transactional.class, actor).cancelTransaction(this.getIdentity());
         }
         writeState();
         return Task.done();
@@ -84,7 +84,7 @@ public class TransactionActor extends AbstractActor<TransactionActor.Transaction
             state().canceled = true;
             final Task<Void> members = Task.allOf(state().actors.stream()
                     //.filter(actor -> !actor.equals(caller))
-                    .map(a -> Actor.cast(Transactional.class, a).cancelTransaction(this.actorIdentity())));
+                    .map(a -> Actor.cast(Transactional.class, a).cancelTransaction(this.getIdentity())));
 
             final Task<Void> subs = Task.allOf(state().children.stream()
                     .map(a -> a.cancelTransaction(caller)));

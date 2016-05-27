@@ -116,7 +116,7 @@ public class DemoTest extends ActorBaseTest
         @Override
         public Task buy(final int value, final String item)
         {
-            final Bank bank = Actor.getReference(Bank.class, actorIdentity());
+            final Bank bank = Actor.getReference(Bank.class, getIdentity());
             await(bank.remove(value));
             state().items.add(item);
             return writeState();

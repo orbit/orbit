@@ -73,7 +73,7 @@ public class StreamWithActorsTest extends ActorBaseTest
                     .subscribe((d,t) -> {
                         state().last = d;
                         // test framework trick
-                        testSync.put(actorIdentity() + "-last", d);
+                        testSync.put(getIdentity() + "-last", d);
                         return Task.done();
                     }));
             return Task.done();

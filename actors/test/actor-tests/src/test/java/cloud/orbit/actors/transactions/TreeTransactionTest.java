@@ -85,7 +85,7 @@ public class TreeTransactionTest extends ActorBaseTest
         @Override
         public Task<Integer> treeInc(int count)
         {
-            final String id = actorIdentity();
+            final String id = getIdentity();
             if (id.length() == 1)
             {
                 if (id.equals("x"))

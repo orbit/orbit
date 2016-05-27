@@ -59,7 +59,7 @@ public class StreamReferenceTest extends ActorBaseTest
         @Override
         public Task<AsyncStream<String>> getStreamReference()
         {
-            return Task.fromValue(AsyncStream.getStream(String.class, "hello:" + actorIdentity()));
+            return Task.fromValue(AsyncStream.getStream(String.class, "hello:" + getIdentity()));
         }
 
         @Override

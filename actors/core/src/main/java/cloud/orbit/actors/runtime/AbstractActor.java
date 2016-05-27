@@ -240,6 +240,8 @@ public abstract class AbstractActor<T>
      *
      * @return unique identity string
      */
+
+    @Deprecated
     protected String actorIdentity()
     {
         return reference.id.toString();

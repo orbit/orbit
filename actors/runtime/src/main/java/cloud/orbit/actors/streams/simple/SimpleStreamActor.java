@@ -71,7 +71,7 @@ public class SimpleStreamActor extends AbstractActor<SimpleStreamActor.State> im
     {
         if (getLogger().isDebugEnabled())
         {
-            getLogger().debug("Activating stream: {}", actorIdentity());
+            getLogger().debug("Activating stream: {}", getIdentity());
         }
         await(super.activateAsync());
 

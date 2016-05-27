@@ -46,7 +46,7 @@ public class StatelessThingActor extends AbstractActor implements StatelessThing
     public Task<String> sayHello()
     {
         Thread.yield();
-        return Task.fromValue("hello from " + actorIdentity() + "/" + activationId);
+        return Task.fromValue("hello from " + getIdentity() + "/" + activationId);
     }
 
     @Override

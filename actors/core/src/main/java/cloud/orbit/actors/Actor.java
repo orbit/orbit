@@ -30,6 +30,7 @@ package cloud.orbit.actors;
 
 import cloud.orbit.actors.annotation.NoIdentity;
 import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
+import cloud.orbit.actors.runtime.RemoteReference;
 import cloud.orbit.util.StringUtils;
 
 /**
@@ -98,6 +99,27 @@ public interface Actor
             throw new IllegalArgumentException("Not annotated with " + NoIdentity.class);
         }
         return DefaultDescriptorFactory.ref(actorInterface, null);
+    }
+
+    /**
+     * Gets a the id of an actor reference or instance.
+     *
+     * @param actor the actor whose identity you wish to retrieve
+     * @return the actor's identity
+     */
+    static String getIdentity(Actor actor)
+    {
+        return String.valueOf(RemoteReference.getId(RemoteReference.from(actor)));
+    }
+
+    /**
+     * Gets a the id of the current actor reference or instance.
+     *
+     * @return the actor's identity
+     */
+    default String getIdentity()
+    {
+        return Actor.getIdentity(this);
     }
 
     static <T> T cast(Class<T> remoteInterface, Actor actor)
