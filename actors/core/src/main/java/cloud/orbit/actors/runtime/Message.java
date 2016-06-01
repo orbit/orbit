@@ -30,7 +30,7 @@ package cloud.orbit.actors.runtime;
 
 import cloud.orbit.actors.cluster.NodeAddress;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -57,7 +57,6 @@ public class Message
     // method fields
     private int methodId;
     private Object payload;
-
 
     public Message()
     {
@@ -136,7 +135,7 @@ public class Message
     {
         if (headers == null)
         {
-            headers = new LinkedHashMap<>();
+            headers = new HashMap<>();
         }
         headers.put(key, value);
     }
@@ -145,7 +144,7 @@ public class Message
     {
         if (headers == null)
         {
-            headers = new LinkedHashMap<>();
+            headers = new HashMap<>();
         }
         headers.put(key, value);
         return this;

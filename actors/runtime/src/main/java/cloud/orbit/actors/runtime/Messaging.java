@@ -43,7 +43,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -330,10 +330,10 @@ public class Messaging extends HandlerAdapter implements Startable
         RemoteReference<?> actorReference = (RemoteReference<?>) toReference;
         NodeAddress toNode = invocation.getToNode();
 
-        LinkedHashMap<Object, Object> actualHeaders = null;
+        Map<Object, Object> actualHeaders = null;
         if (invocation.getHeaders() != null)
         {
-            actualHeaders = new LinkedHashMap<>();
+            actualHeaders = new HashMap<>();
             actualHeaders.putAll(invocation.getHeaders());
         }
 

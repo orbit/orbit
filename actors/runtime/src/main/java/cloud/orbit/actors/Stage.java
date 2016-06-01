@@ -105,9 +105,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -916,7 +916,7 @@ public class Stage implements Startable, ActorRuntime
         final ActorTaskContext context = ActorTaskContext.current();
         if (context != null)
         {
-            LinkedHashMap<Object, Object> headers = null;
+            Map<Object, Object> headers = null;
             for (String key : stickyHeaders)
             {
                 final Object value = context.getProperty(key);
@@ -924,7 +924,7 @@ public class Stage implements Startable, ActorRuntime
                 {
                     if (headers == null)
                     {
-                        headers = new LinkedHashMap<>();
+                        headers = new HashMap<>();
                     }
                     headers.put(key, value);
                 }
