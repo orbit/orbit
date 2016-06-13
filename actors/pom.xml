@@ -42,7 +42,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     <properties>
         <asm.version>5.0.4</asm.version>
-        <caffeine.version>2.3.0</caffeine.version>
+        <caffeine.version>2.3.1</caffeine.version>
     </properties>
 
 
