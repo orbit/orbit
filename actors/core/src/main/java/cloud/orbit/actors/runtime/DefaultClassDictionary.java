@@ -31,12 +31,14 @@ package cloud.orbit.actors.runtime;
 import cloud.orbit.actors.annotation.ClassIdStrategy;
 import cloud.orbit.actors.reflection.ClassIdGenerationStrategy;
 import cloud.orbit.exception.UncheckedException;
-import cloud.orbit.util.ClassPath;
+import cloud.orbit.util.ClassPathUtils;
 import cloud.orbit.util.IOUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+
+import com.google.common.reflect.ClassPath;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -94,10 +96,20 @@ public class DefaultClassDictionary
             {
                 return;
             }
-            ClassPath.get().getAllResources().stream()
-                    .filter(r -> r.getResourceName().startsWith(META_INF_SERVICES_ORBIT_CLASSES) && r.getResourceName().endsWith(SUFFIX))
-                    .forEach(r -> loadClassInfo(r));
-            loaded = true;
+
+            try
+            {
+                ClassPath.from(DefaultClassDictionary.class.getClassLoader())
+                        .getResources().stream()
+                        .filter(r -> r.getResourceName().startsWith(META_INF_SERVICES_ORBIT_CLASSES) && r.getResourceName().endsWith(SUFFIX))
+                        .forEach(r -> loadClassInfo(r));
+
+                loaded = true;
+            }
+            catch(IOException e)
+            {
+                throw new UncheckedException(e);
+            }
         }
     }
 
@@ -182,17 +194,29 @@ public class DefaultClassDictionary
 
         if (className == null)
         {
-            final List<ClassPath.ClassResourceInfo> list = ClassPath.get().getAllClasses().stream()
-                    .filter(c -> c.getClassName().hashCode() == classId)
-                    .collect(Collectors.toList());
+            List<ClassPath.ClassInfo> list = null;
+            try
+            {
+                list = ClassPath.from(DefaultClassDictionary.class.getClassLoader())
+                        .getAllClasses().stream()
+                        .filter(c -> c.getName().hashCode() == classId)
+                        .collect(Collectors.toList());
+
+            }
+            catch(IOException e)
+            {
+                throw new UncheckedException(e);
+            }
+
             if (list.size() > 0)
             {
-                className = list.get(0).getClassName();
+                className = list.get(0).getName();
             }
             if (list.size() == 0)
             {
                 throw new UncheckedException("Class not found classId:" + id);
             }
+
         }
         clazz = classForName(className, false);
         int actualClassId = getClassId(clazz);
