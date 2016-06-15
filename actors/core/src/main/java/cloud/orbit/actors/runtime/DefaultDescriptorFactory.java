@@ -35,7 +35,7 @@ import cloud.orbit.actors.annotation.OneWay;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.extensions.ActorClassFinder;
 import cloud.orbit.exception.UncheckedException;
-import cloud.orbit.util.ClassPath;
+import cloud.orbit.util.ClassPathUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -199,7 +199,7 @@ public class DefaultDescriptorFactory implements DescriptorFactory
                 {
                     factoryClazz = factoryClazz.substring(1); // remove leading 'I'
                 }
-                factory = (ReferenceFactory<T>) Class.forName(ClassPath.getNullSafePackageName(iClass) + "." + factoryClazz).newInstance();
+                factory = (ReferenceFactory<T>) Class.forName(ClassPathUtils.getNullSafePackageName(iClass) + "." + factoryClazz).newInstance();
             }
             catch (Exception e)
             {

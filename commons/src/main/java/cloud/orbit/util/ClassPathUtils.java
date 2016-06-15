@@ -26,29 +26,39 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.util.test;
+package cloud.orbit.util;
 
-import cloud.orbit.util.ClassPath;
+import cloud.orbit.exception.UncheckedException;
 
-import org.junit.Test;
-
+import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.Set;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
-
-public class ClassPathTest
+public class ClassPathUtils
 {
-
-    @Test
-    public void test() throws IOException
+     public static String getNullSafePackageName(final Class<?> clazz)
     {
-        final ClassPath cp = ClassPath.get();
-        assertNotNull(cp.getAllResources());
-        assertTrue(cp.getAllResources().size() > 0);
-        final long count = cp.getAllResources().stream()
-                .filter(r -> r.getResourceName().equals(ClassPathTest.class.getName().replace(".", "/") + ".class"))
-                .count();
-        assertEquals(1, count);
+        return clazz.getPackage() != null ? clazz.getPackage().getName() : "";
     }
 
 }

@@ -29,7 +29,9 @@ package cloud.orbit.actors.runtime;
 
 import cloud.orbit.actors.Actor;
 import cloud.orbit.concurrent.ConcurrentHashSet;
-import cloud.orbit.util.ClassPath;
+import cloud.orbit.exception.UncheckedException;
+
+import com.google.common.reflect.ClassPath;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -119,12 +121,21 @@ public class ClassPathSearch
                 .map(this::getClassInfo)
                 .toArray(x -> new ClassPathSearch.ClassInfo[x]);
 
-        // get all class names from class path
-        ClassPath.get().getAllResources().stream()
-                .map(ClassPath.ResourceInfo::getResourceName)
-                .filter(rn -> rn.endsWith(".class"))
-                .map(rn -> rn.substring(0, rn.length() - 6))
-                .forEach(rn -> classes.putIfAbsent(rn, new ClassInfo(rn)));
+        try
+        {
+            ClassPath.from(ClassPathSearch.class.getClassLoader())
+                    .getResources()
+                    .stream()
+                    .map(ClassPath.ResourceInfo::getResourceName)
+                    .filter(rn -> rn.endsWith(".class"))
+                    .map(rn -> rn.substring(0, rn.length() - 6))
+                    .forEach(rn -> classes.putIfAbsent(rn, new ClassInfo(rn)));
+
+        }
+        catch(IOException e)
+        {
+            throw new UncheckedException(e);
+        }
 
         unprocessed.addAll(classes.keySet());
 
