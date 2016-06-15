@@ -99,7 +99,7 @@ public class DefaultClassDictionary
 
             try
             {
-                ClassPath.from(ClassPathSearch.class.getClassLoader())
+                ClassPath.from(DefaultClassDictionary.class.getClassLoader())
                         .getResources().stream()
                         .filter(r -> r.getResourceName().startsWith(META_INF_SERVICES_ORBIT_CLASSES) && r.getResourceName().endsWith(SUFFIX))
                         .forEach(r -> loadClassInfo(r));
@@ -197,7 +197,7 @@ public class DefaultClassDictionary
             List<ClassPath.ClassInfo> list = null;
             try
             {
-                list = ClassPath.from(ClassPathSearch.class.getClassLoader())
+                list = ClassPath.from(DefaultClassDictionary.class.getClassLoader())
                         .getAllClasses().stream()
                         .filter(c -> c.getName().hashCode() == classId)
                         .collect(Collectors.toList());
