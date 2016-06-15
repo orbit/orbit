@@ -41,7 +41,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <name>Orbit Actors</name>
 
     <properties>
-        <asm.version>5.0.4</asm.version>
         <caffeine.version>2.3.1</caffeine.version>
     </properties>
 
@@ -71,9 +70,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.ow2.asm</groupId>
-                <artifactId>asm</artifactId>
-                <version>${asm.version}</version>
+                <groupId>io.github.lukehutch</groupId>
+                <artifactId>fast-classpath-scanner</artifactId>
+                <version>1.9.19</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
