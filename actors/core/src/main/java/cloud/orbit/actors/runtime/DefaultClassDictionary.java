@@ -28,32 +28,34 @@
 
 package cloud.orbit.actors.runtime;
 
+import cloud.orbit.actors.annotation.ClassIdStrategy;
+import cloud.orbit.actors.reflection.ClassIdGenerationStrategy;
+import cloud.orbit.exception.UncheckedException;
+import cloud.orbit.util.ClassPathUtils;
+import cloud.orbit.util.IOUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
-import cloud.orbit.actors.annotation.ClassIdStrategy;
-import cloud.orbit.actors.reflection.ClassIdGenerationStrategy;
-import cloud.orbit.exception.UncheckedException;
-import cloud.orbit.util.IOUtils;
-import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
-import io.github.lukehutch.fastclasspathscanner.matchprocessor.FileMatchProcessor;
+import com.google.common.reflect.ClassPath;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 public class DefaultClassDictionary
 {
     private static final Logger logger = LoggerFactory.getLogger(DefaultClassDictionary.class);
     public static final String META_INF_SERVICES_ORBIT_CLASSES = "META-INF/services/orbit/classes/";
-    public static final String EXTENSION = "yml";
-    public static final String SUFFIX = "." + EXTENSION;
+    public static final String SUFFIX = ".yml";
     public static final Object LOAD_MUTEX = new Object();
     private static DefaultClassDictionary instance = new DefaultClassDictionary();
     private ConcurrentMap<Class<?>, Integer> classToId = new ConcurrentHashMap<>();
@@ -95,22 +97,32 @@ public class DefaultClassDictionary
                 return;
             }
 
-            new FastClasspathScanner().matchFilenamePattern("^" + META_INF_SERVICES_ORBIT_CLASSES + ".*" + EXTENSION + "$", (FileMatchProcessor) (s, inputStream, i) -> {
-                loadClassInfo(s, inputStream);
-            }).scan();
+            try
+            {
+                ClassPath.from(DefaultClassDictionary.class.getClassLoader())
+                        .getResources().stream()
+                        .filter(r -> r.getResourceName().startsWith(META_INF_SERVICES_ORBIT_CLASSES) && r.getResourceName().endsWith(SUFFIX))
+                        .forEach(r -> loadClassInfo(r));
 
-            loaded = true;
+                loaded = true;
+            }
+            catch(IOException e)
+            {
+                throw new UncheckedException(e);
+            }
         }
     }
 
-    private void loadClassInfo(final String resourceName, final InputStream stream)
+    private void loadClassInfo(final ClassPath.ResourceInfo r)
     {
+        final URL url = r.url();
         try
         {
-            final LinkedHashMap map = new Yaml().loadAs(stream, LinkedHashMap.class);
+            final LinkedHashMap map = new Yaml().loadAs(url.openStream(), LinkedHashMap.class);
             final Object classId = map.get("classId");
             if (classId instanceof Number)
             {
+                final String resourceName = r.getResourceName();
                 final Integer classIdKey = ((Number) classId).intValue();
                 final String className = resourceName.substring(META_INF_SERVICES_ORBIT_CLASSES.length(),
                         resourceName.length() - SUFFIX.length());
@@ -119,12 +131,12 @@ public class DefaultClassDictionary
             }
             else
             {
-                logger.warn("classId not found at: " + resourceName);
+                logger.warn("classId not found at: " + url);
             }
         }
         catch (Exception ex)
         {
-            logger.error("Error loading class info " + resourceName, ex);
+            logger.error("Error loading class info " + url, ex);
         }
     }
 
@@ -145,20 +157,6 @@ public class DefaultClassDictionary
         return null;
     }
 
-    private static final Map<Integer, String> hashCodeToClassName = new ConcurrentHashMap<>();
-
-    static
-    {
-        for (String candidate : new FastClasspathScanner().scan().getNamesOfAllClasses())
-        {
-            String old = hashCodeToClassName.put(candidate.hashCode(), candidate);
-            if (old != null)
-            {
-                logger.info("Found more than one class with hashCode #" + candidate.hashCode() + " replacing " + old + " with " + candidate);
-            }
-        }
-    }
-
     public Class<?> getClassById(int classId)
     {
         final Integer id = classId;
@@ -167,6 +165,7 @@ public class DefaultClassDictionary
         {
             return clazz;
         }
+
 
         String className = idToName.get(id);
         if (className == null)
@@ -195,12 +194,29 @@ public class DefaultClassDictionary
 
         if (className == null)
         {
-            className = hashCodeToClassName.get(classId);
+            List<ClassPath.ClassInfo> list = null;
+            try
+            {
+                list = ClassPath.from(DefaultClassDictionary.class.getClassLoader())
+                        .getAllClasses().stream()
+                        .filter(c -> c.getName().hashCode() == classId)
+                        .collect(Collectors.toList());
 
-            if (className == null)
+            }
+            catch(IOException e)
+            {
+                throw new UncheckedException(e);
+            }
+
+            if (list.size() > 0)
+            {
+                className = list.get(0).getName();
+            }
+            if (list.size() == 0)
             {
                 throw new UncheckedException("Class not found classId:" + id);
             }
+
         }
         clazz = classForName(className, false);
         int actualClassId = getClassId(clazz);
