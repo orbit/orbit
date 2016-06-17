@@ -28,16 +28,73 @@
 
 package cloud.orbit.actors.runtime;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cloud.orbit.actors.Actor;
+import cloud.orbit.actors.Remindable;
 import cloud.orbit.actors.extensions.ActorClassFinder;
+import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
+
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultActorClassFinder implements ActorClassFinder
 {
-    private static final ClassPathSearch search = new ClassPathSearch(Actor.class);
+    private static Logger logger = LoggerFactory.getLogger(DefaultActorClassFinder.class);
 
-	@Override
+    private static final Map<Class<?>, Class<?>> concreteImplementations = new ConcurrentHashMap<>();
+
+    static {
+        String basePackage = System.getProperty("orbit.actors.basePackage", "");
+        String[] scanSpec = new String[]{};
+        if (!basePackage.isEmpty())
+        {
+            String[] basePackages = basePackage.split(",");
+            Set<String> tmp = new LinkedHashSet<>(basePackages.length);
+            for (String s : basePackages)
+            {
+                if (!s.trim().isEmpty())
+                {
+                    tmp.add(s);
+                }
+            }
+            tmp.add("cloud.orbit"); // internal actors
+            scanSpec = tmp.toArray(new String[tmp.size()]);
+        }
+
+        List<Class<?>> clazzInterfaces = new ArrayList<>();
+        new FastClasspathScanner(scanSpec).matchSubinterfacesOf(Actor.class, candidate -> {
+            if (candidate == Remindable.class)
+            {
+                return;
+            }
+            clazzInterfaces.add(candidate);
+        }).scan();
+
+        new FastClasspathScanner(scanSpec).matchClassesImplementing(Actor.class, clazzImplementation -> {
+            for (Class<?> clazzInterface : clazzInterfaces)
+            {
+                if (clazzInterface.isAssignableFrom(clazzImplementation))
+                {
+                    Class<?> old = concreteImplementations.put(clazzInterface, clazzImplementation);
+                    if (old != null)
+                    {
+                        logger.warn("Multiple actor implementations found for " + clazzInterface);
+                    }
+                }
+            }
+        }).scan();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
     public <T extends Actor> Class<? extends T> findActorImplementation(Class<T> actorInterface)
     {
-        return search.findImplementation(actorInterface);
+        return (Class<? extends T>) concreteImplementations.get(actorInterface);
     }
 }
