@@ -33,7 +33,6 @@ import cloud.orbit.actors.streams.AsyncStream;
 import cloud.orbit.actors.streams.StreamSubscriptionHandle;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.concurrent.TaskFunction;
-import cloud.orbit.exception.UncheckedException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -108,16 +107,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
                 return Task.fromValue(null);
             }
         }
-        Object newInstance;
-        try
-        {
-            newInstance = concreteClass.newInstance();
-        }
-        catch (Exception ex)
-        {
-            getLogger().error("Error creating instance of " + concreteClass, ex);
-            throw new UncheckedException(ex);
-        }
+        Object newInstance = runtime.getFirstExtension(LifetimeExtension.class).newInstance(concreteClass);
         if (!AbstractActor.class.isInstance(newInstance))
         {
             throw new IllegalArgumentException(String.format("%s is not an actor class", concreteClass));
