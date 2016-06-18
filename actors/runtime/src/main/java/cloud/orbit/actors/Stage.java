@@ -120,6 +120,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import static com.ea.async.Async.await;
 
@@ -138,6 +139,9 @@ public class Stage implements Startable, ActorRuntime
             return Stage.this.createLocalObjectEntry(reference, object);
         }
     };
+
+    @Config("orbit.actors.basePackages")
+    private String basePackages;
 
     @Config("orbit.actors.clusterName")
     private String clusterName;
@@ -216,6 +220,7 @@ public class Stage implements Startable, ActorRuntime
         private ExecutionObjectCloner messageLoopbackObjectCloner;
         private ClusterPeer clusterPeer;
 
+        private String basePackages;
         private String clusterName;
         private String nodeName;
         private StageMode mode = StageMode.HOST;
@@ -264,6 +269,12 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
+        public Builder basePackages(String basePackages)
+        {
+            this.basePackages = basePackages;
+            return this;
+        }
+
         public Builder nodeName(String nodeName)
         {
             this.nodeName = nodeName;
@@ -307,6 +318,7 @@ public class Stage implements Startable, ActorRuntime
             stage.setExecutionPool(executionPool);
             stage.setObjectCloner(objectCloner);
             stage.setMessageLoopbackObjectCloner(messageLoopbackObjectCloner);
+            stage.setBasePackages(basePackages);
             stage.setClusterName(clusterName);
             stage.setClusterPeer(clusterPeer);
             stage.setNodeName(nodeName);
@@ -379,6 +391,11 @@ public class Stage implements Startable, ActorRuntime
     @SuppressWarnings("unused")
     public long getLocalObjectCount() {
         return objects.getLocalObjectCount();
+    }
+
+    public void setBasePackages(final String basePackages)
+    {
+        this.basePackages = basePackages;
     }
 
     public String getClusterName()
@@ -500,7 +517,7 @@ public class Stage implements Startable, ActorRuntime
         finder = getFirstExtension(ActorClassFinder.class);
         if (finder == null)
         {
-            finder = new DefaultActorClassFinder();
+            finder = StringUtils.isNotEmpty(basePackages) ? new DefaultActorClassFinder(basePackages.split(Pattern.quote(","))) : new DefaultActorClassFinder();
             finder.start().join();
         }
 

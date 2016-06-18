@@ -46,9 +46,11 @@ import org.junit.Test;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -117,12 +119,11 @@ public class AsymmetricalStagesTest extends ActorBaseTest
     @Override
     protected void installExtensions(final Stage stage)
     {
-        super.installExtensions(stage);
         final List<Class<?>> classes = this.excludedClasses;
         if (classes != null)
         {
             this.excludedClasses = null;
-            stage.addExtension(new DefaultActorClassFinder()
+            stage.addExtension(new DefaultActorClassFinder() // install custom DefaultActorClassFinder first
             {
                 @Override
                 public <T extends Actor> Class<? extends T> findActorImplementation(Class<T> actorInterface)
@@ -130,8 +131,15 @@ public class AsymmetricalStagesTest extends ActorBaseTest
                     Class<? extends T> c = super.findActorImplementation(actorInterface);
                     return classes.contains(c) ? null : c;
                 }
+
+                @Override
+                public <T extends Actor> Collection<Class<? extends T>> findActorInterfaces(final Predicate<Class<T>> predicate)
+                {
+                    throw new UnsupportedOperationException("Not implemented");
+                }
             });
         }
+        super.installExtensions(stage);
     }
 
     public Stage createStage(Class<?>... excludedActorClasses) throws ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException

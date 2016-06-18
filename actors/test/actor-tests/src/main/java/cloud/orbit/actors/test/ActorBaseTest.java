@@ -45,6 +45,7 @@ import cloud.orbit.actors.cloner.ExecutionObjectCloner;
 import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.concurrent.MultiExecutionSerializer;
 import cloud.orbit.actors.concurrent.WaitFreeExecutionSerializer;
+import cloud.orbit.actors.extensions.ActorClassFinder;
 import cloud.orbit.actors.extensions.LifetimeExtension;
 import cloud.orbit.actors.extensions.json.InMemoryJSONStorageExtension;
 import cloud.orbit.actors.extensions.json.JsonMessageSerializer;
@@ -52,6 +53,7 @@ import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.runtime.AbstractExecution;
 import cloud.orbit.actors.runtime.ActorFactoryGenerator;
 import cloud.orbit.actors.runtime.ActorTaskContext;
+import cloud.orbit.actors.runtime.DefaultActorClassFinder;
 import cloud.orbit.actors.runtime.Execution;
 import cloud.orbit.actors.runtime.NodeCapabilities;
 import cloud.orbit.actors.server.ServerPeer;
@@ -338,9 +340,12 @@ public class ActorBaseTest
         return stage;
     }
 
+    // reused for all stages (performance)
+    private static final ActorClassFinder actorClassFinder = new DefaultActorClassFinder("cloud.orbit");
 
     protected void installExtensions(final Stage stage)
     {
+        stage.addExtension(actorClassFinder);
         stage.addExtension(new TestLogger(loggerExtension, "s" + stages.size()));
         //stage.addExtension(new TestMessageLog(this, stage));
         stage.addExtension(new TestInvocationLog(loggerExtension, "s" + stages.size()));
