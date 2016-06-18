@@ -36,6 +36,7 @@ import cloud.orbit.actors.extensions.StreamProvider;
 import cloud.orbit.concurrent.Task;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -134,17 +135,32 @@ public interface ActorRuntime extends BasicRuntime
     default <T extends ActorExtension> List<T> getAllExtensions(Class<T> itemType)
     {
         final List<ActorExtension> extensions = getExtensions();
-        return extensions == null ? Collections.emptyList()
-                : (List<T>) extensions.stream().filter(p -> itemType.isInstance(p)).collect(Collectors.toList());
+        if (extensions == null || extensions.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<T> result = new ArrayList<>();
+        for (ActorExtension extension : extensions)
+        {
+            if (itemType.isInstance(extension)) {
+                result.add((T) extension);
+            }
+        }
+        return result;
     }
 
     @SuppressWarnings("unchecked")
     default <T extends ActorExtension> T getFirstExtension(Class<T> itemType)
     {
         final List<ActorExtension> extensions = getExtensions();
-        return extensions == null ? null :
-                (T) extensions.stream().filter(p -> itemType.isInstance(p)).findFirst().orElse(null);
-
+        if (extensions == null || extensions.isEmpty()) {
+            return null;
+        }
+        for (ActorExtension extension : extensions) {
+            if (itemType.isInstance(extension)) {
+                return (T) extension;
+            }
+        }
+        return null;
     }
 
     List<NodeAddress> getAllNodes();
