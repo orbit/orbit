@@ -38,6 +38,7 @@ import cloud.orbit.actors.concurrent.WaitFreeMultiExecutionSerializer;
 import cloud.orbit.actors.extensions.ActorClassFinder;
 import cloud.orbit.actors.extensions.ActorExtension;
 import cloud.orbit.actors.extensions.DefaultLoggerExtension;
+import cloud.orbit.actors.extensions.LifetimeExtension;
 import cloud.orbit.actors.extensions.LoggerExtension;
 import cloud.orbit.actors.extensions.MessageSerializer;
 import cloud.orbit.actors.extensions.PipelineExtension;
