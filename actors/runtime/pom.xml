@@ -55,10 +55,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                             <artifactSet>
                                 <includes>
                                     <include>com.esotericsoftware:*</include>
+                                    <include>org.ow2.asm:asm</include>
                                     <include>de.javakaffee:kryo-serializers</include>
                                     <include>org.objenesis:*</include>
-                                    <include>org.ow2.asm:asm</include>
                                     <include>com.github.ben-manes.caffeine:caffeine</include>
+                                    <include>io.github.lukehutch:fast-classpath-scanner</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -75,12 +76,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                     <shadedPattern>cloud.orbit.runtime.shaded.org.objenesis.</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>com.github.benmanes.caffeine.</pattern>
+                                    <shadedPattern>cloud.orbit.runtime.shaded.com.github.benmanes.caffeine.</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>org.objectweb.</pattern>
                                     <shadedPattern>cloud.orbit.runtime.shaded.org.objectweb.</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.github.benmanes.caffeine.</pattern>
-                                    <shadedPattern>cloud.orbit.runtime.shaded.com.github.benmanes.caffeine.</shadedPattern>
+                                    <pattern>io.github.lukehutch.</pattern>
+                                    <shadedPattern>cloud.orbit.runtime.shaded.io.github.lukehutch.</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
@@ -96,19 +101,25 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <artifactId>orbit-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <dependency>
             <groupId>cloud.orbit</groupId>
             <artifactId>orbit-infinispan-cluster</artifactId>
             <version>${project.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>io.github.lukehutch</groupId>
+            <artifactId>fast-classpath-scanner</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
             <version>${caffeine.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>5.0.4</version>
+        </dependency>
         <dependency>
             <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>
@@ -119,7 +130,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <artifactId>kryo-serializers</artifactId>
             <version>0.37</version>
         </dependency>
-
         <dependency>
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
