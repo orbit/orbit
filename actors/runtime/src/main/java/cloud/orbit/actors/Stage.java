@@ -53,6 +53,7 @@ import cloud.orbit.actors.runtime.AsyncStreamReference;
 import cloud.orbit.actors.runtime.BasicRuntime;
 import cloud.orbit.actors.runtime.ClusterHandler;
 import cloud.orbit.actors.runtime.DefaultActorClassFinder;
+import cloud.orbit.actors.runtime.DefaultLifetimeExtension;
 import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
 import cloud.orbit.actors.runtime.DefaultHandlers;
 import cloud.orbit.actors.runtime.Execution;
@@ -569,6 +570,17 @@ public class Stage implements Startable, ActorRuntime
         {
             defaultStreamProvider = new SimpleStreamExtension(AsyncStream.DEFAULT_PROVIDER);
             extensions.add(defaultStreamProvider);
+        }
+
+        LifetimeExtension lifetimeExtension = extensions.stream()
+                .filter(p -> p instanceof LifetimeExtension)
+                .map(p -> (LifetimeExtension) p)
+                .findFirst().orElse(null);
+
+        if (lifetimeExtension == null)
+        {
+            lifetimeExtension = new DefaultLifetimeExtension();
+            extensions.add(lifetimeExtension);
         }
 
         messaging.start();
