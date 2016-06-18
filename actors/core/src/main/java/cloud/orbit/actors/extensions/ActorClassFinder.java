@@ -30,7 +30,11 @@ package cloud.orbit.actors.extensions;
 
 import cloud.orbit.actors.Actor;
 
+import java.util.Collection;
+import java.util.function.Predicate;
+
 public interface ActorClassFinder extends ActorExtension
 {
     <T extends Actor> Class<? extends T> findActorImplementation(Class<T> actorInterface);
+    <T extends Actor> Collection<Class<? extends T>> findActorInterfaces(Predicate<Class<T>> predicate);
 }
