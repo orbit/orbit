@@ -38,6 +38,7 @@ import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -125,7 +126,7 @@ public class DefaultActorClassFinder implements ActorClassFinder
                 return tmp.toArray(new String[tmp.size()]);
             }
         }
-        return actorBasePackages;
+        return actorBasePackages; // scan entire classpath
     }
 
     @SuppressWarnings("unchecked")
@@ -139,14 +140,17 @@ public class DefaultActorClassFinder implements ActorClassFinder
     @Override
     public <T extends Actor> Collection<Class<? extends T>> findActorInterfaces(final Predicate<Class<T>> predicate)
     {
-        List<Class<? extends T>> interfaces = new ArrayList<>();
+        List<Class<? extends T>> interfaces = null;
         for (Class<?> concreteInterface : concreteImplementations.keySet())
         {
             if (predicate.test((Class<T>) concreteInterface))
             {
+                if (interfaces == null) {
+                    interfaces = new ArrayList<>();
+                }
                 interfaces.add((Class<T>) concreteInterface);
             }
         }
-        return interfaces;
+        return interfaces != null ? interfaces : Collections.emptyList();
     }
 }

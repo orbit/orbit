@@ -44,9 +44,9 @@ import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class DefaultClassDictionary
 {
@@ -145,18 +145,33 @@ public class DefaultClassDictionary
         return null;
     }
 
-    private static final Map<Integer, String> hashCodeToClassName = new ConcurrentHashMap<>();
+    private static final AtomicReference<ConcurrentHashMap<Integer, String>> hashCodeToClassName = new AtomicReference<>();
 
-    static
+    private static ConcurrentHashMap<Integer, String> getHashCodeToClassName()
     {
-        for (String candidate : new FastClasspathScanner().scan().getNamesOfAllClasses())
+        ConcurrentHashMap<Integer, String> value = hashCodeToClassName.get();
+        if (value == null)
         {
-            String old = hashCodeToClassName.put(candidate.hashCode(), candidate);
-            if (old != null)
+            synchronized (hashCodeToClassName)
             {
-                logger.info("Found more than one class with hashCode #" + candidate.hashCode() + " replacing " + old + " with " + candidate);
+                value = hashCodeToClassName.get();
+                if (value == null)
+                {
+                    final ConcurrentHashMap<Integer, String> actualValue = new ConcurrentHashMap<>();
+                    for (String candidate : new FastClasspathScanner().scan().getNamesOfAllClasses())
+                    {
+                        String old = actualValue.put(candidate.hashCode(), candidate);
+                        if (old != null)
+                        {
+                            logger.info("Found more than one class with hashCode #" + candidate.hashCode() + " replacing " + old + " with " + candidate);
+                        }
+                    }
+                    value = actualValue;
+                    hashCodeToClassName.set(value);
+                }
             }
         }
+        return value;
     }
 
     public Class<?> getClassById(int classId)
@@ -195,7 +210,7 @@ public class DefaultClassDictionary
 
         if (className == null)
         {
-            className = hashCodeToClassName.get(classId);
+            className = getHashCodeToClassName().get(classId);
 
             if (className == null)
             {
