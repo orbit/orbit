@@ -95,9 +95,13 @@ public class DefaultClassDictionary
                 return;
             }
 
-            new FastClasspathScanner().matchFilenamePattern("^" + META_INF_SERVICES_ORBIT_CLASSES + ".*" + EXTENSION + "$", (FileMatchProcessor) (s, inputStream, i) -> {
+            long start = System.currentTimeMillis();
+            new FastClasspathScanner(META_INF_SERVICES_ORBIT_CLASSES).matchFilenameExtension(EXTENSION, (FileMatchProcessor) (s, inputStream, i) -> {
                 loadClassInfo(s, inputStream);
             }).scan();
+            if (logger.isDebugEnabled()) {
+                logger.debug("Took " + (System.currentTimeMillis() - start) + "ms to scan for Orbit class service files.");
+            }
 
             loaded = true;
         }
@@ -158,6 +162,7 @@ public class DefaultClassDictionary
                 if (value == null)
                 {
                     final ConcurrentHashMap<Integer, String> actualValue = new ConcurrentHashMap<>();
+                    long start = System.currentTimeMillis();
                     for (String candidate : new FastClasspathScanner().scan().getNamesOfAllClasses())
                     {
                         String old = actualValue.put(candidate.hashCode(), candidate);
@@ -165,6 +170,9 @@ public class DefaultClassDictionary
                         {
                             logger.info("Found more than one class with hashCode #" + candidate.hashCode() + " replacing " + old + " with " + candidate);
                         }
+                    }
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Took " + (System.currentTimeMillis() - start) + "ms to scan all classes.");
                     }
                     value = actualValue;
                     hashCodeToClassName.set(value);

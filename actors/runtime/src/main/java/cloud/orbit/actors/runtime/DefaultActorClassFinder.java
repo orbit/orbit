@@ -58,15 +58,20 @@ public class DefaultActorClassFinder implements ActorClassFinder
         String[] scanSpec = extractScanSpec(actorBasePackages);
 
         List<Class<?>> clazzInterfaces = new ArrayList<>();
-        new FastClasspathScanner(scanSpec).matchSubinterfacesOf(Actor.class, candidate -> {
+        long start = System.currentTimeMillis();
+        FastClasspathScanner scanner = new FastClasspathScanner(scanSpec).matchSubinterfacesOf(Actor.class, candidate -> {
             if (candidate == Remindable.class)
             {
                 return;
             }
             clazzInterfaces.add(candidate);
         }).scan();
+        if (logger.isDebugEnabled()) {
+            logger.debug("Took " + (System.currentTimeMillis() - start) + "ms to scan for Actor sub interfaces.");
+        }
 
-        new FastClasspathScanner(scanSpec).matchClassesImplementing(Actor.class, clazzImplementation -> {
+        start = System.currentTimeMillis();
+        scanner.matchClassesImplementing(Actor.class, clazzImplementation -> {
             if (clazzImplementation.getSimpleName().toLowerCase(Locale.ENGLISH).startsWith("abstract"))
             {
                 return;
@@ -107,6 +112,9 @@ public class DefaultActorClassFinder implements ActorClassFinder
                 }
             }
         }).scan();
+        if (logger.isDebugEnabled()) {
+            logger.debug("Took " + (System.currentTimeMillis() - start) + "ms to scan for Actor implementations.");
+        }
     }
 
     private String[] extractScanSpec(final String[] actorBasePackages)
