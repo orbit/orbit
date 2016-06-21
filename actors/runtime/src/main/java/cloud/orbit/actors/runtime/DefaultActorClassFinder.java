@@ -65,12 +65,7 @@ public class DefaultActorClassFinder implements ActorClassFinder
                 return;
             }
             clazzInterfaces.add(candidate);
-        }).scan();
-        if (logger.isDebugEnabled()) {
-            logger.debug("Took " + (System.currentTimeMillis() - start) + "ms to scan for Actor sub interfaces.");
-        }
-
-        start = System.currentTimeMillis();
+        });
         scanner.matchClassesImplementing(Actor.class, clazzImplementation -> {
             if (clazzImplementation.getSimpleName().toLowerCase(Locale.ENGLISH).startsWith("abstract"))
             {
@@ -111,7 +106,8 @@ public class DefaultActorClassFinder implements ActorClassFinder
                     }
                 }
             }
-        }).scan();
+        });
+        scanner.scan();
         if (logger.isDebugEnabled()) {
             logger.debug("Took " + (System.currentTimeMillis() - start) + "ms to scan for Actor implementations.");
         }
