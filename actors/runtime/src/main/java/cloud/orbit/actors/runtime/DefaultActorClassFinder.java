@@ -53,17 +53,11 @@ public class DefaultActorClassFinder implements ActorClassFinder
 {
     private static Logger logger = LoggerFactory.getLogger(DefaultActorClassFinder.class);
 
-    private final String[] scanSpec;
     private final Map<Class<?>, Class<?>> concreteImplementations = new ConcurrentHashMap<>();
 
     public DefaultActorClassFinder(final String... actorBasePackages)
     {
-        this.scanSpec = extractScanSpec(actorBasePackages);
-    }
-
-    @Override
-    public Task<?> start()
-    {
+        String[] scanSpec = extractScanSpec(actorBasePackages);
         List<Class<?>> clazzImplementations = new ArrayList<>();
         long start = System.currentTimeMillis();
         FastClasspathScanner scanner = new FastClasspathScanner(scanSpec).matchClassesImplementing(Actor.class, candidate -> {
@@ -111,6 +105,12 @@ public class DefaultActorClassFinder implements ActorClassFinder
         {
             logger.debug("Took " + end + "ms to scan for Actor implementations.");
         }
+    }
+
+    @Override
+    public Task<?> start()
+    {
+        // code in constructor as ActorClassFinder is a special Startable
         return Task.done();
     }
 
@@ -126,7 +126,8 @@ public class DefaultActorClassFinder implements ActorClassFinder
                     tmp.add(actorBasePackage.trim());
                 }
             }
-            if (tmp.size() > 0) { // only create new scanSpec if valid actorBasePackage is passed in
+            if (tmp.size() > 0)
+            { // only create new scanSpec if valid actorBasePackage is passed in
                 tmp.add("cloud.orbit"); // internal actors
                 return tmp.toArray(new String[tmp.size()]);
             }
@@ -150,7 +151,8 @@ public class DefaultActorClassFinder implements ActorClassFinder
         {
             if (predicate.test((Class<T>) concreteInterface))
             {
-                if (interfaces == null) {
+                if (interfaces == null)
+                {
                     interfaces = new ArrayList<>();
                 }
                 interfaces.add((Class<T>) concreteInterface);
