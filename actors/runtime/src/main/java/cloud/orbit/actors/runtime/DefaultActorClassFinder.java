@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Remindable;
 import cloud.orbit.actors.extensions.ActorClassFinder;
+import cloud.orbit.concurrent.Task;
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 
 import java.util.ArrayList;
@@ -45,18 +46,24 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 public class DefaultActorClassFinder implements ActorClassFinder
 {
     private static Logger logger = LoggerFactory.getLogger(DefaultActorClassFinder.class);
 
+    private final String[] scanSpec;
     private final Map<Class<?>, Class<?>> concreteImplementations = new ConcurrentHashMap<>();
 
     public DefaultActorClassFinder(final String... actorBasePackages)
     {
-        String[] scanSpec = extractScanSpec(actorBasePackages);
+        this.scanSpec = extractScanSpec(actorBasePackages);
+    }
 
+    @Override
+    public Task<?> start()
+    {
         List<Class<?>> clazzImplementations = new ArrayList<>();
         long start = System.currentTimeMillis();
         FastClasspathScanner scanner = new FastClasspathScanner(scanSpec).matchClassesImplementing(Actor.class, candidate -> {
@@ -73,7 +80,7 @@ public class DefaultActorClassFinder implements ActorClassFinder
         scanner.scan();
         for (Class<?> clazzImplementation : clazzImplementations)
         {
-            Class<?>[] implementationInterfaces = clazzImplementation.getInterfaces(); // check interfaces directly to support inheritance
+            Class<?>[] implementationInterfaces = clazzImplementation.getInterfaces();
             if (implementationInterfaces.length == 0)
             {
                 continue;
@@ -94,10 +101,17 @@ public class DefaultActorClassFinder implements ActorClassFinder
                 }
             }
         }
+        long end = System.currentTimeMillis() - start;
+        if (scanSpec.length == 0 && end > TimeUnit.SECONDS.toMillis(10))
+        {
+            logger.info("Took " + end + "ms to scan for Actor implementations, for better performance "
+                    + "set the property orbit.actors.basePackages");
+        }
         if (logger.isDebugEnabled())
         {
-            logger.debug("Took " + (System.currentTimeMillis() - start) + "ms to scan for Actor implementations.");
+            logger.debug("Took " + end + "ms to scan for Actor implementations.");
         }
+        return Task.done();
     }
 
     private String[] extractScanSpec(final String[] actorBasePackages)
