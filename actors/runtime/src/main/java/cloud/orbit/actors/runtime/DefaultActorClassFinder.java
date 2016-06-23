@@ -53,65 +53,68 @@ public class DefaultActorClassFinder implements ActorClassFinder
 {
     private static Logger logger = LoggerFactory.getLogger(DefaultActorClassFinder.class);
 
+    private final Task<Void> scanTask;
     private final Map<Class<?>, Class<?>> concreteImplementations = new ConcurrentHashMap<>();
 
     public DefaultActorClassFinder(final String... actorBasePackages)
     {
-        String[] scanSpec = extractScanSpec(actorBasePackages);
-        List<Class<?>> clazzImplementations = new ArrayList<>();
-        long start = System.currentTimeMillis();
-        FastClasspathScanner scanner = new FastClasspathScanner(scanSpec).matchClassesImplementing(Actor.class, candidate -> {
-            if (candidate.getSimpleName().toLowerCase(Locale.ENGLISH).startsWith("abstract"))
+        scanTask = Task.supplyAsync(() -> {
+            String[] scanSpec = extractScanSpec(actorBasePackages);
+            List<Class<?>> clazzImplementations = new ArrayList<>();
+            long start = System.currentTimeMillis();
+            FastClasspathScanner scanner = new FastClasspathScanner(scanSpec).matchClassesImplementing(Actor.class, candidate -> {
+                if (candidate.getSimpleName().toLowerCase(Locale.ENGLISH).startsWith("abstract"))
+                {
+                    return;
+                }
+                clazzImplementations.add(candidate);
+            });
+            if (logger.isTraceEnabled())
             {
-                return;
+                scanner.verbose();
             }
-            clazzImplementations.add(candidate);
-        });
-        if (logger.isTraceEnabled())
-        {
-            scanner.verbose();
-        }
-        scanner.scan();
-        for (Class<?> clazzImplementation : clazzImplementations)
-        {
-            Class<?>[] implementationInterfaces = clazzImplementation.getInterfaces();
-            if (implementationInterfaces.length == 0)
+            scanner.scan();
+            for (Class<?> clazzImplementation : clazzImplementations)
             {
-                continue;
-            }
-            for (Class<?> implementationInterface : implementationInterfaces)
-            {
-                if (implementationInterface == Remindable.class)
+                Class<?>[] implementationInterfaces = clazzImplementation.getInterfaces();
+                if (implementationInterfaces.length == 0)
                 {
                     continue;
                 }
-                if (Actor.class.isAssignableFrom(implementationInterface))
+                for (Class<?> implementationInterface : implementationInterfaces)
                 {
-                    Class<?> old = concreteImplementations.put(implementationInterface, clazzImplementation);
-                    if (old != null)
+                    if (implementationInterface == Remindable.class)
                     {
-                        logger.warn("Multiple actor implementations found for " + implementationInterface);
+                        continue;
+                    }
+                    if (Actor.class.isAssignableFrom(implementationInterface))
+                    {
+                        Class<?> old = concreteImplementations.put(implementationInterface, clazzImplementation);
+                        if (old != null)
+                        {
+                            logger.warn("Multiple actor implementations found for " + implementationInterface);
+                        }
                     }
                 }
             }
-        }
-        long end = System.currentTimeMillis() - start;
-        if (scanSpec.length == 0 && end > TimeUnit.SECONDS.toMillis(10))
-        {
-            logger.info("Took " + end + "ms to scan for Actor implementations, for better performance "
-                    + "set the property orbit.actors.basePackages");
-        }
-        if (logger.isDebugEnabled())
-        {
-            logger.debug("Took " + end + "ms to scan for Actor implementations.");
-        }
+            long end = System.currentTimeMillis() - start;
+            if (scanSpec.length == 0 && end > TimeUnit.SECONDS.toMillis(10))
+            {
+                logger.info("Took " + end + "ms to scan for Actor implementations, for better performance "
+                        + "set the property orbit.actors.basePackages");
+            }
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("Took " + end + "ms to scan for Actor implementations.");
+            }
+            return Task.done();
+        });
     }
 
     @Override
     public Task<?> start()
     {
-        // code in constructor as ActorClassFinder is a special Startable
-        return Task.done();
+        return scanTask;
     }
 
     private String[] extractScanSpec(final String[] actorBasePackages)
