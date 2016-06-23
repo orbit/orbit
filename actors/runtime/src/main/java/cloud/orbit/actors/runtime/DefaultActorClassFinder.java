@@ -53,68 +53,81 @@ public class DefaultActorClassFinder implements ActorClassFinder
 {
     private static Logger logger = LoggerFactory.getLogger(DefaultActorClassFinder.class);
 
-    private final Task<Void> scanTask;
     private final Map<Class<?>, Class<?>> concreteImplementations = new ConcurrentHashMap<>();
+
+    private final String[] scanSpec;
+    private Task<Void> scanTask;
 
     public DefaultActorClassFinder(final String... actorBasePackages)
     {
-        scanTask = Task.supplyAsync(() -> {
-            String[] scanSpec = extractScanSpec(actorBasePackages);
-            List<Class<?>> clazzImplementations = new ArrayList<>();
-            long start = System.currentTimeMillis();
-            FastClasspathScanner scanner = new FastClasspathScanner(scanSpec).matchClassesImplementing(Actor.class, candidate -> {
-                if (candidate.getSimpleName().toLowerCase(Locale.ENGLISH).startsWith("abstract"))
-                {
-                    return;
-                }
-                clazzImplementations.add(candidate);
-            });
-            if (logger.isTraceEnabled())
-            {
-                scanner.verbose();
-            }
-            scanner.scan();
-            for (Class<?> clazzImplementation : clazzImplementations)
-            {
-                Class<?>[] implementationInterfaces = clazzImplementation.getInterfaces();
-                if (implementationInterfaces.length == 0)
-                {
-                    continue;
-                }
-                for (Class<?> implementationInterface : implementationInterfaces)
-                {
-                    if (implementationInterface == Remindable.class)
-                    {
-                        continue;
-                    }
-                    if (Actor.class.isAssignableFrom(implementationInterface))
-                    {
-                        Class<?> old = concreteImplementations.put(implementationInterface, clazzImplementation);
-                        if (old != null)
-                        {
-                            logger.warn("Multiple actor implementations found for " + implementationInterface);
-                        }
-                    }
-                }
-            }
-            long end = System.currentTimeMillis() - start;
-            if (scanSpec.length == 0 && end > TimeUnit.SECONDS.toMillis(10))
-            {
-                logger.info("Took " + end + "ms to scan for Actor implementations, for better performance "
-                        + "set the property orbit.actors.basePackages");
-            }
-            if (logger.isDebugEnabled())
-            {
-                logger.debug("Took " + end + "ms to scan for Actor implementations.");
-            }
-            return Task.done();
-        });
+        this.scanSpec = extractScanSpec(actorBasePackages);
     }
 
     @Override
     public Task<?> start()
     {
-        return scanTask;
+        if (scanTask != null)
+        {
+            return scanTask;
+        }
+        synchronized (this)
+        {
+            if (scanTask != null)
+            {
+                return scanTask;
+            }
+            scanTask = Task.supplyAsync(() -> {
+                List<Class<?>> clazzImplementations = new ArrayList<>();
+                long start = System.currentTimeMillis();
+                FastClasspathScanner scanner = new FastClasspathScanner(scanSpec).matchClassesImplementing(Actor.class, candidate -> {
+                    if (candidate.getSimpleName().toLowerCase(Locale.ENGLISH).startsWith("abstract"))
+                    {
+                        return;
+                    }
+                    clazzImplementations.add(candidate);
+                });
+                if (logger.isTraceEnabled())
+                {
+                    scanner.verbose();
+                }
+                scanner.scan();
+                for (Class<?> clazzImplementation : clazzImplementations)
+                {
+                    Class<?>[] implementationInterfaces = clazzImplementation.getInterfaces();
+                    if (implementationInterfaces.length == 0)
+                    {
+                        continue;
+                    }
+                    for (Class<?> implementationInterface : implementationInterfaces)
+                    {
+                        if (implementationInterface == Remindable.class)
+                        {
+                            continue;
+                        }
+                        if (Actor.class.isAssignableFrom(implementationInterface))
+                        {
+                            Class<?> old = concreteImplementations.put(implementationInterface, clazzImplementation);
+                            if (old != null)
+                            {
+                                logger.warn("Multiple actor implementations found for " + implementationInterface);
+                            }
+                        }
+                    }
+                }
+                long end = System.currentTimeMillis() - start;
+                if (scanSpec.length == 0 && end > TimeUnit.SECONDS.toMillis(10))
+                {
+                    logger.info("Took " + end + "ms to scan for Actor implementations, for better performance "
+                            + "set the property orbit.actors.basePackages");
+                }
+                if (logger.isDebugEnabled())
+                {
+                    logger.debug("Took " + end + "ms to scan for Actor implementations.");
+                }
+                return Task.done();
+            });
+            return scanTask;
+        }
     }
 
     private String[] extractScanSpec(final String[] actorBasePackages)
@@ -129,8 +142,9 @@ public class DefaultActorClassFinder implements ActorClassFinder
                     tmp.add(actorBasePackage.trim());
                 }
             }
+            // only create new scanSpec if valid actorBasePackage is passed in
             if (tmp.size() > 0)
-            { // only create new scanSpec if valid actorBasePackage is passed in
+            {
                 tmp.add("cloud.orbit"); // internal actors
                 return tmp.toArray(new String[tmp.size()]);
             }
