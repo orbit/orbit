@@ -66,13 +66,17 @@ public class DefaultActorClassFinder implements ActorClassFinder
             }
             clazzImplementations.add(candidate);
         });
-        scanner.verbose().scan();
+        if (logger.isTraceEnabled())
+        {
+            scanner.verbose();
+        }
+        scanner.scan();
         for (Class<?> clazzImplementation : clazzImplementations)
         {
             Class<?>[] implementationInterfaces = clazzImplementation.getInterfaces(); // check interfaces directly to support inheritance
             if (implementationInterfaces.length == 0)
             {
-                return;
+                continue;
             }
             for (Class<?> implementationInterface : implementationInterfaces)
             {
