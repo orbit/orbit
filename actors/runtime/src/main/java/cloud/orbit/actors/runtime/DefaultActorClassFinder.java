@@ -53,62 +53,45 @@ public class DefaultActorClassFinder implements ActorClassFinder
 
     private final Map<Class<?>, Class<?>> concreteImplementations = new ConcurrentHashMap<>();
 
-    public DefaultActorClassFinder(final String ...actorBasePackages)
+    public DefaultActorClassFinder(final String... actorBasePackages)
     {
         String[] scanSpec = extractScanSpec(actorBasePackages);
 
-        List<Class<?>> clazzInterfaces = new ArrayList<>();
+        List<Class<?>> clazzImplementations = new ArrayList<>();
         long start = System.currentTimeMillis();
-        FastClasspathScanner scanner = new FastClasspathScanner(scanSpec).matchSubinterfacesOf(Actor.class, candidate -> {
-            if (candidate == Remindable.class)
+        FastClasspathScanner scanner = new FastClasspathScanner(scanSpec).matchClassesImplementing(Actor.class, candidate -> {
+            if (candidate.getSimpleName().toLowerCase(Locale.ENGLISH).startsWith("abstract"))
             {
                 return;
             }
-            clazzInterfaces.add(candidate);
+            clazzImplementations.add(candidate);
         });
-        scanner.matchClassesImplementing(Actor.class, clazzImplementation -> {
-            if (clazzImplementation.getSimpleName().toLowerCase(Locale.ENGLISH).startsWith("abstract"))
-            {
-                return;
-            }
+        scanner.verbose().scan();
+        for (Class<?> clazzImplementation : clazzImplementations)
+        {
             Class<?>[] implementationInterfaces = clazzImplementation.getInterfaces(); // check interfaces directly to support inheritance
             if (implementationInterfaces.length == 0)
             {
                 return;
             }
-            for (Class<?> clazzInterface : clazzInterfaces)
+            for (Class<?> implementationInterface : implementationInterfaces)
             {
-                if (clazzInterface.isAssignableFrom(clazzImplementation))
+                if (implementationInterface == Remindable.class)
                 {
-                    boolean found = false;
-                    for (Class<?> implementationInterface : implementationInterfaces)
+                    continue;
+                }
+                if (Actor.class.isAssignableFrom(implementationInterface))
+                {
+                    Class<?> old = concreteImplementations.put(implementationInterface, clazzImplementation);
+                    if (old != null)
                     {
-                        if (implementationInterface == clazzInterface)
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (found)
-                    {
-                        Class<?> old = concreteImplementations.put(clazzInterface, clazzImplementation);
-                        if (old != null)
-                        {
-                            logger.warn("Multiple actor implementations found for " + clazzInterface);
-                        }
-                    }
-                    else
-                    {
-                        if (logger.isDebugEnabled())
-                        {
-                            logger.debug(clazzInterface + " is assignable from " + clazzImplementation + " but the concrete class does not implement the interface directly");
-                        }
+                        logger.warn("Multiple actor implementations found for " + implementationInterface);
                     }
                 }
             }
-        });
-        scanner.scan();
-        if (logger.isDebugEnabled()) {
+        }
+        if (logger.isDebugEnabled())
+        {
             logger.debug("Took " + (System.currentTimeMillis() - start) + "ms to scan for Actor implementations.");
         }
     }
