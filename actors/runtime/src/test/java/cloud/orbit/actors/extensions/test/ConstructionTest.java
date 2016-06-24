@@ -54,13 +54,13 @@ public class ConstructionTest {
 
         try {
 
-            stage.start();
+            stage.start().join();
 
             final TestConstruction actor = Actor.getReference(TestConstruction.class, "0");
             assertEquals(DEFAULT_ID, actor.getId().get());
 
         } finally {
-            stage.stop();
+            stage.stop().join();
         }
 
     }
@@ -74,13 +74,13 @@ public class ConstructionTest {
 
         try {
 
-            stage.start();
+            stage.start().join();
 
             final TestConstruction actor = Actor.getReference(TestConstruction.class, "0");
             assertEquals(OTHER_ID, actor.getId().get());
 
         } finally {
-            stage.stop();
+            stage.stop().join();
         }
 
     }
