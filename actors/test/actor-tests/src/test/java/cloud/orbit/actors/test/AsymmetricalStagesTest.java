@@ -28,10 +28,12 @@
 
 package cloud.orbit.actors.test;
 
+import org.junit.Test;
+
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
-import cloud.orbit.actors.runtime.DefaultActorClassFinder;
 import cloud.orbit.actors.runtime.Execution;
+import cloud.orbit.actors.runtime.LazyActorClassFinder;
 import cloud.orbit.actors.runtime.Messaging;
 import cloud.orbit.actors.test.actors.SomeActor;
 import cloud.orbit.actors.test.actors.SomeActorImpl;
@@ -41,16 +43,12 @@ import cloud.orbit.actors.test.actors.SomePlayer;
 import cloud.orbit.actors.test.actors.SomePlayerActor;
 import cloud.orbit.concurrent.Task;
 
-import org.junit.Test;
-
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -119,11 +117,12 @@ public class AsymmetricalStagesTest extends ActorBaseTest
     @Override
     protected void installExtensions(final Stage stage)
     {
+        super.installExtensions(stage);
         final List<Class<?>> classes = this.excludedClasses;
         if (classes != null)
         {
             this.excludedClasses = null;
-            stage.addExtension(new DefaultActorClassFinder() // install custom DefaultActorClassFinder first
+            stage.addExtension(new LazyActorClassFinder()
             {
                 @Override
                 public <T extends Actor> Class<? extends T> findActorImplementation(Class<T> actorInterface)
@@ -131,15 +130,8 @@ public class AsymmetricalStagesTest extends ActorBaseTest
                     Class<? extends T> c = super.findActorImplementation(actorInterface);
                     return classes.contains(c) ? null : c;
                 }
-
-                @Override
-                public <T extends Actor> Collection<Class<? extends T>> findActorInterfaces(final Predicate<Class<T>> predicate)
-                {
-                    throw new UnsupportedOperationException("Not implemented");
-                }
             });
         }
-        super.installExtensions(stage);
     }
 
     public Stage createStage(Class<?>... excludedActorClasses) throws ExecutionException, InterruptedException, NoSuchFieldException, IllegalAccessException

@@ -65,6 +65,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                     <include>org.javassist:javassist</include>
                                     <include>org.yaml:snakeyaml</include>
                                     <include>io.github.lukehutch:fast-classpath-scanner</include>
+                                    <include>org.ow2.asm:asm</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -83,6 +84,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                 <relocation>
                                     <pattern>io.github.lukehutch.</pattern>
                                     <shadedPattern>cloud.orbit.core.shaded.io.github.lukehutch.</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.objectweb.</pattern>
+                                    <shadedPattern>cloud.orbit.core.shaded.org.objectweb.</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
@@ -115,6 +120,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <dependency>
             <groupId>io.github.lukehutch</groupId>
             <artifactId>fast-classpath-scanner</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
