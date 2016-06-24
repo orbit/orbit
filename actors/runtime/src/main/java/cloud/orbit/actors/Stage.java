@@ -479,8 +479,7 @@ public class Stage implements Startable, ActorRuntime
 
         if (executionPool == null)
         {
-            final ExecutorService newService = ExecutorUtils.newScalingThreadPool(executionPoolSize);
-            executionPool = newService;
+            executionPool = ExecutorUtils.newScalingThreadPool(executionPoolSize);
         }
 
         executionSerializer = new WaitFreeMultiExecutionSerializer<>(executionPool);
@@ -514,11 +513,14 @@ public class Stage implements Startable, ActorRuntime
             objectCloner = new KryoCloner();
         }
 
+        // create pipeline before waiting for ActorClassFinder as stop might be invoked before it is complete
+        pipeline = new DefaultPipeline();
+
         finder = getFirstExtension(ActorClassFinder.class);
         if (finder == null)
         {
             finder = StringUtils.isNotEmpty(basePackages) ? new DefaultActorClassFinder(basePackages.split(Pattern.quote(","))) : new DefaultActorClassFinder();
-            finder.start().join();
+            await(finder.start());
         }
 
         cacheManager = new ResponseCaching();
@@ -536,7 +538,6 @@ public class Stage implements Startable, ActorRuntime
 
         hosting.setStage(this);
         hosting.setClusterPeer(clusterPeer);
-        pipeline = new DefaultPipeline();
 
         // caches responses
         pipeline.addLast(DefaultHandlers.CACHING, cacheManager);
@@ -545,7 +546,6 @@ public class Stage implements Startable, ActorRuntime
 
         // handles invocation messages and request-response matching
         pipeline.addLast(DefaultHandlers.HOSTING, hosting);
-
 
         // handles invocation messages and request-response matching
         pipeline.addLast(DefaultHandlers.MESSAGING, messaging);

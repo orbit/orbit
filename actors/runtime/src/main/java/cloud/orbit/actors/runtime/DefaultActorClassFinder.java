@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Remindable;
 import cloud.orbit.actors.extensions.ActorClassFinder;
+import cloud.orbit.concurrent.Task;
 import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
 
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 public class DefaultActorClassFinder implements ActorClassFinder
@@ -53,60 +55,79 @@ public class DefaultActorClassFinder implements ActorClassFinder
 
     private final Map<Class<?>, Class<?>> concreteImplementations = new ConcurrentHashMap<>();
 
-    public DefaultActorClassFinder(final String ...actorBasePackages)
+    private final String[] scanSpec;
+    private volatile Task<Void> scanTask;
+
+    public DefaultActorClassFinder(final String... actorBasePackages)
     {
-        String[] scanSpec = extractScanSpec(actorBasePackages);
+        this.scanSpec = extractScanSpec(actorBasePackages);
+    }
 
-        List<Class<?>> clazzInterfaces = new ArrayList<>();
-        new FastClasspathScanner(scanSpec).matchSubinterfacesOf(Actor.class, candidate -> {
-            if (candidate == Remindable.class)
+    @Override
+    public Task<?> start()
+    {
+        if (scanTask != null)
+        {
+            return scanTask;
+        }
+        synchronized (this)
+        {
+            if (scanTask != null)
             {
-                return;
+                return scanTask;
             }
-            clazzInterfaces.add(candidate);
-        }).scan();
-
-        new FastClasspathScanner(scanSpec).matchClassesImplementing(Actor.class, clazzImplementation -> {
-            if (clazzImplementation.getSimpleName().toLowerCase(Locale.ENGLISH).startsWith("abstract"))
-            {
-                return;
-            }
-            Class<?>[] implementationInterfaces = clazzImplementation.getInterfaces(); // check interfaces directly to support inheritance
-            if (implementationInterfaces.length == 0)
-            {
-                return;
-            }
-            for (Class<?> clazzInterface : clazzInterfaces)
-            {
-                if (clazzInterface.isAssignableFrom(clazzImplementation))
+            scanTask = Task.supplyAsync(() -> {
+                List<Class<?>> clazzImplementations = new ArrayList<>();
+                long start = System.currentTimeMillis();
+                FastClasspathScanner scanner = new FastClasspathScanner(scanSpec).matchClassesImplementing(Actor.class, candidate -> {
+                    if (candidate.getSimpleName().toLowerCase(Locale.ENGLISH).startsWith("abstract"))
+                    {
+                        return;
+                    }
+                    clazzImplementations.add(candidate);
+                });
+                if (logger.isTraceEnabled())
                 {
-                    boolean found = false;
+                    scanner.verbose();
+                }
+                scanner.scan();
+                for (Class<?> clazzImplementation : clazzImplementations)
+                {
+                    Class<?>[] implementationInterfaces = clazzImplementation.getInterfaces();
+                    if (implementationInterfaces.length == 0)
+                    {
+                        continue;
+                    }
                     for (Class<?> implementationInterface : implementationInterfaces)
                     {
-                        if (implementationInterface == clazzInterface)
+                        if (implementationInterface == Remindable.class)
                         {
-                            found = true;
-                            break;
+                            continue;
                         }
-                    }
-                    if (found)
-                    {
-                        Class<?> old = concreteImplementations.put(clazzInterface, clazzImplementation);
-                        if (old != null)
+                        if (Actor.class.isAssignableFrom(implementationInterface))
                         {
-                            logger.warn("Multiple actor implementations found for " + clazzInterface);
-                        }
-                    }
-                    else
-                    {
-                        if (logger.isDebugEnabled())
-                        {
-                            logger.debug(clazzInterface + " is assignable from " + clazzImplementation + " but the concrete class does not implement the interface directly");
+                            Class<?> old = concreteImplementations.put(implementationInterface, clazzImplementation);
+                            if (old != null)
+                            {
+                                logger.warn("Multiple actor implementations found for " + implementationInterface);
+                            }
                         }
                     }
                 }
-            }
-        }).scan();
+                long end = System.currentTimeMillis() - start;
+                if (scanSpec.length == 0 && end > TimeUnit.SECONDS.toMillis(10))
+                {
+                    logger.info("Took " + end + "ms to scan for Actor implementations, for better performance "
+                            + "set the property orbit.actors.basePackages");
+                }
+                if (logger.isDebugEnabled())
+                {
+                    logger.debug("Took " + end + "ms to scan for Actor implementations.");
+                }
+                return Task.done();
+            });
+            return scanTask;
+        }
     }
 
     private String[] extractScanSpec(final String[] actorBasePackages)
@@ -121,7 +142,9 @@ public class DefaultActorClassFinder implements ActorClassFinder
                     tmp.add(actorBasePackage.trim());
                 }
             }
-            if (tmp.size() > 0) { // only create new scanSpec if valid actorBasePackage is passed in
+            // only create new scanSpec if valid actorBasePackage is passed in
+            if (tmp.size() > 0)
+            {
                 tmp.add("cloud.orbit"); // internal actors
                 return tmp.toArray(new String[tmp.size()]);
             }
@@ -145,7 +168,8 @@ public class DefaultActorClassFinder implements ActorClassFinder
         {
             if (predicate.test((Class<T>) concreteInterface))
             {
-                if (interfaces == null) {
+                if (interfaces == null)
+                {
                     interfaces = new ArrayList<>();
                 }
                 interfaces.add((Class<T>) concreteInterface);

@@ -52,6 +52,7 @@ public class DefaultActorClassFinderTest
     public void setUp() throws Exception
     {
         actorClassFinder = new DefaultActorClassFinder("cloud.orbit");
+        actorClassFinder.start().join();
     }
 
     @Test
