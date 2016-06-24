@@ -56,7 +56,7 @@ public class DefaultActorClassFinder implements ActorClassFinder
     private final Map<Class<?>, Class<?>> concreteImplementations = new ConcurrentHashMap<>();
 
     private final String[] scanSpec;
-    private Task<Void> scanTask;
+    private volatile Task<Void> scanTask;
 
     public DefaultActorClassFinder(final String... actorBasePackages)
     {
