@@ -53,7 +53,7 @@ import cloud.orbit.actors.runtime.ActorTaskContext;
 import cloud.orbit.actors.runtime.AsyncStreamReference;
 import cloud.orbit.actors.runtime.BasicRuntime;
 import cloud.orbit.actors.runtime.ClusterHandler;
-import cloud.orbit.actors.runtime.DefaultActorClassFinder;
+import cloud.orbit.actors.runtime.FastActorClassFinder;
 import cloud.orbit.actors.runtime.DefaultLifetimeExtension;
 import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
 import cloud.orbit.actors.runtime.DefaultHandlers;
@@ -62,6 +62,7 @@ import cloud.orbit.actors.runtime.Hosting;
 import cloud.orbit.actors.runtime.InternalUtils;
 import cloud.orbit.actors.runtime.Invocation;
 import cloud.orbit.actors.runtime.JavaMessageSerializer;
+import cloud.orbit.actors.runtime.LazyActorClassFinder;
 import cloud.orbit.actors.runtime.LocalObjects;
 import cloud.orbit.actors.runtime.MessageLoopback;
 import cloud.orbit.actors.runtime.Messaging;
@@ -519,7 +520,7 @@ public class Stage implements Startable, ActorRuntime
         finder = getFirstExtension(ActorClassFinder.class);
         if (finder == null)
         {
-            finder = StringUtils.isNotEmpty(basePackages) ? new DefaultActorClassFinder(basePackages.split(Pattern.quote(","))) : new DefaultActorClassFinder();
+            finder = StringUtils.isNotEmpty(basePackages) ? new FastActorClassFinder(basePackages.split(Pattern.quote(","))) : new LazyActorClassFinder();
             await(finder.start());
         }
 

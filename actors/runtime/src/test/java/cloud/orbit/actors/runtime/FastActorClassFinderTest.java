@@ -44,14 +44,14 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Johno Crawford (johno@sulake.com)
  */
-public class DefaultActorClassFinderTest
+public class FastActorClassFinderTest
 {
-    private DefaultActorClassFinder actorClassFinder;
+    private FastActorClassFinder actorClassFinder;
 
     @Before
     public void setUp() throws Exception
     {
-        actorClassFinder = new DefaultActorClassFinder("cloud.orbit");
+        actorClassFinder = new FastActorClassFinder("cloud.orbit");
         actorClassFinder.start().join();
     }
 

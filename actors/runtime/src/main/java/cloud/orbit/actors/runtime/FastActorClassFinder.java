@@ -49,16 +49,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
-public class DefaultActorClassFinder implements ActorClassFinder
+/**
+ * @author Johno Crawford (johno@sulake.com)
+ */
+public class FastActorClassFinder implements ActorClassFinder
 {
-    private static Logger logger = LoggerFactory.getLogger(DefaultActorClassFinder.class);
+    private static Logger logger = LoggerFactory.getLogger(FastActorClassFinder.class);
 
     private final Map<Class<?>, Class<?>> concreteImplementations = new ConcurrentHashMap<>();
 
     private final String[] scanSpec;
     private volatile Task<Void> scanTask;
 
-    public DefaultActorClassFinder(final String... actorBasePackages)
+    public FastActorClassFinder(final String... actorBasePackages)
     {
         this.scanSpec = extractScanSpec(actorBasePackages);
     }
