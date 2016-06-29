@@ -173,6 +173,13 @@ public class ObserverManager<T extends ActorObserver> implements Serializable
     }
 
     /**
+     * Returns whether any observers are registered with this manager.
+     */
+    public boolean isEmpty() {
+        return observers.isEmpty();
+    }
+
+    /**
      * Returns a sequential {@code Stream} with this collection as its source.
      *
      * @return a sequential {@code Stream} over the elements in this collection.
