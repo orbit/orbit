@@ -28,7 +28,6 @@
 
 package cloud.orbit.actors.cluster;
 
-
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.exception.UncheckedException;
 
@@ -58,6 +57,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ForkJoinTask;
@@ -100,7 +100,6 @@ public class JGroupsClusterPeer implements ClusterPeer
     {
         this.messageListener = messageListener;
     }
-
 
     protected static class NodeInfo
     {
@@ -184,15 +183,11 @@ public class JGroupsClusterPeer implements ClusterPeer
                     ConfigurationBuilder builder = new ConfigurationBuilder();
                     builder.clustering().cacheMode(CacheMode.DIST_ASYNC);
 
-
                     cacheManager = new DefaultCacheManager(globalConfigurationBuilder.build(), builder.build());
 
-                    ConfigurationBuilder builder2 = new ConfigurationBuilder();
-                    builder2.clustering().cacheMode(CacheMode.REPL_SYNC);
-                    cacheManager.defineConfiguration("clusterTopologyCache", builder2.build());
-
                     // need to get a cache, any cache to force the initialization
-                    cacheManager.getCache("clusterTopologyCache");
+                    cacheManager.getCache("distributedDirectory");
+
                     channel.connect(clusterName);
                     local = new NodeInfo(channel.getAddress());
                     logger.info("Registering the local address");
@@ -277,11 +272,7 @@ public class JGroupsClusterPeer implements ClusterPeer
         sync();
         try
         {
-            if (address == null)
-            {
-                throw new NullPointerException("node address");
-            }
-
+            Objects.requireNonNull(address, "node address");
             final NodeInfo node = nodeMap2.get(address);
             if (node == null)
             {
