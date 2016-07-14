@@ -46,6 +46,12 @@ public class SomeActorImpl extends AbstractActor implements SomeActor
     }
 
     @Override
+    public Task<String> sayHelloOnlyIfActivated()
+    {
+        return Task.fromValue("hello");
+    }
+
+    @Override
     public Task<UUID> getUniqueActivationId()
     {
         return Task.fromValue(uniqueActivationId);

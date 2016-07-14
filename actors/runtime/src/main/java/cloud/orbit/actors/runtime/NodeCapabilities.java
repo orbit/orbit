@@ -60,4 +60,7 @@ public interface NodeCapabilities extends ActorObserver
 
     @OneWay
     Task<Void> moved(RemoteReference<?> actorKey, NodeAddress oldAddress, NodeAddress newAddress);
+
+    @OneWay
+    Task<Void> remove(RemoteReference<?> actorKey);
 }
