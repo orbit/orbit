@@ -861,7 +861,10 @@ public class Stage implements Startable, ActorRuntime
 
     public Task pulse()
     {
-        Actor.getReference(ReminderController.class).ensureStart();
+        if (mode == StageMode.HOST)
+        {
+            Actor.getReference(ReminderController.class).ensureStart();
+        }
         return cleanup();
     }
 
