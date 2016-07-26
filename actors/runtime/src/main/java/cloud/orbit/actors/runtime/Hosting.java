@@ -186,9 +186,17 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         return Task.done();
     }
 
+    @Override
     public Task<Void> moved(RemoteReference remoteReference, NodeAddress oldAddress, NodeAddress newAddress)
     {
         setCachedAddress(remoteReference, Task.fromValue(newAddress));
+        return Task.done();
+    }
+
+    @Override
+    public Task<Void> remove(final RemoteReference<?> remoteReference)
+    {
+        localAddressCache.remove(remoteReference);
         return Task.done();
     }
 
@@ -292,9 +300,16 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     public void actorDeactivated(RemoteReference remoteReference)
     {
-        // removing the reference form the cluster directory
-        localAddressCache.remove(remoteReference);
+        // removing the reference from the cluster directory and local caches
         getDistributedDirectory().remove(createRemoteKey(remoteReference), clusterPeer.localAddress());
+        localAddressCache.remove(remoteReference);
+        for (NodeInfo info : activeNodes.values())
+        {
+            if (!info.address.equals(clusterPeer.localAddress()) && info.state == NodeState.RUNNING)
+            {
+                info.nodeCapabilities.remove(remoteReference);
+            }
+        }
     }
 
     private Task<NodeAddress> locateAndActivateActor(final RemoteReference<?> actorReference)
@@ -650,6 +665,17 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                         if (logger.isDebugEnabled())
                         {
                             logger.debug("Choosing a remote node for the invocation");
+                        }
+                        NodeInfo info = activeNodes.get(invocation.getFromNode());
+                        if (info != null && info.state == NodeState.RUNNING)
+                        {
+                            try
+                            {
+                                info.nodeCapabilities.moved(toReference, localAddress, r);
+                            }
+                            catch (RuntimeException ignore)
+                            {
+                            }
                         }
                         // forwards the message to somewhere else.
                         invocation.setHops(invocation.getHops() + 1);

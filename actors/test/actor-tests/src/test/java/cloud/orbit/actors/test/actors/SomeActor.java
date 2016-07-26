@@ -29,6 +29,7 @@
 package cloud.orbit.actors.test.actors;
 
 import cloud.orbit.actors.Actor;
+import cloud.orbit.actors.annotation.OnlyIfActivated;
 import cloud.orbit.concurrent.Task;
 
 import java.util.UUID;
@@ -36,6 +37,9 @@ import java.util.UUID;
 public interface SomeActor extends Actor
 {
     Task<String> sayHello(String greeting);
+
+    @OnlyIfActivated
+    Task<String> sayHelloOnlyIfActivated();
 
     Task<UUID> getUniqueActivationId();
 

@@ -28,15 +28,15 @@
 
 package cloud.orbit.actors.test;
 
-
-import cloud.orbit.actors.Actor;
-import cloud.orbit.actors.Stage;
-import cloud.orbit.actors.test.actors.SomeActor;
-import cloud.orbit.actors.test.actors.StatelessThing;
-
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import cloud.orbit.actors.Actor;
+import cloud.orbit.actors.Stage;
+import cloud.orbit.actors.runtime.RemoteReference;
+import cloud.orbit.actors.test.actors.SomeActor;
+import cloud.orbit.actors.test.actors.StatelessThing;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -111,6 +111,25 @@ public class DeactivationTest extends ClientTest
         client.bind();
         set.add(actor1.getUniqueActivationId().join());
         assertEquals(2, set.size());
+    }
+
+    @Test
+    public void dirtyLocalCache() throws ExecutionException, InterruptedException, TimeoutException
+    {
+        clock.stop();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
+        SomeActor actor1 = Actor.getReference(SomeActor.class, "1");
+
+        stage1.bind();
+        actor1.sayHello("huuhaa").join();
+        stage2.bind();
+        assertNotNull(actor1.sayHelloOnlyIfActivated().join());
+        clock.incrementTimeMillis(TimeUnit.HOURS.toMillis(1));
+        stage1.cleanup().join();
+        eventuallyTrue(2000, () -> stage1.locateActor(RemoteReference.from(actor1), false).get() == null);
+        assertNull(actor1.sayHelloOnlyIfActivated().join());
+        dumpMessages();
     }
 
     @SuppressWarnings("unused")
