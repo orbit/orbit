@@ -46,6 +46,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -56,13 +57,24 @@ public class FastActorClassFinder implements ActorClassFinder
 {
     private static Logger logger = LoggerFactory.getLogger(FastActorClassFinder.class);
 
+    private static final int DEFAULT_PARALLELISM = 6;
+
     private final Map<Class<?>, Class<?>> concreteImplementations = new ConcurrentHashMap<>();
 
+    private final ExecutorService executor;
+    private final int parallelism;
     private final String[] scanSpec;
     private volatile Task<Void> scanTask;
 
     public FastActorClassFinder(final String... actorBasePackages)
     {
+        this(null, DEFAULT_PARALLELISM, actorBasePackages);
+    }
+
+    public FastActorClassFinder(final ExecutorService executor, final int parallelism, final String... actorBasePackages)
+    {
+        this.executor = executor;
+        this.parallelism = parallelism;
         this.scanSpec = extractScanSpec(actorBasePackages);
     }
 
@@ -80,52 +92,63 @@ public class FastActorClassFinder implements ActorClassFinder
                 return scanTask;
             }
             scanTask = Task.supplyAsync(() -> {
-                List<Class<?>> clazzImplementations = new ArrayList<>();
-                long start = System.currentTimeMillis();
-                FastClasspathScanner scanner = new FastClasspathScanner(scanSpec).matchClassesImplementing(Actor.class, candidate -> {
-                    if (candidate.getSimpleName().toLowerCase(Locale.ENGLISH).startsWith("abstract"))
-                    {
-                        return;
-                    }
-                    clazzImplementations.add(candidate);
-                });
-                if (logger.isTraceEnabled())
+                try
                 {
-                    scanner.verbose();
-                }
-                scanner.scan();
-                for (Class<?> clazzImplementation : clazzImplementations)
-                {
-                    Class<?>[] implementationInterfaces = clazzImplementation.getInterfaces();
-                    if (implementationInterfaces.length == 0)
+                    List<Class<?>> clazzImplementations = new ArrayList<>();
+                    long start = System.currentTimeMillis();
+                    FastClasspathScanner scanner = new FastClasspathScanner(scanSpec).matchClassesImplementing(Actor.class, candidate -> {
+                        if (candidate.getSimpleName().toLowerCase(Locale.ENGLISH).startsWith("abstract"))
+                        {
+                            return;
+                        }
+                        clazzImplementations.add(candidate);
+                    });
+                    if (logger.isTraceEnabled())
                     {
-                        continue;
+                        scanner.verbose();
                     }
-                    for (Class<?> implementationInterface : implementationInterfaces)
+                    if (executor != null) {
+                        scanner.scan(executor, parallelism);
+                    } else {
+                        scanner.scan(parallelism);
+                    }
+                    for (Class<?> clazzImplementation : clazzImplementations)
                     {
-                        if (implementationInterface == Remindable.class)
+                        Class<?>[] implementationInterfaces = clazzImplementation.getInterfaces();
+                        if (implementationInterfaces.length == 0)
                         {
                             continue;
                         }
-                        if (Actor.class.isAssignableFrom(implementationInterface))
+                        for (Class<?> implementationInterface : implementationInterfaces)
                         {
-                            Class<?> old = concreteImplementations.put(implementationInterface, clazzImplementation);
-                            if (old != null)
+                            if (implementationInterface == Remindable.class)
                             {
-                                logger.warn("Multiple actor implementations found for " + implementationInterface);
+                                continue;
+                            }
+                            if (Actor.class.isAssignableFrom(implementationInterface))
+                            {
+                                Class<?> old = concreteImplementations.put(implementationInterface, clazzImplementation);
+                                if (old != null)
+                                {
+                                    logger.warn("Multiple actor implementations found for " + implementationInterface);
+                                }
                             }
                         }
                     }
+                    long end = System.currentTimeMillis() - start;
+                    if (scanSpec.length == 0 && end > TimeUnit.SECONDS.toMillis(10))
+                    {
+                        logger.info("Took " + end + "ms to scan for Actor implementations, for better performance "
+                                + "set the property orbit.actors.basePackages");
+                    }
+                    if (logger.isDebugEnabled())
+                    {
+                        logger.info("Took " + end + "ms to scan for Actor implementations.");
+                    }
                 }
-                long end = System.currentTimeMillis() - start;
-                if (scanSpec.length == 0 && end > TimeUnit.SECONDS.toMillis(10))
+                catch (RuntimeException e)
                 {
-                    logger.info("Took " + end + "ms to scan for Actor implementations, for better performance "
-                            + "set the property orbit.actors.basePackages");
-                }
-                if (logger.isDebugEnabled())
-                {
-                    logger.debug("Took " + end + "ms to scan for Actor implementations.");
+                    logger.error("Failed scanning for Actor implementations.", e);
                 }
                 return Task.done();
             });
