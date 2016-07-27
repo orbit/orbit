@@ -171,7 +171,8 @@ public class DefaultClassDictionary
                             logger.info("Found more than one class with hashCode #" + candidate.hashCode() + " replacing " + old + " with " + candidate);
                         }
                     }
-                    if (logger.isDebugEnabled()) {
+                    if (logger.isDebugEnabled())
+                    {
                         logger.debug("Took " + (System.currentTimeMillis() - start) + "ms to scan all classes.");
                     }
                     value = actualValue;
