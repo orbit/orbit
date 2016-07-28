@@ -34,6 +34,7 @@ import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.runtime.DefaultClassDictionary;
 import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
 import cloud.orbit.actors.runtime.DefaultHandlers;
+import cloud.orbit.actors.runtime.InternalUtils;
 import cloud.orbit.actors.runtime.Message;
 import cloud.orbit.actors.runtime.RemoteReference;
 import cloud.orbit.concurrent.Task;
@@ -118,7 +119,7 @@ public class TestMessageLog extends NamedPipelineExtension
         }
 
 
-        logger.write(TestUtils.hexDump(32, pair.getRight(), 0, pair.getRight().length));
+        logger.write(InternalUtils.hexDump(32, pair.getRight(), 0, pair.getRight().length));
     }
 
     private void logMessage(final Message message, boolean in)
