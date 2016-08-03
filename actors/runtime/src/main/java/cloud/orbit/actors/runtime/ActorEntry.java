@@ -66,7 +66,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
     public <R> Task<R> run(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function)
     {
         lastAccess = runtime.clock().millis();
-        return executionSerializer.offerJob(key, () -> doRun(function), 1000);
+        return executionSerializer.offerJob(key, () -> doRun(function), 10000);
     }
 
     private <R> Task<R> doRun(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function)
@@ -188,7 +188,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
             {
                 try
                 {
-                    getLogger().error("error deactivating " + getRemoteReference(), ex);
+                    getLogger().error("Error deactivating " + getRemoteReference(), ex);
                 }
                 catch (Throwable ex2)
                 {

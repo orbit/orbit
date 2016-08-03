@@ -1035,7 +1035,7 @@ public class Stage implements Startable, ActorRuntime
                                 }
                             }
                             return (Task) Task.done();
-                        }, 1000);
+                        }, 10000);
             }
 
             @Override
