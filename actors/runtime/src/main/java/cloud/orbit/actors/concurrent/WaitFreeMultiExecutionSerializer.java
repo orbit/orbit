@@ -71,12 +71,7 @@ public class WaitFreeMultiExecutionSerializer<T> implements MultiExecutionSerial
 
     public WaitFreeExecutionSerializer getSerializer(T key)
     {
-        final WaitFreeExecutionSerializer serializer = serializers.getIfPresent(key);
-        if (serializer == null)
-        {
-            return serializers.get(key, o -> new WaitFreeExecutionSerializer(executorService, key));
-        }
-        return serializer;
+        return serializers.get(key, o -> new WaitFreeExecutionSerializer(executorService, key));
     }
 
     /**
