@@ -41,7 +41,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <name>Orbit Actors</name>
 
     <properties>
-        <caffeine.version>2.3.1</caffeine.version>
+        <caffeine.version>2.3.2</caffeine.version>
     </properties>
 
 
@@ -72,7 +72,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <dependency>
                 <groupId>io.github.lukehutch</groupId>
                 <artifactId>fast-classpath-scanner</artifactId>
-                <version>1.93.3</version>
+                <version>1.99.0</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
