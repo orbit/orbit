@@ -48,12 +48,12 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class AbstractActor<T>
 {
-    T state;
-    StorageExtension stateExtension;
-    RemoteReference<?> reference;
-    Logger logger;
-    ActorRuntime runtime;
-    Object activation;
+    protected T state;
+    protected StorageExtension stateExtension;
+    protected RemoteReference<?> reference;
+    protected Logger logger;
+    protected ActorRuntime runtime;
+    protected Object activation;
 
     protected AbstractActor()
     {
