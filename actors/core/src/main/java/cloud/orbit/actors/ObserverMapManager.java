@@ -34,6 +34,7 @@ import cloud.orbit.concurrent.Task;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -94,6 +95,37 @@ public class ObserverMapManager<K, V extends ActorObserver> implements Serializa
         }
         if (fail != null && fail.size() > 0)
         {
+            observers.values().removeAll(fail);
+        }
+    }
+
+    /**
+     * Used to notify the observers (call some method of their remote interface)
+     * <p>
+     * <pre>
+     * String message = "...";
+     * observers.notifyObservers((k, o) -&gt; o.receiveMessage(message));
+     * </pre>
+     * </p>
+     *
+     * @param callable operation to be called on all observers
+     */
+    public void notifyObservers(final BiConsumer<K, V> callable) {
+        List<V> fail = null;
+        for (Map.Entry<K, V> entry : observers.entrySet()) {
+            try {
+                callable.accept(entry.getKey(), entry.getValue());
+            } catch (final Exception ex) {
+                if (fail == null) {
+                    fail = new ArrayList<>();
+                }
+                fail.add(entry.getValue());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Removing observer due to exception", ex);
+                }
+            }
+        }
+        if (fail != null && fail.size() > 0) {
             observers.values().removeAll(fail);
         }
     }
