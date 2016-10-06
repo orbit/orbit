@@ -231,7 +231,6 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 nodeInfo = new NodeInfo(a);
                 nodeInfo.nodeCapabilities = stage.getRemoteObserverReference(a, NodeCapabilities.class, "");
                 nodeInfo.active = true;
-                activeNodes.put(a, nodeInfo);
                 justAddedNodes.add(nodeInfo);
             }
             newNodes.put(a, nodeInfo);

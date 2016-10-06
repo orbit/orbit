@@ -9,6 +9,9 @@
 
 Orbit is a framework to write distributed systems using virtual actors on the JVM. It allows developers to write highly distributed and scalable applications while greatly simplifying clustering, discovery, networking, state management, actor lifetime and more.
 
+<a href="https://github.com/orbit/orbit/wiki/Duke's-Choice-Award-2016"><img src="http://www.orbit.cloud/img/dca/dca_logo.png" alt="Duke's Choice Award Logo" width="200px" /></a><br />
+Orbit received the 2016 Duke's Choice Award for Open Source, read [here](https://github.com/orbit/orbit/wiki/Duke's-Choice-Award-2016) for more information. 
+
 Full Documentation
 =======
 See the [Wiki](https://github.com/orbit/orbit/wiki) for full documentation, examples and other information.
