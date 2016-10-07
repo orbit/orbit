@@ -46,6 +46,7 @@ public class ExceptionUtils
         return false;
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends Throwable> T getCauseInChain(final Class<T> cause, final Throwable chain)
     {
         for(Throwable ex = chain; ex != null; ex = ex.getCause())
