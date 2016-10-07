@@ -26,36 +26,56 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.util;
+package cloud.orbit.concurrent.test;
 
-public class ExceptionUtils
+import org.junit.Assert;
+import org.junit.Test;
+
+import cloud.orbit.exception.NotAvailableHere;
+import cloud.orbit.exception.NotImplementedException;
+import cloud.orbit.util.ExceptionUtils;
+
+public class ExceptionUtilsTest
 {
-    private ExceptionUtils()
+    @Test
+    public void testIsCauseInChain()
     {
+        try
+        {
+            final NotAvailableHere nestedException = new NotAvailableHere();
+            final Exception parentException = new Exception(nestedException);
+            throw parentException;
+        }
+        catch(Exception e)
+        {
+            // Check NotAvailableHere is in chain
+            Assert.assertTrue(ExceptionUtils.isCauseInChain(NotAvailableHere.class, e));
+
+            // Check that NotImplementedException is not in chain
+            Assert.assertFalse(ExceptionUtils.isCauseInChain(NotImplementedException.class, e));
+        }
     }
 
-    public static boolean isCauseInChain(final Class<?> cause, final Throwable chain)
+    @Test
+    public void testGetCauseInChain()
     {
-        for(Throwable ex = chain; ex != null; ex = ex.getCause())
+        try
         {
-            if(cause.isInstance(ex))
-            {
-                return true;
-            }
+            final NotAvailableHere nestedException = new NotAvailableHere();
+            final Exception parentException = new Exception(nestedException);
+            throw parentException;
         }
-        return false;
+        catch(Exception e)
+        {
+            // Check NotAvailableHere is returned
+            final NotAvailableHere nah = ExceptionUtils.getCauseInChain(NotAvailableHere.class, e);
+            Assert.assertNotNull(nah);
+
+            // Check that NotImplementedException is not returned
+            final NotImplementedException nih = ExceptionUtils.getCauseInChain(NotImplementedException.class, e);
+            Assert.assertNull(nih);
+        }
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T extends Throwable> T getCauseInChain(final Class<T> cause, final Throwable chain)
-    {
-        for(Throwable ex = chain; ex != null; ex = ex.getCause())
-        {
-            if(cause.isInstance(ex))
-            {
-                return (T) ex;
-            }
-        }
-        return null;
-    }
+
 }
