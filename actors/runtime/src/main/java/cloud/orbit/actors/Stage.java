@@ -691,7 +691,7 @@ public class Stage implements Startable, ActorRuntime
         // * stop the network
 
         logger.debug("start stopping pipeline");
-        await(pipeline.write(NodeCapabilities.NodeState.STOPPING));
+        await(hosting.notifyStateChange());
 
         logger.debug("stopping actors");
         await(stopActors());
