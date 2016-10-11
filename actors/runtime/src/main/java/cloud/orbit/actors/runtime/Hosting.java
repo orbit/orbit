@@ -135,8 +135,9 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     public Task<?> notifyStateChange()
     {
-        return Task.allOf(activeNodes.values().stream().map(info ->
-                info.nodeCapabilities.nodeModeChanged(clusterPeer.localAddress(), stage.getState())));
+        return Task.allOf(activeNodes.values().stream()
+                .filter(nodeInfo -> !nodeInfo.address.equals(clusterPeer.localAddress()) && nodeInfo.state == NodeState.RUNNING)
+                .map(info -> info.nodeCapabilities.nodeModeChanged(clusterPeer.localAddress(), stage.getState()).exceptionally(throwable -> null)));
     }
 
     public NodeAddress getNodeAddress()
@@ -342,8 +343,6 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         }
 
         // There is no existing activation at this time or it's not in the local cache
-
-
         final Task<NodeAddress> async = Task.supplyAsync(() ->
         {
             NodeAddress nodeAddress = null;

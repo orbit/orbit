@@ -73,7 +73,7 @@ public class StreamTest extends ActorBaseTest
                 .publish("data").join();
 
         // create a second stage from which the stream is going to be used
-        createStage();
+        final Stage stage2 = createStage();
         AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
         BlockingQueue queue = new LinkedBlockingQueue<>();
         test.subscribe((msg,t) -> {
@@ -85,6 +85,8 @@ public class StreamTest extends ActorBaseTest
 
         // Stopping the first stage, the stream should migrate on the next post.
         stage1.stop().join();
+
+        stage2.bind();
 
         test.publish("hello2");
         assertEquals("hello2", queue.poll(5, TimeUnit.SECONDS));
