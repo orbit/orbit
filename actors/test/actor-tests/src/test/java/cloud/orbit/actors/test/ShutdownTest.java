@@ -90,6 +90,8 @@ public class ShutdownTest extends ActorBaseTest
         logger.info("stage2: " + stage2);
 
         stage1.stop().join();
+
+        stage2.bind();
         Actor.getReference(Shut.class, "0").doSomething().join();
     }
 

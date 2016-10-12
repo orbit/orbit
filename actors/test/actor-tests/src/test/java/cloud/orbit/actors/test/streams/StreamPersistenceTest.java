@@ -103,6 +103,8 @@ public class StreamPersistenceTest extends ActorBaseTest
         // the actor will remain alive in stage 2
         stage1.stop().join();
 
+        stage2.bind();
+
         // the stream will be activated again in stage 2
         test.publish("hello3");
         assertEquals("hello3", queue.poll(10, TimeUnit.SECONDS));
