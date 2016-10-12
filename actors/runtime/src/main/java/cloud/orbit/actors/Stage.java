@@ -521,8 +521,8 @@ public class Stage implements Startable, ActorRuntime
         if (finder == null)
         {
             finder = StringUtils.isNotEmpty(basePackages) ? new FastActorClassFinder(basePackages.split(Pattern.quote(","))) : new LazyActorClassFinder();
-            await(finder.start());
         }
+        await(finder.start());
 
         cacheManager = new ResponseCaching();
 
