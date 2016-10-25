@@ -73,6 +73,7 @@ public class StreamPersistenceTest extends ActorBaseTest
                     .subscribe((d, t) -> {
                         // test framework trick
                         testSync.deque("queue").add(d);
+                        await(writeState());
                         return Task.done();
                     }));
             return Task.done();
@@ -93,8 +94,7 @@ public class StreamPersistenceTest extends ActorBaseTest
         Hello hello2 = Actor.getReference(Hello.class, "2");
         hello2.doSubscribe("test").join();
 
-
-        BlockingQueue<Object> queue = fakeSync.deque("queue");
+        BlockingQueue<String> queue = fakeSync.deque("queue");
         test.publish("hello2");
         // stream in stage 1, actor in stage 2
         assertEquals("hello2", queue.poll(10, TimeUnit.SECONDS));
