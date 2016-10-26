@@ -68,14 +68,14 @@ public class StreamTest extends ActorBaseTest
     public void testStreamPersistence() throws InterruptedException
     {
         final Stage stage1 = createStage();
-        // forces the stream to be created in the fist stage.
+        // forces the stream to be created in the first stage.
         AsyncStream.getStream(String.class, "test")
                 .publish("data").join();
 
         // create a second stage from which the stream is going to be used
         final Stage stage2 = createStage();
         AsyncStream<String> test = AsyncStream.getStream(String.class, "test");
-        BlockingQueue queue = new LinkedBlockingQueue<>();
+        BlockingQueue<String> queue = new LinkedBlockingQueue<>();
         test.subscribe((msg,t) -> {
             queue.add(msg);
             return Task.done();
@@ -89,7 +89,7 @@ public class StreamTest extends ActorBaseTest
         stage2.bind();
 
         test.publish("hello2");
-        assertEquals("hello2", queue.poll(5, TimeUnit.SECONDS));
+        assertEquals("hello2", queue.poll(10, TimeUnit.SECONDS));
 
         dumpMessages();
     }

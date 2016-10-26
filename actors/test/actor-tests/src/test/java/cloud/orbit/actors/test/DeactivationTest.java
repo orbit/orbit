@@ -127,7 +127,7 @@ public class DeactivationTest extends ClientTest
         assertNotNull(actor1.sayHelloOnlyIfActivated().join());
         clock.incrementTimeMillis(TimeUnit.HOURS.toMillis(1));
         stage1.cleanup().join();
-        eventuallyTrue(2000, () -> stage1.locateActor(RemoteReference.from(actor1), false).get() == null);
+        eventuallyTrue(6000, () -> stage1.locateActor(RemoteReference.from(actor1), false).get() == null);
         assertNull(actor1.sayHelloOnlyIfActivated().join());
         dumpMessages();
     }
