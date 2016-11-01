@@ -44,7 +44,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <name>Orbit Internal Parent</name>
 
     <properties>
-        <ea.async.version>1.0.3</ea.async.version>
+        <ea.async.version>1.0.5</ea.async.version>
     </properties>
 
     <modules>
