@@ -142,7 +142,7 @@ public class Execution extends AbstractExecution implements Startable
     {
         if (logger.isDebugEnabled())
         {
-            logger.debug("Invoking {} ", invocation);
+            //logger.debug("Invoking {} ", invocation);
         }
         try
         {
@@ -161,53 +161,15 @@ public class Execution extends AbstractExecution implements Startable
                 ctx.write(invocation);
                 return Task.fromValue(null);
             }
+
             final ObjectInvoker invoker = DefaultDescriptorFactory.get().getInvoker(target.getObject().getClass());
 
             // todo: it would be nice to separate this last part into another handler (InvocationHandler)
             // to be able intercept the invocation right before it actually happens, good for logging and metrics
 
-            boolean reentrant = false;
-
-            final ActorTaskContext context = ActorTaskContext.current();
-            if (context != null)
-            {
-                if (invocation.getHeaders() != null && invocation.getHeaders().size() > 0 && runtime.getStickyHeaders() != null)
-                {
-                    for (Map.Entry e : invocation.getHeaders().entrySet())
-                    {
-                        if (runtime.getStickyHeaders().contains(e.getKey()))
-                        {
-                            context.setProperty(String.valueOf(e.getKey()), e.getValue());
-                        }
-                    }
-                }
-                Method method = invoker.getMethod(invocation.getMethodId());
-                if (reentrantCache.isAnnotated(method))
-                {
-                    reentrant = true;
-                    context.setDefaultExecutor(r -> entry.run(o -> {
-                        r.run();
-                        return Task.done();
-                    }));
-                }
-                context.setRuntime(runtime);
-            }
-            else
-            {
-                runtime.bind();
-            }
-
-            final Task result = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
-            if (invocation.getCompletion() != null)
-            {
-                InternalUtils.linkFutures(result, invocation.getCompletion());
-            }
-
-            if (reentrant)
-            {
-                // let the execution serializer proceed if actor method blocks on a task
-                return Task.fromValue(null);
-            }
+            InvocationHandler invocationHandler = new InvocationHandler().invoke(invocation, entry, target, invoker);
+            if (invocationHandler.is()) return Task.fromValue(null);
+            Task result = invocationHandler.getResult();
 
             return result;
         }
@@ -230,4 +192,107 @@ public class Execution extends AbstractExecution implements Startable
         this.objects = objects;
     }
 
+    public class InvocationHandler {
+        private boolean myResult;
+        private Task result;
+
+        boolean is() {
+            return myResult;
+        }
+
+        public Task getResult() {
+            return result;
+        }
+
+        public void beforeInvoke(Invocation invocation, Method method) {
+
+            logger.debug("Invoking {}.{}", invocation.getToReference().toString(), method.getName());
+
+        }
+
+        public void afterInvoke(long startTimeMs, Invocation invocation, Method method) {
+
+            long end = System.nanoTime();
+            double duration = (end - startTimeMs) / 1000000.0;
+            logger.debug("Invoke complete {}.{} in {} ms", invocation.getToReference().toString(), method.getName(), duration);
+
+        }
+
+        public void taskComplete(long startTimeMs, Invocation invocation, Method method) {
+
+            long end = System.nanoTime();
+            double duration = (end - startTimeMs) / 1000000.0;
+            logger.debug("Task {}.{} completed in {} ms", invocation.getToReference().toString(), method.getName(), duration);
+
+        }
+
+        public InvocationHandler invoke(Invocation invocation, LocalObjects.LocalObjectEntry entry, LocalObjects.LocalObjectEntry target, ObjectInvoker invoker) {
+
+            boolean reentrant = false;
+
+            final Method method;
+            final long start;
+
+            final ActorTaskContext context = ActorTaskContext.current();
+            if (context != null)
+            {
+                if (invocation.getHeaders() != null && invocation.getHeaders().size() > 0 && runtime.getStickyHeaders() != null)
+                {
+                    for (Map.Entry e : invocation.getHeaders().entrySet())
+                    {
+                        if (runtime.getStickyHeaders().contains(e.getKey()))
+                        {
+                            context.setProperty(String.valueOf(e.getKey()), e.getValue());
+                        }
+                    }
+                }
+
+                method = invoker.getMethod(invocation.getMethodId());
+
+                if (reentrantCache.isAnnotated(method))
+                {
+                    reentrant = true;
+                    context.setDefaultExecutor(r -> entry.run(o -> {
+                        r.run();
+                        return Task.done();
+                    }));
+                }
+                context.setRuntime(runtime);
+            }
+            else
+            {   method = null;
+                runtime.bind();
+            }
+
+            if(method != null) {
+                beforeInvoke(invocation, method);
+            }
+
+            start = System.nanoTime();
+            result = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
+
+            if (method != null) {
+                this.afterInvoke(start, invocation, method);
+            }
+
+            if (invocation.getCompletion() != null)
+            {
+                InternalUtils.linkFutures(result, invocation.getCompletion());
+            }
+
+            if(method != null) {
+                result.thenAccept(n -> this.taskComplete(start, invocation, method));
+            }
+
+            if (reentrant)
+            {
+                // let the execution serializer proceed if actor method blocks on a task
+                myResult = true;
+                return this;
+            }
+
+            myResult = false;
+            return this;
+        }
+    }
 }
