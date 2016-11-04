@@ -496,8 +496,6 @@ public class Stage implements Startable, ActorRuntime
         execution.setObjects(objects);
         execution.setExecutionSerializer(executionSerializer);
 
-        //TODO: execution.setInvocationHandler
-
         cacheManager.setObjectCloner(objectCloner);
         cacheManager.setRuntime(this);
         cacheManager.setMessageSerializer(messageSerializer);
