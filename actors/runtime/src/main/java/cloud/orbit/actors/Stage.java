@@ -148,6 +148,9 @@ public class Stage implements Startable, ActorRuntime
     private ExecutionObjectCloner objectCloner;
     private ExecutionObjectCloner messageLoopbackObjectCloner;
     private MessageSerializer messageSerializer;
+
+    private InvocationHandler invocationHandler;
+
     private final WeakReference<ActorRuntime> cachedRef = new WeakReference<>(this);
 
     static
@@ -177,14 +180,18 @@ public class Stage implements Startable, ActorRuntime
         private List<ActorExtension> extensions = new ArrayList<>();
         private Set<String> stickyHeaders = new HashSet<>();
 
-        private Execution.InvocationHandler invocationHandler;
-        //TODO: add invocation handler to builder, set it in executor?
+        private InvocationHandler invocationHandler;
 
         private Timer timer;
 
         public Builder clock(Clock clock)
         {
             this.clock = clock;
+            return this;
+        }
+
+        public Builder invocationHandler(InvocationHandler handler) {
+            this.invocationHandler = handler;
             return this;
         }
 
@@ -277,6 +284,8 @@ public class Stage implements Startable, ActorRuntime
             extensions.forEach(stage::addExtension);
             stage.setMessaging(messaging);
             stage.addStickyHeaders(stickyHeaders);
+            stage.setInvocationHandler(invocationHandler);
+
             return stage;
         }
 
@@ -285,6 +294,10 @@ public class Stage implements Startable, ActorRuntime
     public Stage()
     {
         ActorRuntime.setRuntime(cachedRef);
+    }
+
+    void setInvocationHandler(InvocationHandler handler) {
+        this.invocationHandler = handler;
     }
 
     public void addStickyHeaders(Collection<String> stickyHeaders)
@@ -444,6 +457,10 @@ public class Stage implements Startable, ActorRuntime
         if (execution == null)
         {
             execution = new Execution();
+
+            if(this.invocationHandler != null) {
+                execution.setInvocationHandler(this.invocationHandler);
+            }
         }
         if (messageSerializer == null)
         {
