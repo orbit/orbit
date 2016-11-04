@@ -145,7 +145,7 @@ public class Execution extends AbstractExecution implements Startable
     {
         if (logger.isDebugEnabled())
         {
-            //logger.debug("Invoking {} ", invocation);
+            logger.debug("Invoking {} ", invocation);
         }
         try
         {
