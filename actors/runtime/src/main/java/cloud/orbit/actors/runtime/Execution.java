@@ -42,7 +42,7 @@ public class Execution extends AbstractExecution implements Startable
     private Stage runtime;
     private LocalObjects objects;
 
-    private InvocationHandler invocationHandler = new DefaultInvocationHandler();
+    private InvocationHandler invocationHandler;
 
     private final AnnotationCache<Reentrant> reentrantCache = new AnnotationCache<>(Reentrant.class);
 
@@ -58,7 +58,8 @@ public class Execution extends AbstractExecution implements Startable
         this.logger = runtime.getLogger(this);
     }
 
-    public void setInvocationHandler(final InvocationHandler handler) {
+    public void setInvocationHandler(final InvocationHandler handler)
+    {
         this.invocationHandler = handler;
     }
 
@@ -169,9 +170,12 @@ public class Execution extends AbstractExecution implements Startable
 
             //InvocationHandler invocationHandler = new InvocationHandler().invoke(runtime, reentrantCache, invocation, entry, target, invoker);
 
-            if(this.invocationHandler != null) {
+            if (this.invocationHandler != null)
+            {
                 this.invocationHandler.invoke(runtime, reentrantCache, invocation, entry, target, invoker);
-            } else {
+            }
+            else
+            {
                 logger.error("Invocation handler was not set!");
             }
 

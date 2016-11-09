@@ -30,18 +30,53 @@ package cloud.orbit.actors;
 
 import cloud.orbit.actors.annotation.NeverDeactivate;
 import cloud.orbit.actors.annotation.StatelessWorker;
-import cloud.orbit.actors.annotation.StorageExtension;
-import cloud.orbit.actors.cloner.ExecutionObjectCloner;
-import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.cluster.ClusterPeer;
 import cloud.orbit.actors.cluster.JGroupsClusterPeer;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.concurrent.MultiExecutionSerializer;
 import cloud.orbit.actors.concurrent.WaitFreeMultiExecutionSerializer;
-import cloud.orbit.actors.extensions.*;
+import cloud.orbit.actors.extensions.ActorClassFinder;
+import cloud.orbit.actors.extensions.ActorExtension;
+import cloud.orbit.actors.extensions.DefaultLoggerExtension;
+import cloud.orbit.actors.extensions.LifetimeExtension;
+import cloud.orbit.actors.extensions.LoggerExtension;
+import cloud.orbit.actors.extensions.MessageSerializer;
+import cloud.orbit.actors.extensions.PipelineExtension;
+import cloud.orbit.actors.extensions.StreamProvider;
 import cloud.orbit.actors.net.DefaultPipeline;
 import cloud.orbit.actors.net.Pipeline;
-import cloud.orbit.actors.runtime.*;
+import cloud.orbit.actors.runtime.AbstractActor;
+import cloud.orbit.actors.runtime.ActorBaseEntry;
+import cloud.orbit.actors.runtime.ActorEntry;
+import cloud.orbit.actors.runtime.ActorRuntime;
+import cloud.orbit.actors.runtime.ActorTaskContext;
+import cloud.orbit.actors.runtime.AsyncStreamReference;
+import cloud.orbit.actors.runtime.BasicRuntime;
+import cloud.orbit.actors.runtime.ClusterHandler;
+import cloud.orbit.actors.runtime.FastActorClassFinder;
+import cloud.orbit.actors.runtime.DefaultLifetimeExtension;
+import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
+import cloud.orbit.actors.runtime.DefaultHandlers;
+import cloud.orbit.actors.runtime.Execution;
+import cloud.orbit.actors.runtime.Hosting;
+import cloud.orbit.actors.runtime.InternalUtils;
+import cloud.orbit.actors.runtime.Invocation;
+import cloud.orbit.actors.runtime.InvocationHandler;
+import cloud.orbit.actors.runtime.JavaMessageSerializer;
+import cloud.orbit.actors.runtime.LazyActorClassFinder;
+import cloud.orbit.actors.runtime.LocalObjects;
+import cloud.orbit.actors.runtime.MessageLoopback;
+import cloud.orbit.actors.runtime.Messaging;
+import cloud.orbit.actors.runtime.NodeCapabilities;
+import cloud.orbit.actors.runtime.ObserverEntry;
+import cloud.orbit.actors.runtime.Registration;
+import cloud.orbit.actors.runtime.ReminderController;
+import cloud.orbit.actors.runtime.RemoteReference;
+import cloud.orbit.actors.runtime.ResponseCaching;
+import cloud.orbit.actors.runtime.SerializationHandler;
+import cloud.orbit.actors.runtime.StatelessActorEntry;
+import cloud.orbit.actors.cloner.ExecutionObjectCloner;
+import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.streams.AsyncObserver;
 import cloud.orbit.actors.streams.AsyncStream;
 import cloud.orbit.actors.streams.StreamSequenceToken;
@@ -52,20 +87,41 @@ import cloud.orbit.actors.transactions.TransactionUtils;
 import cloud.orbit.annotation.Config;
 import cloud.orbit.concurrent.ExecutorUtils;
 import cloud.orbit.concurrent.Task;
-import cloud.orbit.exception.UncheckedException;
 import cloud.orbit.lifecycle.Startable;
+import cloud.orbit.exception.UncheckedException;
 import cloud.orbit.util.StringUtils;
+
 import com.ea.async.Async;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cloud.orbit.actors.annotation.StorageExtension;
+
 import javax.inject.Singleton;
+
 import java.lang.annotation.Annotation;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.time.Clock;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import static com.ea.async.Async.await;
@@ -140,6 +196,7 @@ public class Stage implements Startable, ActorRuntime
 
     private ClusterPeer clusterPeer;
     private Messaging messaging;
+    private InvocationHandler invocationHandler;
     private Execution execution;
     private Hosting hosting;
     private boolean startCalled;
@@ -148,9 +205,6 @@ public class Stage implements Startable, ActorRuntime
     private ExecutionObjectCloner objectCloner;
     private ExecutionObjectCloner messageLoopbackObjectCloner;
     private MessageSerializer messageSerializer;
-
-    private InvocationHandler invocationHandler;
-
     private final WeakReference<ActorRuntime> cachedRef = new WeakReference<>(this);
 
     static
@@ -168,6 +222,8 @@ public class Stage implements Startable, ActorRuntime
         private ExecutionObjectCloner objectCloner;
         private ExecutionObjectCloner messageLoopbackObjectCloner;
         private ClusterPeer clusterPeer;
+        private Messaging messaging;
+        private InvocationHandler invocationHandler;
 
         private String basePackages;
         private String clusterName;
@@ -175,23 +231,16 @@ public class Stage implements Startable, ActorRuntime
         private StageMode mode = StageMode.HOST;
         private int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
 
-        private Messaging messaging;
+
 
         private List<ActorExtension> extensions = new ArrayList<>();
         private Set<String> stickyHeaders = new HashSet<>();
-
-        private InvocationHandler invocationHandler;
 
         private Timer timer;
 
         public Builder clock(Clock clock)
         {
             this.clock = clock;
-            return this;
-        }
-
-        public Builder invocationHandler(InvocationHandler handler) {
-            this.invocationHandler = handler;
             return this;
         }
 
@@ -219,6 +268,18 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
+        public Builder messaging(Messaging messaging)
+        {
+            this.messaging = messaging;
+            return this;
+        }
+
+        public Builder invocationHandler(InvocationHandler invocationHandler)
+        {
+            this.invocationHandler = invocationHandler;
+            return this;
+        }
+
         public Builder clusterName(String clusterName)
         {
             this.clusterName = clusterName;
@@ -243,11 +304,7 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
-        public Builder messaging(Messaging messaging)
-        {
-            this.messaging = messaging;
-            return this;
-        }
+
 
         public Builder extensions(ActorExtension... extensions)
         {
@@ -284,8 +341,6 @@ public class Stage implements Startable, ActorRuntime
             extensions.forEach(stage::addExtension);
             stage.setMessaging(messaging);
             stage.addStickyHeaders(stickyHeaders);
-            stage.setInvocationHandler(invocationHandler);
-
             return stage;
         }
 
@@ -294,10 +349,6 @@ public class Stage implements Startable, ActorRuntime
     public Stage()
     {
         ActorRuntime.setRuntime(cachedRef);
-    }
-
-    void setInvocationHandler(InvocationHandler handler) {
-        this.invocationHandler = handler;
     }
 
     public void addStickyHeaders(Collection<String> stickyHeaders)
@@ -313,6 +364,11 @@ public class Stage implements Startable, ActorRuntime
     public void setMessaging(final Messaging messaging)
     {
         this.messaging = messaging;
+    }
+
+    public void setInvocationHandler(final InvocationHandler invocationHandler)
+    {
+        this.invocationHandler = invocationHandler;
     }
 
     public void setExecutionPool(final ExecutorService executionPool)
@@ -457,10 +513,10 @@ public class Stage implements Startable, ActorRuntime
         if (execution == null)
         {
             execution = new Execution();
-
-            if(this.invocationHandler != null) {
-                execution.setInvocationHandler(this.invocationHandler);
-            }
+        }
+        if(invocationHandler == null)
+        {
+            invocationHandler = new InvocationHandler();
         }
         if (messageSerializer == null)
         {
@@ -495,6 +551,7 @@ public class Stage implements Startable, ActorRuntime
         execution.setRuntime(this);
         execution.setObjects(objects);
         execution.setExecutionSerializer(executionSerializer);
+        execution.setInvocationHandler(invocationHandler);
 
         cacheManager.setObjectCloner(objectCloner);
         cacheManager.setRuntime(this);
