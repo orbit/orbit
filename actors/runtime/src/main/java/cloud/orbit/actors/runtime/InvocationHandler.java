@@ -43,8 +43,27 @@ public class InvocationHandler
 {
     private Logger logger = LoggerFactory.getLogger(InvocationHandler.class);
 
+    private boolean perfLoggingEnabled = true;
+    private double slowInvokeThresholdMs = 25;
+    private double slowTaskThresholdMs = 1000;
+
     private boolean myResult;
     private Task result;
+
+    public void setPerfLoggingEnabled(boolean perfLoggingEnabled)
+    {
+        this.perfLoggingEnabled = perfLoggingEnabled;
+    }
+
+    public void setSlowInvokeThresholdMs(double slowInvokeThresholdMs)
+    {
+        this.slowInvokeThresholdMs = slowInvokeThresholdMs;
+    }
+
+    public void setSlowTaskThresholdMs(double slowTaskThresholdMs)
+    {
+        this.slowTaskThresholdMs = slowTaskThresholdMs;
+    }
 
     boolean is()
     {
@@ -58,17 +77,36 @@ public class InvocationHandler
 
     public void beforeInvoke(Invocation invocation, Method method)
     {
-        logger.debug("Invoking: {}.{}", invocation.getToReference().toString(), method.getName());
+        if(logger.isDebugEnabled())
+        {
+            logger.debug("Invoking: {}.{}", invocation.getToReference().toString(), method.getName());
+        }
     }
 
     public void afterInvoke(long startTimeMs, Invocation invocation, Method method)
     {
-
+        long durationNanos = (System.nanoTime() - startTimeMs);
+        double durationMs = durationNanos / 1_000_000.0;
+        if(perfLoggingEnabled &&
+                durationMs > slowInvokeThresholdMs &&
+                logger.isWarnEnabled())
+        {
+            logger.warn("Slow invocation: {}. {} in {} ms",
+                    invocation.getToReference().toString(), method.getName(), durationMs);
+        }
     }
 
     public void taskComplete(long startTimeMs, Invocation invocation, Method method)
     {
-
+        long durationNanos = (System.nanoTime() - startTimeMs);
+        double durationMs = durationNanos / 1_000_000.0;
+        if(perfLoggingEnabled &&
+                durationMs > slowTaskThresholdMs &&
+                logger.isWarnEnabled())
+        {
+            logger.warn("Slow task: {}. {} in {} ms",
+                    invocation.getToReference().toString(), method.getName(), durationMs);
+        }
     }
 
     @SuppressWarnings("unchecked")
