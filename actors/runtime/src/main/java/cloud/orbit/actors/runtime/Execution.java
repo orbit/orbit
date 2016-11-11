@@ -37,6 +37,8 @@ import cloud.orbit.concurrent.Task;
 import cloud.orbit.lifecycle.Startable;
 import cloud.orbit.util.AnnotationCache;
 
+import java.util.Objects;
+
 public class Execution extends AbstractExecution implements Startable
 {
     private Stage runtime;
@@ -56,11 +58,6 @@ public class Execution extends AbstractExecution implements Startable
     {
         this.runtime = runtime;
         this.logger = runtime.getLogger(this);
-    }
-
-    public void setInvocationHandler(final InvocationHandler handler)
-    {
-        this.invocationHandler = handler;
     }
 
     @Override
@@ -167,22 +164,7 @@ public class Execution extends AbstractExecution implements Startable
             }
 
             final ObjectInvoker invoker = DefaultDescriptorFactory.get().getInvoker(target.getObject().getClass());
-
-            //InvocationHandler invocationHandler = new InvocationHandler().invoke(runtime, reentrantCache, invocation, entry, target, invoker);
-
-            if (this.invocationHandler != null)
-            {
-                this.invocationHandler.invoke(runtime, reentrantCache, invocation, entry, target, invoker);
-            }
-            else
-            {
-                logger.error("Invocation handler was not set!");
-            }
-
-            if (invocationHandler.is()) return Task.fromValue(null);
-            Task result = invocationHandler.getResult();
-
-            return result;
+            return invocationHandler.invoke(runtime, reentrantCache, invocation, entry, target, invoker);
         }
         catch (Throwable exception)
         {
@@ -198,9 +180,14 @@ public class Execution extends AbstractExecution implements Startable
         }
     }
 
+    public void setInvocationHandler(final InvocationHandler invocationHandler)
+    {
+        this.invocationHandler = Objects.requireNonNull(invocationHandler);
+    }
+
     public void setObjects(final LocalObjects objects)
     {
-        this.objects = objects;
+        this.objects = Objects.requireNonNull(objects);
     }
 
 }

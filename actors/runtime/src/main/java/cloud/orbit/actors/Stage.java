@@ -231,8 +231,6 @@ public class Stage implements Startable, ActorRuntime
         private StageMode mode = StageMode.HOST;
         private int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
 
-
-
         private List<ActorExtension> extensions = new ArrayList<>();
         private Set<String> stickyHeaders = new HashSet<>();
 
@@ -304,8 +302,6 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
-
-
         public Builder extensions(ActorExtension... extensions)
         {
             Collections.addAll(this.extensions, extensions);
@@ -339,6 +335,7 @@ public class Stage implements Startable, ActorRuntime
             stage.setExecutionPoolSize(executionPoolSize);
             stage.setTimer(timer);
             extensions.forEach(stage::addExtension);
+            stage.setInvocationHandler(invocationHandler);
             stage.setMessaging(messaging);
             stage.addStickyHeaders(stickyHeaders);
             return stage;
