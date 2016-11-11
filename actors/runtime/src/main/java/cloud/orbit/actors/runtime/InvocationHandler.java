@@ -37,18 +37,14 @@ import cloud.orbit.concurrent.Task;
 import cloud.orbit.util.AnnotationCache;
 
 import java.lang.reflect.Method;
-import java.util.Map;
 
 public class InvocationHandler
 {
-    private Logger logger = LoggerFactory.getLogger(InvocationHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(InvocationHandler.class);
 
-    private boolean perfLoggingEnabled = true;
+    private boolean perfLoggingEnabled = false;
     private double slowInvokeThresholdMs = 250;
     private double slowTaskThresholdMs = 1000;
-
-    private boolean myResult;
-    private Task result;
 
     public void setPerfLoggingEnabled(boolean perfLoggingEnabled)
     {
@@ -65,19 +61,9 @@ public class InvocationHandler
         this.slowTaskThresholdMs = slowTaskThresholdMs;
     }
 
-    boolean is()
-    {
-        return myResult;
-    }
-
-    public Task getResult()
-    {
-        return result;
-    }
-
     public void beforeInvoke(Invocation invocation, Method method)
     {
-        if(logger.isDebugEnabled())
+        if (logger.isDebugEnabled())
         {
             logger.debug("Invoking: {}.{}", invocation.getToReference().toString(), method.getName());
         }
@@ -85,7 +71,7 @@ public class InvocationHandler
 
     public void afterInvoke(long startTimeMs, Invocation invocation, Method method)
     {
-        if(perfLoggingEnabled && logger.isWarnEnabled())
+        if (perfLoggingEnabled && logger.isWarnEnabled())
         {
             final long durationNanos = (System.nanoTime() - startTimeMs);
             final double durationMs = durationNanos / 1_000_000.0;
@@ -99,7 +85,7 @@ public class InvocationHandler
 
     public void taskComplete(long startTimeMs, Invocation invocation, Method method)
     {
-        if(perfLoggingEnabled && logger.isWarnEnabled())
+        if (perfLoggingEnabled && logger.isWarnEnabled())
         {
             final long durationNanos = (System.nanoTime() - startTimeMs);
             final double durationMs = durationNanos / 1_000_000.0;
@@ -112,12 +98,11 @@ public class InvocationHandler
     }
 
     @SuppressWarnings("unchecked")
-    public InvocationHandler invoke(Stage runtime, AnnotationCache<Reentrant> reentrantCache, Invocation invocation, LocalObjects.LocalObjectEntry entry, LocalObjects.LocalObjectEntry target, ObjectInvoker invoker)
+    public Task<Object> invoke(Stage runtime, AnnotationCache<Reentrant> reentrantCache, Invocation invocation, LocalObjects.LocalObjectEntry entry, LocalObjects.LocalObjectEntry target, ObjectInvoker invoker)
     {
         boolean reentrant = false;
 
         final Method method;
-        final long start;
 
         final ActorTaskContext context = ActorTaskContext.current();
         if (context != null)
@@ -152,37 +137,34 @@ public class InvocationHandler
             runtime.bind();
         }
 
+        final Task<Object> result;
         if (method != null)
         {
             beforeInvoke(invocation, method);
-        }
-
-        start = System.nanoTime();
-        result = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
-
-        if (method != null)
-        {
+            result = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
+            final long start = System.nanoTime();
             afterInvoke(start, invocation, method);
+            if (invocation.getCompletion() != null)
+            {
+                InternalUtils.linkFutures(result, invocation.getCompletion());
+            }
+            result.thenAccept(n -> taskComplete(start, invocation, method)); // handle instead of thenAccept?
         }
-
-        if (invocation.getCompletion() != null)
+        else
         {
-            InternalUtils.linkFutures(result, invocation.getCompletion());
-        }
-
-        if (method != null)
-        {
-            result.thenAccept(n -> taskComplete(start, invocation, method));
+            result = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
+            if (invocation.getCompletion() != null)
+            {
+                InternalUtils.linkFutures(result, invocation.getCompletion());
+            }
         }
 
         if (reentrant)
         {
             // let the execution serializer proceed if actor method blocks on a task
-            myResult = true;
-            return this;
+            return null;
         }
 
-        myResult = false;
-        return this;
+        return result;
     }
 }
