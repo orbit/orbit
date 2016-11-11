@@ -44,7 +44,7 @@ public class InvocationHandler
     private Logger logger = LoggerFactory.getLogger(InvocationHandler.class);
 
     private boolean perfLoggingEnabled = true;
-    private double slowInvokeThresholdMs = 25;
+    private double slowInvokeThresholdMs = 250;
     private double slowTaskThresholdMs = 1000;
 
     private boolean myResult;
@@ -85,27 +85,29 @@ public class InvocationHandler
 
     public void afterInvoke(long startTimeMs, Invocation invocation, Method method)
     {
-        long durationNanos = (System.nanoTime() - startTimeMs);
-        double durationMs = durationNanos / 1_000_000.0;
-        if(perfLoggingEnabled &&
-                durationMs > slowInvokeThresholdMs &&
-                logger.isWarnEnabled())
+        if(perfLoggingEnabled && logger.isWarnEnabled())
         {
-            logger.warn("Slow invocation: {}. {} in {} ms",
-                    invocation.getToReference().toString(), method.getName(), durationMs);
+            final long durationNanos = (System.nanoTime() - startTimeMs);
+            final double durationMs = durationNanos / 1_000_000.0;
+            if (durationMs > slowInvokeThresholdMs)
+            {
+                logger.warn("Slow task: {}. {} in {} ms",
+                        invocation.getToReference().toString(), method.getName(), durationMs);
+            }
         }
     }
 
     public void taskComplete(long startTimeMs, Invocation invocation, Method method)
     {
-        long durationNanos = (System.nanoTime() - startTimeMs);
-        double durationMs = durationNanos / 1_000_000.0;
-        if(perfLoggingEnabled &&
-                durationMs > slowTaskThresholdMs &&
-                logger.isWarnEnabled())
+        if(perfLoggingEnabled && logger.isWarnEnabled())
         {
-            logger.warn("Slow task: {}. {} in {} ms",
-                    invocation.getToReference().toString(), method.getName(), durationMs);
+            final long durationNanos = (System.nanoTime() - startTimeMs);
+            final double durationMs = durationNanos / 1_000_000.0;
+            if (durationMs > slowTaskThresholdMs)
+            {
+                logger.warn("Slow chain: {}. {} in {} ms",
+                        invocation.getToReference().toString(), method.getName(), durationMs);
+            }
         }
     }
 
