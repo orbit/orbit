@@ -162,7 +162,7 @@ public class InvocationHandler
         if (reentrant)
         {
             // let the execution serializer proceed if actor method blocks on a task
-            return null;
+            return Task.fromValue(null);
         }
 
         return result;
