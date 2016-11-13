@@ -28,7 +28,11 @@
 
 package cloud.orbit.actors.runtime;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cloud.orbit.actors.Stage;
+import cloud.orbit.actors.annotation.OnlyIfActivated;
 import cloud.orbit.actors.annotation.PreferLocalPlacement;
 import cloud.orbit.actors.annotation.StatelessWorker;
 import cloud.orbit.actors.cluster.ClusterPeer;
@@ -36,14 +40,10 @@ import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.exceptions.ObserverNotFound;
 import cloud.orbit.actors.extensions.PipelineExtension;
 import cloud.orbit.actors.net.HandlerContext;
-import cloud.orbit.actors.annotation.OnlyIfActivated;
 import cloud.orbit.concurrent.Task;
-import cloud.orbit.lifecycle.Startable;
 import cloud.orbit.exception.UncheckedException;
+import cloud.orbit.lifecycle.Startable;
 import cloud.orbit.util.AnnotationCache;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.security.MessageDigest;
@@ -283,7 +283,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private Task<NodeAddress> locateActiveActor(final RemoteReference<?> actorReference)
     {
         final NodeAddress address = await(getCachedAddressTask(actorReference));
-        if (address != null && activeNodes.containsKey(address))
+        if (address != null && address != nullAddress && activeNodes.containsKey(address))
         {
             return Task.fromValue(address);
         }
@@ -337,7 +337,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         NodeAddress address = await(getCachedAddressTask(actorReference));
 
         // Is this actor already activated and in the local cache? If so, we're done
-        if (address != null && activeNodes.containsKey(address))
+        if (address != null && address != nullAddress && activeNodes.containsKey(address))
         {
             return Task.fromValue(address);
         }
@@ -357,8 +357,6 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 // Target node still valid?
                 if (activeNodes.containsKey(nodeAddress))
                 {
-                    // Cache locally
-                    setCachedAddress(actorReference, Task.fromValue(nodeAddress));
                     return Task.fromValue(nodeAddress);
                 }
                 else
@@ -391,12 +389,11 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 nodeAddress = otherNodeAddress;
             }
 
-            // Add to local cache
-            setCachedAddress(actorReference, Task.fromValue(nodeAddress));
-
             return Task.fromValue(nodeAddress);
 
         }, stage.getExecutionPool());
+
+        // Cache locally
         setCachedAddress(actorReference, async);
 
         return async;
@@ -603,7 +600,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         }
     }
 
-    private void onInvocation(final HandlerContext ctx, final Invocation invocation)
+    private Task onInvocation(final HandlerContext ctx, final Invocation invocation)
     {
         final RemoteReference toReference = invocation.getToReference();
         final NodeAddress localAddress = getNodeAddress();
@@ -611,20 +608,20 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         if (Objects.equals(toReference.address, localAddress))
         {
             ctx.fireRead(invocation);
-            return;
+            return Task.done();
         }
         final NodeAddress cachedAddress = await(getCachedAddressTask(toReference));
         if (Objects.equals(cachedAddress, localAddress))
         {
             ctx.fireRead(invocation);
-            return;
+            return Task.done();
         }
         if (toReference._interfaceClass().isAnnotationPresent(StatelessWorker.class)
                 && stage.canActivateActor(toReference._interfaceClass().getName()))
         {
             // accepting stateless worker call
             ctx.fireRead(invocation);
-            return;
+            return Task.done();
         }
 
         if (logger.isDebugEnabled())
@@ -636,7 +633,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         // since we received this message someone thinks that this node is the right one.
         // so we remove that entry from the local cache and query the global cache again
         localAddressCache.remove(toReference);
-        locateActor(invocation.getToReference(), true)
+        return locateActor(invocation.getToReference(), true)
                 .whenComplete((r, e) -> {
                     if (e != null)
                     {
@@ -685,7 +682,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                         // don't know what to do with it...
                         if (logger.isErrorEnabled())
                         {
-                            logger.error("Can't find a destination for {}", invocation);
+                            logger.error("Failed to find destination for {}", invocation);
                         }
                     }
                 });
