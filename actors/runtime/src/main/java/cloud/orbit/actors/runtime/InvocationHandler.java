@@ -42,13 +42,13 @@ public class InvocationHandler
 {
     private static final Logger logger = LoggerFactory.getLogger(InvocationHandler.class);
 
-    private boolean perfLoggingEnabled = false;
+    private boolean performanceLoggingEnabled = true;
     private double slowInvokeThresholdMs = 250;
     private double slowTaskThresholdMs = 1000;
 
-    public void setPerfLoggingEnabled(boolean perfLoggingEnabled)
+    public void setPerformanceLoggingEnabled(boolean performanceLoggingEnabled)
     {
-        this.perfLoggingEnabled = perfLoggingEnabled;
+        this.performanceLoggingEnabled = performanceLoggingEnabled;
     }
 
     public void setSlowInvokeThresholdMs(double slowInvokeThresholdMs)
@@ -71,7 +71,7 @@ public class InvocationHandler
 
     public void afterInvoke(long startTimeMs, Invocation invocation, Method method)
     {
-        if (perfLoggingEnabled && logger.isWarnEnabled())
+        if (performanceLoggingEnabled && logger.isWarnEnabled())
         {
             final long durationNanos = (System.nanoTime() - startTimeMs);
             final double durationMs = durationNanos / 1_000_000.0;
@@ -85,7 +85,7 @@ public class InvocationHandler
 
     public void taskComplete(long startTimeMs, Invocation invocation, Method method)
     {
-        if (perfLoggingEnabled && logger.isWarnEnabled())
+        if (performanceLoggingEnabled && logger.isWarnEnabled())
         {
             final long durationNanos = (System.nanoTime() - startTimeMs);
             final double durationMs = durationNanos / 1_000_000.0;
