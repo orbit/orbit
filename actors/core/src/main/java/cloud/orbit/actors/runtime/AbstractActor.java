@@ -48,16 +48,71 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class AbstractActor<T>
 {
-    protected T state;
-    protected StorageExtension stateExtension;
-    protected RemoteReference<?> reference;
-    protected Logger logger;
-    protected ActorRuntime runtime;
-    protected Object activation;
+    private T state;
+    private StorageExtension stateExtension;
+    private RemoteReference<?> reference;
+    private Logger logger;
+    private ActorRuntime runtime;
+    private Object activation;
 
     protected AbstractActor()
     {
         this.createDefaultState();
+    }
+
+    public T getStateInternal()
+    {
+        return state;
+    }
+
+    public void setStateInternal(T state)
+    {
+        this.state = state;
+    }
+
+    public StorageExtension getStateExtension()
+    {
+        return stateExtension;
+    }
+
+    public void setStateExtension(StorageExtension stateExtension)
+    {
+        this.stateExtension = stateExtension;
+    }
+
+    public RemoteReference<?> getReference()
+    {
+        return reference;
+    }
+
+    public void setReference(RemoteReference<?> reference)
+    {
+        this.reference = reference;
+    }
+
+    public ActorRuntime getRuntime()
+    {
+        return runtime;
+    }
+
+    public void setRuntime(ActorRuntime runtime)
+    {
+        this.runtime = runtime;
+    }
+
+    public Object getActivation()
+    {
+        return activation;
+    }
+
+    public void setActivation(Object activation)
+    {
+        this.activation = activation;
+    }
+
+    public void setLogger(Logger logger)
+    {
+        this.logger = logger;
     }
 
     /**
@@ -88,13 +143,13 @@ public abstract class AbstractActor<T>
     @SuppressWarnings({ "PMD.LooseCoupling", "unchecked" })
     protected void createDefaultState()
     {
-        Class<?> c = getStateClass();
+        final Class<?> c = getStateClass();
         try
         {
-            Object newState = (T) c.newInstance();
+            final Object newState = c.newInstance();
             this.state = (T) newState;
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             throw new UncheckedException(e);
         }
@@ -269,7 +324,7 @@ public abstract class AbstractActor<T>
 
     protected StreamProvider getStreamProvider(String name)
     {
-        StreamProvider provider = runtime.getStreamProvider(name);
+        final StreamProvider provider = runtime.getStreamProvider(name);
 
         // obs.: the actor runtime wraps the StreamProvider
         // to use an actor executor for call backs

@@ -139,7 +139,7 @@ public class LocalObjects
     {
         if (actor instanceof AbstractActor)
         {
-            return (LocalObjectEntry) ((AbstractActor) actor).activation;
+            return (LocalObjectEntry) ((AbstractActor) actor).getActivation();
         }
         return localObjects.get(RemoteReference.from(actor));
     }
@@ -170,7 +170,7 @@ public class LocalObjects
 
         if (localObject != null)
         {
-            RemoteReference ref = localObject.getRemoteReference();
+            final RemoteReference ref = localObject.getRemoteReference();
             if (objectId != null && !java.util.Objects.equals(ref.id, objectId))
             {
                 throw new IllegalArgumentException("Called twice with different ids: " + objectId + " != " + ((RemoteReference<?>) ref).id);
@@ -183,7 +183,7 @@ public class LocalObjects
             {
                 throw new IllegalArgumentException("Called twice with different Classes: " + iClass + " != " + ((RemoteReference<?>) ref)._interfaceClass());
             }
-            return (RemoteReference<T>) ref;
+            return ref;
         }
         return registerLocalObject(address, iClass, objectId, object);
     }
@@ -212,7 +212,7 @@ public class LocalObjects
         final String actualObjectId = objectId != null ? objectId : IdUtils.urlSafeString(128);
 
 
-        RemoteReference reference = createReference(address, iClass, actualObjectId);
+        final RemoteReference reference = createReference(address, iClass, actualObjectId);
         return registerLocalObject(reference, object);
     }
 
@@ -241,7 +241,7 @@ public class LocalObjects
         {
             throw new IllegalArgumentException("Object clashes with a pre-existing object: " + reference);
         }
-        LocalObjectEntry localObject = createLocalObjectEntry(reference, object);
+        final LocalObjectEntry localObject = createLocalObjectEntry(reference, object);
         if (object != null)
         {
             final LocalObjectEntry other = objectMap.get(object, o -> localObject);
@@ -251,7 +251,7 @@ public class LocalObjects
                 {
                     throw new ConcurrentModificationException();
                 }
-                return (RemoteReference) other.getRemoteReference();
+                return other.getRemoteReference();
             }
         }
         final LocalObjectEntry previous = localObjects.putIfAbsent(reference, localObject);
@@ -261,14 +261,14 @@ public class LocalObjects
             {
                 throw new ConcurrentModificationException();
             }
-            return (RemoteReference) previous.getRemoteReference();
+            return previous.getRemoteReference();
         }
         return reference;
     }
 
     protected Class<?> findRemoteInterface(final Class<?> baseInterface, final Object instance)
     {
-        for (Class<?> aInterface : instance.getClass().getInterfaces())
+        for (final Class<?> aInterface : instance.getClass().getInterfaces())
         {
             if (baseInterface.isAssignableFrom(aInterface))
             {

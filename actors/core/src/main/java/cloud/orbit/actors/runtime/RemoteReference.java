@@ -202,12 +202,12 @@ public abstract class RemoteReference<T> implements Serializable, Addressable
 
     public static RemoteReference from(AbstractActor actor)
     {
-        return actor.reference;
+        return actor.getReference();
     }
 
     public static RemoteReference from(Actor actor)
     {
-        return actor instanceof AbstractActor ? ((AbstractActor) actor).reference
+        return actor instanceof AbstractActor ? ((AbstractActor) actor).getReference()
                 : actor instanceof RemoteReference ? (RemoteReference) actor
                 : null;
     }

@@ -49,14 +49,15 @@ import java.util.UUID;
  */
 public class JavaMessageSerializer implements MessageSerializer
 {
+    @Override
     public Message deserializeMessage(final BasicRuntime runtime, final InputStream inputStream) throws Exception
     {
         final ObjectInput in = createObjectInput(runtime, inputStream);
         final Message message = new Message();
         message.setMessageType(in.readByte());
         message.setMessageId(in.readInt());
-        long most = in.readLong();
-        long least = in.readLong();
+        final long most = in.readLong();
+        final long least = in.readLong();
         message.setReferenceAddress(most != 0 && least != 0 ? new NodeAddressImpl(new UUID(most, least)) : null);
         message.setInterfaceId(in.readInt());
         message.setMethodId(in.readInt());
@@ -67,6 +68,7 @@ public class JavaMessageSerializer implements MessageSerializer
         return message;
     }
 
+    @Override
     public void serializeMessage(final BasicRuntime runtime, OutputStream outputStream, Message message) throws Exception
     {
         final ObjectOutput out = createObjectOutput(runtime, outputStream);
@@ -118,11 +120,11 @@ public class JavaMessageSerializer implements MessageSerializer
                 {
                     if (obj instanceof AbstractActor)
                     {
-                        reference = ((AbstractActor) obj).reference;
+                        reference = ((AbstractActor) obj).getReference();
                     }
                     else if (obj instanceof ActorObserver)
                     {
-                        ActorObserver objectReference = runtime.registerObserver(null, (ActorObserver) obj);
+                        final ActorObserver objectReference = runtime.registerObserver(null, (ActorObserver) obj);
                         reference = (RemoteReference) objectReference;
                     }
                     else
@@ -134,7 +136,7 @@ public class JavaMessageSerializer implements MessageSerializer
                 {
                     reference = (RemoteReference) obj;
                 }
-                ReferenceReplacement replacement = new ReferenceReplacement();
+                final ReferenceReplacement replacement = new ReferenceReplacement();
                 replacement.address = reference.address;
                 replacement.interfaceClass = reference._interfaceClass();
                 replacement.id = reference.id;
@@ -157,7 +159,7 @@ public class JavaMessageSerializer implements MessageSerializer
             {
                 if (obj instanceof ReferenceReplacement)
                 {
-                    ReferenceReplacement replacement = (ReferenceReplacement) obj;
+                    final ReferenceReplacement replacement = (ReferenceReplacement) obj;
                     if (replacement.address != null)
                     {
                         return runtime.getRemoteObserverReference(replacement.address, (Class) replacement.interfaceClass, replacement.id);

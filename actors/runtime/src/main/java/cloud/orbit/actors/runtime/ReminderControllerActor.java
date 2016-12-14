@@ -46,7 +46,7 @@ public class ReminderControllerActor extends AbstractActor<ReminderControllerAct
         public ConcurrentHashSet<ReminderEntry> reminders = new ConcurrentHashSet<>();
     }
 
-    private Map<ReminderEntry, Registration> local = new ConcurrentHashMap<>();
+    private final Map<ReminderEntry, Registration> local = new ConcurrentHashMap<>();
 
     @Override
     public Task<String> registerOrUpdateReminder(final Remindable actor, final String reminderName, final Date startAt, final long period, final TimeUnit timeUnit)
@@ -109,8 +109,8 @@ public class ReminderControllerActor extends AbstractActor<ReminderControllerAct
     @Override
     public Task<List<String>> getReminders(final Remindable actor)
     {
-        final List<String> list = state.reminders.stream()
-                .filter(r -> reference.equals(actor))
+        final List<String> list = getStateInternal().reminders.stream()
+                .filter(r -> getReference().equals(actor))
                 .map(r -> r.getReminderName())
                 .collect(Collectors.toList());
         return Task.fromValue(list);
@@ -122,14 +122,16 @@ public class ReminderControllerActor extends AbstractActor<ReminderControllerAct
         return Task.done();
     }
 
+    @Override
     public Task<?> activateAsync()
     {
         getLogger().debug("activated");
         // registering the local timers.
         return super.activateAsync().thenRun(
-                () -> state.reminders.forEach(r -> registerLocalTimer(r)));
+                () -> getStateInternal().reminders.forEach(r -> registerLocalTimer(r)));
     }
 
+    @Override
     public Task<?> deactivateAsync()
     {
         local.values().forEach(r -> r.dispose());
