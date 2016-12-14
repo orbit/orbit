@@ -168,9 +168,9 @@ public class Execution extends AbstractExecution implements Startable
         }
         catch (Throwable exception)
         {
-            if (logger.isDebugEnabled())
+            if (logger.isErrorEnabled())
             {
-                logger.debug("Unknown application error. ", exception);
+                logger.error("Unknown application error. ", exception);
             }
             if (invocation.getCompletion() != null)
             {
