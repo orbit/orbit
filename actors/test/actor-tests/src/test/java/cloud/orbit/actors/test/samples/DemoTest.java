@@ -143,6 +143,7 @@ public class DemoTest extends ActorBaseTest
         stage2.cleanup().join();
         stage1.cleanup().join();
         stage1.stop().join();
+        stage2.bind();
         assertEquals(100, bank.getBalance().join().intValue());
 
         dumpMessages();

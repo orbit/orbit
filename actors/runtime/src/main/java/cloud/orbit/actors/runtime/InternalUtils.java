@@ -28,6 +28,9 @@
 
 package cloud.orbit.actors.runtime;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cloud.orbit.concurrent.Task;
 
 import java.util.concurrent.CompletableFuture;
@@ -41,6 +44,8 @@ import java.util.function.Supplier;
  */
 public class InternalUtils
 {
+    private static final Logger logger = LoggerFactory.getLogger(InternalUtils.class);
+
     public static <T> Class<T> classForName(final String className)
     {
         return classForName(className, false);
@@ -189,6 +194,10 @@ public class InternalUtils
         }
         catch (Throwable ex)
         {
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("Failed invoking task", ex);
+            }
             return Task.fromException(ex);
         }
     }

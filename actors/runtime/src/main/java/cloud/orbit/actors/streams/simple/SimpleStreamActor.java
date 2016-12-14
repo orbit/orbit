@@ -88,6 +88,36 @@ public class SimpleStreamActor extends AbstractActor<SimpleStreamActor.State> im
         return Task.done();
     }
 
+    @Override
+    public Task<?> deactivateAsync()
+    {
+        await(super.deactivateAsync());
+
+        /*
+        int size = state().subscribers.size();
+
+        // check if each subscriber is still alive.
+        await(Task.allOf(state().subscribers.entrySet().stream()
+                .map(entry -> checkAlive(entry.getKey(), entry.getValue()))));
+
+        if (state().subscribers.isEmpty())
+        {
+            return clearState();
+        }
+        else if (size != state().subscribers.size())
+        {
+            return writeState();
+        }
+        */
+
+        if (state().subscribers.isEmpty())
+        {
+            return clearState();
+        }
+
+        return Task.done();
+    }
+
     private Task<Boolean> checkAlive(final String handle, final SimpleStreamProxy subscriber)
     {
         final ActorRuntime runtime = ActorRuntime.getRuntime();

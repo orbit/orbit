@@ -39,12 +39,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	
 	<groupId>cloud.orbit</groupId>
     <artifactId>orbit-internal-parent</artifactId>
-    <version>0.9.7-SNAPSHOT</version>
+    <version>0.9.13-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Orbit Internal Parent</name>
 
     <properties>
-        <ea.async.version>1.0.3</ea.async.version>
+        <ea.async.version>1.0.5</ea.async.version>
     </properties>
 
     <modules>

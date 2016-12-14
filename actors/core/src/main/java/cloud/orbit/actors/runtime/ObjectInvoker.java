@@ -28,6 +28,9 @@
 
 package cloud.orbit.actors.runtime;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cloud.orbit.concurrent.Task;
 
 import cloud.orbit.exception.MethodNotFoundException;
@@ -36,6 +39,8 @@ import java.lang.reflect.Method;
 
 public abstract class ObjectInvoker<T>
 {
+    private static final Logger logger = LoggerFactory.getLogger(ObjectInvoker.class);
+
     public Task<?> invoke(T target, int methodId, Object[] params)
     {
         throw new MethodNotFoundException(target + " MethodId :" + methodId);
@@ -59,6 +64,10 @@ public abstract class ObjectInvoker<T>
         }
         catch (Throwable ex)
         {
+            if (logger.isDebugEnabled())
+            {
+                logger.debug("Failed invoking task", ex);
+            }
             return Task.fromException(ex);
         }
     }

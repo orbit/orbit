@@ -37,13 +37,14 @@ import cloud.orbit.concurrent.Task;
 import cloud.orbit.lifecycle.Startable;
 import cloud.orbit.util.AnnotationCache;
 
-import java.lang.reflect.Method;
-import java.util.Map;
+import java.util.Objects;
 
 public class Execution extends AbstractExecution implements Startable
 {
     private Stage runtime;
     private LocalObjects objects;
+
+    private InvocationHandler invocationHandler;
 
     private final AnnotationCache<Reentrant> reentrantCache = new AnnotationCache<>(Reentrant.class);
 
@@ -161,55 +162,9 @@ public class Execution extends AbstractExecution implements Startable
                 ctx.write(invocation);
                 return Task.fromValue(null);
             }
+
             final ObjectInvoker invoker = DefaultDescriptorFactory.get().getInvoker(target.getObject().getClass());
-
-            // todo: it would be nice to separate this last part into another handler (InvocationHandler)
-            // to be able intercept the invocation right before it actually happens, good for logging and metrics
-
-            boolean reentrant = false;
-
-            final ActorTaskContext context = ActorTaskContext.current();
-            if (context != null)
-            {
-                if (invocation.getHeaders() != null && invocation.getHeaders().size() > 0 && runtime.getStickyHeaders() != null)
-                {
-                    for (Map.Entry e : invocation.getHeaders().entrySet())
-                    {
-                        if (runtime.getStickyHeaders().contains(e.getKey()))
-                        {
-                            context.setProperty(String.valueOf(e.getKey()), e.getValue());
-                        }
-                    }
-                }
-                Method method = invoker.getMethod(invocation.getMethodId());
-                if (reentrantCache.isAnnotated(method))
-                {
-                    reentrant = true;
-                    context.setDefaultExecutor(r -> entry.run(o -> {
-                        r.run();
-                        return Task.done();
-                    }));
-                }
-                context.setRuntime(runtime);
-            }
-            else
-            {
-                runtime.bind();
-            }
-
-            final Task result = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
-            if (invocation.getCompletion() != null)
-            {
-                InternalUtils.linkFutures(result, invocation.getCompletion());
-            }
-
-            if (reentrant)
-            {
-                // let the execution serializer proceed if actor method blocks on a task
-                return Task.fromValue(null);
-            }
-
-            return result;
+            return invocationHandler.invoke(runtime, reentrantCache, invocation, entry, target, invoker);
         }
         catch (Throwable exception)
         {
@@ -225,9 +180,14 @@ public class Execution extends AbstractExecution implements Startable
         }
     }
 
+    public void setInvocationHandler(final InvocationHandler invocationHandler)
+    {
+        this.invocationHandler = Objects.requireNonNull(invocationHandler);
+    }
+
     public void setObjects(final LocalObjects objects)
     {
-        this.objects = objects;
+        this.objects = Objects.requireNonNull(objects);
     }
 
 }

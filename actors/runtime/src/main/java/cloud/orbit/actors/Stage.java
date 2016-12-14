@@ -61,6 +61,7 @@ import cloud.orbit.actors.runtime.Execution;
 import cloud.orbit.actors.runtime.Hosting;
 import cloud.orbit.actors.runtime.InternalUtils;
 import cloud.orbit.actors.runtime.Invocation;
+import cloud.orbit.actors.runtime.InvocationHandler;
 import cloud.orbit.actors.runtime.JavaMessageSerializer;
 import cloud.orbit.actors.runtime.LazyActorClassFinder;
 import cloud.orbit.actors.runtime.LocalObjects;
@@ -195,6 +196,7 @@ public class Stage implements Startable, ActorRuntime
 
     private ClusterPeer clusterPeer;
     private Messaging messaging;
+    private InvocationHandler invocationHandler;
     private Execution execution;
     private Hosting hosting;
     private boolean startCalled;
@@ -220,14 +222,14 @@ public class Stage implements Startable, ActorRuntime
         private ExecutionObjectCloner objectCloner;
         private ExecutionObjectCloner messageLoopbackObjectCloner;
         private ClusterPeer clusterPeer;
+        private Messaging messaging;
+        private InvocationHandler invocationHandler;
 
         private String basePackages;
         private String clusterName;
         private String nodeName;
         private StageMode mode = StageMode.HOST;
         private int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
-
-        private Messaging messaging;
 
         private List<ActorExtension> extensions = new ArrayList<>();
         private Set<String> stickyHeaders = new HashSet<>();
@@ -264,6 +266,18 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
+        public Builder messaging(Messaging messaging)
+        {
+            this.messaging = messaging;
+            return this;
+        }
+
+        public Builder invocationHandler(InvocationHandler invocationHandler)
+        {
+            this.invocationHandler = invocationHandler;
+            return this;
+        }
+
         public Builder clusterName(String clusterName)
         {
             this.clusterName = clusterName;
@@ -285,12 +299,6 @@ public class Stage implements Startable, ActorRuntime
         public Builder mode(StageMode mode)
         {
             this.mode = mode;
-            return this;
-        }
-
-        public Builder messaging(Messaging messaging)
-        {
-            this.messaging = messaging;
             return this;
         }
 
@@ -327,6 +335,7 @@ public class Stage implements Startable, ActorRuntime
             stage.setExecutionPoolSize(executionPoolSize);
             stage.setTimer(timer);
             extensions.forEach(stage::addExtension);
+            stage.setInvocationHandler(invocationHandler);
             stage.setMessaging(messaging);
             stage.addStickyHeaders(stickyHeaders);
             return stage;
@@ -352,6 +361,11 @@ public class Stage implements Startable, ActorRuntime
     public void setMessaging(final Messaging messaging)
     {
         this.messaging = messaging;
+    }
+
+    public void setInvocationHandler(final InvocationHandler invocationHandler)
+    {
+        this.invocationHandler = invocationHandler;
     }
 
     public void setExecutionPool(final ExecutorService executionPool)
@@ -497,6 +511,10 @@ public class Stage implements Startable, ActorRuntime
         {
             execution = new Execution();
         }
+        if(invocationHandler == null)
+        {
+            invocationHandler = new InvocationHandler();
+        }
         if (messageSerializer == null)
         {
             messageSerializer = new JavaMessageSerializer();
@@ -521,8 +539,8 @@ public class Stage implements Startable, ActorRuntime
         if (finder == null)
         {
             finder = StringUtils.isNotEmpty(basePackages) ? new FastActorClassFinder(basePackages.split(Pattern.quote(","))) : new LazyActorClassFinder();
-            await(finder.start());
         }
+        await(finder.start());
 
         cacheManager = new ResponseCaching();
 
@@ -530,6 +548,7 @@ public class Stage implements Startable, ActorRuntime
         execution.setRuntime(this);
         execution.setObjects(objects);
         execution.setExecutionSerializer(executionSerializer);
+        execution.setInvocationHandler(invocationHandler);
 
         cacheManager.setObjectCloner(objectCloner);
         cacheManager.setRuntime(this);
@@ -691,7 +710,7 @@ public class Stage implements Startable, ActorRuntime
         // * stop the network
 
         logger.debug("start stopping pipeline");
-        await(pipeline.write(NodeCapabilities.NodeState.STOPPING));
+        await(hosting.notifyStateChange());
 
         logger.debug("stopping actors");
         await(stopActors());
@@ -699,7 +718,7 @@ public class Stage implements Startable, ActorRuntime
         await(stopTimers());
         do
         {
-            InternalUtils.sleep(100);
+            InternalUtils.sleep(250);
         } while (executionSerializer.isBusy());
         logger.debug("closing pipeline");
         await(pipeline.close());
