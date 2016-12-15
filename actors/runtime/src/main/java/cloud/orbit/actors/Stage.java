@@ -884,6 +884,7 @@ public class Stage implements Startable, ActorRuntime
         {
             Actor.getReference(ReminderController.class).ensureStart();
         }
+        await(clusterPeer.pulse());
         return cleanup();
     }
 
