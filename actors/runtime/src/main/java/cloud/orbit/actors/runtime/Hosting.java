@@ -329,7 +329,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             else
             {
                 final String interfaceClassName = interfaceClass.getName();
-                return selectNode(interfaceClassName, true);
+                return selectNode(interfaceClassName);
             }
         }
 
@@ -377,7 +377,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             if (nodeAddress == null)
             {
                 // If not, select randomly
-                nodeAddress = await(selectNode(interfaceClass.getName(), true));
+                nodeAddress = await(selectNode(interfaceClass.getName()));
             }
 
             // Push our selection to the distributed cache (if possible)
@@ -427,7 +427,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 String.valueOf(actorReference.id));
     }
 
-    private Task<NodeAddress> selectNode(final String interfaceClassName, boolean allowToBlock)
+    private Task<NodeAddress> selectNode(final String interfaceClassName)
     {
         List<NodeInfo> potentialNodes;
         long start = System.currentTimeMillis();
@@ -450,10 +450,6 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
             if (potentialNodes.size() == 0)
             {
-                if (!allowToBlock)
-                {
-                    return null;
-                }
                 waitForServers();
             }
             else
@@ -624,9 +620,9 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             return Task.done();
         }
 
-        if (logger.isDebugEnabled())
+        if (logger.isTraceEnabled())
         {
-            logger.debug("Choosing a new node for the invocation");
+            logger.trace("Choosing a new node for the invocation");
         }
 
         // over here the actor address is not the localAddress.
@@ -657,9 +653,9 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                     }
                     else if (r != null)
                     {
-                        if (logger.isDebugEnabled())
+                        if (logger.isTraceEnabled())
                         {
-                            logger.debug("Choosing a remote node for the invocation");
+                            logger.trace("Choosing a remote node for the invocation");
                         }
                         NodeInfo info = activeNodes.get(invocation.getFromNode());
                         if (info != null && info.state == NodeState.RUNNING)

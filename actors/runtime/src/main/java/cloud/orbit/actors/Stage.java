@@ -1275,11 +1275,8 @@ public class Stage implements Startable, ActorRuntime
     {
         if (getState() != NodeCapabilities.NodeState.RUNNING)
         {
-            // todo, improve this
-            if (hosting.getServerNodes().size() > 1)
-            {
-                return false;
-            }
+            // should never return true if node is shutting down
+            return false;
         }
         Class<Actor> aInterface = InternalUtils.classForName(interfaceName, true);
         if (aInterface == null)
