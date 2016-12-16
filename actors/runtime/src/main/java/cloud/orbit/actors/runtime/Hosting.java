@@ -38,6 +38,7 @@ import cloud.orbit.actors.annotation.StatelessWorker;
 import cloud.orbit.actors.cluster.ClusterPeer;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.exceptions.ObserverNotFound;
+import cloud.orbit.actors.extensions.NodeSelectorExtension;
 import cloud.orbit.actors.extensions.PipelineExtension;
 import cloud.orbit.actors.net.HandlerContext;
 import cloud.orbit.concurrent.Task;
@@ -81,16 +82,19 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private volatile ConcurrentMap<RemoteKey, NodeAddress> distributedDirectory;
 
     private long timeToWaitForServersMillis = 30000;
-    private Random random = new Random();
+    private final Random random = new Random();
 
     private TreeMap<String, NodeInfo> consistentHashNodeTree = new TreeMap<>();
     private final AnnotationCache<OnlyIfActivated> onlyIfActivateCache = new AnnotationCache<>(OnlyIfActivated.class);
 
-    private CompletableFuture<Void> hostingActive = new Task<>();
+    private final CompletableFuture<Void> hostingActive = new Task<>();
 
     private int maxLocalAddressCacheCount = 10_000;
 
     private final Task<NodeAddress> nullAddress = Task.fromValue(null);
+
+    private NodeSelectorExtension nodeSelector;
+    private final RandomSelectorExtension randomSelector = new RandomSelectorExtension(random);
 
     public Hosting()
     {
@@ -111,6 +115,11 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     {
         this.stage = stage;
         logger = stage.getLogger(this);
+
+        nodeSelector = stage.getAllExtensions(NodeSelectorExtension.class)
+                .stream()
+                .findFirst()
+                .orElse(randomSelector);
     }
 
     public void setNodeType(final NodeTypeEnum nodeType)
@@ -126,7 +135,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     public List<NodeAddress> getServerNodes()
     {
         final ArrayList<NodeAddress> set = new ArrayList<>(serverNodes.size());
-        for (NodeInfo s : serverNodes)
+        for (final NodeInfo s : serverNodes)
         {
             set.add(s.address);
         }
@@ -143,21 +152,6 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     public NodeAddress getNodeAddress()
     {
         return clusterPeer.localAddress();
-    }
-
-    private static class NodeInfo
-    {
-        boolean active;
-        NodeAddress address;
-        NodeState state = NodeState.RUNNING;
-        NodeCapabilities nodeCapabilities;
-        boolean cannotHostActors;
-        final ConcurrentHashMap<String, Integer> canActivate = new ConcurrentHashMap<>();
-
-        public NodeInfo(final NodeAddress address)
-        {
-            this.address = address;
-        }
     }
 
     @Override
@@ -206,6 +200,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         this.clusterPeer = clusterPeer;
     }
 
+    @Override
     public Task<Void> start()
     {
         clusterPeer.registerViewListener(v -> onClusterViewChanged(v));
@@ -218,9 +213,9 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         {
             logger.debug("Cluster view changed " + nodes);
         }
-        HashMap<NodeAddress, NodeInfo> oldNodes = new HashMap<>(activeNodes);
-        HashMap<NodeAddress, NodeInfo> newNodes = new HashMap<>(nodes.size());
-        List<NodeInfo> justAddedNodes = new ArrayList<>(Math.max(1, nodes.size() - oldNodes.size()));
+        final HashMap<NodeAddress, NodeInfo> oldNodes = new HashMap<>(activeNodes);
+        final HashMap<NodeAddress, NodeInfo> newNodes = new HashMap<>(nodes.size());
+        final List<NodeInfo> justAddedNodes = new ArrayList<>(Math.max(1, nodes.size() - oldNodes.size()));
 
         final TreeMap<String, NodeInfo> newHashes = new TreeMap<>();
 
@@ -244,7 +239,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             }
         }
         // nodes that were removed
-        for (NodeInfo oldNodeInfo : oldNodes.values())
+        for (final NodeInfo oldNodeInfo : oldNodes.values())
         {
             oldNodeInfo.active = false;
         }
@@ -269,7 +264,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     public Task<NodeAddress> locateActor(final RemoteReference reference, final boolean forceActivation)
     {
-        NodeAddress address = RemoteReference.getAddress(reference);
+        final NodeAddress address = RemoteReference.getAddress(reference);
         if (address != null)
         {
             // don't need to call the node call the node to check.
@@ -303,7 +298,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         // removing the reference from the cluster directory and local caches
         getDistributedDirectory().remove(createRemoteKey(remoteReference), clusterPeer.localAddress());
         localAddressCache.remove(remoteReference);
-        for (NodeInfo info : activeNodes.values())
+        for (final NodeInfo info : activeNodes.values())
         {
             if (!info.address.equals(clusterPeer.localAddress()) && info.state == NodeState.RUNNING)
             {
@@ -334,7 +329,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         }
 
         // Get the existing activation from the local cache (if any)
-        NodeAddress address = await(getCachedAddressTask(actorReference));
+        final NodeAddress address = await(getCachedAddressTask(actorReference));
 
         // Is this actor already activated and in the local cache? If so, we're done
         if (address != null && address != nullAddress && activeNodes.containsKey(address))
@@ -348,7 +343,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             NodeAddress nodeAddress = null;
 
             // Get the distributed cache if needed
-            ConcurrentMap<RemoteKey, NodeAddress> distributedDirectory = getDistributedDirectory();
+            final ConcurrentMap<RemoteKey, NodeAddress> distributedDirectory = getDistributedDirectory();
 
             // Get the existing activation from the distributed cache (if any)
             nodeAddress = distributedDirectory.get(remoteKey);
@@ -381,7 +376,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             }
 
             // Push our selection to the distributed cache (if possible)
-            NodeAddress otherNodeAddress = distributedDirectory.putIfAbsent(remoteKey, nodeAddress);
+            final NodeAddress otherNodeAddress = distributedDirectory.putIfAbsent(remoteKey, nodeAddress);
 
             // Someone else beat us to placement, use that node
             if (otherNodeAddress != null)
@@ -430,18 +425,18 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private Task<NodeAddress> selectNode(final String interfaceClassName, boolean allowToBlock)
     {
         List<NodeInfo> potentialNodes;
-        long start = System.currentTimeMillis();
+        final long start = System.currentTimeMillis();
 
         while (true)
         {
             if (System.currentTimeMillis() - start > timeToWaitForServersMillis)
             {
-                String err = "Timeout waiting for a server capable of handling: " + interfaceClassName;
+                final String err = "Timeout waiting for a server capable of handling: " + interfaceClassName;
                 logger.error(err);
                 throw new UncheckedException(err);
             }
 
-            List<NodeInfo> currentServerNodes = serverNodes;
+            final List<NodeInfo> currentServerNodes = serverNodes;
 
             potentialNodes = currentServerNodes.stream()
                     .filter(n -> (!n.cannotHostActors && n.state == NodeState.RUNNING)
@@ -458,7 +453,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             }
             else
             {
-                NodeInfo nodeInfo = potentialNodes.get(random.nextInt(potentialNodes.size()));
+                final NodeInfo nodeInfo = nodeSelector.select(getNodeAddress(), potentialNodes);
 
                 Integer canActivate = nodeInfo.canActivate.get(interfaceClassName);
                 if (canActivate == null)
@@ -478,7 +473,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                             nodeInfo.canActivate.put(interfaceClassName, canActivate);
                         }
                     }
-                    catch (Exception ex)
+                    catch (final Exception ex)
                     {
                         logger.error("Error locating server for " + interfaceClassName, ex);
                         continue;
@@ -503,7 +498,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 {
                     serverNodesUpdateMutex.wait(5);
                 }
-                catch (InterruptedException e)
+                catch (final InterruptedException e)
                 {
                     throw new UncheckedException(e);
                 }
@@ -532,12 +527,12 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     {
         try
         {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            final MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(key.getBytes("UTF-8"));
-            byte[] digest = md.digest();
+            final byte[] digest = md.digest();
             return String.format("%064x", new java.math.BigInteger(1, digest));
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             throw new UncheckedException(e);
         }
@@ -661,14 +656,14 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                         {
                             logger.debug("Choosing a remote node for the invocation");
                         }
-                        NodeInfo info = activeNodes.get(invocation.getFromNode());
+                        final NodeInfo info = activeNodes.get(invocation.getFromNode());
                         if (info != null && info.state == NodeState.RUNNING)
                         {
                             try
                             {
                                 info.nodeCapabilities.moved(toReference, localAddress, r);
                             }
-                            catch (RuntimeException ignore)
+                            catch (final RuntimeException ignore)
                             {
                             }
                         }
@@ -724,8 +719,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         if (invocation.getToNode() == null)
         {
             NodeAddress address;
-            if (toReference instanceof RemoteReference
-                    && (address = RemoteReference.getAddress((RemoteReference) toReference)) != null)
+            if ((address = RemoteReference.getAddress(toReference)) != null)
             {
                 invocation.withToNode(address);
                 if (!activeNodes.containsKey(address))
@@ -757,7 +751,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
      */
     private Task<Boolean> verifyActivated(RemoteReference<?> toReference)
     {
-        NodeAddress actorAddress = await(locateActor(toReference, false));
+        final NodeAddress actorAddress = await(locateActor(toReference, false));
         return Task.fromValue(actorAddress != null);
     }
 
@@ -766,7 +760,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         if (localAddressCache.size() > maxLocalAddressCacheCount)
         {
             // randomly removes local references
-            List<RemoteReference<?>> remoteReferences = new ArrayList<>(localAddressCache.keySet());
+            final List<RemoteReference<?>> remoteReferences = new ArrayList<>(localAddressCache.keySet());
             Collections.shuffle(remoteReferences);
             for (int c = remoteReferences.size() - maxLocalAddressCacheCount / 2; --c >= 0; )
             {
