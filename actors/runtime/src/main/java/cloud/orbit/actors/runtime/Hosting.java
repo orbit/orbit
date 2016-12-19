@@ -94,7 +94,6 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private final Task<NodeAddress> nullAddress = Task.fromValue(null);
 
     private NodeSelectorExtension nodeSelector;
-    private final RandomSelectorExtension randomSelector = new RandomSelectorExtension(random);
 
     public Hosting()
     {
@@ -115,11 +114,11 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     {
         this.stage = stage;
         logger = stage.getLogger(this);
+    }
 
-        nodeSelector = stage.getAllExtensions(NodeSelectorExtension.class)
-                .stream()
-                .findFirst()
-                .orElse(randomSelector);
+    public void setNodeSelector(NodeSelectorExtension nodeSelector)
+    {
+        this.nodeSelector = nodeSelector;
     }
 
     public void setNodeType(final NodeTypeEnum nodeType)
@@ -213,6 +212,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         {
             logger.debug("Cluster view changed " + nodes);
         }
+
         final HashMap<NodeAddress, NodeInfo> oldNodes = new HashMap<>(activeNodes);
         final HashMap<NodeAddress, NodeInfo> newNodes = new HashMap<>(nodes.size());
         final List<NodeInfo> justAddedNodes = new ArrayList<>(Math.max(1, nodes.size() - oldNodes.size()));

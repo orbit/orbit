@@ -41,6 +41,7 @@ import cloud.orbit.actors.extensions.DefaultLoggerExtension;
 import cloud.orbit.actors.extensions.LifetimeExtension;
 import cloud.orbit.actors.extensions.LoggerExtension;
 import cloud.orbit.actors.extensions.MessageSerializer;
+import cloud.orbit.actors.extensions.NodeSelectorExtension;
 import cloud.orbit.actors.extensions.PipelineExtension;
 import cloud.orbit.actors.extensions.StreamProvider;
 import cloud.orbit.actors.net.DefaultPipeline;
@@ -69,6 +70,7 @@ import cloud.orbit.actors.runtime.MessageLoopback;
 import cloud.orbit.actors.runtime.Messaging;
 import cloud.orbit.actors.runtime.NodeCapabilities;
 import cloud.orbit.actors.runtime.ObserverEntry;
+import cloud.orbit.actors.runtime.RandomSelectorExtension;
 import cloud.orbit.actors.runtime.Registration;
 import cloud.orbit.actors.runtime.ReminderController;
 import cloud.orbit.actors.runtime.RemoteReference;
@@ -161,10 +163,10 @@ public class Stage implements Startable, ActorRuntime
     private List<ActorExtension> extensions = new CopyOnWriteArrayList<>();
 
     @Config("orbit.actors.stickyHeaders")
-    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
+    private final Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
 
     @Config("orbit.actors.pulseInterval")
-    private long pulseIntervalMillis = TimeUnit.SECONDS.toMillis(10);
+    private final long pulseIntervalMillis = TimeUnit.SECONDS.toMillis(10);
     private Timer timer;
     private Pipeline pipeline;
 
@@ -178,15 +180,15 @@ public class Stage implements Startable, ActorRuntime
     private NodeCapabilities.NodeState state;
 
     @Config("orbit.actors.concurrentDeactivations")
-    private int concurrentDeactivations = 16;
+    private final int concurrentDeactivations = 16;
 
     @Config("orbit.actors.defaultActorTTL")
-    private long defaultActorTTL = TimeUnit.MINUTES.toMillis(10);
+    private final long defaultActorTTL = TimeUnit.MINUTES.toMillis(10);
 
     @Config("orbit.actors.deactivationTimeoutMillis")
-    private long deactivationTimeoutMillis = TimeUnit.MINUTES.toMillis(2);
+    private final long deactivationTimeoutMillis = TimeUnit.MINUTES.toMillis(2);
 
-    private Task<Void> startPromise = new Task<>();
+    private final Task<Void> startPromise = new Task<>();
 
     public enum StageMode
     {
@@ -229,10 +231,10 @@ public class Stage implements Startable, ActorRuntime
         private String clusterName;
         private String nodeName;
         private StageMode mode = StageMode.HOST;
-        private int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
+        private final int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
 
-        private List<ActorExtension> extensions = new ArrayList<>();
-        private Set<String> stickyHeaders = new HashSet<>();
+        private final List<ActorExtension> extensions = new ArrayList<>();
+        private final Set<String> stickyHeaders = new HashSet<>();
 
         private Timer timer;
 
@@ -322,7 +324,7 @@ public class Stage implements Startable, ActorRuntime
 
         public Stage build()
         {
-            Stage stage = new Stage();
+            final Stage stage = new Stage();
             stage.setClock(clock);
             stage.setExecutionPool(executionPool);
             stage.setObjectCloner(objectCloner);
@@ -457,6 +459,7 @@ public class Stage implements Startable, ActorRuntime
         return startPromise;
     }
 
+    @Override
     public Task<?> start()
     {
         extensions = new ArrayList<>(extensions);
@@ -558,6 +561,12 @@ public class Stage implements Startable, ActorRuntime
 
         hosting.setStage(this);
         hosting.setClusterPeer(clusterPeer);
+
+        final NodeSelectorExtension nodeSelector = getAllExtensions(NodeSelectorExtension.class)
+                .stream()
+                .findFirst()
+                .orElse(new RandomSelectorExtension());
+        hosting.setNodeSelector(nodeSelector);
 
         // caches responses
         pipeline.addLast(DefaultHandlers.CACHING, cacheManager);
@@ -690,6 +699,7 @@ public class Stage implements Startable, ActorRuntime
     }
 
 
+    @Override
     public Task<?> stop()
     {
         if (getState() != NodeCapabilities.NodeState.RUNNING)
@@ -845,7 +855,7 @@ public class Stage implements Startable, ActorRuntime
         {
             timer.cancel();
         }
-        catch (Throwable ex)
+        catch (final Throwable ex)
         {
             logger.error("Error stopping timers", ex);
         }
@@ -854,13 +864,13 @@ public class Stage implements Startable, ActorRuntime
 
     private Task<Void> stopExtensions()
     {
-        for (ActorExtension e : getExtensions())
+        for (final ActorExtension e : getExtensions())
         {
             try
             {
                 await(e.stop());
             }
-            catch (Throwable ex)
+            catch (final Throwable ex)
             {
                 logger.error("Error stopping extension: " + e);
             }
@@ -913,6 +923,7 @@ public class Stage implements Startable, ActorRuntime
      * This method writes a weak reference to the runtime in a thread local.
      * No cleanup is necessary, so none is available.
      */
+    @Override
     public void bind()
     {
         ActorRuntime.setRuntime(this.cachedRef);
@@ -970,7 +981,7 @@ public class Stage implements Startable, ActorRuntime
         if (context != null)
         {
             Map<Object, Object> headers = null;
-            for (String key : stickyHeaders)
+            for (final String key : stickyHeaders)
             {
                 final Object value = context.getProperty(key);
                 if (value != null)
@@ -1048,7 +1059,7 @@ public class Stage implements Startable, ActorRuntime
                                         return (Task) taskCallable.call();
                                     }
                                 }
-                                catch (Exception ex)
+                                catch (final Exception ex)
                                 {
                                     logger.warn("Error calling timer", ex);
                                 }
@@ -1065,7 +1076,7 @@ public class Stage implements Startable, ActorRuntime
             }
         };
 
-        MyRegistration registration = new MyRegistration();
+        final MyRegistration registration = new MyRegistration();
         registration.task = timerTask;
 
         // this ensures that the timers get removed during deactivation
@@ -1129,6 +1140,7 @@ public class Stage implements Startable, ActorRuntime
         return iClass != null ? iClass.cast(reference) : (T) reference;
     }
 
+    @Override
     public <T> T getReference(BasicRuntime runtime, NodeAddress address, Class<T> iClass, Object id)
     {
         return DefaultDescriptorFactory.get().getReference(this, address, iClass, id);
@@ -1137,7 +1149,7 @@ public class Stage implements Startable, ActorRuntime
     @Override
     public StreamProvider getStreamProvider(final String providerName)
     {
-        StreamProvider streamProvider = getAllExtensions(StreamProvider.class).stream()
+        final StreamProvider streamProvider = getAllExtensions(StreamProvider.class).stream()
                 .filter(p -> StringUtils.equals(p.getName(), providerName))
                 .findFirst().orElseThrow(() -> new UncheckedException(String.format("Provider: %s not found", providerName)));
 
@@ -1145,7 +1157,7 @@ public class Stage implements Startable, ActorRuntime
         if (actor != null)
         {
             @SuppressWarnings("unchecked")
-            ActorEntry<AbstractActor> actorEntry = (ActorEntry<AbstractActor>) objects.findLocalActor((Actor) actor);
+            final ActorEntry<AbstractActor> actorEntry = (ActorEntry<AbstractActor>) objects.findLocalActor((Actor) actor);
 
             // wraps the stream provider to ensure sequential execution
             return new StreamProvider()
@@ -1168,7 +1180,7 @@ public class Stage implements Startable, ActorRuntime
                         public Task<StreamSubscriptionHandle<T>> subscribe(final AsyncObserver<T> observer, StreamSequenceToken sequenceToken)
                         {
 
-                            Task<StreamSubscriptionHandle<T>> subscriptionTask = stream.subscribe(new AsyncObserver<T>()
+                            final Task<StreamSubscriptionHandle<T>> subscriptionTask = stream.subscribe(new AsyncObserver<T>()
                             {
                                 @Override
                                 public Task<Void> onNext(final T data, final StreamSequenceToken sequenceToken)
@@ -1260,8 +1272,8 @@ public class Stage implements Startable, ActorRuntime
             return null;
         }
         final Annotation annotation = actorClass.getAnnotation(StorageExtension.class);
-        StorageExtension ann = (StorageExtension) annotation;
-        String extensionName = ann == null ? "default" : ann.value();
+        final StorageExtension ann = (StorageExtension) annotation;
+        final String extensionName = ann == null ? "default" : ann.value();
         // selects the fist provider with the right name
         return (T) extensions.stream()
                 .filter(p -> (p instanceof cloud.orbit.actors.extensions.StorageExtension) && extensionName.equals(((cloud.orbit.actors.extensions.StorageExtension) p).getName()))
@@ -1280,7 +1292,7 @@ public class Stage implements Startable, ActorRuntime
                 return false;
             }
         }
-        Class<Actor> aInterface = InternalUtils.classForName(interfaceName, true);
+        final Class<Actor> aInterface = InternalUtils.classForName(interfaceName, true);
         if (aInterface == null)
         {
             return false;
