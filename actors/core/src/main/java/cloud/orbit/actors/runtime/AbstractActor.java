@@ -48,71 +48,16 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class AbstractActor<T>
 {
-    private T state;
-    private StorageExtension stateExtension;
-    private RemoteReference<?> reference;
-    private Logger logger;
-    private ActorRuntime runtime;
-    private Object activation;
+    protected T state;
+    protected StorageExtension stateExtension;
+    protected RemoteReference<?> reference;
+    protected Logger logger;
+    protected ActorRuntime runtime;
+    protected Object activation;
 
     protected AbstractActor()
     {
         this.createDefaultState();
-    }
-
-    public T getStateInternal()
-    {
-        return state;
-    }
-
-    public void setStateInternal(T state)
-    {
-        this.state = state;
-    }
-
-    public StorageExtension getStateExtension()
-    {
-        return stateExtension;
-    }
-
-    public void setStateExtension(StorageExtension stateExtension)
-    {
-        this.stateExtension = stateExtension;
-    }
-
-    public RemoteReference<?> getReference()
-    {
-        return reference;
-    }
-
-    public void setReference(RemoteReference<?> reference)
-    {
-        this.reference = reference;
-    }
-
-    public ActorRuntime getRuntime()
-    {
-        return runtime;
-    }
-
-    public void setRuntime(ActorRuntime runtime)
-    {
-        this.runtime = runtime;
-    }
-
-    public Object getActivation()
-    {
-        return activation;
-    }
-
-    public void setActivation(Object activation)
-    {
-        this.activation = activation;
-    }
-
-    public void setLogger(Logger logger)
-    {
-        this.logger = logger;
     }
 
     /**

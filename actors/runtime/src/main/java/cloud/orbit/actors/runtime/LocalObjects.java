@@ -139,7 +139,7 @@ public class LocalObjects
     {
         if (actor instanceof AbstractActor)
         {
-            return (LocalObjectEntry) ((AbstractActor) actor).getActivation();
+            return (LocalObjectEntry) ((AbstractActor) actor).activation;
         }
         return localObjects.get(RemoteReference.from(actor));
     }

@@ -109,8 +109,8 @@ public class ReminderControllerActor extends AbstractActor<ReminderControllerAct
     @Override
     public Task<List<String>> getReminders(final Remindable actor)
     {
-        final List<String> list = getStateInternal().reminders.stream()
-                .filter(r -> getReference().equals(actor))
+        final List<String> list = state.reminders.stream()
+                .filter(r -> reference.equals(actor))
                 .map(r -> r.getReminderName())
                 .collect(Collectors.toList());
         return Task.fromValue(list);
@@ -128,7 +128,7 @@ public class ReminderControllerActor extends AbstractActor<ReminderControllerAct
         getLogger().debug("activated");
         // registering the local timers.
         return super.activateAsync().thenRun(
-                () -> getStateInternal().reminders.forEach(r -> registerLocalTimer(r)));
+                () -> state.reminders.forEach(r -> registerLocalTimer(r)));
     }
 
     @Override

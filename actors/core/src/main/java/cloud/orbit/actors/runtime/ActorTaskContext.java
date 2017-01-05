@@ -52,7 +52,7 @@ public class ActorTaskContext extends TaskContext
         this.actor = actor;
         if (actor != null)
         {
-            this.runtime = actor.getRuntime();
+            this.runtime = actor.runtime;
         }
     }
 

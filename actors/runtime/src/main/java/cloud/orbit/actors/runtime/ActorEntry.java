@@ -114,15 +114,15 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
         }
         final AbstractActor<?> actor = (AbstractActor<?>) newInstance;
         ActorTaskContext.current().setActor(actor);
-        actor.setReference(reference);
-        actor.setRuntime(runtime);
-        actor.setStateExtension(storageExtension);
-        actor.setLogger(loggerExtension.getLogger(actor));
-        actor.setActivation(this);
+        actor.reference = reference;
+        actor.runtime = runtime;
+        actor.stateExtension = storageExtension;
+        actor.logger = loggerExtension.getLogger(actor);
+        actor.activation = this;
 
         await(Task.allOf(runtime.getAllExtensions(LifetimeExtension.class).stream().map(v -> v.preActivation(actor))));
 
-        if (actor.getStateExtension() != null)
+        if (actor.stateExtension != null)
         {
             try
             {
@@ -130,9 +130,9 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
             }
             catch (final Exception ex)
             {
-                if (actor.getLogger().isErrorEnabled())
+                if (actor.logger.isErrorEnabled())
                 {
-                    actor.getLogger().error("Error reading actor state for: " + reference, ex);
+                    actor.logger.error("Error reading actor state for: " + reference, ex);
                 }
                 throw ex;
             }
@@ -143,9 +143,9 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
         }
         catch (final Exception ex)
         {
-            if (actor.getLogger().isErrorEnabled())
+            if (actor.logger.isErrorEnabled())
             {
-                actor.getLogger().error("Error activating actor for: " + reference, ex);
+                actor.logger.error("Error activating actor for: " + reference, ex);
             }
             throw ex;
         }

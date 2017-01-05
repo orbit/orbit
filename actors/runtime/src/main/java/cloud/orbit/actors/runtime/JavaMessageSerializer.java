@@ -120,7 +120,7 @@ public class JavaMessageSerializer implements MessageSerializer
                 {
                     if (obj instanceof AbstractActor)
                     {
-                        reference = ((AbstractActor) obj).getReference();
+                        reference = ((AbstractActor) obj).reference;
                     }
                     else if (obj instanceof ActorObserver)
                     {
