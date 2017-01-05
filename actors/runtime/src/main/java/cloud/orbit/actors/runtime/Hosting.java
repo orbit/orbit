@@ -82,12 +82,12 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private volatile ConcurrentMap<RemoteKey, NodeAddress> distributedDirectory;
 
     private long timeToWaitForServersMillis = 30000;
-    private final Random random = new Random();
+    private Random random = new Random();
 
     private TreeMap<String, NodeInfo> consistentHashNodeTree = new TreeMap<>();
     private final AnnotationCache<OnlyIfActivated> onlyIfActivateCache = new AnnotationCache<>(OnlyIfActivated.class);
 
-    private final CompletableFuture<Void> hostingActive = new Task<>();
+    private CompletableFuture<Void> hostingActive = new Task<>();
 
     private int maxLocalAddressCacheCount = 10_000;
 

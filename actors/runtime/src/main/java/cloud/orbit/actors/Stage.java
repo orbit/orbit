@@ -163,10 +163,10 @@ public class Stage implements Startable, ActorRuntime
     private List<ActorExtension> extensions = new CopyOnWriteArrayList<>();
 
     @Config("orbit.actors.stickyHeaders")
-    private final Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
+    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
 
     @Config("orbit.actors.pulseInterval")
-    private final long pulseIntervalMillis = TimeUnit.SECONDS.toMillis(10);
+    private long pulseIntervalMillis = TimeUnit.SECONDS.toMillis(10);
     private Timer timer;
     private Pipeline pipeline;
 
@@ -180,15 +180,15 @@ public class Stage implements Startable, ActorRuntime
     private NodeCapabilities.NodeState state;
 
     @Config("orbit.actors.concurrentDeactivations")
-    private final int concurrentDeactivations = 16;
+    private int concurrentDeactivations = 16;
 
     @Config("orbit.actors.defaultActorTTL")
-    private final long defaultActorTTL = TimeUnit.MINUTES.toMillis(10);
+    private long defaultActorTTL = TimeUnit.MINUTES.toMillis(10);
 
     @Config("orbit.actors.deactivationTimeoutMillis")
-    private final long deactivationTimeoutMillis = TimeUnit.MINUTES.toMillis(2);
+    private long deactivationTimeoutMillis = TimeUnit.MINUTES.toMillis(2);
 
-    private final Task<Void> startPromise = new Task<>();
+    private Task<Void> startPromise = new Task<>();
 
     public enum StageMode
     {
@@ -231,10 +231,10 @@ public class Stage implements Startable, ActorRuntime
         private String clusterName;
         private String nodeName;
         private StageMode mode = StageMode.HOST;
-        private final int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
+        private int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
 
-        private final List<ActorExtension> extensions = new ArrayList<>();
-        private final Set<String> stickyHeaders = new HashSet<>();
+        private List<ActorExtension> extensions = new ArrayList<>();
+        private Set<String> stickyHeaders = new HashSet<>();
 
         private Timer timer;
 
@@ -1273,8 +1273,8 @@ public class Stage implements Startable, ActorRuntime
             return null;
         }
         final Annotation annotation = actorClass.getAnnotation(StorageExtension.class);
-        final StorageExtension ann = (StorageExtension) annotation;
-        final String extensionName = ann == null ? "default" : ann.value();
+        StorageExtension ann = (StorageExtension) annotation;
+        String extensionName = ann == null ? "default" : ann.value();
         // selects the fist provider with the right name
         return (T) extensions.stream()
                 .filter(p -> (p instanceof cloud.orbit.actors.extensions.StorageExtension) && extensionName.equals(((cloud.orbit.actors.extensions.StorageExtension) p).getName()))
@@ -1293,7 +1293,7 @@ public class Stage implements Startable, ActorRuntime
                 return false;
             }
         }
-        final Class<Actor> aInterface = InternalUtils.classForName(interfaceName, true);
+        Class<Actor> aInterface = InternalUtils.classForName(interfaceName, true);
         if (aInterface == null)
         {
             return false;

@@ -56,8 +56,8 @@ public class JavaMessageSerializer implements MessageSerializer
         final Message message = new Message();
         message.setMessageType(in.readByte());
         message.setMessageId(in.readInt());
-        final long most = in.readLong();
-        final long least = in.readLong();
+        long most = in.readLong();
+        long least = in.readLong();
         message.setReferenceAddress(most != 0 && least != 0 ? new NodeAddressImpl(new UUID(most, least)) : null);
         message.setInterfaceId(in.readInt());
         message.setMethodId(in.readInt());
@@ -124,7 +124,7 @@ public class JavaMessageSerializer implements MessageSerializer
                     }
                     else if (obj instanceof ActorObserver)
                     {
-                        final ActorObserver objectReference = runtime.registerObserver(null, (ActorObserver) obj);
+                        ActorObserver objectReference = runtime.registerObserver(null, (ActorObserver) obj);
                         reference = (RemoteReference) objectReference;
                     }
                     else
@@ -136,7 +136,7 @@ public class JavaMessageSerializer implements MessageSerializer
                 {
                     reference = (RemoteReference) obj;
                 }
-                final ReferenceReplacement replacement = new ReferenceReplacement();
+                ReferenceReplacement replacement = new ReferenceReplacement();
                 replacement.address = reference.address;
                 replacement.interfaceClass = reference._interfaceClass();
                 replacement.id = reference.id;
