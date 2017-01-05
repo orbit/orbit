@@ -59,4 +59,10 @@ public class RemoteKey implements Serializable
         result = 31 * result + id.hashCode();
         return result;
     }
+
+    @Override
+    public String toString()
+    {
+        return iClass + "/" + id;
+    }
 }
