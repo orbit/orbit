@@ -86,6 +86,13 @@ public interface ClusterPeer
     Task<?> join(String clusterName, String nodeName);
 
     /**
+     * Pulses with the stage pulse
+     *
+     * @return future representing the completion of the pulse
+     */
+    default Task pulse() {return Task.done(); }
+
+    /**
      * Leaves the cluster.
      */
     void leave();

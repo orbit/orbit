@@ -2,7 +2,7 @@
 =======
 [![Release](https://img.shields.io/github/release/orbit/orbit.svg)](https://github.com/orbit/orbit/releases)
 [![Maven Central](https://img.shields.io/maven-central/v/cloud.orbit/orbit-runtime.svg)](https://repo1.maven.org/maven2/cloud/orbit/)
-[![Javadocs](https://img.shields.io/maven-central/v/cloud.orbit/orbit-runtime.svg?label=javadocs)](https://github.com/orbit/orbit/wiki/Javadocs)
+[![Javadocs](http://www.javadoc.io/badge/cloud.orbit/orbit-runtime.svg)](https://github.com/orbit/orbit/wiki/Javadocs)
 [![Build Status](https://img.shields.io/travis/orbit/orbit.svg)](https://travis-ci.org/orbit/orbit)
 [![Gitter](https://img.shields.io/badge/style-Join_Chat-ff69b4.svg?style=flat&label=gitter)](https://gitter.im/orbit/orbit)
 [![Twitter Follow](https://img.shields.io/twitter/follow/OrbitFramework.svg?style=flat&maxAge=86400)](https://twitter.com/orbitframework)
