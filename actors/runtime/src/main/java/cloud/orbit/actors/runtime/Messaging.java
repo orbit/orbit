@@ -163,6 +163,10 @@ public class Messaging extends HandlerAdapter implements Startable
             networkMessagesReceived.increment();
             final int messageType = message.getMessageType();
             final int messageId = message.getMessageId();
+            if (logger.isTraceEnabled())
+            {
+                logger.trace("message received: " + message.getMessageId() + " " + message.getMessageType() + "\r\n");
+            }
             final NodeAddress fromNode = message.getFromNode();
             switch (messageType)
             {

@@ -29,6 +29,9 @@
 package cloud.orbit.actors.server.streams;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.peer.streams.ClientSideStreamProxy;
 import cloud.orbit.actors.peer.streams.ServerSideStreamProxy;
@@ -50,6 +53,7 @@ import static com.ea.async.Async.await;
 
 public class ServerSideStreamProxyImpl implements ServerSideStreamProxy, Startable
 {
+    private Logger logger = LoggerFactory.getLogger(ServerSideStreamProxyImpl.class);
     private Stage stage;
     private ConcurrentMap<StreamSubscriptionHandle, SubscriptionInfo> handleMap = new ConcurrentHashMap<>();
     private ServerPeer peer;
@@ -58,6 +62,7 @@ public class ServerSideStreamProxyImpl implements ServerSideStreamProxy, Startab
     @SuppressWarnings("unchecked")
     public <T> Task<StreamSubscriptionHandle<T>> subscribe(final String provider, final int dataClassId, final String streamId, final ClientSideStreamProxy proxy)
     {
+        logger.debug("Subscribing server side stream proxy.");
         Class<?> dataClass = DefaultClassDictionary.get().getClassById(dataClassId);
         AsyncStream<?> stream = stage.getStream(provider, dataClass, streamId);
 
@@ -72,6 +77,7 @@ public class ServerSideStreamProxyImpl implements ServerSideStreamProxy, Startab
         await(subscription);
         final StreamReference.SimpleStreamHandle<T> handle = new StreamReference.SimpleStreamHandle<>(String.valueOf(IdUtils.sequentialLongId()));
         handleMap.putIfAbsent(handle, new SubscriptionInfo(stream, subscription.join(), proxy));
+        logger.debug("Successfully subscribed server stream proxy.");
         return Task.fromValue(handle);
     }
 
@@ -84,13 +90,14 @@ public class ServerSideStreamProxyImpl implements ServerSideStreamProxy, Startab
         {
             throw new IllegalArgumentException("Not subscribed " + handle);
         }
-
+        logger.debug("Unsubscribed server stream proxy.");
         return subscriptionInfo.stream.unsubscribe(subscriptionInfo.actualHandle);
     }
 
     @Override
     public Task<?> start()
     {
+        logger.info("Starting server stream proxy.");
         peer.registerObserver(ServerSideStreamProxy.class, "0", this);
         return Task.done();
     }
@@ -99,6 +106,7 @@ public class ServerSideStreamProxyImpl implements ServerSideStreamProxy, Startab
     @SuppressWarnings("unchecked")
     public Task<?> stop()
     {
+        logger.info("Stopping server stream proxy.");
         return Task.allOf(handleMap.values().stream().map(s -> s.stream.unsubscribe(s.actualHandle)));
     }
 

@@ -174,6 +174,10 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     @Override
     public Task<Void> nodeModeChanged(final NodeAddress nodeAddress, final NodeState newState)
     {
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("Node state changed to be: {}.", newState);
+        }
         final NodeInfo node = activeNodes.get(nodeAddress);
         if (node != null)
         {
@@ -190,6 +194,10 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     @Override
     public Task<Void> moved(RemoteReference remoteReference, NodeAddress oldAddress, NodeAddress newAddress)
     {
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("Move {} to from {} to {}.", remoteReference, oldAddress, newAddress);
+        }
         setCachedAddress(remoteReference, Task.fromValue(newAddress));
         return Task.done();
     }
@@ -197,6 +205,10 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     @Override
     public Task<Void> remove(final RemoteReference<?> remoteReference)
     {
+        if (logger.isDebugEnabled())
+        {
+            logger.debug("Remove {} from this node.", remoteReference);
+        }
         localAddressCache.remove(remoteReference);
         return Task.done();
     }
@@ -454,6 +466,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 {
                     return null;
                 }
+                logger.warn("No node available at the moment to place actor: {}.", interfaceClassName);
                 waitForServers();
             }
             else
@@ -670,6 +683,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                             }
                             catch (RuntimeException ignore)
                             {
+                                logger.error("Got exception when trying to move an actor.", ignore);
                             }
                         }
                         // forwards the message to somewhere else.

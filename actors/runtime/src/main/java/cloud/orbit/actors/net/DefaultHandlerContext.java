@@ -127,6 +127,7 @@ public class DefaultHandlerContext implements HandlerContext
     @Override
     public Task connect(final Object param)
     {
+        logger.debug("Connecting handler {}...", name);
         try
         {
             return outbound.handler.connect(outbound, param);

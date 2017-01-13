@@ -459,6 +459,7 @@ public class Stage implements Startable, ActorRuntime
 
     public Task<?> start()
     {
+        logger.info("Starting Stage...");
         extensions = new ArrayList<>(extensions);
         startCalled = true;
         if (state != null)
@@ -621,10 +622,14 @@ public class Stage implements Startable, ActorRuntime
             extensions.add(lifetimeExtension);
         }
 
+        logger.debug("Starting messaging...");
         messaging.start();
+        logger.debug("Starting hosting...");
         hosting.start();
+        logger.debug("Starting execution...");
         execution.start();
 
+        logger.debug("Starting extensions...");
         await(Task.allOf(extensions.stream().map(Startable::start)));
 
         Task<Void> future = pipeline.connect(null);
@@ -662,10 +667,9 @@ public class Stage implements Startable, ActorRuntime
             }
         });
         await(startPromise);
-        if (logger.isDebugEnabled())
-        {
-            logger.debug("Stage started [{}]", runtimeIdentity());
-        }
+
+        logger.info("Stage started [{}]", runtimeIdentity());
+
         return Task.done();
     }
 
