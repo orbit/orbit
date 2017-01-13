@@ -67,6 +67,7 @@ public class ClusterHandler extends HandlerAdapter
     @Override
     public Task connect(final HandlerContext ctx, final Object param) throws Exception
     {
+        logger.info("Connecting handler ClusterHandler...");
         clusterPeer.registerMessageReceiver((n, m) -> ctx.fireRead(Pair.of(n, m)));
         return clusterPeer.join(clusterName, nodeName).thenRun(() ->
                 {
@@ -85,6 +86,7 @@ public class ClusterHandler extends HandlerAdapter
     @Override
     public Task close(final HandlerContext ctx) throws Exception
     {
+        logger.info("Closing ClusterHandler... ");
         clusterPeer.leave();
         return super.close(ctx);
     }
