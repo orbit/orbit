@@ -74,7 +74,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
         final Task<R> completion = new Task<>();
 
         int queueSize = size.get();
-        if (DEBUG_ENABLED && queueSize >= maxQueueSize / 10)
+        if (DEBUG_ENABLED && queueSize >= maxQueueSize / 10 && queueSize % 1000 == 0)
         {
             logger.debug("Queued " + queueSize + " / " + maxQueueSize + " for " + key);
         }
