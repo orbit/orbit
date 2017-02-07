@@ -234,6 +234,10 @@ public class Stage implements Startable, ActorRuntime
         private List<ActorExtension> extensions = new ArrayList<>();
         private Set<String> stickyHeaders = new HashSet<>();
 
+        private Long actorTTLMillis = null;
+        private Long deactivationTimeoutMillis;
+        private Integer concurrentDeactivations;
+
         private Timer timer;
 
         public Builder clock(Clock clock)
@@ -320,6 +324,24 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
+        public Builder actorTTL(final long duration, final TimeUnit timeUnit)
+        {
+            this.actorTTLMillis = timeUnit.toMillis(duration);
+            return this;
+        }
+
+        public Builder deactivationTimeout(final long duration, final TimeUnit timeUnit)
+        {
+            this.deactivationTimeoutMillis = timeUnit.toMillis(duration);
+            return this;
+        }
+
+        public Builder concurrentDeactivations(final int concurrentDeactivations)
+        {
+            this.concurrentDeactivations = concurrentDeactivations;
+            return this;
+        }
+
         public Stage build()
         {
             Stage stage = new Stage();
@@ -338,6 +360,9 @@ public class Stage implements Startable, ActorRuntime
             stage.setInvocationHandler(invocationHandler);
             stage.setMessaging(messaging);
             stage.addStickyHeaders(stickyHeaders);
+            if(actorTTLMillis != null) stage.setDefaultActorTTL(actorTTLMillis);
+            if(deactivationTimeoutMillis != null) stage.setDeactivationTimeout(deactivationTimeoutMillis);
+            if(concurrentDeactivations != null) stage.setConcurrentDeactivations(concurrentDeactivations);
             return stage;
         }
 
@@ -455,6 +480,21 @@ public class Stage implements Startable, ActorRuntime
     public Task<Void> getStartPromise()
     {
         return startPromise;
+    }
+
+    public void setConcurrentDeactivations(int concurrentDeactivations)
+    {
+        this.concurrentDeactivations = concurrentDeactivations;
+    }
+
+    public void setDefaultActorTTL(long defaultActorTTLMs)
+    {
+        this.defaultActorTTL = defaultActorTTLMs;
+    }
+
+    public void setDeactivationTimeout(long deactivationTimeoutMs)
+    {
+        this.deactivationTimeoutMillis = deactivationTimeoutMs;
     }
 
     public Task<?> start()
