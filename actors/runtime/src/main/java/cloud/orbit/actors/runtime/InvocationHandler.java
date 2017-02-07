@@ -69,11 +69,11 @@ public class InvocationHandler
         }
     }
 
-    public void afterInvoke(long startTimeMs, Invocation invocation, Method method)
+    public void afterInvoke(long startTimeNanos, Invocation invocation, Method method)
     {
         if (performanceLoggingEnabled && logger.isWarnEnabled())
         {
-            final long durationNanos = (System.nanoTime() - startTimeMs);
+            final long durationNanos = (System.nanoTime() - startTimeNanos);
             final double durationMs = durationNanos / 1_000_000.0;
             if (durationMs > slowInvokeThresholdMs)
             {
@@ -83,11 +83,11 @@ public class InvocationHandler
         }
     }
 
-    public void taskComplete(long startTimeMs, Invocation invocation, Method method)
+    public void taskComplete(long startTimeNanos, Invocation invocation, Method method)
     {
         if (performanceLoggingEnabled && logger.isWarnEnabled())
         {
-            final long durationNanos = (System.nanoTime() - startTimeMs);
+            final long durationNanos = (System.nanoTime() - startTimeNanos);
             final double durationMs = durationNanos / 1_000_000.0;
             if (durationMs > slowTaskThresholdMs)
             {
@@ -142,13 +142,13 @@ public class InvocationHandler
         {
             beforeInvoke(invocation, method);
             result = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
-            final long start = System.nanoTime();
-            afterInvoke(start, invocation, method);
+            final long startTimeNanos = System.nanoTime();
+            afterInvoke(startTimeNanos, invocation, method);
             if (invocation.getCompletion() != null)
             {
                 InternalUtils.linkFutures(result, invocation.getCompletion());
             }
-            result.thenAccept(n -> taskComplete(start, invocation, method)); // handle instead of thenAccept?
+            result.thenAccept(n -> taskComplete(startTimeNanos, invocation, method)); // handle instead of thenAccept?
         }
         else
         {
