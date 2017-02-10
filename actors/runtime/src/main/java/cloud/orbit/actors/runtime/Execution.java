@@ -120,7 +120,7 @@ public class Execution extends AbstractExecution implements Startable
         LocalObjects.LocalObjectEntry<Object> entry = objects.findLocalObjectByReference(invocation.getToReference());
         if (entry == null)
         {
-            objects.registerLocalObject(invocation.getToReference(), null);
+            objects.registerLocalObject(invocation.getToReference());
             entry = objects.findLocalObjectByReference(invocation.getToReference());
         }
         // queues the invocation
