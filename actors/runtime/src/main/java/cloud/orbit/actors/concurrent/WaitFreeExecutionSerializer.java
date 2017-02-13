@@ -28,17 +28,16 @@
 
 package cloud.orbit.actors.concurrent;
 
-import cloud.orbit.actors.runtime.InternalUtils;
-import cloud.orbit.concurrent.Task;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import cloud.orbit.actors.runtime.InternalUtils;
+import cloud.orbit.concurrent.Task;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.Supplier;
 
 /**
@@ -51,10 +50,16 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
     private static final Logger logger = LoggerFactory.getLogger(WaitFreeExecutionSerializer.class);
     private static final boolean DEBUG_ENABLED = logger.isDebugEnabled();
 
+    private static final AtomicIntegerFieldUpdater<WaitFreeExecutionSerializer> lockUpdater = AtomicIntegerFieldUpdater.newUpdater(WaitFreeExecutionSerializer.class, "lock");
+    private static final AtomicIntegerFieldUpdater<WaitFreeExecutionSerializer> sizeUpdater = AtomicIntegerFieldUpdater.newUpdater(WaitFreeExecutionSerializer.class, "size");
+
     private final ExecutorService executorService;
     private final ConcurrentLinkedQueue<Supplier<Task<?>>> queue = new ConcurrentLinkedQueue<>();
-    private final AtomicBoolean lock = new AtomicBoolean();
-    private final AtomicInteger size = new AtomicInteger();
+
+    @SuppressWarnings("FieldCanBeLocal")
+    private volatile int lock = 0;
+    @SuppressWarnings("FieldCanBeLocal")
+    private volatile int size = 0;
     private final Object key;
 
     public WaitFreeExecutionSerializer(final ExecutorService executorService)
@@ -73,7 +78,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
     {
         final Task<R> completion = new Task<>();
 
-        int queueSize = size.get();
+        int queueSize = size;
         if (DEBUG_ENABLED && queueSize >= maxQueueSize / 10)
         {
             logger.debug("Queued " + queueSize + " / " + maxQueueSize + " for " + key);
@@ -89,7 +94,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
         }
 
         // managing the size like this to avoid using ConcurrentLinkedQueue.size()
-        size.incrementAndGet();
+        sizeUpdater.incrementAndGet(this);
 
         tryExecute(false);
 
@@ -99,7 +104,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
     @Override
     public boolean isBusy()
     {
-        return lock.get() || !queue.isEmpty();
+        return lock == 1 || !queue.isEmpty();
     }
 
     /**
@@ -119,7 +124,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
             final Supplier<Task<?>> toRun = queue.poll();
             if (toRun != null)
             {
-                size.decrementAndGet();
+                sizeUpdater.decrementAndGet(this);
                 try
                 {
                     Task<?> taskFuture;
@@ -209,7 +214,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
 
     private void unlock()
     {
-        if (!lock.compareAndSet(true, false))
+        if (!lockUpdater.compareAndSet(this, 1, 0))
         {
             logger.error("Unlocking without having the lock");
         }
@@ -217,7 +222,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
 
     private boolean lock()
     {
-        return lock.compareAndSet(false, true);
+        return lockUpdater.compareAndSet(this, 0, 1);
     }
 
     private <T> void whenCompleteAsync(T result, Throwable error)
