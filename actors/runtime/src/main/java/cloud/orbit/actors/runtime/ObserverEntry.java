@@ -42,7 +42,6 @@ public class ObserverEntry<T> implements LocalObjects.LocalObjectEntry<T>
 
     public ObserverEntry(final RemoteReference reference, final T object)
     {
-
         this.reference = reference;
         this.object = new WeakReference<>(object);
     }
@@ -62,7 +61,7 @@ public class ObserverEntry<T> implements LocalObjects.LocalObjectEntry<T>
     @Override
     public <R> Task<R> run(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function)
     {
-        return function.apply(this);
+        return executionSerializer.offerJob(reference, () -> function.apply(ObserverEntry.this), 10000);
     }
 
     public void setExecutionSerializer(final MultiExecutionSerializer<Object> executionSerializer)
