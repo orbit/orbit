@@ -466,7 +466,10 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 {
                     return null;
                 }
-                logger.warn("No node available at the moment to place actor: {}.", interfaceClassName);
+                if (logger.isDebugEnabled())
+                {
+                    logger.debug("No node available at the moment to place actor: {}.", interfaceClassName);
+                }
                 waitForServers();
             }
             else
