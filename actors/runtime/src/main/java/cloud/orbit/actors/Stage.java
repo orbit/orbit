@@ -176,7 +176,7 @@ public class Stage implements Startable, ActorRuntime
     private MultiExecutionSerializer<Object> executionSerializer;
     private ActorClassFinder finder;
     private LoggerExtension loggerExtension;
-    private NodeCapabilities.NodeState state;
+    private volatile NodeCapabilities.NodeState state;
 
     @Config("orbit.actors.concurrentDeactivations")
     private int concurrentDeactivations = 16;
@@ -757,7 +757,7 @@ public class Stage implements Startable, ActorRuntime
         logger.debug("Start stopping pipeline");
         CompletableFuture<Void> notified = new CompletableFuture<>();
         // await must not be used directly on actor call otherwise shutdown may continue in execution thread and cause livelock
-        hosting.notifyStateChange().whenCompleteAsync((r, e) -> notified.complete(null));
+        hosting.notifyStateChange().whenCompleteAsync((r, e) -> notified.complete(null), r -> new Thread(r).start());
         await(notified);
 
         logger.debug("Stopping actors");
