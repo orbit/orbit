@@ -468,7 +468,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 }
                 if (logger.isDebugEnabled())
                 {
-                    logger.debug("No node available at the moment to place actor: {}.", interfaceClassName);
+                    logger.debug("No node available to activate actor: {}.", interfaceClassName);
                 }
                 waitForServers();
             }
@@ -510,19 +510,15 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     private void waitForServers()
     {
-        // waits for servers
         synchronized (serverNodesUpdateMutex)
         {
-            if (serverNodes.size() == 0)
+            try
             {
-                try
-                {
-                    serverNodesUpdateMutex.wait(5);
-                }
-                catch (InterruptedException e)
-                {
-                    throw new UncheckedException(e);
-                }
+                serverNodesUpdateMutex.wait(2500);
+            }
+            catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
             }
         }
     }
