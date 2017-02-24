@@ -1076,7 +1076,7 @@ public class Stage implements Startable, ActorRuntime
             @Override
             public void run()
             {
-                if (localActor.isDeactivated() || getState() != NodeCapabilities.NodeState.RUNNING)
+                if (localActor.isDeactivated())
                 {
                     cancel();
                     return;
@@ -1084,7 +1084,7 @@ public class Stage implements Startable, ActorRuntime
 
                 executionSerializer.offerJob(key,
                         () -> {
-                            if (localActor.isDeactivated() || getState() != NodeCapabilities.NodeState.RUNNING)
+                            if (localActor.isDeactivated())
                             {
                                 cancel();
                             }
