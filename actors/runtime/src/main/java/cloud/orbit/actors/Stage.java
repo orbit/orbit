@@ -225,6 +225,7 @@ public class Stage implements Startable, ActorRuntime
         private ClusterPeer clusterPeer;
         private Messaging messaging;
         private InvocationHandler invocationHandler;
+        private Execution execution;
 
         private String basePackages;
         private String clusterName;
@@ -250,6 +251,12 @@ public class Stage implements Startable, ActorRuntime
         public Builder executionPool(ExecutorService executionPool)
         {
             this.executionPool = executionPool;
+            return this;
+        }
+
+        public Builder execution(Execution execution)
+        {
+            this.execution = execution;
             return this;
         }
 
@@ -348,6 +355,7 @@ public class Stage implements Startable, ActorRuntime
             Stage stage = new Stage();
             stage.setClock(clock);
             stage.setExecutionPool(executionPool);
+            stage.setExecution(execution);
             stage.setObjectCloner(objectCloner);
             stage.setMessageLoopbackObjectCloner(messageLoopbackObjectCloner);
             stage.setBasePackages(basePackages);
@@ -412,6 +420,16 @@ public class Stage implements Startable, ActorRuntime
     public void setExecutionPoolSize(int defaultPoolSize)
     {
         this.executionPoolSize = defaultPoolSize;
+    }
+
+    public Execution getExecution()
+    {
+        return execution;
+    }
+
+    public void setExecution(Execution execution)
+    {
+        this.execution = execution;
     }
 
     public ExecutionObjectCloner getObjectCloner()
