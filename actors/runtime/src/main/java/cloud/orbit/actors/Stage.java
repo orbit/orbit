@@ -118,6 +118,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
@@ -175,7 +176,7 @@ public class Stage implements Startable, ActorRuntime
     private MultiExecutionSerializer<Object> executionSerializer;
     private ActorClassFinder finder;
     private LoggerExtension loggerExtension;
-    private NodeCapabilities.NodeState state;
+    private volatile NodeCapabilities.NodeState state;
 
     @Config("orbit.actors.concurrentDeactivations")
     private int concurrentDeactivations = 16;
@@ -733,7 +734,7 @@ public class Stage implements Startable, ActorRuntime
         this.extensions.add(extension);
     }
 
-
+    @Override
     public Task<?> stop()
     {
         if (getState() != NodeCapabilities.NodeState.RUNNING)
@@ -753,28 +754,31 @@ public class Stage implements Startable, ActorRuntime
         // * wait pending tasks execution
         // * stop the network
 
-        logger.debug("start stopping pipeline");
-        await(hosting.notifyStateChange());
+        logger.debug("Start stopping pipeline");
+        CompletableFuture<Void> notified = new CompletableFuture<>();
+        // await must not be used directly on actor call otherwise shutdown may continue in execution thread and cause livelock
+        hosting.notifyStateChange().whenCompleteAsync((r, e) -> notified.complete(null), r -> new Thread(r).start());
+        await(notified);
 
-        logger.debug("stopping actors");
+        logger.debug("Stopping actors");
         await(stopActors());
-        logger.debug("stopping timers");
+        logger.debug("Stopping timers");
         await(stopTimers());
         do
         {
             InternalUtils.sleep(250);
         } while (executionSerializer.isBusy());
-        logger.debug("closing pipeline");
+        logger.debug("Closing pipeline");
         await(pipeline.close());
 
-        logger.debug("stopping execution serializer");
+        logger.debug("Stopping execution serializer");
         executionSerializer.shutdown();
 
-        logger.debug("stopping extensions");
+        logger.debug("Stopping extensions");
         await(stopExtensions());
 
         state = NodeCapabilities.NodeState.STOPPED;
-        logger.debug("stop done");
+        logger.debug("Stop done");
 
         return Task.done();
     }

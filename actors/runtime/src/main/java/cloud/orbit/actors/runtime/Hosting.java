@@ -340,8 +340,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             }
             else
             {
-                final String interfaceClassName = interfaceClass.getName();
-                return selectNode(interfaceClassName, true);
+                return selectNode(interfaceClass.getName());
             }
         }
 
@@ -389,7 +388,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             if (nodeAddress == null)
             {
                 // If not, select randomly
-                nodeAddress = await(selectNode(interfaceClass.getName(), true));
+                nodeAddress = await(selectNode(interfaceClass.getName()));
             }
 
             // Push our selection to the distributed cache (if possible)
@@ -439,7 +438,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 String.valueOf(actorReference.id));
     }
 
-    private Task<NodeAddress> selectNode(final String interfaceClassName, boolean allowToBlock)
+    private Task<NodeAddress> selectNode(final String interfaceClassName)
     {
         List<NodeInfo> potentialNodes;
         long start = System.currentTimeMillis();
@@ -462,7 +461,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
             if (potentialNodes.size() == 0)
             {
-                if (!allowToBlock)
+                if (stage.getState() != NodeCapabilities.NodeState.RUNNING)
                 {
                     return null;
                 }
@@ -514,7 +513,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         {
             try
             {
-                serverNodesUpdateMutex.wait(2500);
+                serverNodesUpdateMutex.wait(1000);
             }
             catch (InterruptedException e)
             {
