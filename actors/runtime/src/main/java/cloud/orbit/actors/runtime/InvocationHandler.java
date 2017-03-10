@@ -97,6 +97,8 @@ public class InvocationHandler
         }
     }
 
+    public void taskCompleteExceptionally(Throwable ex) {}
+
     @SuppressWarnings("unchecked")
     public Task<Object> invoke(Stage runtime, AnnotationCache<Reentrant> reentrantCache, Invocation invocation, LocalObjects.LocalObjectEntry entry, LocalObjects.LocalObjectEntry target, ObjectInvoker invoker)
     {
@@ -148,7 +150,15 @@ public class InvocationHandler
             {
                 InternalUtils.linkFutures(result, invocation.getCompletion());
             }
-            result.thenAccept(n -> taskComplete(start, invocation, method)); // handle instead of thenAccept?
+
+            result.handle( (n,ex) -> {
+                if(ex == null) {
+                    taskComplete(start, invocation, method);
+                } else {
+                    taskCompleteExceptionally(ex);
+                }
+                return Task.done();
+            });
         }
         else
         {
