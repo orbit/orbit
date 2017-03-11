@@ -49,7 +49,7 @@ import static com.ea.async.Async.await;
 public class InvocationHandler
 {
     private static final Logger logger = LoggerFactory.getLogger(InvocationHandler.class);
-    private ConcurrentMap<Stage, List<InvocationHandlerExtension>> handlerExtensionCache = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, List<InvocationHandlerExtension>> handlerExtensionCache = new ConcurrentHashMap<>();
 
     private final AnnotationCache<Reentrant> reentrantCache = new AnnotationCache<>(Reentrant.class);
 
@@ -202,10 +202,12 @@ public class InvocationHandler
     }
 
     private List<InvocationHandlerExtension> getCachedHandlerExtensions(final Stage stage) {
-        List<InvocationHandlerExtension> invocationHandlerExtensions = handlerExtensionCache.get(stage);
+        final String identity = stage.runtimeIdentity();
+
+        List<InvocationHandlerExtension> invocationHandlerExtensions = handlerExtensionCache.get(identity);
         if(invocationHandlerExtensions == null) {
             invocationHandlerExtensions = Collections.unmodifiableList(stage.getAllExtensions(InvocationHandlerExtension.class));
-            handlerExtensionCache.putIfAbsent(stage, invocationHandlerExtensions);
+            handlerExtensionCache.putIfAbsent(identity, invocationHandlerExtensions);
         }
         return invocationHandlerExtensions;
     }
