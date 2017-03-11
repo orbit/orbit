@@ -28,6 +28,8 @@
 
 package cloud.orbit.actors.test.reentrant;
 
+import org.junit.Test;
+
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.annotation.Reentrant;
@@ -35,8 +37,6 @@ import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.test.ActorBaseTest;
 import cloud.orbit.actors.test.FakeSync;
 import cloud.orbit.concurrent.Task;
-
-import org.junit.Test;
 
 import javax.inject.Inject;
 
@@ -49,6 +49,7 @@ import static org.junit.Assert.fail;
 /**
  * @author Johno Crawford (johno@sulake.com)
  */
+
 public class ReentrantTest extends ActorBaseTest
 {
     public interface ReentrantActor extends Actor
