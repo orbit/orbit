@@ -12,7 +12,7 @@ public class RandomSelectorExtension implements NodeSelectorExtension
     private final Random random = new Random();
 
     @Override
-    public NodeInfo select(final NodeAddress localAddress, final List<NodeInfo> potentialNodes)
+    public NodeInfo select(final String interfaceClassName, final NodeAddress localAddress, final List<NodeInfo> potentialNodes)
     {
       return potentialNodes.get(random.nextInt(potentialNodes.size()));
     }

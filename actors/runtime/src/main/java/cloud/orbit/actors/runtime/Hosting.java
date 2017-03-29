@@ -468,7 +468,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             }
             else
             {
-                final NodeInfo nodeInfo = nodeSelector.select(getNodeAddress(), potentialNodes);
+                final NodeInfo nodeInfo = nodeSelector.select(interfaceClassName, getNodeAddress(), potentialNodes);
 
                 Integer canActivate = nodeInfo.canActivate.get(interfaceClassName);
                 if (canActivate == null)
