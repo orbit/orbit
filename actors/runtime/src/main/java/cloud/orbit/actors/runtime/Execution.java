@@ -30,12 +30,10 @@ package cloud.orbit.actors.runtime;
 
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
-import cloud.orbit.actors.annotation.Reentrant;
 import cloud.orbit.actors.exceptions.ObserverNotFound;
 import cloud.orbit.actors.net.HandlerContext;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.lifecycle.Startable;
-import cloud.orbit.util.AnnotationCache;
 
 import java.util.Objects;
 
@@ -45,8 +43,6 @@ public class Execution extends AbstractExecution implements Startable
     private LocalObjects objects;
 
     private InvocationHandler invocationHandler;
-
-    private final AnnotationCache<Reentrant> reentrantCache = new AnnotationCache<>(Reentrant.class);
 
     @Override
     public Task<Void> cleanup()
@@ -120,7 +116,7 @@ public class Execution extends AbstractExecution implements Startable
         LocalObjects.LocalObjectEntry<Object> entry = objects.findLocalObjectByReference(invocation.getToReference());
         if (entry == null)
         {
-            objects.registerLocalObject(invocation.getToReference(), null);
+            objects.registerLocalObject(invocation.getToReference());
             entry = objects.findLocalObjectByReference(invocation.getToReference());
         }
         // queues the invocation
@@ -164,7 +160,7 @@ public class Execution extends AbstractExecution implements Startable
             }
 
             final ObjectInvoker invoker = DefaultDescriptorFactory.get().getInvoker(target.getObject().getClass());
-            return invocationHandler.invoke(runtime, reentrantCache, invocation, entry, target, invoker);
+            return invocationHandler.invoke(runtime, invocation, entry, target, invoker);
         }
         catch (Throwable exception)
         {

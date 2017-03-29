@@ -28,6 +28,8 @@
 
 package cloud.orbit.actors.test.reentrant;
 
+import org.junit.Test;
+
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.annotation.Reentrant;
@@ -35,8 +37,6 @@ import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.test.ActorBaseTest;
 import cloud.orbit.actors.test.FakeSync;
 import cloud.orbit.concurrent.Task;
-
-import org.junit.Test;
 
 import javax.inject.Inject;
 
@@ -49,6 +49,7 @@ import static org.junit.Assert.fail;
 /**
  * @author Johno Crawford (johno@sulake.com)
  */
+
 public class ReentrantTest extends ActorBaseTest
 {
     public interface ReentrantActor extends Actor
@@ -58,8 +59,6 @@ public class ReentrantTest extends ActorBaseTest
         Task<Void> doSomething2(String goStr);
 
         Task<Void> doSomething3();
-
-        Task<Void> doSomething4();
     }
 
     public static class ReentrantActorImpl extends AbstractActor implements ReentrantActor
@@ -89,13 +88,6 @@ public class ReentrantTest extends ActorBaseTest
 
         @Override
         public Task<Void> doSomething3()
-        {
-            return Task.done();
-        }
-
-        @Override
-        @Reentrant
-        public Task<Void> doSomething4()
         {
             return Task.done();
         }
@@ -157,24 +149,6 @@ public class ReentrantTest extends ActorBaseTest
             }
             task1.get(5, TimeUnit.SECONDS);
             task2.get(5, TimeUnit.SECONDS);
-        }
-        finally
-        {
-            stage1.stop().join();
-        }
-    }
-
-    @Test(timeout = 10000)
-    public void testReentrantChain() throws Exception
-    {
-        Stage stage1 = createStage();
-        try
-        {
-            ReentrantActor actor = Actor.getReference(ReentrantActor.class, "1");
-            Task task1 = actor.doSomething4().thenCompose(x -> {
-                return actor.doSomething3();
-            });
-            task1.get(5, TimeUnit.SECONDS);
         }
         finally
         {

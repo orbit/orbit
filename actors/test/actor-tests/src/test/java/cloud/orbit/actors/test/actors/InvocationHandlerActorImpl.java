@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -26,46 +26,16 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.runtime;
+package cloud.orbit.actors.test.actors;
 
-import cloud.orbit.actors.concurrent.MultiExecutionSerializer;
+import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.concurrent.Task;
-import cloud.orbit.concurrent.TaskFunction;
 
-import java.lang.ref.WeakReference;
-
-public class ObserverEntry<T> implements LocalObjects.LocalObjectEntry<T>
+public class InvocationHandlerActorImpl extends AbstractActor implements InvocationHandlerActor
 {
-    private final RemoteReference<T> reference;
-    private final WeakReference<T> object;
-    private MultiExecutionSerializer<Object> executionSerializer;
-
-    public ObserverEntry(final RemoteReference reference, final T object)
-    {
-        this.reference = reference;
-        this.object = new WeakReference<>(object);
-    }
-
     @Override
-    public RemoteReference<T> getRemoteReference()
+    public Task<String> poke()
     {
-        return reference;
-    }
-
-    @Override
-    public T getObject()
-    {
-        return object.get();
-    }
-
-    @Override
-    public <R> Task<R> run(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function)
-    {
-        return executionSerializer.offerJob(reference, () -> function.apply(ObserverEntry.this), 10000);
-    }
-
-    public void setExecutionSerializer(final MultiExecutionSerializer<Object> executionSerializer)
-    {
-        this.executionSerializer = executionSerializer;
+        return Task.fromValue("invocationHandlerResult");
     }
 }

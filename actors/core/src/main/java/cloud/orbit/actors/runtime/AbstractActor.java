@@ -168,7 +168,7 @@ public abstract class AbstractActor<T>
 
     /**
      * Registers a timer for the current actor. The timer is automatically disposed ondeactivation.
-     * The timer calls will keep the actor active. Timer calls are serialized according to the actor policy.
+     * The timer calls will not keep the actor active. Timer calls are serialized according to the actor policy.
      * Each stateless actor activation has it's on set of timers.
      *
      * @param futureCallable a callable that returns a Task
@@ -184,7 +184,7 @@ public abstract class AbstractActor<T>
 
     /**
      * Registers a single shot timer for the current actor. The timer is automatically disposed on deactivation.
-     * The timer calls will keep the actor active. Timer calls are serialized according to the actor policy.
+     * The timer calls will not keep the actor active. Timer calls are serialized according to the actor policy.
      * Each stateless actor activation has it's on set of timers.
      *
      * @param futureCallable a callable that returns a Task
@@ -240,8 +240,6 @@ public abstract class AbstractActor<T>
      *
      * @return unique identity string
      */
-
-    @Deprecated
     protected String actorIdentity()
     {
         return reference.id.toString();

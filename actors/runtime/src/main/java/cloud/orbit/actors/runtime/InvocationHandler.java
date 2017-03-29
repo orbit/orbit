@@ -28,19 +28,30 @@
 
 package cloud.orbit.actors.runtime;
 
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.annotation.Reentrant;
+import cloud.orbit.actors.extensions.InvocationHandlerExtension;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.util.AnnotationCache;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import static com.ea.async.Async.await;
 
 public class InvocationHandler
 {
     private static final Logger logger = LoggerFactory.getLogger(InvocationHandler.class);
+    private ConcurrentMap<String, List<InvocationHandlerExtension>> handlerExtensionCache = new ConcurrentHashMap<>();
+
+    private final AnnotationCache<Reentrant> reentrantCache = new AnnotationCache<>(Reentrant.class);
 
     private boolean performanceLoggingEnabled = true;
     private double slowInvokeThresholdMs = 250;
@@ -61,50 +72,49 @@ public class InvocationHandler
         this.slowTaskThresholdMs = slowTaskThresholdMs;
     }
 
-    public void beforeInvoke(Invocation invocation, Method method)
+    protected void beforeInvoke(Invocation invocation, @Nullable Method method)
     {
         if (logger.isDebugEnabled())
         {
-            logger.debug("Invoking: {}.{}", invocation.getToReference().toString(), method.getName());
+            logger.debug("Invoking: {}.{}", invocation.getToReference().toString(), method != null ? method.getName() : invocation.getMethodId());
         }
     }
 
-    public void afterInvoke(long startTimeMs, Invocation invocation, Method method)
+    protected void afterInvoke(long startTimeNanos, Invocation invocation, @Nullable Method method)
     {
         if (performanceLoggingEnabled && logger.isWarnEnabled())
         {
-            final long durationNanos = (System.nanoTime() - startTimeMs);
+            final long durationNanos = (System.nanoTime() - startTimeNanos);
             final double durationMs = durationNanos / 1_000_000.0;
             if (durationMs > slowInvokeThresholdMs)
             {
                 logger.warn("Slow task: {}. {} in {} ms",
-                        invocation.getToReference().toString(), method.getName(), durationMs);
+                        invocation.getToReference().toString(), method != null ? method.getName() : invocation.getMethodId(), durationMs);
             }
         }
     }
 
-    public void taskComplete(long startTimeMs, Invocation invocation, Method method)
+    protected void taskComplete(long startTimeNanos, Invocation invocation, @Nullable Method method)
     {
         if (performanceLoggingEnabled && logger.isWarnEnabled())
         {
-            final long durationNanos = (System.nanoTime() - startTimeMs);
+            final long durationNanos = (System.nanoTime() - startTimeNanos);
             final double durationMs = durationNanos / 1_000_000.0;
             if (durationMs > slowTaskThresholdMs)
             {
                 logger.warn("Slow chain: {}. {} in {} ms",
-                        invocation.getToReference().toString(), method.getName(), durationMs);
+                        invocation.getToReference().toString(), method != null ? method.getName() : invocation.getMethodId(), durationMs);
             }
         }
     }
 
-    public void taskCompleteExceptionally(Throwable ex) {}
 
-    @SuppressWarnings("unchecked")
-    public Task<Object> invoke(Stage runtime, AnnotationCache<Reentrant> reentrantCache, Invocation invocation, LocalObjects.LocalObjectEntry entry, LocalObjects.LocalObjectEntry target, ObjectInvoker invoker)
+    public Task<Object> invoke(final Stage runtime, final Invocation invocation, final LocalObjects.LocalObjectEntry entry, final LocalObjects.LocalObjectEntry target, final ObjectInvoker invoker)
     {
-        boolean reentrant = false;
+        runtime.bind();
 
-        final Method method;
+        final Method method = invoker.getMethod(invocation.getMethodId());
+        final boolean reentrant = reentrantCache.isAnnotated(method);
 
         final ActorTaskContext context = ActorTaskContext.current();
         if (context != null)
@@ -120,11 +130,8 @@ public class InvocationHandler
                 });
             }
 
-            method = invoker.getMethod(invocation.getMethodId());
-
-            if (reentrantCache.isAnnotated(method))
+            if (reentrant)
             {
-                reentrant = true;
                 context.setDefaultExecutor(r -> entry.run(o ->
                 {
                     r.run();
@@ -133,48 +140,75 @@ public class InvocationHandler
             }
             context.setRuntime(runtime);
         }
-        else
+
+        // Perform the internal invocation
+        final Task<Object> invokeResult = internalInvoke(runtime, invocation, entry, target, method, reentrant, invoker);
+
+        // Link the result to the completion promise
+        if (invocation.getCompletion() != null)
         {
-            method = null;
-            runtime.bind();
+            InternalUtils.linkFutures(invokeResult, invocation.getCompletion());
         }
 
-        final Task<Object> result;
-        if (method != null)
-        {
-            beforeInvoke(invocation, method);
-            result = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
-            final long start = System.nanoTime();
-            afterInvoke(start, invocation, method);
-            if (invocation.getCompletion() != null)
-            {
-                InternalUtils.linkFutures(result, invocation.getCompletion());
-            }
-
-            result.handle( (n,ex) -> {
-                if(ex == null) {
-                    taskComplete(start, invocation, method);
-                } else {
-                    taskCompleteExceptionally(ex);
-                }
-                return Task.done();
-            });
-        }
-        else
-        {
-            result = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
-            if (invocation.getCompletion() != null)
-            {
-                InternalUtils.linkFutures(result, invocation.getCompletion());
-            }
-        }
-
+        // If reentrant we say we are done
         if (reentrant)
         {
-            // let the execution serializer proceed if actor method blocks on a task
             return Task.fromValue(null);
         }
 
-        return result;
+        return invokeResult;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected Task<Object> internalInvoke(final Stage runtime, final Invocation invocation, final LocalObjects.LocalObjectEntry entry, final LocalObjects.LocalObjectEntry target, final Method method, final Boolean reentrant, final ObjectInvoker invoker)
+    {
+        final long startTimeNanos = System.nanoTime();
+        final List<InvocationHandlerExtension> invocationHandlerExtensions = getCachedHandlerExtensions(runtime);
+
+        // Before invoke actions
+        Task<?> beforeInvokeChain = Task.done();
+        for (InvocationHandlerExtension invocationHandlerExtension : invocationHandlerExtensions)
+        {
+            beforeInvokeChain = beforeInvokeChain.thenCompose(() -> invocationHandlerExtension.beforeInvoke(startTimeNanos, target.getObject(), method, invocation.getParams()));
+        }
+        await(beforeInvokeChain);
+        beforeInvoke(invocation, method);
+
+        // Real invoke
+        final Task<Object> invokeResult = invoker.safeInvoke(target.getObject(), invocation.getMethodId(), invocation.getParams());
+
+        // After invoke actions
+        afterInvoke(startTimeNanos, invocation, method);
+        Task<?> afterInvokeChain = Task.done();
+        for (InvocationHandlerExtension invocationHandlerExtension : invocationHandlerExtensions)
+        {
+            afterInvokeChain = afterInvokeChain.thenCompose(() -> invocationHandlerExtension.afterInvoke(startTimeNanos, target.getObject(), method, invocation.getParams()));
+        }
+        await(afterInvokeChain);
+
+        // After complete invoke chain actions
+        return invokeResult.thenCompose((o) ->
+        {
+            taskComplete(startTimeNanos, invocation, method);
+
+            Task<?> afterCompleteChain = Task.done();
+            for (InvocationHandlerExtension invocationHandlerExtension : invocationHandlerExtensions)
+            {
+                afterCompleteChain = afterCompleteChain.thenCompose(() -> invocationHandlerExtension.afterInvokeChain(startTimeNanos, target.getObject(), method, invocation.getParams()));
+            }
+
+            return afterCompleteChain.thenApply((f) -> o);
+        });
+    }
+
+    private List<InvocationHandlerExtension> getCachedHandlerExtensions(final Stage stage) {
+        final String identity = stage.runtimeIdentity();
+
+        List<InvocationHandlerExtension> invocationHandlerExtensions = handlerExtensionCache.get(identity);
+        if(invocationHandlerExtensions == null) {
+            invocationHandlerExtensions = Collections.unmodifiableList(stage.getAllExtensions(InvocationHandlerExtension.class));
+            handlerExtensionCache.putIfAbsent(identity, invocationHandlerExtensions);
+        }
+        return invocationHandlerExtensions;
     }
 }

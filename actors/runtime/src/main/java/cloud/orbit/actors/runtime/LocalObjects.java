@@ -144,12 +144,10 @@ public class LocalObjects
         return localObjects.get(RemoteReference.from(actor));
     }
 
-
     public LocalObjectEntry findLocalObjectByObject(Object object)
     {
         return objectMap.getIfPresent(object);
     }
-
 
     /**
      * Installs this remote object into this node with the given id.
@@ -166,37 +164,39 @@ public class LocalObjects
     @SuppressWarnings("unchecked")
     public <T> RemoteReference<T> getOrAddLocalObjectReference(NodeAddress address, Class<T> iClass, String objectId, final T object)
     {
-        final LocalObjectEntry localObject = objectMap.getIfPresent(object);
-
-        if (localObject != null)
-        {
-            final RemoteReference ref = localObject.getRemoteReference();
-            if (objectId != null && !java.util.Objects.equals(ref.id, objectId))
+        return objectMap.get(object, o -> {
+            RemoteReference reference = createReference(address, resolveObjectClass(iClass, (T) o), objectId != null ? objectId : IdUtils.urlSafeString(128));
+            final LocalObjectEntry existing = localObjects.get(reference);
+            if (existing != null)
             {
-                throw new IllegalArgumentException("Called twice with different ids: " + objectId + " != " + ((RemoteReference<?>) ref).id);
+                throw new IllegalArgumentException("Object clashes with a pre-existing object: " + reference);
             }
-            if (address != null && !java.util.Objects.equals(ref.address, address))
+            if (o != null)
             {
-                throw new IllegalArgumentException("Called twice with different addresses: " + address + " != " + ((RemoteReference<?>) ref).address);
+                LocalObjectEntry localObject = createLocalObjectEntry(reference, o);
+                final LocalObjectEntry previous = localObjects.putIfAbsent(reference, localObject);
+                if (previous != null && localObject != previous)
+                {
+                    if (!Objects.equals(reference, previous.getRemoteReference()))
+                    {
+                        throw new ConcurrentModificationException();
+                    }
+                    return previous;
+                }
+                return localObject;
             }
-            if (iClass != null && !java.util.Objects.equals(ref._interfaceClass(), iClass))
-            {
-                throw new IllegalArgumentException("Called twice with different Classes: " + iClass + " != " + ((RemoteReference<?>) ref)._interfaceClass());
-            }
-            return ref;
-        }
-        return registerLocalObject(address, iClass, objectId, object);
+            return registerLocalObject(reference);
+        }).getRemoteReference();
     }
 
     @SuppressWarnings("unchecked")
-    protected <T> RemoteReference<T> registerLocalObject(NodeAddress address, Class<T> iClass, String objectId, final T object)
+    <T> LocalObjectEntry registerLocalObject(RemoteReference reference) {
+          return localObjects.computeIfAbsent(reference, ref -> createLocalObjectEntry((RemoteReference<T>) ref, null));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Class<T> resolveObjectClass(Class<T> iClass, final T object)
     {
-        final LocalObjectEntry previousLocalObject = objectMap.getIfPresent(object);
-        if (previousLocalObject != null)
-        {
-            // perhaps should just return instead? modify if later code introduce concurrency issues
-            throw new IllegalArgumentException("Object already installed: " + previousLocalObject.getRemoteReference());
-        }
         if (iClass == null)
         {
             iClass = (Class) findRemoteInterface(ActorObserver.class, object);
@@ -209,11 +209,7 @@ public class LocalObjects
         {
             throw new IllegalArgumentException("Can't find a remote interface for " + object);
         }
-        final String actualObjectId = objectId != null ? objectId : IdUtils.urlSafeString(128);
-
-
-        final RemoteReference reference = createReference(address, iClass, actualObjectId);
-        return registerLocalObject(reference, object);
+        return iClass;
     }
 
     void registerEntry(Object key, LocalObjectEntry entry)
@@ -222,51 +218,7 @@ public class LocalObjects
         objectMap.put(key, entry);
     }
 
-
-    @SuppressWarnings("unchecked")
-    public <T> RemoteReference<T> registerLocalObject(RemoteReference reference, final T object)
-    {
-        if (object != null)
-        {
-            final LocalObjectEntry previousLocalObject = objectMap.getIfPresent(object);
-            if (previousLocalObject != null)
-            {
-                // perhaps should just return instead? modify if later code introduce concurrency issues
-                throw new IllegalArgumentException("Object already installed: " + previousLocalObject.getRemoteReference());
-            }
-        }
-
-        final LocalObjectEntry existing = localObjects.get(reference);
-        if (existing != null)
-        {
-            throw new IllegalArgumentException("Object clashes with a pre-existing object: " + reference);
-        }
-        final LocalObjectEntry localObject = createLocalObjectEntry(reference, object);
-        if (object != null)
-        {
-            final LocalObjectEntry other = objectMap.get(object, o -> localObject);
-            if (localObject != other)
-            {
-                if (!Objects.equals(reference, other.getRemoteReference()))
-                {
-                    throw new ConcurrentModificationException();
-                }
-                return other.getRemoteReference();
-            }
-        }
-        final LocalObjectEntry previous = localObjects.putIfAbsent(reference, localObject);
-        if (previous != null && localObject != previous)
-        {
-            if (!Objects.equals(reference, previous.getRemoteReference()))
-            {
-                throw new ConcurrentModificationException();
-            }
-            return previous.getRemoteReference();
-        }
-        return reference;
-    }
-
-    protected Class<?> findRemoteInterface(final Class<?> baseInterface, final Object instance)
+    private Class<?> findRemoteInterface(final Class<?> baseInterface, final Object instance)
     {
         for (final Class<?> aInterface : instance.getClass().getInterfaces())
         {

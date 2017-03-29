@@ -33,7 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <parent>
         <groupId>cloud.orbit</groupId>
         <artifactId>orbit-internal-parent</artifactId>
-        <version>0.9.15.1-SNAPSHOT</version>
+        <version>0.9.19-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>orbit-actors-parent</artifactId>
@@ -41,7 +41,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <name>Orbit Actors</name>
 
     <properties>
-        <caffeine.version>2.3.5</caffeine.version>
+        <caffeine.version>2.4.0</caffeine.version>
     </properties>
 
 
@@ -64,6 +64,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <groupId>com.ea.async</groupId>
             <artifactId>ea-async</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.intellij</groupId>
+            <artifactId>annotations</artifactId>
+            <version>12.0</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
