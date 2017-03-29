@@ -100,7 +100,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         </pluginManagement>
     </build>
 
-	<profiles>
+    <profiles>
         <profile>
             <id>withoutTests</id>
             <properties>
@@ -108,26 +108,5 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </properties>
         </profile>
     </profiles>
-    
-    <repositories>
-        <repository>
-            <id>ea-mobile-kitchener-releases</id>
-            <url>http://ktc-generation-nexus.eamobile.ad.ea.com/nexus/content/groups/ea-mobile-kitchener-development</url>
-        </repository>
-        <repository>
-            <id>ea-mobile-kitchener-snapshots</id>
-            <url>http://ktc-generation-nexus.eamobile.ad.ea.com/nexus/content/repositories/ea-mobile-kitchener-snapshots/</url>
-        </repository>
-    </repositories>
 
-    <distributionManagement>
-        <repository>
-            <id>ea-mobile-kitchener-releases</id>
-            <url>http://ktc-generation-nexus.eamobile.ad.ea.com/nexus/content/repositories/ea-mobile-kitchener-releases/</url>
-        </repository>
-        <snapshotRepository>
-            <id>ea-mobile-kitchener-snapshots</id>
-            <url>http://ktc-generation-nexus.eamobile.ad.ea.com/nexus/content/repositories/ea-mobile-kitchener-snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
 </project>
