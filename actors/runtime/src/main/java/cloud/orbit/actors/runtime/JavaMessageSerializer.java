@@ -45,6 +45,7 @@ import java.util.UUID;
  */
 public class JavaMessageSerializer implements MessageSerializer
 {
+    @Override
     public Message deserializeMessage(final BasicRuntime runtime, final InputStream inputStream) throws Exception
     {
         final ObjectInput in = createObjectInput(runtime, inputStream);
@@ -63,6 +64,7 @@ public class JavaMessageSerializer implements MessageSerializer
         return message;
     }
 
+    @Override
     public void serializeMessage(final BasicRuntime runtime, OutputStream outputStream, Message message) throws Exception
     {
         final ObjectOutput out = createObjectOutput(runtime, outputStream);

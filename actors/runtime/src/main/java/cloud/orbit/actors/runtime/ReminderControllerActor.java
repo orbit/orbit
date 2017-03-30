@@ -46,7 +46,7 @@ public class ReminderControllerActor extends AbstractActor<ReminderControllerAct
         public ConcurrentHashSet<ReminderEntry> reminders = new ConcurrentHashSet<>();
     }
 
-    private Map<ReminderEntry, Registration> local = new ConcurrentHashMap<>();
+    private final Map<ReminderEntry, Registration> local = new ConcurrentHashMap<>();
 
     @Override
     public Task<String> registerOrUpdateReminder(final Remindable actor, final String reminderName, final Date startAt, final long period, final TimeUnit timeUnit)
@@ -122,6 +122,7 @@ public class ReminderControllerActor extends AbstractActor<ReminderControllerAct
         return Task.done();
     }
 
+    @Override
     public Task<?> activateAsync()
     {
         getLogger().debug("activated");
@@ -130,6 +131,7 @@ public class ReminderControllerActor extends AbstractActor<ReminderControllerAct
                 () -> state.reminders.forEach(r -> registerLocalTimer(r)));
     }
 
+    @Override
     public Task<?> deactivateAsync()
     {
         local.values().forEach(r -> r.dispose());

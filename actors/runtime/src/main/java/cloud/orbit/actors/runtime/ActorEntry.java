@@ -107,7 +107,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
                 return Task.fromValue(null);
             }
         }
-        Object newInstance = runtime.getFirstExtension(LifetimeExtension.class).newInstance(concreteClass);
+        final Object newInstance = runtime.getFirstExtension(LifetimeExtension.class).newInstance(concreteClass);
         if (!AbstractActor.class.isInstance(newInstance))
         {
             throw new IllegalArgumentException(String.format("%s is not an actor class", concreteClass));
@@ -128,7 +128,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
             {
                 await(actor.readState());
             }
-            catch (Exception ex)
+            catch (final Exception ex)
             {
                 if (actor.logger.isErrorEnabled())
                 {
@@ -141,7 +141,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
         {
             await(actor.activateAsync());
         }
-        catch (Exception ex)
+        catch (final Exception ex)
         {
             if (actor.logger.isErrorEnabled())
             {
@@ -167,7 +167,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
             }
             return executionSerializer.offerJob(key, () -> doDeactivate(), 10000);
         }
-        catch (Throwable ex)
+        catch (final Throwable ex)
         {
             // this should never happen, but deactivate must't fail.
             ex.printStackTrace();
@@ -184,13 +184,13 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
                 await(deactivate(getObject()));
                 actor = null;
             }
-            catch (Throwable ex)
+            catch (final Throwable ex)
             {
                 try
                 {
                     getLogger().error("Error deactivating " + getRemoteReference(), ex);
                 }
-                catch (Throwable ex2)
+                catch (final Throwable ex2)
                 {
                     ex2.printStackTrace();
                     ex.printStackTrace();
@@ -208,7 +208,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
         {
             await(actor.deactivateAsync());
         }
-        catch (Throwable ex)
+        catch (final Throwable ex)
         {
             getLogger().error("Error on actor " + reference + " deactivation", ex);
         }

@@ -210,19 +210,19 @@ public class ActorFactoryGenerator
         {
             newClass = cc.getClassPool().toClass(cc, relatedClass.getClassLoader(), relatedClass.getProtectionDomain());
         }
-        catch (Exception ex)
+        catch (final Exception ex)
         {
             try
             {
                 newClass = relatedClass.getClassLoader().loadClass(cc.getName());
             }
-            catch (ClassNotFoundException e)
+            catch (final ClassNotFoundException e)
             {
                 throw new UncheckedException(e);
             }
         }
 
-        ConcurrentMap<String, Class> map = (ConcurrentMap<String, Class>) getRelatedClassMap(relatedClass);
+        final ConcurrentMap<String, Class> map = getRelatedClassMap(relatedClass);
         map.put(newClass.getName(), newClass);
         return newClass;
     }
@@ -262,7 +262,7 @@ public class ActorFactoryGenerator
             final Class<?> aClass = makeInvokerClass(concreteClass, concreteClass.getName() + "$ObjectInvoker");
             return (ObjectInvoker<Object>) aClass.newInstance();
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             throw new UncheckedException(e);
         }
@@ -285,8 +285,7 @@ public class ActorFactoryGenerator
             {
                 return clazz;
             }
-            ClassPool pool = classPool;
-
+            final ClassPool pool = classPool;
             final CtClass cc = pool.makeClass(invokerFullName);
             final String className = actorClass.getName();
             final CtClass ccInterface = pool.get(className);
@@ -324,7 +323,7 @@ public class ActorFactoryGenerator
                         .collect(Collectors.joining(","));
 
                 // get method
-                String methodField = methodId > 0 ? "m" + methodId : "m_" + Math.abs(methodId);
+                final String methodField = methodId > 0 ? "m" + methodId : "m_" + Math.abs(methodId);
                 final String src = "private static java.lang.reflect.Method " + methodField + " = "
                         + className + ".class.getMethod(\"" + methodName + "\", "
                         + "new Class"
@@ -376,7 +375,7 @@ public class ActorFactoryGenerator
             try
             {
                 final Class<?> erased = GenericTypeReflector.erase(stateType);
-                Class<?> baseClass = erased.isInterface() ? Object.class : erased;
+                final Class<?> baseClass = erased.isInterface() ? Object.class : erased;
                 final String genericSignature = GenericUtils.toGenericSignature(stateType);
 
                 final ClassPool pool = classPool;
@@ -393,10 +392,10 @@ public class ActorFactoryGenerator
 
                 if (TransactionalState.class.isAssignableFrom(erased))
                 {
-                    StringBuilder invokerBody = new StringBuilder();
+                    final StringBuilder invokerBody = new StringBuilder();
                     invokerBody.append("{ switch($1.hashCode()) {");
                     int count = 0;
-                    for (CtMethod m : baseStateClass.getMethods())
+                    for (final CtMethod m : baseStateClass.getMethods())
                     {
                         if (m.hasAnnotation(TransactionalEvent.class))
                         {
@@ -466,7 +465,7 @@ public class ActorFactoryGenerator
                 }
                 return loadClass(cc, actorClass);
             }
-            catch (Exception ex)
+            catch (final Exception ex)
             {
                 throw new UncheckedException("Don't know how to handle state: " + stateType.getTypeName(), ex);
             }

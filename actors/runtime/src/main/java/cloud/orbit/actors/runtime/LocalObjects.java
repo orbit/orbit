@@ -220,7 +220,7 @@ public class LocalObjects
 
     private Class<?> findRemoteInterface(final Class<?> baseInterface, final Object instance)
     {
-        for (Class<?> aInterface : instance.getClass().getInterfaces())
+        for (final Class<?> aInterface : instance.getClass().getInterfaces())
         {
             if (baseInterface.isAssignableFrom(aInterface))
             {

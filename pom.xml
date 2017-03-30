@@ -100,7 +100,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         </pluginManagement>
     </build>
 
-	<profiles>
+    <profiles>
         <profile>
             <id>withoutTests</id>
             <properties>
@@ -108,4 +108,5 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </properties>
         </profile>
     </profiles>
+
 </project>

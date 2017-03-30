@@ -63,7 +63,7 @@ public class ActorTaskContext extends TaskContext
 
     public static ActorTaskContext current()
     {
-        TaskContext current = TaskContext.current();
+        final TaskContext current = TaskContext.current();
         if (current instanceof ActorTaskContext)
         {
             return (ActorTaskContext) current;
@@ -79,7 +79,7 @@ public class ActorTaskContext extends TaskContext
      */
     public static ActorTaskContext currentFor(Thread thread)
     {
-        TaskContext current = TaskContext.currentFor(thread);
+        final TaskContext current = TaskContext.currentFor(thread);
         if (current instanceof ActorTaskContext)
         {
             return (ActorTaskContext) current;
@@ -99,7 +99,7 @@ public class ActorTaskContext extends TaskContext
 
     public ActorTaskContext cloneContext()
     {
-        ActorTaskContext tc = new ActorTaskContext();
+        final ActorTaskContext tc = new ActorTaskContext();
         tc.actor = actor;
         tc.runtime = runtime;
         tc.properties().putAll(properties());
@@ -108,7 +108,7 @@ public class ActorTaskContext extends TaskContext
 
     public static AbstractActor<?> currentActor()
     {
-        ActorTaskContext current = current();
+        final ActorTaskContext current = current();
         return current != null ? current.getActor() : null;
     }
 }

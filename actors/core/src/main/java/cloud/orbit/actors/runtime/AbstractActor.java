@@ -88,13 +88,13 @@ public abstract class AbstractActor<T>
     @SuppressWarnings({ "PMD.LooseCoupling", "unchecked" })
     protected void createDefaultState()
     {
-        Class<?> c = getStateClass();
+        final Class<?> c = getStateClass();
         try
         {
-            Object newState = (T) c.newInstance();
+            final Object newState = c.newInstance();
             this.state = (T) newState;
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             throw new UncheckedException(e);
         }
@@ -267,7 +267,7 @@ public abstract class AbstractActor<T>
 
     protected StreamProvider getStreamProvider(String name)
     {
-        StreamProvider provider = runtime.getStreamProvider(name);
+        final StreamProvider provider = runtime.getStreamProvider(name);
 
         // obs.: the actor runtime wraps the StreamProvider
         // to use an actor executor for call backs
