@@ -71,7 +71,7 @@ public class OrbitObjectOutputStream extends ObjectOutputStream
         {
             reference = (RemoteReference) obj;
         }
-        ReferenceReplacement replacement = new ReferenceReplacement();
+        final ReferenceReplacement replacement = new ReferenceReplacement();
         replacement.address = reference.address;
         replacement.interfaceClass = reference._interfaceClass();
         replacement.id = reference.id;
