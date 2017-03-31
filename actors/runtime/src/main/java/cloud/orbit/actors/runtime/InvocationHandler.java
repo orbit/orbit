@@ -108,6 +108,7 @@ public class InvocationHandler
         }
     }
 
+    protected void taskException(final Invocation invocation, @Nullable final Method method, final Throwable exception) {}
 
     public Task<Object> invoke(final Stage runtime, final Invocation invocation, final LocalObjects.LocalObjectEntry entry, final LocalObjects.LocalObjectEntry target, final ObjectInvoker invoker)
     {
@@ -186,11 +187,15 @@ public class InvocationHandler
         }
         await(afterInvokeChain);
 
+        invokeResult.exceptionally(exception->{
+            this.taskException(invocation, method, exception);
+            return null;
+        });
+
         // After complete invoke chain actions
         return invokeResult.thenCompose((o) ->
         {
             taskComplete(startTimeNanos, invocation, method);
-
             Task<?> afterCompleteChain = Task.done();
             for (InvocationHandlerExtension invocationHandlerExtension : invocationHandlerExtensions)
             {
