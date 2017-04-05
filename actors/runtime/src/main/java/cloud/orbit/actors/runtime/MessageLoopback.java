@@ -75,7 +75,7 @@ public class MessageLoopback extends NamedPipelineExtension
                     {
                         clonedPayload = cloner.clone(originalPayload);
                     }
-                    catch (Throwable e)
+                    catch (LinkageError | Exception e)
                     {
                         // Log clone errors as warnings
                         if (logger.isWarnEnabled())
