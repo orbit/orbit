@@ -28,52 +28,15 @@
 
 package cloud.orbit.actors.test.actors;
 
-import cloud.orbit.actors.Actor;
-import cloud.orbit.actors.runtime.AbstractActor;
-import cloud.orbit.concurrent.Task;
+import java.util.ArrayList;
+import java.util.List;
 
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-public class Parallel1Actor extends AbstractActor<Parallel1State> implements Parallel1
+public class Parallel1State
 {
-    private static final int NUM_ELEMENTS = 10_000_000;
+    private final List<Integer> list = new ArrayList<>();
 
-    @Override
-    public Task<?> activateAsync()
+    public List<Integer> getList()
     {
-        state().getList().addAll(IntStream.range(0, NUM_ELEMENTS).boxed().collect(Collectors.toList()));
-        return super.activateAsync();
-    }
-
-    @Override
-    public Task<Void> read() {
-        state().getList().forEach(i -> {
-        });
-        return Task.done();
-    }
-
-    @Override
-    public Task<Void> writeAttached() {
-        return this.otherActor().nothing().thenCompose(this::write);
-    }
-
-    @Override
-    public Task<Void> writeDetached() {
-        this.otherActor().nothing().thenCompose(this::write);
-        return Task.done();
-    }
-
-    private Parallel2 otherActor() {
-        return Actor.getReference(Parallel2.class, this.getIdentity());
-    }
-
-    private Task<Void> write() {
-        IntStream.range(0, NUM_ELEMENTS).forEach(i -> {
-            if (i % 10000 == 0) {
-                state().getList().remove(i);
-            }
-        });
-        return Task.done();
+        return list;
     }
 }
