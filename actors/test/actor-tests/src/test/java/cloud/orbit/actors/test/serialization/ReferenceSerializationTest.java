@@ -28,24 +28,19 @@
 
 package cloud.orbit.actors.test.serialization;
 
+import org.junit.Test;
 
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
-import cloud.orbit.actors.cluster.NodeAddressImpl;
 import cloud.orbit.actors.runtime.AbstractActor;
-import cloud.orbit.actors.runtime.RemoteKey;
 import cloud.orbit.actors.test.ActorBaseTest;
-import cloud.orbit.actors.test.FakeGroup;
 import cloud.orbit.actors.test.actors.Hello;
 import cloud.orbit.actors.test.actors.SomeMatch;
 import cloud.orbit.actors.test.actors.SomePlayer;
 import cloud.orbit.concurrent.Task;
 
-import org.junit.Test;
-
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,7 +49,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static com.ea.async.Async.await;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @SuppressWarnings("unused")
 public class ReferenceSerializationTest extends ActorBaseTest
@@ -146,42 +142,6 @@ public class ReferenceSerializationTest extends ActorBaseTest
         SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
         SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
         somePlayer.joinMatch(someMatch).join();
-    }
-
-    /**
-     * Asserts that no classes other than NodeAddress and ActorKey get into the distributed caches
-     */
-    @Test
-    public void distributedDirectoryClassesTest() throws ExecutionException, InterruptedException
-    {
-
-        Stage stage1 = createStage();
-        Stage client = createClient();
-        client.bind();
-        SomeMatch someMatch = Actor.getReference(SomeMatch.class, "300");
-        SomePlayer somePlayer = Actor.getReference(SomePlayer.class, "101");
-        somePlayer.joinMatch(someMatch).join();
-
-        Set<Class<?>> validClasses = new HashSet<>(Arrays.asList(RemoteKey.class, NodeAddressImpl.class, String.class));
-
-        for (Map.Entry e : FakeGroup.get(clusterName).getCaches().entrySet())
-        {
-            Map<Object, Object> cache = (Map) e.getValue();
-            for (Map.Entry e2 : cache.entrySet())
-            {
-                Object key = e2.getKey();
-                if (!validClasses.contains(key.getClass()))
-                {
-                    fail("Invalid class found in the distributed cache: " + key.getClass());
-                }
-
-                Object value = e2.getValue();
-                if (!validClasses.contains(value.getClass()))
-                {
-                    fail("Invalid class found in the distributed cache: " + value.getClass());
-                }
-            }
-        }
     }
 
     @Test

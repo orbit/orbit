@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -26,57 +26,46 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.runtime;
+package cloud.orbit.actors.cluster;
 
-class EntryKey
+import org.infinispan.Cache;
+
+import cloud.orbit.concurrent.Task;
+
+/**
+ * @author Johno Crawford (johno@sulake.com)
+ */
+final class InfinispanDistributedMap<K, V> implements DistributedMap<K, V>
 {
-    private int interfaceId;
-    private Object id;
 
-    EntryKey(final int interfaceId, final Object id)
+    private final Cache<K, V> cache;
+
+    InfinispanDistributedMap(final Cache<K, V> cache)
     {
-        this.interfaceId = interfaceId;
-        this.id = id;
+        this.cache = cache;
     }
 
     @Override
-    public boolean equals(final Object o)
+    public Task<V> putIfAbsent(final K key, final V value)
     {
-        if (this == o) return true;
-        if (!(o instanceof EntryKey)) return false;
-
-        final EntryKey entryKey = (EntryKey) o;
-
-        if (interfaceId != entryKey.interfaceId) return false;
-        if (id != null ? !id.equals(entryKey.id) : entryKey.id != null) return false;
-
-        return true;
+        return Task.fromValue(cache.putIfAbsent(key, value));
     }
 
     @Override
-    public int hashCode()
+    public Task<V> put(final K key, final V value)
     {
-        int result = interfaceId;
-        result = 31 * result + (id != null ? id.hashCode() : 0);
-        return result;
+        return Task.fromValue(cache.put(key, value));
     }
 
     @Override
-    public String toString()
+    public Task<V> get(final K key)
     {
-        return "EntryKey{" +
-                "interfaceId=" + interfaceId +
-                ", id=" + id +
-                '}';
+        return Task.fromValue(cache.get(key));
     }
 
-    public int getInterfaceId()
+    @Override
+    public Task<Boolean> remove(final K key, final V value)
     {
-        return interfaceId;
-    }
-
-    public Object getId()
-    {
-        return id;
+        return Task.fromValue(cache.remove(key, value));
     }
 }

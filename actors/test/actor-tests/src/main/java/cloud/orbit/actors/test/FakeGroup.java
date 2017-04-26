@@ -28,6 +28,7 @@
 
 package cloud.orbit.actors.test;
 
+import cloud.orbit.actors.cluster.DistributedMap;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.cluster.NodeAddressImpl;
 import cloud.orbit.concurrent.ExecutorUtils;
@@ -49,7 +50,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
@@ -71,16 +71,7 @@ public class FakeGroup
     private final Map<NodeAddress, FakeClusterPeer> currentChannels = new HashMap<>();
 
     private final Object topologyMutex = new Object();
-    @SuppressWarnings("rawtypes")
-    private final LoadingCache<String, ConcurrentMap> maps = Caffeine.newBuilder()
-            .build(new CacheLoader<String, ConcurrentMap>()
-            {
-                @Override
-                public ConcurrentMap load(final String key) throws Exception
-                {
-                    return new ConcurrentHashMap();
-                }
-            });
+    private final ConcurrentHashMap<String, DistributedMap> maps = new ConcurrentHashMap<>();
     private int count = 0;
     private String clusterName;
     private static Executor pool = ExecutorUtils.newScalingThreadPool(20);
@@ -110,7 +101,7 @@ public class FakeGroup
         return nodeAddress;
     }
 
-    public void leave(final FakeClusterPeer fakeClusterPeer)
+    public Task<?> leave(final FakeClusterPeer fakeClusterPeer)
     {
         List<CompletableFuture<?>> tasks;
         synchronized (topologyMutex)
@@ -119,17 +110,17 @@ public class FakeGroup
             final ArrayList<NodeAddress> newView = new ArrayList<>(currentChannels.keySet());
             tasks = currentChannels.values().stream().map(ch -> CompletableFuture.runAsync(() -> ch.onViewChanged(newView), pool)).collect(Collectors.toList());
         }
-        Task.allOf(tasks).join();
+        return Task.allOf(tasks);
     }
 
 
-    public void sendMessage(final NodeAddress from, final NodeAddress to, final byte[] buff)
+    public CompletableFuture<Void> sendMessage(final NodeAddress from, final NodeAddress to, final byte[] buff)
     {
         if (to == null)
         {
             throw new NullPointerException("Target address cannot be null");
         }
-        CompletableFuture.runAsync(() -> {
+        return CompletableFuture.runAsync(() -> {
             try
             {
                 final FakeClusterPeer fakeClusterPeer = currentChannels.get(to);
@@ -152,14 +143,36 @@ public class FakeGroup
     }
 
     @SuppressWarnings("unchecked")
-    public <K, V> ConcurrentMap<K, V> getCache(final String name)
+    public <K, V> DistributedMap<K, V> getCache(final String name)
     {
-        return maps.get(name);
-    }
+        return maps.computeIfAbsent(name, s -> new DistributedMap() {
 
-    public Map<String, ConcurrentMap> getCaches()
-    {
-        return maps.asMap();
+            private ConcurrentHashMap map = new ConcurrentHashMap();
+
+            @Override
+            public Task putIfAbsent(final Object key, final Object value)
+            {
+                return Task.fromValue(map.putIfAbsent(key, value));
+            }
+
+            @Override
+            public Task put(final Object key, final Object value)
+            {
+                return Task.fromValue(map.put(key, value));
+            }
+
+            @Override
+            public Task get(final Object key)
+            {
+                return Task.fromValue(map.get(key));
+            }
+
+            @Override
+            public Task<Boolean> remove(final Object key, final Object value)
+            {
+                return Task.fromValue(map.remove(key, value));
+            }
+        });
     }
 
     Executor pool()

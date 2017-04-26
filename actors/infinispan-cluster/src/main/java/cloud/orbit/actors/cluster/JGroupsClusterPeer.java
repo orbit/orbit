@@ -59,7 +59,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinTask;
 
 public class JGroupsClusterPeer implements ClusterPeer
@@ -71,6 +71,8 @@ public class JGroupsClusterPeer implements ClusterPeer
     private ForkChannel channel;
     private DefaultCacheManager cacheManager;
     private NodeInfo local;
+
+    private final ConcurrentHashMap<String, DistributedMap> caches = new ConcurrentHashMap<>();
 
     private NodeInfo master;
     private volatile Map<Address, NodeInfo> nodeMap = new HashMap<>();
@@ -114,6 +116,7 @@ public class JGroupsClusterPeer implements ClusterPeer
         }
     }
 
+    @Override
     public Task<?> join(final String clusterName, final String nodeName)
     {
         final ForkJoinTask<Address> f = ForkJoinTask.adapt(new Callable<Address>()
@@ -229,11 +232,12 @@ public class JGroupsClusterPeer implements ClusterPeer
     }
 
     @Override
-    public void leave()
+    public Task<?> leave()
     {
         channel.close();
         channel = null;
         cacheManager.stop();
+        return Task.done();
     }
 
     // ensures that the channel is connected
@@ -267,7 +271,8 @@ public class JGroupsClusterPeer implements ClusterPeer
     }
 
     @SuppressWarnings("PMD.AvoidThrowingNullPointerException")
-    public void sendMessage(NodeAddress address, byte message[])
+    @Override
+    public Task<Void> sendMessage(NodeAddress address, byte message[])
     {
         sync();
         try
@@ -284,17 +289,19 @@ public class JGroupsClusterPeer implements ClusterPeer
                 throw new IllegalStateException("Cluster not connected");
             }
             channel.send(node.address, message);
+            return Task.done();
         }
         catch (Exception e)
         {
-            throw new UncheckedException(e);
+            return Task.fromException(e);
         }
     }
 
     @Override
-    public <K, V> ConcurrentMap<K, V> getCache(final String name)
+    @SuppressWarnings("unchecked")
+    public <K, V> DistributedMap<K, V> getCache(final String name)
     {
-        return cacheManager.getCache(name);
+        return caches.computeIfAbsent(name, s -> new InfinispanDistributedMap<>(cacheManager.getCache(s)));
     }
 
     protected void doReceive(final Message msg)
