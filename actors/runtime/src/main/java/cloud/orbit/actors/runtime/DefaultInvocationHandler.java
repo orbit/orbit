@@ -58,7 +58,7 @@ public class DefaultInvocationHandler extends BasicInvocationHandler
         Task<?> beforeInvokeChain = Task.done();
         for (InvocationHandlerExtension invocationHandlerExtension : invocationHandlerExtensions)
         {
-            beforeInvokeChain = beforeInvokeChain.thenCompose(() -> invocationHandlerExtension.beforeInvoke(startTimeNanos, target.getObject(), method, invocation.getParams()));
+            beforeInvokeChain = beforeInvokeChain.thenCompose(() -> invocationHandlerExtension.beforeInvoke(startTimeNanos, target.getObject(), method, invocation.getParams(), invocation.getHeaders()));
         }
         await(beforeInvokeChain);
         beforeInvoke(invocation, method);
@@ -71,7 +71,7 @@ public class DefaultInvocationHandler extends BasicInvocationHandler
         Task<?> afterInvokeChain = Task.done();
         for (InvocationHandlerExtension invocationHandlerExtension : invocationHandlerExtensions)
         {
-            afterInvokeChain = afterInvokeChain.thenCompose(() -> invocationHandlerExtension.afterInvoke(startTimeNanos, target.getObject(), method, invocation.getParams()));
+            afterInvokeChain = afterInvokeChain.thenCompose(() -> invocationHandlerExtension.afterInvoke(startTimeNanos, target.getObject(), method, invocation.getParams(), invocation.getHeaders()));
         }
         await(afterInvokeChain);
 
@@ -83,7 +83,7 @@ public class DefaultInvocationHandler extends BasicInvocationHandler
             Task<?> afterCompleteChain = Task.done();
             for (InvocationHandlerExtension invocationHandlerExtension : invocationHandlerExtensions)
             {
-                afterCompleteChain = afterCompleteChain.thenCompose(() -> invocationHandlerExtension.afterInvokeChain(startTimeNanos, target.getObject(), method, invocation.getParams()));
+                afterCompleteChain = afterCompleteChain.thenCompose(() -> invocationHandlerExtension.afterInvokeChain(startTimeNanos, target.getObject(), method, invocation.getParams(), invocation.getHeaders()));
             }
 
             return afterCompleteChain.thenApply((f) -> o);

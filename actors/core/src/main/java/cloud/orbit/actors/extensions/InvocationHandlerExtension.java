@@ -31,6 +31,7 @@ package cloud.orbit.actors.extensions;
 import cloud.orbit.concurrent.Task;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 
 public interface InvocationHandlerExtension extends ActorExtension
 {
@@ -45,7 +46,7 @@ public interface InvocationHandlerExtension extends ActorExtension
      * @param params The parameters for the invocation
      * @return completed void task
      */
-    Task<Void> beforeInvoke(long startTimeNanos, Object targetObject, Method targetMethod, Object[] params);
+    Task<Void> beforeInvoke(long startTimeNanos, Object targetObject, Method targetMethod, Object[] params, Map<?, ?> invocationHeaders);
 
     /**
      * Called after an invocation is performed.
@@ -58,7 +59,7 @@ public interface InvocationHandlerExtension extends ActorExtension
      * @param params The parameters for the invocation
      * @return completed void task
      */
-    Task<Void> afterInvoke(long startTimeNanos, Object targetObject, Method targetMethod, Object[] params);
+    Task<Void> afterInvoke(long startTimeNanos, Object targetObject, Method targetMethod, Object[] params, Map<?, ?> invocationHeaders);
 
     /**
      * Called after an invocation chain has completed.
@@ -71,5 +72,5 @@ public interface InvocationHandlerExtension extends ActorExtension
      * @param params The parameters for the invocation
      * @return completed void task
      */
-    Task<Void> afterInvokeChain(long startTimeNanos, Object targetObject, Method targetMethod, Object[] params);
+    Task<Void> afterInvokeChain(long startTimeNanos, Object targetObject, Method targetMethod, Object[] params, Map<?, ?> invocationHeaders);
 }
