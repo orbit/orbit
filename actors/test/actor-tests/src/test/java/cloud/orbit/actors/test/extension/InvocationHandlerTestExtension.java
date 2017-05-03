@@ -37,12 +37,12 @@ import cloud.orbit.exception.UncheckedException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 
 public class InvocationHandlerTestExtension implements InvocationHandlerExtension
 {
     private AtomicBoolean acceptCalls = new AtomicBoolean(true);
-    private AtomicInteger callCount = new AtomicInteger(0);
+    private LongAdder callCount = new LongAdder();
 
     @Override
     public Task beforeInvoke(final long startTimeNanos, final Object targetObject, final Method targetMethod, final Object[] params, final Map<?, ?> invocationHeaders)
@@ -51,7 +51,7 @@ public class InvocationHandlerTestExtension implements InvocationHandlerExtensio
 
         if(!acceptCalls.get()) throw new UncheckedException("Not accepting calls");
 
-        callCount.incrementAndGet();
+        callCount.increment();
 
         return Task.done();
     }
@@ -63,7 +63,7 @@ public class InvocationHandlerTestExtension implements InvocationHandlerExtensio
 
         if(!acceptCalls.get()) throw new UncheckedException("Not accepting calls");
 
-        callCount.incrementAndGet();
+        callCount.increment();
 
         return Task.done();
     }
@@ -75,17 +75,17 @@ public class InvocationHandlerTestExtension implements InvocationHandlerExtensio
 
         if(!acceptCalls.get()) throw new UncheckedException("Not accepting calls");
 
-        callCount.incrementAndGet();
+        callCount.increment();
 
         return Task.done();
     }
 
     public void resetInvocationCount() {
-        callCount.set(0);
+        callCount.reset();
     }
 
-    public int getInvocationCount() {
-        return callCount.get();
+    public long getInvocationCount() {
+        return callCount.sum();
     }
 
     public void setAcceptCalls(final Boolean acceptCalls) {

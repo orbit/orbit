@@ -54,6 +54,7 @@ import cloud.orbit.actors.runtime.ActorTaskContext;
 import cloud.orbit.actors.runtime.AsyncStreamReference;
 import cloud.orbit.actors.runtime.BasicRuntime;
 import cloud.orbit.actors.runtime.ClusterHandler;
+import cloud.orbit.actors.runtime.DefaultInvocationHandler;
 import cloud.orbit.actors.runtime.FastActorClassFinder;
 import cloud.orbit.actors.runtime.DefaultLifetimeExtension;
 import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
@@ -224,6 +225,7 @@ public class Stage implements Startable, ActorRuntime
         private ExecutorService executionPool;
         private ExecutionObjectCloner objectCloner;
         private ExecutionObjectCloner messageLoopbackObjectCloner;
+        private MessageSerializer messageSerializer;
         private ClusterPeer clusterPeer;
         private Messaging messaging;
         private InvocationHandler invocationHandler;
@@ -271,6 +273,12 @@ public class Stage implements Startable, ActorRuntime
         public Builder objectCloner(ExecutionObjectCloner objectCloner)
         {
             this.objectCloner = objectCloner;
+            return this;
+        }
+
+        public Builder messageSerializer(MessageSerializer messageSerializer)
+        {
+            this.messageSerializer = messageSerializer;
             return this;
         }
 
@@ -360,6 +368,7 @@ public class Stage implements Startable, ActorRuntime
             stage.setExecution(execution);
             stage.setObjectCloner(objectCloner);
             stage.setMessageLoopbackObjectCloner(messageLoopbackObjectCloner);
+            stage.setMessageSerializer(messageSerializer);
             stage.setBasePackages(basePackages);
             stage.setClusterName(clusterName);
             stage.setClusterPeer(clusterPeer);
@@ -576,7 +585,7 @@ public class Stage implements Startable, ActorRuntime
         }
         if(invocationHandler == null)
         {
-            invocationHandler = new InvocationHandler();
+            invocationHandler = new DefaultInvocationHandler();
         }
         if (messageSerializer == null)
         {
