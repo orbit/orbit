@@ -532,7 +532,7 @@ public class Stage implements Startable, ActorRuntime
 
         if(timer == null)
         {
-            timer = new Timer("orbit-stage-timer");
+            timer = new Timer("OrbitTimer");
         }
 
         if (loggerExtension == null)
