@@ -86,7 +86,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private TreeMap<String, NodeInfo> consistentHashNodeTree = new TreeMap<>();
     private final AnnotationCache<OnlyIfActivated> onlyIfActivateCache = new AnnotationCache<>(OnlyIfActivated.class);
 
-    private CompletableFuture<Void> hostingActive = new Task<>();
+    private final CompletableFuture<Void> hostingActive = new Task<>();
 
     private int maxLocalAddressCacheCount = 10_000;
 
@@ -429,26 +429,25 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     private Task<NodeAddress> selectNode(final String interfaceClassName)
     {
-        List<NodeInfo> potentialNodes;
         final long start = System.currentTimeMillis();
 
         while (true)
         {
             if (System.currentTimeMillis() - start > timeToWaitForServersMillis)
             {
-                final String err = "Timeout waiting for a server capable of handling: " + interfaceClassName;
-                logger.error(err);
-                throw new UncheckedException(err);
+                final String timeoutMessage = "Timeout waiting for a server capable of handling: " + interfaceClassName;
+                logger.error(timeoutMessage);
+                throw new UncheckedException(timeoutMessage);
             }
 
             final List<NodeInfo> currentServerNodes = serverNodes;
 
-            potentialNodes = currentServerNodes.stream()
+            final List<NodeInfo> potentialNodes = currentServerNodes.stream()
                     .filter(n -> (!n.cannotHostActors && n.state == NodeState.RUNNING)
                             && actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, actorSupported_yes))
                     .collect(Collectors.toList());
 
-            if (potentialNodes.size() == 0)
+            if (potentialNodes.isEmpty())
             {
                 if (stage.getState() != NodeCapabilities.NodeState.RUNNING)
                 {

@@ -29,61 +29,63 @@
 package cloud.orbit.actors.test.extension;
 
 import cloud.orbit.actors.extensions.InvocationHandlerExtension;
+import cloud.orbit.actors.runtime.Invocation;
 import cloud.orbit.actors.test.actors.InvocationHandlerActorImpl;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.exception.UncheckedException;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 
 public class InvocationHandlerTestExtension implements InvocationHandlerExtension
 {
     private AtomicBoolean acceptCalls = new AtomicBoolean(true);
-    private AtomicInteger callCount = new AtomicInteger(0);
+    private LongAdder callCount = new LongAdder();
 
     @Override
-    public Task beforeInvoke(final long startTimeNanos, final Object targetObject, final Method targetMethod, final Object[] params)
+    public Task beforeInvoke(final long startTimeNanos, final Object targetObject, final Method targetMethod, final Object[] params, final Map<?, ?> invocationHeaders)
     {
         if(!(targetObject instanceof InvocationHandlerActorImpl)) return Task.done();
 
         if(!acceptCalls.get()) throw new UncheckedException("Not accepting calls");
 
-        callCount.incrementAndGet();
+        callCount.increment();
 
         return Task.done();
     }
 
     @Override
-    public Task afterInvoke(final long startTimeNanos, final Object targetObject, final Method targetMethod, final Object[] params)
+    public Task afterInvoke(final long startTimeNanos, final Object targetObject, final Method targetMethod, final Object[] params, final Map<?, ?> invocationHeaders)
     {
         if(!(targetObject instanceof InvocationHandlerActorImpl)) return Task.done();
 
         if(!acceptCalls.get()) throw new UncheckedException("Not accepting calls");
 
-        callCount.incrementAndGet();
+        callCount.increment();
 
         return Task.done();
     }
 
     @Override
-    public Task afterInvokeChain(final long startTimeNanos, final Object targetObject, final Method targetMethod, final Object[] params)
+    public Task afterInvokeChain(final long startTimeNanos, final Object targetObject, final Method targetMethod, final Object[] params, final Map<?, ?> invocationHeaders)
     {
         if(!(targetObject instanceof InvocationHandlerActorImpl)) return Task.done();
 
         if(!acceptCalls.get()) throw new UncheckedException("Not accepting calls");
 
-        callCount.incrementAndGet();
+        callCount.increment();
 
         return Task.done();
     }
 
     public void resetInvocationCount() {
-        callCount.set(0);
+        callCount.reset();
     }
 
-    public int getInvocationCount() {
-        return callCount.get();
+    public long getInvocationCount() {
+        return callCount.sum();
     }
 
     public void setAcceptCalls(final Boolean acceptCalls) {

@@ -284,4 +284,12 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
         return Task.done();
     }
 
+    @Override
+    public String toString()
+    {
+        return "ActorEntry{" +
+                "actor=" + actor +
+                ", key=" + key +
+                '}';
+    }
 }
