@@ -117,7 +117,7 @@ public class BasicInvocationHandler implements InvocationHandler
 
         afterInvoke(startTimeNanos, invocation, method);
 
-        invokeResult.whenComplete((o, throwable) -> taskComplete(startTimeNanos, invocation, method));
+        invokeResult.whenComplete((o, throwable) -> taskComplete(startTimeNanos, invocation, method, throwable));
 
         return invokeResult;
     }
@@ -134,7 +134,7 @@ public class BasicInvocationHandler implements InvocationHandler
     {
         if (performanceLoggingEnabled && logger.isWarnEnabled())
         {
-            final long durationNanos = (System.nanoTime() - startTimeNanos);
+            final long durationNanos = System.nanoTime() - startTimeNanos;
             final double durationMs = durationNanos / 1_000_000.0;
             if (durationMs > slowInvokeThresholdMs)
             {
@@ -143,17 +143,18 @@ public class BasicInvocationHandler implements InvocationHandler
             }
         }
     }
-
-    protected void taskComplete(long startTimeNanos, Invocation invocation, @Nullable Method method)
+    
+    protected void taskComplete(long startTimeNanos, Invocation invocation, @Nullable Method method, final Throwable throwable)
     {
         if (performanceLoggingEnabled && logger.isWarnEnabled())
         {
-            final long durationNanos = (System.nanoTime() - startTimeNanos);
+            final long durationNanos = System.nanoTime() - startTimeNanos;
             final double durationMs = durationNanos / 1_000_000.0;
             if (durationMs > slowTaskThresholdMs)
             {
-                logger.warn("Slow chain: {}. {} in {} ms",
-                        invocation.getToReference().toString(), method != null ? method.getName() : invocation.getMethodId(), durationMs);
+                final String withException = throwable != null ? " with exception: " + throwable.getMessage() : "";
+                logger.warn("Slow chain {}: {}. {} in {} ms", withException,
+                    invocation.getToReference().toString(), method != null ? method.getName() : invocation.getMethodId(), durationMs);
             }
         }
     }

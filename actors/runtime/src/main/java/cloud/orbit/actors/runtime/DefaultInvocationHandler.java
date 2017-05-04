@@ -76,10 +76,9 @@ public class DefaultInvocationHandler extends BasicInvocationHandler
         await(afterInvokeChain);
 
         // After complete invoke chain actions
+        invokeResult.whenComplete((o, throwable) -> taskComplete(startTimeNanos, invocation, method, throwable));
         return invokeResult.thenCompose((o) ->
         {
-            taskComplete(startTimeNanos, invocation, method);
-
             Task<?> afterCompleteChain = Task.done();
             for (InvocationHandlerExtension invocationHandlerExtension : invocationHandlerExtensions)
             {
