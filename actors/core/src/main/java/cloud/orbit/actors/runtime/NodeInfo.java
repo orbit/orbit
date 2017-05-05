@@ -13,6 +13,7 @@ public class NodeInfo
     NodeCapabilities nodeCapabilities;
     boolean cannotHostActors;
     final ConcurrentHashMap<String, Integer> canActivate = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<String, Boolean> canActivatePending = new ConcurrentHashMap<>();
 
     public NodeInfo(final NodeAddress address)
     {
