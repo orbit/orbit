@@ -38,6 +38,8 @@ import cloud.orbit.tuples.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.ea.async.Async.await;
+
 public class ClusterHandler extends HandlerAdapter
 {
     private static Logger logger = LoggerFactory.getLogger(ClusterHandler.class);
@@ -60,8 +62,7 @@ public class ClusterHandler extends HandlerAdapter
             return ctx.write(msg);
         }
         Pair<NodeAddress, byte[]> message = (Pair<NodeAddress, byte[]>) msg;
-        clusterPeer.sendMessage(message.getLeft(), message.getRight());
-        return Task.done();
+        return clusterPeer.sendMessage(message.getLeft(), message.getRight());
     }
 
     @Override
@@ -87,7 +88,7 @@ public class ClusterHandler extends HandlerAdapter
     public Task close(final HandlerContext ctx) throws Exception
     {
         logger.info("Closing ClusterHandler... ");
-        clusterPeer.leave();
+        await(clusterPeer.leave());
         return super.close(ctx);
     }
 }

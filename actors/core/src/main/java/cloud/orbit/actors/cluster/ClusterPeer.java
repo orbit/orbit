@@ -30,8 +30,6 @@ package cloud.orbit.actors.cluster;
 
 import cloud.orbit.concurrent.Task;
 
-import java.util.concurrent.ConcurrentMap;
-
 /**
  * Represents a node connection to a cluster of orbit actor nodes.
  */
@@ -64,7 +62,7 @@ public interface ClusterPeer
      * @param toAddress   the target node address
      * @param message the byte array representing the message
      */
-    void sendMessage(NodeAddress toAddress, byte[] message);
+    Task<?> sendMessage(NodeAddress toAddress, byte[] message);
 
     /**
      * Gets a reference to a distributed cache
@@ -74,7 +72,7 @@ public interface ClusterPeer
      * @param <V>  the cache value
      * @return a cache
      */
-    <K, V> ConcurrentMap<K, V> getCache(String name);
+    <K, V> DistributedMap<K, V> getCache(String name);
 
     /**
      * Joins a cluster
@@ -95,5 +93,5 @@ public interface ClusterPeer
     /**
      * Leaves the cluster.
      */
-    void leave();
+    Task<?> leave();
 }

@@ -29,6 +29,7 @@
 package cloud.orbit.actors.test;
 
 import cloud.orbit.actors.cluster.ClusterPeer;
+import cloud.orbit.actors.cluster.DistributedMap;
 import cloud.orbit.actors.cluster.MessageListener;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.cluster.ViewListener;
@@ -36,7 +37,6 @@ import cloud.orbit.concurrent.Task;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -73,9 +73,9 @@ public class FakeClusterPeer implements ClusterPeer
     }
 
     @Override
-    public void leave()
+    public Task<?> leave()
     {
-        group.leave(this);
+        return group.leave(this);
     }
 
     public void onViewChanged(final List<NodeAddress> newView)
@@ -108,18 +108,18 @@ public class FakeClusterPeer implements ClusterPeer
         this.messageListener = messageListener;
     }
 
-
     @Override
-    public void sendMessage(final NodeAddress to, final byte[] message)
+    public Task<Void> sendMessage(final NodeAddress to, final byte[] message)
     {
         startFuture.join();
         messagesSent.incrementAndGet();
-        group.sendMessage(address, to, message);
-        messagesSentOk.incrementAndGet();
+        return Task.from(group.sendMessage(address, to, message)).thenRun(() -> {
+            messagesSentOk.incrementAndGet();
+        });
     }
 
     @Override
-    public <K, V> ConcurrentMap<K, V> getCache(final String name)
+    public <K, V> DistributedMap<K, V> getCache(final String name)
     {
         return group.getCache(name);
     }
