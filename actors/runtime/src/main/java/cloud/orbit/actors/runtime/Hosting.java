@@ -435,30 +435,29 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     private Task<NodeAddress> selectNode(final String interfaceClassName)
     {
-        List<NodeInfo> potentialNodes;
         final long start = System.currentTimeMillis();
 
         while (true)
         {
             if (System.currentTimeMillis() - start > timeToWaitForServersMillis)
             {
-                final String err = "Timeout waiting for a server capable of handling: " + interfaceClassName;
-                logger.error(err);
-                throw new UncheckedException(err);
+                final String timeoutMessage = "Timeout waiting for a server capable of handling: " + interfaceClassName;
+                logger.error(timeoutMessage);
+                return Task.fromException(new UncheckedException(timeoutMessage));
             }
 
             final List<NodeInfo> currentServerNodes = serverNodes;
 
-            potentialNodes = currentServerNodes.stream()
+            final List<NodeInfo> potentialNodes = currentServerNodes.stream()
                     .filter(n -> (!n.cannotHostActors && n.state == NodeState.RUNNING)
                             && actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, actorSupported_yes))
                     .collect(Collectors.toList());
 
-            if (potentialNodes.size() == 0)
+            if (potentialNodes.isEmpty())
             {
                 if (stage.getState() != NodeCapabilities.NodeState.RUNNING)
                 {
-                    return null;
+                    return Task.fromException(new UncheckedException("No node found to activate " + interfaceClassName));
                 }
                 if (logger.isDebugEnabled())
                 {
@@ -468,33 +467,35 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             }
             else
             {
-                final NodeInfo nodeInfo = nodeSelector.select(interfaceClassName, getNodeAddress(), potentialNodes);
-
-                Integer canActivate = nodeInfo.canActivate.get(interfaceClassName);
-                if (canActivate == null)
+                for (NodeInfo potentialNode : potentialNodes)
                 {
-                    // ask if the node can activate this type of actor.
-                    try
-                    {
-                        canActivate = await(nodeInfo.nodeCapabilities.canActivate(interfaceClassName));
-                        if (canActivate == actorSupported_noneSupported)
-                        {
-                            nodeInfo.cannotHostActors = true;
-                            // jic
-                            nodeInfo.canActivate.put(interfaceClassName, actorSupported_no);
-                        }
-                        else
-                        {
-                            nodeInfo.canActivate.put(interfaceClassName, canActivate);
-                        }
-                    }
-                    catch (final Exception ex)
-                    {
-                        logger.error("Error locating server for " + interfaceClassName, ex);
-                        continue;
+                    if (potentialNode.canActivatePending.add(interfaceClassName)) {
+                        potentialNode.nodeCapabilities.canActivate(interfaceClassName).handle((result, throwable) -> {
+                            if (throwable != null)
+                            {
+                                potentialNode.canActivatePending.remove(interfaceClassName); // retry
+                            }
+                            else
+                            {
+                                if (result == actorSupported_noneSupported)
+                                {
+                                    potentialNode.cannotHostActors = true;
+                                    // jic
+                                    potentialNode.canActivate.put(interfaceClassName, actorSupported_no);
+                                }
+                                else
+                                {
+                                    potentialNode.canActivate.put(interfaceClassName, result);
+                                }
+                            }
+                            return null;
+                        });
                     }
                 }
-                if (canActivate == actorSupported_yes)
+
+                final NodeInfo nodeInfo = nodeSelector.select(interfaceClassName, getNodeAddress(), potentialNodes);
+
+                if (nodeInfo.canActivate.getOrDefault(interfaceClassName, actorSupported_no) == actorSupported_yes)
                 {
                     return Task.fromValue(nodeInfo.address);
                 }
