@@ -30,6 +30,7 @@ package cloud.orbit.concurrent;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,10 +38,14 @@ public class ExecutorUtils
 {
     private static final Logger logger = Logger.getLogger(ExecutorUtils.class.getName());
 
-    public static ExecutorService newScalingThreadPool(
-            final int maxThreads)
+    public static ExecutorService newScalingThreadPool(final int maxThreads)
     {
-        return new ForkJoinPool(maxThreads, ForkJoinPool.defaultForkJoinWorkerThreadFactory,
-                (t, e) -> logger.log(Level.SEVERE, "Uncaught Exception", e), false);
+        final ForkJoinPool.ForkJoinWorkerThreadFactory factory = pool ->
+        {
+            final ForkJoinWorkerThread worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
+            worker.setName("OrbitThread-" + worker.getPoolIndex());
+            return worker;
+        };
+        return new ForkJoinPool(maxThreads, factory, (t, e) -> logger.log(Level.SEVERE, "Uncaught exception", e), false);
     }
 }
