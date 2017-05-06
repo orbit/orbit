@@ -174,8 +174,6 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             node.state = newState;
             if (node.state != NodeState.RUNNING)
             {
-                // clear local cache
-                localAddressCache.values().remove(nodeAddress);
                 // clear list of actors this node can activate
                 node.canActivate.clear();
             }
@@ -255,7 +253,14 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         activeNodes = newNodes;
         consistentHashNodeTree = newHashes;
         updateServerNodes();
-        // TODO notify someone? (NodeInfo oldNodeInfo : oldNodes.values()) { ... }
+
+        for (NodeInfo info : oldNodes.values())
+        {
+            // clear local cache
+            localAddressCache.values().remove(info.address);
+
+            // TODO notify someone?
+        }
     }
 
     private void updateServerNodes()
@@ -490,7 +495,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         {
             try
             {
-                serverNodesUpdateMutex.wait(1000);
+                serverNodesUpdateMutex.wait(250);
             }
             catch (InterruptedException e)
             {
