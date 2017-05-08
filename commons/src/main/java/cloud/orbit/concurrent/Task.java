@@ -69,6 +69,7 @@ public class Task<T> extends CompletableFuture<T>
     private static Executor commonPool = ExecutorUtils.newScalingThreadPool(100);
     private static ScheduledExecutorService schedulerExecutor = new ScheduledThreadPoolExecutor(10, runnable -> {
         Thread thread = Executors.defaultThreadFactory().newThread(runnable);
+        thread.setName("OrbitTaskThread");
         thread.setDaemon(true);
         return thread;
     });

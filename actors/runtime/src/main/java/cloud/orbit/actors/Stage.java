@@ -121,9 +121,10 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -137,7 +138,11 @@ public class Stage implements Startable, ActorRuntime
 
     private static final int DEFAULT_EXECUTION_POOL_SIZE = 128;
 
-    LocalObjects objects = new LocalObjects()
+    private final String runtimeIdentity = "Orbit[" + IdUtils.urlSafeString(128) + "]";
+
+    private final WeakReference<ActorRuntime> cachedRef = new WeakReference<>(this);
+
+    private final LocalObjects objects = new LocalObjects()
     {
         @Override
         protected <T> LocalObjectEntry createLocalObjectEntry(final RemoteReference<T> reference, final T object)
@@ -145,6 +150,13 @@ public class Stage implements Startable, ActorRuntime
             return Stage.this.createLocalObjectEntry(reference, object);
         }
     };
+
+    private final Executor shutdownExecutor = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = Executors.defaultThreadFactory().newThread(runnable);
+        thread.setName("OrbitShutdownThread");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     @Config("orbit.actors.basePackages")
     private String basePackages;
@@ -169,17 +181,6 @@ public class Stage implements Startable, ActorRuntime
 
     @Config("orbit.actors.pulseInterval")
     private long pulseIntervalMillis = TimeUnit.SECONDS.toMillis(10);
-    private Timer timer;
-    private Pipeline pipeline;
-
-    private final String runtimeIdentity = "Orbit[" + IdUtils.urlSafeString(128) + "]";
-
-    private ResponseCaching cacheManager;
-
-    private MultiExecutionSerializer<Object> executionSerializer;
-    private ActorClassFinder finder;
-    private LoggerExtension loggerExtension;
-    private volatile NodeCapabilities.NodeState state;
 
     @Config("orbit.actors.concurrentDeactivations")
     private int concurrentDeactivations = 16;
@@ -188,15 +189,9 @@ public class Stage implements Startable, ActorRuntime
     private long defaultActorTTL = TimeUnit.MINUTES.toMillis(10);
 
     @Config("orbit.actors.deactivationTimeoutMillis")
-    private long deactivationTimeoutMillis = TimeUnit.MINUTES.toMillis(2);
+    private long deactivationTimeoutMillis = TimeUnit.SECONDS.toMillis(10);
 
-    private Task<Void> startPromise = new Task<>();
-
-    public enum StageMode
-    {
-        CLIENT, // no activations
-        HOST // allows activations
-    }
+    private volatile NodeCapabilities.NodeState state;
 
     private ClusterPeer clusterPeer;
     private Messaging messaging;
@@ -209,7 +204,21 @@ public class Stage implements Startable, ActorRuntime
     private ExecutionObjectCloner objectCloner;
     private ExecutionObjectCloner messageLoopbackObjectCloner;
     private MessageSerializer messageSerializer;
-    private final WeakReference<ActorRuntime> cachedRef = new WeakReference<>(this);
+
+    private MultiExecutionSerializer<Object> executionSerializer;
+    private ActorClassFinder finder;
+    private LoggerExtension loggerExtension;
+
+    private Timer timer;
+    private Pipeline pipeline;
+
+    private final Task<Void> startPromise = new Task<>();
+
+    public enum StageMode
+    {
+        CLIENT, // no activations
+        HOST // allows activations
+    }
 
     static
     {
@@ -614,7 +623,7 @@ public class Stage implements Startable, ActorRuntime
         }
         await(finder.start());
 
-        cacheManager = new ResponseCaching();
+        final ResponseCaching cacheManager = new ResponseCaching();
 
         hosting.setNodeType(mode == StageMode.HOST ? NodeCapabilities.NodeTypeEnum.SERVER : NodeCapabilities.NodeTypeEnum.CLIENT);
         execution.setRuntime(this);
@@ -791,19 +800,21 @@ public class Stage implements Startable, ActorRuntime
         // * stop the network
 
         logger.debug("Start stopping pipeline");
-        CompletableFuture<Void> notified = new CompletableFuture<>();
-        // await must not be used directly on actor call otherwise shutdown may continue in execution thread and cause livelock
-        hosting.notifyStateChange().whenCompleteAsync((r, e) -> notified.complete(null), r -> new Thread(r).start());
-        await(notified);
+
+        // shutdown must continue in non-execution pool thread to prevent thread waiting for itself when checking executionSerializer is busy
+        await(hosting.notifyStateChange().whenCompleteAsync((r, e) -> {}, shutdownExecutor));
 
         logger.debug("Stopping actors");
-        await(stopActors());
+        await(stopActors().whenCompleteAsync((r, e) -> {}, shutdownExecutor));
+
         logger.debug("Stopping timers");
         await(stopTimers());
+
         do
         {
             InternalUtils.sleep(250);
         } while (executionSerializer.isBusy());
+
         logger.debug("Closing pipeline");
         await(pipeline.close());
 
@@ -821,20 +832,11 @@ public class Stage implements Startable, ActorRuntime
 
     private Task<Void> stopActors()
     {
-        for (int passes = 0; passes < 2; passes++)
-        {
-            // using negative age meaning all actors, regardless of age
-            cleanupActors(Long.MIN_VALUE);
-        }
+        // using negative age meaning all actors, regardless of age
+        await(cleanupActors(Long.MIN_VALUE));
+        await(cleanupActors(Long.MIN_VALUE)); // intentional second pass
         return Task.done();
     }
-
-    @Deprecated
-    public Task<Void> cleanupActors()
-    {
-        return cleanupActors(defaultActorTTL);
-    }
-
 
     private Task<Void> cleanupObservers()
     {
@@ -870,7 +872,7 @@ public class Stage implements Startable, ActorRuntime
                 }
 
                 // Skip this actor if it is marked NeverDeactivate
-                if (RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class)) {
+                if (maxAge != Long.MIN_VALUE && RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class)) {
                     continue;
                 }
 
