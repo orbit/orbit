@@ -393,6 +393,7 @@ public class Stage implements Startable, ActorRuntime
             stage.setNodeName(nodeName);
             stage.setMode(mode);
             stage.setExecutionPoolSize(executionPoolSize);
+            stage.setLocalObjectsCleaner(localObjectsCleaner);
             stage.setTimer(timer);
             extensions.forEach(stage::addExtension);
             stage.setInvocationHandler(invocationHandler);
