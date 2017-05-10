@@ -1,5 +1,6 @@
 package cloud.orbit.actors.runtime;
 
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import cloud.orbit.actors.cluster.NodeAddress;
@@ -13,6 +14,7 @@ public class NodeInfo
     NodeCapabilities nodeCapabilities;
     boolean cannotHostActors;
     final ConcurrentHashMap<String, Integer> canActivate = new ConcurrentHashMap<>();
+    final Set<String> canActivatePending = ConcurrentHashMap.newKeySet();
 
     public NodeInfo(final NodeAddress address)
     {
