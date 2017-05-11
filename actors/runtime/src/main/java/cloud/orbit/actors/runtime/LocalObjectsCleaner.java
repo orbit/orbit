@@ -51,14 +51,14 @@ public class LocalObjectsCleaner
 {
     private Logger logger = LoggerFactory.getLogger(LocalObjectsCleaner.class);
 
-    final LocalObjects localObjects;
-    final long defaultActorTTL;
-    final long deactivationTimeoutMillis;
-    final Clock clock;
-    final Hosting hosting;
-    final ConcurrentHashSet<ActorBaseEntry<?>> pendingDeactivations = new ConcurrentHashSet<>();
+    private final LocalObjects localObjects;
+    private final long defaultActorTTL;
+    private final long deactivationTimeoutMillis;
+    private final Clock clock;
+    private final Hosting hosting;
+    private final ConcurrentHashSet<ActorBaseEntry<?>> pendingDeactivations = new ConcurrentHashSet<>();
 
-    final ConcurrentExecutionQueue concurrentExecutionQueue;
+    private final ConcurrentExecutionQueue concurrentExecutionQueue;
 
 
     public LocalObjectsCleaner(final Hosting hosting, final Clock clock, final ExecutorService executor, final LocalObjects localObjects, final long defaultActorTTL, final int concurrentDeactivations, final long deactivationTimeoutMillis)
@@ -71,6 +71,7 @@ public class LocalObjectsCleaner
         this.concurrentExecutionQueue = new ConcurrentExecutionQueue(executor, concurrentDeactivations, 0);
     }
 
+    @SuppressWarnings("unchecked")
     public Task cleanup()
     {
         await(cleanupObservers());
@@ -78,6 +79,7 @@ public class LocalObjectsCleaner
         return Task.done();
     }
 
+    @SuppressWarnings("unchecked")
     public Task shutdown()
     {
         await(cleanupActors(true));
@@ -115,7 +117,6 @@ public class LocalObjectsCleaner
             shouldRemove = shouldRemove && !RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class);
             // Override if shutdownAll is true
             shouldRemove = shouldRemove || shutdownAll;
-
 
             if (shouldRemove)
             {
