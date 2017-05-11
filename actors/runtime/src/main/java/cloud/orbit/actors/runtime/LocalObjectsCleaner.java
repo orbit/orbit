@@ -108,13 +108,16 @@ public class LocalObjectsCleaner
                 continue;
             }
 
-            // Skip this actor if it is marked NeverDeactivate
-            if (!shutdownAll && RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class))
-            {
-                continue;
-            }
+            boolean shouldRemove;
+            // Check for timeout
+            shouldRemove = clock.millis() - actorEntry.getLastAccess() > defaultActorTTL;
+            // Make sure it isn't tagged NeverDeactivate
+            shouldRemove = shouldRemove && !RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class);
+            // Override if shutdownAll is true
+            shouldRemove = shouldRemove || shutdownAll;
 
-            if (shutdownAll || clock.millis() - actorEntry.getLastAccess() > defaultActorTTL)
+
+            if (shouldRemove)
             {
                 if (pendingDeactivations.add(actorEntry))
                 {
