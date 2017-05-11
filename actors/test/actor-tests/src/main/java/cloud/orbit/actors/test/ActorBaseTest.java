@@ -493,7 +493,6 @@ public class ActorBaseTest
             isBusy = false;
             for(Stage stage : stages)
             {
-                System.out.println(stage);
                 if(stage.getLocalObjectsCleaner().hasBacklog())
                 {
                     isBusy = true;
