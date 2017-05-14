@@ -486,6 +486,23 @@ public class ActorBaseTest
 
     }
 
+    protected void waitForDeactivations() {
+        boolean isBusy;
+        do
+        {
+            isBusy = false;
+            for(Stage stage : stages)
+            {
+                if(stage.getLocalObjectsCleaner().hasBacklog())
+                {
+                    isBusy = true;
+                    break;
+                }
+
+            }
+        } while(isBusy);
+    }
+
 
     @After
     public void tearDown()
