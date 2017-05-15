@@ -109,7 +109,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
 
         actorDeactivationExtensions.stream().forEach(x -> x.cleanupActors(baseEntries, toRemove));
 
-        final List<Task<Void>> pending = new ArrayList<>();
+        final List<Task<Void>> pendingThisCycle = new ArrayList<>();
 
         for(final Map.Entry<Object, LocalObjects.LocalObjectEntry> entryEntry : actorEntries)
         {
@@ -136,7 +136,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
             {
                 if (pendingDeactivations.add(actorEntry))
                 {
-                    pending.add(concurrentExecutionQueue.execute(() ->
+                    pendingThisCycle.add(concurrentExecutionQueue.execute(() ->
                             actorEntry.deactivate().failAfter(deactivationTimeoutMillis, TimeUnit.MILLISECONDS)
                                     .whenComplete((r, e) ->
                                     {
@@ -164,7 +164,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
             }
         }
 
-        return Task.allOf(pending);
+        return Task.allOf(pendingThisCycle);
     }
 
     private Task cleanupObservers()
