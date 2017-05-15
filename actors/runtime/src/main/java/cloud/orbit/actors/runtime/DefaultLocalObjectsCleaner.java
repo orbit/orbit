@@ -107,7 +107,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
 
         final Set<ActorBaseEntry<?>> toRemove = new HashSet<>();
 
-        actorDeactivationExtensions.stream().forEach(x -> x.cleanupActors(baseEntries, toRemove));
+        actorDeactivationExtensions.forEach(x -> x.cleanupActors(baseEntries, toRemove));
 
         final List<Task<Void>> pendingThisCycle = new ArrayList<>();
 
