@@ -55,7 +55,7 @@ public class ActorCountDeactivationExtension implements ActorDeactivationExtensi
 
         if(actorCount > maxActorCount)
         {
-            final int countToRemove = (actorCount - maxActorCount) + targetActorCount;
+            final int countToRemove = Math.abs(targetActorCount - actorCount);
 
             actorEntries.stream()
                     .sorted((Comparator.comparingLong(ActorBaseEntry::getLastAccess)))
