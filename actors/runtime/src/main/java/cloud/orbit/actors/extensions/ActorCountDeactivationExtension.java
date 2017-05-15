@@ -40,21 +40,26 @@ import java.util.Set;
 public class ActorCountDeactivationExtension implements ActorDeactivationExtension
 {
     private final int maxActorCount;
-    private final int removeActorCount;
+    private final int targetActorCount;
 
     public ActorCountDeactivationExtension(final int maxActorCount, final int removeActorCount)
     {
         this.maxActorCount = maxActorCount;
-        this.removeActorCount = removeActorCount;
+        this.targetActorCount = removeActorCount;
     }
 
     @Override
     public void cleanupActors(final Collection<ActorBaseEntry<?>> actorEntries, final Set<ActorBaseEntry<?>> toRemove)
     {
-        if(actorEntries.size() > maxActorCount) {
+        final Integer actorCount = actorEntries.size();
+
+        if(actorCount > maxActorCount)
+        {
+            final int countToRemove = (actorCount - maxActorCount) + targetActorCount;
+
             actorEntries.stream()
                     .sorted((Comparator.comparingLong(ActorBaseEntry::getLastAccess)))
-                    .limit(removeActorCount)
+                    .limit(countToRemove)
                     .forEach(toRemove::add);
         }
     }

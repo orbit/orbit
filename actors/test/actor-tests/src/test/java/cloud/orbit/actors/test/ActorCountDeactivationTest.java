@@ -41,8 +41,8 @@ import cloud.orbit.actors.test.actors.SomeActor;
  */
 public class ActorCountDeactivationTest extends ActorBaseTest
 {
-    final Integer maxActorCount = 50;
-    final Integer removeActorCount = 25;
+    private static final Integer maxActorCount = 50;
+    private static final Integer targetActorCount = 25;
 
     @Test
     public void testActorCountDeactivation() {
@@ -63,13 +63,13 @@ public class ActorCountDeactivationTest extends ActorBaseTest
         stage.cleanup().join();
         stage.cleanup().join();
 
-        Assert.assertTrue(stage.getLocalObjectCount() <= baseCount - removeActorCount);
+        Assert.assertTrue(stage.getLocalObjectCount() <= baseCount - targetActorCount);
 
     }
 
     @Override
     protected void installExtensions(final Stage stage)
     {
-        stage.addExtension(new ActorCountDeactivationExtension(maxActorCount, removeActorCount));
+        stage.addExtension(new ActorCountDeactivationExtension(maxActorCount, targetActorCount));
     }
 }
