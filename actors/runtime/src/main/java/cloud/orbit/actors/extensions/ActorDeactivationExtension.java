@@ -38,5 +38,8 @@ import java.util.Set;
  */
 public interface ActorDeactivationExtension extends ActorExtension
 {
-    void cleanupActors(final Collection<ActorBaseEntry<?>> actorEntries, final Set<ActorBaseEntry<?>> toRemove);
+    default void cleanupActors(final Collection<ActorBaseEntry<?>> actorEntries, final Set<ActorBaseEntry<?>> toRemove)
+    {
+
+    }
 }

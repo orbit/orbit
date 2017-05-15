@@ -35,6 +35,7 @@ import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.concurrent.MultiExecutionSerializer;
 import cloud.orbit.actors.concurrent.WaitFreeMultiExecutionSerializer;
 import cloud.orbit.actors.extensions.ActorClassFinder;
+import cloud.orbit.actors.extensions.ActorDeactivationExtension;
 import cloud.orbit.actors.extensions.ActorExtension;
 import cloud.orbit.actors.extensions.DefaultLoggerExtension;
 import cloud.orbit.actors.extensions.LifetimeExtension;
@@ -644,6 +645,8 @@ public class Stage implements Startable, ActorRuntime
             finder = StringUtils.isNotEmpty(basePackages) ? new FastActorClassFinder(basePackages.split(Pattern.quote(","))) : new LazyActorClassFinder();
         }
         await(finder.start());
+
+        localObjectsCleaner.setActorDeactivationExtensions(getAllExtensions(ActorDeactivationExtension.class));
 
         final ResponseCaching cacheManager = new ResponseCaching();
 
