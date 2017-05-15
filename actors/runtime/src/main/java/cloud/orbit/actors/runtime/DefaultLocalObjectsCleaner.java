@@ -37,7 +37,9 @@ import cloud.orbit.concurrent.ConcurrentHashSet;
 import cloud.orbit.concurrent.Task;
 
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -93,6 +95,8 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
                 .filter(e -> e.getValue() instanceof ActorBaseEntry)
                 .iterator();
 
+        final List<Task<Void>> pending = new ArrayList<>();
+
         while (iterator.hasNext())
         {
             final Map.Entry<Object, LocalObjects.LocalObjectEntry> entryEntry = iterator.next();
@@ -118,7 +122,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
             {
                 if (pendingDeactivations.add(actorEntry))
                 {
-                    return concurrentExecutionQueue.execute(() ->
+                    pending.add(concurrentExecutionQueue.execute(() ->
                             actorEntry.deactivate().failAfter(deactivationTimeoutMillis, TimeUnit.MILLISECONDS)
                                     .whenComplete((r, e) ->
                                     {
@@ -141,12 +145,12 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
                                             // removing non stateless actor from the distributed directory
                                             hosting.actorDeactivated(actorEntry.getRemoteReference());
                                         }
-                                    }));
+                                    })));
                 }
             }
         }
 
-        return Task.done();
+        return Task.allOf(pending);
     }
 
     private Task cleanupObservers()
