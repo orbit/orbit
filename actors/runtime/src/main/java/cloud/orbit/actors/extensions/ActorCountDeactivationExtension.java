@@ -42,20 +42,20 @@ public class ActorCountDeactivationExtension implements ActorDeactivationExtensi
     private final int maxActorCount;
     private final int targetActorCount;
 
-    public ActorCountDeactivationExtension(final int maxActorCount, final int removeActorCount)
+    public ActorCountDeactivationExtension(final int maxActorCount, final int targetActorCount)
     {
         this.maxActorCount = maxActorCount;
-        this.targetActorCount = removeActorCount;
+        this.targetActorCount = targetActorCount;
     }
 
     @Override
     public void cleanupActors(final Collection<ActorBaseEntry<?>> actorEntries, final Set<ActorBaseEntry<?>> toRemove)
     {
-        final Integer actorCount = actorEntries.size();
+        final Integer currentActorCount = actorEntries.size();
 
-        if(actorCount > maxActorCount)
+        if(currentActorCount > maxActorCount)
         {
-            final int countToRemove = Math.abs(targetActorCount - actorCount);
+            final int countToRemove = Math.abs(targetActorCount - currentActorCount);
 
             actorEntries.stream()
                     .sorted((Comparator.comparingLong(ActorBaseEntry::getLastAccess)))
