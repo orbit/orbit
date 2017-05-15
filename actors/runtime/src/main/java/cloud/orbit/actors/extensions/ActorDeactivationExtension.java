@@ -26,19 +26,20 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.runtime;
+package cloud.orbit.actors.extensions;
 
-import cloud.orbit.actors.extensions.ActorDeactivationExtension;
-import cloud.orbit.concurrent.Task;
+import cloud.orbit.actors.runtime.ActorBaseEntry;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.Set;
 
 /**
- * @author Johno Crawford (johno@sulake.com)
+ * Created by joeh on 2017-05-15.
  */
-public interface LocalObjectsCleaner
+public interface ActorDeactivationExtension extends ActorExtension
 {
-    Task<Void> cleanup();
-    Task<Void> shutdown();
-    void setActorDeactivationExtensions(final List<ActorDeactivationExtension> extensionList);
+    default void cleanupActors(final Collection<ActorBaseEntry<?>> actorEntries, final Set<ActorBaseEntry<?>> toRemove)
+    {
+
+    }
 }

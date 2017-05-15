@@ -33,16 +33,21 @@ import org.slf4j.LoggerFactory;
 
 import cloud.orbit.actors.annotation.NeverDeactivate;
 import cloud.orbit.actors.concurrent.ConcurrentExecutionQueue;
+import cloud.orbit.actors.extensions.ActorDeactivationExtension;
 import cloud.orbit.concurrent.ConcurrentHashSet;
 import cloud.orbit.concurrent.Task;
 
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.ea.async.Async.await;
 
@@ -59,8 +64,9 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
     private final Clock clock;
     private final Hosting hosting;
     private final ConcurrentHashSet<ActorBaseEntry<?>> pendingDeactivations = new ConcurrentHashSet<>();
-
     private final ConcurrentExecutionQueue concurrentExecutionQueue;
+    private List<ActorDeactivationExtension> actorDeactivationExtensions = Collections.emptyList();
+
 
     public DefaultLocalObjectsCleaner(final Hosting hosting, final Clock clock, final ExecutorService executor, final LocalObjects localObjects, final long defaultActorTTL, final int concurrentDeactivations, final long deactivationTimeoutMillis)
     {
@@ -91,15 +97,22 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
 
     private Task cleanupActors(final boolean shutdownAll)
     {
-        final Iterator<Map.Entry<Object, LocalObjects.LocalObjectEntry>> iterator = localObjects.stream()
+        final List<Map.Entry<Object, LocalObjects.LocalObjectEntry>> actorEntries = localObjects.stream()
                 .filter(e -> e.getValue() instanceof ActorBaseEntry)
-                .iterator();
+                .collect(Collectors.toList());
 
-        final List<Task<Void>> pending = new ArrayList<>();
+        final Collection<ActorBaseEntry<?>> baseEntries = actorEntries.stream()
+                .map(entryEntry -> (ActorBaseEntry<?>) entryEntry.getValue())
+                .collect(Collectors.toList());
 
-        while (iterator.hasNext())
+        final Set<ActorBaseEntry<?>> toRemove = new HashSet<>();
+
+        actorDeactivationExtensions.forEach(x -> x.cleanupActors(baseEntries, toRemove));
+
+        final List<Task<Void>> pendingThisCycle = new ArrayList<>();
+
+        for(final Map.Entry<Object, LocalObjects.LocalObjectEntry> entryEntry : actorEntries)
         {
-            final Map.Entry<Object, LocalObjects.LocalObjectEntry> entryEntry = iterator.next();
             final ActorBaseEntry<?> actorEntry = (ActorBaseEntry<?>) entryEntry.getValue();
 
             if (actorEntry.isDeactivated())
@@ -110,9 +123,10 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
                 continue;
             }
 
-            boolean shouldRemove;
             // Check for timeout
-            shouldRemove = clock.millis() - actorEntry.getLastAccess() > defaultActorTTL;
+            boolean shouldRemove = clock.millis() - actorEntry.getLastAccess() > defaultActorTTL;
+            // Check if extension wanted to remove it
+            shouldRemove = shouldRemove || toRemove.contains(actorEntry);
             // Make sure it isn't tagged NeverDeactivate
             shouldRemove = shouldRemove && !RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class);
             // Override if shutdownAll is true
@@ -122,7 +136,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
             {
                 if (pendingDeactivations.add(actorEntry))
                 {
-                    pending.add(concurrentExecutionQueue.execute(() ->
+                    pendingThisCycle.add(concurrentExecutionQueue.execute(() ->
                             actorEntry.deactivate().failAfter(deactivationTimeoutMillis, TimeUnit.MILLISECONDS)
                                     .whenComplete((r, e) ->
                                     {
@@ -150,7 +164,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
             }
         }
 
-        return Task.allOf(pending);
+        return Task.allOf(pendingThisCycle);
     }
 
     private Task cleanupObservers()
@@ -159,6 +173,11 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
                 .filter(e -> e.getValue() instanceof ObserverEntry && e.getValue().getObject() == null)
                 .forEach(e -> localObjects.remove(e.getKey(), e.getValue()));
         return Task.done();
+    }
+
+    public void setActorDeactivationExtensions(final List<ActorDeactivationExtension> extensionList)
+    {
+        this.actorDeactivationExtensions = Collections.unmodifiableList(extensionList);
     }
 
 }
