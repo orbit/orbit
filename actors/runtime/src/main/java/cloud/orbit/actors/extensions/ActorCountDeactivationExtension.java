@@ -28,6 +28,9 @@
 
 package cloud.orbit.actors.extensions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cloud.orbit.actors.runtime.ActorBaseEntry;
 
 import java.util.Collection;
@@ -39,6 +42,8 @@ import java.util.Set;
  */
 public class ActorCountDeactivationExtension implements ActorDeactivationExtension
 {
+    private static final Logger logger = LoggerFactory.getLogger(ActorCountDeactivationExtension.class);
+
     private final int maxActorCount;
     private final int targetActorCount;
 
@@ -51,11 +56,17 @@ public class ActorCountDeactivationExtension implements ActorDeactivationExtensi
     @Override
     public void cleanupActors(final Collection<ActorBaseEntry<?>> actorEntries, final Set<ActorBaseEntry<?>> toRemove)
     {
-        final Integer currentActorCount = actorEntries.size();
+        final int currentActorCount = actorEntries.size();
 
         if(currentActorCount > maxActorCount)
         {
             final int countToRemove = Math.abs(targetActorCount - currentActorCount);
+
+            if(logger.isWarnEnabled())
+            {
+                logger.warn("Stage has {} actors. The max actor count is set at {} with a target of {}. Attemping to deactivate {} actors to hit desired target."
+                        , currentActorCount, maxActorCount, targetActorCount, countToRemove);
+            }
 
             actorEntries.stream()
                     .sorted((Comparator.comparingLong(ActorBaseEntry::getLastAccess)))
