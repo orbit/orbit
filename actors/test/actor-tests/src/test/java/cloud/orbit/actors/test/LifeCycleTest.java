@@ -75,7 +75,6 @@ public class LifeCycleTest extends ActorBaseTest
         // touching the player to prevent it's deactivation;
         assertEquals(machEventCount, player.getMatchEventCount().get().intValue());
         stage.cleanup().join();
-        waitForDeactivations();
 
 
         // the match calls a player event on it's deactivation

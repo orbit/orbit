@@ -33,14 +33,21 @@ import org.slf4j.LoggerFactory;
 
 import cloud.orbit.actors.annotation.NeverDeactivate;
 import cloud.orbit.actors.concurrent.ConcurrentExecutionQueue;
+import cloud.orbit.actors.extensions.ActorDeactivationExtension;
 import cloud.orbit.concurrent.ConcurrentHashSet;
 import cloud.orbit.concurrent.Task;
 
 import java.time.Clock;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.ea.async.Async.await;
 
@@ -57,8 +64,9 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
     private final Clock clock;
     private final Hosting hosting;
     private final ConcurrentHashSet<ActorBaseEntry<?>> pendingDeactivations = new ConcurrentHashSet<>();
-
     private final ConcurrentExecutionQueue concurrentExecutionQueue;
+    private List<ActorDeactivationExtension> actorDeactivationExtensions = Collections.emptyList();
+
 
     public DefaultLocalObjectsCleaner(final Hosting hosting, final Clock clock, final ExecutorService executor, final LocalObjects localObjects, final long defaultActorTTL, final int concurrentDeactivations, final long deactivationTimeoutMillis)
     {
@@ -89,13 +97,20 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
 
     private Task cleanupActors(final boolean shutdownAll)
     {
-        final Iterator<Map.Entry<Object, LocalObjects.LocalObjectEntry>> iterator = localObjects.stream()
+        final List<Map.Entry<Object, LocalObjects.LocalObjectEntry>> actorEntries = localObjects.stream()
                 .filter(e -> e.getValue() instanceof ActorBaseEntry)
-                .iterator();
+                .collect(Collectors.toList());
 
-        while (iterator.hasNext())
+        final Collection<ActorBaseEntry<?>> baseEntries = actorEntries.stream()
+                .map(entryEntry -> (ActorBaseEntry<?>) entryEntry.getValue())
+                .collect(Collectors.toList());
+
+        final Set<ActorBaseEntry<?>> toRemove = new HashSet<>();
+
+        actorDeactivationExtensions.stream().forEach(x -> x.cleanupActors(baseEntries, toRemove));
+
+        for(final Map.Entry<Object, LocalObjects.LocalObjectEntry> entryEntry : actorEntries)
         {
-            final Map.Entry<Object, LocalObjects.LocalObjectEntry> entryEntry = iterator.next();
             final ActorBaseEntry<?> actorEntry = (ActorBaseEntry<?>) entryEntry.getValue();
 
             if (actorEntry.isDeactivated())
@@ -155,6 +170,11 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
                 .filter(e -> e.getValue() instanceof ObserverEntry && e.getValue().getObject() == null)
                 .forEach(e -> localObjects.remove(e.getKey(), e.getValue()));
         return Task.done();
+    }
+
+    public void setActorDeactivationExtensions(final List<ActorDeactivationExtension> extensionList)
+    {
+        this.actorDeactivationExtensions = Collections.unmodifiableList(extensionList);
     }
 
 }

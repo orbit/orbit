@@ -117,6 +117,7 @@ public class ConcurrentExecutionQueue implements Executor
                         if (task.isDone())
                         {
                             inFlightUpdater.decrementAndGet(this);
+                            tryDrainQueue();
                         } else {
                             task.whenCompleteAsync(ConcurrentExecutionQueue.this::whenCompleteAsync, executorService);
                         }
