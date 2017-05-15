@@ -38,6 +38,7 @@ import cloud.orbit.concurrent.ConcurrentHashSet;
 import cloud.orbit.concurrent.Task;
 
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -109,6 +110,8 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
 
         actorDeactivationExtensions.stream().forEach(x -> x.cleanupActors(baseEntries, toRemove));
 
+        final List<Task<Void>> pending = new ArrayList<>();
+
         for(final Map.Entry<Object, LocalObjects.LocalObjectEntry> entryEntry : actorEntries)
         {
             final ActorBaseEntry<?> actorEntry = (ActorBaseEntry<?>) entryEntry.getValue();
@@ -121,9 +124,10 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
                 continue;
             }
 
-            boolean shouldRemove;
             // Check for timeout
-            shouldRemove = clock.millis() - actorEntry.getLastAccess() > defaultActorTTL;
+            boolean shouldRemove = clock.millis() - actorEntry.getLastAccess() > defaultActorTTL;
+            // Check if extension wanted to remove it
+            shouldRemove = shouldRemove || toRemove.contains(actorEntry);
             // Make sure it isn't tagged NeverDeactivate
             shouldRemove = shouldRemove && !RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class);
             // Override if shutdownAll is true
@@ -133,7 +137,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
             {
                 if (pendingDeactivations.add(actorEntry))
                 {
-                    return concurrentExecutionQueue.execute(() ->
+                    pending.add(concurrentExecutionQueue.execute(() ->
                             actorEntry.deactivate().failAfter(deactivationTimeoutMillis, TimeUnit.MILLISECONDS)
                                     .whenComplete((r, e) ->
                                     {
@@ -156,12 +160,12 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
                                             // removing non stateless actor from the distributed directory
                                             hosting.actorDeactivated(actorEntry.getRemoteReference());
                                         }
-                                    }));
+                                    })));
                 }
             }
         }
 
-        return Task.done();
+        return Task.allOf(pending);
     }
 
     private Task cleanupObservers()
