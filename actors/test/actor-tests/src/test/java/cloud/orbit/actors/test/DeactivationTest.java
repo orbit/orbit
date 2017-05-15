@@ -63,7 +63,6 @@ public class DeactivationTest extends ClientTest
         final UUID id = actor1.getUniqueActivationId().join();
         clock.incrementTime(20, TimeUnit.MINUTES);
         stage.cleanup().join();
-        waitForDeactivations();
         Assert.assertNotEquals(id, actor1.getUniqueActivationId().join());
         dumpMessages();
     }
@@ -79,7 +78,6 @@ public class DeactivationTest extends ClientTest
         final UUID id = actor1.getUniqueActivationId().join();
         clock.incrementTime(20, TimeUnit.MINUTES);
         stage.cleanup().join();
-        waitForDeactivations();
         Assert.assertNotEquals(id, actor1.getUniqueActivationId().join());
         dumpMessages();
     }
@@ -110,7 +108,6 @@ public class DeactivationTest extends ClientTest
         waitFor(() -> isIdle(stage));
         clock.incrementTime(20, TimeUnit.MINUTES);
         stage.cleanup().join();
-        waitForDeactivations();
         client.bind();
         set.add(actor1.getUniqueActivationId().join());
         assertEquals(2, set.size());
@@ -130,7 +127,6 @@ public class DeactivationTest extends ClientTest
         assertNotNull(actor1.sayHelloOnlyIfActivated().join());
         clock.incrementTimeMillis(TimeUnit.HOURS.toMillis(1));
         stage1.cleanup().join();
-        waitForDeactivations();
         eventuallyTrue(6000, () -> stage1.locateActor(RemoteReference.from(actor1), false).get() == null);
         assertNull(actor1.sayHelloOnlyIfActivated().join());
         dumpMessages();
@@ -179,11 +175,8 @@ public class DeactivationTest extends ClientTest
         loggerExtension.enableDebugFor(Stage.class);
         waitFor(() -> isIdle(stage1));
         stage1.cleanup().join();
-        waitForDeactivations();
         waitFor(() -> isIdle(stage1));
         stage1.cleanup().join();
-        waitForDeactivations();
-
 
         // do the shenanigans again
         final Set<UUID> set2 = new HashSet<>();
@@ -250,11 +243,8 @@ public class DeactivationTest extends ClientTest
         // this will collect all but one activation
         loggerExtension.enableDebugFor(Stage.class);
         stage1.cleanup().join();
-        waitForDeactivations();
         waitFor(() -> isIdle(stage1));
         stage1.cleanup().join();
-        waitForDeactivations();
-
 
         // do the shenanigans again
         final Set<UUID> set2 = new HashSet<>();
