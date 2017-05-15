@@ -94,10 +94,6 @@ public class ConcurrentExecutionQueue implements Executor
         return completion;
     }
 
-    public boolean hasBacklog() {
-        return queueSize > 0 || inFlight > 0;
-    }
-
     private void tryDrainQueue()
     {
         while(!queue.isEmpty() && inFlight < concurrentExecutions) {

@@ -95,7 +95,7 @@ public class StreamStatelessDeactivationTest extends ActorBaseTest
         clock.incrementTime(20, TimeUnit.MINUTES);
         // actors get deactivated
         stage1.cleanup().join();
-        waitForDeactivations();
+        stage1.cleanup().join();
 
         // the actor has been deactivated so it won't receive this message
         test.publish("hello2").join();

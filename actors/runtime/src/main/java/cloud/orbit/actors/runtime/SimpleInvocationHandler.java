@@ -41,11 +41,11 @@ import cloud.orbit.util.AnnotationCache;
 import java.lang.reflect.Method;
 
 /**
- * Basic {@link InvocationHandler} with no support for {@link InvocationHandlerExtension}.
+ * Simple {@link InvocationHandler} with no support for {@link InvocationHandlerExtension}.
  *
  * @author Johno Crawford (johno@sulake.com)
  */
-public class BasicInvocationHandler implements InvocationHandler
+public class SimpleInvocationHandler implements InvocationHandler
 {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 

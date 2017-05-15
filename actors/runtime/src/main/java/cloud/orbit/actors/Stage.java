@@ -28,7 +28,6 @@
 
 package cloud.orbit.actors;
 
-import cloud.orbit.actors.annotation.NeverDeactivate;
 import cloud.orbit.actors.annotation.StatelessWorker;
 import cloud.orbit.actors.cluster.ClusterPeer;
 import cloud.orbit.actors.cluster.JGroupsClusterPeer;
@@ -48,7 +47,7 @@ import cloud.orbit.actors.net.DefaultPipeline;
 import cloud.orbit.actors.net.Pipeline;
 import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.runtime.ActorBaseEntry;
-import cloud.orbit.actors.runtime.LocalObjectsCleaner;
+import cloud.orbit.actors.runtime.DefaultLocalObjectsCleaner;
 import cloud.orbit.actors.runtime.ActorEntry;
 import cloud.orbit.actors.runtime.ActorRuntime;
 import cloud.orbit.actors.runtime.ActorTaskContext;
@@ -68,6 +67,7 @@ import cloud.orbit.actors.runtime.InvocationHandler;
 import cloud.orbit.actors.runtime.JavaMessageSerializer;
 import cloud.orbit.actors.runtime.LazyActorClassFinder;
 import cloud.orbit.actors.runtime.LocalObjects;
+import cloud.orbit.actors.runtime.LocalObjectsCleaner;
 import cloud.orbit.actors.runtime.MessageLoopback;
 import cloud.orbit.actors.runtime.Messaging;
 import cloud.orbit.actors.runtime.NodeCapabilities;
@@ -115,7 +115,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -631,9 +630,9 @@ public class Stage implements Startable, ActorRuntime
         {
             objectCloner = new KryoCloner();
         }
-        if(localObjectsCleaner == null)
+        if (localObjectsCleaner == null)
         {
-            localObjectsCleaner = new LocalObjectsCleaner(hosting, clock, executionPool, objects, defaultActorTTL, concurrentDeactivations, deactivationTimeoutMillis);
+            localObjectsCleaner = new DefaultLocalObjectsCleaner(hosting, clock, executionPool, objects, defaultActorTTL, concurrentDeactivations, deactivationTimeoutMillis);
         }
 
         // create pipeline before waiting for ActorClassFinder as stop might be invoked before it is complete
