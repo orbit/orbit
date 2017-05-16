@@ -32,7 +32,7 @@ import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.extensions.json.InMemoryJSONStorageExtension;
 import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.runtime.ActorProfiler;
-import cloud.orbit.actors.transactions.IdUtils;
+import cloud.orbit.actors.util.IdUtils;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.profiler.ProfileDump;
 import cloud.orbit.profiler.ProfilerData;

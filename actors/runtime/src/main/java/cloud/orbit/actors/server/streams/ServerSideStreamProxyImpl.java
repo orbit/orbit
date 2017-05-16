@@ -42,7 +42,7 @@ import cloud.orbit.actors.streams.AsyncStream;
 import cloud.orbit.actors.streams.StreamSequenceToken;
 import cloud.orbit.actors.streams.StreamSubscriptionHandle;
 import cloud.orbit.actors.streams.simple.StreamReference;
-import cloud.orbit.actors.transactions.IdUtils;
+import cloud.orbit.actors.util.IdUtils;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.lifecycle.Startable;
 

@@ -31,8 +31,6 @@ package cloud.orbit.actors.runtime;
 import com.googlecode.gentyref.GenericTypeReflector;
 
 import cloud.orbit.actors.annotation.OneWay;
-import cloud.orbit.actors.transactions.TransactionalEvent;
-import cloud.orbit.actors.transactions.TransactionalState;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.exception.UncheckedException;
 import javassist.CannotCompileException;
@@ -390,79 +388,6 @@ public class ActorFactoryGenerator
                 cc.addInterface(pool.get(ActorState.class.getName()));
 
 
-                if (TransactionalState.class.isAssignableFrom(erased))
-                {
-                    final StringBuilder invokerBody = new StringBuilder();
-                    invokerBody.append("{ switch($1.hashCode()) {");
-                    int count = 0;
-                    for (final CtMethod m : baseStateClass.getMethods())
-                    {
-                        if (m.hasAnnotation(TransactionalEvent.class))
-                        {
-                            count++;
-                            final String methodName = m.getName();
-                            final CtClass[] parameterTypes = m.getParameterTypes();
-                            final boolean isVoid = CtClass.voidType.equals(m.getReturnType());
-
-                            //
-                            // part of the invoker switch case:
-                            // equivalent to:
-                            //   case "methodName" : return super.methodName(args);
-                            //
-                            invokerBody.append("case ").append(m.getName().hashCode()).append(": "
-                                    + "if($1.equals(\"" + m.getName() + "\")) { "
-                                    + (isVoid ? " " : " return ($w)") + "super." + methodName + "(");
-                            unwrapParams(invokerBody, parameterTypes, "$2");
-                            invokerBody.append(");");
-                            if (isVoid)
-                            {
-                                invokerBody.append("return null;");
-                            }
-                            invokerBody.append("} break;");
-
-                            //
-                            // replacement method, intercepts the event call and forwards it to the actor.
-                            //
-                            final String methodReferenceField = methodName + "_" + count;
-                            cc.addField(CtField.make("private static java.lang.reflect.Method " + methodReferenceField + " = null;", cc));
-
-                            final String lazyMethodReferenceInit = "(" + methodReferenceField + "!=null) ? " + methodReferenceField + " : ( "
-                                    + methodReferenceField + "=" + baseStateClass.getName() + ".class.getDeclaredMethod(\"" + methodName + "\",$sig) )";
-
-
-                            final CtMethod newMethod = CtNewMethod.make(
-                                    m.getReturnType(), methodName, parameterTypes, m.getExceptionTypes(),
-                                    "{ " + ActorTaskContext.class.getName() + " taskContext = " + ActorTaskContext.class.getName() + ".current();"
-                                            + "if(taskContext !=null) {"
-                                            + AbstractActor.class.getName() + " actor = taskContext.getActor();"
-                                            + "if(actor != null) { "
-                                            + " return ($r) actor.interceptStateMethod("
-                                            + lazyMethodReferenceInit + ", \"" + methodName + "\", $args); "
-                                            + "}}"
-                                            + "throw new java.lang.IllegalStateException(\"Actor state is not ready\");"
-                                            + "}",
-                                    cc);
-                            cc.addMethod(newMethod);
-                        }
-                    }
-                    if (count > 0)
-                    {
-                        invokerBody.append(" } ");
-                    }
-                    else
-                    {
-                        invokerBody.setLength(0);
-                        invokerBody.append("{ ");
-                    }
-                    invokerBody.append("return ((" + ActorState.class.getName() + ")super).invokeEvent($1, $2); }");
-                    final CtMethod invoker = CtNewMethod.make(
-                            pool.get(Object.class.getName()), "invokeEvent",
-                            new CtClass[]{ pool.get(String.class.getName()), pool.get(Object[].class.getName()) },
-                            new CtClass[0],
-                            invokerBody.toString(), cc);
-
-                    cc.addMethod(invoker);
-                }
                 return loadClass(cc, actorClass);
             }
             catch (final Exception ex)

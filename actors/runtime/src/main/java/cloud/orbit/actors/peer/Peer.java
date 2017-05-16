@@ -41,7 +41,7 @@ import cloud.orbit.actors.runtime.Invocation;
 import cloud.orbit.actors.runtime.LocalObjects;
 import cloud.orbit.actors.runtime.RemoteReference;
 import cloud.orbit.actors.streams.AsyncStream;
-import cloud.orbit.actors.transactions.IdUtils;
+import cloud.orbit.actors.util.IdUtils;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.lifecycle.Startable;
 import cloud.orbit.exception.NotImplementedException;

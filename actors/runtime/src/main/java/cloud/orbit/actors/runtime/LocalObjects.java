@@ -35,7 +35,7 @@ import com.github.benmanes.caffeine.cache.RemovalCause;
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.ActorObserver;
 import cloud.orbit.actors.cluster.NodeAddress;
-import cloud.orbit.actors.transactions.IdUtils;
+import cloud.orbit.actors.util.IdUtils;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.concurrent.TaskFunction;
 import cloud.orbit.exception.NotImplementedException;
