@@ -28,7 +28,6 @@
 
 package cloud.orbit.actors;
 
-import cloud.orbit.actors.annotation.NeverDeactivate;
 import cloud.orbit.actors.annotation.StatelessWorker;
 import cloud.orbit.actors.cluster.ClusterPeer;
 import cloud.orbit.actors.cluster.JGroupsClusterPeer;
@@ -36,6 +35,7 @@ import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.concurrent.MultiExecutionSerializer;
 import cloud.orbit.actors.concurrent.WaitFreeMultiExecutionSerializer;
 import cloud.orbit.actors.extensions.ActorClassFinder;
+import cloud.orbit.actors.extensions.ActorDeactivationExtension;
 import cloud.orbit.actors.extensions.ActorExtension;
 import cloud.orbit.actors.extensions.DefaultLoggerExtension;
 import cloud.orbit.actors.extensions.LifetimeExtension;
@@ -48,6 +48,7 @@ import cloud.orbit.actors.net.DefaultPipeline;
 import cloud.orbit.actors.net.Pipeline;
 import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.runtime.ActorBaseEntry;
+import cloud.orbit.actors.runtime.DefaultLocalObjectsCleaner;
 import cloud.orbit.actors.runtime.ActorEntry;
 import cloud.orbit.actors.runtime.ActorRuntime;
 import cloud.orbit.actors.runtime.ActorTaskContext;
@@ -67,6 +68,7 @@ import cloud.orbit.actors.runtime.InvocationHandler;
 import cloud.orbit.actors.runtime.JavaMessageSerializer;
 import cloud.orbit.actors.runtime.LazyActorClassFinder;
 import cloud.orbit.actors.runtime.LocalObjects;
+import cloud.orbit.actors.runtime.LocalObjectsCleaner;
 import cloud.orbit.actors.runtime.MessageLoopback;
 import cloud.orbit.actors.runtime.Messaging;
 import cloud.orbit.actors.runtime.NodeCapabilities;
@@ -114,7 +116,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -204,6 +205,7 @@ public class Stage implements Startable, ActorRuntime
     private ExecutionObjectCloner objectCloner;
     private ExecutionObjectCloner messageLoopbackObjectCloner;
     private MessageSerializer messageSerializer;
+    private LocalObjectsCleaner localObjectsCleaner;
 
     private MultiExecutionSerializer<Object> executionSerializer;
     private ActorClassFinder finder;
@@ -239,6 +241,7 @@ public class Stage implements Startable, ActorRuntime
         private Messaging messaging;
         private InvocationHandler invocationHandler;
         private Execution execution;
+        private LocalObjectsCleaner localObjectsCleaner;
 
         private String basePackages;
         private String clusterName;
@@ -270,6 +273,12 @@ public class Stage implements Startable, ActorRuntime
         public Builder execution(Execution execution)
         {
             this.execution = execution;
+            return this;
+        }
+
+        public Builder localObjectsCleaner(LocalObjectsCleaner localObjectsCleaner)
+        {
+            this.localObjectsCleaner = localObjectsCleaner;
             return this;
         }
 
@@ -384,6 +393,7 @@ public class Stage implements Startable, ActorRuntime
             stage.setNodeName(nodeName);
             stage.setMode(mode);
             stage.setExecutionPoolSize(executionPoolSize);
+            stage.setLocalObjectsCleaner(localObjectsCleaner);
             stage.setTimer(timer);
             extensions.forEach(stage::addExtension);
             stage.setInvocationHandler(invocationHandler);
@@ -450,6 +460,15 @@ public class Stage implements Startable, ActorRuntime
     public void setExecution(Execution execution)
     {
         this.execution = execution;
+    }
+
+    public void setLocalObjectsCleaner(final LocalObjectsCleaner localObjectsCleaner)
+    {
+        this.localObjectsCleaner = localObjectsCleaner;
+    }
+
+    public LocalObjectsCleaner getLocalObjectsCleaner() {
+        return localObjectsCleaner;
     }
 
     public ExecutionObjectCloner getObjectCloner()
@@ -612,6 +631,10 @@ public class Stage implements Startable, ActorRuntime
         {
             objectCloner = new KryoCloner();
         }
+        if (localObjectsCleaner == null)
+        {
+            localObjectsCleaner = new DefaultLocalObjectsCleaner(hosting, clock, executionPool, objects, defaultActorTTL, concurrentDeactivations, deactivationTimeoutMillis);
+        }
 
         // create pipeline before waiting for ActorClassFinder as stop might be invoked before it is complete
         pipeline = new DefaultPipeline();
@@ -622,6 +645,8 @@ public class Stage implements Startable, ActorRuntime
             finder = StringUtils.isNotEmpty(basePackages) ? new FastActorClassFinder(basePackages.split(Pattern.quote(","))) : new LazyActorClassFinder();
         }
         await(finder.start());
+
+        localObjectsCleaner.setActorDeactivationExtensions(getAllExtensions(ActorDeactivationExtension.class));
 
         final ResponseCaching cacheManager = new ResponseCaching();
 
@@ -832,96 +857,7 @@ public class Stage implements Startable, ActorRuntime
 
     private Task<Void> stopActors()
     {
-        // using negative age meaning all actors, regardless of age
-        await(cleanupActors(Long.MIN_VALUE));
-        await(cleanupActors(Long.MIN_VALUE)); // intentional second pass
-        return Task.done();
-    }
-
-    private Task<Void> cleanupObservers()
-    {
-        objects.stream()
-                .filter(e -> e.getValue() instanceof ObserverEntry && e.getValue().getObject() == null)
-                .forEach(e -> objects.remove(e.getKey(), e.getValue()));
-        return Task.done();
-    }
-
-    private Task<Void> cleanupActors(long maxAge)
-    {
-        // avoid sorting since lastAccess changes
-        // and O(N) is still smaller than O(N Log N)
-        final Iterator<Map.Entry<Object, LocalObjects.LocalObjectEntry>> iterator = objects.stream()
-                .filter(e -> e.getValue() instanceof ActorBaseEntry)
-                .iterator();
-
-        final List<Task<Void>> pending = new ArrayList<>();
-
-        // ensure that certain number of concurrent deactivations is happening at each moment
-        while (iterator.hasNext())
-        {
-            while (pending.size() < concurrentDeactivations && iterator.hasNext())
-            {
-
-                final Map.Entry<Object, LocalObjects.LocalObjectEntry> entryEntry = iterator.next();
-                final ActorBaseEntry<?> actorEntry = (ActorBaseEntry<?>) entryEntry.getValue();
-                if (actorEntry.isDeactivated())
-                {
-                    // this might happen if the deactivation is called outside this loop,
-                    // for instance by the stateless worker that owns the objects
-                    objects.remove(entryEntry.getKey(), entryEntry.getValue());
-                }
-
-                // Skip this actor if it is marked NeverDeactivate
-                if (maxAge != Long.MIN_VALUE && RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class)) {
-                    continue;
-                }
-
-                if (clock().millis() - actorEntry.getLastAccess() > maxAge)
-                {
-                    if (logger.isTraceEnabled())
-                    {
-                        logger.trace("deactivating {}", actorEntry.getRemoteReference());
-                    }
-                    pending.add(actorEntry.deactivate().failAfter(deactivationTimeoutMillis, TimeUnit.MILLISECONDS)
-                            .whenComplete((r, e) -> {
-                                // ensures removal
-                                if (e != null)
-                                {
-                                    // error occurred
-                                    if (logger.isErrorEnabled())
-                                    {
-                                        logger.error("Error during the deactivation of " + actorEntry.getRemoteReference(), e);
-                                    }
-                                    // forcefully setting the entry to deactivated
-                                    actorEntry.setDeactivated(true);
-                                }
-                                objects.remove(entryEntry.getKey(), entryEntry.getValue());
-                                if (entryEntry.getKey() == actorEntry.getRemoteReference())
-                                {
-                                    // removing non stateless actor from the distributed directory
-                                    getHosting().actorDeactivated(actorEntry.getRemoteReference());
-                                }
-                            }));
-                }
-            }
-            if (pending.size() > 0)
-            {
-                // await for at least one deactivation to complete
-                await(Task.anyOf(pending));
-                // remove all completed deactivations
-                for (int i = pending.size(); --i >= 0; )
-                {
-                    if (pending.get(i).isDone())
-                    {
-                        pending.remove(i);
-                    }
-                }
-            }
-        }
-        if (pending.size() > 0)
-        {
-            await(Task.allOf(pending));
-        }
+        await(localObjectsCleaner.shutdown());
         return Task.done();
     }
 
@@ -978,8 +914,7 @@ public class Stage implements Startable, ActorRuntime
     public Task cleanup()
     {
         await(execution.cleanup());
-        await(cleanupActors(defaultActorTTL));
-        await(cleanupObservers());
+        await(localObjectsCleaner.cleanup());
         await(messaging.cleanup());
 
         return Task.done();

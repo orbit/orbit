@@ -178,7 +178,6 @@ public class DeactivationTest extends ClientTest
         waitFor(() -> isIdle(stage1));
         stage1.cleanup().join();
 
-
         // do the shenanigans again
         final Set<UUID> set2 = new HashSet<>();
         {
@@ -246,7 +245,6 @@ public class DeactivationTest extends ClientTest
         stage1.cleanup().join();
         waitFor(() -> isIdle(stage1));
         stage1.cleanup().join();
-
 
         // do the shenanigans again
         final Set<UUID> set2 = new HashSet<>();

@@ -486,7 +486,6 @@ public class ActorBaseTest
 
     }
 
-
     @After
     public void tearDown()
     {

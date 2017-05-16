@@ -43,7 +43,7 @@ import static com.ea.async.Async.await;
 /**
  * Adds support for {@link InvocationHandlerExtension}.
  */
-public class DefaultInvocationHandler extends BasicInvocationHandler
+public class DefaultInvocationHandler extends SimpleInvocationHandler
 {
     private final ConcurrentMap<String, List<InvocationHandlerExtension>> handlerExtensionCache = new ConcurrentHashMap<>();
 
