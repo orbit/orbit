@@ -87,8 +87,7 @@ import cloud.orbit.actors.streams.AsyncStream;
 import cloud.orbit.actors.streams.StreamSequenceToken;
 import cloud.orbit.actors.streams.StreamSubscriptionHandle;
 import cloud.orbit.actors.streams.simple.SimpleStreamExtension;
-import cloud.orbit.actors.transactions.IdUtils;
-import cloud.orbit.actors.transactions.TransactionUtils;
+import cloud.orbit.actors.util.IdUtils;
 import cloud.orbit.annotation.Config;
 import cloud.orbit.concurrent.ExecutorUtils;
 import cloud.orbit.concurrent.Task;
@@ -178,7 +177,7 @@ public class Stage implements Startable, ActorRuntime
     private List<ActorExtension> extensions = new CopyOnWriteArrayList<>();
 
     @Config("orbit.actors.stickyHeaders")
-    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
+    private Set<String> stickyHeaders = new HashSet<>();
 
     @Config("orbit.actors.pulseInterval")
     private long pulseIntervalMillis = TimeUnit.SECONDS.toMillis(10);
