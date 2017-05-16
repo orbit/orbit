@@ -28,7 +28,15 @@
 
 package cloud.orbit.actors;
 
+import com.ea.async.Async;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cloud.orbit.actors.annotation.StatelessWorker;
+import cloud.orbit.actors.annotation.StorageExtension;
+import cloud.orbit.actors.cloner.ExecutionObjectCloner;
+import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.cluster.ClusterPeer;
 import cloud.orbit.actors.cluster.JGroupsClusterPeer;
 import cloud.orbit.actors.cluster.NodeAddress;
@@ -48,19 +56,19 @@ import cloud.orbit.actors.net.DefaultPipeline;
 import cloud.orbit.actors.net.Pipeline;
 import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.runtime.ActorBaseEntry;
-import cloud.orbit.actors.runtime.DefaultLocalObjectsCleaner;
 import cloud.orbit.actors.runtime.ActorEntry;
 import cloud.orbit.actors.runtime.ActorRuntime;
 import cloud.orbit.actors.runtime.ActorTaskContext;
 import cloud.orbit.actors.runtime.AsyncStreamReference;
 import cloud.orbit.actors.runtime.BasicRuntime;
 import cloud.orbit.actors.runtime.ClusterHandler;
-import cloud.orbit.actors.runtime.DefaultInvocationHandler;
-import cloud.orbit.actors.runtime.FastActorClassFinder;
-import cloud.orbit.actors.runtime.DefaultLifetimeExtension;
 import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
 import cloud.orbit.actors.runtime.DefaultHandlers;
+import cloud.orbit.actors.runtime.DefaultInvocationHandler;
+import cloud.orbit.actors.runtime.DefaultLifetimeExtension;
+import cloud.orbit.actors.runtime.DefaultLocalObjectsCleaner;
 import cloud.orbit.actors.runtime.Execution;
+import cloud.orbit.actors.runtime.FastActorClassFinder;
 import cloud.orbit.actors.runtime.Hosting;
 import cloud.orbit.actors.runtime.InternalUtils;
 import cloud.orbit.actors.runtime.Invocation;
@@ -80,8 +88,6 @@ import cloud.orbit.actors.runtime.RemoteReference;
 import cloud.orbit.actors.runtime.ResponseCaching;
 import cloud.orbit.actors.runtime.SerializationHandler;
 import cloud.orbit.actors.runtime.StatelessActorEntry;
-import cloud.orbit.actors.cloner.ExecutionObjectCloner;
-import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.streams.AsyncObserver;
 import cloud.orbit.actors.streams.AsyncStream;
 import cloud.orbit.actors.streams.StreamSequenceToken;
@@ -91,16 +97,9 @@ import cloud.orbit.actors.util.IdUtils;
 import cloud.orbit.annotation.Config;
 import cloud.orbit.concurrent.ExecutorUtils;
 import cloud.orbit.concurrent.Task;
-import cloud.orbit.lifecycle.Startable;
 import cloud.orbit.exception.UncheckedException;
+import cloud.orbit.lifecycle.Startable;
 import cloud.orbit.util.StringUtils;
-
-import com.ea.async.Async;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import cloud.orbit.actors.annotation.StorageExtension;
 
 import javax.inject.Singleton;
 
@@ -109,7 +108,6 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -127,7 +125,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 import static com.ea.async.Async.await;
 
@@ -159,7 +156,7 @@ public class Stage implements Startable, ActorRuntime
     });
 
     @Config("orbit.actors.basePackages")
-    private String basePackages;
+    private List<String> basePackages;
 
     @Config("orbit.actors.clusterName")
     private String clusterName;
@@ -242,7 +239,7 @@ public class Stage implements Startable, ActorRuntime
         private Execution execution;
         private LocalObjectsCleaner localObjectsCleaner;
 
-        private String basePackages;
+        private List<String> basePackages = new ArrayList<>();
         private String clusterName;
         private String nodeName;
         private StageMode mode = StageMode.HOST;
@@ -323,9 +320,15 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
-        public Builder basePackages(String basePackages)
+        public Builder basePackages(String... basePackages)
         {
-            this.basePackages = basePackages;
+            Collections.addAll(this.basePackages, basePackages);
+            return this;
+        }
+
+        public Builder basePackages(Collection<String> basePackages)
+        {
+            this.basePackages.addAll(basePackages);
             return this;
         }
 
@@ -490,9 +493,9 @@ public class Stage implements Startable, ActorRuntime
         return objects.getLocalObjectCount();
     }
 
-    public void setBasePackages(final String basePackages)
+    public void setBasePackages(final List<String> basePackages)
     {
-        this.basePackages = basePackages;
+        this.basePackages = Collections.unmodifiableList(basePackages);
     }
 
     public String getClusterName()
@@ -641,7 +644,7 @@ public class Stage implements Startable, ActorRuntime
         finder = getFirstExtension(ActorClassFinder.class);
         if (finder == null)
         {
-            finder = StringUtils.isNotEmpty(basePackages) ? new FastActorClassFinder(basePackages.split(Pattern.quote(","))) : new LazyActorClassFinder();
+            finder = !basePackages.isEmpty() ? new FastActorClassFinder((String[]) basePackages.toArray()) : new LazyActorClassFinder();
         }
         await(finder.start());
 
