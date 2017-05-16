@@ -41,9 +41,9 @@ import java.util.Set;
 /**
  * Created by joeh on 2017-05-15.
  */
-public class MemoryActorDeactivationExtension implements ActorDeactivationExtension
+public class ActorMemoryDeactivationExtension implements ActorDeactivationExtension
 {
-    private static final Logger logger = LoggerFactory.getLogger(MemoryActorDeactivationExtension.class);
+    private static final Logger logger = LoggerFactory.getLogger(ActorMemoryDeactivationExtension.class);
 
     private final int maxMemoryPct;
     private final int actorCullPct;
@@ -51,7 +51,7 @@ public class MemoryActorDeactivationExtension implements ActorDeactivationExtens
 
     private long lastCulling = 0;
 
-    public MemoryActorDeactivationExtension(final int maxMemoryPct, final int actorCullPct, final Duration maxFrequency)
+    public ActorMemoryDeactivationExtension(final int maxMemoryPct, final int actorCullPct, final Duration maxFrequency)
     {
         this.maxMemoryPct = maxMemoryPct;
         this.actorCullPct = actorCullPct;
@@ -63,11 +63,11 @@ public class MemoryActorDeactivationExtension implements ActorDeactivationExtens
     {
         final long currentTime = System.currentTimeMillis();
         final Runtime runtime = Runtime.getRuntime();
-        final long maxMem = runtime.maxMemory();
-        final long freeMem = runtime.freeMemory();
-        final long memoryPct = (freeMem / maxMem) * 100;
+        final float maxMem = runtime.maxMemory() / 1024 / 1024;
+        final float freeMem = runtime.freeMemory() / 1024 / 1024;
+        final int memoryPct  = (int) (((maxMem - freeMem) / maxMem) * 100.0f);
 
-        if(lastCulling + maxFrequency.toMillis() < currentTime)
+        //if(lastCulling + maxFrequency.toMillis() < currentTime)
         {
             if(memoryPct > maxMemoryPct) {
                 final int actorCount = actorEntries.size();
