@@ -67,7 +67,7 @@ public class ActorMemoryDeactivationExtension implements ActorDeactivationExtens
         final float freeMem = runtime.freeMemory() / 1024 / 1024;
         final int memoryPct  = (int) (((maxMem - freeMem) / maxMem) * 100.0f);
 
-        //if(lastCulling + maxFrequency.toMillis() < currentTime)
+        if(lastCulling + maxFrequency.toMillis() < currentTime)
         {
             if(memoryPct > maxMemoryPct) {
                 final int actorCount = actorEntries.size();
