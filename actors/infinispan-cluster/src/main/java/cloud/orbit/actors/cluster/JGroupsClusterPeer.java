@@ -318,6 +318,7 @@ public class JGroupsClusterPeer implements ClusterPeer
 
     public String getJgroupsConfig()
     {
+        jgroupsConfig = System.getProperty("orbit.jgroups.config",  jgroupsConfig);
         return jgroupsConfig;
     }
 
