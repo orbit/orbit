@@ -155,9 +155,6 @@ public class Stage implements Startable, ActorRuntime
         return thread;
     });
 
-    @Config("orbit.actors.basePackages")
-    private List<String> basePackages;
-
     @Config("orbit.actors.clusterName")
     private String clusterName;
 
@@ -175,6 +172,9 @@ public class Stage implements Startable, ActorRuntime
 
     @Config("orbit.actors.stickyHeaders")
     private Set<String> stickyHeaders = new HashSet<>();
+
+    @Config("orbit.actors.basePackages")
+    private List<String> basePackages = new ArrayList<>();
 
     @Config("orbit.actors.pulseInterval")
     private long pulseIntervalMillis = TimeUnit.SECONDS.toMillis(10);
@@ -239,7 +239,6 @@ public class Stage implements Startable, ActorRuntime
         private Execution execution;
         private LocalObjectsCleaner localObjectsCleaner;
 
-        private List<String> basePackages = new ArrayList<>();
         private String clusterName;
         private String nodeName;
         private StageMode mode = StageMode.HOST;
@@ -247,6 +246,7 @@ public class Stage implements Startable, ActorRuntime
 
         private List<ActorExtension> extensions = new ArrayList<>();
         private Set<String> stickyHeaders = new HashSet<>();
+        private List<String> basePackages = new ArrayList<>();
 
         private Long actorTTLMillis = null;
         private Long deactivationTimeoutMillis;
@@ -320,18 +320,6 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
-        public Builder basePackages(String... basePackages)
-        {
-            Collections.addAll(this.basePackages, basePackages);
-            return this;
-        }
-
-        public Builder basePackages(Collection<String> basePackages)
-        {
-            this.basePackages.addAll(basePackages);
-            return this;
-        }
-
         public Builder nodeName(String nodeName)
         {
             this.nodeName = nodeName;
@@ -353,6 +341,18 @@ public class Stage implements Startable, ActorRuntime
         public Builder stickyHeaders(String... stickyHeaders)
         {
             Collections.addAll(this.stickyHeaders, stickyHeaders);
+            return this;
+        }
+
+        public Builder basePackages(String... basePackages)
+        {
+            Collections.addAll(this.basePackages, basePackages);
+            return this;
+        }
+
+        public Builder basePackages(Collection<String> basePackages)
+        {
+            this.basePackages.addAll(basePackages);
             return this;
         }
 
@@ -389,7 +389,6 @@ public class Stage implements Startable, ActorRuntime
             stage.setObjectCloner(objectCloner);
             stage.setMessageLoopbackObjectCloner(messageLoopbackObjectCloner);
             stage.setMessageSerializer(messageSerializer);
-            stage.setBasePackages(basePackages);
             stage.setClusterName(clusterName);
             stage.setClusterPeer(clusterPeer);
             stage.setNodeName(nodeName);
@@ -401,6 +400,7 @@ public class Stage implements Startable, ActorRuntime
             stage.setInvocationHandler(invocationHandler);
             stage.setMessaging(messaging);
             stage.addStickyHeaders(stickyHeaders);
+            stage.addBasePackages(basePackages);
             if(actorTTLMillis != null) stage.setDefaultActorTTL(actorTTLMillis);
             if(deactivationTimeoutMillis != null) stage.setDeactivationTimeout(deactivationTimeoutMillis);
             if(concurrentDeactivations != null) stage.setConcurrentDeactivations(concurrentDeactivations);
@@ -417,6 +417,11 @@ public class Stage implements Startable, ActorRuntime
     public void addStickyHeaders(Collection<String> stickyHeaders)
     {
         this.stickyHeaders.addAll(stickyHeaders);
+    }
+
+    public void addBasePackages(final List<String> basePackages)
+    {
+        this.basePackages.addAll(basePackages);
     }
 
     public void setClock(final Clock clock)
@@ -491,11 +496,6 @@ public class Stage implements Startable, ActorRuntime
     @SuppressWarnings("unused")
     public long getLocalObjectCount() {
         return objects.getLocalObjectCount();
-    }
-
-    public void setBasePackages(final List<String> basePackages)
-    {
-        this.basePackages = Collections.unmodifiableList(basePackages);
     }
 
     public String getClusterName()
@@ -644,7 +644,15 @@ public class Stage implements Startable, ActorRuntime
         finder = getFirstExtension(ActorClassFinder.class);
         if (finder == null)
         {
-            finder = !basePackages.isEmpty() ? new FastActorClassFinder((String[]) basePackages.toArray()) : new LazyActorClassFinder();
+            if(!basePackages.isEmpty())
+            {
+                final String[] basePackagesArray = basePackages.toArray(new String[0]);
+                finder = new FastActorClassFinder(basePackagesArray);
+            }
+            else
+            {
+                finder = new LazyActorClassFinder();
+            }
         }
         await(finder.start());
 
