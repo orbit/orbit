@@ -31,7 +31,7 @@ package cloud.orbit.actors.runtime;
 import java.lang.ref.WeakReference;
 
 /**
- * Utility class to get the current IRuntime. Used by the generated code.
+ * Utility class to get the current ActorRuntime. Used by the generated code.
  */
 public class RuntimeBinder
 {

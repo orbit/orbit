@@ -33,12 +33,8 @@ import cloud.orbit.actors.ActorObserver;
 import cloud.orbit.actors.annotation.NoIdentity;
 import cloud.orbit.actors.annotation.OneWay;
 import cloud.orbit.actors.cluster.NodeAddress;
-import cloud.orbit.actors.extensions.ActorClassFinder;
 import cloud.orbit.exception.UncheckedException;
 import cloud.orbit.util.ClassPathUtils;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Proxy;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,22 +42,19 @@ import java.util.concurrent.ConcurrentMap;
 
 public class DefaultDescriptorFactory implements DescriptorFactory
 {
-    private static final Logger logger = LoggerFactory.getLogger(DescriptorFactory.class);
     private static DefaultDescriptorFactory instance = new DefaultDescriptorFactory();
 
     private ConcurrentMap<Class<?>, ReferenceFactory<?>> factories = new ConcurrentHashMap<>();
     private ActorFactoryGenerator dynamicReferenceFactory = new ActorFactoryGenerator();
 
-    private ActorClassFinder finder;
-    private ConcurrentMap<Class<?>, ClassDescriptor> descriptorMapByInterface = new ConcurrentHashMap<>();
-    private ConcurrentMap<Integer, ClassDescriptor> descriptorMapByInterfaceId = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class<?>, ClassDescriptor> descriptorMapByInterface = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer, ClassDescriptor> descriptorMapByInterfaceId = new ConcurrentHashMap<>();
 
     static class ClassDescriptor
     {
         ReferenceFactory<?> factory;
         ObjectInvoker<Object> invoker;
         boolean isObserver;
-        boolean isActor;
     }
 
     private DefaultDescriptorFactory()

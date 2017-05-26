@@ -330,7 +330,7 @@ class ClassIdResolver extends ClassNameIdResolver
     @Override
     protected JavaType _typeFromId(final String id, final TypeFactory typeFactory)
     {
-        Class<?> cls = DefaultClassDictionary.get().getClassById(Integer.parseInt(id));
+        Class<?> cls = DefaultClassDictionary.get().getClassById(Integer.parseInt(id), true);
         return typeFactory.constructSpecializedType(_baseType, cls);
     }
 }

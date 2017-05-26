@@ -51,15 +51,15 @@ import java.util.concurrent.atomic.AtomicReference;
 public class DefaultClassDictionary
 {
     private static final Logger logger = LoggerFactory.getLogger(DefaultClassDictionary.class);
-    public static final String META_INF_SERVICES_ORBIT_CLASSES = "META-INF/services/orbit/classes/";
-    public static final String EXTENSION = "yml";
-    public static final String SUFFIX = "." + EXTENSION;
-    public static final Object LOAD_MUTEX = new Object();
-    private static DefaultClassDictionary instance = new DefaultClassDictionary();
-    private ConcurrentMap<Class<?>, Integer> classToId = new ConcurrentHashMap<>();
-    private ConcurrentMap<Integer, Class<?>> idToClass = new ConcurrentHashMap<>();
-    private ConcurrentMap<Integer, String> idToName = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, Integer> nameToId = new ConcurrentHashMap<>();
+    private static final String META_INF_SERVICES_ORBIT_CLASSES = "META-INF/services/orbit/classes/";
+    private static final String EXTENSION = "yml";
+    private static final String SUFFIX = "." + EXTENSION;
+    private static final Object LOAD_MUTEX = new Object();
+    private static final DefaultClassDictionary instance = new DefaultClassDictionary();
+    private final ConcurrentMap<Class<?>, Integer> classToId = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer, Class<?>> idToClass = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer, String> idToName = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Integer> nameToId = new ConcurrentHashMap<>();
     private volatile boolean loaded = false;
 
     private DefaultClassDictionary()
@@ -185,6 +185,11 @@ public class DefaultClassDictionary
 
     public Class<?> getClassById(int classId)
     {
+        return getClassById(classId, false);
+    }
+
+    public Class<?> getClassById(int classId, boolean fullClasspath)
+    {
         final Integer id = classId;
         Class<?> clazz = idToClass.get(id);
         if (clazz != null)
@@ -219,7 +224,10 @@ public class DefaultClassDictionary
 
         if (className == null)
         {
-            className = getHashCodeToClassName().get(classId);
+            if (fullClasspath)
+            {
+                className = getHashCodeToClassName().get(classId);
+            }
 
             if (className == null)
             {
@@ -286,4 +294,3 @@ public class DefaultClassDictionary
         return id;
     }
 }
-
