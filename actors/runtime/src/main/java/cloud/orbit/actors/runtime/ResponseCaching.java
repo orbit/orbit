@@ -39,6 +39,7 @@ import cloud.orbit.actors.cache.ExecutionCacheFlushObserver;
 import cloud.orbit.actors.cloner.CloneHelper;
 import cloud.orbit.actors.cloner.ExecutionObjectCloner;
 import cloud.orbit.actors.extensions.MessageSerializer;
+import cloud.orbit.actors.extensions.ResponseCachingExtension;
 import cloud.orbit.actors.net.HandlerAdapter;
 import cloud.orbit.actors.net.HandlerContext;
 import cloud.orbit.concurrent.Task;
@@ -58,7 +59,7 @@ import java.util.concurrent.TimeUnit;
 
 public class ResponseCaching
         extends HandlerAdapter
-        implements ExecutionCacheFlushObserver
+        implements ResponseCachingExtension
 {
     private static Clock clock = null;
     private static Executor cacheExecutor = null;
@@ -100,6 +101,7 @@ public class ResponseCaching
      * Retrieves a cached value for an actor's method.
      * Returns null if there is no cached value.
      */
+    @Override
     public Task<?> get(Method method, Pair<Addressable, String> key)
     {
         Cache<Pair<Addressable, String>, Task> cache = getIfPresent(method);
@@ -109,6 +111,7 @@ public class ResponseCaching
     /**
      * Caches a value for an actor's method.
      */
+    @Override
     public void put(Method method, Pair<Addressable, String> key, Task<?> value)
     {
         Cache<Pair<Addressable, String>, Task> cache = getCache(method);
