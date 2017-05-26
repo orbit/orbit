@@ -28,7 +28,15 @@
 
 package cloud.orbit.actors;
 
+import com.ea.async.Async;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cloud.orbit.actors.annotation.StatelessWorker;
+import cloud.orbit.actors.annotation.StorageExtension;
+import cloud.orbit.actors.cloner.ExecutionObjectCloner;
+import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.cluster.ClusterPeer;
 import cloud.orbit.actors.cluster.JGroupsClusterPeer;
 import cloud.orbit.actors.cluster.NodeAddress;
@@ -48,19 +56,19 @@ import cloud.orbit.actors.net.DefaultPipeline;
 import cloud.orbit.actors.net.Pipeline;
 import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.runtime.ActorBaseEntry;
-import cloud.orbit.actors.runtime.DefaultLocalObjectsCleaner;
 import cloud.orbit.actors.runtime.ActorEntry;
 import cloud.orbit.actors.runtime.ActorRuntime;
 import cloud.orbit.actors.runtime.ActorTaskContext;
 import cloud.orbit.actors.runtime.AsyncStreamReference;
 import cloud.orbit.actors.runtime.BasicRuntime;
 import cloud.orbit.actors.runtime.ClusterHandler;
-import cloud.orbit.actors.runtime.DefaultInvocationHandler;
-import cloud.orbit.actors.runtime.FastActorClassFinder;
-import cloud.orbit.actors.runtime.DefaultLifetimeExtension;
 import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
 import cloud.orbit.actors.runtime.DefaultHandlers;
+import cloud.orbit.actors.runtime.DefaultInvocationHandler;
+import cloud.orbit.actors.runtime.DefaultLifetimeExtension;
+import cloud.orbit.actors.runtime.DefaultLocalObjectsCleaner;
 import cloud.orbit.actors.runtime.Execution;
+import cloud.orbit.actors.runtime.FastActorClassFinder;
 import cloud.orbit.actors.runtime.Hosting;
 import cloud.orbit.actors.runtime.InternalUtils;
 import cloud.orbit.actors.runtime.Invocation;
@@ -80,28 +88,18 @@ import cloud.orbit.actors.runtime.RemoteReference;
 import cloud.orbit.actors.runtime.ResponseCaching;
 import cloud.orbit.actors.runtime.SerializationHandler;
 import cloud.orbit.actors.runtime.StatelessActorEntry;
-import cloud.orbit.actors.cloner.ExecutionObjectCloner;
-import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.streams.AsyncObserver;
 import cloud.orbit.actors.streams.AsyncStream;
 import cloud.orbit.actors.streams.StreamSequenceToken;
 import cloud.orbit.actors.streams.StreamSubscriptionHandle;
 import cloud.orbit.actors.streams.simple.SimpleStreamExtension;
-import cloud.orbit.actors.transactions.IdUtils;
-import cloud.orbit.actors.transactions.TransactionUtils;
+import cloud.orbit.actors.util.IdUtils;
 import cloud.orbit.annotation.Config;
 import cloud.orbit.concurrent.ExecutorUtils;
 import cloud.orbit.concurrent.Task;
-import cloud.orbit.lifecycle.Startable;
 import cloud.orbit.exception.UncheckedException;
+import cloud.orbit.lifecycle.Startable;
 import cloud.orbit.util.StringUtils;
-
-import com.ea.async.Async;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import cloud.orbit.actors.annotation.StorageExtension;
 
 import javax.inject.Singleton;
 
@@ -110,7 +108,6 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -128,7 +125,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 import static com.ea.async.Async.await;
 
@@ -159,9 +155,6 @@ public class Stage implements Startable, ActorRuntime
         return thread;
     });
 
-    @Config("orbit.actors.basePackages")
-    private String basePackages;
-
     @Config("orbit.actors.clusterName")
     private String clusterName;
 
@@ -178,7 +171,10 @@ public class Stage implements Startable, ActorRuntime
     private List<ActorExtension> extensions = new CopyOnWriteArrayList<>();
 
     @Config("orbit.actors.stickyHeaders")
-    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
+    private Set<String> stickyHeaders = new HashSet<>();
+
+    @Config("orbit.actors.basePackages")
+    private List<String> basePackages = new ArrayList<>();
 
     @Config("orbit.actors.pulseInterval")
     private long pulseIntervalMillis = TimeUnit.SECONDS.toMillis(10);
@@ -243,7 +239,6 @@ public class Stage implements Startable, ActorRuntime
         private Execution execution;
         private LocalObjectsCleaner localObjectsCleaner;
 
-        private String basePackages;
         private String clusterName;
         private String nodeName;
         private StageMode mode = StageMode.HOST;
@@ -251,6 +246,7 @@ public class Stage implements Startable, ActorRuntime
 
         private List<ActorExtension> extensions = new ArrayList<>();
         private Set<String> stickyHeaders = new HashSet<>();
+        private List<String> basePackages = new ArrayList<>();
 
         private Long actorTTLMillis = null;
         private Long deactivationTimeoutMillis;
@@ -324,12 +320,6 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
-        public Builder basePackages(String basePackages)
-        {
-            this.basePackages = basePackages;
-            return this;
-        }
-
         public Builder nodeName(String nodeName)
         {
             this.nodeName = nodeName;
@@ -351,6 +341,18 @@ public class Stage implements Startable, ActorRuntime
         public Builder stickyHeaders(String... stickyHeaders)
         {
             Collections.addAll(this.stickyHeaders, stickyHeaders);
+            return this;
+        }
+
+        public Builder basePackages(String... basePackages)
+        {
+            Collections.addAll(this.basePackages, basePackages);
+            return this;
+        }
+
+        public Builder basePackages(Collection<String> basePackages)
+        {
+            this.basePackages.addAll(basePackages);
             return this;
         }
 
@@ -387,7 +389,6 @@ public class Stage implements Startable, ActorRuntime
             stage.setObjectCloner(objectCloner);
             stage.setMessageLoopbackObjectCloner(messageLoopbackObjectCloner);
             stage.setMessageSerializer(messageSerializer);
-            stage.setBasePackages(basePackages);
             stage.setClusterName(clusterName);
             stage.setClusterPeer(clusterPeer);
             stage.setNodeName(nodeName);
@@ -399,6 +400,7 @@ public class Stage implements Startable, ActorRuntime
             stage.setInvocationHandler(invocationHandler);
             stage.setMessaging(messaging);
             stage.addStickyHeaders(stickyHeaders);
+            stage.addBasePackages(basePackages);
             if(actorTTLMillis != null) stage.setDefaultActorTTL(actorTTLMillis);
             if(deactivationTimeoutMillis != null) stage.setDeactivationTimeout(deactivationTimeoutMillis);
             if(concurrentDeactivations != null) stage.setConcurrentDeactivations(concurrentDeactivations);
@@ -415,6 +417,11 @@ public class Stage implements Startable, ActorRuntime
     public void addStickyHeaders(Collection<String> stickyHeaders)
     {
         this.stickyHeaders.addAll(stickyHeaders);
+    }
+
+    public void addBasePackages(final List<String> basePackages)
+    {
+        this.basePackages.addAll(basePackages);
     }
 
     public void setClock(final Clock clock)
@@ -489,11 +496,6 @@ public class Stage implements Startable, ActorRuntime
     @SuppressWarnings("unused")
     public long getLocalObjectCount() {
         return objects.getLocalObjectCount();
-    }
-
-    public void setBasePackages(final String basePackages)
-    {
-        this.basePackages = basePackages;
     }
 
     public String getClusterName()
@@ -642,7 +644,15 @@ public class Stage implements Startable, ActorRuntime
         finder = getFirstExtension(ActorClassFinder.class);
         if (finder == null)
         {
-            finder = StringUtils.isNotEmpty(basePackages) ? new FastActorClassFinder(basePackages.split(Pattern.quote(","))) : new LazyActorClassFinder();
+            if(!basePackages.isEmpty())
+            {
+                final String[] basePackagesArray = basePackages.toArray(new String[0]);
+                finder = new FastActorClassFinder(basePackagesArray);
+            }
+            else
+            {
+                finder = new LazyActorClassFinder();
+            }
         }
         await(finder.start());
 

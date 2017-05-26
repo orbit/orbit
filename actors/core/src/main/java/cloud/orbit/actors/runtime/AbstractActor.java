@@ -100,14 +100,6 @@ public abstract class AbstractActor<T>
         }
     }
 
-    public Object interceptStateMethod(
-            final Method method,
-            final String event,
-            final Object[] args)
-    {
-        return ((ActorState) state()).invokeEvent(event, args);
-    }
-
     protected Class<?> getStateClass()
     {
         final Class<? extends AbstractActor> aClass = getClass();

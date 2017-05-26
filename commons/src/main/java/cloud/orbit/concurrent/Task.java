@@ -132,7 +132,6 @@ public class Task<T> extends CompletableFuture<T>
      * This completableFuture derived method is not available for Tasks.
      */
     @Override
-    @Deprecated
     public boolean complete(T value)
     {
         // TODO: throw an exception
@@ -143,7 +142,6 @@ public class Task<T> extends CompletableFuture<T>
      * This completableFuture derived method is not available for Tasks.
      */
     @Override
-    @Deprecated
     public boolean completeExceptionally(Throwable ex)
     {
         // TODO: throw an exception

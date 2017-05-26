@@ -32,7 +32,7 @@ package cloud.orbit.actors.streams;
 import cloud.orbit.actors.runtime.ActorRuntime;
 import cloud.orbit.actors.runtime.Invocation;
 import cloud.orbit.actors.server.ServerPeer;
-import cloud.orbit.actors.transactions.IdUtils;
+import cloud.orbit.actors.util.IdUtils;
 import cloud.orbit.concurrent.Task;
 
 import java.util.LinkedHashMap;

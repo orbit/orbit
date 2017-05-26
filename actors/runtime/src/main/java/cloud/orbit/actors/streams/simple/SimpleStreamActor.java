@@ -32,7 +32,7 @@ import cloud.orbit.actors.Addressable;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.runtime.ActorRuntime;
-import cloud.orbit.actors.transactions.IdUtils;
+import cloud.orbit.actors.util.IdUtils;
 import cloud.orbit.concurrent.Task;
 
 import java.util.concurrent.ConcurrentHashMap;
