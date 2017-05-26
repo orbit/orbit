@@ -266,6 +266,12 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
+        public Builder executionPoolSize(int executionPoolSize)
+        {
+            this.executionPoolSize = executionPoolSize;
+            return this;
+        }
+
         public Builder execution(Execution execution)
         {
             this.execution = execution;
