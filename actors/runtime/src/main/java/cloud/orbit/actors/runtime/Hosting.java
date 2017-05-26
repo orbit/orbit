@@ -423,70 +423,86 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     {
         final long start = System.currentTimeMillis();
 
-        while (true)
-        {
-            if (System.currentTimeMillis() - start > timeToWaitForServersMillis)
+        return Task.supplyAsync(() -> {
+            while (true)
             {
-                final String timeoutMessage = "Timeout waiting for a server capable of handling: " + interfaceClassName;
-                logger.error(timeoutMessage);
-                return Task.fromException(new UncheckedException(timeoutMessage));
-            }
-
-            final List<NodeInfo> currentServerNodes = serverNodes;
-
-            final List<NodeInfo> potentialNodes = currentServerNodes.stream()
-                    .filter(n -> (!n.cannotHostActors && n.state == NodeState.RUNNING)
-                            && actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, actorSupported_yes))
-                    .collect(Collectors.toList());
-
-            if (potentialNodes.isEmpty())
-            {
-                if (stage.getState() != NodeCapabilities.NodeState.RUNNING)
+                if (System.currentTimeMillis() - start > timeToWaitForServersMillis)
                 {
-                    return Task.fromException(new UncheckedException("No node found to activate " + interfaceClassName));
+                    final String timeoutMessage = "Timeout waiting for a server capable of handling: " + interfaceClassName;
+                    logger.error(timeoutMessage);
+                    return Task.fromException(new UncheckedException(timeoutMessage));
                 }
-                if (logger.isDebugEnabled())
+
+                // read volatile field into local field
+                final List<NodeInfo> currentServerNodes = serverNodes;
+
+                // filter out nodes which cannot host actors (nodes which are not running and nodes which cannot host this actor)
+                final List<NodeInfo> potentialNodes = currentServerNodes.stream()
+                        .filter(n -> (!n.cannotHostActors && n.state == NodeState.RUNNING)
+                                && actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, actorSupported_yes))
+                        .collect(Collectors.toList());
+
+                if (potentialNodes.isEmpty())
                 {
-                    logger.debug("No node available to activate actor: {}.", interfaceClassName);
+                    // fail if there are no nodes in the cluster and this nodes state is not running
+                    if (stage.getState() != NodeCapabilities.NodeState.RUNNING)
+                    {
+                        return Task.fromException(new UncheckedException("No node found to activate " + interfaceClassName));
+                    }
+                    // "spin" and sleep every second to avoid burning cpu cycles, a node joining the cluster will interrupt the sleep
+                    if (logger.isDebugEnabled())
+                    {
+                        logger.info("No node available to activate actor: {}.", interfaceClassName);
+                    }
+                    waitForServers();
                 }
-                waitForServers();
-            }
-            else
-            {
-                for (NodeInfo potentialNode : potentialNodes)
+                else
                 {
-                    if (potentialNode.canActivatePending.add(interfaceClassName)) {
-                        potentialNode.nodeCapabilities.canActivate(interfaceClassName).handle((result, throwable) -> {
-                            if (throwable != null)
+                    for (NodeInfo potentialNode : potentialNodes)
+                    {
+                        // loop over the potential nodes, add the interface to a concurrent hashset, if add returns true there is no activation pending
+                        if (potentialNode.canActivatePending.add(interfaceClassName))
+                        {
+                            // query if this node can activate this actor
+                            potentialNode.nodeCapabilities.canActivate(interfaceClassName).handle((result, throwable) ->
                             {
-                                potentialNode.canActivatePending.remove(interfaceClassName); // retry
-                            }
-                            else
-                            {
-                                if (result == actorSupported_noneSupported)
+                                if (throwable != null)
                                 {
-                                    potentialNode.cannotHostActors = true;
-                                    // jic
-                                    potentialNode.canActivate.put(interfaceClassName, actorSupported_no);
+                                    // actor call to can activate failed, retry next loop
+                                    potentialNode.canActivatePending.remove(interfaceClassName);
                                 }
                                 else
                                 {
-                                    potentialNode.canActivate.put(interfaceClassName, result);
+                                    // node cannot host this actor, mark it so
+                                    if (result == actorSupported_noneSupported)
+                                    {
+                                        potentialNode.cannotHostActors = true;
+                                        // jic
+                                        potentialNode.canActivate.put(interfaceClassName, actorSupported_no);
+                                    }
+                                    else
+                                    {
+                                        // found suitable host
+                                        potentialNode.canActivate.put(interfaceClassName, result);
+                                    }
                                 }
-                            }
-                            return null;
-                        });
+                                return null;
+                            });
+                        }
+                    }
+
+                    final List<NodeInfo> suitableNodes = potentialNodes.stream()
+                            .filter(n -> actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, actorSupported_no))
+                            .collect(Collectors.toList());
+
+                    if (!suitableNodes.isEmpty())
+                    {
+                        final NodeInfo nodeInfo = nodeSelector.select(interfaceClassName, getNodeAddress(), suitableNodes);
+                        return Task.fromValue(nodeInfo.address);
                     }
                 }
-
-                final NodeInfo nodeInfo = nodeSelector.select(interfaceClassName, getNodeAddress(), potentialNodes);
-
-                if (nodeInfo.canActivate.getOrDefault(interfaceClassName, actorSupported_no) == actorSupported_yes)
-                {
-                    return Task.fromValue(nodeInfo.address);
-                }
             }
-        }
+        }, stage.getExecutionPool());
     }
 
     private void waitForServers()
