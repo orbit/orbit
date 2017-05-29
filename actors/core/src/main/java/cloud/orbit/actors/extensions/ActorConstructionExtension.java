@@ -28,8 +28,6 @@
 
 package cloud.orbit.actors.extensions;
 
-import cloud.orbit.exception.UncheckedException;
-
 /**
  * Created by joeh on 2017-05-29.
  */
