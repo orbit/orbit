@@ -340,6 +340,12 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
+        public Builder extensions(Collection<ActorExtension> extensions)
+        {
+            this.extensions.addAll(extensions);
+            return this;
+        }
+
         public Builder extensions(ActorExtension... extensions)
         {
             Collections.addAll(this.extensions, extensions);
