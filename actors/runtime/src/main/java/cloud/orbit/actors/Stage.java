@@ -43,6 +43,7 @@ import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.concurrent.MultiExecutionSerializer;
 import cloud.orbit.actors.concurrent.WaitFreeMultiExecutionSerializer;
 import cloud.orbit.actors.extensions.ActorClassFinder;
+import cloud.orbit.actors.extensions.ActorConstructionExtension;
 import cloud.orbit.actors.extensions.ActorDeactivationExtension;
 import cloud.orbit.actors.extensions.ActorExtension;
 import cloud.orbit.actors.extensions.DefaultLoggerExtension;
@@ -62,6 +63,7 @@ import cloud.orbit.actors.runtime.ActorTaskContext;
 import cloud.orbit.actors.runtime.AsyncStreamReference;
 import cloud.orbit.actors.runtime.BasicRuntime;
 import cloud.orbit.actors.runtime.ClusterHandler;
+import cloud.orbit.actors.runtime.DefaultActorConstructionExtension;
 import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
 import cloud.orbit.actors.runtime.DefaultHandlers;
 import cloud.orbit.actors.runtime.DefaultInvocationHandler;
@@ -741,13 +743,16 @@ public class Stage implements Startable, ActorRuntime
         LifetimeExtension lifetimeExtension = extensions.stream()
                 .filter(p -> p instanceof LifetimeExtension)
                 .map(p -> (LifetimeExtension) p)
-                .findFirst().orElse(null);
+                .findFirst()
+                .orElse(new DefaultLifetimeExtension());
+        extensions.add(lifetimeExtension);
 
-        if (lifetimeExtension == null)
-        {
-            lifetimeExtension = new DefaultLifetimeExtension();
-            extensions.add(lifetimeExtension);
-        }
+        ActorConstructionExtension actorConstructionExtension = extensions.stream()
+                .filter(p -> p instanceof ActorConstructionExtension)
+                .map(p -> (ActorConstructionExtension) p)
+                .findFirst()
+                .orElse(new DefaultActorConstructionExtension());
+        extensions.add(actorConstructionExtension);
 
         logger.debug("Starting messaging...");
         messaging.start();

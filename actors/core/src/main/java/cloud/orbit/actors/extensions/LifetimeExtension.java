@@ -39,24 +39,6 @@ import cloud.orbit.exception.UncheckedException;
 public interface LifetimeExtension extends ActorExtension
 {
     /**
-     * Called to construct actor.
-     *
-     * @param concreteClass concrete class of actor instance to construct
-     * @return instance of concreteClass
-     */
-    default <T> T newInstance(Class<T> concreteClass)
-    {
-        try
-        {
-            return concreteClass.newInstance();
-        }
-        catch (Exception ex)
-        {
-            throw new UncheckedException(ex);
-        }
-    }
-
-    /**
      * Called immediately before invoking the actors activation.
      *
      * @param actor the actor object being activated
