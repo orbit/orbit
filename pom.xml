@@ -39,7 +39,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	
 	<groupId>cloud.orbit</groupId>
     <artifactId>orbit-internal-parent</artifactId>
-    <version>1.0.0-rc3-SNAPSHOT</version>
+    <version>1.0.0-rc3</version>
     <packaging>pom</packaging>
     <name>Orbit Internal Parent</name>
 
