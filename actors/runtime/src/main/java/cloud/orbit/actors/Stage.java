@@ -740,19 +740,16 @@ public class Stage implements Startable, ActorRuntime
             extensions.add(defaultStreamProvider);
         }
 
-        LifetimeExtension lifetimeExtension = extensions.stream()
-                .filter(p -> p instanceof LifetimeExtension)
-                .map(p -> (LifetimeExtension) p)
-                .findFirst()
-                .orElse(new DefaultLifetimeExtension());
-        extensions.add(lifetimeExtension);
+        if(extensions.stream().noneMatch(p -> p instanceof LifetimeExtension))
+        {
+            extensions.add(new DefaultLifetimeExtension());
+        }
 
-        ActorConstructionExtension actorConstructionExtension = extensions.stream()
-                .filter(p -> p instanceof ActorConstructionExtension)
-                .map(p -> (ActorConstructionExtension) p)
-                .findFirst()
-                .orElse(new DefaultActorConstructionExtension());
-        extensions.add(actorConstructionExtension);
+        if(extensions.stream().noneMatch(p -> p instanceof ActorConstructionExtension))
+        {
+            extensions.add(new DefaultActorConstructionExtension());
+        }
+
 
         logger.debug("Starting messaging...");
         messaging.start();
