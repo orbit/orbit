@@ -26,20 +26,26 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.extensions;
+package cloud.orbit.actors.runtime;
 
+import cloud.orbit.actors.extensions.ActorConstructionExtension;
 import cloud.orbit.exception.UncheckedException;
 
 /**
  * Created by joeh on 2017-05-29.
  */
-public interface ActorConstructionExtension extends ActorExtension
+public class DefaultActorConstructionExtension implements ActorConstructionExtension
 {
-    /**
-     * Called to construct actor.
-     *
-     * @param concreteClass concrete class of actor instance to construct
-     * @return instance of concreteClass
-     */
-    <T> T newInstance(Class<T> concreteClass);
+    @Override
+    public <T> T newInstance(final Class<T> concreteClass)
+    {
+        try
+        {
+            return concreteClass.newInstance();
+        }
+        catch (Exception ex)
+        {
+            throw new UncheckedException(ex);
+        }
+    }
 }
