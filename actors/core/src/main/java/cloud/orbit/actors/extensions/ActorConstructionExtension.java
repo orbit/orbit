@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -28,57 +28,28 @@
 
 package cloud.orbit.actors.extensions;
 
-
-import cloud.orbit.actors.runtime.AbstractActor;
-import cloud.orbit.concurrent.Task;
 import cloud.orbit.exception.UncheckedException;
 
 /**
- * Listener the actor activation/deactivation process.
+ * Created by joeh on 2017-05-29.
  */
-public interface LifetimeExtension extends ActorExtension
+public interface ActorConstructionExtension extends ActorExtension
 {
     /**
-     * Called immediately before invoking the actors activation.
+     * Called to construct actor.
      *
-     * @param actor the actor object being activated
-     * @return a completion promise, the framework will wait if necessary.
+     * @param concreteClass concrete class of actor instance to construct
+     * @return instance of concreteClass
      */
-    default Task<?> preActivation(AbstractActor<?> actor)
+    default <T> T newInstance(Class<T> concreteClass)
     {
-        return Task.done();
-    }
-
-    /**
-     * Called immediately after invoking the actors activation.
-     *
-     * @param actor the actor object being activated
-     * @return a completion promise, the framework will wait if necessary.
-     */
-    default Task<?> postActivation(AbstractActor<?> actor)
-    {
-        return Task.done();
-    }
-
-    /**
-     * Called immediately before invoking the actors deactivation code.
-     *
-     * @param actor the actor object being deactivated
-     * @return a completion promise, the framework will wait if necessary.
-     */
-    default Task<?> preDeactivation(AbstractActor<?> actor)
-    {
-        return Task.done();
-    }
-
-    /**
-     * Called immediately after invoking the actors deactivation code.
-     *
-     * @param actor the actor object being deactivated
-     * @return a completion promise, the framework will wait if necessary.
-     */
-    default Task<?> postDeactivation(AbstractActor<?> actor)
-    {
-        return Task.done();
+        try
+        {
+            return concreteClass.newInstance();
+        }
+        catch (Exception ex)
+        {
+            throw new UncheckedException(ex);
+        }
     }
 }
