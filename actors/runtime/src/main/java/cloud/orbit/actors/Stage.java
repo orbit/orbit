@@ -577,7 +577,7 @@ public class Stage implements Startable, ActorRuntime
         logger.info("Starting Stage...");
         extensions = new ArrayList<>(extensions);
         startCalled = true;
-        if (state != null)
+        if (state != null && state != NodeCapabilities.NodeState.STOPPED)
         {
             throw new IllegalStateException("Can't start the stage at this state. " + this.toString());
         }
@@ -890,6 +890,7 @@ public class Stage implements Startable, ActorRuntime
         try
         {
             timer.cancel();
+            timer = null;
         }
         catch (final Throwable ex)
         {
