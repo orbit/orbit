@@ -31,7 +31,7 @@ package cloud.orbit.actors.test;
 
 import cloud.orbit.actors.ActorObserver;
 import cloud.orbit.actors.Stage;
-import cloud.orbit.actors.cloner.KryoCloner;
+import cloud.orbit.actors.runtime.KryoSerializer;
 import cloud.orbit.concurrent.Task;
 
 import org.junit.Test;
@@ -68,7 +68,7 @@ public class ObserverDownTest extends ActorBaseTest
         Stage stage2 = createStage();
 
         SomeObserverImpl observer1 = new SomeObserverImpl();
-        final KryoCloner cloner = new KryoCloner();
+        final KryoSerializer cloner = new KryoSerializer();
         SomeObserver observerRef = cloner.clone(stage1.registerObserver(SomeObserver.class, observer1));
 
         // should respond immediately
