@@ -78,9 +78,6 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     // according to the micro benchmarks, a guava cache is much slower than using a ConcurrentHashMap here.
     private final Map<RemoteReference<?>, NodeAddress> localAddressCache = new ConcurrentHashMap<>();
 
-    // don't use RemoteReferences, better to restrict keys to a small set of classes.
-    private volatile ConcurrentMap<RemoteKey, NodeAddress> distributedDirectory;
-
     private long timeToWaitForServersMillis = 30000;
 
     private TreeMap<String, NodeInfo> consistentHashNodeTree = new TreeMap<>();
@@ -400,17 +397,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     private ConcurrentMap<RemoteKey, NodeAddress> getDistributedDirectory()
     {
-        if (distributedDirectory == null)
-        {
-            synchronized (this)
-            {
-                if (distributedDirectory == null)
-                {
-                    distributedDirectory = clusterPeer.getCache("distributedDirectory");
-                }
-            }
-        }
-        return distributedDirectory;
+        return clusterPeer.getCache("distributedDirectory");
     }
 
     private RemoteKey createRemoteKey(final RemoteReference actorReference)
