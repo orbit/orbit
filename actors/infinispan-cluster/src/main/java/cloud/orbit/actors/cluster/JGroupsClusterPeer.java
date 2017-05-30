@@ -267,6 +267,7 @@ public class JGroupsClusterPeer implements ClusterPeer
     }
 
     @SuppressWarnings("PMD.AvoidThrowingNullPointerException")
+    @Override
     public void sendMessage(NodeAddress address, byte message[])
     {
         sync();
