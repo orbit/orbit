@@ -28,7 +28,6 @@
 
 package cloud.orbit.actors.runtime;
 
-import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.profiler.ProfilerData;
 
 import java.util.HashMap;
@@ -44,7 +43,7 @@ public class ActorProfiler
 {
     private final HashMap<Object, ProfilerData> collectedData = new HashMap<>();
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock();
-    private final KryoCloner kryoCloner = new KryoCloner();
+    private final KryoSerializer kryoCloner = new KryoSerializer();
     protected int collectInterval;
     protected TimeUnit collectTimeUnit = TimeUnit.MILLISECONDS;
     protected double collectionTotalTimeNanos;

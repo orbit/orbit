@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import cloud.orbit.actors.annotation.StatelessWorker;
 import cloud.orbit.actors.annotation.StorageExtension;
 import cloud.orbit.actors.cloner.ExecutionObjectCloner;
-import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.cluster.ClusterPeer;
 import cloud.orbit.actors.cluster.JGroupsClusterPeer;
 import cloud.orbit.actors.cluster.NodeAddress;
@@ -76,6 +75,7 @@ import cloud.orbit.actors.runtime.InternalUtils;
 import cloud.orbit.actors.runtime.Invocation;
 import cloud.orbit.actors.runtime.InvocationHandler;
 import cloud.orbit.actors.runtime.JavaMessageSerializer;
+import cloud.orbit.actors.runtime.KryoSerializer;
 import cloud.orbit.actors.runtime.LazyActorClassFinder;
 import cloud.orbit.actors.runtime.LocalObjects;
 import cloud.orbit.actors.runtime.LocalObjectsCleaner;
@@ -645,7 +645,7 @@ public class Stage implements Startable, ActorRuntime
         }
         if (objectCloner == null)
         {
-            objectCloner = new KryoCloner();
+            objectCloner = new KryoSerializer();
         }
         if (localObjectsCleaner == null)
         {
@@ -707,7 +707,7 @@ public class Stage implements Startable, ActorRuntime
         pipeline.addLast(DefaultHandlers.MESSAGING, messaging);
 
         final MessageLoopback messageLoopback = new MessageLoopback();
-        messageLoopback.setCloner(messageLoopbackObjectCloner != null ? messageLoopbackObjectCloner : new KryoCloner());
+        messageLoopback.setCloner(messageLoopbackObjectCloner != null ? messageLoopbackObjectCloner : new KryoSerializer());
         messageLoopback.setRuntime(this);
         pipeline.addLast(messageLoopback.getName(), messageLoopback);
 
