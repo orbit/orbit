@@ -36,13 +36,13 @@ import org.slf4j.LoggerFactory;
 import cloud.orbit.actors.annotation.StatelessWorker;
 import cloud.orbit.actors.annotation.StorageExtension;
 import cloud.orbit.actors.cloner.ExecutionObjectCloner;
-import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.cluster.ClusterPeer;
 import cloud.orbit.actors.cluster.JGroupsClusterPeer;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.concurrent.MultiExecutionSerializer;
 import cloud.orbit.actors.concurrent.WaitFreeMultiExecutionSerializer;
 import cloud.orbit.actors.extensions.ActorClassFinder;
+import cloud.orbit.actors.extensions.ActorConstructionExtension;
 import cloud.orbit.actors.extensions.ActorDeactivationExtension;
 import cloud.orbit.actors.extensions.ActorExtension;
 import cloud.orbit.actors.extensions.DefaultLoggerExtension;
@@ -63,6 +63,7 @@ import cloud.orbit.actors.runtime.ActorTaskContext;
 import cloud.orbit.actors.runtime.AsyncStreamReference;
 import cloud.orbit.actors.runtime.BasicRuntime;
 import cloud.orbit.actors.runtime.ClusterHandler;
+import cloud.orbit.actors.runtime.DefaultActorConstructionExtension;
 import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
 import cloud.orbit.actors.runtime.DefaultHandlers;
 import cloud.orbit.actors.runtime.DefaultInvocationHandler;
@@ -75,6 +76,7 @@ import cloud.orbit.actors.runtime.InternalUtils;
 import cloud.orbit.actors.runtime.Invocation;
 import cloud.orbit.actors.runtime.InvocationHandler;
 import cloud.orbit.actors.runtime.JavaMessageSerializer;
+import cloud.orbit.actors.runtime.KryoSerializer;
 import cloud.orbit.actors.runtime.LazyActorClassFinder;
 import cloud.orbit.actors.runtime.LocalObjects;
 import cloud.orbit.actors.runtime.LocalObjectsCleaner;
@@ -267,6 +269,12 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
+        public Builder executionPoolSize(int executionPoolSize)
+        {
+            this.executionPoolSize = executionPoolSize;
+            return this;
+        }
+
         public Builder execution(Execution execution)
         {
             this.execution = execution;
@@ -330,6 +338,12 @@ public class Stage implements Startable, ActorRuntime
         public Builder mode(StageMode mode)
         {
             this.mode = mode;
+            return this;
+        }
+
+        public Builder extensions(Collection<ActorExtension> extensions)
+        {
+            this.extensions.addAll(extensions);
             return this;
         }
 
@@ -632,7 +646,7 @@ public class Stage implements Startable, ActorRuntime
         }
         if (objectCloner == null)
         {
-            objectCloner = new KryoCloner();
+            objectCloner = new KryoSerializer();
         }
         if (localObjectsCleaner == null)
         {
@@ -706,7 +720,7 @@ public class Stage implements Startable, ActorRuntime
         pipeline.addLast(DefaultHandlers.MESSAGING, messaging);
 
         final MessageLoopback messageLoopback = new MessageLoopback();
-        messageLoopback.setCloner(messageLoopbackObjectCloner != null ? messageLoopbackObjectCloner : new KryoCloner());
+        messageLoopback.setCloner(messageLoopbackObjectCloner != null ? messageLoopbackObjectCloner : new KryoSerializer());
         messageLoopback.setRuntime(this);
         pipeline.addLast(messageLoopback.getName(), messageLoopback);
 
@@ -745,16 +759,16 @@ public class Stage implements Startable, ActorRuntime
             extensions.add(defaultStreamProvider);
         }
 
-        LifetimeExtension lifetimeExtension = extensions.stream()
-                .filter(p -> p instanceof LifetimeExtension)
-                .map(p -> (LifetimeExtension) p)
-                .findFirst().orElse(null);
-
-        if (lifetimeExtension == null)
+        if(extensions.stream().noneMatch(p -> p instanceof LifetimeExtension))
         {
-            lifetimeExtension = new DefaultLifetimeExtension();
-            extensions.add(lifetimeExtension);
+            extensions.add(new DefaultLifetimeExtension());
         }
+
+        if(extensions.stream().noneMatch(p -> p instanceof ActorConstructionExtension))
+        {
+            extensions.add(new DefaultActorConstructionExtension());
+        }
+
 
         logger.debug("Starting messaging...");
         messaging.start();
