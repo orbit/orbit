@@ -144,14 +144,7 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
         public void write(Kryo kryo, Output output, ReferenceReplacement object) {
             kryo.writeClass(output, object.interfaceClass);
             kryo.writeClassAndObject(output, object.id);
-            if (object.address != null) {
-                UUID uuid = object.address.asUUID();
-                output.writeLong(uuid.getMostSignificantBits());
-                output.writeLong(uuid.getLeastSignificantBits());
-            } else {
-                output.writeLong(0L);
-                output.writeLong(0L);
-            }
+            writeNodeAddress(output, object.address);
         }
     
         @Override
@@ -289,7 +282,18 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
             return BasicRuntime.getRuntime().getReference((Class<RemoteReference>) replacement.interfaceClass, replacement.id);
         }
     }
-    
+
+    private static void writeNodeAddress(Output out, NodeAddress nodeAddress) {
+        if (nodeAddress != null) {
+            UUID uuid = nodeAddress.asUUID();
+            out.writeLong(uuid.getMostSignificantBits());
+            out.writeLong(uuid.getLeastSignificantBits());
+        } else {
+            out.writeLong(0L);
+            out.writeLong(0L);
+        }
+    }
+
     private static NodeAddress readNodeAddress(Input in) {
         long most = in.readLong();
         long least = in.readLong();
@@ -330,30 +334,12 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
             try (Output out = new Output(outputStream)) {
                 out.writeByte(message.getMessageType());
                 out.writeInt(message.getMessageId());
-                if (message.getReferenceAddress() != null) {
-                    UUID uuid = message.getReferenceAddress().asUUID();
-                    out.writeLong(uuid.getMostSignificantBits());
-                    out.writeLong(uuid.getLeastSignificantBits());
-                } else {
-                    out.writeLong(0L);
-                    out.writeLong(0L);
-                }
-                
+                writeNodeAddress(out, message.getReferenceAddress());
                 out.writeInt(message.getInterfaceId());
                 out.writeInt(message.getMethodId());
-                
                 kryo.writeClassAndObject(out, message.getObjectId());
                 kryo.writeObjectOrNull(out, message.getHeaders(), HashMap.class);
-                
-                if (message.getFromNode() != null) {
-                    UUID nodeUuid = message.getFromNode().asUUID();
-                    out.writeLong(nodeUuid.getMostSignificantBits());
-                    out.writeLong(nodeUuid.getLeastSignificantBits());
-                } else {
-                    out.writeLong(0L);
-                    out.writeLong(0L);
-                }
-    
+                writeNodeAddress(out, message.getFromNode());
                 kryo.writeClassAndObject(out, message.getPayload());
                 return null;
             } finally {
