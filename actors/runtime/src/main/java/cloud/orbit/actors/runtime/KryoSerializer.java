@@ -68,6 +68,7 @@ import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * Kryo based message serializer and object cloning implementation.
@@ -79,6 +80,10 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
     private final KryoPool kryoPool;
     
     public KryoSerializer() {
+        this(k -> {});
+    }
+    
+    public KryoSerializer(Consumer<Kryo> kryoConsumer) {
         KryoFactory factory = new KryoFactory() {
             @Override
             public Kryo create() {
@@ -126,7 +131,7 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
                 kryo.addDefaultSerializer(ActorObserver.class, new ActorObserverSerializer());
                 
                 kryo.register(ReferenceReplacement.class, new ReferenceReplacementSerializer());
-
+                kryoConsumer.accept(kryo);
                 return kryo;
             }
         };
