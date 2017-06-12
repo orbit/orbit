@@ -52,7 +52,11 @@ public class DefaultInvocationHandler extends SimpleInvocationHandler
     protected Task<Object> doInvoke(final Stage runtime, final Invocation invocation, final LocalObjects.LocalObjectEntry entry, final LocalObjects.LocalObjectEntry target, final Method method, final Boolean reentrant, final ObjectInvoker invoker)
     {
         final long startTimeNanos = System.nanoTime();
-        final List<InvocationHandlerExtension> invocationHandlerExtensions = handlerExtensionCache.computeIfAbsent(runtime.runtimeIdentity(), s -> Collections.unmodifiableList(runtime.getAllExtensions(InvocationHandlerExtension.class)));
+        final List<InvocationHandlerExtension> extensions = handlerExtensionCache.get(runtime.runtimeIdentity());
+
+        final List<InvocationHandlerExtension> invocationHandlerExtensions = extensions == null ?
+                handlerExtensionCache.computeIfAbsent(runtime.runtimeIdentity(), s -> Collections.unmodifiableList(runtime.getAllExtensions(InvocationHandlerExtension.class))) :
+                extensions;
 
         // Before invoke actions
         Task<?> beforeInvokeChain = Task.done();
