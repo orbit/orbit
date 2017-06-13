@@ -261,16 +261,15 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         consistentHashNodeTree = newHashes;
         updateServerNodes();
 
-        localAddressCache.invalidateAll();
-/*
+        Collection<NodeAddress> values = localAddressCache.asMap().values();
         for (NodeInfo info : oldNodes.values())
         {
             // clear local cache
-            localAddressCache.values().remove(info.address);
+           values.remove(info.address);
 
             // TODO notify someone?
         }
-*/
+
     }
 
     private void updateServerNodes()
