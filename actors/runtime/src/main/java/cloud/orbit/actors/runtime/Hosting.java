@@ -31,6 +31,9 @@ package cloud.orbit.actors.runtime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.annotation.OnlyIfActivated;
 import cloud.orbit.actors.annotation.PreferLocalPlacement;
@@ -60,6 +63,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.ea.async.Async.await;
@@ -75,9 +79,13 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private final Object serverNodesUpdateMutex = new Object();
     private Stage stage;
 
+    private int maxLocalAddressCacheCount = 1_000_000;
     // according to the micro benchmarks, a guava cache is much slower than using a ConcurrentHashMap here.
-    private final Map<RemoteReference<?>, NodeAddress> localAddressCache = new ConcurrentHashMap<>();
-
+    //private final Map<RemoteReference<?>, NodeAddress> localAddressCache = new ConcurrentHashMap<>();
+    private final Cache<RemoteReference<?>, NodeAddress> localAddressCache = Caffeine.newBuilder()
+    		.expireAfterAccess(10, TimeUnit.MINUTES)
+    		.maximumSize(maxLocalAddressCacheCount)
+    		.build();
     // don't use RemoteReferences, better to restrict keys to a small set of classes.
     private volatile ConcurrentMap<RemoteKey, NodeAddress> distributedDirectory;
 
@@ -88,7 +96,6 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     private CompletableFuture<Void> hostingActive = new Task<>();
 
-    private int maxLocalAddressCacheCount = 10_000;
 
     private NodeSelectorExtension nodeSelector;
 
@@ -199,7 +206,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         {
             logger.debug("Remove {} from this node.", remoteReference);
         }
-        localAddressCache.remove(remoteReference);
+        localAddressCache.invalidate(remoteReference);
         return Task.done();
     }
 
@@ -254,6 +261,8 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         consistentHashNodeTree = newHashes;
         updateServerNodes();
 
+        localAddressCache.invalidateAll();
+/*
         for (NodeInfo info : oldNodes.values())
         {
             // clear local cache
@@ -261,6 +270,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
             // TODO notify someone?
         }
+*/
     }
 
     private void updateServerNodes()
@@ -291,7 +301,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     private Task<NodeAddress> locateActiveActor(final RemoteReference<?> actorReference)
     {
-        final NodeAddress address = localAddressCache.get(actorReference);
+        final NodeAddress address = localAddressCache.asMap().get(actorReference);
         if (address != null && activeNodes.containsKey(address))
         {
             return Task.fromValue(address);
@@ -305,7 +315,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     {
         // removing the reference from the cluster directory and local caches
         getDistributedDirectory().remove(createRemoteKey(remoteReference), clusterPeer.localAddress());
-        localAddressCache.remove(remoteReference);
+        localAddressCache.invalidate(remoteReference);
         for (final NodeInfo info : activeNodes.values())
         {
             if (!info.address.equals(clusterPeer.localAddress()) && info.state == NodeState.RUNNING)
@@ -336,7 +346,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         }
 
         // Get the existing activation from the local cache (if any)
-        final NodeAddress address = localAddressCache.get(actorReference);
+        final NodeAddress address = localAddressCache.asMap().get(actorReference);
 
         // Is this actor already activated and in the local cache? If so, we're done
         if (address != null && activeNodes.containsKey(address))
@@ -626,7 +636,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             ctx.fireRead(invocation);
             return Task.done();
         }
-        final NodeAddress cachedAddress = localAddressCache.get(toReference);
+        final NodeAddress cachedAddress = localAddressCache.asMap().get(toReference);
         if (Objects.equals(cachedAddress, localAddress))
         {
             ctx.fireRead(invocation);
@@ -648,7 +658,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         // over here the actor address is not the localAddress.
         // since we received this message someone thinks that this node is the right one.
         // so we remove that entry from the local cache and query the global cache again
-        localAddressCache.remove(toReference);
+        localAddressCache.invalidate(toReference);
         return locateActor(invocation.getToReference(), true)
                 .whenComplete((r, e) -> {
                     if (e != null)
@@ -779,16 +789,16 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     public void cleanup()
     {
-        if (localAddressCache.size() > maxLocalAddressCacheCount)
-        {
-            // randomly removes local references
-            final List<RemoteReference<?>> remoteReferences = new ArrayList<>(localAddressCache.keySet());
-            Collections.shuffle(remoteReferences);
-            for (int c = remoteReferences.size() - maxLocalAddressCacheCount / 2; --c >= 0; )
-            {
-                localAddressCache.remove(remoteReferences.get(c));
-            }
-        }
+//        if (localAddressCache.size() > maxLocalAddressCacheCount)
+//        {
+//            // randomly removes local references
+//            final List<RemoteReference<?>> remoteReferences = new ArrayList<>(localAddressCache.keySet());
+//            Collections.shuffle(remoteReferences);
+//            for (int c = remoteReferences.size() - maxLocalAddressCacheCount / 2; --c >= 0; )
+//            {
+//                localAddressCache.remove(remoteReferences.get(c));
+//            }
+//        }
     }
 
     public int getMaxLocalAddressCacheCount()
