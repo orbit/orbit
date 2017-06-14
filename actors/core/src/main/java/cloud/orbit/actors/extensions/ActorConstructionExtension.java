@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -25,15 +25,19 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package cloud.orbit.actors.transactions;
 
-import cloud.orbit.concurrent.Task;
+package cloud.orbit.actors.extensions;
 
 /**
- * Optional interface that the actor implementation can implement if it wants to be able to cancel transactions.
+ * Created by joeh on 2017-05-29.
  */
-public interface Transactional
+public interface ActorConstructionExtension extends ActorExtension
 {
-    Task<Void> cancelTransaction(String transactionId);
-
+    /**
+     * Called to construct actor.
+     *
+     * @param concreteClass concrete class of actor instance to construct
+     * @return instance of concreteClass
+     */
+    <T> T newInstance(Class<T> concreteClass);
 }

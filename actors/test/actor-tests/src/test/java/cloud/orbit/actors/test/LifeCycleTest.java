@@ -76,6 +76,7 @@ public class LifeCycleTest extends ActorBaseTest
         assertEquals(machEventCount, player.getMatchEventCount().get().intValue());
         stage.cleanup().join();
 
+
         // the match calls a player event on it's deactivation
         assertNotEquals(machEventCount, player.getMatchEventCount().get().intValue());
     }

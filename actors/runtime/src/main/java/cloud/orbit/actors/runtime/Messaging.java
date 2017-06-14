@@ -67,7 +67,7 @@ public class Messaging extends HandlerAdapter implements Startable
 
     private final LongAdder networkMessagesReceived = new LongAdder();
     private final LongAdder responsesReceived = new LongAdder();
-    private static Timer timer = new Timer("Messaging timer", true);
+    private static Timer timer = new Timer("OrbitMessagingTimer", true);
     private BasicRuntime runtime;
 
 
@@ -163,6 +163,10 @@ public class Messaging extends HandlerAdapter implements Startable
             networkMessagesReceived.increment();
             final int messageType = message.getMessageType();
             final int messageId = message.getMessageId();
+            if (logger.isTraceEnabled())
+            {
+                logger.trace("message received: " + message.getMessageId() + " " + message.getMessageType() + "\r\n");
+            }
             final NodeAddress fromNode = message.getFromNode();
             switch (messageType)
             {

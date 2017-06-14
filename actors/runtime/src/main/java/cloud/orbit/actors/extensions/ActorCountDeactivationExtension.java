@@ -26,55 +26,52 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.runtime;
+package cloud.orbit.actors.extensions;
 
-import cloud.orbit.actors.ActorObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
+import cloud.orbit.actors.runtime.ActorBaseEntry;
 
-public class OrbitObjectOutputStream extends ObjectOutputStream
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Set;
+
+/**
+ * Created by joeh on 2017-05-15.
+ */
+public class ActorCountDeactivationExtension implements ActorDeactivationExtension
 {
+    private static final Logger logger = LoggerFactory.getLogger(ActorCountDeactivationExtension.class);
 
-    private final BasicRuntime runtime;
+    private final int maxActorCount;
+    private final int targetActorCount;
 
-    public OrbitObjectOutputStream(final OutputStream outputStream, final BasicRuntime runtime) throws IOException
+    public ActorCountDeactivationExtension(final int maxActorCount, final int targetActorCount)
     {
-        super(outputStream);
-        this.runtime = runtime;
-        enableReplaceObject(true);
+        this.maxActorCount = maxActorCount;
+        this.targetActorCount = targetActorCount;
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
-    protected Object replaceObject(final Object obj) throws IOException
+    public void cleanupActors(final Collection<ActorBaseEntry<?>> actorEntries, final Set<ActorBaseEntry<?>> toRemove)
     {
-        final RemoteReference reference;
-        if (!(obj instanceof RemoteReference))
+        final int currentActorCount = actorEntries.size();
+
+        if(currentActorCount > maxActorCount)
         {
-            if (obj instanceof AbstractActor)
+            final int countToRemove = Math.abs(targetActorCount - currentActorCount);
+
+            if(logger.isWarnEnabled())
             {
-                reference = ((AbstractActor) obj).reference;
+                logger.warn("Stage has {} actors. The max actor count is set at {} with a target of {}. Attemping to deactivate {} actors to hit desired target."
+                        , currentActorCount, maxActorCount, targetActorCount, countToRemove);
             }
-            else if (obj instanceof ActorObserver)
-            {
-                ActorObserver objectReference = runtime.registerObserver(null, (ActorObserver) obj);
-                reference = (RemoteReference) objectReference;
-            }
-            else
-            {
-                return super.replaceObject(obj);
-            }
+
+            actorEntries.stream()
+                    .sorted((Comparator.comparingLong(ActorBaseEntry::getLastAccess)))
+                    .limit(countToRemove)
+                    .forEach(toRemove::add);
         }
-        else
-        {
-            reference = (RemoteReference) obj;
-        }
-        final ReferenceReplacement replacement = new ReferenceReplacement();
-        replacement.address = reference.address;
-        replacement.interfaceClass = reference._interfaceClass();
-        replacement.id = reference.id;
-        return replacement;
     }
 }

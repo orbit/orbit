@@ -28,6 +28,7 @@
 
 package cloud.orbit.actors.runtime;
 
+import cloud.orbit.actors.extensions.ActorConstructionExtension;
 import cloud.orbit.actors.extensions.LifetimeExtension;
 import cloud.orbit.actors.streams.AsyncStream;
 import cloud.orbit.actors.streams.StreamSubscriptionHandle;
@@ -107,7 +108,7 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
                 return Task.fromValue(null);
             }
         }
-        final Object newInstance = runtime.getFirstExtension(LifetimeExtension.class).newInstance(concreteClass);
+        final Object newInstance = runtime.getFirstExtension(ActorConstructionExtension.class).newInstance(concreteClass);
         if (!AbstractActor.class.isInstance(newInstance))
         {
             throw new IllegalArgumentException(String.format("%s is not an actor class", concreteClass));
@@ -284,4 +285,12 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
         return Task.done();
     }
 
+    @Override
+    public String toString()
+    {
+        return "ActorEntry{" +
+                "actor=" + actor +
+                ", key=" + key +
+                '}';
+    }
 }

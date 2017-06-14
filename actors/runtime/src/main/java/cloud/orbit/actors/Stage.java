@@ -28,14 +28,22 @@
 
 package cloud.orbit.actors;
 
-import cloud.orbit.actors.annotation.NeverDeactivate;
+import com.ea.async.Async;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cloud.orbit.actors.annotation.StatelessWorker;
+import cloud.orbit.actors.annotation.StorageExtension;
+import cloud.orbit.actors.cloner.ExecutionObjectCloner;
 import cloud.orbit.actors.cluster.ClusterPeer;
 import cloud.orbit.actors.cluster.JGroupsClusterPeer;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.concurrent.MultiExecutionSerializer;
 import cloud.orbit.actors.concurrent.WaitFreeMultiExecutionSerializer;
 import cloud.orbit.actors.extensions.ActorClassFinder;
+import cloud.orbit.actors.extensions.ActorConstructionExtension;
+import cloud.orbit.actors.extensions.ActorDeactivationExtension;
 import cloud.orbit.actors.extensions.ActorExtension;
 import cloud.orbit.actors.extensions.DefaultLoggerExtension;
 import cloud.orbit.actors.extensions.LifetimeExtension;
@@ -54,18 +62,23 @@ import cloud.orbit.actors.runtime.ActorTaskContext;
 import cloud.orbit.actors.runtime.AsyncStreamReference;
 import cloud.orbit.actors.runtime.BasicRuntime;
 import cloud.orbit.actors.runtime.ClusterHandler;
-import cloud.orbit.actors.runtime.FastActorClassFinder;
-import cloud.orbit.actors.runtime.DefaultLifetimeExtension;
+import cloud.orbit.actors.runtime.DefaultActorConstructionExtension;
 import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
 import cloud.orbit.actors.runtime.DefaultHandlers;
+import cloud.orbit.actors.runtime.DefaultInvocationHandler;
+import cloud.orbit.actors.runtime.DefaultLifetimeExtension;
+import cloud.orbit.actors.runtime.DefaultLocalObjectsCleaner;
 import cloud.orbit.actors.runtime.Execution;
+import cloud.orbit.actors.runtime.FastActorClassFinder;
 import cloud.orbit.actors.runtime.Hosting;
 import cloud.orbit.actors.runtime.InternalUtils;
 import cloud.orbit.actors.runtime.Invocation;
 import cloud.orbit.actors.runtime.InvocationHandler;
 import cloud.orbit.actors.runtime.JavaMessageSerializer;
+import cloud.orbit.actors.runtime.KryoSerializer;
 import cloud.orbit.actors.runtime.LazyActorClassFinder;
 import cloud.orbit.actors.runtime.LocalObjects;
+import cloud.orbit.actors.runtime.LocalObjectsCleaner;
 import cloud.orbit.actors.runtime.MessageLoopback;
 import cloud.orbit.actors.runtime.Messaging;
 import cloud.orbit.actors.runtime.NodeCapabilities;
@@ -77,28 +90,18 @@ import cloud.orbit.actors.runtime.RemoteReference;
 import cloud.orbit.actors.runtime.ResponseCaching;
 import cloud.orbit.actors.runtime.SerializationHandler;
 import cloud.orbit.actors.runtime.StatelessActorEntry;
-import cloud.orbit.actors.cloner.ExecutionObjectCloner;
-import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.streams.AsyncObserver;
 import cloud.orbit.actors.streams.AsyncStream;
 import cloud.orbit.actors.streams.StreamSequenceToken;
 import cloud.orbit.actors.streams.StreamSubscriptionHandle;
 import cloud.orbit.actors.streams.simple.SimpleStreamExtension;
-import cloud.orbit.actors.transactions.IdUtils;
-import cloud.orbit.actors.transactions.TransactionUtils;
+import cloud.orbit.actors.util.IdUtils;
 import cloud.orbit.annotation.Config;
 import cloud.orbit.concurrent.ExecutorUtils;
 import cloud.orbit.concurrent.Task;
-import cloud.orbit.lifecycle.Startable;
 import cloud.orbit.exception.UncheckedException;
+import cloud.orbit.lifecycle.Startable;
 import cloud.orbit.util.StringUtils;
-
-import com.ea.async.Async;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import cloud.orbit.actors.annotation.StorageExtension;
 
 import javax.inject.Singleton;
 
@@ -107,13 +110,11 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -121,10 +122,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 import static com.ea.async.Async.await;
 
@@ -135,7 +137,11 @@ public class Stage implements Startable, ActorRuntime
 
     private static final int DEFAULT_EXECUTION_POOL_SIZE = 128;
 
-    LocalObjects objects = new LocalObjects()
+    private final String runtimeIdentity = "Orbit[" + IdUtils.urlSafeString(128) + "]";
+
+    private final WeakReference<ActorRuntime> cachedRef = new WeakReference<>(this);
+
+    private final LocalObjects objects = new LocalObjects()
     {
         @Override
         protected <T> LocalObjectEntry createLocalObjectEntry(final RemoteReference<T> reference, final T object)
@@ -144,8 +150,12 @@ public class Stage implements Startable, ActorRuntime
         }
     };
 
-    @Config("orbit.actors.basePackages")
-    private String basePackages;
+    private final Executor shutdownExecutor = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = Executors.defaultThreadFactory().newThread(runnable);
+        thread.setName("OrbitShutdownThread");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     @Config("orbit.actors.clusterName")
     private String clusterName;
@@ -163,21 +173,13 @@ public class Stage implements Startable, ActorRuntime
     private List<ActorExtension> extensions = new CopyOnWriteArrayList<>();
 
     @Config("orbit.actors.stickyHeaders")
-    private Set<String> stickyHeaders = new HashSet<>(Arrays.asList(TransactionUtils.ORBIT_TRANSACTION_ID, "orbit.traceId"));
+    private Set<String> stickyHeaders = new HashSet<>();
+
+    @Config("orbit.actors.basePackages")
+    private List<String> basePackages = new ArrayList<>();
 
     @Config("orbit.actors.pulseInterval")
     private long pulseIntervalMillis = TimeUnit.SECONDS.toMillis(10);
-    private Timer timer;
-    private Pipeline pipeline;
-
-    private final String runtimeIdentity = "Orbit[" + IdUtils.urlSafeString(128) + "]";
-
-    private ResponseCaching cacheManager;
-
-    private MultiExecutionSerializer<Object> executionSerializer;
-    private ActorClassFinder finder;
-    private LoggerExtension loggerExtension;
-    private NodeCapabilities.NodeState state;
 
     @Config("orbit.actors.concurrentDeactivations")
     private int concurrentDeactivations = 16;
@@ -186,15 +188,9 @@ public class Stage implements Startable, ActorRuntime
     private long defaultActorTTL = TimeUnit.MINUTES.toMillis(10);
 
     @Config("orbit.actors.deactivationTimeoutMillis")
-    private long deactivationTimeoutMillis = TimeUnit.MINUTES.toMillis(2);
+    private long deactivationTimeoutMillis = TimeUnit.SECONDS.toMillis(10);
 
-    private Task<Void> startPromise = new Task<>();
-
-    public enum StageMode
-    {
-        CLIENT, // no activations
-        HOST // allows activations
-    }
+    private volatile NodeCapabilities.NodeState state;
 
     private ClusterPeer clusterPeer;
     private Messaging messaging;
@@ -207,7 +203,22 @@ public class Stage implements Startable, ActorRuntime
     private ExecutionObjectCloner objectCloner;
     private ExecutionObjectCloner messageLoopbackObjectCloner;
     private MessageSerializer messageSerializer;
-    private final WeakReference<ActorRuntime> cachedRef = new WeakReference<>(this);
+    private LocalObjectsCleaner localObjectsCleaner;
+
+    private MultiExecutionSerializer<Object> executionSerializer;
+    private ActorClassFinder finder;
+    private LoggerExtension loggerExtension;
+
+    private Timer timer;
+    private Pipeline pipeline;
+
+    private final Task<Void> startPromise = new Task<>();
+
+    public enum StageMode
+    {
+        CLIENT, // no activations
+        HOST // allows activations
+    }
 
     static
     {
@@ -223,11 +234,13 @@ public class Stage implements Startable, ActorRuntime
         private ExecutorService executionPool;
         private ExecutionObjectCloner objectCloner;
         private ExecutionObjectCloner messageLoopbackObjectCloner;
+        private MessageSerializer messageSerializer;
         private ClusterPeer clusterPeer;
         private Messaging messaging;
         private InvocationHandler invocationHandler;
+        private Execution execution;
+        private LocalObjectsCleaner localObjectsCleaner;
 
-        private String basePackages;
         private String clusterName;
         private String nodeName;
         private StageMode mode = StageMode.HOST;
@@ -235,6 +248,11 @@ public class Stage implements Startable, ActorRuntime
 
         private List<ActorExtension> extensions = new ArrayList<>();
         private Set<String> stickyHeaders = new HashSet<>();
+        private List<String> basePackages = new ArrayList<>();
+
+        private Long actorTTLMillis = null;
+        private Long deactivationTimeoutMillis;
+        private Integer concurrentDeactivations;
 
         private Timer timer;
 
@@ -250,6 +268,24 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
+        public Builder executionPoolSize(int executionPoolSize)
+        {
+            this.executionPoolSize = executionPoolSize;
+            return this;
+        }
+
+        public Builder execution(Execution execution)
+        {
+            this.execution = execution;
+            return this;
+        }
+
+        public Builder localObjectsCleaner(LocalObjectsCleaner localObjectsCleaner)
+        {
+            this.localObjectsCleaner = localObjectsCleaner;
+            return this;
+        }
+
         public Builder clusterPeer(ClusterPeer clusterPeer)
         {
             this.clusterPeer = clusterPeer;
@@ -259,6 +295,12 @@ public class Stage implements Startable, ActorRuntime
         public Builder objectCloner(ExecutionObjectCloner objectCloner)
         {
             this.objectCloner = objectCloner;
+            return this;
+        }
+
+        public Builder messageSerializer(MessageSerializer messageSerializer)
+        {
+            this.messageSerializer = messageSerializer;
             return this;
         }
 
@@ -286,12 +328,6 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
-        public Builder basePackages(String basePackages)
-        {
-            this.basePackages = basePackages;
-            return this;
-        }
-
         public Builder nodeName(String nodeName)
         {
             this.nodeName = nodeName;
@@ -301,6 +337,12 @@ public class Stage implements Startable, ActorRuntime
         public Builder mode(StageMode mode)
         {
             this.mode = mode;
+            return this;
+        }
+
+        public Builder extensions(Collection<ActorExtension> extensions)
+        {
+            this.extensions.addAll(extensions);
             return this;
         }
 
@@ -316,9 +358,39 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
+        public Builder basePackages(String... basePackages)
+        {
+            Collections.addAll(this.basePackages, basePackages);
+            return this;
+        }
+
+        public Builder basePackages(Collection<String> basePackages)
+        {
+            this.basePackages.addAll(basePackages);
+            return this;
+        }
+
         public Builder timer(Timer timer)
         {
             this.timer = timer;
+            return this;
+        }
+
+        public Builder actorTTL(final long duration, final TimeUnit timeUnit)
+        {
+            this.actorTTLMillis = timeUnit.toMillis(duration);
+            return this;
+        }
+
+        public Builder deactivationTimeout(final long duration, final TimeUnit timeUnit)
+        {
+            this.deactivationTimeoutMillis = timeUnit.toMillis(duration);
+            return this;
+        }
+
+        public Builder concurrentDeactivations(final int concurrentDeactivations)
+        {
+            this.concurrentDeactivations = concurrentDeactivations;
             return this;
         }
 
@@ -327,19 +399,25 @@ public class Stage implements Startable, ActorRuntime
             final Stage stage = new Stage();
             stage.setClock(clock);
             stage.setExecutionPool(executionPool);
+            stage.setExecution(execution);
             stage.setObjectCloner(objectCloner);
             stage.setMessageLoopbackObjectCloner(messageLoopbackObjectCloner);
-            stage.setBasePackages(basePackages);
+            stage.setMessageSerializer(messageSerializer);
             stage.setClusterName(clusterName);
             stage.setClusterPeer(clusterPeer);
             stage.setNodeName(nodeName);
             stage.setMode(mode);
             stage.setExecutionPoolSize(executionPoolSize);
+            stage.setLocalObjectsCleaner(localObjectsCleaner);
             stage.setTimer(timer);
             extensions.forEach(stage::addExtension);
             stage.setInvocationHandler(invocationHandler);
             stage.setMessaging(messaging);
             stage.addStickyHeaders(stickyHeaders);
+            stage.addBasePackages(basePackages);
+            if(actorTTLMillis != null) stage.setDefaultActorTTL(actorTTLMillis);
+            if(deactivationTimeoutMillis != null) stage.setDeactivationTimeout(deactivationTimeoutMillis);
+            if(concurrentDeactivations != null) stage.setConcurrentDeactivations(concurrentDeactivations);
             return stage;
         }
 
@@ -353,6 +431,11 @@ public class Stage implements Startable, ActorRuntime
     public void addStickyHeaders(Collection<String> stickyHeaders)
     {
         this.stickyHeaders.addAll(stickyHeaders);
+    }
+
+    public void addBasePackages(final List<String> basePackages)
+    {
+        this.basePackages.addAll(basePackages);
     }
 
     public void setClock(final Clock clock)
@@ -390,6 +473,25 @@ public class Stage implements Startable, ActorRuntime
         this.executionPoolSize = defaultPoolSize;
     }
 
+    public Execution getExecution()
+    {
+        return execution;
+    }
+
+    public void setExecution(Execution execution)
+    {
+        this.execution = execution;
+    }
+
+    public void setLocalObjectsCleaner(final LocalObjectsCleaner localObjectsCleaner)
+    {
+        this.localObjectsCleaner = localObjectsCleaner;
+    }
+
+    public LocalObjectsCleaner getLocalObjectsCleaner() {
+        return localObjectsCleaner;
+    }
+
     public ExecutionObjectCloner getObjectCloner()
     {
         return objectCloner;
@@ -408,11 +510,6 @@ public class Stage implements Startable, ActorRuntime
     @SuppressWarnings("unused")
     public long getLocalObjectCount() {
         return objects.getLocalObjectCount();
-    }
-
-    public void setBasePackages(final String basePackages)
-    {
-        this.basePackages = basePackages;
     }
 
     public String getClusterName()
@@ -459,9 +556,25 @@ public class Stage implements Startable, ActorRuntime
         return startPromise;
     }
 
+    public void setConcurrentDeactivations(int concurrentDeactivations)
+    {
+        this.concurrentDeactivations = concurrentDeactivations;
+    }
+
+    public void setDefaultActorTTL(long defaultActorTTLMs)
+    {
+        this.defaultActorTTL = defaultActorTTLMs;
+    }
+
+    public void setDeactivationTimeout(long deactivationTimeoutMs)
+    {
+        this.deactivationTimeoutMillis = deactivationTimeoutMs;
+    }
+
     @Override
     public Task<?> start()
     {
+        logger.info("Starting Stage...");
         extensions = new ArrayList<>(extensions);
         startCalled = true;
         if (state != null)
@@ -472,7 +585,7 @@ public class Stage implements Startable, ActorRuntime
 
         if(timer == null)
         {
-            timer = new Timer("orbit-stage-timer");
+            timer = new Timer("OrbitTimer");
         }
 
         if (loggerExtension == null)
@@ -516,7 +629,7 @@ public class Stage implements Startable, ActorRuntime
         }
         if(invocationHandler == null)
         {
-            invocationHandler = new InvocationHandler();
+            invocationHandler = new DefaultInvocationHandler();
         }
         if (messageSerializer == null)
         {
@@ -532,7 +645,11 @@ public class Stage implements Startable, ActorRuntime
         }
         if (objectCloner == null)
         {
-            objectCloner = new KryoCloner();
+            objectCloner = new KryoSerializer();
+        }
+        if (localObjectsCleaner == null)
+        {
+            localObjectsCleaner = new DefaultLocalObjectsCleaner(hosting, clock, executionPool, objects, defaultActorTTL, concurrentDeactivations, deactivationTimeoutMillis);
         }
 
         // create pipeline before waiting for ActorClassFinder as stop might be invoked before it is complete
@@ -541,11 +658,21 @@ public class Stage implements Startable, ActorRuntime
         finder = getFirstExtension(ActorClassFinder.class);
         if (finder == null)
         {
-            finder = StringUtils.isNotEmpty(basePackages) ? new FastActorClassFinder(basePackages.split(Pattern.quote(","))) : new LazyActorClassFinder();
+            if(!basePackages.isEmpty())
+            {
+                final String[] basePackagesArray = basePackages.toArray(new String[0]);
+                finder = new FastActorClassFinder(basePackagesArray);
+            }
+            else
+            {
+                finder = new LazyActorClassFinder();
+            }
         }
         await(finder.start());
 
-        cacheManager = new ResponseCaching();
+        localObjectsCleaner.setActorDeactivationExtensions(getAllExtensions(ActorDeactivationExtension.class));
+
+        final ResponseCaching cacheManager = new ResponseCaching();
 
         hosting.setNodeType(mode == StageMode.HOST ? NodeCapabilities.NodeTypeEnum.SERVER : NodeCapabilities.NodeTypeEnum.CLIENT);
         execution.setRuntime(this);
@@ -580,7 +707,7 @@ public class Stage implements Startable, ActorRuntime
         pipeline.addLast(DefaultHandlers.MESSAGING, messaging);
 
         final MessageLoopback messageLoopback = new MessageLoopback();
-        messageLoopback.setCloner(messageLoopbackObjectCloner != null ? messageLoopbackObjectCloner : new KryoCloner());
+        messageLoopback.setCloner(messageLoopbackObjectCloner != null ? messageLoopbackObjectCloner : new KryoSerializer());
         messageLoopback.setRuntime(this);
         pipeline.addLast(messageLoopback.getName(), messageLoopback);
 
@@ -619,21 +746,25 @@ public class Stage implements Startable, ActorRuntime
             extensions.add(defaultStreamProvider);
         }
 
-        LifetimeExtension lifetimeExtension = extensions.stream()
-                .filter(p -> p instanceof LifetimeExtension)
-                .map(p -> (LifetimeExtension) p)
-                .findFirst().orElse(null);
-
-        if (lifetimeExtension == null)
+        if(extensions.stream().noneMatch(p -> p instanceof LifetimeExtension))
         {
-            lifetimeExtension = new DefaultLifetimeExtension();
-            extensions.add(lifetimeExtension);
+            extensions.add(new DefaultLifetimeExtension());
         }
 
+        if(extensions.stream().noneMatch(p -> p instanceof ActorConstructionExtension))
+        {
+            extensions.add(new DefaultActorConstructionExtension());
+        }
+
+
+        logger.debug("Starting messaging...");
         messaging.start();
+        logger.debug("Starting hosting...");
         hosting.start();
+        logger.debug("Starting execution...");
         execution.start();
 
+        logger.debug("Starting extensions...");
         await(Task.allOf(extensions.stream().map(Startable::start)));
 
         Task<Void> future = pipeline.connect(null);
@@ -671,10 +802,9 @@ public class Stage implements Startable, ActorRuntime
             }
         });
         await(startPromise);
-        if (logger.isDebugEnabled())
-        {
-            logger.debug("Stage started [{}]", runtimeIdentity());
-        }
+
+        logger.info("Stage started [{}]", runtimeIdentity());
+
         return Task.done();
     }
 
@@ -698,7 +828,6 @@ public class Stage implements Startable, ActorRuntime
         this.extensions.add(extension);
     }
 
-
     @Override
     public Task<?> stop()
     {
@@ -719,133 +848,40 @@ public class Stage implements Startable, ActorRuntime
         // * wait pending tasks execution
         // * stop the network
 
-        logger.debug("start stopping pipeline");
-        await(hosting.notifyStateChange());
+        logger.debug("Start stopping pipeline");
 
-        logger.debug("stopping actors");
-        await(stopActors());
-        logger.debug("stopping timers");
+        // shutdown must continue in non-execution pool thread to prevent thread waiting for itself when checking executionSerializer is busy
+        await(hosting.notifyStateChange().whenCompleteAsync((r, e) -> {}, shutdownExecutor));
+
+        logger.debug("Stopping actors");
+        await(stopActors().whenCompleteAsync((r, e) -> {}, shutdownExecutor));
+
+        logger.debug("Stopping timers");
         await(stopTimers());
+
         do
         {
             InternalUtils.sleep(250);
         } while (executionSerializer.isBusy());
-        logger.debug("closing pipeline");
+
+        logger.debug("Closing pipeline");
         await(pipeline.close());
 
-        logger.debug("stopping execution serializer");
+        logger.debug("Stopping execution serializer");
         executionSerializer.shutdown();
 
-        logger.debug("stopping extensions");
+        logger.debug("Stopping extensions");
         await(stopExtensions());
 
         state = NodeCapabilities.NodeState.STOPPED;
-        logger.debug("stop done");
+        logger.debug("Stop done");
 
         return Task.done();
     }
 
     private Task<Void> stopActors()
     {
-        for (int passes = 0; passes < 2; passes++)
-        {
-            // using negative age meaning all actors, regardless of age
-            cleanupActors(Long.MIN_VALUE);
-        }
-        return Task.done();
-    }
-
-    @Deprecated
-    public Task<Void> cleanupActors()
-    {
-        return cleanupActors(defaultActorTTL);
-    }
-
-
-    private Task<Void> cleanupObservers()
-    {
-        objects.stream()
-                .filter(e -> e.getValue() instanceof ObserverEntry && e.getValue().getObject() == null)
-                .forEach(e -> objects.remove(e.getKey(), e.getValue()));
-        return Task.done();
-    }
-
-    private Task<Void> cleanupActors(long maxAge)
-    {
-        // avoid sorting since lastAccess changes
-        // and O(N) is still smaller than O(N Log N)
-        final Iterator<Map.Entry<Object, LocalObjects.LocalObjectEntry>> iterator = objects.stream()
-                .filter(e -> e.getValue() instanceof ActorBaseEntry)
-                .iterator();
-
-        final List<Task<Void>> pending = new ArrayList<>();
-
-        // ensure that certain number of concurrent deactivations is happening at each moment
-        while (iterator.hasNext())
-        {
-            while (pending.size() < concurrentDeactivations && iterator.hasNext())
-            {
-
-                final Map.Entry<Object, LocalObjects.LocalObjectEntry> entryEntry = iterator.next();
-                final ActorBaseEntry<?> actorEntry = (ActorBaseEntry<?>) entryEntry.getValue();
-                if (actorEntry.isDeactivated())
-                {
-                    // this might happen if the deactivation is called outside this loop,
-                    // for instance by the stateless worker that owns the objects
-                    objects.remove(entryEntry.getKey(), entryEntry.getValue());
-                }
-
-                // Skip this actor if it is marked NeverDeactivate
-                if (RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class)) {
-                    continue;
-                }
-
-                if (clock().millis() - actorEntry.getLastAccess() > maxAge)
-                {
-                    if (logger.isTraceEnabled())
-                    {
-                        logger.trace("deactivating {}", actorEntry.getRemoteReference());
-                    }
-                    pending.add(actorEntry.deactivate().failAfter(deactivationTimeoutMillis, TimeUnit.MILLISECONDS)
-                            .whenComplete((r, e) -> {
-                                // ensures removal
-                                if (e != null)
-                                {
-                                    // error occurred
-                                    if (logger.isErrorEnabled())
-                                    {
-                                        logger.error("Error during the deactivation of " + actorEntry.getRemoteReference(), e);
-                                    }
-                                    // forcefully setting the entry to deactivated
-                                    actorEntry.setDeactivated(true);
-                                }
-                                objects.remove(entryEntry.getKey(), entryEntry.getValue());
-                                if (entryEntry.getKey() == actorEntry.getRemoteReference())
-                                {
-                                    // removing non stateless actor from the distributed directory
-                                    getHosting().actorDeactivated(actorEntry.getRemoteReference());
-                                }
-                            }));
-                }
-            }
-            if (pending.size() > 0)
-            {
-                // await for at least one deactivation to complete
-                await(Task.anyOf(pending));
-                // remove all completed deactivations
-                for (int i = pending.size(); --i >= 0; )
-                {
-                    if (pending.get(i).isDone())
-                    {
-                        pending.remove(i);
-                    }
-                }
-            }
-        }
-        if (pending.size() > 0)
-        {
-            await(Task.allOf(pending));
-        }
+        await(localObjectsCleaner.shutdown());
         return Task.done();
     }
 
@@ -902,8 +938,7 @@ public class Stage implements Startable, ActorRuntime
     public Task cleanup()
     {
         await(execution.cleanup());
-        await(cleanupActors(defaultActorTTL));
-        await(cleanupObservers());
+        await(localObjectsCleaner.cleanup());
         await(messaging.cleanup());
 
         return Task.done();

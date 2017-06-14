@@ -9,6 +9,6 @@ import cloud.orbit.actors.runtime.NodeInfo;
 public interface NodeSelectorExtension extends ActorExtension
 {
 
-    NodeInfo select(NodeAddress localAddress, List<NodeInfo> potentialNodes);
+    NodeInfo select(String interfaceClassName, NodeAddress localAddress, List<NodeInfo> potentialNodes);
 
 }

@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -26,26 +26,12 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.transactions;
+package cloud.orbit.actors.test.actors;
 
 import cloud.orbit.actors.Actor;
-import cloud.orbit.actors.annotation.OneWay;
 import cloud.orbit.concurrent.Task;
 
-public interface Transaction extends Actor
+public interface InvocationHandlerActor extends Actor
 {
-    @OneWay
-    Task<Void> initTransaction(String parentTransactionId, Actor initiator);
-
-    @OneWay
-    Task<Void> registerActor(Actor actor);
-
-    @OneWay
-    Task<Void> registerNestedTransaction(Transaction child, final Actor initiator);
-
-    @OneWay
-    Task<Void> cancelTransaction(final Actor caller);
-
-    @OneWay
-    Task<Void> transactionSuccessful();
+    Task<String> poke();
 }

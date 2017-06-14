@@ -30,11 +30,11 @@ package cloud.orbit.actors.test;
 
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
+import cloud.orbit.actors.runtime.KryoSerializer;
 import cloud.orbit.actors.runtime.ResponseCaching;
 import cloud.orbit.actors.runtime.NodeCapabilities;
 import cloud.orbit.actors.cloner.ExecutionObjectCloner;
 import cloud.orbit.actors.cloner.JavaSerializationCloner;
-import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.test.actors.CacheResponse;
 import cloud.orbit.actors.test.dto.TestDto1;
 import cloud.orbit.actors.test.dto.TestDto2;
@@ -66,7 +66,7 @@ public class CacheResponseCloneTest extends ActorBaseTest
     public static Collection<ExecutionObjectCloner> data()
     {
         return Arrays.asList(
-               new KryoCloner(),
+               new KryoSerializer(),
                new JavaSerializationCloner()
         );
     }

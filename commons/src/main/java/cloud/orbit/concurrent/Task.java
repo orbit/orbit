@@ -69,6 +69,7 @@ public class Task<T> extends CompletableFuture<T>
     private static Executor commonPool = ExecutorUtils.newScalingThreadPool(100);
     private static ScheduledExecutorService schedulerExecutor = new ScheduledThreadPoolExecutor(10, runnable -> {
         Thread thread = Executors.defaultThreadFactory().newThread(runnable);
+        thread.setName("OrbitTaskThread");
         thread.setDaemon(true);
         return thread;
     });
@@ -131,7 +132,6 @@ public class Task<T> extends CompletableFuture<T>
      * This completableFuture derived method is not available for Tasks.
      */
     @Override
-    @Deprecated
     public boolean complete(T value)
     {
         // TODO: throw an exception
@@ -142,7 +142,6 @@ public class Task<T> extends CompletableFuture<T>
      * This completableFuture derived method is not available for Tasks.
      */
     @Override
-    @Deprecated
     public boolean completeExceptionally(Throwable ex)
     {
         // TODO: throw an exception

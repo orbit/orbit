@@ -31,7 +31,7 @@ package cloud.orbit.actors.streams.simple;
 import cloud.orbit.actors.streams.AsyncObserver;
 import cloud.orbit.actors.streams.StreamSequenceToken;
 import cloud.orbit.actors.streams.StreamSubscriptionHandle;
-import cloud.orbit.actors.transactions.IdUtils;
+import cloud.orbit.actors.util.IdUtils;
 import cloud.orbit.concurrent.Task;
 
 import java.util.Map;

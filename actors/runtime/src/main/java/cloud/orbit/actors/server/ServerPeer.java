@@ -28,6 +28,9 @@
 
 package cloud.orbit.actors.server;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cloud.orbit.actors.ActorObserver;
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.cluster.NodeAddress;
@@ -46,6 +49,7 @@ import cloud.orbit.lifecycle.Startable;
 
 public class ServerPeer extends Peer implements Startable, BasicRuntime
 {
+    private Logger logger = LoggerFactory.getLogger(ServerPeer.class);
     private Stage stage;
 
     public ServerPeer()
@@ -65,6 +69,7 @@ public class ServerPeer extends Peer implements Startable, BasicRuntime
 
     public Task<?> start()
     {
+        logger.info("Starting server peer...");
         final Pipeline pipeline = getPipeline();
 
         final ServerSideStreamProxyImpl streamProxy = new ServerSideStreamProxyImpl();
@@ -103,6 +108,7 @@ public class ServerPeer extends Peer implements Startable, BasicRuntime
         });
         pipeline.addLast(DefaultHandlers.NETWORK, getNetwork());
         installPipelineExtensions();
+        logger.info("Server peer started.");
         return Task.done();
     }
 

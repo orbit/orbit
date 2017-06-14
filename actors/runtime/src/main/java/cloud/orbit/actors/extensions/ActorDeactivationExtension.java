@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -25,15 +25,21 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package cloud.orbit.actors.transactions;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package cloud.orbit.actors.extensions;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface TransactionalEvent
+import cloud.orbit.actors.runtime.ActorBaseEntry;
+
+import java.util.Collection;
+import java.util.Set;
+
+/**
+ * Created by joeh on 2017-05-15.
+ */
+public interface ActorDeactivationExtension extends ActorExtension
 {
+    default void cleanupActors(final Collection<ActorBaseEntry<?>> actorEntries, final Set<ActorBaseEntry<?>> toRemove)
+    {
+
+    }
 }

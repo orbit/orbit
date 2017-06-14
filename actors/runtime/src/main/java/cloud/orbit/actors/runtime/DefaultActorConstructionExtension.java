@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -25,72 +25,27 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package cloud.orbit.actors.transactions;
 
-public class TransactionEvent
+package cloud.orbit.actors.runtime;
+
+import cloud.orbit.actors.extensions.ActorConstructionExtension;
+import cloud.orbit.exception.UncheckedException;
+
+/**
+ * Created by joeh on 2017-05-29.
+ */
+public class DefaultActorConstructionExtension implements ActorConstructionExtension
 {
-    // to be used to merge split clusters
-    // should be locally (node) monotonic
-    private long timestamp;
-
-    private String transactionId;
-    private String methodName;
-    private Object[] params;
-
-    public TransactionEvent(
-            final long timestamp,
-            final String transactionId,
-            final String methodName,
-            final Object[] params)
+    @Override
+    public <T> T newInstance(final Class<T> concreteClass)
     {
-        this.timestamp = timestamp;
-        this.transactionId = transactionId;
-        this.methodName = methodName;
-        this.params = params;
+        try
+        {
+            return concreteClass.newInstance();
+        }
+        catch (Exception ex)
+        {
+            throw new UncheckedException(ex);
+        }
     }
-
-    public TransactionEvent()
-    {
-    }
-
-    public String getTransactionId()
-    {
-        return transactionId;
-    }
-
-    public String getMethodName()
-    {
-        return methodName;
-    }
-
-    public Object[] getParams()
-    {
-        return params;
-    }
-
-    public long getTimestamp()
-    {
-        return timestamp;
-    }
-
-    public void setTimestamp(final long timestamp)
-    {
-        this.timestamp = timestamp;
-    }
-
-    public void setTransactionId(final String transactionId)
-    {
-        this.transactionId = transactionId;
-    }
-
-    public void setMethodName(final String methodName)
-    {
-        this.methodName = methodName;
-    }
-
-    public void setParams(final Object[] params)
-    {
-        this.params = params;
-    }
-
 }

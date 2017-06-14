@@ -42,7 +42,6 @@ import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.client.ClientPeer;
 import cloud.orbit.actors.cloner.ExecutionObjectCloner;
-import cloud.orbit.actors.cloner.KryoCloner;
 import cloud.orbit.actors.concurrent.MultiExecutionSerializer;
 import cloud.orbit.actors.concurrent.WaitFreeExecutionSerializer;
 import cloud.orbit.actors.extensions.LifetimeExtension;
@@ -53,6 +52,7 @@ import cloud.orbit.actors.runtime.AbstractExecution;
 import cloud.orbit.actors.runtime.ActorFactoryGenerator;
 import cloud.orbit.actors.runtime.ActorTaskContext;
 import cloud.orbit.actors.runtime.Execution;
+import cloud.orbit.actors.runtime.KryoSerializer;
 import cloud.orbit.actors.runtime.NodeCapabilities;
 import cloud.orbit.actors.server.ServerPeer;
 import cloud.orbit.concurrent.ExecutorUtils;
@@ -348,7 +348,7 @@ public class ActorBaseTest
 
     protected ExecutionObjectCloner getExecutionObjectCloner()
     {
-        return new KryoCloner();
+        return new KryoSerializer();
     }
 
     @FunctionalInterface
@@ -485,7 +485,6 @@ public class ActorBaseTest
         } while (true);
 
     }
-
 
     @After
     public void tearDown()
