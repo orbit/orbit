@@ -93,13 +93,14 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     private NodeSelectorExtension nodeSelector;
 
-    public Hosting(final int maxLocalAddressCacheCount, final long defaultActorTTL)
+    public Hosting(final int localAddressCacheMaximumSize, final long localAddressCacheTTL)
     {
-    	
-        this.localAddressCache = Caffeine.newBuilder()
-                .maximumSize(maxLocalAddressCacheCount)
-                .expireAfterAccess(defaultActorTTL, TimeUnit.MILLISECONDS)
-                .build();
+    	final Caffeine<Object, Object> builder = Caffeine.newBuilder();
+    	if (localAddressCacheMaximumSize > 0) {
+    		builder.maximumSize(localAddressCacheMaximumSize);
+    	}
+    	builder.expireAfterAccess(localAddressCacheTTL, TimeUnit.MILLISECONDS);
+        this.localAddressCache = builder.build();
     }
 
     public long getTimeToWaitForServersMillis()

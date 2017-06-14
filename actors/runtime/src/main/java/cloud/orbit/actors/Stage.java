@@ -191,6 +191,9 @@ public class Stage implements Startable, ActorRuntime
     @Config("orbit.actors.defaultActorTTL")
     private long defaultActorTTL = TimeUnit.MINUTES.toMillis(10);
 
+    @Config("orbit.actors.localAddressCacheTTL")
+    private long localAddressCacheTTL = 0;
+
     @Config("orbit.actors.deactivationTimeoutMillis")
     private long deactivationTimeoutMillis = TimeUnit.SECONDS.toMillis(10);
 
@@ -634,7 +637,7 @@ public class Stage implements Startable, ActorRuntime
 
         if (hosting == null)
         {
-            hosting = new Hosting(localAddressCacheMaximumSize, defaultActorTTL);
+            hosting = new Hosting(localAddressCacheMaximumSize, localAddressCacheTTL);
         }
         if (messaging == null)
         {
