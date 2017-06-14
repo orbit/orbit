@@ -79,7 +79,6 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private final Object serverNodesUpdateMutex = new Object();
     private Stage stage;
 
-    // according to the micro benchmarks, a guava cache is much slower than using a ConcurrentHashMap here.
     private final Cache<RemoteReference<?>, NodeAddress> localAddressCache;
 
     // don't use RemoteReferences, better to restrict keys to a small set of classes.
