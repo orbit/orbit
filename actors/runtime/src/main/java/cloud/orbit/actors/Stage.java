@@ -136,6 +136,7 @@ public class Stage implements Startable, ActorRuntime
     private Logger logger = LoggerFactory.getLogger(Stage.class);
 
     private static final int DEFAULT_EXECUTION_POOL_SIZE = 128;
+    private static final int DEFAULT_LOCAL_ADDRESS_CACHE_MAXIMUM_SIZE = 10_000;
 
     private final String runtimeIdentity = "Orbit[" + IdUtils.urlSafeString(128) + "]";
 
@@ -168,6 +169,9 @@ public class Stage implements Startable, ActorRuntime
 
     @Config("orbit.actors.executionPoolSize")
     private int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
+
+    @Config("orbit.actors.localAddressCacheMaximumSize")
+    private int localAddressCacheMaximumSize = DEFAULT_LOCAL_ADDRESS_CACHE_MAXIMUM_SIZE;
 
     @Config("orbit.actors.extensions")
     private List<ActorExtension> extensions = new CopyOnWriteArrayList<>();
@@ -245,6 +249,7 @@ public class Stage implements Startable, ActorRuntime
         private String nodeName;
         private StageMode mode = StageMode.HOST;
         private int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
+        private int localAddressCacheMaximumSize = DEFAULT_LOCAL_ADDRESS_CACHE_MAXIMUM_SIZE;
 
         private List<ActorExtension> extensions = new ArrayList<>();
         private Set<String> stickyHeaders = new HashSet<>();
@@ -271,6 +276,12 @@ public class Stage implements Startable, ActorRuntime
         public Builder executionPoolSize(int executionPoolSize)
         {
             this.executionPoolSize = executionPoolSize;
+            return this;
+        }
+
+        public Builder localAddressCacheMaximumSize(int localAddressCacheMaximumSize)
+        {
+            this.localAddressCacheMaximumSize = localAddressCacheMaximumSize;
             return this;
         }
 
@@ -408,6 +419,7 @@ public class Stage implements Startable, ActorRuntime
             stage.setNodeName(nodeName);
             stage.setMode(mode);
             stage.setExecutionPoolSize(executionPoolSize);
+            stage.setLocalAddressCacheMaximumSize(localAddressCacheMaximumSize);
             stage.setLocalObjectsCleaner(localObjectsCleaner);
             stage.setTimer(timer);
             extensions.forEach(stage::addExtension);
@@ -471,6 +483,11 @@ public class Stage implements Startable, ActorRuntime
     public void setExecutionPoolSize(int defaultPoolSize)
     {
         this.executionPoolSize = defaultPoolSize;
+    }
+
+    public void setLocalAddressCacheMaximumSize(final int localAddressCacheMaximumSize)
+    {
+        this.localAddressCacheMaximumSize = localAddressCacheMaximumSize;
     }
 
     public Execution getExecution()
@@ -617,7 +634,7 @@ public class Stage implements Startable, ActorRuntime
 
         if (hosting == null)
         {
-            hosting =  new Hosting();
+            hosting = new Hosting(localAddressCacheMaximumSize, defaultActorTTL);
         }
         if (messaging == null)
         {
