@@ -60,7 +60,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -80,8 +79,6 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private Stage stage;
 
     private int maxLocalAddressCacheCount = 1_000_000;
-    // according to the micro benchmarks, a guava cache is much slower than using a ConcurrentHashMap here.
-    //private final Map<RemoteReference<?>, NodeAddress> localAddressCache = new ConcurrentHashMap<>();
     private final Cache<RemoteReference<?>, NodeAddress> localAddressCache = Caffeine.newBuilder()
     		.expireAfterAccess(10, TimeUnit.MINUTES)
     		.maximumSize(maxLocalAddressCacheCount)
@@ -788,16 +785,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     public void cleanup()
     {
-//        if (localAddressCache.size() > maxLocalAddressCacheCount)
-//        {
-//            // randomly removes local references
-//            final List<RemoteReference<?>> remoteReferences = new ArrayList<>(localAddressCache.keySet());
-//            Collections.shuffle(remoteReferences);
-//            for (int c = remoteReferences.size() - maxLocalAddressCacheCount / 2; --c >= 0; )
-//            {
-//                localAddressCache.remove(remoteReferences.get(c));
-//            }
-//        }
+
     }
 
     public int getMaxLocalAddressCacheCount()
