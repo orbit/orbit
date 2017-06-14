@@ -361,6 +361,8 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             // Target node still valid?
             if (activeNodes.containsKey(nodeAddress))
             {
+                // Cache locally
+                localAddressCache.put(actorReference, nodeAddress);
                 return Task.fromValue(nodeAddress);
             }
             else
