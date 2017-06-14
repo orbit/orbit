@@ -634,7 +634,7 @@ public class Stage implements Startable, ActorRuntime
 
         if (hosting == null)
         {
-            hosting = new Hosting(localAddressCacheMaximumSize);
+            hosting = new Hosting(localAddressCacheMaximumSize, defaultActorTTL);
         }
         if (messaging == null)
         {

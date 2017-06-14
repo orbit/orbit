@@ -94,11 +94,9 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     private NodeSelectorExtension nodeSelector;
 
-    @Config("orbit.actors.defaultActorTTL")
-    private long defaultActorTTL = TimeUnit.MINUTES.toMillis(10);
-
-    public Hosting(final int maxLocalAddressCacheCount)
+    public Hosting(final int maxLocalAddressCacheCount, final long defaultActorTTL)
     {
+    	
         this.localAddressCache = Caffeine.newBuilder()
                 .maximumSize(maxLocalAddressCacheCount)
                 .expireAfterAccess(defaultActorTTL, TimeUnit.MILLISECONDS)
