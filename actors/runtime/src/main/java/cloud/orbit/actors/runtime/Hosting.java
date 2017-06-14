@@ -193,7 +193,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         {
             logger.debug("Move {} to from {} to {}.", remoteReference, oldAddress, newAddress);
         }
-        setCachedAddress(remoteReference, newAddress);
+        localAddressCache.put(remoteReference, newAddress);
         return Task.done();
     }
 
@@ -392,15 +392,9 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             nodeAddress = otherNodeAddress;
         }
 
-        // Cache locally
-        setCachedAddress(actorReference, nodeAddress);
+        localAddressCache.put(actorReference, nodeAddress);
 
         return Task.fromValue(nodeAddress);
-    }
-
-    private void setCachedAddress(final RemoteReference<?> actorReference, final NodeAddress nodeAddress)
-    {
-        localAddressCache.put(actorReference, nodeAddress);
     }
 
     private ConcurrentMap<RemoteKey, NodeAddress> getDistributedDirectory()
