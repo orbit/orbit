@@ -259,6 +259,7 @@ public class Stage implements Startable, ActorRuntime
         private List<String> basePackages = new ArrayList<>();
 
         private Long actorTTLMillis = null;
+        private Long localAddressCacheTTLMillis = null;
         private Long deactivationTimeoutMillis;
         private Integer concurrentDeactivations;
 
@@ -396,6 +397,11 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
+        public Builder localAddressCacheTTL(final long duration, final TimeUnit timeUnit) {
+            this.localAddressCacheTTLMillis = timeUnit.toMillis(duration);
+            return this;
+        }
+
         public Builder deactivationTimeout(final long duration, final TimeUnit timeUnit)
         {
             this.deactivationTimeoutMillis = timeUnit.toMillis(duration);
@@ -431,6 +437,7 @@ public class Stage implements Startable, ActorRuntime
             stage.addStickyHeaders(stickyHeaders);
             stage.addBasePackages(basePackages);
             if(actorTTLMillis != null) stage.setDefaultActorTTL(actorTTLMillis);
+            if(localAddressCacheTTLMillis != null) stage.setLocalAddressCacheTTL(localAddressCacheTTLMillis);
             if(deactivationTimeoutMillis != null) stage.setDeactivationTimeout(deactivationTimeoutMillis);
             if(concurrentDeactivations != null) stage.setConcurrentDeactivations(concurrentDeactivations);
             return stage;
@@ -584,6 +591,10 @@ public class Stage implements Startable, ActorRuntime
     public void setDefaultActorTTL(long defaultActorTTLMs)
     {
         this.defaultActorTTL = defaultActorTTLMs;
+    }
+
+    public void setLocalAddressCacheTTL(final long localAddressCacheTTL) {
+        this.localAddressCacheTTL = localAddressCacheTTL;
     }
 
     public void setDeactivationTimeout(long deactivationTimeoutMs)
