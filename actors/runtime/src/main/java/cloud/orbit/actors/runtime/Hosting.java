@@ -31,6 +31,9 @@ package cloud.orbit.actors.runtime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.annotation.OnlyIfActivated;
 import cloud.orbit.actors.annotation.PreferLocalPlacement;
@@ -57,9 +60,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.ea.async.Async.await;
@@ -75,8 +78,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private final Object serverNodesUpdateMutex = new Object();
     private Stage stage;
 
-    // according to the micro benchmarks, a guava cache is much slower than using a ConcurrentHashMap here.
-    private final Map<RemoteReference<?>, NodeAddress> localAddressCache = new ConcurrentHashMap<>();
+    private final Cache<RemoteReference<?>, NodeAddress> localAddressCache;
 
     // don't use RemoteReferences, better to restrict keys to a small set of classes.
     private volatile ConcurrentMap<RemoteKey, NodeAddress> distributedDirectory;
@@ -88,13 +90,13 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     private CompletableFuture<Void> hostingActive = new Task<>();
 
-    private int maxLocalAddressCacheCount = 10_000;
-
     private NodeSelectorExtension nodeSelector;
 
-    public Hosting()
+    public Hosting(final int maxLocalAddressCacheCount, final long defaultActorTTL)
     {
-        //
+        this.localAddressCache = Caffeine.newBuilder()
+                .expireAfterAccess(defaultActorTTL, TimeUnit.MILLISECONDS)
+                .maximumSize(maxLocalAddressCacheCount).build();
     }
 
     public long getTimeToWaitForServersMillis()
@@ -188,7 +190,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         {
             logger.debug("Move {} to from {} to {}.", remoteReference, oldAddress, newAddress);
         }
-        setCachedAddress(remoteReference, newAddress);
+        localAddressCache.put(remoteReference, newAddress);
         return Task.done();
     }
 
@@ -199,7 +201,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         {
             logger.debug("Remove {} from this node.", remoteReference);
         }
-        localAddressCache.remove(remoteReference);
+        localAddressCache.invalidate(remoteReference);
         return Task.done();
     }
 
@@ -257,7 +259,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         for (NodeInfo info : oldNodes.values())
         {
             // clear local cache
-            localAddressCache.values().remove(info.address);
+            localAddressCache.asMap().values().remove(info.address);
 
             // TODO notify someone?
         }
@@ -291,7 +293,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     private Task<NodeAddress> locateActiveActor(final RemoteReference<?> actorReference)
     {
-        final NodeAddress address = localAddressCache.get(actorReference);
+        final NodeAddress address = localAddressCache.getIfPresent(actorReference);
         if (address != null && activeNodes.containsKey(address))
         {
             return Task.fromValue(address);
@@ -305,7 +307,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     {
         // removing the reference from the cluster directory and local caches
         getDistributedDirectory().remove(createRemoteKey(remoteReference), clusterPeer.localAddress());
-        localAddressCache.remove(remoteReference);
+        localAddressCache.invalidate(remoteReference);
         for (final NodeInfo info : activeNodes.values())
         {
             if (!info.address.equals(clusterPeer.localAddress()) && info.state == NodeState.RUNNING)
@@ -336,7 +338,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         }
 
         // Get the existing activation from the local cache (if any)
-        final NodeAddress address = localAddressCache.get(actorReference);
+        final NodeAddress address = localAddressCache.getIfPresent(actorReference);
 
         // Is this actor already activated and in the local cache? If so, we're done
         if (address != null && activeNodes.containsKey(address))
@@ -354,6 +356,8 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             // Target node still valid?
             if (activeNodes.containsKey(nodeAddress))
             {
+                // Cache locally
+                localAddressCache.put(actorReference, nodeAddress);
                 return Task.fromValue(nodeAddress);
             }
             else
@@ -387,15 +391,9 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         }
 
         // Cache locally
-        setCachedAddress(actorReference, nodeAddress);
+        localAddressCache.put(actorReference, nodeAddress);
 
         return Task.fromValue(nodeAddress);
-    }
-
-    private void setCachedAddress(final RemoteReference<?> actorReference, final NodeAddress nodeAddress)
-    {
-        cleanup();
-        localAddressCache.put(actorReference, nodeAddress);
     }
 
     private ConcurrentMap<RemoteKey, NodeAddress> getDistributedDirectory()
@@ -626,7 +624,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             ctx.fireRead(invocation);
             return Task.done();
         }
-        final NodeAddress cachedAddress = localAddressCache.get(toReference);
+        final NodeAddress cachedAddress = localAddressCache.getIfPresent(toReference);
         if (Objects.equals(cachedAddress, localAddress))
         {
             ctx.fireRead(invocation);
@@ -648,7 +646,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         // over here the actor address is not the localAddress.
         // since we received this message someone thinks that this node is the right one.
         // so we remove that entry from the local cache and query the global cache again
-        localAddressCache.remove(toReference);
+        localAddressCache.invalidate(toReference);
         return locateActor(invocation.getToReference(), true)
                 .whenComplete((r, e) -> {
                     if (e != null)
@@ -775,29 +773,5 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     {
         final NodeAddress actorAddress = await(locateActor(toReference, false));
         return Task.fromValue(actorAddress != null);
-    }
-
-    public void cleanup()
-    {
-        if (localAddressCache.size() > maxLocalAddressCacheCount)
-        {
-            // randomly removes local references
-            final List<RemoteReference<?>> remoteReferences = new ArrayList<>(localAddressCache.keySet());
-            Collections.shuffle(remoteReferences);
-            for (int c = remoteReferences.size() - maxLocalAddressCacheCount / 2; --c >= 0; )
-            {
-                localAddressCache.remove(remoteReferences.get(c));
-            }
-        }
-    }
-
-    public int getMaxLocalAddressCacheCount()
-    {
-        return maxLocalAddressCacheCount;
-    }
-
-    public void setMaxLocalAddressCacheCount(final int maxLocalAddressCacheCount)
-    {
-        this.maxLocalAddressCacheCount = maxLocalAddressCacheCount;
     }
 }
