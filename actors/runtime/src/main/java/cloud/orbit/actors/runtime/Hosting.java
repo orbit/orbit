@@ -297,7 +297,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     private Task<NodeAddress> locateActiveActor(final RemoteReference<?> actorReference)
     {
-        final NodeAddress address = localAddressCache.asMap().get(actorReference);
+        final NodeAddress address = localAddressCache.getIfPresent(actorReference);
         if (address != null && activeNodes.containsKey(address))
         {
             return Task.fromValue(address);
@@ -342,7 +342,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         }
 
         // Get the existing activation from the local cache (if any)
-        final NodeAddress address = localAddressCache.asMap().get(actorReference);
+        final NodeAddress address = localAddressCache.getIfPresent(actorReference);
 
         // Is this actor already activated and in the local cache? If so, we're done
         if (address != null && activeNodes.containsKey(address))
@@ -631,7 +631,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             ctx.fireRead(invocation);
             return Task.done();
         }
-        final NodeAddress cachedAddress = localAddressCache.asMap().get(toReference);
+        final NodeAddress cachedAddress = localAddressCache.getIfPresent(toReference);
         if (Objects.equals(cachedAddress, localAddress))
         {
             ctx.fireRead(invocation);
