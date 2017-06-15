@@ -80,9 +80,9 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
     private final KryoPool kryoPool;
     
     public KryoSerializer() {
-        this(k -> {});
+        this(kryo -> {});
     }
-    
+
     public KryoSerializer(Consumer<Kryo> kryoConsumer) {
         KryoFactory factory = new KryoFactory() {
             @Override
@@ -131,7 +131,9 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
                 kryo.addDefaultSerializer(ActorObserver.class, new ActorObserverSerializer());
                 
                 kryo.register(ReferenceReplacement.class, new ReferenceReplacementSerializer());
+
                 kryoConsumer.accept(kryo);
+
                 return kryo;
             }
         };
