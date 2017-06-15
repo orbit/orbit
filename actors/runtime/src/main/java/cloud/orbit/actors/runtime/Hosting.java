@@ -95,11 +95,11 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
     public Hosting(final int localAddressCacheMaximumSize, final long localAddressCacheTTL)
     {
-    	final Caffeine<Object, Object> builder = Caffeine.newBuilder();
-    	if (localAddressCacheMaximumSize > 0) {
-    		builder.maximumSize(localAddressCacheMaximumSize);
-    	}
-    	builder.expireAfterAccess(localAddressCacheTTL, TimeUnit.MILLISECONDS);
+        final Caffeine<Object, Object> builder = Caffeine.newBuilder();
+        if (localAddressCacheMaximumSize > 0) {
+            builder.maximumSize(localAddressCacheMaximumSize);
+        }
+        builder.expireAfterAccess(localAddressCacheTTL, TimeUnit.MILLISECONDS);
         this.localAddressCache = builder.build();
     }
 
@@ -260,14 +260,11 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         consistentHashNodeTree = newHashes;
         updateServerNodes();
 
-        Collection<NodeAddress> values = localAddressCache.asMap().values();
-        for (NodeInfo info : oldNodes.values())
-        {
-            // clear local cache
-            values.remove(info.address);
+        localAddressCache.asMap().values()
+            .removeAll(oldNodes.values().stream().map(e -> e.address)
+                    .collect(Collectors.toList()));
 
-            // TODO notify someone?
-        }
+        // TODO notify someone?
     }
 
     private void updateServerNodes()
