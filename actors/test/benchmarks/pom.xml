@@ -35,7 +35,7 @@ THE POSSIBILITY OF SUCH DAMAGE.
     <parent>
         <groupId>cloud.orbit</groupId>
         <artifactId>orbit-actors-parent</artifactId>
-        <version>1.1.0</version>
+        <version>1.1.1-SNAPSHOT</version>
         <relativePath>../..</relativePath>
     </parent>
 
