@@ -118,19 +118,24 @@ public class ConcurrentExecutionQueue implements Executor
                         {
                             inFlightUpdater.decrementAndGet(this);
                             tryDrainQueue();
-                        } else {
+                        }
+                        else
+                        {
                             task.whenCompleteAsync(ConcurrentExecutionQueue.this::whenCompleteAsync, executorService);
                         }
                     });
-                } catch(Throwable error) {
+                }
+                catch (Throwable ex)
+                {
                     inFlightUpdater.decrementAndGet(this);
                     try
                     {
-                        logger.error("Error executing action", error);
+                        logger.error("Error executing action", ex);
                     }
-                    catch (Throwable ex)
+                    catch (Throwable ex2)
                     {
                         // just to be on the safe side... loggers can fail...
+                        ex2.printStackTrace();
                         ex.printStackTrace();
                     }
                 }

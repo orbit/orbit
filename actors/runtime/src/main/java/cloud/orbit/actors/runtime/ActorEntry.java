@@ -166,12 +166,21 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
             {
                 return Task.done();
             }
-            return executionSerializer.offerJob(key, () -> doDeactivate(), 10000);
+            return executionSerializer.offerJob(key, this::doDeactivate, 10000);
         }
         catch (final Throwable ex)
         {
-            // this should never happen, but deactivate must't fail.
-            ex.printStackTrace();
+            // this should never happen, but deactivate must not fail.
+            try
+            {
+                getLogger().error("Error executing action", ex);
+            }
+            catch (Throwable ex2)
+            {
+                // just to be on the safe side... loggers can fail...
+                ex2.printStackTrace();
+                ex.printStackTrace();
+            }
             return Task.done();
         }
     }
@@ -183,7 +192,6 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
             try
             {
                 await(deactivate(getObject()));
-                actor = null;
             }
             catch (final Throwable ex)
             {
@@ -193,9 +201,13 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
                 }
                 catch (final Throwable ex2)
                 {
-                    ex2.printStackTrace();
                     ex.printStackTrace();
+                    ex2.printStackTrace();
                 }
+            }
+            finally
+            {
+                actor = null;
             }
         }
         setDeactivated(true);

@@ -164,15 +164,16 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
                         return;
                     }
                 }
-                catch (Throwable error)
+                catch (Throwable ex)
                 {
                     try
                     {
-                        logger.error("Error executing action", error);
+                        logger.error("Error executing action", ex);
                     }
-                    catch (Throwable ex)
+                    catch (Throwable ex2)
                     {
                         // just to be on the safe side... loggers can fail...
+                        ex2.printStackTrace();
                         ex.printStackTrace();
                     }
                 }
