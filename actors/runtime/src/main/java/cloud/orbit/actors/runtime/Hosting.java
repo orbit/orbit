@@ -376,25 +376,23 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             nodeAddress = clusterPeer.localAddress();
         }
 
-        // Do we have a target node yet?
-        if (nodeAddress == null)
-        {
-            // If not, select randomly
-            nodeAddress = await(selectNode(interfaceClass.getName()));
-        }
+        // Do we have a target node yet? If not, select randomly
+        Task<NodeAddress> nodeAddressTask = nodeAddress != null ? Task.fromValue(nodeAddress) : selectNode(interfaceClass.getName());
 
-        // Push our selection to the distributed cache (if possible)
-        NodeAddress otherNodeAddress = distributedDirectory.putIfAbsent(remoteKey, nodeAddress);
+        return nodeAddressTask.thenApply((selectedNodeAddress) -> {
+            // Push our selection to the distributed cache (if possible)
+            NodeAddress otherNodeAddress = distributedDirectory.putIfAbsent(remoteKey, selectedNodeAddress);
 
-        // Someone else beat us to placement, use that node
-        if (otherNodeAddress != null)
-        {
-            nodeAddress = otherNodeAddress;
-        }
+            // Someone else beat us to placement, use that node
+            if (otherNodeAddress != null)
+            {
+                selectedNodeAddress = otherNodeAddress;
+            }
 
-        localAddressCache.put(actorReference, nodeAddress);
+            localAddressCache.put(actorReference, selectedNodeAddress);
 
-        return Task.fromValue(nodeAddress);
+            return selectedNodeAddress;
+        });
     }
 
     private ConcurrentMap<RemoteKey, NodeAddress> getDistributedDirectory()
