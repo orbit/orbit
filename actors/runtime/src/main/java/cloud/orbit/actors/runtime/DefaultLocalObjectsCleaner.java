@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 import cloud.orbit.actors.annotation.NeverDeactivate;
 import cloud.orbit.actors.concurrent.ConcurrentExecutionQueue;
 import cloud.orbit.actors.extensions.ActorDeactivationExtension;
-import cloud.orbit.concurrent.ConcurrentHashSet;
 import cloud.orbit.concurrent.Task;
 
 import java.time.Clock;
@@ -45,6 +44,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -63,10 +63,9 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
     private final long deactivationTimeoutMillis;
     private final Clock clock;
     private final Hosting hosting;
-    private final ConcurrentHashSet<ActorBaseEntry<?>> pendingDeactivations = new ConcurrentHashSet<>();
+    private final Set<ActorBaseEntry<?>> pendingDeactivations = ConcurrentHashMap.newKeySet();
     private final ConcurrentExecutionQueue concurrentExecutionQueue;
     private List<ActorDeactivationExtension> actorDeactivationExtensions = Collections.emptyList();
-
 
     public DefaultLocalObjectsCleaner(final Hosting hosting, final Clock clock, final ExecutorService executor, final LocalObjects localObjects, final long defaultActorTTL, final int concurrentDeactivations, final long deactivationTimeoutMillis)
     {
@@ -91,8 +90,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
     @Override
     public Task<Void> shutdown()
     {
-        await(cleanupActors(true));
-        return Task.done();
+        return cleanupActors(true);
     }
 
     private Task cleanupActors(final boolean shutdownAll)
@@ -123,16 +121,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
                 continue;
             }
 
-            // Check for timeout
-            boolean shouldRemove = clock.millis() - actorEntry.getLastAccess() > defaultActorTTL;
-            // Check if extension wanted to remove it
-            shouldRemove = shouldRemove || toRemove.contains(actorEntry);
-            // Make sure it isn't tagged NeverDeactivate
-            shouldRemove = shouldRemove && !RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class);
-            // Override if shutdownAll is true
-            shouldRemove = shouldRemove || shutdownAll;
-
-            if (shouldRemove)
+            if (shutdownAll || shouldRemove(actorEntry, toRemove))
             {
                 if (pendingDeactivations.add(actorEntry))
                 {
@@ -152,19 +141,41 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
                                             actorEntry.setDeactivated(true);
                                         }
 
-                                        pendingDeactivations.remove(actorEntry);
-                                        localObjects.remove(entryEntry.getKey(), entryEntry.getValue());
-                                        if (entryEntry.getKey() == actorEntry.getRemoteReference())
+                                        try
                                         {
-                                            // removing non stateless actor from the distributed directory
-                                            hosting.actorDeactivated(actorEntry.getRemoteReference());
+                                            localObjects.remove(entryEntry.getKey(), entryEntry.getValue());
+                                            if (entryEntry.getKey() == actorEntry.getRemoteReference())
+                                            {
+                                                // removing non stateless actor from the distributed directory
+                                                hosting.actorDeactivated(actorEntry.getRemoteReference());
+                                            }
                                         }
-                                    })));
+                                        finally
+                                        {
+                                            pendingDeactivations.remove(actorEntry);
+                                        }
+                                    })
+                            )
+                    );
                 }
             }
         }
 
         return Task.allOf(pendingThisCycle);
+    }
+
+    private boolean shouldRemove(final ActorBaseEntry<?> actorEntry, final Set<ActorBaseEntry<?>> toRemove)
+    {
+        // Make sure it isn't tagged NeverDeactivate
+        if (RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class))
+        {
+            return false;
+        }
+        // Check for timeout
+        boolean shouldRemove = clock.millis() - actorEntry.getLastAccess() > defaultActorTTL;
+        // Check if extension wanted to remove it
+        shouldRemove = shouldRemove || toRemove.contains(actorEntry);
+        return shouldRemove;
     }
 
     private Task cleanupObservers()
@@ -175,6 +186,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
         return Task.done();
     }
 
+    @Override
     public void setActorDeactivationExtensions(final List<ActorDeactivationExtension> extensionList)
     {
         this.actorDeactivationExtensions = Collections.unmodifiableList(extensionList);
