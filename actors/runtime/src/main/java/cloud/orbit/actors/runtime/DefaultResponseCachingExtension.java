@@ -42,6 +42,7 @@ import cloud.orbit.actors.extensions.MessageSerializer;
 import cloud.orbit.actors.extensions.ResponseCachingExtension;
 import cloud.orbit.actors.net.HandlerAdapter;
 import cloud.orbit.actors.net.HandlerContext;
+import cloud.orbit.concurrent.MessageDigestFactory;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.exception.UncheckedException;
 import cloud.orbit.tuples.Pair;
@@ -57,7 +58,7 @@ import java.time.Clock;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-public class ResponseCaching
+public class DefaultResponseCachingExtension
         extends HandlerAdapter
         implements ResponseCachingExtension
 {
@@ -66,6 +67,7 @@ public class ResponseCaching
     private MessageSerializer messageSerializer;
     private BasicRuntime runtime;
     private final AnnotationCache<CacheResponse> cacheResponseCache = new AnnotationCache<>(CacheResponse.class);
+    private final MessageDigestFactory messageDigest = new MessageDigestFactory("SHA-256");
 
     private static class NullOutputStream extends OutputStream
     {
@@ -89,12 +91,12 @@ public class ResponseCaching
 
     public static void setCacheExecutor(final Executor cacheExecutor)
     {
-        ResponseCaching.cacheExecutor = cacheExecutor;
+        DefaultResponseCachingExtension.cacheExecutor = cacheExecutor;
     }
 
     public static void setClock(final Clock clock)
     {
-        ResponseCaching.clock = clock;
+        DefaultResponseCachingExtension.clock = clock;
     }
 
     /**
@@ -213,9 +215,8 @@ public class ResponseCaching
         }
         try
         {
-            final MessageDigest md = MessageDigest.getInstance("SHA-256");
+            final MessageDigest md = messageDigest.newDigest();
             DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
-            // this entire function shouldn't be here...
             messageSerializer.serializeMessage(runtime, d, new Message().withPayload(params));
             d.close();
             return String.format("%032X", new BigInteger(1, md.digest()));
@@ -225,6 +226,8 @@ public class ResponseCaching
             throw new UncheckedException("Unable to make parameter hash", e);
         }
     }
+
+
 
     @Override
     public Task write(final HandlerContext ctx, final Object msg) throws Exception

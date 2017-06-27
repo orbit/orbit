@@ -88,7 +88,7 @@ import cloud.orbit.actors.runtime.RandomSelectorExtension;
 import cloud.orbit.actors.runtime.Registration;
 import cloud.orbit.actors.runtime.ReminderController;
 import cloud.orbit.actors.runtime.RemoteReference;
-import cloud.orbit.actors.runtime.ResponseCaching;
+import cloud.orbit.actors.runtime.DefaultResponseCachingExtension;
 import cloud.orbit.actors.runtime.SerializationHandler;
 import cloud.orbit.actors.runtime.StatelessActorEntry;
 import cloud.orbit.actors.streams.AsyncObserver;
@@ -715,7 +715,7 @@ public class Stage implements Startable, ActorRuntime
                 .findFirst()
                 .orElseGet(() ->
                 {
-                    final ResponseCaching responseCaching = new ResponseCaching();
+                    final DefaultResponseCachingExtension responseCaching = new DefaultResponseCachingExtension();
                     responseCaching.setObjectCloner(objectCloner);
                     responseCaching.setRuntime(this);
                     responseCaching.setMessageSerializer(messageSerializer);
