@@ -106,7 +106,7 @@ public class DefaultResponseCachingExtension
     @Override
     public Task<?> get(Method method, Pair<Addressable, String> key)
     {
-        Cache<Pair<Addressable, String>, Task> cache = getIfPresent(method);
+        final Cache<Pair<Addressable, String>, Task> cache = getIfPresent(method);
         return cache != null ? cache.getIfPresent(key) : null;
     }
 
@@ -116,13 +116,13 @@ public class DefaultResponseCachingExtension
     @Override
     public void put(Method method, Pair<Addressable, String> key, Task<?> value)
     {
-        Cache<Pair<Addressable, String>, Task> cache = getCache(method);
+        final Cache<Pair<Addressable, String>, Task> cache = getCache(method);
         cache.put(key, value);
     }
 
     private Cache<Pair<Addressable, String>, Task> getIfPresent(Method method)
     {
-        CacheResponse cacheResponse = cacheResponseCache.getAnnotation(method);
+        final CacheResponse cacheResponse = cacheResponseCache.getAnnotation(method);
         if (cacheResponse == null)
         {
             throw new IllegalArgumentException("Passed non-CacheResponse method.");
@@ -137,7 +137,7 @@ public class DefaultResponseCachingExtension
      */
     private Cache<Pair<Addressable, String>, Task> getCache(Method method)
     {
-        CacheResponse cacheResponse = cacheResponseCache.getAnnotation(method);
+        final CacheResponse cacheResponse = cacheResponseCache.getAnnotation(method);
         if (cacheResponse == null)
         {
             throw new IllegalArgumentException("Passed non-CacheResponse method.");
@@ -161,8 +161,8 @@ public class DefaultResponseCachingExtension
     @Override
     public Task<Void> flush(Actor actor)
     {
-        RemoteReference actorReference = (RemoteReference) actor;
-        Class interfaceClass = RemoteReference.getInterfaceClass(actorReference);
+        final RemoteReference actorReference = (RemoteReference) actor;
+        final Class interfaceClass = RemoteReference.getInterfaceClass(actorReference);
 
         masterCache.asMap().entrySet().forEach(entry -> {
             if (interfaceClass.equals(entry.getKey().getDeclaringClass()))
@@ -186,8 +186,8 @@ public class DefaultResponseCachingExtension
 
     private Task<?> cacheResponseInvoke(HandlerContext ctx, Invocation invocation)
     {
-        String parameterHash = generateParameterHash(invocation.getParams());
-        Pair<Addressable, String> key = Pair.of(invocation.getToReference(), parameterHash);
+        final String parameterHash = generateParameterHash(invocation.getParams());
+        final Pair<Addressable, String> key = Pair.of(invocation.getToReference(), parameterHash);
 
         final Method method = invocation.getMethod();
         Task<?> cached = get(method, key);
@@ -216,7 +216,7 @@ public class DefaultResponseCachingExtension
         try
         {
             final MessageDigest md = messageDigest.newDigest();
-            DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
+            final DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
             messageSerializer.serializeMessage(runtime, d, new Message().withPayload(params));
             d.close();
             return String.format("%032X", new BigInteger(1, md.digest()));
