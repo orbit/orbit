@@ -35,7 +35,7 @@ import org.junit.Test;
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.runtime.NodeCapabilities;
-import cloud.orbit.actors.runtime.ResponseCaching;
+import cloud.orbit.actors.runtime.DefaultResponseCachingExtension;
 import cloud.orbit.actors.test.actors.CacheResponse;
 import cloud.orbit.actors.test.actors.CacheResponseActor;
 import cloud.orbit.exception.UncheckedException;
@@ -62,7 +62,7 @@ public class CacheResponseTest extends ActorBaseTest
     @Test
     public void testCacheDuration()
     {
-        ResponseCaching.setClock(clock);
+        DefaultResponseCachingExtension.setClock(clock);
 
         CacheResponse actor = Actor.getReference(CacheResponse.class, UUID.randomUUID().toString());
 
@@ -126,7 +126,7 @@ public class CacheResponseTest extends ActorBaseTest
     @Test(timeout = 10_000L)
     public void testCacheFlush()
     {
-        ResponseCaching.setClock(clock);
+        DefaultResponseCachingExtension.setClock(clock);
 
         CacheResponse actor = Actor.getReference(CacheResponse.class, UUID.randomUUID().toString());
 
@@ -202,8 +202,8 @@ public class CacheResponseTest extends ActorBaseTest
     @Before
     public void initializeCacheManager()
     {
-        ResponseCaching.setCacheExecutor(Runnable::run);
-        ResponseCaching.setClock(null);
+        DefaultResponseCachingExtension.setCacheExecutor(Runnable::run);
+        DefaultResponseCachingExtension.setClock(null);
     }
 
     @After
