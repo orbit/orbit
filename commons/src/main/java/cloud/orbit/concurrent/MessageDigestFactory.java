@@ -38,26 +38,13 @@ public class MessageDigestFactory
 {
     private final String algorithm;
     private final MessageDigest digestPrototype;
-    private final Boolean supportsClone;
+    private final boolean supportsClone;
 
     public MessageDigestFactory(final String algorithm)
     {
         this.algorithm = algorithm;
         this.digestPrototype = createJDKDigest(algorithm);
         this.supportsClone = supportsCloning(digestPrototype);
-    }
-
-    private static boolean supportsCloning(MessageDigest messageDigest)
-    {
-        try
-        {
-            messageDigest.clone();
-            return true;
-        }
-        catch (CloneNotSupportedException e)
-        {
-            return false;
-        }
     }
 
     public MessageDigest newDigest()
@@ -75,6 +62,19 @@ public class MessageDigestFactory
         }
 
         return createJDKDigest(algorithm);
+    }
+
+    private static boolean supportsCloning(MessageDigest messageDigest)
+    {
+        try
+        {
+            messageDigest.clone();
+            return true;
+        }
+        catch (CloneNotSupportedException e)
+        {
+            return false;
+        }
     }
 
     private static MessageDigest createJDKDigest(final String algorithm)
