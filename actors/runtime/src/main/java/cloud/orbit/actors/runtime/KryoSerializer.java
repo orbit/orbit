@@ -78,26 +78,38 @@ import java.util.function.Consumer;
 public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
 {
     private final KryoPool kryoPool;
-    
-    public KryoSerializer() {
+
+    public KryoSerializer()
+    {
         this(kryo -> {});
     }
 
-    public KryoSerializer(Consumer<Kryo> kryoConsumer) {
-        KryoFactory factory = new KryoFactory() {
+    public KryoSerializer(Consumer<Kryo> kryoConsumer)
+    {
+        KryoFactory factory = new KryoFactory()
+        {
             @Override
-            public Kryo create() {
-                Kryo kryo = new Kryo(new DefaultClassResolver() {
+            public Kryo create()
+            {
+                Kryo kryo = new Kryo(new DefaultClassResolver()
+                {
                     @Override
-                    public Registration writeClass(Output output, Class type) {
-                        if (type != null && !type.isInterface()) {
-                            if (ActorObserver.class.isAssignableFrom(type)) {
+                    public Registration writeClass(Output output, Class type)
+                    {
+                        if (type != null && !type.isInterface())
+                        {
+                            if (ActorObserver.class.isAssignableFrom(type))
+                            {
                                 super.writeClass(output, ActorObserver.class);
                                 return kryo.getRegistration(type);
-                            } else if (AbstractActor.class.isAssignableFrom(type)) {
+                            }
+                            else if (AbstractActor.class.isAssignableFrom(type))
+                            {
                                 super.writeClass(output, AbstractActor.class);
                                 return kryo.getRegistration(type);
-                            } else if (RemoteReference.class.isAssignableFrom(type)) {
+                            }
+                            else if (RemoteReference.class.isAssignableFrom(type))
+                            {
                                 super.writeClass(output, RemoteReference.class);
                                 return kryo.getRegistration(type);
                             }
@@ -106,10 +118,12 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
                     }
                 }, new MapReferenceResolver(), new DefaultStreamFactory());
 
+                kryo.setAutoReset(true);
+
                 // Configure Kryo to first try to find and use a no-arg constructor and if it fails to do so,
                 // fallback to StdInstantiatorStrategy (no constructor is invoked!).
                 kryo.setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
-                
+
                 kryo.register(Arrays.asList("").getClass(), new ArraysAsListSerializer());
                 kryo.register(Collections.emptyList().getClass(), new CollectionsEmptyListSerializer());
                 kryo.register(Collections.emptyMap().getClass(), new CollectionsEmptyMapSerializer());
@@ -119,17 +133,17 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
                 kryo.register(Collections.singletonMap("", "").getClass(), new CollectionsSingletonMapSerializer());
                 kryo.register(GregorianCalendar.class, new GregorianCalendarSerializer());
                 kryo.register(InvocationHandler.class, new JdkProxySerializer());
-                
+
                 UnmodifiableCollectionsSerializer.registerSerializers(kryo);
                 SynchronizedCollectionsSerializer.registerSerializers(kryo);
 
                 kryo.register(UUID.class, new UUIDSerializer());
-    
+
                 // addDefaultSerializer for subclasses
                 kryo.addDefaultSerializer(RemoteReference.class, new RemoteReferenceSerializer());
                 kryo.addDefaultSerializer(AbstractActor.class, new AbstractActorSerializer());
                 kryo.addDefaultSerializer(ActorObserver.class, new ActorObserverSerializer());
-                
+
                 kryo.register(ReferenceReplacement.class, new ReferenceReplacementSerializer());
 
                 kryoConsumer.accept(kryo);
@@ -137,25 +151,29 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
                 return kryo;
             }
         };
-        
+
         kryoPool = new KryoPool.Builder(factory).softReferences().build();
     }
-         
-    private static class ReferenceReplacementSerializer extends Serializer<ReferenceReplacement> {
-        
-        private ReferenceReplacementSerializer() {
+
+    private static class ReferenceReplacementSerializer extends Serializer<ReferenceReplacement>
+    {
+
+        private ReferenceReplacementSerializer()
+        {
             setImmutable(true);
         }
-        
+
         @Override
-        public void write(Kryo kryo, Output output, ReferenceReplacement object) {
+        public void write(Kryo kryo, Output output, ReferenceReplacement object)
+        {
             kryo.writeClass(output, object.interfaceClass);
             kryo.writeClassAndObject(output, object.id);
             writeNodeAddress(output, object.address);
         }
-    
+
         @Override
-        public ReferenceReplacement read(Kryo kryo, Input input, Class<ReferenceReplacement> type) {
+        public ReferenceReplacement read(Kryo kryo, Input input, Class<ReferenceReplacement> type)
+        {
             ReferenceReplacement referenceReplacement = new ReferenceReplacement();
             referenceReplacement.interfaceClass = kryo.readClass(input).getType();
             referenceReplacement.id = kryo.readClassAndObject(input);
@@ -163,8 +181,9 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
             return referenceReplacement;
         }
     }
-    
-    private static class AbstractActorSerializer extends Serializer {
+
+    private static class AbstractActorSerializer extends Serializer
+    {
 
         @Override
         public Object copy(final Kryo kryo, final Object original)
@@ -202,7 +221,7 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
             replacement.id = reference.id;
             kryo.writeObject(output, replacement);
         }
-    
+
         @Override
         public Object read(Kryo kryo, Input input, Class type)
         {
@@ -210,10 +229,10 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
             return BasicRuntime.getRuntime().getReference(replacement.interfaceClass, replacement.id);
         }
     }
-    
+
     private static class ActorObserverSerializer extends Serializer
     {
-        
+
         @Override
         public Object copy(Kryo kryo, Object original)
         {
@@ -230,7 +249,7 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
             }
             return ActorRuntime.getRuntime().registerObserver(null, (ActorObserver) original);
         }
-        
+
         @Override
         public void write(Kryo kryo, Output output, Object object)
         {
@@ -242,7 +261,7 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
             replacement.id = reference.id;
             kryo.writeObject(output, replacement);
         }
-        
+
         @Override
         public Object read(Kryo kryo, Input input, Class type)
         {
@@ -254,8 +273,9 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
             return BasicRuntime.getRuntime().getReference(replacement.interfaceClass, replacement.id);
         }
     }
-    
-    private static class RemoteReferenceSerializer extends Serializer {
+
+    private static class RemoteReferenceSerializer extends Serializer
+    {
 
         @Override
         public Object copy(final Kryo kryo, final Object original)
@@ -272,9 +292,10 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
             }
             return original;
         }
-        
+
         @Override
-        public void write(Kryo kryo, Output output, Object object) {
+        public void write(Kryo kryo, Output output, Object object)
+        {
             RemoteReference reference = (RemoteReference) object;
             ReferenceReplacement replacement = new ReferenceReplacement();
             replacement.address = reference.address;
@@ -282,42 +303,52 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
             replacement.id = reference.id;
             kryo.writeObject(output, replacement);
         }
-        
+
         @Override
-        public RemoteReference read(Kryo kryo, Input input, Class type) {
+        public RemoteReference read(Kryo kryo, Input input, Class type)
+        {
             ReferenceReplacement replacement = kryo.readObject(input, ReferenceReplacement.class);
             return BasicRuntime.getRuntime().getReference((Class<RemoteReference>) replacement.interfaceClass, replacement.id);
         }
     }
 
-    private static void writeNodeAddress(Output out, NodeAddress nodeAddress) {
-        if (nodeAddress != null) {
+    private static void writeNodeAddress(Output out, NodeAddress nodeAddress)
+    {
+        if (nodeAddress != null)
+        {
             UUID uuid = nodeAddress.asUUID();
             out.writeLong(uuid.getMostSignificantBits());
             out.writeLong(uuid.getLeastSignificantBits());
-        } else {
+        }
+        else
+        {
             out.writeLong(0L);
             out.writeLong(0L);
         }
     }
 
-    private static NodeAddress readNodeAddress(Input in) {
+    private static NodeAddress readNodeAddress(Input in)
+    {
         long most = in.readLong();
         long least = in.readLong();
         return most != 0L && least != 0L ? new NodeAddressImpl(new UUID(most, least)) : null;
     }
-    
-    private static class ReferenceReplacement implements Serializable {
+
+    private static class ReferenceReplacement implements Serializable
+    {
         private static final long serialVersionUID = 1L;
         Class<?> interfaceClass;
         Object id;
         NodeAddress address;
     }
-    
+
     @Override
-    public Message deserializeMessage(BasicRuntime basicRuntime, InputStream inputStream) throws Exception {
-        return kryoPool.run(kryo -> {
-            try (Input in = new Input(inputStream)) {
+    public Message deserializeMessage(BasicRuntime basicRuntime, InputStream inputStream) throws Exception
+    {
+        return kryoPool.run(kryo ->
+        {
+            try (Input in = new Input(inputStream))
+            {
                 Message message = new Message();
                 message.setMessageType(in.readByte());
                 message.setMessageId(in.readInt());
@@ -329,16 +360,17 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
                 message.setFromNode(readNodeAddress(in));
                 message.setPayload(kryo.readClassAndObject(in));
                 return message;
-            } finally {
-                kryo.reset();
             }
         });
     }
-    
+
     @Override
-    public void serializeMessage(BasicRuntime basicRuntime, OutputStream outputStream, Message message) throws Exception {
-        kryoPool.run(kryo -> {
-            try (Output out = new Output(outputStream)) {
+    public void serializeMessage(BasicRuntime basicRuntime, OutputStream outputStream, Message message) throws Exception
+    {
+        kryoPool.run(kryo ->
+        {
+            try (Output out = new Output(outputStream))
+            {
                 out.writeByte(message.getMessageType());
                 out.writeInt(message.getMessageId());
                 writeNodeAddress(out, message.getReferenceAddress());
@@ -349,22 +381,16 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
                 writeNodeAddress(out, message.getFromNode());
                 kryo.writeClassAndObject(out, message.getPayload());
                 return null;
-            } finally {
-                kryo.reset();
             }
         });
     }
-    
+
     @Override
-    public <T> T clone(final T object) {
-        if (object != null) {
-            return kryoPool.run(kryo -> {
-                try {
-                    return kryo.copy(object);
-                } finally {
-                    kryo.reset();
-                }
-            });
+    public <T> T clone(final T object)
+    {
+        if (object != null)
+        {
+            return kryoPool.run(kryo -> kryo.copy(object));
         }
         return null;
     }
