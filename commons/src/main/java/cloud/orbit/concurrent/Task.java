@@ -29,7 +29,9 @@
 package cloud.orbit.concurrent;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -64,6 +66,7 @@ import java.util.stream.Stream;
  */
 public class Task<T> extends CompletableFuture<T>
 {
+    private Map<String,String> metaData;
     private static Void NIL = null;
 
     private static Executor commonPool = ExecutorUtils.newScalingThreadPool(100);
@@ -97,6 +100,25 @@ public class Task<T> extends CompletableFuture<T>
             this.defaultExecutor = null;
         }
     }
+
+    public String getMetadata(String key) {
+        lazyMetadataInit();
+        return this.metaData.get(key);
+    }
+
+    public void putMetadata(String key, String value) {
+        lazyMetadataInit();
+        this.metaData.put(key, value);
+    }
+
+    private void lazyMetadataInit()
+    {
+        if(this.metaData == null) {
+            this.metaData = new HashMap<>();
+        }
+    }
+
+
 
     /**
      * Creates an already completed task from the given value.
