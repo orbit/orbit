@@ -34,12 +34,15 @@ import cloud.orbit.actors.Remindable;
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.runtime.ReminderControllerActor;
+import cloud.orbit.actors.runtime.ShardedReminderController;
 import cloud.orbit.actors.runtime.TickStatus;
 import cloud.orbit.actors.test.ActorBaseTest;
 import cloud.orbit.concurrent.Task;
 
 import org.junit.Test;
 
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -57,6 +60,9 @@ public class ReminderTests extends ActorBaseTest
     {
 
         Task<?> addReminder(String name, long start, long period, TimeUnit unit);
+
+        Task<?> removeReminder(String name);
+
     }
 
     private static BlockingQueue<String> remindersReceived = new LinkedBlockingQueue<>();
@@ -77,6 +83,13 @@ public class ReminderTests extends ActorBaseTest
         {
             return registerReminder(name, start, period, unit);
         }
+
+        @Override
+        public Task<?> removeReminder(String name)
+        {
+            return unregisterReminder(name);
+        }
+
     }
 
     @Test
@@ -113,5 +126,30 @@ public class ReminderTests extends ActorBaseTest
         stage2.stop().join();
     }
 
+    @Test
+    public void shardTest()
+    {
+        final Stage stage = createStage(builder -> builder.numReminderControllers(2));
+        final String reminderName = UUID.randomUUID().toString();
+
+        final String reminderControllerIdentity = stage.getReminderControllerIdentity(reminderName);
+        final ShardedReminderController reminderController = Actor.getReference(ShardedReminderController.class, reminderControllerIdentity);
+
+        final List<String> remindersBeforeAdd = reminderController.getReminders().join();
+        assertEquals(0, remindersBeforeAdd.size());
+
+        final ReminderTest testActor = Actor.getReference(ReminderTest.class, reminderName);
+        testActor.addReminder(reminderName, 1L, 1L, TimeUnit.DAYS).join();
+
+        final List<String> remindersAfterAdd = reminderController.getReminders().join();
+        assertEquals(1, remindersAfterAdd.size());
+        assertEquals(reminderName, remindersAfterAdd.get(0));
+
+        testActor.removeReminder(reminderName).join();
+
+        final List<String> remindersAfterRemove = reminderController.getReminders().join();
+        assertEquals(0, remindersAfterRemove.size());
+
+    }
 
 }
