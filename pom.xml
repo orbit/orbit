@@ -39,12 +39,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	
 	<groupId>cloud.orbit</groupId>
     <artifactId>orbit-internal-parent</artifactId>
-    <version>1.1.1-SNAPSHOT</version>
+    <version>1.2.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Orbit Internal Parent</name>
 
     <properties>
-        <ea.async.version>1.0.5</ea.async.version>
+        <ea.async.version>1.0.6</ea.async.version>
     </properties>
 
     <modules>
@@ -87,7 +87,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>2.4.1</version>
+                    <version>3.0.0</version>
                 </plugin>
 
                 <plugin>

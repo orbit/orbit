@@ -31,7 +31,7 @@ package cloud.orbit.actors.test;
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.runtime.KryoSerializer;
-import cloud.orbit.actors.runtime.ResponseCaching;
+import cloud.orbit.actors.runtime.DefaultResponseCachingExtension;
 import cloud.orbit.actors.runtime.NodeCapabilities;
 import cloud.orbit.actors.cloner.ExecutionObjectCloner;
 import cloud.orbit.actors.cloner.JavaSerializationCloner;
@@ -167,7 +167,7 @@ public class CacheResponseCloneTest extends ActorBaseTest
     @Before
     public void initializeCacheManager()
     {
-        ResponseCaching.setClock(null);
+        DefaultResponseCachingExtension.setClock(null);
     }
 
     @After

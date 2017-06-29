@@ -42,6 +42,7 @@ import cloud.orbit.actors.extensions.MessageSerializer;
 import cloud.orbit.actors.extensions.ResponseCachingExtension;
 import cloud.orbit.actors.net.HandlerAdapter;
 import cloud.orbit.actors.net.HandlerContext;
+import cloud.orbit.concurrent.MessageDigestFactory;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.exception.UncheckedException;
 import cloud.orbit.tuples.Pair;
@@ -57,7 +58,7 @@ import java.time.Clock;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-public class ResponseCaching
+public class DefaultResponseCachingExtension
         extends HandlerAdapter
         implements ResponseCachingExtension
 {
@@ -66,6 +67,7 @@ public class ResponseCaching
     private MessageSerializer messageSerializer;
     private BasicRuntime runtime;
     private final AnnotationCache<CacheResponse> cacheResponseCache = new AnnotationCache<>(CacheResponse.class);
+    private final MessageDigestFactory messageDigest = new MessageDigestFactory("SHA-256");
 
     private static class NullOutputStream extends OutputStream
     {
@@ -89,12 +91,12 @@ public class ResponseCaching
 
     public static void setCacheExecutor(final Executor cacheExecutor)
     {
-        ResponseCaching.cacheExecutor = cacheExecutor;
+        DefaultResponseCachingExtension.cacheExecutor = cacheExecutor;
     }
 
     public static void setClock(final Clock clock)
     {
-        ResponseCaching.clock = clock;
+        DefaultResponseCachingExtension.clock = clock;
     }
 
     /**
@@ -104,7 +106,7 @@ public class ResponseCaching
     @Override
     public Task<?> get(Method method, Pair<Addressable, String> key)
     {
-        Cache<Pair<Addressable, String>, Task> cache = getIfPresent(method);
+        final Cache<Pair<Addressable, String>, Task> cache = getIfPresent(method);
         return cache != null ? cache.getIfPresent(key) : null;
     }
 
@@ -114,13 +116,13 @@ public class ResponseCaching
     @Override
     public void put(Method method, Pair<Addressable, String> key, Task<?> value)
     {
-        Cache<Pair<Addressable, String>, Task> cache = getCache(method);
+        final Cache<Pair<Addressable, String>, Task> cache = getCache(method);
         cache.put(key, value);
     }
 
     private Cache<Pair<Addressable, String>, Task> getIfPresent(Method method)
     {
-        CacheResponse cacheResponse = cacheResponseCache.getAnnotation(method);
+        final CacheResponse cacheResponse = cacheResponseCache.getAnnotation(method);
         if (cacheResponse == null)
         {
             throw new IllegalArgumentException("Passed non-CacheResponse method.");
@@ -135,7 +137,7 @@ public class ResponseCaching
      */
     private Cache<Pair<Addressable, String>, Task> getCache(Method method)
     {
-        CacheResponse cacheResponse = cacheResponseCache.getAnnotation(method);
+        final CacheResponse cacheResponse = cacheResponseCache.getAnnotation(method);
         if (cacheResponse == null)
         {
             throw new IllegalArgumentException("Passed non-CacheResponse method.");
@@ -159,8 +161,8 @@ public class ResponseCaching
     @Override
     public Task<Void> flush(Actor actor)
     {
-        RemoteReference actorReference = (RemoteReference) actor;
-        Class interfaceClass = RemoteReference.getInterfaceClass(actorReference);
+        final RemoteReference actorReference = (RemoteReference) actor;
+        final Class interfaceClass = RemoteReference.getInterfaceClass(actorReference);
 
         masterCache.asMap().entrySet().forEach(entry -> {
             if (interfaceClass.equals(entry.getKey().getDeclaringClass()))
@@ -184,8 +186,8 @@ public class ResponseCaching
 
     private Task<?> cacheResponseInvoke(HandlerContext ctx, Invocation invocation)
     {
-        String parameterHash = generateParameterHash(invocation.getParams());
-        Pair<Addressable, String> key = Pair.of(invocation.getToReference(), parameterHash);
+        final String parameterHash = generateParameterHash(invocation.getParams());
+        final Pair<Addressable, String> key = Pair.of(invocation.getToReference(), parameterHash);
 
         final Method method = invocation.getMethod();
         Task<?> cached = get(method, key);
@@ -213,9 +215,8 @@ public class ResponseCaching
         }
         try
         {
-            final MessageDigest md = MessageDigest.getInstance("SHA-256");
-            DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
-            // this entire function shouldn't be here...
+            final MessageDigest md = messageDigest.newDigest();
+            final DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
             messageSerializer.serializeMessage(runtime, d, new Message().withPayload(params));
             d.close();
             return String.format("%032X", new BigInteger(1, md.digest()));
@@ -225,6 +226,8 @@ public class ResponseCaching
             throw new UncheckedException("Unable to make parameter hash", e);
         }
     }
+
+
 
     @Override
     public Task write(final HandlerContext ctx, final Object msg) throws Exception
