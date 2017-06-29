@@ -90,6 +90,7 @@ public class SimpleInvocationHandler implements InvocationHandler
 
         // Perform the internal invocation
         final Task<Object> invokeResult = doInvoke(runtime, invocation, entry, target, method, reentrant, invoker);
+        invokeResult.putMetadata("methodName", method.getName());
 
         // Link the result to the completion promise
         if (invocation.getCompletion() != null)

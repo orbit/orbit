@@ -84,11 +84,8 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
             logger.debug("Queued " + queueSize + " / " + maxQueueSize + " for " + key);
         }
 
-        if (queueSize >= maxQueueSize || !queue.add(() -> {
-                    Task<R> source = InternalUtils.safeInvoke(taskSupplier);
-                    InternalUtils.linkFutures(source, completion);
-                    return source;
-                }))
+        final long timeAddedToQueue = System.currentTimeMillis();
+        if (queueSize >= maxQueueSize || !queue.add(getTaskSupplier(taskSupplier, completion, timeAddedToQueue)))
         {
             throw new IllegalStateException(String.format("Queue full for %s (%d > %d)", key, queue.size(), maxQueueSize));
         }
@@ -99,6 +96,19 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
         tryExecute(false);
 
         return completion;
+    }
+
+    private <R> Supplier<Task<?>> getTaskSupplier(final Supplier<Task<R>> taskSupplier, final Task<R> completion, final long timeAddedToQueue)
+    {
+        return () ->
+        {
+            Task<R> source = InternalUtils.safeInvoke(taskSupplier);
+
+            addedToQueue(timeAddedToQueue, source);
+
+            InternalUtils.linkFutures(source, completion);
+            return source;
+        };
     }
 
     @Override
@@ -132,6 +142,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
                     if (local)
                     {
                         taskFuture = toRun.get();
+                        executedFromQueue(taskFuture);
                     }
                     else
                     {
@@ -184,11 +195,20 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
         } while (!queue.isEmpty());
     }
 
+    protected <R> void addedToQueue(final long timeAddedToQueue, final Task<R> source)
+    {
+    }
+
+    protected void executedFromQueue(final Task<?> task)
+    {
+    }
+
     private void wrapExecution(final Supplier<Task<?>> toRun, final Task<?> taskFuture)
     {
         try
         {
             final Task<?> task = (Task) toRun.get();
+            executedFromQueue(task);
             if (task == null || task.isDone())
             {
                 taskFuture.complete(null);
