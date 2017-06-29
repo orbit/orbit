@@ -72,6 +72,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -292,6 +293,11 @@ public class ActorBaseTest
 
     public Stage createStage()
     {
+        return createStage(builder -> {});
+    }
+
+    public Stage createStage(final Consumer<Stage.Builder> customizer)
+    {
         loggerExtension.write("Create Stage");
 
         LifetimeExtension lifetimeExtension = new LifetimeExtension()
@@ -304,16 +310,18 @@ public class ActorBaseTest
             }
         };
 
-        Stage stage = new Stage.Builder()
+        final Stage.Builder builder = new Stage.Builder()
                 .extensions(lifetimeExtension, new InMemoryJSONStorageExtension(fakeDatabase))
                 .mode(Stage.StageMode.HOST)
                 .executionPool(commonPool)
                 .objectCloner(getExecutionObjectCloner())
                 .clock(clock)
                 .clusterName(clusterName)
-                .clusterPeer(new FakeClusterPeer())
-                .build();
+                .clusterPeer(new FakeClusterPeer());
 
+        customizer.accept(builder);
+
+        final Stage stage = builder.build();
 
         stages.add(stage);
         installExtensions(stage);
