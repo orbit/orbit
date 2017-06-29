@@ -69,6 +69,7 @@ import cloud.orbit.actors.runtime.DefaultHandlers;
 import cloud.orbit.actors.runtime.DefaultInvocationHandler;
 import cloud.orbit.actors.runtime.DefaultLifetimeExtension;
 import cloud.orbit.actors.runtime.DefaultLocalObjectsCleaner;
+import cloud.orbit.actors.runtime.DefaultResponseCachingExtension;
 import cloud.orbit.actors.runtime.Execution;
 import cloud.orbit.actors.runtime.FastActorClassFinder;
 import cloud.orbit.actors.runtime.Hosting;
@@ -88,7 +89,6 @@ import cloud.orbit.actors.runtime.RandomSelectorExtension;
 import cloud.orbit.actors.runtime.Registration;
 import cloud.orbit.actors.runtime.ReminderController;
 import cloud.orbit.actors.runtime.RemoteReference;
-import cloud.orbit.actors.runtime.DefaultResponseCachingExtension;
 import cloud.orbit.actors.runtime.SerializationHandler;
 import cloud.orbit.actors.runtime.StatelessActorEntry;
 import cloud.orbit.actors.streams.AsyncObserver;
@@ -247,6 +247,7 @@ public class Stage implements Startable, ActorRuntime
         private Messaging messaging;
         private InvocationHandler invocationHandler;
         private Execution execution;
+        private MultiExecutionSerializer<Object> executionSerializer;
         private LocalObjectsCleaner localObjectsCleaner;
 
         private String clusterName;
@@ -293,6 +294,11 @@ public class Stage implements Startable, ActorRuntime
         public Builder execution(Execution execution)
         {
             this.execution = execution;
+            return this;
+        }
+
+        public Builder executionSerializer(MultiExecutionSerializer<Object> executionSerializer) {
+            this.executionSerializer = executionSerializer;
             return this;
         }
 
@@ -421,6 +427,7 @@ public class Stage implements Startable, ActorRuntime
             stage.setClock(clock);
             stage.setExecutionPool(executionPool);
             stage.setExecution(execution);
+            stage.setExecutionSerializer(executionSerializer);
             stage.setObjectCloner(objectCloner);
             stage.setMessageLoopbackObjectCloner(messageLoopbackObjectCloner);
             stage.setMessageSerializer(messageSerializer);
@@ -437,6 +444,7 @@ public class Stage implements Startable, ActorRuntime
             stage.setMessaging(messaging);
             stage.addStickyHeaders(stickyHeaders);
             stage.addBasePackages(basePackages);
+
             if(actorTTLMillis != null) stage.setDefaultActorTTL(actorTTLMillis);
             if(localAddressCacheTTLMillis != null) stage.setLocalAddressCacheTTL(localAddressCacheTTLMillis);
             if(deactivationTimeoutMillis != null) stage.setDeactivationTimeout(deactivationTimeoutMillis);
@@ -510,6 +518,11 @@ public class Stage implements Startable, ActorRuntime
     {
         this.execution = execution;
     }
+
+    public void setExecutionSerializer(MultiExecutionSerializer<Object> executionSerializer) {
+        this.executionSerializer = executionSerializer;
+    }
+
 
     public void setLocalObjectsCleaner(final LocalObjectsCleaner localObjectsCleaner)
     {
@@ -645,7 +658,10 @@ public class Stage implements Startable, ActorRuntime
             executionPool = ExecutorUtils.newScalingThreadPool(executionPoolSize);
         }
 
-        executionSerializer = new WaitFreeMultiExecutionSerializer<>(executionPool);
+        if(executionSerializer == null)
+        {
+            executionSerializer = new WaitFreeMultiExecutionSerializer<>(executionPool);
+        }
 
         if (hosting == null)
         {
