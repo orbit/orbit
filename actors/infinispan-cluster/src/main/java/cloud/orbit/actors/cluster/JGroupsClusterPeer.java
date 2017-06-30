@@ -28,9 +28,6 @@
 
 package cloud.orbit.actors.cluster;
 
-import cloud.orbit.concurrent.Task;
-import cloud.orbit.exception.UncheckedException;
-
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
@@ -42,29 +39,36 @@ import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
 import org.jgroups.fork.ForkChannel;
-import org.jgroups.protocols.FORK;
 import org.jgroups.protocols.FRAG2;
+import org.jgroups.protocols.FRAG3;
 import org.jgroups.protocols.UDP;
+import org.jgroups.stack.Protocol;
 import org.jgroups.stack.ProtocolStack;
+import org.jgroups.util.MessageBatch;
 import org.jgroups.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cloud.orbit.concurrent.Task;
+import cloud.orbit.exception.UncheckedException;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinTask;
 
-public class JGroupsClusterPeer implements ClusterPeer
+public class JGroupsClusterPeer implements ExtendedClusterPeer
 {
     private static final Logger logger = LoggerFactory.getLogger(JGroupsClusterPeer.class);
+
+    private static final String REPLICATED_CONFIGURATION_NAME = "replicatedAsyncCache";
+
+    private final Executor executor;
 
     private int portRangeLength = 1000;
     private Task<Address> startFuture;
@@ -73,14 +77,24 @@ public class JGroupsClusterPeer implements ClusterPeer
     private NodeInfo local;
 
     private NodeInfo master;
-    private volatile Map<Address, NodeInfo> nodeMap = new HashMap<>();
-    private volatile Map<NodeAddress, NodeInfo> nodeMap2 = new HashMap<>();
+    private final Map<Address, NodeInfo> nodeMap = new ConcurrentHashMap<>();
+    private final Map<NodeAddress, NodeInfo> nodeMap2 = new ConcurrentHashMap<>();
     private ViewListener viewListener;
     private MessageListener messageListener;
 
-    private String jgroupsConfig = "classpath:/conf/jgroups.xml";
+    private String jgroupsConfig = "classpath:/conf/udp-jgroups.xml";
 
     private boolean nameBasedUpdPort = true;
+
+    public JGroupsClusterPeer()
+    {
+        this(Runnable::run);
+    }
+
+    public JGroupsClusterPeer(final Executor executor)
+    {
+        this.executor = executor;
+    }
 
     @Override
     public NodeAddress localAddress()
@@ -101,106 +115,137 @@ public class JGroupsClusterPeer implements ClusterPeer
         this.messageListener = messageListener;
     }
 
-    protected static class NodeInfo
+    private static final class NodeInfo
     {
-        private Address address;
-        private NodeAddress nodeAddress;
+        private final Address address;
+        private final NodeAddress nodeAddress;
 
-        public NodeInfo(final Address address)
+        NodeInfo(final Address address)
         {
             this.address = address;
             final UUID jgroupsUUID = (UUID) address;
             this.nodeAddress = new NodeAddressImpl(new java.util.UUID(jgroupsUUID.getMostSignificantBits(), jgroupsUUID.getLeastSignificantBits()));
         }
+
+        @Override
+        public boolean equals(final Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final NodeInfo nodeInfo = (NodeInfo) o;
+
+            return address.equals(nodeInfo.address);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return address.hashCode();
+        }
     }
 
+    @Override
     public Task<?> join(final String clusterName, final String nodeName)
     {
-        final ForkJoinTask<Address> f = ForkJoinTask.adapt(new Callable<Address>()
+        final ForkJoinTask<Address> f = ForkJoinTask.adapt(() ->
         {
-            @Override
-            public Address call()
+            try
             {
-                try
+                // the parameter of this constructor defines the protocol stack
+                // we are using the default that allows discovery based on broadcast packets.
+                // It must be asserted that the production network support (enables) this.
+                // Otherwise it's also possible to change the discovery mechanism.
+                JChannel baseChannel = new JChannel(configToURL(getJgroupsConfig()));
+                baseChannel.setName(nodeName);
+
+                if (isNameBasedUpdPort() && baseChannel.getProtocolStack().getBottomProtocol() instanceof UDP)
                 {
-                    if (System.getProperty("java.net.preferIPv4Stack", null) == null)
-                    {
-                        System.setProperty("java.net.preferIPv4Stack", "true");
-                    }
-                    // the parameter of this constructor defines the protocol stack
-                    // we are using the default that allows discovery based on broadcast packets.
-                    // It must be asserted that the production network support (enables) this.
-                    // Otherwise it's also possible to change the discovery mechanism.
-                    JChannel baseChannel = new JChannel(configToURL(getJgroupsConfig()));
-                    baseChannel.setName(nodeName);
-
-                    if (isNameBasedUpdPort() && baseChannel.getProtocolStack().getBottomProtocol() instanceof UDP)
-                    {
-                        final UDP udp = (UDP) baseChannel.getProtocolStack().getBottomProtocol();
-                        udp.setMulticastPort(udp.getMulticastPort() + ((clusterName.hashCode() & 0x8fff_ffff) % portRangeLength));
-                    }
-
-                    // TODO: Remove when using JGroups 3.6.7.Final see https://github.com/belaban/JGroups/pull/241
-                    synchronized (baseChannel) {
-                        ProtocolStack stack = baseChannel.getProtocolStack();
-                        FORK fork = (FORK) stack.findProtocol(FORK.class);
-                        if (fork == null)
-                        {
-                            fork = new FORK();
-                            fork.setProtocolStack(stack);
-                            stack.insertProtocol(fork, ProtocolStack.ABOVE, FRAG2.class);
-                        }
-                    }
-
-                    channel = new ForkChannel(baseChannel,
-                            "hijack-stack",
-                            "lead-hijacker",
-                            true,
-                            ProtocolStack.ABOVE,
-                            FRAG2.class);
-
-                    channel.setReceiver(new ReceiverAdapter()
-                    {
-
-                        @Override
-                        public void viewAccepted(final View view)
-                        {
-                            doViewAccepted(view);
-                        }
-
-                        @Override
-                        public void receive(final Message msg)
-                        {
-                            doReceive(msg);
-                        }
-
-                    });
-
-                    final GlobalConfigurationBuilder globalConfigurationBuilder = GlobalConfigurationBuilder.defaultClusteredBuilder();
-                    globalConfigurationBuilder.globalJmxStatistics().allowDuplicateDomains(true);
-                    globalConfigurationBuilder.transport().clusterName(clusterName).nodeName(nodeName).transport(new JGroupsTransport(baseChannel));
-
-                    ConfigurationBuilder builder = new ConfigurationBuilder();
-                    builder.clustering().cacheMode(CacheMode.DIST_ASYNC);
-
-                    cacheManager = new DefaultCacheManager(globalConfigurationBuilder.build(), builder.build());
-
-                    // need to get a cache, any cache to force the initialization
-                    cacheManager.getCache("distributedDirectory");
-
-                    channel.connect(clusterName);
-                    local = new NodeInfo(channel.getAddress());
-                    logger.info("Registering the local address");
-                    logger.info("Done with JGroups initialization");
-                    return local.address;
+                    final UDP udp = (UDP) baseChannel.getProtocolStack().getBottomProtocol();
+                    udp.setMulticastPort(udp.getMulticastPort() + ((clusterName.hashCode() & 0x8fff_ffff) % portRangeLength));
                 }
-                catch (final Exception e)
+
+                ProtocolStack stack = baseChannel.getProtocolStack();
+
+                Class<? extends Protocol> neighborProtocol = stack.findProtocol(FRAG2.class) != null ?
+                        FRAG2.class : FRAG3.class;
+                channel = new ForkChannel(baseChannel,
+                        "hijack-stack",
+                        "lead-hijacker",
+                        true,
+                        ProtocolStack.Position.ABOVE,
+                        neighborProtocol);
+
+                channel.setReceiver(new ReceiverAdapter()
                 {
-                    logger.error("Error during JGroups initialization", e);
-                    throw new UncheckedException(e);
-                }
+
+                    @Override
+                    public void viewAccepted(final View view)
+                    {
+                        doViewAccepted(view);
+                    }
+
+                    @Override
+                    public void receive(final MessageBatch batch)
+                    {
+                        Task.runAsync(() ->
+                        {
+                            for (Message message : batch)
+                            {
+                                try
+                                {
+                                    doReceive(message);
+                                }
+                                catch (Throwable ex)
+                                {
+                                    logger.error("Error receiving batched message", ex);
+                                }
+                            }
+                        }, executor).exceptionally((e) ->
+                        {
+                            logger.error("Error receiving message", e);
+                            return null;
+                        });
+                    }
+
+                    @Override
+                    public void receive(final Message msg)
+                    {
+                        Task.runAsync(() -> doReceive(msg), executor).exceptionally((e) ->
+                        {
+                            logger.error("Error receiving message", e);
+                            return null;
+                        });
+                    }
+                });
+
+                final GlobalConfigurationBuilder globalConfigurationBuilder = GlobalConfigurationBuilder.defaultClusteredBuilder();
+                globalConfigurationBuilder.globalJmxStatistics().allowDuplicateDomains(true);
+                globalConfigurationBuilder.transport().clusterName(clusterName).nodeName(nodeName).transport(new JGroupsTransport(baseChannel));
+
+                ConfigurationBuilder builder = new ConfigurationBuilder();
+                builder.clustering().cacheMode(CacheMode.DIST_ASYNC);
+
+                cacheManager = new DefaultCacheManager(globalConfigurationBuilder.build(), builder.build());
+
+                ConfigurationBuilder builder2 = new ConfigurationBuilder();
+                builder2.clustering().cacheMode(CacheMode.REPL_ASYNC);
+                cacheManager.defineConfiguration(REPLICATED_CONFIGURATION_NAME, builder2.build());
+
+                // need to get a cache, any cache to force the initialization
+                cacheManager.getCache("distributedDirectory");
+
+                channel.connect(clusterName);
+                local = new NodeInfo(channel.getAddress());
+                logger.info("Registering the local address");
+                logger.info("Done with JGroups initialization");
+                return local.address;
             }
-
+            catch (final Exception e)
+            {
+                logger.error("Error during JGroups initialization", e);
+                throw new UncheckedException(e);
+            }
         });
         startFuture = Task.fromFuture(f);
         f.fork();
@@ -247,8 +292,8 @@ public class JGroupsClusterPeer implements ClusterPeer
 
     private void doViewAccepted(final View view)
     {
-        final LinkedHashMap<Address, NodeInfo> newNodes = new LinkedHashMap<>(view.size());
-        final LinkedHashMap<NodeAddress, NodeInfo> newNodes2 = new LinkedHashMap<>(view.size());
+        final ConcurrentHashMap<Address, NodeInfo> newNodes = new ConcurrentHashMap<>(view.size());
+        final ConcurrentHashMap<NodeAddress, NodeInfo> newNodes2 = new ConcurrentHashMap<>(view.size());
         for (final Address a : view)
         {
             NodeInfo info = nodeMap.get(a);
@@ -259,21 +304,25 @@ public class JGroupsClusterPeer implements ClusterPeer
             newNodes.put(a, info);
             newNodes2.put(info.nodeAddress, info);
         }
+
         final NodeInfo newMaster = newNodes.values().iterator().next();
-        nodeMap = Collections.unmodifiableMap(newNodes);
-        nodeMap2 = Collections.unmodifiableMap(newNodes2);
+
+        nodeMap.putAll(newNodes);
+        nodeMap.values().retainAll(newNodes.values());
+        nodeMap2.putAll(newNodes2);
+        nodeMap2.values().retainAll(newNodes2.values());
+
         master = newMaster;
         viewListener.onViewChange(nodeMap2.keySet());
     }
 
     @SuppressWarnings("PMD.AvoidThrowingNullPointerException")
+    @Override
     public void sendMessage(NodeAddress address, byte message[])
     {
-        sync();
         try
         {
-            Objects.requireNonNull(address, "node address");
-            final NodeInfo node = nodeMap2.get(address);
+            final NodeInfo node = nodeMap2.get(Objects.requireNonNull(address, "node address"));
             if (node == null)
             {
                 throw new IllegalArgumentException("Cluster node not found: " + address);
@@ -297,7 +346,13 @@ public class JGroupsClusterPeer implements ClusterPeer
         return cacheManager.getCache(name);
     }
 
-    protected void doReceive(final Message msg)
+    @Override
+    public <K, V> ConcurrentMap<K, V> getReplicatedCache(final String name)
+    {
+        return cacheManager.getCache(name, REPLICATED_CONFIGURATION_NAME);
+    }
+
+    private void doReceive(final Message msg)
     {
         final NodeInfo nodeInfo = nodeMap.get(msg.getSrc());
         if (nodeInfo == null)

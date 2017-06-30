@@ -32,7 +32,6 @@ package cloud.orbit.actors.extensions.test;
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.extensions.ActorConstructionExtension;
-import cloud.orbit.actors.extensions.LifetimeExtension;
 import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.concurrent.Task;
 import org.junit.Test;

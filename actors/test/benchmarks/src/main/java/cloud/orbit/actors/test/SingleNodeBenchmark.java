@@ -29,10 +29,12 @@ package cloud.orbit.actors.test;
 
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
+import cloud.orbit.actors.cluster.JGroupsClusterPeer;
 import cloud.orbit.actors.extensions.json.InMemoryJSONStorageExtension;
 import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.runtime.ActorProfiler;
 import cloud.orbit.actors.util.IdUtils;
+import cloud.orbit.concurrent.ExecutorUtils;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.profiler.ProfileDump;
 import cloud.orbit.profiler.ProfilerData;
@@ -57,7 +59,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
 
 @State(Scope.Benchmark)
 @Fork(5)
@@ -226,16 +227,19 @@ public class SingleNodeBenchmark
     {
         ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
 
+        // decreases context switching
+        final int defaultPoolSize = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
+
         Stage stage = new Stage.Builder()
                 .extensions(new InMemoryJSONStorageExtension(fakeDatabase))
                 .mode(Stage.StageMode.HOST)
                 .clusterName(IdUtils.urlSafeString(32))
+                .clusterPeer(new JGroupsClusterPeer())
                 // uncomment this to remove jgroups from the equation
                 //.clusterPeer(new FakeClusterPeer())
                 .build();
 
-        // decreases context switching
-        stage.setExecutionPoolSize(Math.max(1, Runtime.getRuntime().availableProcessors() / 2));
+        stage.setExecutionPool(ExecutorUtils.newScalingThreadPool(defaultPoolSize));
 
         stage.start().join();
 
