@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class ReminderControllerActor extends AbstractActor<ReminderControllerActor.State> implements ReminderController
+public class ReminderControllerActor extends AbstractActor<ReminderControllerActor.State> implements ReminderController, ShardedReminderController
 {
     public static class State
     {
@@ -114,6 +114,14 @@ public class ReminderControllerActor extends AbstractActor<ReminderControllerAct
                 .map(r -> r.getReminderName())
                 .collect(Collectors.toList());
         return Task.fromValue(list);
+    }
+
+    @Override
+    public Task<List<String>> getReminders()
+    {
+        return Task.fromValue(state.reminders.stream()
+                .map(ReminderEntry::getReminderName)
+                .collect(Collectors.toList()));
     }
 
     @Override
