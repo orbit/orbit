@@ -77,6 +77,31 @@ public class ShutdownTest extends ActorBaseTest
         }
     }
 
+    public interface Deactivate extends Actor
+    {
+        Task<Void> doSomething();
+    }
+
+    public static class DeactivateActor extends AbstractActor implements Deactivate
+    {
+        @Inject
+        FakeSync fakeSync;
+
+        public Task<Void> doSomething()
+        {
+            getLogger().info("doSomething: " + ActorRuntime.getRuntime());
+            return Task.done();
+        }
+
+        @Override
+        public Task<?> deactivateAsync()
+        {
+            fakeSync.semaphore("shouldDeactivate" + getIdentity()).acquire(10, TimeUnit.SECONDS);
+            fakeSync.semaphore("deactivate" + getIdentity()).release();
+            return super.deactivateAsync();
+        }
+    }
+
     @Test
     public void basicShutdownTest() throws ExecutionException, InterruptedException
     {
@@ -122,5 +147,40 @@ public class ShutdownTest extends ActorBaseTest
 
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void invocationAfterShutdownTest()
+    {
+        final Stage stage = createStage();
+        fakeSync.semaphore("shouldDeactivate0").release();
+
+        final Deactivate deactivate = Actor.getReference(Deactivate.class, "0");
+        deactivate.doSomething();
+        stage.stop().join();
+        deactivate.doSomething().join();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void invocationDuringShutdownTest()
+    {
+        final Stage stage = createStage();
+
+        final Deactivate deactivate1 = Actor.getReference(Deactivate.class, "1");
+        final Deactivate deactivate2 = Actor.getReference(Deactivate.class, "2");
+
+        deactivate1.doSomething().join();
+        deactivate2.doSomething().join();
+
+        // Allow 1 to deactivate, but not 2
+        fakeSync.semaphore("shouldDeactivate1").release();
+
+        stage.stop();
+
+        // Wait for 1 to deactivate
+        fakeSync.semaphore("deactivate1").acquire(10, TimeUnit.SECONDS);
+
+        // Try to do something with 1, which is already deactivated
+        deactivate1.doSomething().join();
+
+    }
 
 }
