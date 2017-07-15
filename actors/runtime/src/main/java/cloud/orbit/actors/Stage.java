@@ -90,6 +90,7 @@ import cloud.orbit.actors.runtime.ReminderController;
 import cloud.orbit.actors.runtime.RemoteReference;
 import cloud.orbit.actors.runtime.DefaultResponseCachingExtension;
 import cloud.orbit.actors.runtime.SerializationHandler;
+import cloud.orbit.actors.runtime.ShardedReminderController;
 import cloud.orbit.actors.runtime.StatelessActorEntry;
 import cloud.orbit.actors.streams.AsyncObserver;
 import cloud.orbit.actors.streams.AsyncStream;
@@ -128,6 +129,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 import static com.ea.async.Async.await;
 
@@ -198,6 +200,9 @@ public class Stage implements Startable, ActorRuntime
     @Config("orbit.actors.localAddressCacheTTL")
     private long localAddressCacheTTL = defaultActorTTL + deactivationTimeoutMillis;
 
+    @Config("orbit.actors.numReminderControllers")
+    private int numReminderControllers = 1;
+
     private volatile NodeCapabilities.NodeState state;
 
     private ClusterPeer clusterPeer;
@@ -261,6 +266,7 @@ public class Stage implements Startable, ActorRuntime
 
         private Long actorTTLMillis = null;
         private Long localAddressCacheTTLMillis = null;
+        private Integer numReminderControllers = null;
         private Long deactivationTimeoutMillis;
         private Integer concurrentDeactivations;
 
@@ -403,6 +409,16 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
+        public Builder numReminderControllers(final int numReminderControllers)
+        {
+            if(numReminderControllers < 1)
+            {
+                throw new IllegalArgumentException("Must specify at least 1 reminder controller");
+            }
+            this.numReminderControllers = numReminderControllers;
+            return this;
+        }
+
         public Builder deactivationTimeout(final long duration, final TimeUnit timeUnit)
         {
             this.deactivationTimeoutMillis = timeUnit.toMillis(duration);
@@ -439,6 +455,7 @@ public class Stage implements Startable, ActorRuntime
             stage.addBasePackages(basePackages);
             if(actorTTLMillis != null) stage.setDefaultActorTTL(actorTTLMillis);
             if(localAddressCacheTTLMillis != null) stage.setLocalAddressCacheTTL(localAddressCacheTTLMillis);
+            if(numReminderControllers != null) stage.setNumReminderControllers(numReminderControllers);
             if(deactivationTimeoutMillis != null) stage.setDeactivationTimeout(deactivationTimeoutMillis);
             if(concurrentDeactivations != null) stage.setConcurrentDeactivations(concurrentDeactivations);
             return stage;
@@ -596,6 +613,15 @@ public class Stage implements Startable, ActorRuntime
 
     public void setLocalAddressCacheTTL(final long localAddressCacheTTL) {
         this.localAddressCacheTTL = localAddressCacheTTL;
+    }
+
+    public void setNumReminderControllers(final int numReminderControllers)
+    {
+        if(numReminderControllers < 1)
+        {
+            throw new IllegalArgumentException("Must specify at least 1 reminder controller shard");
+        }
+        this.numReminderControllers = numReminderControllers;
     }
 
     public void setDeactivationTimeout(long deactivationTimeoutMs)
@@ -800,6 +826,7 @@ public class Stage implements Startable, ActorRuntime
             extensions.add(new DefaultActorConstructionExtension());
         }
 
+
         logger.debug("Starting messaging...");
         messaging.start();
         logger.debug("Starting hosting...");
@@ -811,13 +838,15 @@ public class Stage implements Startable, ActorRuntime
         await(Task.allOf(extensions.stream().map(Startable::start)));
 
         Task<Void> future = pipeline.connect(null);
-        future = future.thenRun(this::bind);
         if (mode == StageMode.HOST)
         {
             future = future.thenRun(() -> {
-                Actor.getReference(ReminderController.class).ensureStart();
+                this.bind();
+                startReminderController();
             });
         }
+
+        future = future.thenRun(() -> bind());
 
         // schedules the pulse
         timer.schedule(new TimerTask()
@@ -847,6 +876,29 @@ public class Stage implements Startable, ActorRuntime
         logger.info("Stage started [{}]", runtimeIdentity());
 
         return Task.done();
+    }
+
+    private void startReminderController()
+    {
+        if(useReminderShards())
+        {
+            IntStream.range(0, numReminderControllers).forEach(i ->
+                    Actor.getReference(ShardedReminderController.class, Integer.toString(i)).ensureStart());
+        }
+        else
+        {
+            Actor.getReference(ReminderController.class).ensureStart();
+        }
+    }
+
+    private boolean useReminderShards()
+    {
+        return numReminderControllers > 1;
+    }
+
+    public String getReminderControllerIdentity(final String reminderName)
+    {
+        return Integer.toString((Math.abs(reminderName.hashCode())) % numReminderControllers);
     }
 
     public void setClusterPeer(final ClusterPeer clusterPeer)
@@ -969,7 +1021,7 @@ public class Stage implements Startable, ActorRuntime
     {
         if (mode == StageMode.HOST)
         {
-            Actor.getReference(ReminderController.class).ensureStart();
+            startReminderController();
         }
         await(clusterPeer.pulse());
         return cleanup();
@@ -1181,12 +1233,26 @@ public class Stage implements Startable, ActorRuntime
     @Override
     public Task<?> registerReminder(final Remindable actor, final String reminderName, final long dueTime, final long period, final TimeUnit timeUnit)
     {
-        return Actor.getReference(ReminderController.class).registerOrUpdateReminder(actor, reminderName, new Date(clock.millis() + timeUnit.toMillis(dueTime)), period, timeUnit);
+        final Date date = new Date(clock.millis() + timeUnit.toMillis(dueTime));
+
+        if(useReminderShards())
+        {
+            final String id = getReminderControllerIdentity(reminderName);
+            return Actor.getReference(ShardedReminderController.class, id).registerOrUpdateReminder(actor, reminderName, date, period, timeUnit);
+        }
+
+        return Actor.getReference(ReminderController.class).registerOrUpdateReminder(actor, reminderName, date, period, timeUnit);
     }
 
     @Override
     public Task<?> unregisterReminder(final Remindable actor, final String reminderName)
     {
+        if(useReminderShards())
+        {
+            final String id = getReminderControllerIdentity(reminderName);
+            return Actor.getReference(ShardedReminderController.class, id).unregisterReminder(actor, reminderName);
+        }
+
         return Actor.getReference(ReminderController.class).unregisterReminder(actor, reminderName);
     }
 
