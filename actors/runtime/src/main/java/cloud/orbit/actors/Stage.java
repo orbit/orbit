@@ -800,7 +800,6 @@ public class Stage implements Startable, ActorRuntime
             extensions.add(new DefaultActorConstructionExtension());
         }
 
-
         logger.debug("Starting messaging...");
         messaging.start();
         logger.debug("Starting hosting...");
@@ -812,15 +811,13 @@ public class Stage implements Startable, ActorRuntime
         await(Task.allOf(extensions.stream().map(Startable::start)));
 
         Task<Void> future = pipeline.connect(null);
+        future = future.thenRun(this::bind);
         if (mode == StageMode.HOST)
         {
             future = future.thenRun(() -> {
-                this.bind();
                 Actor.getReference(ReminderController.class).ensureStart();
             });
         }
-
-        future = future.thenRun(() -> bind());
 
         // schedules the pulse
         timer.schedule(new TimerTask()
