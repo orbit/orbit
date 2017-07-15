@@ -152,6 +152,9 @@ public class JGroupsClusterPeer implements ExtendedClusterPeer
         {
             try
             {
+                if (System.getProperty("java.net.preferIPv4Stack", null) == null) {
+                    System.setProperty("java.net.preferIPv4Stack", "true");
+                }
                 // the parameter of this constructor defines the protocol stack
                 // we are using the default that allows discovery based on broadcast packets.
                 // It must be asserted that the production network support (enables) this.

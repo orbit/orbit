@@ -34,7 +34,6 @@ import cloud.orbit.actors.extensions.json.InMemoryJSONStorageExtension;
 import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.actors.runtime.ActorProfiler;
 import cloud.orbit.actors.util.IdUtils;
-import cloud.orbit.concurrent.ExecutorUtils;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.profiler.ProfileDump;
 import cloud.orbit.profiler.ProfilerData;
@@ -223,7 +222,7 @@ public class SingleNodeBenchmark
         result.join();
     }
 
-    public Stage createStage()
+    private Stage createStage()
     {
         ConcurrentHashMap<Object, Object> fakeDatabase = new ConcurrentHashMap<>();
 
@@ -239,7 +238,7 @@ public class SingleNodeBenchmark
                 //.clusterPeer(new FakeClusterPeer())
                 .build();
 
-        stage.setExecutionPool(ExecutorUtils.newScalingThreadPool(defaultPoolSize));
+        stage.setExecutionPoolSize(defaultPoolSize);
 
         stage.start().join();
 

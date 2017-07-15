@@ -48,6 +48,7 @@ public class InMemoryJSONStorageExtension implements StorageExtension
     private ObjectMapper mapper = new ObjectMapper();
     private String name;
 
+    @Override
     public String getName()
     {
         return name;
