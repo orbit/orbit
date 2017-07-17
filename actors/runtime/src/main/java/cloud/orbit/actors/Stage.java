@@ -138,7 +138,7 @@ public class Stage implements Startable, ActorRuntime
 {
     private Logger logger = LoggerFactory.getLogger(Stage.class);
 
-    private static final int DEFAULT_EXECUTION_POOL_SIZE = 128;
+    private static final int DEFAULT_EXECUTION_POOL_SIZE = 32;
     private static final int DEFAULT_LOCAL_ADDRESS_CACHE_MAXIMUM_SIZE = 10_000;
 
     private final String runtimeIdentity = "Orbit[" + IdUtils.urlSafeString(128) + "]";
