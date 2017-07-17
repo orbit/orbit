@@ -41,7 +41,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <name>Orbit Actors</name>
 
     <properties>
-        <caffeine.version>2.5.2</caffeine.version>
+        <caffeine.version>2.5.3</caffeine.version>
     </properties>
 
 
