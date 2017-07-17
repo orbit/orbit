@@ -68,23 +68,6 @@ public class DefaultDescriptorFactory implements DescriptorFactory
     }
 
     @SuppressWarnings("unchecked")
-    private <T> Class<T> classForName(final String className, boolean ignoreException)
-    {
-        try
-        {
-            return (Class<T>) Class.forName(className);
-        }
-        catch (Error | Exception ex)
-        {
-            if (!ignoreException)
-            {
-                throw new Error("Error loading class: " + className, ex);
-            }
-        }
-        return null;
-    }
-
-    @SuppressWarnings("unchecked")
     private ClassDescriptor getDescriptor(final Class<?> aInterface)
     {
         ClassDescriptor descriptor = descriptorMapByInterface.get(aInterface);

@@ -515,7 +515,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         {
             try
             {
-                serverNodesUpdateMutex.wait(100);
+                serverNodesUpdateMutex.wait(250);
             }
             catch (InterruptedException e)
             {

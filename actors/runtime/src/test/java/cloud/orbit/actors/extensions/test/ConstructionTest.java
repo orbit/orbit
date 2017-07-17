@@ -31,10 +31,10 @@ package cloud.orbit.actors.extensions.test;
 
 import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Stage;
-import cloud.orbit.actors.extensions.ActorConstructionExtension;
-import cloud.orbit.actors.extensions.LifetimeExtension;
 import cloud.orbit.actors.runtime.AbstractActor;
+import cloud.orbit.actors.runtime.DefaultActorConstructionExtension;
 import cloud.orbit.concurrent.Task;
+
 import org.junit.Test;
 
 import java.util.UUID;
@@ -86,14 +86,18 @@ public class ConstructionTest {
 
     }
 
-    public static class TestConstructionExtension implements ActorConstructionExtension {
+    public static class TestConstructionExtension extends DefaultActorConstructionExtension
+    {
 
         @Override
         public <T> T newInstance(final Class<T> concreteClass) {
-            final TestConstructionActor testConstructionActor = new TestConstructionActor();
-            testConstructionActor.setId(OTHER_ID);
-            //noinspection unchecked
-            return (T)testConstructionActor;
+            if (concreteClass.equals(TestConstructionActor.class)) {
+                final TestConstructionActor testConstructionActor = new TestConstructionActor();
+                testConstructionActor.setId(OTHER_ID);
+                //noinspection unchecked
+                return (T)testConstructionActor;
+            }
+            return super.newInstance(concreteClass);
         }
     }
 

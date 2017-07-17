@@ -123,13 +123,13 @@ public class FakeGroup
     }
 
 
-    public void sendMessage(final NodeAddress from, final NodeAddress to, final byte[] buff)
+    public Task<Void> sendMessage(final NodeAddress from, final NodeAddress to, final byte[] buff)
     {
         if (to == null)
         {
             throw new NullPointerException("Target address cannot be null");
         }
-        CompletableFuture.runAsync(() -> {
+        return Task.runAsync(() -> {
             try
             {
                 final FakeClusterPeer fakeClusterPeer = currentChannels.get(to);

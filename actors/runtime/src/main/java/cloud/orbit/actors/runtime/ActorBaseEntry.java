@@ -97,6 +97,7 @@ public abstract class ActorBaseEntry<T extends AbstractActor> implements LocalOb
         this.loggerExtension = loggerExtension;
     }
 
+    @Override
     public boolean isDeactivated()
     {
         return deactivated;
@@ -105,7 +106,6 @@ public abstract class ActorBaseEntry<T extends AbstractActor> implements LocalOb
     /**
      * This must not fail. If errors it should log them instead of throwing
      */
-
     public abstract Task<Void> deactivate();
 
 

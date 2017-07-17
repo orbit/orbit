@@ -284,6 +284,8 @@ public class ActorBaseTest
                 .extensions(lifetimeExtension)
                 .build();
 
+        stages.add(client);
+
         installExtensions(client);
 
         client.start().join();
@@ -497,17 +499,21 @@ public class ActorBaseTest
     @After
     public void tearDown()
     {
-        Task.runAsync(() -> stages.stream()
-                .filter(s -> s.getState() == NodeCapabilities.NodeState.RUNNING)
-                .forEach(s -> {
-                    try
-                    {
-                        s.stop();
-                    }
-                    catch (Throwable t)
-                    {
-                        // ignore
-                    }
-                }));
+        List<Task<?>> tasks = new ArrayList<>();
+        for (Stage stage : stages)
+        {
+            if (stage.getState() == NodeCapabilities.NodeState.RUNNING)
+            {
+                tasks.add(stage.stop());
+            }
+        }
+        try
+        {
+            Task.allOf(tasks).join();
+        }
+        catch (Throwable t)
+        {
+            // ignore
+        }
     }
 }

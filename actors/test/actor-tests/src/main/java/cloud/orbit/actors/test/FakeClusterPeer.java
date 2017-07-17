@@ -66,10 +66,10 @@ public class FakeClusterPeer implements ClusterPeer
     public Task<Void> join(final String clusterName, final String nodeName)
     {
         group = FakeGroup.get(clusterName);
-        return Task.fromFuture(CompletableFuture.runAsync(() -> {
+        return Task.runAsync(() -> {
             address = group.join(this);
             startFuture.complete(null);
-        }, group.pool()));
+        }, group.pool());
     }
 
     @Override
@@ -108,14 +108,12 @@ public class FakeClusterPeer implements ClusterPeer
         this.messageListener = messageListener;
     }
 
-
     @Override
     public void sendMessage(final NodeAddress to, final byte[] message)
     {
         startFuture.join();
         messagesSent.incrementAndGet();
-        group.sendMessage(address, to, message);
-        messagesSentOk.incrementAndGet();
+        group.sendMessage(address, to, message).thenRun(() -> messagesSentOk.incrementAndGet());
     }
 
     @Override

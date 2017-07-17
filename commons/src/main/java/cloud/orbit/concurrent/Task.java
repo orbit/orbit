@@ -64,7 +64,7 @@ import java.util.stream.Stream;
  */
 public class Task<T> extends CompletableFuture<T>
 {
-    private static Void NIL = null;
+    private static final Void NIL = null;
 
     private static Executor commonPool = ExecutorUtils.newScalingThreadPool(100);
     private static ScheduledExecutorService schedulerExecutor = new ScheduledThreadPoolExecutor(10, runnable -> {

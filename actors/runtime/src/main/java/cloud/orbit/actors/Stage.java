@@ -816,16 +816,15 @@ public class Stage implements Startable, ActorRuntime
             extensions.add(defaultStreamProvider);
         }
 
-        if(extensions.stream().noneMatch(p -> p instanceof LifetimeExtension))
+        if (extensions.stream().noneMatch(p -> p instanceof LifetimeExtension))
         {
             extensions.add(new DefaultLifetimeExtension());
         }
 
-        if(extensions.stream().noneMatch(p -> p instanceof ActorConstructionExtension))
+        if (extensions.stream().noneMatch(p -> p instanceof ActorConstructionExtension))
         {
             extensions.add(new DefaultActorConstructionExtension());
         }
-
 
         logger.debug("Starting messaging...");
         messaging.start();
@@ -838,28 +837,28 @@ public class Stage implements Startable, ActorRuntime
         await(Task.allOf(extensions.stream().map(Startable::start)));
 
         Task<Void> future = pipeline.connect(null);
-        if (mode == StageMode.HOST)
-        {
-            future = future.thenRun(() -> {
-                this.bind();
-                startReminderController();
-            });
-        }
 
-        future = future.thenRun(() -> bind());
+        future = future.thenRun(() -> {
+            bind();
 
-        // schedules the pulse
-        timer.schedule(new TimerTask()
-        {
-            @Override
-            public void run()
+            // schedules the pulse
+            timer.schedule(new TimerTask()
             {
-                if (state == NodeCapabilities.NodeState.RUNNING)
+                @Override
+                public void run()
                 {
-                    ForkJoinTask.adapt(() -> pulse().join()).fork();
+                    if (state == NodeCapabilities.NodeState.RUNNING)
+                    {
+                        ForkJoinTask.adapt(() -> pulse().join()).fork();
+                    }
                 }
+            }, pulseIntervalMillis, pulseIntervalMillis);
+
+            if (mode == StageMode.HOST)
+            {
+                startReminderController();
             }
-        }, pulseIntervalMillis, pulseIntervalMillis);
+        });
 
         future.whenComplete((r, e) -> {
             if (e != null)
@@ -974,8 +973,7 @@ public class Stage implements Startable, ActorRuntime
 
     private Task<Void> stopActors()
     {
-        await(localObjectsCleaner.shutdown());
-        return Task.done();
+        return localObjectsCleaner.shutdown();
     }
 
     private Task<Void> stopTimers()
@@ -1167,7 +1165,7 @@ public class Stage implements Startable, ActorRuntime
             @Override
             public void run()
             {
-                if (localActor.isDeactivated())
+                if (localActor.isDeactivated() || state == NodeCapabilities.NodeState.STOPPED)
                 {
                     cancel();
                     return;
@@ -1175,7 +1173,7 @@ public class Stage implements Startable, ActorRuntime
 
                 executionSerializer.offerJob(key,
                         () -> {
-                            if (localActor.isDeactivated())
+                            if (localActor.isDeactivated() || state == NodeCapabilities.NodeState.STOPPED)
                             {
                                 cancel();
                             }
