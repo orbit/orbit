@@ -203,6 +203,9 @@ public class Stage implements Startable, ActorRuntime
     @Config("orbit.actors.numReminderControllers")
     private int numReminderControllers = 1;
 
+    @Config("orbit.actors.broadcastActorDeactivations")
+    private boolean broadcastActorDeactivations = true;
+
     private volatile NodeCapabilities.NodeState state;
 
     private ClusterPeer clusterPeer;
@@ -267,6 +270,7 @@ public class Stage implements Startable, ActorRuntime
         private Long actorTTLMillis = null;
         private Long localAddressCacheTTLMillis = null;
         private Integer numReminderControllers = null;
+        private Boolean broadcastActorDeactivations = null;
         private Long deactivationTimeoutMillis;
         private Integer concurrentDeactivations;
 
@@ -431,6 +435,12 @@ public class Stage implements Startable, ActorRuntime
             return this;
         }
 
+        public Builder broadcastActorDeactivations(final boolean broadcastActorDeactivations)
+        {
+            this.broadcastActorDeactivations = broadcastActorDeactivations;
+            return this;
+        }
+
         public Stage build()
         {
             final Stage stage = new Stage();
@@ -458,6 +468,7 @@ public class Stage implements Startable, ActorRuntime
             if(numReminderControllers != null) stage.setNumReminderControllers(numReminderControllers);
             if(deactivationTimeoutMillis != null) stage.setDeactivationTimeout(deactivationTimeoutMillis);
             if(concurrentDeactivations != null) stage.setConcurrentDeactivations(concurrentDeactivations);
+            if(broadcastActorDeactivations != null) stage.setBroadcastActorDeactivations(broadcastActorDeactivations);
             return stage;
         }
 
@@ -627,6 +638,16 @@ public class Stage implements Startable, ActorRuntime
     public void setDeactivationTimeout(long deactivationTimeoutMs)
     {
         this.deactivationTimeoutMillis = deactivationTimeoutMs;
+    }
+
+    public boolean getBroadcastActorDeactivations()
+    {
+        return broadcastActorDeactivations;
+    }
+
+    public void setBroadcastActorDeactivations(boolean broadcastActorDeactivation)
+    {
+        this.broadcastActorDeactivations = broadcastActorDeactivation;
     }
 
     @Override

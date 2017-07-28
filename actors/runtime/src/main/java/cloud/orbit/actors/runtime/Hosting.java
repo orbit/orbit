@@ -310,11 +310,15 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         // removing the reference from the cluster directory and local caches
         getDistributedDirectory().remove(createRemoteKey(remoteReference), clusterPeer.localAddress());
         localAddressCache.invalidate(remoteReference);
-        for (final NodeInfo info : activeNodes.values())
+
+        if(stage.getBroadcastActorDeactivations())
         {
-            if (!info.address.equals(clusterPeer.localAddress()) && info.state == NodeState.RUNNING)
+            for (final NodeInfo info : activeNodes.values())
             {
-                info.nodeCapabilities.remove(remoteReference);
+                if (!info.address.equals(clusterPeer.localAddress()) && info.state == NodeState.RUNNING)
+                {
+                    info.nodeCapabilities.remove(remoteReference);
+                }
             }
         }
     }
