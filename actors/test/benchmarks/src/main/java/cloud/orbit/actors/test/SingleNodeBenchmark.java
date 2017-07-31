@@ -229,13 +229,11 @@ public class SingleNodeBenchmark
         // decreases context switching
         final int defaultPoolSize = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
 
+
         Stage stage = new Stage.Builder()
                 .extensions(new InMemoryJSONStorageExtension(fakeDatabase))
                 .mode(Stage.StageMode.HOST)
                 .clusterName(IdUtils.urlSafeString(32))
-                .clusterPeer(new JGroupsClusterPeer())
-                // uncomment this to remove jgroups from the equation
-                //.clusterPeer(new FakeClusterPeer())
                 .build();
 
         stage.setExecutionPoolSize(defaultPoolSize);

@@ -37,7 +37,6 @@ import cloud.orbit.actors.annotation.StatelessWorker;
 import cloud.orbit.actors.annotation.StorageExtension;
 import cloud.orbit.actors.cloner.ExecutionObjectCloner;
 import cloud.orbit.actors.cluster.ClusterPeer;
-import cloud.orbit.actors.cluster.JGroupsClusterPeer;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.concurrent.MultiExecutionSerializer;
 import cloud.orbit.actors.concurrent.WaitFreeMultiExecutionSerializer;
@@ -716,7 +715,7 @@ public class Stage implements Startable, ActorRuntime
         }
         if (clusterPeer == null)
         {
-            clusterPeer = new JGroupsClusterPeer();
+            clusterPeer = constructDefaultClusterPeer();
         }
         if (clock == null)
         {
@@ -1033,7 +1032,8 @@ public class Stage implements Startable, ActorRuntime
 
     public ClusterPeer getClusterPeer()
     {
-        return clusterPeer != null ? clusterPeer : (clusterPeer = new JGroupsClusterPeer());
+
+        return clusterPeer != null ? clusterPeer : (clusterPeer = constructDefaultClusterPeer());
     }
 
     public Task pulse()
@@ -1075,6 +1075,19 @@ public class Stage implements Startable, ActorRuntime
     public void bind()
     {
         ActorRuntime.setRuntime(this.cachedRef);
+    }
+
+    private ClusterPeer constructDefaultClusterPeer()
+    {
+        try
+        {
+            final Class jGroupsClusterPeer = Class.forName("cloud.orbit.actors.cluster.JGroupsClusterPeer");
+            return (ClusterPeer) jGroupsClusterPeer.getConstructors()[0].newInstance();
+        }
+        catch(Exception e)
+        {
+            throw new UncheckedException(e);
+        }
     }
 
     @Override
