@@ -1201,7 +1201,9 @@ public class Stage implements Startable, ActorRuntime
                                 {
                                     if (!canceled)
                                     {
-                                        return (Task) taskCallable.call();
+                                        Task invokeResult = taskCallable.call();
+                                        invokeResult.putMetadata("methodName", "timerTask");
+                                        return invokeResult;
                                     }
                                 }
                                 catch (final Exception ex)
