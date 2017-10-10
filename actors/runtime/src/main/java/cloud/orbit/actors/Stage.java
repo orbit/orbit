@@ -1141,7 +1141,7 @@ public class Stage implements Startable, ActorRuntime
         final ActorTaskContext context = ActorTaskContext.current();
         if (context != null)
         {
-            Map<Object, Object> headers = null;
+            Map<String, Object> headers = null;
             for (final String key : stickyHeaders)
             {
                 final Object value = context.getProperty(key);

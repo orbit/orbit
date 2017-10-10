@@ -407,54 +407,57 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
                 message.setReferenceAddress(readNodeAddress(in));
                 message.setInterfaceId(in.readInt());
                 message.setMethodId(in.readInt());
-
-                ValueType valueTypeForObjectId = ValueType.getById(in.readByte());
-                if (valueTypeForObjectId.equals(ValueType.STRING))
-                {
-                    message.setObjectId(in.readString());
-                }
-                else if (valueTypeForObjectId.equals(ValueType.INT))
-                {
-                    message.setObjectId(in.readInt());
-                }
-                else
-                {
-                    message.setObjectId(kryo.readClassAndObject(in));
-                }
-
-                int headers = in.readInt();
-                if (headers > 0)
-                {
-                    Map<Object, Object> payload = new HashMap<>();
-                    for (int i = 0; i < headers; i++)
-                    {
-                        String key = in.readString();
-                        ValueType valueType = ValueType.getById(in.readByte());
-                        if (valueType.equals(ValueType.STRING))
-                        {
-                            payload.put(key, in.readString());
-                        }
-                        else if (valueType.equals(ValueType.INT))
-                        {
-                            payload.put(key, in.readInt());
-                        }
-                        else
-                        {
-                            payload.put(key, kryo.readClassAndObject(in));
-                        }
-                    }
-                    message.setHeaders(payload);
-                }
-                else
-                {
-                    message.setHeaders(Collections.emptyMap());
-                }
-
+                message.setObjectId(readObjectId(kryo, in));
+                message.setHeaders(readHeaders(kryo, in, in.readInt()));
                 message.setFromNode(readNodeAddress(in));
                 message.setPayload(kryo.readClassAndObject(in));
                 return message;
             }
         });
+    }
+
+    private static Map<String, Object> readHeaders(Kryo kryo, Input in, int headers)
+    {
+        if (headers == 0)
+        {
+            return Collections.emptyMap();
+        }
+        Map<String, Object> payload = new HashMap<>();
+        for (int i = 0; i < headers; i++)
+        {
+            String key = in.readString();
+            ValueType valueType = ValueType.getById(in.readByte());
+            if (valueType.equals(ValueType.STRING))
+            {
+                payload.put(key, in.readString());
+            }
+            else if (valueType.equals(ValueType.INT))
+            {
+                payload.put(key, in.readInt());
+            }
+            else
+            {
+                payload.put(key, kryo.readClassAndObject(in));
+            }
+        }
+        return payload;
+    }
+
+    private static Object readObjectId(Kryo kryo, Input in)
+    {
+        ValueType valueTypeForObjectId = ValueType.getById(in.readByte());
+        if (valueTypeForObjectId.equals(ValueType.STRING))
+        {
+            return in.readString();
+        }
+        else if (valueTypeForObjectId.equals(ValueType.INT))
+        {
+            return in.readInt();
+        }
+        else
+        {
+            return kryo.readClassAndObject(in);
+        }
     }
 
     @Override
@@ -469,55 +472,59 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
                 writeNodeAddress(out, message.getReferenceAddress());
                 out.writeInt(message.getInterfaceId());
                 out.writeInt(message.getMethodId());
-
-                ValueType valueTypeForObjectId = ValueType.getType(message.getObjectId());
-                out.writeByte(valueTypeForObjectId.id);
-                if (valueTypeForObjectId.equals(ValueType.STRING))
-                {
-                    out.writeString(String.valueOf(message.getObjectId()));
-                }
-                else if (valueTypeForObjectId.equals(ValueType.INT))
-                {
-                    out.writeInt((Integer) message.getObjectId());
-                }
-                else
-                {
-                    kryo.writeClassAndObject(out, message.getObjectId());
-                }
-
-                Map<Object, Object> headers = message.getHeaders();
-                if (headers != null)
-                {
-                    out.writeInt(headers.size());
-                    for (Map.Entry<Object, Object> entry : headers.entrySet())
-                    {
-                        out.writeString(String.valueOf(entry.getKey()));
-                        ValueType valueType = ValueType.getType(entry.getValue());
-                        out.writeByte(valueType.id);
-                        if (valueType.equals(ValueType.STRING))
-                        {
-                            out.writeString(String.valueOf(entry.getValue()));
-                        }
-                        else if (valueType.equals(ValueType.INT))
-                        {
-                            out.writeInt((Integer) entry.getValue());
-                        }
-                        else
-                        {
-                            kryo.writeClassAndObject(out, entry.getValue());
-                        }
-                    }
-                }
-                else
-                {
-                    out.writeInt(0);
-                }
-
+                writeObjectId(message, kryo, out);
+                writeHeaders(kryo, out, message.getHeaders());
                 writeNodeAddress(out, message.getFromNode());
                 kryo.writeClassAndObject(out, message.getPayload());
                 return null;
             }
         });
+    }
+
+    private static void writeHeaders(Kryo kryo, Output out, Map<String, Object> headers)
+    {
+        if (headers == null)
+        {
+            out.writeInt(0);
+            return;
+        }
+        out.writeInt(headers.size());
+        for (Map.Entry<String, Object> entry : headers.entrySet())
+        {
+            out.writeString(entry.getKey());
+            ValueType valueType = ValueType.getType(entry.getValue());
+            out.writeByte(valueType.id);
+            if (valueType.equals(ValueType.STRING))
+            {
+                out.writeString(String.valueOf(entry.getValue()));
+            }
+            else if (valueType.equals(ValueType.INT))
+            {
+                out.writeInt((Integer) entry.getValue());
+            }
+            else
+            {
+                kryo.writeClassAndObject(out, entry.getValue());
+            }
+        }
+    }
+
+    private static void writeObjectId(Message message, Kryo kryo, Output out)
+    {
+        ValueType valueTypeForObjectId = ValueType.getType(message.getObjectId());
+        out.writeByte(valueTypeForObjectId.id);
+        if (valueTypeForObjectId.equals(ValueType.STRING))
+        {
+            out.writeString(String.valueOf(message.getObjectId()));
+        }
+        else if (valueTypeForObjectId.equals(ValueType.INT))
+        {
+            out.writeInt((Integer) message.getObjectId());
+        }
+        else
+        {
+            kryo.writeClassAndObject(out, message.getObjectId());
+        }
     }
 
     @Override

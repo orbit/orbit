@@ -41,7 +41,7 @@ public class Invocation
     private boolean oneWay;
     private int methodId;
     private Object[] params;
-    private Map<?, ?> headers;
+    private Map<String, Object> headers;
     private Task completion;
     private NodeAddress toNode;
     private NodeAddress fromNode;
@@ -93,12 +93,12 @@ public class Invocation
         return completion;
     }
 
-    public Map<?, ?> getHeaders()
+    public Map<String, Object> getHeaders()
     {
         return headers;
     }
 
-    public void setHeaders(Map<?, ?> headers)
+    public void setHeaders(Map<String, Object> headers)
     {
         this.headers = headers;
     }
@@ -196,7 +196,7 @@ public class Invocation
         return this;
     }
 
-    public Invocation withHeaders(final Map<?, ?> headers)
+    public Invocation withHeaders(final Map<String, Object> headers)
     {
         this.headers = headers;
         return this;
