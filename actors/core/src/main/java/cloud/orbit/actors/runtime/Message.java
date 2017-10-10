@@ -47,7 +47,7 @@ public class Message
     private NodeAddress fromNode;
     private NodeAddress toNode;
 
-    private Map<Object, Object> headers;
+    private Map<String, Object> headers;
 
     // target reference fields
     private int interfaceId;
@@ -126,12 +126,12 @@ public class Message
         return this;
     }
 
-    public Object getHeader(Object key)
+    public Object getHeader(String key)
     {
         return headers != null ? headers.get(key) : null;
     }
 
-    public void setHeader(Object key, Object value)
+    public void setHeader(String key, Object value)
     {
         if (headers == null)
         {
@@ -140,7 +140,7 @@ public class Message
         headers.put(key, value);
     }
 
-    public Message withHeader(Object key, Object value)
+    public Message withHeader(String key, Object value)
     {
         if (headers == null)
         {
@@ -150,18 +150,18 @@ public class Message
         return this;
     }
 
-    public Map<Object, Object> getHeaders()
+    public Map<String, Object> getHeaders()
     {
         return headers;
     }
 
-    public Message withHeaders(final Map<Object, Object> headers)
+    public Message withHeaders(final Map<String, Object> headers)
     {
         this.headers = headers;
         return this;
     }
 
-    public void setHeaders(final Map<Object, Object> headers)
+    public void setHeaders(final Map<String, Object> headers)
     {
         this.headers = headers;
     }

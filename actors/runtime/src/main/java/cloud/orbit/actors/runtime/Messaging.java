@@ -334,7 +334,7 @@ public class Messaging extends HandlerAdapter implements Startable
         RemoteReference<?> actorReference = (RemoteReference<?>) toReference;
         NodeAddress toNode = invocation.getToNode();
 
-        Map<Object, Object> actualHeaders = null;
+        Map<String, Object> actualHeaders = null;
         if (invocation.getHeaders() != null)
         {
             actualHeaders = new HashMap<>();
