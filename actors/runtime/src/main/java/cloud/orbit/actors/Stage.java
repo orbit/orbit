@@ -711,7 +711,7 @@ public class Stage implements Startable, ActorRuntime
         }
         if (messageSerializer == null)
         {
-            messageSerializer = new JavaMessageSerializer();
+            messageSerializer = new KryoSerializer();
         }
         if (clusterPeer == null)
         {
