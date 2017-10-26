@@ -99,6 +99,10 @@ public class LocalObjects
         T getObject();
 
         <R> Task<R> run(TaskFunction<LocalObjectEntry<T>, R> function);
+
+        default void updateLastAccessTime() {
+
+        }
     }
 
     public static class NormalObjectEntry<T> implements LocalObjectEntry<T>

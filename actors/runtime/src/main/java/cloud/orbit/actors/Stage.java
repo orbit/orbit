@@ -74,7 +74,6 @@ import cloud.orbit.actors.runtime.Hosting;
 import cloud.orbit.actors.runtime.InternalUtils;
 import cloud.orbit.actors.runtime.Invocation;
 import cloud.orbit.actors.runtime.InvocationHandler;
-import cloud.orbit.actors.runtime.JavaMessageSerializer;
 import cloud.orbit.actors.runtime.KryoSerializer;
 import cloud.orbit.actors.runtime.LazyActorClassFinder;
 import cloud.orbit.actors.runtime.LocalObjects;

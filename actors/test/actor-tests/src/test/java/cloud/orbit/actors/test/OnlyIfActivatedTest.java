@@ -38,6 +38,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.assertEquals;
 
 public class OnlyIfActivatedTest extends ActorBaseTest
@@ -47,6 +49,7 @@ public class OnlyIfActivatedTest extends ActorBaseTest
     @Test
     public void onlyIfActivatedTest()
     {
+        clock.stop();
         OnlyIfActivated only = Actor.getReference(OnlyIfActivated.class, "234");
         only.doSomethingSpecial("A").join();
         only.doSomethingSpecial("A").join();
@@ -61,6 +64,14 @@ public class OnlyIfActivatedTest extends ActorBaseTest
         only.doSomethingSpecial("A").join();
         only.doSomethingSpecial("A").join();
         assertEquals(5, OnlyIfActivatedActor.accessCount);
+
+        clock.incrementTime(10, TimeUnit.MINUTES);
+        only.doSomethingSpecial("A").join();
+        assertEquals(6, OnlyIfActivatedActor.accessCount);
+        clock.incrementTime(10, TimeUnit.MINUTES);
+        stage.cleanup().join();
+        only.doSomethingSpecial("A").join();
+        assertEquals(6, OnlyIfActivatedActor.accessCount);
     }
 
     @Before
