@@ -167,7 +167,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
 
     private boolean shouldRemove(final ActorBaseEntry<?> actorEntry, final Set<ActorBaseEntry<?>> toRemove)
     {
-        final Class<?> interfaceClass = RemoteReference.getInterfaceClass(actorEntry.getRemoteReference())
+        final Class<?> interfaceClass = RemoteReference.getInterfaceClass(actorEntry.getRemoteReference());
         // Make sure it isn't tagged NeverDeactivate
         if (interfaceClass.isAnnotationPresent(NeverDeactivate.class))
         {
@@ -183,7 +183,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
             {
                 return true;
             }
-        } 
+        }
         else
             {
             // Check against default
