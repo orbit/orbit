@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cloud.orbit.actors.annotation.NeverDeactivate;
+import cloud.orbit.actors.annotation.TimeToLive;
 import cloud.orbit.actors.concurrent.ConcurrentExecutionQueue;
 import cloud.orbit.actors.extensions.ActorDeactivationExtension;
 import cloud.orbit.concurrent.Task;
@@ -166,16 +167,39 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
 
     private boolean shouldRemove(final ActorBaseEntry<?> actorEntry, final Set<ActorBaseEntry<?>> toRemove)
     {
+        final Class<?> interfaceClass = RemoteReference.getInterfaceClass(actorEntry.getRemoteReference());
         // Make sure it isn't tagged NeverDeactivate
-        if (RemoteReference.getInterfaceClass(actorEntry.getRemoteReference()).isAnnotationPresent(NeverDeactivate.class))
+        if (interfaceClass.isAnnotationPresent(NeverDeactivate.class))
         {
             return false;
         }
-        // Check for timeout
-        boolean shouldRemove = clock.millis() - actorEntry.getLastAccess() > defaultActorTTL;
+
+        // Check for ttl override
+        if(interfaceClass.isAnnotationPresent(TimeToLive.class))
+        {
+            final TimeToLive customTtl = interfaceClass.getAnnotation(TimeToLive.class);
+            final long customTtlMilliseconds = customTtl.timeUnit().toMillis(customTtl.value());
+            if(clock.millis() - actorEntry.getLastAccess() > customTtlMilliseconds)
+            {
+                return true;
+            }
+        }
+        else
+            {
+            // Check against default
+            if(clock.millis() - actorEntry.getLastAccess() > defaultActorTTL)
+            {
+                return true;
+            }
+        }
+
+
         // Check if extension wanted to remove it
-        shouldRemove = shouldRemove || toRemove.contains(actorEntry);
-        return shouldRemove;
+        if(toRemove.contains(actorEntry)) {
+            return true;
+        }
+
+        return false;
     }
 
     private Task cleanupObservers()
