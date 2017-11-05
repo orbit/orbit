@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import cloud.orbit.actors.Stage;
 import cloud.orbit.actors.annotation.Reentrant;
+import cloud.orbit.actors.annotation.SkipUpdateLastAccess;
 import cloud.orbit.actors.extensions.InvocationHandlerExtension;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.util.AnnotationCache;
@@ -50,6 +51,7 @@ public class SimpleInvocationHandler implements InvocationHandler
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final AnnotationCache<Reentrant> reentrantCache = new AnnotationCache<>(Reentrant.class);
+    private final AnnotationCache<SkipUpdateLastAccess> skipUpdateLastAccessAnnotationCache = new AnnotationCache<>(SkipUpdateLastAccess.class);
 
     private boolean performanceLoggingEnabled = true;
     private double slowInvokeThresholdMs = 250;
@@ -63,16 +65,21 @@ public class SimpleInvocationHandler implements InvocationHandler
         final Method method = invoker.getMethod(invocation.getMethodId());
         final boolean reentrant = reentrantCache.isAnnotated(method);
 
+        if (!skipUpdateLastAccessAnnotationCache.isAnnotated(method)) {
+            // when stateless, entry refers to the stateless actor entry and target is the actorentry
+            target.updateLastAccessTime();
+        }
+
         final ActorTaskContext context = ActorTaskContext.current();
         if (context != null)
         {
             if (invocation.getHeaders() != null && invocation.getHeaders().size() > 0 && runtime.getStickyHeaders() != null)
             {
-                invocation.getHeaders().entrySet().forEach(e ->
+                invocation.getHeaders().forEach((key, value) ->
                 {
-                    if (runtime.getStickyHeaders().contains(e.getKey()))
+                    if (runtime.getStickyHeaders().contains(key))
                     {
-                        context.setProperty(String.valueOf(e.getKey()), e.getValue());
+                        context.setProperty(key, value);
                     }
                 });
             }

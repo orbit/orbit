@@ -66,8 +66,13 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
     @Override
     public <R> Task<R> run(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function)
     {
-        lastAccess = runtime.clock().millis();
         return executionSerializer.offerJob(key, () -> doRun(function), 10000);
+    }
+
+    @Override
+    public void updateLastAccessTime()
+    {
+        lastAccess = runtime.clock().millis();
     }
 
     private <R> Task<R> doRun(final TaskFunction<LocalObjects.LocalObjectEntry<T>, R> function)
@@ -295,14 +300,5 @@ public class ActorEntry<T extends AbstractActor> extends ActorBaseEntry<T>
             return Task.allOf(list.stream().map(e -> e.getValue().unsubscribe(e.getKey())));
         }
         return Task.done();
-    }
-
-    @Override
-    public String toString()
-    {
-        return "ActorEntry{" +
-                "actor=" + actor +
-                ", key=" + key +
-                '}';
     }
 }
