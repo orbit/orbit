@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -26,31 +26,24 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.test.actors;
+package cloud.orbit.actors.annotation;
 
-import cloud.orbit.actors.Actor;
-import cloud.orbit.actors.annotation.OnlyIfActivated;
-import cloud.orbit.actors.annotation.Timeout;
-import cloud.orbit.concurrent.Task;
-
-import java.util.UUID;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
-public interface SomeActor extends Actor
+/**
+ * Defines a custom timeout for the given actor method that will be used instead of the
+ * configured <code>responseTimeoutMillis</code>.
+ *
+ * @author Johno Crawford (johno@sulake.com)
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface Timeout
 {
-    Task<String> sayHello(String greeting);
-
-    @OnlyIfActivated
-    Task<String> sayHelloOnlyIfActivated();
-
-    Task<UUID> getUniqueActivationId();
-
-    Task<UUID> getUniqueActivationId(long sleepNanos);
-
-    @Timeout(value = 100, timeUnit = TimeUnit.MILLISECONDS)
-    Task<UUID> getUniqueActivationIdWithTimeoutAnnotation(long sleepNanos);
-
-    Task<Boolean> getActivationWasCalled();
-
-    Task<String> getNodeId();
+    int value();
+    TimeUnit timeUnit() default TimeUnit.SECONDS;
 }

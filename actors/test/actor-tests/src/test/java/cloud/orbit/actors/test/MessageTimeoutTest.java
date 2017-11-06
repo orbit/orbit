@@ -66,6 +66,23 @@ public class MessageTimeoutTest extends ActorBaseTest
     }
 
     @Test
+    public void timeoutAnnotationTest() throws ExecutionException, InterruptedException
+    {
+        clock.stop();
+        Stage stage1 = createStage();
+        Stage client = createClient();
+
+        SomeActor someActor = Actor.getReference(SomeActor.class, "1");
+
+        UUID uuid = someActor.getUniqueActivationId(0).get();
+        Assert.assertEquals(uuid, someActor.getUniqueActivationId().get());
+        Task<UUID> call = someActor.getUniqueActivationIdWithTimeoutAnnotation(TimeUnit.SECONDS.toNanos(200));
+        clock.incrementTime(5, TimeUnit.SECONDS);
+        client.cleanup();
+        expectException(() -> call.join());
+    }
+
+    @Test
     public void timeoutWithTwoMessagesTest() throws ExecutionException, InterruptedException
     {
         clock.stop();

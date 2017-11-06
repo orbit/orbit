@@ -29,12 +29,14 @@
 package cloud.orbit.actors.runtime;
 
 import cloud.orbit.actors.Addressable;
+import cloud.orbit.actors.annotation.Timeout;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.net.HandlerAdapter;
 import cloud.orbit.actors.net.HandlerContext;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.lifecycle.Startable;
 import cloud.orbit.exception.UncheckedException;
+import cloud.orbit.util.AnnotationCache;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +61,8 @@ public class Messaging extends HandlerAdapter implements Startable
 {
     private static Object NIL = null;
     private Logger logger = LoggerFactory.getLogger(Messaging.class);
+
+    private final AnnotationCache<Timeout> timeoutAnnotationCache = new AnnotationCache<>(Timeout.class);
 
     private final AtomicInteger messageIdGen = new AtomicInteger();
     private final Map<Integer, PendingResponse> pendingResponseMap = new ConcurrentHashMap<>();
@@ -251,7 +255,7 @@ public class Messaging extends HandlerAdapter implements Startable
                     else
                     {
                         // missing counterpart
-                        logger.warn("Received response for pending request which timed out (took > " + responseTimeoutMillis + "ms) message id: {}, type: {} for {}.", messageId, messageType, getInvokedClassAndMethodName(message));
+                        logger.warn("Received response for pending request which timed out (took > " + getResponseTimeoutMillis(message) + "ms) message id: {}, type: {} for {}.", messageId, messageType, getInvokedClassAndMethodName(message));
                         if (logger.isDebugEnabled()) {
                             logger.debug("Headers for message #" + messageId + " " + message.getHeaders());
                         }
@@ -331,8 +335,8 @@ public class Messaging extends HandlerAdapter implements Startable
     public Task<?> writeInvocation(final HandlerContext ctx, Invocation invocation)
     {
         final Addressable toReference = invocation.getToReference();
-        RemoteReference<?> actorReference = (RemoteReference<?>) toReference;
-        NodeAddress toNode = invocation.getToNode();
+        final RemoteReference<?> actorReference = (RemoteReference<?>) toReference;
+        final NodeAddress toNode = invocation.getToNode();
 
         Map<String, Object> actualHeaders = null;
         if (invocation.getHeaders() != null)
@@ -389,7 +393,9 @@ public class Messaging extends HandlerAdapter implements Startable
             return Task.done();
         }
         message.setMessageId(messageId);
-        PendingResponse pendingResponse = new PendingResponse(messageId, runtime.clock().millis() + responseTimeoutMillis);
+
+        final PendingResponse pendingResponse = new PendingResponse(messageId, runtime.clock().millis() + getResponseTimeoutMillis(message));
+
         final boolean oneWay = message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE;
         if (!oneWay)
         {
@@ -409,6 +415,21 @@ public class Messaging extends HandlerAdapter implements Startable
             pendingResponse.internalCompleteExceptionally(ex);
         }
         return pendingResponse;
+    }
+
+    private long getResponseTimeoutMillis(final Message message)
+    {
+        final Class<?> clazz = DefaultClassDictionary.get().getClassById(message.getInterfaceId());
+        if (clazz != null)
+        {
+            final Method method = DefaultDescriptorFactory.get().getInvoker(clazz).getMethod(message.getMethodId());
+            final Timeout timeout = timeoutAnnotationCache.getAnnotation(method);
+            if (timeout != null)
+            {
+                return timeout.timeUnit().toMillis(timeout.value());
+            }
+        }
+        return responseTimeoutMillis;
     }
 
     public Task cleanup()

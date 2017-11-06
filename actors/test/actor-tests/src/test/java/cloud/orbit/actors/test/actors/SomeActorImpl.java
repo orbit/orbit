@@ -79,6 +79,11 @@ public class SomeActorImpl extends AbstractActor implements SomeActor
         return Task.fromValue(uniqueActivationId);
     }
 
+    @Override
+    public Task<UUID> getUniqueActivationIdWithTimeoutAnnotation(final long sleepNanos)
+    {
+        return getUniqueActivationId(sleepNanos);
+    }
 
     @Override
     public Task<Boolean> getActivationWasCalled()
