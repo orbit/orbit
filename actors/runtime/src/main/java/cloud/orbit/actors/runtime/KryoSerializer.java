@@ -125,6 +125,17 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
                 // fallback to StdInstantiatorStrategy (no constructor is invoked!).
                 kryo.setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
 
+                kryo.register(Object[].class);
+
+                kryo.register(ReferenceReplacement.class, new ReferenceReplacementSerializer());
+
+                // addDefaultSerializer for subclasses
+                kryo.addDefaultSerializer(RemoteReference.class, new RemoteReferenceSerializer());
+                kryo.addDefaultSerializer(AbstractActor.class, new AbstractActorSerializer());
+                kryo.addDefaultSerializer(ActorObserver.class, new ActorObserverSerializer());
+
+                kryo.register(UUID.class, new UUIDSerializer());
+
                 kryo.register(Arrays.asList("").getClass(), new ArraysAsListSerializer());
                 kryo.register(Collections.emptyList().getClass(), new CollectionsEmptyListSerializer());
                 kryo.register(Collections.emptyMap().getClass(), new CollectionsEmptyMapSerializer());
@@ -137,15 +148,6 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
 
                 UnmodifiableCollectionsSerializer.registerSerializers(kryo);
                 SynchronizedCollectionsSerializer.registerSerializers(kryo);
-
-                kryo.register(UUID.class, new UUIDSerializer());
-
-                // addDefaultSerializer for subclasses
-                kryo.addDefaultSerializer(RemoteReference.class, new RemoteReferenceSerializer());
-                kryo.addDefaultSerializer(AbstractActor.class, new AbstractActorSerializer());
-                kryo.addDefaultSerializer(ActorObserver.class, new ActorObserverSerializer());
-
-                kryo.register(ReferenceReplacement.class, new ReferenceReplacementSerializer());
 
                 kryoConsumer.accept(kryo);
 
@@ -343,6 +345,20 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
         NodeAddress address;
     }
 
+    private enum PayloadType
+    {
+        UNKNOWN(0),
+        NULL(1),
+        OBJECT_ARRAY(2);
+
+        private final byte id;
+
+        PayloadType(int id)
+        {
+            this.id = (byte) id;
+        }
+    }
+
     private enum ValueType
     {
         UNKNOWN(0),
@@ -350,30 +366,6 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
         INT(2);
 
         private final byte id;
-
-        private static final ValueType[] ID_TO_DEFINITION;
-
-        static
-        {
-            byte maxId = 0;
-            for (ValueType definition : values())
-            {
-                if (definition.id > maxId)
-                {
-                    maxId = definition.id;
-                }
-            }
-            ID_TO_DEFINITION = new ValueType[maxId + 1];
-            for (ValueType definition : values())
-            {
-                ID_TO_DEFINITION[definition.id] = definition;
-            }
-        }
-
-        public static ValueType getById(byte id)
-        {
-            return ID_TO_DEFINITION[id];
-        }
 
         ValueType(int id)
         {
@@ -386,7 +378,7 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
             {
                 return STRING;
             }
-            if (int.class.isInstance(object) || Integer.class.isInstance(object))
+            if (Integer.class.isInstance(object) || int.class.isInstance(object))
             {
                 return INT;
             }
@@ -408,30 +400,45 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
                 message.setInterfaceId(in.readInt());
                 message.setMethodId(in.readInt());
                 message.setObjectId(readObjectId(kryo, in));
-                message.setHeaders(readHeaders(kryo, in, in.readInt()));
+                message.setHeaders(readHeaders(kryo, in));
                 message.setFromNode(readNodeAddress(in));
-                message.setPayload(kryo.readClassAndObject(in));
+                message.setPayload(readPayload(kryo, in));
                 return message;
             }
         });
     }
 
-    private static Map<String, Object> readHeaders(Kryo kryo, Input in, int headers)
+    private static Object readPayload(Kryo kryo, Input in)
     {
+        byte payloadTypeId = in.readByte();
+        if (PayloadType.OBJECT_ARRAY.id == payloadTypeId)
+        {
+            return kryo.readObject(in, Object[].class);
+        }
+        if (PayloadType.NULL.id == payloadTypeId)
+        {
+            return null;
+        }
+        return kryo.readClassAndObject(in);
+    }
+
+    private static Map<String, Object> readHeaders(Kryo kryo, Input in)
+    {
+        int headers = in.readInt();
         if (headers == 0)
         {
             return Collections.emptyMap();
         }
-        Map<String, Object> payload = new HashMap<>();
+        Map<String, Object> payload = new HashMap<>(headers);
         for (int i = 0; i < headers; i++)
         {
             String key = in.readString();
-            ValueType valueType = ValueType.getById(in.readByte());
-            if (valueType.equals(ValueType.STRING))
+            byte valueTypeId = in.readByte();
+            if (valueTypeId == ValueType.STRING.id)
             {
                 payload.put(key, in.readString());
             }
-            else if (valueType.equals(ValueType.INT))
+            else if (valueTypeId == ValueType.INT.id)
             {
                 payload.put(key, in.readInt());
             }
@@ -445,12 +452,12 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
 
     private static Object readObjectId(Kryo kryo, Input in)
     {
-        ValueType valueTypeForObjectId = ValueType.getById(in.readByte());
-        if (valueTypeForObjectId.equals(ValueType.STRING))
+        byte valueTypeIdForObjectId = in.readByte();
+        if (valueTypeIdForObjectId == ValueType.STRING.id)
         {
             return in.readString();
         }
-        else if (valueTypeForObjectId.equals(ValueType.INT))
+        else if (valueTypeIdForObjectId == ValueType.INT.id)
         {
             return in.readInt();
         }
@@ -472,18 +479,35 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
                 writeNodeAddress(out, message.getReferenceAddress());
                 out.writeInt(message.getInterfaceId());
                 out.writeInt(message.getMethodId());
-                writeObjectId(message, kryo, out);
+                writeObjectId(kryo, out, message);
                 writeHeaders(kryo, out, message.getHeaders());
                 writeNodeAddress(out, message.getFromNode());
-                kryo.writeClassAndObject(out, message.getPayload());
+                writePayload(kryo, out, message);
                 return null;
             }
         });
     }
 
+    private static void writePayload(Kryo kryo, Output out, Message message)
+    {
+        if (message.getPayload() instanceof Object[])
+        {
+            out.writeByte(PayloadType.OBJECT_ARRAY.id);
+            kryo.writeObject(out, message.getPayload());
+            return;
+        }
+        if (message.getPayload() == null)
+        {
+            out.writeByte(PayloadType.NULL.id);
+            return;
+        }
+        out.writeByte(PayloadType.UNKNOWN.id);
+        kryo.writeClassAndObject(out, message.getPayload());
+    }
+
     private static void writeHeaders(Kryo kryo, Output out, Map<String, Object> headers)
     {
-        if (headers == null)
+        if (headers == null || headers.isEmpty())
         {
             out.writeInt(0);
             return;
@@ -509,7 +533,7 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
         }
     }
 
-    private static void writeObjectId(Message message, Kryo kryo, Output out)
+    private static void writeObjectId(Kryo kryo, Output out, Message message)
     {
         ValueType valueTypeForObjectId = ValueType.getType(message.getObjectId());
         out.writeByte(valueTypeForObjectId.id);
