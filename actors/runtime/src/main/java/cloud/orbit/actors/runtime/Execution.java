@@ -82,8 +82,17 @@ public class Execution extends AbstractExecution implements Startable
         final LocalObjects.LocalObjectEntry<Object> entry = objects.findLocalObjectByReference(toReference);
         if (entry != null)
         {
-            final Task<Object> result = InternalUtils.safeInvoke(() -> entry.run(
-                    target -> performInvocation(ctx, invocation, entry, target)));
+            Task<Object> result;
+
+            if (invocation.isDeactivate())
+            {
+                result = runtime.deactivateActor(entry);
+            }
+            else
+            {
+                result = InternalUtils.safeInvoke(() -> entry.run(
+                        target -> performInvocation(ctx, invocation, entry, target)));
+            }
             // this has to be done here because of exceptions that can occur before performInvocation is even called.
             if (invocation.getCompletion() != null)
             {
@@ -92,7 +101,7 @@ public class Execution extends AbstractExecution implements Startable
         }
         else
         {
-            if (toReference instanceof Actor)
+            if (toReference instanceof Actor && !invocation.isDeactivate())
             {
                 // on activate will handle the completion;
                 InternalUtils.safeInvoke(() -> executionSerializer.offerJob(toReference,

@@ -94,6 +94,39 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
         return cleanupActors(true);
     }
 
+    /**
+     * Deactivate the target. This is for on-demand actor deactivation.
+     *
+     * @param target
+     * @return
+     */
+    @Override
+    public Task deactivateActor(final LocalObjects.LocalObjectEntry target)
+    {
+
+        // currently ony ActorBaseEntry is supported
+        if (target == null || !(target instanceof ActorBaseEntry))
+        {
+            // Or should I throw an exception?
+            return Task.done();
+        }
+
+        // keep only the target object
+        final List<Map.Entry<Object, LocalObjects.LocalObjectEntry>> actorEntries = localObjects.stream()
+                .filter(e -> e.getValue() instanceof ActorBaseEntry && target.equals(e.getValue()))
+                .collect(Collectors.toList());
+
+        final Collection<ActorBaseEntry<?>> baseEntries = actorEntries.stream()
+                .map(entryEntry -> (ActorBaseEntry<?>) entryEntry.getValue())
+                .collect(Collectors.toList());
+
+        final Set<ActorBaseEntry<?>> toRemove = new HashSet<>(baseEntries);
+
+        await(deactivateActors(false, actorEntries, toRemove));
+
+        return Task.done();
+    }
+
     private Task cleanupActors(final boolean shutdownAll)
     {
         final List<Map.Entry<Object, LocalObjects.LocalObjectEntry>> actorEntries = localObjects.stream()
@@ -108,6 +141,13 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
 
         actorDeactivationExtensions.forEach(x -> x.cleanupActors(baseEntries, toRemove));
 
+        return deactivateActors(shutdownAll, actorEntries, toRemove);
+    }
+
+    private Task deactivateActors(final boolean shutdownAll,
+                                  final List<Map.Entry<Object, LocalObjects.LocalObjectEntry>> actorEntries,
+                                  final Set<ActorBaseEntry<?>> toRemove)
+    {
         final List<Task<Void>> pendingThisCycle = new ArrayList<>();
 
         for(final Map.Entry<Object, LocalObjects.LocalObjectEntry> entryEntry : actorEntries)

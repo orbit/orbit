@@ -26,27 +26,32 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.runtime;
+package cloud.orbit.actors.annotation;
 
-import cloud.orbit.actors.extensions.ActorDeactivationExtension;
-import cloud.orbit.concurrent.Task;
-
-import java.util.List;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * @author Johno Crawford (johno@sulake.com)
+ * Actor methods annotated with {@literal@}Deactivate will trigger actor deactivation when invoked.
+ * Therefore their return type must be {@code Task<Void>} or simply {@code Task}.
+ * <p><pre>
+ * public interface Hello implements Actor
+ * {
+ *
+ *     {@literal@}Deactivate
+ *     Task&lt;Void&gt; deactivate();
+ * }</pre>
+ *</p>
+ * <p>
+ * The callers will still receive a valid Task as response. This Task
+ * will be successful if the network message was sent without errors.
+ * The actual result of the invocation will not reach the caller.
+ * </p>
  */
-public interface LocalObjectsCleaner
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface Deactivate
 {
-    Task<Void> cleanup();
-    Task<Void> shutdown();
-
-    /**
-     * On-Demand actor deactivation
-     *
-     * @param target
-     * @return
-     */
-    Task<Void> deactivateActor(final LocalObjects.LocalObjectEntry target);
-    void setActorDeactivationExtensions(final List<ActorDeactivationExtension> extensionList);
 }

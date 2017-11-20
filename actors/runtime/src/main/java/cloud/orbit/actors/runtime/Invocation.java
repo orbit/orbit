@@ -28,6 +28,7 @@
 
 package cloud.orbit.actors.runtime;
 
+import cloud.orbit.actors.annotation.Deactivate;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.concurrent.Task;
 
@@ -48,6 +49,11 @@ public class Invocation
     private int hops;
     private int messageId;
 
+    /**
+     * Triggers actir deactivation is set
+     */
+    private boolean deactivate = false;
+
     public Invocation()
     {
     }
@@ -61,7 +67,13 @@ public class Invocation
         this.methodId = methodId;
         this.params = params;
         this.completion = completion;
+        if (method != null && method.isAnnotationPresent(Deactivate.class))
+        {
+            this.deactivate = true;
+        }
     }
+
+    public boolean isDeactivate() {return deactivate; }
 
     public RemoteReference getToReference()
     {

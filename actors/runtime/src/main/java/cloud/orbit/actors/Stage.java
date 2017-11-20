@@ -1056,6 +1056,17 @@ public class Stage implements Startable, ActorRuntime
     }
 
     /**
+     * On-Demand actor deactivation
+     *
+     * @param target
+     * @return
+     */
+    public Task deactivateActor(final LocalObjects.LocalObjectEntry target)
+    {
+        return localObjectsCleaner.deactivateActor(target);
+    }
+
+    /**
      * Binds this stage to the current thread.
      * This tells ungrounded references to use this stage to call remote methods.
      * <p>
