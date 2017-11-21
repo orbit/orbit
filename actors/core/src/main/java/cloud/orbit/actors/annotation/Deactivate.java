@@ -35,7 +35,12 @@ import java.lang.annotation.Target;
 
 /**
  * Actor methods annotated with {@literal@}Deactivate will trigger actor deactivation when invoked.
- * Therefore their return type must be {@code Task<Void>} or simply {@code Task}.
+ * Only one method should have this annotation and should perform no operation.
+ *
+ * It is recommended to name the method annotated with {@literal@}Deactivate to "deactivate()" because there is already
+ * a method like this in the {@link cloud.orbit.actors.runtime.AbstractActor}.
+ *
+ * The return type must be {@code Task<Void>}.
  * <p><pre>
  * public interface Hello implements Actor
  * {

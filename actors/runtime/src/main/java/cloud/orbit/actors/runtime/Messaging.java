@@ -193,7 +193,7 @@ public class Messaging extends HandlerAdapter implements Startable
                     invocation.setHeaders(message.getHeaders());
                     invocation.setFromNode(message.getFromNode());
                     invocation.setMessageId(messageId);
-
+                    invocation.setDeactivate(message.isDeactivate());
                     if (!invocation.isOneWay())
                     {
                         Task<Object> completion = new Task<>();
@@ -355,7 +355,8 @@ public class Messaging extends HandlerAdapter implements Startable
                 .withMethodId(invocation.getMethodId())
                 .withObjectId(RemoteReference.getId(actorReference))
                 .withPayload(invocation.getParams())
-                .withReferenceAddress(invocation.getToReference().address);
+                .withReferenceAddress(invocation.getToReference().address)
+                .withDeactivate(invocation.isDeactivate());
 
 
         if (logger.isTraceEnabled())

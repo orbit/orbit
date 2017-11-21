@@ -58,6 +58,8 @@ public class Message
     private int methodId;
     private Object payload;
 
+    private boolean deactivate;
+
     public Message()
     {
     }
@@ -124,6 +126,16 @@ public class Message
     {
         this.messageId = messageId;
         return this;
+    }
+
+    public boolean isDeactivate()
+    {
+        return deactivate;
+    }
+
+    public void setDeactivate(final boolean deactivate)
+    {
+        this.deactivate = deactivate;
     }
 
     public Object getHeader(String key)
@@ -244,6 +256,12 @@ public class Message
     public Message withReferenceAddress(final NodeAddress referenceAddress)
     {
         this.referenceAddress = referenceAddress;
+        return this;
+    }
+
+    public Message withDeactivate(final boolean deactivate)
+    {
+        this.deactivate = deactivate;
         return this;
     }
 }

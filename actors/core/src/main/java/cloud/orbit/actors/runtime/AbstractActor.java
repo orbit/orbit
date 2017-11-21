@@ -257,6 +257,11 @@ public abstract class AbstractActor<T>
         return Task.done();
     }
 
+    public final Task<Void> deactivate() {
+        logger.debug("Actor " + actorIdentity() + " requesting deactivation");
+        return Task.done();
+    }
+
     protected StreamProvider getStreamProvider(String name)
     {
         final StreamProvider provider = runtime.getStreamProvider(name);

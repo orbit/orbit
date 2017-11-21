@@ -122,9 +122,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
 
         final Set<ActorBaseEntry<?>> toRemove = new HashSet<>(baseEntries);
 
-        await(deactivateActors(false, actorEntries, toRemove));
-
-        return Task.done();
+        return deactivateActors(false, actorEntries, toRemove);
     }
 
     private Task cleanupActors(final boolean shutdownAll)

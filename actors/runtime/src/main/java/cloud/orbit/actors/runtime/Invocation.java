@@ -125,6 +125,11 @@ public class Invocation
         this.toNode = toNode;
     }
 
+    public void setDeactivate(final boolean deactivate)
+    {
+        this.deactivate = deactivate;
+    }
+
     public Invocation withToNode(final NodeAddress toNode)
     {
         this.toNode = toNode;

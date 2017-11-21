@@ -1063,7 +1063,8 @@ public class Stage implements Startable, ActorRuntime
      */
     public Task deactivateActor(final LocalObjects.LocalObjectEntry target)
     {
-        return localObjectsCleaner.deactivateActor(target);
+        await(localObjectsCleaner.deactivateActor(target));
+        return Task.done();
     }
 
     /**

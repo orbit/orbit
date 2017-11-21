@@ -86,7 +86,10 @@ public class Execution extends AbstractExecution implements Startable
 
             if (invocation.isDeactivate())
             {
-                result = runtime.deactivateActor(entry);
+                result = InternalUtils.safeInvoke(() -> entry.run(
+                        target -> performInvocation(ctx, invocation, entry, target)));
+
+                runtime.deactivateActor(entry).join();
             }
             else
             {
