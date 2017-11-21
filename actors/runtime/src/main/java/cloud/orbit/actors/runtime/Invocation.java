@@ -50,7 +50,7 @@ public class Invocation
     private int messageId;
 
     /**
-     * Triggers actir deactivation is set
+     * Triggers actor deactivation when set to true
      */
     private boolean deactivate = false;
 
