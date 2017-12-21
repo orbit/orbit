@@ -79,9 +79,18 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
         this.concurrentExecutionQueue = new ConcurrentExecutionQueue(executor, concurrentDeactivations, 0);
     }
 
+    @Override
+    public Task deactivateActor(final Actor actor) {
+        final LocalObjects.LocalObjectEntry<?> actorRef = localObjects.findLocalActor(actor);
+        if(actorRef != null) {
+            return deactivateEntry((ActorBaseEntry<?>)actorRef);
+        }
+        return Task.done();
+    }
+
     @SuppressWarnings("unchecked")
     @Override
-    public Task<Void> cleanup()
+    public Task cleanup()
     {
         await(cleanupObservers());
         await(cleanupActors(false));
@@ -90,7 +99,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
 
     @SuppressWarnings("unchecked")
     @Override
-    public Task<Void> shutdown()
+    public Task shutdown()
     {
         return cleanupActors(true);
     }
@@ -133,15 +142,6 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
         }
 
         return Task.allOf(pendingThisCycle);
-    }
-
-    @Override
-    public Task deactivateActor(final Actor actor) {
-        final LocalObjects.LocalObjectEntry<?> actorRef = localObjects.findLocalActor(actor);
-        if(actorRef != null) {
-            return deactivateEntry((ActorBaseEntry<?>)actorRef);
-        }
-        return Task.done();
     }
 
     private Task deactivateEntry(final ActorBaseEntry<?> actorEntry) {

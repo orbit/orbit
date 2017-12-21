@@ -59,7 +59,7 @@ public class LocalObjects
     {
         private final int interfaceId;
 
-        public ObjectKey(NodeAddress address, int interfaceId, Object id)
+        private ObjectKey(NodeAddress address, int interfaceId, Object id)
         {
             super(id);
             this.address = address;

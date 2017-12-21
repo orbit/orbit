@@ -39,8 +39,8 @@ import java.util.List;
  */
 public interface LocalObjectsCleaner
 {
-    Task<Void> cleanup();
-    Task<Void> shutdown();
-    Task<Void> deactivateActor(Actor actor);
+    Task cleanup();
+    Task shutdown();
+    Task deactivateActor(Actor actor);
     void setActorDeactivationExtensions(final List<ActorDeactivationExtension> extensionList);
 }
