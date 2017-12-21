@@ -31,6 +31,7 @@ package cloud.orbit.actors.runtime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.annotation.NeverDeactivate;
 import cloud.orbit.actors.annotation.TimeToLive;
 import cloud.orbit.actors.concurrent.ConcurrentExecutionQueue;
@@ -126,43 +127,55 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
             {
                 if (pendingDeactivations.add(actorEntry))
                 {
-                    pendingThisCycle.add(concurrentExecutionQueue.execute(() ->
-                            actorEntry.deactivate().failAfter(deactivationTimeoutMillis, TimeUnit.MILLISECONDS)
-                                    .whenComplete((r, e) ->
-                                    {
-                                        // ensures removal
-                                        if (e != null)
-                                        {
-                                            // error occurred
-                                            if (logger.isErrorEnabled())
-                                            {
-                                                logger.error("Error during the deactivation of " + actorEntry.getRemoteReference(), e);
-                                            }
-                                            // forcefully setting the entry to deactivated
-                                            actorEntry.setDeactivated(true);
-                                        }
-
-                                        try
-                                        {
-                                            localObjects.remove(entryEntry.getKey(), entryEntry.getValue());
-                                            if (entryEntry.getKey() == actorEntry.getRemoteReference())
-                                            {
-                                                // removing non stateless actor from the distributed directory
-                                                hosting.actorDeactivated(actorEntry.getRemoteReference());
-                                            }
-                                        }
-                                        finally
-                                        {
-                                            pendingDeactivations.remove(actorEntry);
-                                        }
-                                    })
-                            )
-                    );
+                    pendingThisCycle.add(deactivateEntry(actorEntry));
                 }
             }
         }
 
         return Task.allOf(pendingThisCycle);
+    }
+
+    @Override
+    public Task deactivateActor(final Actor actor) {
+        final LocalObjects.LocalObjectEntry<?> actorRef = localObjects.findLocalActor(actor);
+        if(actorRef != null) {
+            return deactivateEntry((ActorBaseEntry<?>)actorRef);
+        }
+        return Task.done();
+    }
+
+    private Task deactivateEntry(final ActorBaseEntry<?> actorEntry) {
+        return concurrentExecutionQueue.execute(() ->
+                actorEntry.deactivate().failAfter(deactivationTimeoutMillis, TimeUnit.MILLISECONDS)
+                        .whenComplete((r, e) ->
+                        {
+                            // ensures removal
+                            if (e != null)
+                            {
+                                // error occurred
+                                if (logger.isErrorEnabled())
+                                {
+                                    logger.error("Error during the deactivation of " + actorEntry.getRemoteReference(), e);
+                                }
+                                // forcefully setting the entry to deactivated
+                                actorEntry.setDeactivated(true);
+                            }
+
+                            try
+                            {
+                                localObjects.remove(actorEntry.reference, actorEntry);
+                                if (actorEntry.reference == actorEntry.getRemoteReference())
+                                {
+                                    // removing non stateless actor from the distributed directory
+                                    hosting.actorDeactivated(actorEntry.getRemoteReference());
+                                }
+                            }
+                            finally
+                            {
+                                pendingDeactivations.remove(actorEntry);
+                            }
+                        })
+        );
     }
 
     private boolean shouldRemove(final ActorBaseEntry<?> actorEntry, final Set<ActorBaseEntry<?>> toRemove)

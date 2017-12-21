@@ -29,9 +29,15 @@
 package cloud.orbit.actors;
 
 import cloud.orbit.actors.annotation.NoIdentity;
+import cloud.orbit.actors.cluster.NodeAddress;
+import cloud.orbit.actors.runtime.ActorRuntime;
 import cloud.orbit.actors.runtime.DefaultDescriptorFactory;
 import cloud.orbit.actors.runtime.RemoteReference;
+import cloud.orbit.actors.runtime.RuntimeActions;
+import cloud.orbit.concurrent.Task;
 import cloud.orbit.util.StringUtils;
+
+import static com.ea.async.Async.await;
 
 /**
  * Interface marker for orbit actors.
@@ -111,6 +117,24 @@ public interface Actor
     {
         return String.valueOf(RemoteReference.getId(RemoteReference.from(actor)));
     }
+
+    /**
+     * Requests the deactivation of an actor
+     *
+     * @param actor the actor which you want to deactivate.
+     * @return A task indicating the state of the request. Immediately resolved if actor is not activated.
+     */
+    static Task deactivate(final Actor actor)
+    {
+        final NodeAddress address = await(ActorRuntime.getRuntime().locateActor(RemoteReference.from(actor), false));
+        if(address != null) {
+            final RuntimeActions runtimeActions = DefaultDescriptorFactory.observerRef(address, RuntimeActions.class, "");
+            return runtimeActions.deactivateActor(actor);
+        }
+
+        return Task.done();
+    }
+
 
     /**
      * Gets a the id of the current actor reference or instance.

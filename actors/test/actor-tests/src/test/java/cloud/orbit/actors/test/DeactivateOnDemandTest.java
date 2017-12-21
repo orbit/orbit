@@ -26,21 +26,43 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.runtime;
+package cloud.orbit.actors.test;
+
+import org.junit.Test;
 
 import cloud.orbit.actors.Actor;
-import cloud.orbit.actors.extensions.ActorDeactivationExtension;
-import cloud.orbit.concurrent.Task;
+import cloud.orbit.actors.Stage;
+import cloud.orbit.actors.test.actors.CountActor;
 
-import java.util.List;
+import java.util.UUID;
 
-/**
- * @author Johno Crawford (johno@sulake.com)
- */
-public interface LocalObjectsCleaner
+import static org.junit.Assert.assertEquals;
+
+public class DeactivateOnDemandTest extends ActorBaseTest
 {
-    Task<Void> cleanup();
-    Task<Void> shutdown();
-    Task<Void> deactivateActor(Actor actor);
-    void setActorDeactivationExtensions(final List<ActorDeactivationExtension> extensionList);
+    @Test
+    public void deactivateOnDemandTest() {
+        final String actorId = UUID.randomUUID().toString();
+        Stage stage1 = createStage();
+        Stage stage2 = createStage();
+
+        stage1.bind();
+        CountActor actor = Actor.getReference(CountActor.class, actorId);
+        assertEquals(0, actor.getCallCount().join().longValue());
+        actor.incrementCount().join();
+        assertEquals(1, actor.getCallCount().join().longValue());
+
+        stage2.bind();
+        actor = Actor.getReference(CountActor.class, actorId);
+        assertEquals(1, actor.getCallCount().join().longValue());
+        Actor.deactivate(actor).join();
+        assertEquals(0, actor.getCallCount().join().longValue());
+
+        stage1.bind();
+        actor = Actor.getReference(CountActor.class, actorId);
+        assertEquals(0, actor.getCallCount().join().longValue());
+
+        stage1.stop();
+        stage2.stop();
+    }
 }

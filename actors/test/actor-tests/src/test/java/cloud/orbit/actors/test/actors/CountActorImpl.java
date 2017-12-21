@@ -26,21 +26,23 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.runtime;
+package cloud.orbit.actors.test.actors;
 
-import cloud.orbit.actors.Actor;
-import cloud.orbit.actors.extensions.ActorDeactivationExtension;
+import cloud.orbit.actors.runtime.AbstractActor;
 import cloud.orbit.concurrent.Task;
 
-import java.util.List;
-
-/**
- * @author Johno Crawford (johno@sulake.com)
- */
-public interface LocalObjectsCleaner
+public class CountActorImpl extends AbstractActor implements CountActor
 {
-    Task<Void> cleanup();
-    Task<Void> shutdown();
-    Task<Void> deactivateActor(Actor actor);
-    void setActorDeactivationExtensions(final List<ActorDeactivationExtension> extensionList);
+    private long callCount = 0;
+
+    @Override
+    public Task<Long> getCallCount() {
+        return Task.fromValue(callCount);
+    }
+
+    @Override
+    public Task incrementCount() {
+        callCount++;
+        return Task.done();
+    }
 }

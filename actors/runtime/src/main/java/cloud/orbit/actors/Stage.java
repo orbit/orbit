@@ -87,6 +87,7 @@ import cloud.orbit.actors.runtime.Registration;
 import cloud.orbit.actors.runtime.ReminderController;
 import cloud.orbit.actors.runtime.RemoteReference;
 import cloud.orbit.actors.runtime.DefaultResponseCachingExtension;
+import cloud.orbit.actors.runtime.RuntimeActions;
 import cloud.orbit.actors.runtime.SerializationHandler;
 import cloud.orbit.actors.runtime.ShardedReminderController;
 import cloud.orbit.actors.runtime.StatelessActorEntry;
@@ -132,7 +133,7 @@ import java.util.stream.IntStream;
 import static com.ea.async.Async.await;
 
 @Singleton
-public class Stage implements Startable, ActorRuntime
+public class Stage implements Startable, ActorRuntime, RuntimeActions
 {
     private Logger logger = LoggerFactory.getLogger(Stage.class);
 
@@ -860,6 +861,8 @@ public class Stage implements Startable, ActorRuntime
         future = future.thenRun(() -> {
             bind();
 
+            registerObserver(RuntimeActions.class, "", this);
+
             // schedules the pulse
             timer.schedule(new TimerTask()
             {
@@ -1436,6 +1439,11 @@ public class Stage implements Startable, ActorRuntime
             return observerEntry;
         }
         throw new IllegalArgumentException("Invalid object type: " + object.getClass());
+    }
+
+    @Override
+    public Task deactivateActor(Actor actor) {
+        return localObjectsCleaner.deactivateActor(actor);
     }
 
     @SuppressWarnings("unchecked")

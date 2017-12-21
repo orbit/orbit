@@ -55,7 +55,7 @@ public class LocalObjects
 
 
     // used for searches in localObjects
-    private static class ObjectKey extends RemoteReference<Object>
+    public static class ObjectKey extends RemoteReference<Object>
     {
         private final int interfaceId;
 
