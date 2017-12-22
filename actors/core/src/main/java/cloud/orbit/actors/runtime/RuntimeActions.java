@@ -35,5 +35,5 @@ import cloud.orbit.concurrent.Task;
 public interface RuntimeActions extends ActorObserver
 {
     Task deactivateActor(Actor actor);
-
+    Task<Long> getActorCount();
 }

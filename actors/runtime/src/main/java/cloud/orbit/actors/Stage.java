@@ -1446,6 +1446,11 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         return localObjectsCleaner.deactivateActor(actor);
     }
 
+    @Override
+    public Task<Long> getActorCount() {
+        return Task.fromValue(objects.getLocalActorCount());
+    }
+
     @SuppressWarnings("unchecked")
     public <T extends ActorExtension> T getStorageExtensionFor(Class actorClass)
     {

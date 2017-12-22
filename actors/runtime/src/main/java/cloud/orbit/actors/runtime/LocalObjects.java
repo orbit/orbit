@@ -279,6 +279,13 @@ public class LocalObjects
         return localObjects.size();
     }
 
+    public long getLocalActorCount()
+    {
+        return localObjects.values().stream()
+                .filter(e -> e instanceof ActorBaseEntry)
+                .count();
+    }
+
     public void remove(Object key, Object object)
     {
         localObjects.remove(key, object);

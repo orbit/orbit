@@ -37,6 +37,9 @@ import cloud.orbit.actors.runtime.RuntimeActions;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.util.StringUtils;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static com.ea.async.Async.await;
 
 /**
@@ -133,6 +136,30 @@ public interface Actor
         }
 
         return Task.done();
+    }
+
+    /**
+     * Requests the global actor count across the cluster.
+     *
+     * @return A task indicating containing the total actor count across the cluster.
+     */
+    static Task<Long> getClusterActorCount()
+    {
+        final List<Task<Long>> countList = ActorRuntime.getRuntime().getAllNodes().stream()
+                .map(address ->
+                {
+                    final RuntimeActions runtimeActions = DefaultDescriptorFactory.observerRef(address, RuntimeActions.class, "");
+                    return runtimeActions.getActorCount();
+                })
+                .collect(Collectors.toList());
+
+        await(Task.allOf(countList));
+
+        final Long actorCount = countList.stream()
+                .mapToLong(Task<Long>::join)
+                .sum();
+
+        return Task.fromValue(actorCount);
     }
 
 

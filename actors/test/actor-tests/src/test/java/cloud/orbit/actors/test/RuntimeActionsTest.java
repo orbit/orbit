@@ -38,13 +38,13 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
-public class DeactivateOnDemandTest extends ActorBaseTest
+public class RuntimeActionsTest extends ActorBaseTest
 {
     @Test
     public void deactivateOnDemandTest() {
         final String actorId = UUID.randomUUID().toString();
-        Stage stage1 = createStage();
-        Stage stage2 = createStage();
+        final Stage stage1 = createStage();
+        final Stage stage2 = createStage();
 
         stage1.bind();
         CountActor actor = Actor.getReference(CountActor.class, actorId);
@@ -64,5 +64,26 @@ public class DeactivateOnDemandTest extends ActorBaseTest
 
         stage1.stop();
         stage2.stop();
+    }
+
+    @Test
+    public void clusterActorCountTest()
+    {
+        final Stage stage1 = createStage();
+        final Stage stage2 = createStage();
+
+        stage1.bind();
+        final long initialCount = Actor.getClusterActorCount().join();
+
+        stage2.bind();
+        assertEquals(initialCount, Actor.getClusterActorCount().join().longValue());
+
+        final CountActor countActor = Actor.getReference(CountActor.class, UUID.randomUUID().toString());
+        countActor.getCallCount().join();
+
+        assertEquals(initialCount + 1, Actor.getClusterActorCount().join().longValue());
+
+        stage1.bind();
+        assertEquals(initialCount + 1, Actor.getClusterActorCount().join().longValue());
     }
 }
