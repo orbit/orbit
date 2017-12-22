@@ -55,11 +55,11 @@ public class LocalObjects
 
 
     // used for searches in localObjects
-    private static class ObjectKey extends RemoteReference<Object>
+    public static class ObjectKey extends RemoteReference<Object>
     {
         private final int interfaceId;
 
-        public ObjectKey(NodeAddress address, int interfaceId, Object id)
+        private ObjectKey(NodeAddress address, int interfaceId, Object id)
         {
             super(id);
             this.address = address;
@@ -277,6 +277,13 @@ public class LocalObjects
     public int getLocalObjectCount()
     {
         return localObjects.size();
+    }
+
+    public long getLocalActorCount()
+    {
+        return localObjects.values().stream()
+                .filter(e -> e instanceof ActorBaseEntry)
+                .count();
     }
 
     public void remove(Object key, Object object)

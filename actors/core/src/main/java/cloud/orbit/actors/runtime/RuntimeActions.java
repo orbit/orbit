@@ -29,18 +29,11 @@
 package cloud.orbit.actors.runtime;
 
 import cloud.orbit.actors.Actor;
-import cloud.orbit.actors.extensions.ActorDeactivationExtension;
+import cloud.orbit.actors.ActorObserver;
 import cloud.orbit.concurrent.Task;
 
-import java.util.List;
-
-/**
- * @author Johno Crawford (johno@sulake.com)
- */
-public interface LocalObjectsCleaner
+public interface RuntimeActions extends ActorObserver
 {
-    Task cleanup();
-    Task shutdown();
     Task deactivateActor(Actor actor);
-    void setActorDeactivationExtensions(final List<ActorDeactivationExtension> extensionList);
+    Task<Long> getActorCount();
 }

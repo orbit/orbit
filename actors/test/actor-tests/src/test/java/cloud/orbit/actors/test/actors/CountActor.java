@@ -26,21 +26,13 @@
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package cloud.orbit.actors.runtime;
+package cloud.orbit.actors.test.actors;
 
 import cloud.orbit.actors.Actor;
-import cloud.orbit.actors.extensions.ActorDeactivationExtension;
 import cloud.orbit.concurrent.Task;
 
-import java.util.List;
-
-/**
- * @author Johno Crawford (johno@sulake.com)
- */
-public interface LocalObjectsCleaner
+public interface CountActor extends Actor
 {
-    Task cleanup();
-    Task shutdown();
-    Task deactivateActor(Actor actor);
-    void setActorDeactivationExtensions(final List<ActorDeactivationExtension> extensionList);
+    Task<Long> getCallCount();
+    Task incrementCount();
 }
