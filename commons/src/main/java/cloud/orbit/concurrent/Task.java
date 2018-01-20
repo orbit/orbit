@@ -763,10 +763,7 @@ public class Task<T> extends CompletableFuture<T>
      */
     public static <F extends CompletableFuture<?>> Task<Void> allOf(Stream<F> cfs)
     {
-        final List<F> futureList = cfs.collect(Collectors.toList());
-        @SuppressWarnings("rawtypes")
-        final CompletableFuture[] futureArray = futureList.toArray(new CompletableFuture[futureList.size()]);
-        return from(CompletableFuture.allOf(futureArray));
+        return from(CompletableFuture.allOf(cfs.toArray(CompletableFuture[]::new)));
     }
 
     /**
@@ -793,7 +790,7 @@ public class Task<T> extends CompletableFuture<T>
      */
     public static <F extends CompletableFuture<?>> Task<Object> anyOf(Stream<F> cfs)
     {
-        return from(CompletableFuture.anyOf((CompletableFuture[]) cfs.toArray(size -> new CompletableFuture[size])));
+        return from(CompletableFuture.anyOf((CompletableFuture[]) cfs.toArray(CompletableFuture[]::new)));
     }
 
 }
