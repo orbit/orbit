@@ -918,7 +918,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
                     {
                         if (state == NodeCapabilities.NodeState.RUNNING)
                         {
-                            this.stop().join();
+                            this.doStop().join();
                         }
                     }
                 });
@@ -972,8 +972,26 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         this.extensions.add(extension);
     }
 
+
     @Override
     public Task<?> stop()
+    {
+        if(shutdownHook != null) {
+            try
+            {
+                Runtime.getRuntime().removeShutdownHook(shutdownHook);
+                shutdownHook = null;
+            }
+            catch (IllegalStateException ex)
+            {
+                // VM is already shutting down so just eat the error
+            }
+        }
+
+        return doStop();
+    }
+
+    private Task<?> doStop()
     {
         if (getState() != NodeCapabilities.NodeState.RUNNING)
         {
@@ -1020,17 +1038,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         state = NodeCapabilities.NodeState.STOPPED;
         logger.debug("Stop done");
 
-        if(shutdownHook != null) {
-            try
-            {
-                Runtime.getRuntime().removeShutdownHook(shutdownHook);
-                shutdownHook = null;
-            }
-            catch (IllegalStateException ex)
-            {
-                // VM is already shutting down so just eat the error
-            }
-        }
+
 
         return Task.done();
     }
