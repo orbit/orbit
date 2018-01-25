@@ -230,6 +230,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
     private Pipeline pipeline;
 
     private final Task<Void> startPromise = new Task<>();
+    private Thread shutdownHook = null;
 
     public enum StageMode
     {
@@ -910,12 +911,15 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         logger.info("Stage started [{}]", runtimeIdentity());
 
         if(enableShutdownHook) {
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                if(state == NodeCapabilities.NodeState.RUNNING)
-                {
-                    this.stop().join();
-                }
-            }));
+            if(shutdownHook == null) {
+                shutdownHook = new Thread(() -> {
+                    if(state == NodeCapabilities.NodeState.RUNNING)
+                    {
+                        this.stop().join();
+                    }
+                });
+                Runtime.getRuntime().addShutdownHook(shutdownHook);
+            }
         }
 
         return Task.done();
