@@ -913,7 +913,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         if(enableShutdownHook) {
             if(shutdownHook == null) {
                 shutdownHook = new Thread(() -> {
-                    if(state == NodeCapabilities.NodeState.RUNNING)
+                    if (state == NodeCapabilities.NodeState.RUNNING)
                     {
                         this.stop().join();
                     }
@@ -1015,6 +1015,11 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
 
         state = NodeCapabilities.NodeState.STOPPED;
         logger.debug("Stop done");
+
+        if(shutdownHook != null) {
+            Runtime.getRuntime().removeShutdownHook(shutdownHook);
+            shutdownHook = null;
+        }
 
         return Task.done();
     }
