@@ -1021,8 +1021,15 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         logger.debug("Stop done");
 
         if(shutdownHook != null) {
-            Runtime.getRuntime().removeShutdownHook(shutdownHook);
-            shutdownHook = null;
+            try
+            {
+                Runtime.getRuntime().removeShutdownHook(shutdownHook);
+                shutdownHook = null;
+            }
+            catch (IllegalStateException ex)
+            {
+                // VM is already shutting down so just eat the error
+            }
         }
 
         return Task.done();
