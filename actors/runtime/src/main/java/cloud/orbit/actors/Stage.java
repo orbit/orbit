@@ -205,6 +205,8 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
     @Config("orbit.actors.broadcastActorDeactivations")
     private boolean broadcastActorDeactivations = true;
 
+    private boolean enableShutdownHook = true;
+
     private volatile NodeCapabilities.NodeState state;
 
     private ClusterPeer clusterPeer;
@@ -272,6 +274,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         private Boolean broadcastActorDeactivations = null;
         private Long deactivationTimeoutMillis;
         private Integer concurrentDeactivations;
+        private Boolean enableShutdownHook = null;
 
         private Timer timer;
 
@@ -468,6 +471,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             if(deactivationTimeoutMillis != null) stage.setDeactivationTimeout(deactivationTimeoutMillis);
             if(concurrentDeactivations != null) stage.setConcurrentDeactivations(concurrentDeactivations);
             if(broadcastActorDeactivations != null) stage.setBroadcastActorDeactivations(broadcastActorDeactivations);
+            if(enableShutdownHook != null) stage.setEnableShutdownHook(enableShutdownHook);
             return stage;
         }
 
@@ -647,6 +651,10 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
     public void setBroadcastActorDeactivations(boolean broadcastActorDeactivation)
     {
         this.broadcastActorDeactivations = broadcastActorDeactivation;
+    }
+
+    public void setEnableShutdownHook(boolean enableShutdownHook) {
+        this.enableShutdownHook = enableShutdownHook;
     }
 
     @Override
@@ -895,6 +903,12 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         await(startPromise);
 
         logger.info("Stage started [{}]", runtimeIdentity());
+
+        if(enableShutdownHook) {
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                this.stop().join();
+            }));
+        }
 
         return Task.done();
     }
