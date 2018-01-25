@@ -205,6 +205,8 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
     @Config("orbit.actors.broadcastActorDeactivations")
     private boolean broadcastActorDeactivations = true;
 
+    private boolean enableShutdownHook = true;
+
     private volatile NodeCapabilities.NodeState state;
 
     private ClusterPeer clusterPeer;
@@ -228,6 +230,8 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
     private Pipeline pipeline;
 
     private final Task<Void> startPromise = new Task<>();
+    private Thread shutdownHook = null;
+    private final Object shutdownLock = new Object();
 
     public enum StageMode
     {
@@ -272,6 +276,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         private Boolean broadcastActorDeactivations = null;
         private Long deactivationTimeoutMillis;
         private Integer concurrentDeactivations;
+        private Boolean enableShutdownHook = null;
 
         private Timer timer;
 
@@ -440,6 +445,11 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             return this;
         }
 
+        public Builder enableShutdownHook(final boolean enableShutdownHook) {
+            this.enableShutdownHook = enableShutdownHook;
+            return this;
+        }
+
         public Stage build()
         {
             final Stage stage = new Stage();
@@ -468,6 +478,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             if(deactivationTimeoutMillis != null) stage.setDeactivationTimeout(deactivationTimeoutMillis);
             if(concurrentDeactivations != null) stage.setConcurrentDeactivations(concurrentDeactivations);
             if(broadcastActorDeactivations != null) stage.setBroadcastActorDeactivations(broadcastActorDeactivations);
+            if(enableShutdownHook != null) stage.setEnableShutdownHook(enableShutdownHook);
             return stage;
         }
 
@@ -647,6 +658,10 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
     public void setBroadcastActorDeactivations(boolean broadcastActorDeactivation)
     {
         this.broadcastActorDeactivations = broadcastActorDeactivation;
+    }
+
+    public void setEnableShutdownHook(boolean enableShutdownHook) {
+        this.enableShutdownHook = enableShutdownHook;
     }
 
     @Override
@@ -896,6 +911,21 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
 
         logger.info("Stage started [{}]", runtimeIdentity());
 
+        if(enableShutdownHook) {
+            if(shutdownHook == null) {
+                shutdownHook = new Thread(() -> {
+                    synchronized (shutdownLock)
+                    {
+                        if (state == NodeCapabilities.NodeState.RUNNING)
+                        {
+                            this.doStop().join();
+                        }
+                    }
+                });
+                Runtime.getRuntime().addShutdownHook(shutdownHook);
+            }
+        }
+
         return Task.done();
     }
 
@@ -942,8 +972,26 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         this.extensions.add(extension);
     }
 
+
     @Override
     public Task<?> stop()
+    {
+        if(shutdownHook != null) {
+            try
+            {
+                Runtime.getRuntime().removeShutdownHook(shutdownHook);
+                shutdownHook = null;
+            }
+            catch (IllegalStateException ex)
+            {
+                // VM is already shutting down so just eat the error
+            }
+        }
+
+        return doStop();
+    }
+
+    private Task<?> doStop()
     {
         if (getState() != NodeCapabilities.NodeState.RUNNING)
         {
@@ -989,6 +1037,8 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
 
         state = NodeCapabilities.NodeState.STOPPED;
         logger.debug("Stop done");
+
+
 
         return Task.done();
     }
