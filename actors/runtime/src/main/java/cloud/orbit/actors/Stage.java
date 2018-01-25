@@ -231,6 +231,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
 
     private final Task<Void> startPromise = new Task<>();
     private Thread shutdownHook = null;
+    private final Object shutdownLock = new Object();
 
     public enum StageMode
     {
@@ -913,9 +914,12 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         if(enableShutdownHook) {
             if(shutdownHook == null) {
                 shutdownHook = new Thread(() -> {
-                    if (state == NodeCapabilities.NodeState.RUNNING)
+                    synchronized (shutdownLock)
                     {
-                        this.stop().join();
+                        if (state == NodeCapabilities.NodeState.RUNNING)
+                        {
+                            this.stop().join();
+                        }
                     }
                 });
                 Runtime.getRuntime().addShutdownHook(shutdownHook);
