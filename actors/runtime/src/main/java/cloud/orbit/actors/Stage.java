@@ -443,6 +443,11 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             return this;
         }
 
+        public Builder enableShutdownHook(final boolean enableShutdownHook) {
+            this.enableShutdownHook = enableShutdownHook;
+            return this;
+        }
+
         public Stage build()
         {
             final Stage stage = new Stage();
