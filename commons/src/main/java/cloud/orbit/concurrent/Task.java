@@ -64,8 +64,6 @@ import java.util.stream.Stream;
  */
 public class Task<T> extends CompletableFuture<T>
 {
-    private static final Void NIL = null;
-
     private static Executor commonPool = ExecutorUtils.newScalingThreadPool(100);
     private static ScheduledExecutorService schedulerExecutor = new ScheduledThreadPoolExecutor(10, runnable -> {
         Thread thread = Executors.defaultThreadFactory().newThread(runnable);
@@ -73,6 +71,23 @@ public class Task<T> extends CompletableFuture<T>
         thread.setDaemon(true);
         return thread;
     });
+
+    private final static Task<Void> COMPLETED_TASK = new Task<Void>() {
+        @Override
+        public void obtrudeValue(final Void value)
+        {
+            throw new UnsupportedOperationException("obtrudeValue not supported");
+        }
+
+        @Override
+        public void obtrudeException(final Throwable ex)
+        {
+            throw new UnsupportedOperationException("obtrudeException not supported");
+        }
+    };
+    static {
+        COMPLETED_TASK.internalComplete(null);
+    }
 
     // TODO: make all callbacks async by default and using the current executor
     // what "current executor' means will have to be defined.
@@ -379,9 +394,7 @@ public class Task<T> extends CompletableFuture<T>
 
     public static Task<Void> done()
     {
-        final Task<Void> task = new Task<>();
-        task.internalComplete(NIL);
-        return task;
+        return COMPLETED_TASK;
     }
 
     @Override
