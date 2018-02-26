@@ -1,4 +1,4 @@
-<img src="http://www.orbit.cloud/img/orbit-logo-black.png" alt="Orbit Logo" width="200px"/>
+<img src="https://www.orbit.cloud/img/orbit-logo-black.png" alt="Orbit Logo" width="200px"/>
 
 [![Release](https://img.shields.io/github/release/orbit/orbit.svg)](https://github.com/orbit/orbit/releases)
 [![Maven Central](https://img.shields.io/maven-central/v/cloud.orbit/orbit-runtime.svg)](https://repo1.maven.org/maven2/cloud/orbit/)
@@ -9,7 +9,7 @@
 
 Orbit is a framework to write distributed systems using virtual actors on the JVM. It allows developers to write highly distributed and scalable applications while greatly simplifying clustering, discovery, networking, state management, actor lifetime and more.
 
-<a href="https://github.com/orbit/orbit/wiki/Duke's-Choice-Award-2016"><img src="http://www.orbit.cloud/img/dca/dca_logo.png" alt="Duke's Choice Award Logo" width="200px" /></a><br />
+<a href="https://github.com/orbit/orbit/wiki/Duke's-Choice-Award-2016"><img src="https://www.orbit.cloud/img/dca/dca_logo.png" alt="Duke's Choice Award Logo" width="200px" /></a><br />
 Orbit received the 2016 Duke's Choice Award for Open Source, read [here](https://github.com/orbit/orbit/wiki/Duke's-Choice-Award-2016) for more information. 
 
 Full Documentation
