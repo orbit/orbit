@@ -27,28 +27,47 @@
  */
 package cloud.orbit.actors.runtime;
 
-import com.esotericsoftware.kryo.io.Output;
+import java.lang.ref.SoftReference;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Function;
 
-class KryoOutputPool extends KryoIOPool<Output>
+abstract class KryoIOPool<T>
 {
 
-    private static final int MAX_BUFFER_SIZE = 768 * 1024;
-    static final int MAX_POOLED_BUFFER_SIZE = 512 * 1024;
+    private final Queue<SoftReference<T>> queue = new ConcurrentLinkedQueue<>();
 
-    @Override
-    protected Output create(int bufferSize)
+    private T borrow(final int bufferSize)
     {
-        return new Output(bufferSize, MAX_BUFFER_SIZE);
+        T element;
+        SoftReference<T> reference;
+        while ((reference = queue.poll()) != null)
+        {
+            if ((element = reference.get()) != null)
+            {
+                return element;
+            }
+        }
+        return create(bufferSize);
     }
 
-    @Override
-    protected boolean recycle(Output output)
+    protected abstract T create(final int bufferSize);
+
+    protected abstract boolean recycle(final T element);
+
+    <R> R run(final Function<T, R> function, final int bufferSize)
     {
-        if (output.getBuffer().length < MAX_POOLED_BUFFER_SIZE)
+        final T element = borrow(bufferSize);
+        try
         {
-            output.clear();
-            return true;
+            return function.apply(element);
         }
-        return false; // discard
+        finally
+        {
+            if (recycle(element))
+            {
+                queue.offer(new SoftReference<>(element));
+            }
+        }
     }
 }

@@ -25,65 +25,29 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package cloud.orbit.actors.runtime;
 
 import com.esotericsoftware.kryo.io.Input;
 
-import java.lang.ref.SoftReference;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Function;
-
-/**
- * @author Johno Crawford (johno@sulake.com)
- */
-class KryoInputPool
+class KryoInputPool extends KryoIOPool<Input>
 {
-    private static final int DEFAULT_MAX_POOLED_BUFFER_SIZE = 512 * 1024;
 
-    private final int maxPooledBufferSize = DEFAULT_MAX_POOLED_BUFFER_SIZE;
+    static final int MAX_POOLED_BUFFER_SIZE = 512 * 1024;
 
-    private final Queue<SoftReference<Input>> queue = new ConcurrentLinkedQueue<>();
-
-    public <R> R run(final Function<Input, R> callback, final int bufferSize)
-    {
-        final Input element = borrow(bufferSize);
-        try
-        {
-            return callback.apply(element);
-        }
-        finally
-        {
-            release(element);
-        }
-    }
-
-    private Input create(final int bufferSize)
+    @Override
+    protected Input create(int bufferSize)
     {
         return new Input(bufferSize);
     }
 
-    private Input borrow(final int bufferSize)
+    @Override
+    protected boolean recycle(Input input)
     {
-        Input input;
-        SoftReference<Input> reference;
-        while ((reference = queue.poll()) != null)
-        {
-            if ((input = reference.get()) != null)
-            {
-                return input;
-            }
-        }
-        return create(bufferSize);
-    }
-
-    private void release(Input input)
-    {
-        if (input.getBuffer().length < maxPooledBufferSize)
+        if (input.getBuffer().length < MAX_POOLED_BUFFER_SIZE)
         {
             input.setInputStream(null);
-            queue.offer(new SoftReference<>(input));
+            return true;
         }
+        return false; // discard
     }
 }
