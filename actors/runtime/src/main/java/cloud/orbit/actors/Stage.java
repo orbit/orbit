@@ -207,6 +207,8 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
 
     private boolean enableShutdownHook = true;
 
+    private boolean enableMessageLoopback = true;
+
     private volatile NodeCapabilities.NodeState state;
 
     private ClusterPeer clusterPeer;
@@ -277,12 +279,19 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         private Long deactivationTimeoutMillis;
         private Integer concurrentDeactivations;
         private Boolean enableShutdownHook = null;
+        private Boolean enableMessageLoopback;
 
         private Timer timer;
 
         public Builder clock(Clock clock)
         {
             this.clock = clock;
+            return this;
+        }
+
+        public Builder enableMessageLoopback(Boolean enableMessageLoopback)
+        {
+            this.enableMessageLoopback = enableMessageLoopback;
             return this;
         }
 
@@ -479,6 +488,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             if(concurrentDeactivations != null) stage.setConcurrentDeactivations(concurrentDeactivations);
             if(broadcastActorDeactivations != null) stage.setBroadcastActorDeactivations(broadcastActorDeactivations);
             if(enableShutdownHook != null) stage.setEnableShutdownHook(enableShutdownHook);
+            if(enableMessageLoopback != null) stage.setEnableMessageLoopback(enableMessageLoopback);
             return stage;
         }
 
@@ -660,8 +670,14 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         this.broadcastActorDeactivations = broadcastActorDeactivation;
     }
 
-    public void setEnableShutdownHook(boolean enableShutdownHook) {
+    public void setEnableShutdownHook(boolean enableShutdownHook)
+    {
         this.enableShutdownHook = enableShutdownHook;
+    }
+
+    public void setEnableMessageLoopback(final boolean enableMessageLoopback)
+    {
+        this.enableMessageLoopback = enableMessageLoopback;
     }
 
     @Override
@@ -811,10 +827,13 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         // handles invocation messages and request-response matching
         pipeline.addLast(DefaultHandlers.MESSAGING, messaging);
 
-        final MessageLoopback messageLoopback = new MessageLoopback();
-        messageLoopback.setCloner(messageLoopbackObjectCloner != null ? messageLoopbackObjectCloner : new KryoSerializer());
-        messageLoopback.setRuntime(this);
-        pipeline.addLast(messageLoopback.getName(), messageLoopback);
+        if (enableMessageLoopback)
+        {
+            final MessageLoopback messageLoopback = new MessageLoopback();
+            messageLoopback.setCloner(messageLoopbackObjectCloner != null ? messageLoopbackObjectCloner : new KryoSerializer());
+            messageLoopback.setRuntime(this);
+            pipeline.addLast(messageLoopback.getName(), messageLoopback);
+        }
 
         // message serializer handler
         pipeline.addLast(DefaultHandlers.SERIALIZATION, new SerializationHandler(this, messageSerializer));
@@ -911,9 +930,12 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
 
         logger.info("Stage started [{}]", runtimeIdentity());
 
-        if(enableShutdownHook) {
-            if(shutdownHook == null) {
-                shutdownHook = new Thread(() -> {
+        if (enableShutdownHook)
+        {
+            if (shutdownHook == null)
+            {
+                shutdownHook = new Thread(() ->
+                {
                     synchronized (shutdownLock)
                     {
                         if (state == NodeCapabilities.NodeState.RUNNING)
