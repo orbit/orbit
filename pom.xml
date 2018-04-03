@@ -34,7 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	<parent>
 		<groupId>cloud.orbit</groupId>
 		<artifactId>orbit-java-parent</artifactId>
-		<version>1</version>
+		<version>2</version>
 	</parent>
 	
 	<groupId>cloud.orbit</groupId>
