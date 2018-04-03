@@ -205,8 +205,8 @@ public class DefaultResponseCachingExtension
         try
         {
             final MessageDigest md = messageDigest.newDigest();
-            md.digest(messageSerializer.serializeMessage(runtime, new Message().withPayload(params)));
-            return String.format("%032X", new BigInteger(1, md.digest()));
+            final byte[] hashValue = md.digest(messageSerializer.serializeMessage(runtime, new Message().withPayload(params)));
+            return String.format("%032X", new BigInteger(1, hashValue));
         }
         catch (Exception e)
         {
