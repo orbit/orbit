@@ -59,19 +59,19 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.4</version>
+            <version>3.7</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.hk2</groupId>
             <artifactId>hk2</artifactId>
-            <version>2.5.0-b03</version>
+            <version>2.5.0-b61</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <scope>test</scope>
-            <version>1.7.21</version>
+            <version>1.7.25</version>
         </dependency>
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>

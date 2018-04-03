@@ -44,7 +44,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <name>Orbit Internal Parent</name>
 
     <properties>
-        <ea.async.version>1.0.6</ea.async.version>
+        <ea.async.version>1.1.1</ea.async.version>
     </properties>
 
     <modules>
@@ -87,7 +87,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.0.0</version>
+                    <version>3.1.0</version>
                 </plugin>
 
                 <plugin>

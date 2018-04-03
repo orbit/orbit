@@ -70,7 +70,8 @@ public class TaskTest
                         .collect(Collectors.toSet());
 
         Set<String> ignore = new HashSet<>(Arrays.asList(
-                "get,getNow,cancel,completedFuture,obtrudeValue,obtrudeException,isDone"
+                ("get,getNow,cancel,completedFuture,obtrudeValue,obtrudeException,isDone,completeAsync," +
+                        "completeOnTimeout,completedStage,failedFuture,failedStage,orTimeout")
                         .split(",")));
 
 

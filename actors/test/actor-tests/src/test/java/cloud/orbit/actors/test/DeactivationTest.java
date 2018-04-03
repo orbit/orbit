@@ -113,25 +113,6 @@ public class DeactivationTest extends ClientTest
         assertEquals(2, set.size());
     }
 
-    @Test
-    public void dirtyLocalCache() throws ExecutionException, InterruptedException, TimeoutException
-    {
-        clock.stop();
-        Stage stage1 = createStage();
-        Stage stage2 = createStage();
-        SomeActor actor1 = Actor.getReference(SomeActor.class, "1");
-
-        stage1.bind();
-        actor1.sayHello("huuhaa").join();
-        stage2.bind();
-        assertNotNull(actor1.sayHelloOnlyIfActivated().join());
-        clock.incrementTimeMillis(TimeUnit.HOURS.toMillis(1));
-        stage1.cleanup().join();
-        eventuallyTrue(6000, () -> stage1.locateActor(RemoteReference.from(actor1), false).get() == null);
-        assertNull(actor1.sayHelloOnlyIfActivated().join());
-        dumpMessages();
-    }
-
     @SuppressWarnings("unused")
     @Test
     @Ignore
