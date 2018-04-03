@@ -32,6 +32,7 @@ import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.cluster.NodeAddressImpl;
 import cloud.orbit.actors.extensions.MessageSerializer;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInput;
@@ -65,9 +66,10 @@ public class JavaMessageSerializer implements MessageSerializer
     }
 
     @Override
-    public void serializeMessage(final BasicRuntime runtime, OutputStream outputStream, Message message) throws Exception
+    public byte[] serializeMessage(final BasicRuntime runtime, Message message) throws Exception
     {
-        final ObjectOutput out = createObjectOutput(runtime, outputStream);
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final ObjectOutput out = createObjectOutput(runtime, baos);
         out.writeByte(message.getMessageType());
         out.writeInt(message.getMessageId());
         if (message.getReferenceAddress() != null)
@@ -87,6 +89,7 @@ public class JavaMessageSerializer implements MessageSerializer
         out.writeObject(message.getHeaders());
         out.writeObject(message.getFromNode());
         out.writeObject(message.getPayload());
+        return baos.toByteArray();
     }
 
     protected ObjectOutput createObjectOutput(final BasicRuntime runtime, final OutputStream outputStream) throws IOException

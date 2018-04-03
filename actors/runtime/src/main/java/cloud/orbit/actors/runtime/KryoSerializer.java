@@ -468,11 +468,11 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
     }
 
     @Override
-    public void serializeMessage(BasicRuntime basicRuntime, OutputStream outputStream, Message message) throws Exception
+    public byte[] serializeMessage(BasicRuntime basicRuntime, Message message) throws Exception
     {
-        kryoPool.run(kryo ->
+        return kryoPool.run(kryo ->
         {
-            try (Output out = new Output(outputStream))
+            try (Output out = new Output(1024, 4096)) // TODO: pool Output
             {
                 out.writeByte(message.getMessageType());
                 out.writeInt(message.getMessageId());
@@ -483,7 +483,7 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
                 writeHeaders(kryo, out, message.getHeaders());
                 writeNodeAddress(out, message.getFromNode());
                 writePayload(kryo, out, message);
-                return null;
+                return out.toBytes();
             }
         });
     }

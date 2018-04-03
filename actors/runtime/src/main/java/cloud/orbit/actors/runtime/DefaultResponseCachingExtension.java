@@ -48,11 +48,8 @@ import cloud.orbit.exception.UncheckedException;
 import cloud.orbit.tuples.Pair;
 import cloud.orbit.util.AnnotationCache;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
-import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.time.Clock;
 import java.util.concurrent.Executor;
@@ -68,14 +65,6 @@ public class DefaultResponseCachingExtension
     private BasicRuntime runtime;
     private final AnnotationCache<CacheResponse> cacheResponseCache = new AnnotationCache<>(CacheResponse.class);
     private final MessageDigestFactory messageDigest = new MessageDigestFactory("SHA-256");
-
-    private static class NullOutputStream extends OutputStream
-    {
-        @Override
-        public void write(int b) throws IOException
-        {
-        }
-    }
 
     private ExecutionObjectCloner objectCloner;
 
@@ -216,9 +205,7 @@ public class DefaultResponseCachingExtension
         try
         {
             final MessageDigest md = messageDigest.newDigest();
-            final DigestOutputStream d = new DigestOutputStream(new NullOutputStream(), md);
-            messageSerializer.serializeMessage(runtime, d, new Message().withPayload(params));
-            d.close();
+            md.digest(messageSerializer.serializeMessage(runtime, new Message().withPayload(params)));
             return String.format("%032X", new BigInteger(1, md.digest()));
         }
         catch (Exception e)

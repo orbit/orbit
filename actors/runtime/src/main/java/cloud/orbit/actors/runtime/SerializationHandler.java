@@ -28,6 +28,9 @@
 
 package cloud.orbit.actors.runtime;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.extensions.MessageSerializer;
 import cloud.orbit.actors.net.HandlerAdapter;
@@ -36,11 +39,7 @@ import cloud.orbit.concurrent.Task;
 import cloud.orbit.exception.UncheckedException;
 import cloud.orbit.tuples.Pair;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 
 public class SerializationHandler extends HandlerAdapter
 {
@@ -61,12 +60,11 @@ public class SerializationHandler extends HandlerAdapter
         {
             return ctx.write(msg);
         }
-        Message message = (Message) msg;
+        final Message message = (Message) msg;
 
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try
         {
-            messageSerializer.serializeMessage(runtime, baos, message);
+            return ctx.write(Pair.of(message.getToNode(), messageSerializer.serializeMessage(runtime, message)));
         }
         catch (Exception ex2)
         {
@@ -78,7 +76,6 @@ public class SerializationHandler extends HandlerAdapter
                 //return Task.fromException(ex2);
                 throw new UncheckedException("Error serializing message", ex2);
             }
-            baos.reset();
             if (logger.isDebugEnabled())
             {
                 logger.debug("Error sending response", ex2);
@@ -96,11 +93,10 @@ public class SerializationHandler extends HandlerAdapter
                     message.withMessageType(MessageDefinitions.RESPONSE_ERROR)
                             .withPayload(ex2);
                 }
-                messageSerializer.serializeMessage(runtime, baos, message);
+                return ctx.write(Pair.of(message.getToNode(), messageSerializer.serializeMessage(runtime, message)));
             }
             catch (Exception ex3)
             {
-                baos.reset();
                 if (logger.isDebugEnabled())
                 {
                     logger.debug("Failed twice sending result. ", ex2);
@@ -109,16 +105,14 @@ public class SerializationHandler extends HandlerAdapter
                 {
                     message.withMessageType(MessageDefinitions.RESPONSE_PROTOCOL_ERROR)
                             .withPayload("failed twice sending response");
-                    messageSerializer.serializeMessage(runtime, baos, message);
+                    return ctx.write(Pair.of(message.getToNode(), messageSerializer.serializeMessage(runtime, message)));
                 }
                 catch (Exception ex4)
                 {
-                    logger.error("Failed sending exception. ", ex4);
+                    throw new UncheckedException("Failed sending exception. ", ex4);
                 }
             }
         }
-
-        return ctx.write(Pair.of(message.getToNode(), baos.toByteArray()));
     }
 
     private Throwable toSerializationSafeException(final Throwable notSerializable, final Throwable secondaryException)

@@ -152,23 +152,15 @@ public class JsonSerializerTest
     {
         Message message = new Message();
         JsonMessageSerializer jsonMessageSerializer = new JsonMessageSerializer();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        out.reset();
         message.setPayload(Arrays.asList(1, 2, 3));
-        jsonMessageSerializer.serializeMessage(null, out, message);
-        System.out.println(new String(out.toByteArray()));
+        System.out.println(new String(jsonMessageSerializer.serializeMessage(null, message)));
 
-        out.reset();
         message.setPayload(new Object[]{ 1, 2, 3 });
-        jsonMessageSerializer.serializeMessage(null, out, message);
-        System.out.println(new String(out.toByteArray()));
+        System.out.println(new String(jsonMessageSerializer.serializeMessage(null, message)));
 
-        out.reset();
         message.setPayload(new ArrayList(Arrays.asList(new Object[]{ 1, 2, 3 })));
-        jsonMessageSerializer.serializeMessage(null, out, message);
-        System.out.println(new String(out.toByteArray()));
-
+        System.out.println(new String(jsonMessageSerializer.serializeMessage(null, message)));
     }
 }
 
