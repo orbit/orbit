@@ -10,6 +10,7 @@ public class NodeInfo
 {
     boolean active;
     final NodeAddress address;
+    String placementGroup;
     NodeState state = NodeState.RUNNING;
     NodeCapabilities nodeCapabilities;
     boolean cannotHostActors;
