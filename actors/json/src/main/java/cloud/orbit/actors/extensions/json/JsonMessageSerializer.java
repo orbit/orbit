@@ -101,12 +101,12 @@ public class JsonMessageSerializer implements MessageSerializer
 
 
     @Override
-    public Message deserializeMessage(final BasicRuntime runtime, final InputStream inputStream) throws Exception
+    public Message deserializeMessage(final BasicRuntime runtime, final byte[] payload) throws Exception
     {
         ensureInit(runtime);
         try
         {
-            final Message message = mapper.readValue(inputStream, Message.class);
+            final Message message = mapper.readValue(payload, Message.class);
 
             // decode payload parameters according to the interface/method
             if (message.getPayload() != null &&

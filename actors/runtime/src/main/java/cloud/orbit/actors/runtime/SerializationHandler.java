@@ -39,8 +39,6 @@ import cloud.orbit.concurrent.Task;
 import cloud.orbit.exception.UncheckedException;
 import cloud.orbit.tuples.Pair;
 
-import java.io.ByteArrayInputStream;
-
 public class SerializationHandler extends HandlerAdapter
 {
     private static Logger logger = LoggerFactory.getLogger(SerializationHandler.class);
@@ -134,11 +132,10 @@ public class SerializationHandler extends HandlerAdapter
     public void onRead(HandlerContext ctx, final Object msg)
     {
         Pair<NodeAddress, byte[]> message = (Pair<NodeAddress, byte[]>) msg;
-        final ByteArrayInputStream bais = new ByteArrayInputStream(message.getRight());
         Message msg1 = null;
         try
         {
-            msg1 = messageSerializer.deserializeMessage(runtime, bais);
+            msg1 = messageSerializer.deserializeMessage(runtime, message.getRight());
             if (msg1.getFromNode() == null)
             {
                 msg1.setFromNode(message.getLeft());

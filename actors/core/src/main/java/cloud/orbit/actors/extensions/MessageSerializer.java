@@ -31,14 +31,12 @@ package cloud.orbit.actors.extensions;
 import cloud.orbit.actors.runtime.BasicRuntime;
 import cloud.orbit.actors.runtime.Message;
 
-import java.io.InputStream;
-
 /**
  * Extension interface to define how actor messages are serialized.
  */
 public interface MessageSerializer extends ActorExtension
 {
-    Message deserializeMessage(final BasicRuntime runtime, final InputStream inputStream) throws Exception;
+    Message deserializeMessage(final BasicRuntime runtime, final byte[] payload) throws Exception;
 
     byte[] serializeMessage(final BasicRuntime runtime, Message message) throws Exception;
 }

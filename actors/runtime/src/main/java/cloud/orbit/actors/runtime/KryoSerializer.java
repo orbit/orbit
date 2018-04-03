@@ -81,7 +81,6 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
 
     private final KryoPool kryoPool;
     private final KryoOutputPool outputPool = new KryoOutputPool();
-    private final KryoInputPool inputPool = new KryoInputPool();
 
     public KryoSerializer()
     {
@@ -390,25 +389,23 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
     }
 
     @Override
-    public Message deserializeMessage(BasicRuntime basicRuntime, InputStream inputStream) throws Exception
+    public Message deserializeMessage(BasicRuntime basicRuntime, final byte[] payload) throws Exception
     {
-        return inputPool.run(in -> {
-            in.setInputStream(inputStream);
-            return kryoPool.run(kryo ->
-            {
-                Message message = new Message();
-                message.setMessageType(in.readByte());
-                message.setMessageId(in.readInt());
-                message.setReferenceAddress(readNodeAddress(in));
-                message.setInterfaceId(in.readInt());
-                message.setMethodId(in.readInt());
-                message.setObjectId(readObjectId(kryo, in));
-                message.setHeaders(readHeaders(kryo, in));
-                message.setFromNode(readNodeAddress(in));
-                message.setPayload(readPayload(kryo, in));
-                return message;
-            });
-        }, DEFAULT_BUFFER_SIZE);
+        return kryoPool.run(kryo ->
+        {
+            final Input in = new Input(payload);
+            final Message message = new Message();
+            message.setMessageType(in.readByte());
+            message.setMessageId(in.readInt());
+            message.setReferenceAddress(readNodeAddress(in));
+            message.setInterfaceId(in.readInt());
+            message.setMethodId(in.readInt());
+            message.setObjectId(readObjectId(kryo, in));
+            message.setHeaders(readHeaders(kryo, in));
+            message.setFromNode(readNodeAddress(in));
+            message.setPayload(readPayload(kryo, in));
+            return message;
+        });
     }
 
     private static Object readPayload(Kryo kryo, Input in)

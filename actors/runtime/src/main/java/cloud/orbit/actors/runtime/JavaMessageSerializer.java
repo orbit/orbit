@@ -32,6 +32,7 @@ import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.cluster.NodeAddressImpl;
 import cloud.orbit.actors.extensions.MessageSerializer;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,9 +48,9 @@ import java.util.UUID;
 public class JavaMessageSerializer implements MessageSerializer
 {
     @Override
-    public Message deserializeMessage(final BasicRuntime runtime, final InputStream inputStream) throws Exception
+    public Message deserializeMessage(final BasicRuntime runtime, final byte[] payload) throws Exception
     {
-        final ObjectInput in = createObjectInput(runtime, inputStream);
+        final ObjectInput in = createObjectInput(runtime, new ByteArrayInputStream(payload));
         final Message message = new Message();
         message.setMessageType(in.readByte());
         message.setMessageId(in.readInt());
