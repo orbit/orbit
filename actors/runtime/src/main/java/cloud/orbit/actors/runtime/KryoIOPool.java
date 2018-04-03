@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2018 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -25,18 +25,49 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package cloud.orbit.actors.runtime;
 
-package cloud.orbit.actors.extensions;
+import java.lang.ref.SoftReference;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Function;
 
-import cloud.orbit.actors.runtime.BasicRuntime;
-import cloud.orbit.actors.runtime.Message;
-
-/**
- * Extension interface to define how actor messages are serialized.
- */
-public interface MessageSerializer extends ActorExtension
+abstract class KryoIOPool<T>
 {
-    Message deserializeMessage(final BasicRuntime runtime, final byte[] payload) throws Exception;
 
-    byte[] serializeMessage(final BasicRuntime runtime, Message message) throws Exception;
+    private final Queue<SoftReference<T>> queue = new ConcurrentLinkedQueue<>();
+
+    private T borrow(final int bufferSize)
+    {
+        T element;
+        SoftReference<T> reference;
+        while ((reference = queue.poll()) != null)
+        {
+            if ((element = reference.get()) != null)
+            {
+                return element;
+            }
+        }
+        return create(bufferSize);
+    }
+
+    protected abstract T create(final int bufferSize);
+
+    protected abstract boolean recycle(final T element);
+
+    <R> R run(final Function<T, R> function, final int bufferSize)
+    {
+        final T element = borrow(bufferSize);
+        try
+        {
+            return function.apply(element);
+        }
+        finally
+        {
+            if (recycle(element))
+            {
+                queue.offer(new SoftReference<>(element));
+            }
+        }
+    }
 }

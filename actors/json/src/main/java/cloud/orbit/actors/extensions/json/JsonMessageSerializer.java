@@ -101,12 +101,12 @@ public class JsonMessageSerializer implements MessageSerializer
 
 
     @Override
-    public Message deserializeMessage(final BasicRuntime runtime, final InputStream inputStream) throws Exception
+    public Message deserializeMessage(final BasicRuntime runtime, final byte[] payload) throws Exception
     {
         ensureInit(runtime);
         try
         {
-            final Message message = mapper.readValue(inputStream, Message.class);
+            final Message message = mapper.readValue(payload, Message.class);
 
             // decode payload parameters according to the interface/method
             if (message.getPayload() != null &&
@@ -144,7 +144,7 @@ public class JsonMessageSerializer implements MessageSerializer
     }
 
     @Override
-    public void serializeMessage(final BasicRuntime runtime, final OutputStream out, final Message message) throws Exception
+    public byte[] serializeMessage(final BasicRuntime runtime, final Message message) throws Exception
     {
         ensureInit(runtime);
         if (message.getPayload() instanceof Throwable && message.getMessageType() == MessageDefinitions.RESPONSE_ERROR)
@@ -161,7 +161,7 @@ public class JsonMessageSerializer implements MessageSerializer
         {
             message.setHeaders(null);
         }
-        mapper.writeValue(out, message);
+        return mapper.writeValueAsBytes(message);
     }
 
     private Object[] castArgs(final Type[] genericParameterTypes, final Object payload)

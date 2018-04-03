@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2018 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -25,18 +25,55 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package cloud.orbit.actors.runtime;
 
-package cloud.orbit.actors.extensions;
+import org.junit.Before;
+import org.junit.Test;
 
-import cloud.orbit.actors.runtime.BasicRuntime;
-import cloud.orbit.actors.runtime.Message;
+import com.esotericsoftware.kryo.io.Output;
 
-/**
- * Extension interface to define how actor messages are serialized.
- */
-public interface MessageSerializer extends ActorExtension
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class KryoOutputPoolTest
 {
-    Message deserializeMessage(final BasicRuntime runtime, final byte[] payload) throws Exception;
 
-    byte[] serializeMessage(final BasicRuntime runtime, Message message) throws Exception;
+    private KryoOutputPool kryoOutputPool;
+
+    @Before
+    public void setUp() throws Exception {
+        kryoOutputPool = new KryoOutputPool();
+    }
+
+    @Test
+    public void discardOutput() {
+        final Output[] result = new Output[2];
+        kryoOutputPool.run(output -> {
+            result[0] = output;
+            return null;
+        }, KryoOutputPool.MAX_POOLED_BUFFER_SIZE + 1);
+        kryoOutputPool.run(output -> {
+            result[1] = output;
+            return null;
+        }, 0);
+        assertTrue(result[0] != result[1]);
+    }
+
+    @Test
+    public void recycleOutput() {
+        final Output[] result = new Output[2];
+        kryoOutputPool.run(output -> {
+            output.writeInt(1);
+            assertEquals(Integer.BYTES, output.position());
+            result[0] = output;
+            return null;
+        }, 0);
+        assertEquals(0, result[0].position());
+        kryoOutputPool.run(output -> {
+            assertEquals(0, output.position());
+            result[1] = output;
+            return null;
+        }, 0);
+        assertTrue(result[0] == result[1]);
+    }
 }
