@@ -25,27 +25,30 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package cloud.orbit.actors.runtime;
 
-import com.esotericsoftware.kryo.io.Output;
-
-class KryoOutputPool extends KryoIOPool<Output>
+/**
+ * @author Johno Crawford (johno@sulake.com)
+ */
+public class KryoOutputPool extends KryoIOPool<ByteArrayOutput>
 {
 
-    private static final int MAX_BUFFER_SIZE = 768 * 1024;
+    private static final int MAX_BUFFER_SIZE = 1024 * 1024;
     static final int MAX_POOLED_BUFFER_SIZE = 512 * 1024;
 
     @Override
-    protected Output create(int bufferSize)
+    protected ByteArrayOutput create(int bufferSize)
     {
-        return new Output(bufferSize, MAX_BUFFER_SIZE);
+        return new ByteArrayOutput(bufferSize, MAX_BUFFER_SIZE, new BufferAwareByteArrayOutputStream(bufferSize));
     }
 
     @Override
-    protected boolean recycle(Output output)
+    protected boolean recycle(ByteArrayOutput output)
     {
-        if (output.getBuffer().length < MAX_POOLED_BUFFER_SIZE)
+        if (output.getByteArrayOutputStream().getBufferSize() < MAX_POOLED_BUFFER_SIZE)
         {
+            output.getByteArrayOutputStream().reset();
             output.clear();
             return true;
         }

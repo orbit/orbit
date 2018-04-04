@@ -25,56 +25,28 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package cloud.orbit.actors.runtime;
 
-import org.junit.Before;
-import org.junit.Test;
+package cloud.orbit.actors.runtime;
 
 import com.esotericsoftware.kryo.io.Output;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-public class KryoOutputPoolTest
+/**
+ * Convenience class to avoid extra object allocation and casting.
+ */
+final class ByteArrayOutput extends Output
 {
 
-    private KryoOutputPool kryoOutputPool;
+    private final BufferAwareByteArrayOutputStream stream;
 
-    @Before
-    public void setUp() throws Exception {
-        kryoOutputPool = new KryoOutputPool();
+    ByteArrayOutput(final int bufferSize, final int maxBufferSize, final BufferAwareByteArrayOutputStream stream)
+    {
+        super(bufferSize, maxBufferSize);
+        super.setOutputStream(stream);
+        this.stream = stream;
     }
 
-    @Test
-    public void discardOutput() {
-        final Output[] result = new Output[2];
-        kryoOutputPool.run(output -> {
-            result[0] = output;
-            return null;
-        }, KryoOutputPool.MAX_POOLED_BUFFER_SIZE + 1);
-        kryoOutputPool.run(output -> {
-            result[1] = output;
-            return null;
-        }, 0);
-        assertTrue(result[0] != result[1]);
-    }
-
-    @Test
-    public void recycleOutput() {
-        final ByteArrayOutput[] result = new ByteArrayOutput[2];
-        kryoOutputPool.run(output -> {
-            output.writeInt(1);
-            assertEquals(Integer.BYTES, output.position());
-            result[0] = output;
-            return null;
-        }, 0);
-        assertEquals(0, result[0].position());
-        assertEquals(0, result[0].getByteArrayOutputStream().size());
-        kryoOutputPool.run(output -> {
-            assertEquals(0, output.position());
-            result[1] = output;
-            return null;
-        }, 0);
-        assertTrue(result[0] == result[1]);
+    BufferAwareByteArrayOutputStream getByteArrayOutputStream()
+    {
+        return stream;
     }
 }

@@ -488,7 +488,8 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
                 writeHeaders(kryo, out, message.getHeaders());
                 writeNodeAddress(out, message.getFromNode());
                 writePayload(kryo, out, message);
-                return out.toBytes();
+                out.flush();
+                return out.getByteArrayOutputStream().toByteArray();
             });
         }, DEFAULT_BUFFER_SIZE);
     }
