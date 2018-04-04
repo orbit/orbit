@@ -64,7 +64,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.ea.async.Async.await;
@@ -575,7 +574,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         final String interfaceClassName = interfaceClass.getName();
 
         if (interfaceClass.isAnnotationPresent(PreferLocalPlacement.class) &&
-                targetPlacementGroups.contains(await(getPlacementGroup())) &&
+                targetPlacementGroups.contains(stage.getPlacementGroup()) &&
                 nodeType == NodeTypeEnum.SERVER && stage.canActivateActor(interfaceClassName))
         {
             final int percentile = interfaceClass.getAnnotation(PreferLocalPlacement.class).percentile();
