@@ -163,6 +163,9 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
     @Config("orbit.actors.clusterName")
     private String clusterName;
 
+    @Config("orbit.actors.placementGroup")
+    private String placementGroup;
+
     @Config("orbit.actors.nodeName")
     private String nodeName;
 
@@ -263,6 +266,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         private LocalObjectsCleaner localObjectsCleaner;
 
         private String clusterName;
+        private String placementGroup;
         private String nodeName;
         private StageMode mode = StageMode.HOST;
         private int executionPoolSize = DEFAULT_EXECUTION_POOL_SIZE;
@@ -364,6 +368,12 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         public Builder clusterName(String clusterName)
         {
             this.clusterName = clusterName;
+            return this;
+        }
+
+        public Builder placementGroup(String placementGroup)
+        {
+            this.placementGroup = placementGroup;
             return this;
         }
 
@@ -469,6 +479,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             stage.setMessageLoopbackObjectCloner(messageLoopbackObjectCloner);
             stage.setMessageSerializer(messageSerializer);
             stage.setClusterName(clusterName);
+            stage.setPlacementGroup(placementGroup);
             stage.setClusterPeer(clusterPeer);
             stage.setNodeName(nodeName);
             stage.setMode(mode);
@@ -598,6 +609,16 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         this.clusterName = clusterName;
     }
 
+    public String getPlacementGroup()
+    {
+        return placementGroup;
+    }
+
+    public void setPlacementGroup(final String placementGroup)
+    {
+        this.placementGroup = placementGroup;
+    }
+
     public String getNodeName()
     {
         return nodeName;
@@ -712,6 +733,11 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             setClusterName("orbit-cluster");
         }
 
+        if (placementGroup == null || placementGroup.isEmpty())
+        {
+            setPlacementGroup("default");
+        }
+
         if (nodeName == null || nodeName.isEmpty())
         {
             setNodeName(getClusterName());
@@ -815,6 +841,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
                 .findFirst()
                 .orElse(new RandomSelectorExtension());
         hosting.setNodeSelector(nodeSelector);
+        hosting.setTargetPlacementGroups(Collections.singleton(placementGroup));
 
         // caches responses
         pipeline.addLast(DefaultHandlers.CACHING, cacheManager);

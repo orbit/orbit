@@ -44,7 +44,6 @@ import cloud.orbit.actors.exceptions.ObserverNotFound;
 import cloud.orbit.actors.extensions.NodeSelectorExtension;
 import cloud.orbit.actors.extensions.PipelineExtension;
 import cloud.orbit.actors.net.HandlerContext;
-import cloud.orbit.annotation.Config;
 import cloud.orbit.concurrent.Task;
 import cloud.orbit.exception.UncheckedException;
 import cloud.orbit.lifecycle.Startable;
@@ -59,11 +58,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.ea.async.Async.await;
@@ -92,6 +93,8 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private CompletableFuture<Void> hostingActive = new Task<>();
 
     private NodeSelectorExtension nodeSelector;
+
+    private volatile Set<String> targetPlacementGroups;
 
     public Hosting(final int localAddressCacheMaximumSize, final long localAddressCacheTTL)
     {
@@ -124,6 +127,16 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         this.nodeSelector = nodeSelector;
     }
 
+    public Set<String> getTargetPlacementGroups()
+    {
+        return targetPlacementGroups;
+    }
+
+    public void setTargetPlacementGroups(Set<String> targetPlacementGroups)
+    {
+        this.targetPlacementGroups = Collections.unmodifiableSet(targetPlacementGroups);
+    }
+
     public void setNodeType(final NodeTypeEnum nodeType)
     {
         this.nodeType = nodeType;
@@ -154,6 +167,12 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     public NodeAddress getNodeAddress()
     {
         return clusterPeer.localAddress();
+    }
+
+    @Override
+    public Task<String> getPlacementGroup()
+    {
+        return Task.fromValue(stage.getPlacementGroup());
     }
 
     @Override
@@ -433,13 +452,16 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 return Task.fromException(new UncheckedException(timeoutMessage));
             }
 
-            // read volatile field into local field
+            // read volatile fields into local fields
             final List<NodeInfo> currentServerNodes = serverNodes;
+            final Set<String> currentTargetPlacementGroups = targetPlacementGroups;
 
             // filter out nodes which cannot host actors (nodes which are not running and nodes which cannot host this actor)
+            // and nodes that are not in any target placement group
             final List<NodeInfo> potentialNodes = currentServerNodes.stream()
                     .filter(n -> (!n.cannotHostActors && n.state == NodeState.RUNNING)
-                            && actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, actorSupported_yes))
+                            && actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, actorSupported_yes)
+                            && (n.placementGroupPending.get() || currentTargetPlacementGroups.contains(n.placementGroup)))
                     .collect(Collectors.toList());
 
             if (potentialNodes.isEmpty())
@@ -460,6 +482,24 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             {
                 for (NodeInfo potentialNode : potentialNodes)
                 {
+                    if (potentialNode.placementGroupPending.compareAndSet(true, false))
+                    {
+                        potentialNode.nodeCapabilities.getPlacementGroup().handle((result, throwable) ->
+                        {
+                            // call failed, retry on next loop
+                            if (throwable != null)
+                            {
+                                potentialNode.placementGroupPending.set(true);
+                            }
+                            else
+                            {
+                                potentialNode.placementGroup = result;
+                            }
+
+                            return null;
+                        });
+                    }
+
                     // loop over the potential nodes, add the interface to a concurrent hashset, if add returns true there is no activation pending
                     if (potentialNode.canActivatePending.add(interfaceClassName))
                     {
@@ -497,7 +537,9 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 }
 
                 final List<NodeInfo> suitableNodes = potentialNodes.stream()
-                        .filter(n -> actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, actorSupported_no))
+                        .filter(n -> actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, actorSupported_no)
+                                && n.placementGroup != null
+                                && targetPlacementGroups.contains(n.placementGroup))
                         .collect(Collectors.toList());
 
                 if (suitableNodes.isEmpty())
@@ -533,6 +575,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         final String interfaceClassName = interfaceClass.getName();
 
         if (interfaceClass.isAnnotationPresent(PreferLocalPlacement.class) &&
+                targetPlacementGroups.contains(await(getPlacementGroup())) &&
                 nodeType == NodeTypeEnum.SERVER && stage.canActivateActor(interfaceClassName))
         {
             final int percentile = interfaceClass.getAnnotation(PreferLocalPlacement.class).percentile();

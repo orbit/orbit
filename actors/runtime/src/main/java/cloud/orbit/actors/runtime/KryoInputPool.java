@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2018 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -25,44 +25,29 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package cloud.orbit.actors.runtime;
 
-import cloud.orbit.actors.ActorObserver;
-import cloud.orbit.actors.annotation.OneWay;
-import cloud.orbit.actors.cluster.NodeAddress;
-import cloud.orbit.concurrent.Task;
+import com.esotericsoftware.kryo.io.Input;
 
-public interface NodeCapabilities extends ActorObserver
+class KryoInputPool extends KryoIOPool<Input>
 {
-    enum NodeTypeEnum
+
+    static final int MAX_POOLED_BUFFER_SIZE = 512 * 1024;
+
+    @Override
+    protected Input create(int bufferSize)
     {
-        SERVER, CLIENT
+        return new Input(bufferSize);
     }
 
-    enum NodeState
+    @Override
+    protected boolean recycle(Input input)
     {
-        RUNNING, STOPPING, STOPPED
+        if (input.getBuffer().length < MAX_POOLED_BUFFER_SIZE)
+        {
+            input.setInputStream(null);
+            return true;
+        }
+        return false; // discard
     }
-
-    int actorSupported_yes = 1;
-    int actorSupported_no = 0;
-    int actorSupported_noneSupported = 2;
-
-    Task<String> getPlacementGroup();
-
-    /**
-     * Asked a single time or infrequently to find out if this node knows and is able to serve this kind of actor.
-     *
-     * @return #actorSupported_yes, #actorSupported_no, or #actorSupported_noneSupported
-     */
-    Task<Integer> canActivate(String interfaceName);
-
-    Task<Void> nodeModeChanged(NodeAddress nodeAddress, NodeState newMode);
-
-    @OneWay
-    Task<Void> moved(RemoteReference<?> actorKey, NodeAddress oldAddress, NodeAddress newAddress);
-
-    @OneWay
-    Task<Void> remove(RemoteReference<?> actorKey);
 }

@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2016 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2018 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -25,44 +25,62 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package cloud.orbit.actors.runtime;
 
-import cloud.orbit.actors.ActorObserver;
-import cloud.orbit.actors.annotation.OneWay;
-import cloud.orbit.actors.cluster.NodeAddress;
-import cloud.orbit.concurrent.Task;
+import org.junit.Before;
+import org.junit.Test;
 
-public interface NodeCapabilities extends ActorObserver
+import com.esotericsoftware.kryo.io.Input;
+
+import static org.junit.Assert.*;
+
+public class KryoInputPoolTest
 {
-    enum NodeTypeEnum
+
+    private KryoInputPool kryoInputPool;
+
+    @Before
+    public void setUp() throws Exception
     {
-        SERVER, CLIENT
+        kryoInputPool = new KryoInputPool();
     }
 
-    enum NodeState
+    @Test
+    public void discardOutput()
     {
-        RUNNING, STOPPING, STOPPED
+        final Input[] result = new Input[2];
+        kryoInputPool.run(input ->
+        {
+            result[0] = input;
+            return null;
+        }, KryoInputPool.MAX_POOLED_BUFFER_SIZE + 1);
+        kryoInputPool.run(input ->
+        {
+            result[1] = input;
+            return null;
+        }, 0);
+        assertTrue(result[0] != result[1]);
     }
 
-    int actorSupported_yes = 1;
-    int actorSupported_no = 0;
-    int actorSupported_noneSupported = 2;
-
-    Task<String> getPlacementGroup();
-
-    /**
-     * Asked a single time or infrequently to find out if this node knows and is able to serve this kind of actor.
-     *
-     * @return #actorSupported_yes, #actorSupported_no, or #actorSupported_noneSupported
-     */
-    Task<Integer> canActivate(String interfaceName);
-
-    Task<Void> nodeModeChanged(NodeAddress nodeAddress, NodeState newMode);
-
-    @OneWay
-    Task<Void> moved(RemoteReference<?> actorKey, NodeAddress oldAddress, NodeAddress newAddress);
-
-    @OneWay
-    Task<Void> remove(RemoteReference<?> actorKey);
+    @Test
+    public void recycleOutput()
+    {
+        final Input[] result = new Input[2];
+        kryoInputPool.run(input ->
+        {
+            assertEquals(0, input.position());
+            byte[] payload = new byte[]{ 1, 2, 3, 4 };
+            input.setBuffer(payload);
+            assertArrayEquals(payload, input.readBytes(4));
+            result[0] = input;
+            return null;
+        }, 0);
+        assertEquals(0, result[0].position());
+        kryoInputPool.run(input ->
+        {
+            result[1] = input;
+            return null;
+        }, 0);
+        assertTrue(result[0] == result[1]);
+    }
 }
