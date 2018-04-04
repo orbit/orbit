@@ -28,30 +28,25 @@
 
 package cloud.orbit.actors.runtime;
 
+import com.esotericsoftware.kryo.io.Output;
+
 /**
- * @author Johno Crawford (johno@sulake.com)
+ * Convenience class to avoid extra object allocation and casting.
  */
-public class KryoOutputPool extends KryoIOPool<ByteArrayOutput>
+final class ByteArrayOutput extends Output
 {
 
-    private static final int MAX_BUFFER_SIZE = 1024 * 1024;
-    static final int MAX_POOLED_BUFFER_SIZE = 512 * 1024;
+    private final BufferAwareByteArrayOutputStream stream;
 
-    @Override
-    protected ByteArrayOutput create(int bufferSize)
+    ByteArrayOutput(final int bufferSize, final int maxBufferSize, final BufferAwareByteArrayOutputStream stream)
     {
-        return new ByteArrayOutput(bufferSize, MAX_BUFFER_SIZE, new BufferAwareByteArrayOutputStream(bufferSize));
+        super(bufferSize, maxBufferSize);
+        super.setOutputStream(stream);
+        this.stream = stream;
     }
 
-    @Override
-    protected boolean recycle(ByteArrayOutput output)
+    BufferAwareByteArrayOutputStream getByteArrayOutputStream()
     {
-        if (output.getByteArrayOutputStream().getBufferSize() < MAX_POOLED_BUFFER_SIZE)
-        {
-            output.getByteArrayOutputStream().reset();
-            output.clear();
-            return true;
-        }
-        return false; // discard
+        return stream;
     }
 }

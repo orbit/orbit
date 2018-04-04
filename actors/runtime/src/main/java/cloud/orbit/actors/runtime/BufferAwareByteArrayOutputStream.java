@@ -28,30 +28,21 @@
 
 package cloud.orbit.actors.runtime;
 
+import java.io.ByteArrayOutputStream;
+
 /**
- * @author Johno Crawford (johno@sulake.com)
+ * Exposes protected byte array length in {@link ByteArrayOutputStream}.
  */
-public class KryoOutputPool extends KryoIOPool<ByteArrayOutput>
+final class BufferAwareByteArrayOutputStream extends ByteArrayOutputStream
 {
 
-    private static final int MAX_BUFFER_SIZE = 1024 * 1024;
-    static final int MAX_POOLED_BUFFER_SIZE = 512 * 1024;
-
-    @Override
-    protected ByteArrayOutput create(int bufferSize)
+    BufferAwareByteArrayOutputStream(int size)
     {
-        return new ByteArrayOutput(bufferSize, MAX_BUFFER_SIZE, new BufferAwareByteArrayOutputStream(bufferSize));
+        super(size);
     }
 
-    @Override
-    protected boolean recycle(ByteArrayOutput output)
+    int getBufferSize()
     {
-        if (output.getByteArrayOutputStream().getBufferSize() < MAX_POOLED_BUFFER_SIZE)
-        {
-            output.getByteArrayOutputStream().reset();
-            output.clear();
-            return true;
-        }
-        return false; // discard
+        return buf.length;
     }
 }
