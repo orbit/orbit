@@ -2,6 +2,7 @@ package cloud.orbit.actors.runtime;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.runtime.NodeCapabilities.NodeState;
@@ -10,6 +11,7 @@ public class NodeInfo
 {
     boolean active;
     final NodeAddress address;
+    final AtomicBoolean placementGroupPending = new AtomicBoolean(true);
     String placementGroup;
     NodeState state = NodeState.RUNNING;
     NodeCapabilities nodeCapabilities;

@@ -64,6 +64,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static com.ea.async.Async.await;
@@ -177,9 +178,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     @Override
     public Task<Integer> canActivate(String interfaceName)
     {
-        if (nodeType == NodeTypeEnum.CLIENT ||
-                stage.getState() == NodeState.STOPPED ||
-                !targetPlacementGroups.contains(await(getPlacementGroup())))
+        if (nodeType == NodeTypeEnum.CLIENT || stage.getState() == NodeState.STOPPED)
         {
             return Task.fromValue(actorSupported_noneSupported);
         }
@@ -457,18 +456,12 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             final List<NodeInfo> currentServerNodes = serverNodes;
             final Set<String> currentTargetPlacementGroups = targetPlacementGroups;
 
-            // get missing placement groups for nodes
-            await(Task.allOf(currentServerNodes.stream()
-                .filter(n -> n.placementGroup == null)
-                .map(n -> n.nodeCapabilities.getPlacementGroup().thenApply(placementGroup -> n.placementGroup = placementGroup))));
-
             // filter out nodes which cannot host actors (nodes which are not running and nodes which cannot host this actor)
             // and nodes that are not in any target placement group
             final List<NodeInfo> potentialNodes = currentServerNodes.stream()
                     .filter(n -> (!n.cannotHostActors && n.state == NodeState.RUNNING)
                             && actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, actorSupported_yes)
-                            && currentTargetPlacementGroups.contains(n.placementGroup)
-                    )
+                            && (n.placementGroupPending.get() || currentTargetPlacementGroups.contains(n.placementGroup)))
                     .collect(Collectors.toList());
 
             if (potentialNodes.isEmpty())
@@ -489,6 +482,24 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             {
                 for (NodeInfo potentialNode : potentialNodes)
                 {
+                    if (potentialNode.placementGroupPending.compareAndSet(true, false))
+                    {
+                        potentialNode.nodeCapabilities.getPlacementGroup().handle((result, throwable) ->
+                        {
+                            // call failed, retry on next loop
+                            if (throwable != null)
+                            {
+                                potentialNode.placementGroupPending.set(true);
+                            }
+                            else
+                            {
+                                potentialNode.placementGroup = result;
+                            }
+
+                            return null;
+                        });
+                    }
+
                     // loop over the potential nodes, add the interface to a concurrent hashset, if add returns true there is no activation pending
                     if (potentialNode.canActivatePending.add(interfaceClassName))
                     {
@@ -526,7 +537,9 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 }
 
                 final List<NodeInfo> suitableNodes = potentialNodes.stream()
-                        .filter(n -> actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, actorSupported_no))
+                        .filter(n -> actorSupported_no != n.canActivate.getOrDefault(interfaceClassName, actorSupported_no)
+                                && n.placementGroup != null
+                                && targetPlacementGroups.contains(n.placementGroup))
                         .collect(Collectors.toList());
 
                 if (suitableNodes.isEmpty())
