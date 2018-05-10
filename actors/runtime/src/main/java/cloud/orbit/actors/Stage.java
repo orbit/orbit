@@ -693,6 +693,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
     {
         // TODO: Reenable shutdown hook
         // This is currently disabled due to https://github.com/orbit/orbit/issues/301
+        logger.warn("Shutdown hook is currently disabled. See https://github.com/orbit/orbit/issues/301.");
     }
 
     public void setEnableMessageLoopback(final boolean enableMessageLoopback)
