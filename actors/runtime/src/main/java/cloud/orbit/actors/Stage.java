@@ -208,8 +208,6 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
     @Config("orbit.actors.broadcastActorDeactivations")
     private boolean broadcastActorDeactivations = true;
 
-    private boolean enableShutdownHook = true;
-
     private boolean enableMessageLoopback = true;
 
     private volatile NodeCapabilities.NodeState state;
@@ -693,7 +691,12 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
 
     public void setEnableShutdownHook(boolean enableShutdownHook)
     {
-        this.enableShutdownHook = enableShutdownHook;
+        // TODO: Reenable shutdown hook
+        // This is currently disabled due to https://github.com/orbit/orbit/issues/301
+        if(enableShutdownHook)
+        {
+            logger.warn("Shutdown hook can not currently be enabled. See https://github.com/orbit/orbit/issues/301.");
+        }
     }
 
     public void setEnableMessageLoopback(final boolean enableMessageLoopback)
@@ -957,24 +960,6 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
 
         logger.info("Stage started [{}]", runtimeIdentity());
 
-        if (enableShutdownHook)
-        {
-            if (shutdownHook == null)
-            {
-                shutdownHook = new Thread(() ->
-                {
-                    synchronized (shutdownLock)
-                    {
-                        if (state == NodeCapabilities.NodeState.RUNNING)
-                        {
-                            this.doStop().join();
-                        }
-                    }
-                });
-                Runtime.getRuntime().addShutdownHook(shutdownHook);
-            }
-        }
-
         return Task.done();
     }
 
@@ -1025,18 +1010,6 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
     @Override
     public Task<?> stop()
     {
-        if(shutdownHook != null) {
-            try
-            {
-                Runtime.getRuntime().removeShutdownHook(shutdownHook);
-                shutdownHook = null;
-            }
-            catch (IllegalStateException ex)
-            {
-                // VM is already shutting down so just eat the error
-            }
-        }
-
         return doStop();
     }
 
