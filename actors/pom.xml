@@ -78,7 +78,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <dependency>
                 <groupId>io.github.lukehutch</groupId>
                 <artifactId>fast-classpath-scanner</artifactId>
-                <version>3.1.4</version>
+                <version>3.1.6</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
