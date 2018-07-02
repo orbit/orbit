@@ -175,7 +175,7 @@ public class FastActorClassFinder implements ActorClassFinder
             if (tmp.size() > 0)
             {
                 tmp.add("cloud.orbit"); // internal actors
-                return tmp.toArray(new String[tmp.size()]);
+                return tmp.toArray(new String[0]);
             }
         }
         return actorBasePackages; // scan entire classpath
