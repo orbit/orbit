@@ -767,7 +767,7 @@ public class Task<T> extends CompletableFuture<T>
      */
     public static <F extends CompletableFuture<?>, C extends Collection<F>> Task<Void> allOf(C cfs)
     {
-        return from(CompletableFuture.allOf(cfs.toArray(new CompletableFuture[cfs.size()])));
+        return from(CompletableFuture.allOf(cfs.toArray(new CompletableFuture[0])));
     }
 
     /**
@@ -794,7 +794,7 @@ public class Task<T> extends CompletableFuture<T>
      */
     public static <F extends CompletableFuture<?>> Task<Object> anyOf(Collection<F> cfs)
     {
-        return from(CompletableFuture.anyOf(cfs.toArray(new CompletableFuture[cfs.size()])));
+        return from(CompletableFuture.anyOf(cfs.toArray(new CompletableFuture[0])));
     }
 
     /**
