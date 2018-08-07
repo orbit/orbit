@@ -60,7 +60,6 @@ import java.util.Set;
  * This info speeds up classId lookup.
  */
 @SupportedAnnotationTypes({ "*" })
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class Processor extends AbstractProcessor
 {
 
@@ -174,5 +173,11 @@ public class Processor extends AbstractProcessor
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Error processing the class id for: ");
         }
         return 0;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion()
+    {
+        return SourceVersion.values()[SourceVersion.values().length - 1];
     }
 }
