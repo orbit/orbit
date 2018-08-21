@@ -410,7 +410,7 @@ class ClassIdAsPropertyTypeDeserializer extends AsPropertyTypeDeserializer
             tb.writeStartObject();
             tb.writeFieldName(_typePropertyName);
             tb.writeString(typeId);
-            jp = JsonParserSequence.createFlattened(tb.asParser(jp), jp);
+            jp = JsonParserSequence.createFlattened(false, tb.asParser(jp), jp);
             jp.nextToken();
         }
         Object value = deser.deserialize(jp, ctxt);
