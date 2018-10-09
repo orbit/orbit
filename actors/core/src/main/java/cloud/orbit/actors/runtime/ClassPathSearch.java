@@ -154,7 +154,7 @@ public class ClassPathSearch
             String[] _superName = new String[1];
             String[][] _interfaces = new String[1][];
 
-            reader.accept(new ClassVisitor(Opcodes.ASM4)
+            reader.accept(new ClassVisitor(Opcodes.ASM7)
             {
                 @Override
                 public void visit(int version, int access, String name, String signature, String superName, String[] interfaces)
