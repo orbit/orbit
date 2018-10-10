@@ -34,12 +34,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	<parent>
 		<groupId>cloud.orbit</groupId>
 		<artifactId>orbit-java-parent</artifactId>
-		<version>2</version>
+		<version>3</version>
 	</parent>
 	
 	<groupId>cloud.orbit</groupId>
     <artifactId>orbit-internal-parent</artifactId>
-    <version>1.10.2-SNAPSHOT</version>
+    <version>1.10.2</version>
     <packaging>pom</packaging>
     <name>Orbit Internal Parent</name>
 
