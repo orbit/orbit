@@ -48,12 +48,17 @@ import cloud.orbit.exception.UncheckedException;
 import cloud.orbit.tuples.Pair;
 import cloud.orbit.util.AnnotationCache;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.time.Clock;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class DefaultResponseCachingExtension
         extends HandlerAdapter
@@ -63,8 +68,18 @@ public class DefaultResponseCachingExtension
     private static Executor cacheExecutor = null;
     private MessageSerializer messageSerializer;
     private BasicRuntime runtime;
+
     private final AnnotationCache<CacheResponse> cacheResponseCache = new AnnotationCache<>(CacheResponse.class);
+
     private final MessageDigestFactory messageDigest = new MessageDigestFactory("SHA-256");
+
+    private static class NullOutputStream extends OutputStream
+    {
+        @Override
+        public void write(int b) throws IOException
+        {
+        }
+    }
 
     private ExecutionObjectCloner objectCloner;
 
@@ -76,7 +91,7 @@ public class DefaultResponseCachingExtension
      * Key: Pairing of the Actor address, and a hash of the parameters being passed into the method
      * Value: The method result corresponding with the actor's call to the method with provided parameters
      */
-    private final Cache<Method, Cache<Pair<Addressable, String>, Task>> masterCache = Caffeine.newBuilder().build();
+    private final Cache<Method, Cache<Addressable, Cache<String, Task>>> masterCache = Caffeine.newBuilder().build();
 
     public static void setCacheExecutor(final Executor cacheExecutor)
     {
@@ -88,6 +103,18 @@ public class DefaultResponseCachingExtension
         DefaultResponseCachingExtension.clock = clock;
     }
 
+    public Map<Method, Long> getCacheSizes() {
+
+        return masterCache.asMap().entrySet().stream()
+                .map(this::getCacheSize)
+                .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+    }
+
+    private Pair<Method, Long> getCacheSize(final Map.Entry<Method, Cache<Addressable, Cache<String, Task>>> methodCacheEntry)
+    {
+        return Pair.of(methodCacheEntry.getKey(), methodCacheEntry.getValue().estimatedSize());
+    }
+
     /**
      * Retrieves a cached value for an actor's method.
      * Returns null if there is no cached value.
@@ -95,8 +122,16 @@ public class DefaultResponseCachingExtension
     @Override
     public Task<?> get(Method method, Pair<Addressable, String> key)
     {
-        final Cache<Pair<Addressable, String>, Task> cache = getIfPresent(method);
-        return cache != null ? cache.getIfPresent(key) : null;
+        Task<?> result = null;
+        final Cache<Addressable, Cache<String, Task>> methodCache = getIfPresent(method);
+
+        if (methodCache != null)
+        {
+            final Cache<String, Task> addressableCache = methodCache.getIfPresent(key.getLeft());
+            result = addressableCache != null ? addressableCache.getIfPresent(key.getRight()) : null;
+        }
+
+        return result;
     }
 
     /**
@@ -105,26 +140,35 @@ public class DefaultResponseCachingExtension
     @Override
     public void put(Method method, Pair<Addressable, String> key, Task<?> value)
     {
-        final Cache<Pair<Addressable, String>, Task> cache = getCache(method);
-        cache.put(key, value);
+        final Cache<Addressable, Cache<String, Task>> cache = getMethodCache(method);
+        final Cache<String, Task> addressableCache = getAddressableCache(cache, key.getLeft());
+        addressableCache.put(key.getRight(), value);
     }
 
-    private Cache<Pair<Addressable, String>, Task> getIfPresent(Method method)
+    private Cache<Addressable, Cache<String, Task>> getIfPresent(Method method)
     {
-        final CacheResponse cacheResponse = cacheResponseCache.getAnnotation(method);
-        if (cacheResponse == null)
-        {
-            throw new IllegalArgumentException("Passed non-CacheResponse method.");
-        }
-
         return masterCache.getIfPresent(method);
+    }
+
+    private Cache<String, Task> getAddressableCache(final Cache<Addressable, Cache<String, Task>> methodCache, final Addressable addressable)
+    {
+        return methodCache.get(addressable, key -> {
+            Caffeine<Object, Object> builder = Caffeine.newBuilder();
+            if (cacheExecutor != null)
+            {
+                builder.executor(cacheExecutor);
+            }
+            return builder
+                    .ticker(clock == null ? Ticker.systemTicker() : () -> TimeUnit.MILLISECONDS.toNanos(clock.millis()))
+                    .build();
+        });
     }
 
     /**
      * Retrieves the cache for a CacheResponse-annotated method.
      * One is created if necessary.
      */
-    private Cache<Pair<Addressable, String>, Task> getCache(Method method)
+    private Cache<Addressable, Cache<String, Task>> getMethodCache(Method method)
     {
         final CacheResponse cacheResponse = cacheResponseCache.getAnnotation(method);
         if (cacheResponse == null)
@@ -151,13 +195,8 @@ public class DefaultResponseCachingExtension
     public Task<Void> flush(Actor actor)
     {
         final RemoteReference actorReference = (RemoteReference) actor;
-        final Class interfaceClass = RemoteReference.getInterfaceClass(actorReference);
-
-        masterCache.asMap().entrySet().forEach(entry -> {
-            if (interfaceClass.equals(entry.getKey().getDeclaringClass()))
-            {
-                entry.getValue().asMap().keySet().removeIf(addressablePair -> addressablePair.getLeft().equals(actorReference));
-            }
+        masterCache.asMap().forEach((method, cache) -> {
+            cache.invalidate(actorReference);
         });
         return Task.done();
     }
