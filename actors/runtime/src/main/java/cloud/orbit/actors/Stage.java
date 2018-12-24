@@ -933,9 +933,16 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
                 @Override
                 public void run()
                 {
-                    if (state == NodeCapabilities.NodeState.RUNNING)
+                    try
                     {
-                        ForkJoinTask.adapt(() -> pulse().join()).fork();
+                        if (state == NodeCapabilities.NodeState.RUNNING)
+                        {
+                            ForkJoinTask.adapt(() -> pulse().join()).fork();
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        logger.error("Failed executing timer task", e);
                     }
                 }
             }, pulseIntervalMillis, pulseIntervalMillis);
@@ -1273,34 +1280,41 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             @Override
             public void run()
             {
-                if (localActor.isDeactivated() || state == NodeCapabilities.NodeState.STOPPED)
+                try
                 {
-                    cancel();
-                    return;
-                }
+                    if (localActor.isDeactivated() || state == NodeCapabilities.NodeState.STOPPED)
+                    {
+                        cancel();
+                        return;
+                    }
 
-                executionSerializer.offerJob(key,
-                        () -> {
-                            if (localActor.isDeactivated() || state == NodeCapabilities.NodeState.STOPPED)
-                            {
-                                cancel();
-                            }
-                            else
-                            {
-                                try
+                    executionSerializer.offerJob(key,
+                            () -> {
+                                if (localActor.isDeactivated() || state == NodeCapabilities.NodeState.STOPPED)
                                 {
-                                    if (!canceled)
+                                    cancel();
+                                }
+                                else
+                                {
+                                    try
                                     {
-                                        return (Task) taskCallable.call();
+                                        if (!canceled)
+                                        {
+                                            return (Task) taskCallable.call();
+                                        }
+                                    }
+                                    catch (final Exception ex)
+                                    {
+                                        logger.warn("Error calling timer", ex);
                                     }
                                 }
-                                catch (final Exception ex)
-                                {
-                                    logger.warn("Error calling timer", ex);
-                                }
-                            }
-                            return (Task) Task.done();
-                        }, 10000);
+                                return (Task) Task.done();
+                            }, 10000);
+                }
+                catch (Exception e)
+                {
+                    logger.error("Failed executing timer task", e);
+                }
             }
 
             @Override
