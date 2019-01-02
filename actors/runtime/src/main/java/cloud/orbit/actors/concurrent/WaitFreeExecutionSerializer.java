@@ -90,7 +90,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
                     return source;
                 }))
         {
-            throw new IllegalStateException(String.format("Queue full for %s (%d > %d)", key, queue.size(), maxQueueSize));
+            return Task.fromException(new IllegalStateException(String.format("Queue full for %s (%d > %d)", key, queue.size(), maxQueueSize)));
         }
 
         // managing the size like this to avoid using ConcurrentLinkedQueue.size()
