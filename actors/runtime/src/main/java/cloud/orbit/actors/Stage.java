@@ -707,12 +707,12 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
     @Override
     public Task<?> start()
     {
-        logger.info("Starting Stage...");
+        logger.info("Starting Orbit Stage...");
         extensions = new ArrayList<>(extensions);
         startCalled = true;
         if (state != null)
         {
-            throw new IllegalStateException("Can't start the stage at this state. " + this.toString());
+            throw new IllegalStateException("Can't start the stage in this state. " + this.toString());
         }
         state = NodeCapabilities.NodeState.RUNNING;
 
@@ -965,7 +965,11 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         });
         await(startPromise);
 
-        logger.info("Stage started [{}]", runtimeIdentity());
+        logger.info("Orbit Stage started.");
+        logger.info("Orbit Cluster Name: {}", clusterName);
+        logger.info("Orbit Node Name: {}", nodeName);
+        logger.info("Orbit Node ID: {}", clusterPeer.localAddress().toString());
+        logger.info("Orbit Runtime ID: {}", runtimeIdentity());
 
         return Task.done();
     }

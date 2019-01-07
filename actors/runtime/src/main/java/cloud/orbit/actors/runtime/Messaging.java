@@ -84,12 +84,13 @@ public class Messaging extends HandlerAdapter implements Startable
      */
     static class PendingResponse extends Task<Object>
     {
-        final int messageId;
+        final Message message;
         final long timeoutAt;
 
-        public PendingResponse(final int messageId, final long timeoutAt)
+
+        public PendingResponse(final Message message, final long timeoutAt)
         {
-            this.messageId = messageId;
+            this.message = message;
             this.timeoutAt = timeoutAt;
         }
 
@@ -111,7 +112,7 @@ public class Messaging extends HandlerAdapter implements Startable
             int count;
             final StringBuilder builder = new StringBuilder()
                     .append("PendingResponse:").append(hashCode())
-                    .append("[messageId=").append(messageId);
+                    .append("[messageId=").append(message.getMessageId());
             if (isDone())
             {
                 return builder.append((isCompletedExceptionally()
@@ -394,7 +395,10 @@ public class Messaging extends HandlerAdapter implements Startable
         }
         message.setMessageId(messageId);
 
-        final PendingResponse pendingResponse = new PendingResponse(messageId, runtime.clock().millis() + getResponseTimeoutMillis(message));
+        final PendingResponse pendingResponse = new PendingResponse(
+                message,
+                runtime.clock().millis() + getResponseTimeoutMillis(message)
+        );
 
         final boolean oneWay = message.getMessageType() == MessageDefinitions.ONE_WAY_MESSAGE;
         if (!oneWay)
@@ -449,10 +453,48 @@ public class Messaging extends HandlerAdapter implements Startable
                     }
                     if (!top.isDone())
                     {
-                        // todo: do this in the application executor, not critical as hosting is already taking care of it
-                        top.internalCompleteExceptionally(new TimeoutException("Response timeout"));
+                        final StringBuilder errorMsg = new StringBuilder();
+                        errorMsg.append("Response timeout.");
+                        errorMsg.append(System.lineSeparator());
+
+                        errorMsg.append("Message ID: ");
+                        errorMsg.append(top.message.getMessageId());
+                        errorMsg.append(System.lineSeparator());
+
+                        final NodeAddress fromNode = top.message.getFromNode();
+                        if(fromNode != null) {
+                            errorMsg.append("Source Node: ");
+                            errorMsg.append(fromNode.toString());
+                            errorMsg.append(System.lineSeparator());
+                        }
+
+                        final NodeAddress toNode = top.message.getToNode();
+                        if(toNode != null) {
+                            errorMsg.append("Target Node: ");
+                            errorMsg.append(toNode.toString());
+                            errorMsg.append(System.lineSeparator());
+                        }
+
+                        final int classId = top.message.getInterfaceId();
+                        if(classId != 0) {
+                            final Class<?> targetClass = DefaultClassDictionary.get().getClassById(classId);
+                            if(targetClass != null) {
+                                errorMsg.append("Target Interface: ");
+                                errorMsg.append(targetClass.getName());
+                                errorMsg.append(System.lineSeparator());
+                            }
+                        }
+
+                        final Object objectId = top.message.getObjectId();
+                        if(objectId != null) {
+                            errorMsg.append("Target Object ID: ");
+                            errorMsg.append(objectId.toString());
+                            errorMsg.append(System.lineSeparator());
+                        }
+
+                        top.internalCompleteExceptionally(new TimeoutException(errorMsg.toString()));
                     }
-                    pendingResponseMap.remove(top.messageId);
+                    pendingResponseMap.remove(top.message.getMessageId());
                 });
         return Task.done();
     }
