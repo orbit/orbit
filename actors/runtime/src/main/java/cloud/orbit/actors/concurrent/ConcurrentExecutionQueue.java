@@ -160,6 +160,38 @@ public class ConcurrentExecutionQueue implements Executor
         });
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder output = new StringBuilder();
+        output.append("ConcurrentExecutionQueue[");
+
+        output.append("maxQueueSize=");
+        output.append(maxQueueSize);
+        output.append(", ");
+
+        output.append("concurrentExecutions=");
+        output.append(concurrentExecutions);
+        output.append(", ");
+
+        output.append("lock=");
+        output.append(lock);
+        output.append(", ");
+
+        output.append("queueSize=");
+        output.append(queueSize);
+        output.append(", ");
+
+        output.append("inFlight=");
+        output.append(inFlight);
+        output.append(", ");
+
+        output.deleteCharAt(output.length() - 2);
+
+        output.append("]");
+
+        return output.toString();
+    }
+
     private void wrapExecution(final Supplier<Task<?>> toRun, final Task<?> taskFuture)
     {
         try

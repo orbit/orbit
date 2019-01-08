@@ -130,12 +130,6 @@ public class Invocation
         return fromNode;
     }
 
-    @Override
-    public String toString()
-    {
-        return getToReference() + "." + (method != null ? method.getName() : Integer.toString(methodId));
-    }
-
     public int getHops()
     {
         return hops;
@@ -200,5 +194,57 @@ public class Invocation
     {
         this.headers = headers;
         return this;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder output = new StringBuilder();
+        output.append("Invocation[");
+
+        output.append("messageId=");
+        output.append(messageId);
+        output.append(", ");
+
+        output.append("methodId=");
+        output.append(methodId);
+        output.append(", ");
+
+        if(method != null) {
+            output.append("methodName=");
+            output.append(method.getName());
+            output.append(", ");
+
+            output.append("methodDeclaringClass=");
+            output.append(method.getDeclaringClass().getName());
+            output.append(", ");
+        }
+
+        if(toReference != null) {
+            output.append("toReference=");
+            output.append(toReference.toString());
+            output.append(", ");
+        }
+
+        if(fromNode != null) {
+            output.append("fromNode=");
+            output.append(fromNode.toString());
+            output.append(", ");
+        }
+
+        if(toNode != null) {
+            output.append("toNode=");
+            output.append(toNode.toString());
+            output.append(", ");
+        }
+
+        output.append("hops=");
+        output.append(hops);
+        output.append(", ");
+
+        output.deleteCharAt(output.length() - 2);
+
+        output.append("]");
+
+        return output.toString();
     }
 }
