@@ -104,8 +104,8 @@ public class Execution extends AbstractExecution implements Startable
                 invocation.setHops(invocation.getHops() + 1);
                 if (invocation.getCompletion() != null)
                 {
-                    invocation.getCompletion().completeExceptionally(new ObserverNotFound("Observer Missing."
-                    +System.lineSeparator() + invocation.toString()));
+                    invocation.getCompletion().completeExceptionally(new ObserverNotFound("Observer Missing. "
+                            + invocation.toString()));
                 }
             }
         }
@@ -154,8 +154,7 @@ public class Execution extends AbstractExecution implements Startable
             {
                 if (target instanceof ObserverEntry)
                 {
-                    return Task.fromException(new ObserverNotFound("Observer Missing." + System.lineSeparator() +
-                            invocation.toString()));
+                    return Task.fromException(new ObserverNotFound("Observer Missing. " + invocation.toString()));
                 }
                 ctx.write(invocation);
                 return Task.fromValue(null);

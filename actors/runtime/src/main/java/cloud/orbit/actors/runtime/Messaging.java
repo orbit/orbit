@@ -454,8 +454,7 @@ public class Messaging extends HandlerAdapter implements Startable
                     if (!top.isDone())
                     {
                         final StringBuilder errorMsg = new StringBuilder();
-                        errorMsg.append("Response timeout.");
-                        errorMsg.append(System.lineSeparator());
+                        errorMsg.append("Response timeout. ");
                         errorMsg.append(top.message.toString());
 
                         top.internalCompleteExceptionally(new TimeoutException(errorMsg.toString()));

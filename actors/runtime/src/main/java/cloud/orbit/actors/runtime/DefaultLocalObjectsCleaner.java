@@ -156,14 +156,12 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
                                 if (logger.isErrorEnabled())
                                 {
                                     final StringBuilder errorMsg = new StringBuilder();
-                                    errorMsg.append("Error during deactivation. Took more than ");
+                                    errorMsg.append("Error during deactivation. Timeout is ");
                                     errorMsg.append(deactivationTimeoutMillis);
                                     errorMsg.append("ms. ");
                                     errorMsg.append(pendingDeactivations.size());
-                                    errorMsg.append(" deactivations were pending.");
-                                    errorMsg.append(System.lineSeparator());
+                                    errorMsg.append(" deactivations were pending. ");
                                     errorMsg.append(actorEntry.getRemoteReference());
-                                    errorMsg.append(System.lineSeparator());
                                     errorMsg.append(concurrentExecutionQueue);
 
                                     logger.error(errorMsg.toString(), e);
