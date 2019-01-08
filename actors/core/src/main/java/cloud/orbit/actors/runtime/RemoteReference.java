@@ -235,9 +235,12 @@ public abstract class RemoteReference<T> implements Serializable, Addressable
         output.append(_interfaceId());
         output.append(", ");
 
-        output.append("interfaceName=");
-        output.append(_interfaceClass().getName());
-        output.append(", ");
+        if(_interfaceClass() != null)
+        {
+            output.append("interfaceName=");
+            output.append(_interfaceClass().getName());
+            output.append(", ");
+        }
 
         output.deleteCharAt(output.length() - 2);
         output.append("]");
