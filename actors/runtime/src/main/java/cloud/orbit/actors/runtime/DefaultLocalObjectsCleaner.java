@@ -155,8 +155,18 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
                                 // error occurred
                                 if (logger.isErrorEnabled())
                                 {
-                                    logger.error("Error during the deactivation of " + actorEntry.getRemoteReference(), e);
+                                    final StringBuilder errorMsg = new StringBuilder();
+                                    errorMsg.append("Error during deactivation. Timeout is ");
+                                    errorMsg.append(deactivationTimeoutMillis);
+                                    errorMsg.append("ms. ");
+                                    errorMsg.append(pendingDeactivations.size());
+                                    errorMsg.append(" deactivations were pending. ");
+                                    errorMsg.append(actorEntry.getRemoteReference());
+                                    errorMsg.append(concurrentExecutionQueue);
+
+                                    logger.error(errorMsg.toString(), e);
                                 }
+
                                 // forcefully setting the entry to deactivated
                                 actorEntry.setDeactivated(true);
                             }

@@ -789,7 +789,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 invocation.withToNode(address);
                 if (!activeNodes.containsKey(address))
                 {
-                    return Task.fromException(new ObserverNotFound("Node no longer active"));
+                    return Task.fromException(new ObserverNotFound("Node no longer active. " + invocation.toString()));
                 }
                 task = ctx.write(invocation);
             }

@@ -246,4 +246,61 @@ public class Message
         this.referenceAddress = referenceAddress;
         return this;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder output = new StringBuilder();
+        output.append("Message[");
+
+        output.append("messageType=");
+        output.append(messageType);
+        output.append(", ");
+
+        output.append("messageId=");
+        output.append(messageId);
+        output.append(", ");
+
+        if(fromNode != null) {
+            output.append("fromNode=");
+            output.append(fromNode.toString());
+            output.append(", ");
+        }
+
+        if(toNode != null) {
+            output.append("toNode=");
+            output.append(toNode.toString());
+            output.append(", ");
+        }
+
+        if(referenceAddress != null) {
+            output.append("referenceAddress=");
+            output.append(referenceAddress.toString());
+            output.append(", ");
+        }
+
+        output.append("interfaceId=");
+        output.append(interfaceId);
+        output.append(", ");
+
+        if(interfaceId != 0) {
+            final Class<?> targetClass = DefaultClassDictionary.get().getClassById(interfaceId);
+            if(targetClass != null) {
+                output.append("interfaceName=");
+                output.append(targetClass.getName());
+                output.append(", ");
+            }
+        }
+
+        if(objectId != null) {
+            output.append("objectId=");
+            output.append(objectId.toString());
+            output.append(", ");
+        }
+
+        output.deleteCharAt(output.length() - 2);
+
+        output.append("]");
+
+        return output.toString();
+    }
 }

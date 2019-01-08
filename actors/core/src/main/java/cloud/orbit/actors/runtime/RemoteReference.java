@@ -215,11 +215,37 @@ public abstract class RemoteReference<T> implements Serializable, Addressable
     @Override
     public String toString()
     {
-        if (address == null)
-        {
-            return id != null ? _interfaceClass().getName() + ":" + id : _interfaceClass().getName();
+        final StringBuilder output = new StringBuilder();
+        output.append("RemoteReference[");
+
+        if(address != null) {
+            output.append("address=");
+            output.append(address);
+            output.append(", ");
         }
-        return id != null ? _interfaceClass().getName() + ":" + id : _interfaceClass().getName() + ":" + address;
+
+        if(id != null)
+        {
+            output.append("id=");
+            output.append(id.toString());
+            output.append(", ");
+        }
+
+        output.append("interfaceId=");
+        output.append(_interfaceId());
+        output.append(", ");
+
+        if(_interfaceClass() != null)
+        {
+            output.append("interfaceName=");
+            output.append(_interfaceClass().getName());
+            output.append(", ");
+        }
+
+        output.deleteCharAt(output.length() - 2);
+        output.append("]");
+
+       return output.toString();
     }
 
     public static void setRuntime(final RemoteReference<?> reference, final BasicRuntime runtime)
