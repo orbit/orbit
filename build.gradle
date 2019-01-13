@@ -1,0 +1,229 @@
+/*
+ Copyright (C) 2015 - 2019 Electronic Arts Inc.  All rights reserved.
+ This file is part of the Orbit Project <http://www.orbit.cloud>.
+ See license in LICENSE.
+ */
+
+def configureProject(final String projectName, final List<List<Project>> toAdd) {
+    toAdd.each {
+        it.add(project(projectName))
+    }
+}
+
+def withKotlin = []
+def withJava = []
+def withTests = []
+def publish = []
+
+// Framework
+configureProject(":src:framework:orbit-commons", [withKotlin, withTests, publish])
+configureProject(":src:framework:orbit-core", [withKotlin, withTests, publish])
+configureProject(":src:framework:orbit-runtime", [withKotlin, withTests, publish])
+
+
+buildscript {
+    ext.kotlinVersion = "1.3.11"
+    ext.dokkaVersion = "0.9.17"
+
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+
+    dependencies {
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        classpath("org.jetbrains.dokka:dokka-gradle-plugin:$dokkaVersion")
+    }
+}
+
+
+ext {
+    orbitGroup = "cloud.orbit"
+    orbitVersion = getProperty("orbit.version")
+    orbitCodename = getProperty("orbit.codename")
+    orbitCompatVersion = getProperty("orbit.compatVersion")
+    orbitUrl = "https://www.orbit.cloud"
+    orbitScmUrl = "scm:git:git://github.com/orbit/orbit"
+    orbitDescription = "The Orbit project is a collection of JVM libraries that makes it easier to build distributed and scalable online services."
+    orgName = "Electronic Arts"
+    orgUrl = "https://www.ea.com"
+    orgEmail = "orbit@ea.com"
+    licenseName = "The BSD 3-Clause License"
+    licenseUrl = "http://opensource.org/licenses/BSD-3-Clause"
+
+    javaTargetVersion = "1.8"
+    javaSourceVersion = "1.8"
+    kotlinTargetVersion = "1.8"
+
+    coroutinesVersion = "1.1.0"
+
+    junitJupiterVersion = "5.3.2"
+    slf4jVersion = "1.7.25"
+}
+
+allprojects {
+    group = orbitGroup
+    version = orbitVersion
+    description = orbitDescription
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+configure(withKotlin) {
+    apply plugin: "kotlin"
+
+    compileKotlin {
+        kotlinOptions {
+            jvmTarget = kotlinTargetVersion
+        }
+    }
+
+    compileTestKotlin {
+        kotlinOptions {
+            jvmTarget = kotlinTargetVersion
+        }
+    }
+
+    dependencies {
+        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
+    }
+}
+
+configure(withJava + withKotlin) {
+    apply plugin: "java-library"
+
+    compileJava {
+        sourceCompatibility = javaSourceVersion
+        targetCompatibility = javaTargetVersion
+    }
+
+    compileTestJava {
+        sourceCompatibility = javaSourceVersion
+        targetCompatibility = javaTargetVersion
+    }
+}
+
+configure(withTests) {
+    dependencies {
+        testImplementation("org.assertj:assertj-core:3.11.1")
+        testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
+        testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
+        testRuntimeOnly("org.slf4j:slf4j-simple:$slf4jVersion")
+    }
+
+    test {
+        useJUnitPlatform {
+            includeEngines("junit-jupiter")
+        }
+    }
+}
+
+configure(publish) {
+    apply plugin: "maven-publish"
+    apply plugin: "signing"
+    apply plugin: 'org.jetbrains.dokka'
+
+    jar {
+        manifest {
+            attributes(
+                    "Name": project.name,
+                    "Automatic-Module-Name": project.name.replace('-', '.'),
+                    "Implementation-Title": "$orbitCodename Orbit",
+                    "Implementation-Version": orbitVersion,
+                    "Implementation-Vendor": orgName,
+                    "Specification-Title": "$orbitCodename Orbit",
+                    "Specification-Version": orbitCompatVersion,
+                    "Specification-Vendor": orgName
+            )
+        }
+    }
+
+    task dokkaJavadoc(type: org.jetbrains.dokka.gradle.DokkaTask) {
+        outputFormat = "javadoc"
+        outputDirectory = "$buildDir/docs/javadoc"
+        reportUndocumented = false
+    }
+
+    task dokkaHtml(type: org.jetbrains.dokka.gradle.DokkaTask) {
+        outputFormat = "html"
+        outputDirectory = "$buildDir/docs/html"
+        reportUndocumented = false
+    }
+
+    task sourcesJar(type: Jar) {
+        from sourceSets.main.allSource
+        classifier = "sources"
+    }
+
+    task dokkaJavadocJar(type: Jar) {
+        dependsOn("dokkaJavadoc")
+        from dokkaJavadoc.outputDirectory
+        classifier = "javadoc"
+    }
+
+    task dokkaHtmlJar(type: Jar) {
+        dependsOn("dokkaHtml")
+        from dokkaHtml.outputDirectory
+        classifier = "htmldoc"
+    }
+
+    publishing {
+        repositories {
+            maven {
+                url = "$buildDir/repo"
+            }
+        }
+
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+
+                artifact sourcesJar
+                artifact dokkaJavadocJar
+                artifact dokkaHtmlJar
+
+                groupId = project.group
+                version = project.version
+                artifactId = project.name
+
+                pom {
+                    description = project.description
+                    url = orbitUrl
+
+                    licenses {
+                        license {
+                            name = licenseName
+                            url = licenseUrl
+                        }
+                    }
+
+                    scm {
+                        url = orbitUrl
+                        connection = orbitScmUrl
+                        developerConnection = orbitScmUrl
+                    }
+
+                    organization {
+                        name = orgName
+                        url = orgUrl
+                    }
+
+                    developers {
+                        developer {
+                            name = orgName
+                            email = orgEmail
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    signing {
+        sign publishing.publications.mavenJava
+    }
+}

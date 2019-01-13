@@ -1,0 +1,41 @@
+# Maven
+*.versionsBackup
+dependency-reduced-pom.xml
+target/
+
+# Gradle
+.gradle
+out/
+build/
+
+# IntelliJ
+*.iml
+.idea/*
+!.idea/copyright/
+!.idea/codeStyles/
+!.idea/codeStyleSettings.xml
+
+# Eclipse
+.project/
+.classpath/
+.settings/
+.factorypath/
+.apt_generated/
+
+# Netbeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# Logging
+**/log/**
+
+# Mac
+.DS_Store
+
+# Windows
+thumbs.db
+Desktop.ini
+$RECYCLE.BIN/

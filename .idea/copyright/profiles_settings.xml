@@ -1,0 +1,8 @@
+<component name="CopyrightManager">
+  <settings default="Orbit Copyright">
+    <LanguageOptions name="__TEMPLATE__">
+      <option name="prefixLines" value="false" />
+      <option name="lenBefore" value="1" />
+    </LanguageOptions>
+  </settings>
+</component>
