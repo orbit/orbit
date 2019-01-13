@@ -2,3 +2,4 @@ site_name: Orbit
 theme: readthedocs
 nav:
   - Getting Started: index.md
+  - Doc Test: index.md
