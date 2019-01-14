@@ -9,6 +9,9 @@ package cloud.orbit.core.runtime
 import cloud.orbit.common.time.Clock
 import cloud.orbit.core.actor.ActorProxyFactory
 
+/**
+ * The Orbit runtime context.
+ */
 interface RuntimeContext {
     val clock: Clock
     val actorProxyFactory: ActorProxyFactory

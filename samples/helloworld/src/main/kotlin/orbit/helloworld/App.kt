@@ -21,7 +21,7 @@ fun main(args: Array<String>) {
     val stage = Stage(stageConfig)
 
     runBlocking {
-        stage.start()
-        val hello = stage.actorProxyFactory.getReference<Hello>("test")
+        stage.start().await()
+        //val hello = stage.actorProxyFactory.getReference<Hello>("test")
     }
 }

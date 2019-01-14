@@ -41,7 +41,7 @@ internal class ComponentProvider {
     fun <T> resolve(interfaceClass: Class<T>): T {
         return beanInstances.getOrPut(interfaceClass) {
             val beanDef = beanDefinitions.get(interfaceClass)
-                ?: throw IllegalStateException("No bean def registered for '${interfaceClass.name}'.")
+                ?: throw IllegalStateException("No bean definition registered for '${interfaceClass.name}'.")
             if (beanDef.concreteClass.constructors.size != 1)
                 throw IllegalStateException("${beanDef.concreteClass.name} must have one constructor.")
             val ctr = beanDef.concreteClass.constructors[0]
@@ -52,8 +52,6 @@ internal class ComponentProvider {
             ctr.newInstance(*args) as T
         } as T
     }
-
-    inline fun <reified R : Any> instance(): R = resolve(R::class.java)
 
     inline fun <reified R : Any> inject(): Lazy<R> = lazy {
         resolve(R::class.java)
@@ -86,15 +84,14 @@ internal class ComponentProvider {
 }
 
 internal class ComponentProviderRoot constructor(private val componentProvider: ComponentProvider) {
-    inline fun <reified T : Any> definition(body: () -> Class<out T>) {
+    inline fun <reified T : Any> definition(body: () -> Class<out T>) =
         componentProvider.registerDefinition(T::class.java, body())
-    }
 
-    inline fun <reified T : Any> definition() {
+    inline fun <reified T : Any> definition() =
         componentProvider.registerDefinition(T::class.java)
-    }
 
-    inline fun <reified T : Any> instance(body: () -> T) {
+    inline fun <reified T : Any> instance(body: () -> T) =
         componentProvider.registerInstance(T::class.java, body())
-    }
+
+    inline fun <reified T : Any> resolve(): T = componentProvider.resolve(T::class.java)
 }

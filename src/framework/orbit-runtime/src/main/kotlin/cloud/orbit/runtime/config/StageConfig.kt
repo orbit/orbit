@@ -38,5 +38,10 @@ data class StageConfig(
     /**
      * The pool where IO intensive tasks will run.
      */
-    val ioPool: CoroutineDispatcher = Pools.createCachedPool("orbit-io")
+    val ioPool: CoroutineDispatcher = Pools.createCachedPool("orbit-io"),
+
+    /**
+     * The Orbit tick rate in milliseconds.
+     */
+    val tickRate: Long = 1000
 )
