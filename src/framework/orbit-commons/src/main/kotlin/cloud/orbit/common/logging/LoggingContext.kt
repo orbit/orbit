@@ -25,6 +25,15 @@ object LoggingContext {
     }
 
     /**
+     * Puts a context key with the specified value.
+     * @param pair The key/value pair.
+     */
+    @JvmStatic
+    fun put(pair: Pair<String, String>) {
+        put(pair.first, pair.second)
+    }
+
+    /**
      * Removes the specified context key.
      * @param key The key to remove.
      */
@@ -50,4 +59,8 @@ object LoggingContext {
     fun get(key: String): String? {
         return MDC.get(key)
     }
+}
+
+inline fun loggingContext(body: LoggingContext.() -> Unit) {
+    body(LoggingContext)
 }
