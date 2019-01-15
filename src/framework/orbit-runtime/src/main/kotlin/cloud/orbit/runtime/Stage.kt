@@ -12,9 +12,12 @@ import cloud.orbit.common.time.Stopwatch
 import cloud.orbit.common.util.VersionUtils
 import cloud.orbit.core.actor.ActorProxyFactory
 import cloud.orbit.core.runtime.RuntimeContext
+import cloud.orbit.runtime.actor.DefaultActorProxyFactory
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.config.StageConfig
 import cloud.orbit.runtime.di.ComponentProvider
+import cloud.orbit.runtime.remoting.RemoteInterfaceDefinitionDictionary
+import cloud.orbit.runtime.remoting.RemoteInterfaceProxyFactory
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlin.coroutines.CoroutineContext
@@ -40,6 +43,11 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             instance { this@Stage }
             instance { stageConfig }
             instance { Clock() }
+
+            definition<RemoteInterfaceProxyFactory>()
+            definition<RemoteInterfaceDefinitionDictionary>()
+
+            definition<ActorProxyFactory> { DefaultActorProxyFactory::class.java }
         }
     }
 

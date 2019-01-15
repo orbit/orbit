@@ -15,8 +15,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 
-interface Hello : ActorWithStringKey
-class HelloActor : Hello, AbstractActor()
+interface Hello : ActorWithStringKey {
+    suspend fun test()
+}
+class HelloActor : Hello, AbstractActor() {
+    override suspend fun test() {
+
+    }
+}
 
 fun main(args: Array<String>) {
     val stageConfig = StageConfig()
@@ -25,7 +31,8 @@ fun main(args: Array<String>) {
 
     runBlocking {
         stage.start().await()
-        delay(1000)
+        val hello = stage.actorProxyFactory.getReference<Hello>("test")
+        hello.test()
         stage.stop().await()
 
     }

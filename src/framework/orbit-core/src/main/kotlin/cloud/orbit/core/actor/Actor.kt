@@ -6,10 +6,12 @@
 
 package cloud.orbit.core.actor
 
+import cloud.orbit.core.remoting.Addressable
+
 /**
  * Interface marker for actors.
  */
-interface Actor
+interface Actor : Addressable
 
 /**
  * An actor with no key.
