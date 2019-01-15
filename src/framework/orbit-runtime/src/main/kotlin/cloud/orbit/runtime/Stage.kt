@@ -16,6 +16,7 @@ import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.config.StageConfig
 import cloud.orbit.runtime.di.ComponentProvider
 import kotlinx.coroutines.*
+import kotlinx.coroutines.future.asCompletableFuture
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -45,34 +46,32 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     /**
      * Starts the Orbit stage.
      */
-    fun start() = rootScope.start()
+    fun start() = requestStart().asCompletableFuture()
 
-    private fun CoroutineScope.start() = async {
-        val stopwatch = Stopwatch.start(clock)
-        logger.info("Starting Orbit...")
+    /**
+     * Stops the Orbit stage
+     */
+    fun stop() = requestStop().asCompletableFuture()
 
-        logEnvironmentInfo()
-
-        logger.info("Orbit started successfully in {}ms.", stopwatch.elapsed)
-
-        tickJob = tickJob()
-
+    private fun requestStart() = rootScope.async {
+        onStart()
         Unit
     }
 
-    private fun CoroutineScope.tickJob() = launch {
+    private fun launchTick() = rootScope.launch {
         val targetTickRate = stageConfig.tickRate
         while (isActive) {
-            logger.debug { "Starting Orbit tick..." }
             val stopwatch = Stopwatch.start(clock)
+            logger.debug { "Begin Orbit tick..." }
 
             try {
-                tick()
+                onTick()
+            } catch (c: CancellationException) {
+                throw c
             } catch (t: Throwable) {
                 onUnhandledException(coroutineContext, t)
             }
 
-            delay(1234)
 
             val elapsed = stopwatch.elapsed
             val nextTickDelay = (targetTickRate - elapsed).coerceAtLeast(0)
@@ -87,12 +86,39 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
             logger.debug { "Orbit tick completed in ${elapsed}ms. Next tick in ${nextTickDelay}ms." }
             delay(nextTickDelay)
+
         }
     }
 
-    private suspend fun tick() {
+    private fun requestStop() = rootScope.async {
+        logger.info("Orbit stop request received.")
+        tickJob?.cancelAndJoin()
+        onStop()
+        Unit
+    }
+
+    private suspend fun onStart() {
+        val stopwatch = Stopwatch.start(clock)
+        logger.info("Starting Orbit...")
+
+        logEnvironmentInfo()
+
+        logger.info("Orbit started successfully in {}ms.", stopwatch.elapsed)
+
+        tickJob = launchTick()
+    }
+
+    private suspend fun onTick() {
 
     }
+
+    private suspend fun onStop() {
+        val stopwatch = Stopwatch.start(clock)
+        logger.info("Stopping Orbit...")
+
+        logger.info("Orbit stopped in {}ms.", stopwatch.elapsed)
+    }
+
 
     private fun logEnvironmentInfo() {
         val versionInfo = VersionUtils.getVersionInfo()
