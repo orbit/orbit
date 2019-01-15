@@ -1,6 +1,10 @@
 site_name: Orbit
 theme: readthedocs
 nav:
-  - 'Getting Started': index.md
-  - 'User Guide':
-      - 'Logging': userguide/logging.md
+  - About: index.md
+  - Getting Started:
+      - Dependencies: getting-started/dependencies.md
+  - User Guide:
+      - Logging: user-guide/logging.md
+  - Developer Guide:
+      - Building: developer-guide/building.md
