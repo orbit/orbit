@@ -4,6 +4,6 @@
  See license in LICENSE.
  */
 
-dependencies { 
+dependencies {
     api(project(":src:framework:orbit-core"))
 }

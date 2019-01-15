@@ -11,13 +11,13 @@ import cloud.orbit.core.actor.ActorWithStringKey
 import cloud.orbit.core.actor.getReference
 import cloud.orbit.runtime.Stage
 import cloud.orbit.runtime.config.StageConfig
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 
 interface Hello : ActorWithStringKey {
     suspend fun test()
 }
+
 class HelloActor : Hello, AbstractActor() {
     override suspend fun test() {
 

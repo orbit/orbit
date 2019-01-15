@@ -8,7 +8,6 @@ package cloud.orbit.common.concurrent
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import java.lang.IllegalArgumentException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -41,7 +40,7 @@ object Pools {
     @JvmStatic
     @JvmOverloads
     fun createFixedPool(threadPrefix: String, maxThreads: Int = defaultParallelism): CoroutineDispatcher {
-        if(maxThreads <= 0) throw IllegalArgumentException("maxThreads must be at least 1")
+        if (maxThreads <= 0) throw IllegalArgumentException("maxThreads must be at least 1")
         return FixedPool(threadPrefix, maxThreads)
     }
 

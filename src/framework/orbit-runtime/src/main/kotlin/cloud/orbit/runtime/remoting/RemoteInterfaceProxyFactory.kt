@@ -15,7 +15,7 @@ class RemoteInterfaceProxyFactory(
 ) {
     fun <T : Addressable> getReference(interfaceType: Class<T>, key: Key): T {
         val remoteInterfaceDefinition = remoteInterfaceDefinitionDictionary.getOrCreate(interfaceType)
-        val invocationHandler = RemoteProxy(
+        val invocationHandler = RemoteInterfaceProxy(
             remoteInterfaceDefinition = remoteInterfaceDefinition,
             key = key
         )
@@ -25,5 +25,6 @@ class RemoteInterfaceProxyFactory(
             invocationHandler
         )
         @Suppress("UNCHECKED_CAST")
-        return javaProxy as T    }
+        return javaProxy as T
+    }
 }

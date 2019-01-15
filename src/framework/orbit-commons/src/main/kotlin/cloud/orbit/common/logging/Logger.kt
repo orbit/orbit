@@ -77,7 +77,7 @@ interface Logger {
  * @param msg The message.
  */
 inline fun Logger.trace(msg: () -> String) {
-    if(isTraceEnabled) {
+    if (isTraceEnabled) {
         trace(msg())
     }
 }
@@ -88,7 +88,7 @@ inline fun Logger.trace(msg: () -> String) {
  * @param msg The message.
  */
 inline fun Logger.debug(msg: () -> String) {
-    if(isDebugEnabled) {
+    if (isDebugEnabled) {
         debug(msg())
     }
 }
@@ -99,7 +99,7 @@ inline fun Logger.debug(msg: () -> String) {
  * @param msg The message.
  */
 inline fun Logger.info(msg: () -> String) {
-    if(isInfoEnabled) {
+    if (isInfoEnabled) {
         info(msg())
     }
 }
@@ -110,7 +110,7 @@ inline fun Logger.info(msg: () -> String) {
  * @param msg The message.
  */
 inline fun Logger.warn(msg: () -> String) {
-    if(isWarnEnabled) {
+    if (isWarnEnabled) {
         warn(msg())
     }
 }
@@ -121,7 +121,7 @@ inline fun Logger.warn(msg: () -> String) {
  * @param msg The message.
  */
 inline fun Logger.error(msg: () -> String) {
-    if(isErrorEnabled) {
+    if (isErrorEnabled) {
         error(msg())
     }
 }

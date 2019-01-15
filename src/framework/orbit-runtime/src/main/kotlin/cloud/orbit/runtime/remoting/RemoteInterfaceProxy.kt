@@ -10,7 +10,7 @@ import cloud.orbit.core.key.Key
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 
-class RemoteProxy(
+class RemoteInterfaceProxy(
     private val remoteInterfaceDefinition: RemoteInterfaceDefinition,
     private val key: Key
 ) : InvocationHandler {
