@@ -32,6 +32,9 @@ nbdist/
 # Logging
 **/log/**
 
+# Docs
+/site/
+
 # Mac
 .DS_Store
 
