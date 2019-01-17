@@ -8,20 +8,24 @@ package cloud.orbit.runtime.remoting
 
 import cloud.orbit.core.key.Key
 import cloud.orbit.core.remoting.Addressable
+import cloud.orbit.runtime.pipeline.PipelineManager
 import java.lang.reflect.Proxy
 
 class RemoteInterfaceProxyFactory(
-    private val remoteInterfaceDefinitionDictionary: RemoteInterfaceDefinitionDictionary
+    private val pipelineManager: PipelineManager,
+    private val interfaceDefinitionDictionary: RemoteInterfaceDefinitionDictionary
 ) {
-    fun <T : Addressable> getReference(interfaceType: Class<T>, key: Key): T {
-        val remoteInterfaceDefinition = remoteInterfaceDefinitionDictionary.getOrCreate(interfaceType)
+    fun <T : Addressable> getReference(interfaceClass: Class<T>, key: Key): T {
+        val interfaceDefinition = interfaceDefinitionDictionary.getOrCreate(interfaceClass)
+
         val invocationHandler = RemoteInterfaceProxy(
-            remoteInterfaceDefinition = remoteInterfaceDefinition,
+            pipelineManager = pipelineManager,
+            interfaceDefinition = interfaceDefinition,
             key = key
         )
         val javaProxy = Proxy.newProxyInstance(
             javaClass.classLoader,
-            arrayOf(remoteInterfaceDefinition.interfaceClass),
+            arrayOf(interfaceClass),
             invocationHandler
         )
         @Suppress("UNCHECKED_CAST")

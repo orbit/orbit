@@ -7,8 +7,15 @@
 package cloud.orbit.runtime.remoting
 
 import cloud.orbit.core.remoting.AddressableClass
+import java.lang.reflect.Method
 
 data class RemoteInterfaceDefinition(
     val interfaceClass: AddressableClass,
-    val interfaceName: String
+    val interfaceName: String,
+    val methodDefinitions: Map<Method, RemoteMethodDefinition>
+)
+
+data class RemoteMethodDefinition(
+    val method: Method,
+    val methodName: String
 )

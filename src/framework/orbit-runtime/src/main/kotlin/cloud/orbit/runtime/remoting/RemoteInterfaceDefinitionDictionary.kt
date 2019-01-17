@@ -6,11 +6,14 @@
 
 package cloud.orbit.runtime.remoting
 
+import cloud.orbit.common.logging.debug
+import cloud.orbit.common.logging.logger
 import cloud.orbit.core.remoting.AddressableClass
 import java.util.concurrent.ConcurrentHashMap
 
 class RemoteInterfaceDefinitionDictionary {
     private val interfaceDefinitionMap = ConcurrentHashMap<AddressableClass, RemoteInterfaceDefinition>()
+    private val logger by logger()
 
     fun getOrCreate(interfaceClass: AddressableClass): RemoteInterfaceDefinition =
         interfaceDefinitionMap.getOrPut(interfaceClass) {
@@ -18,9 +21,23 @@ class RemoteInterfaceDefinitionDictionary {
         }
 
     private fun generateDefinition(interfaceClass: AddressableClass): RemoteInterfaceDefinition {
-        return RemoteInterfaceDefinition(
+        val methods = interfaceClass.methods
+            .map {
+                RemoteMethodDefinition(
+                    method = it,
+                    methodName = it.name
+                )
+            }.map { it.method to it }
+            .toMap()
+
+        val interfaceDefinition = RemoteInterfaceDefinition(
             interfaceClass = interfaceClass,
-            interfaceName = interfaceClass.name
+            interfaceName = interfaceClass.name,
+            methodDefinitions = methods
         )
+
+        logger.debug { "Created definition: $interfaceDefinition" }
+
+        return interfaceDefinition
     }
 }

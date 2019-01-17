@@ -16,6 +16,7 @@ import cloud.orbit.runtime.actor.DefaultActorProxyFactory
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.config.StageConfig
 import cloud.orbit.runtime.di.ComponentProvider
+import cloud.orbit.runtime.pipeline.PipelineManager
 import cloud.orbit.runtime.remoting.RemoteInterfaceDefinitionDictionary
 import cloud.orbit.runtime.remoting.RemoteInterfaceProxyFactory
 import kotlinx.coroutines.*
@@ -29,7 +30,7 @@ import kotlin.coroutines.CoroutineContext
  */
 class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     private val logger by logger()
-    private val rootScope = SupervisorScope(stageConfig.cpuPool, this::onUnhandledException)
+    private val supervisorScope = SupervisorScope(stageConfig.cpuPool, this::onUnhandledException)
     private val componentProvider = ComponentProvider()
 
     private var tickJob: Job? = null
@@ -39,14 +40,23 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
     init {
         componentProvider.configure {
+            // Stage
             instance<RuntimeContext> { this@Stage }
             instance { this@Stage }
             instance { stageConfig }
+            instance { supervisorScope }
+
+            // Utils
             instance { Clock() }
 
+            // Remoting
             definition<RemoteInterfaceProxyFactory>()
             definition<RemoteInterfaceDefinitionDictionary>()
 
+            // Pipeline
+            definition<PipelineManager>()
+
+            // Actors
             definition<ActorProxyFactory> { DefaultActorProxyFactory::class.java }
         }
     }
@@ -61,12 +71,12 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
      */
     fun stop() = requestStop().asCompletableFuture()
 
-    private fun requestStart() = rootScope.async {
+    private fun requestStart() = supervisorScope.async {
         onStart()
         Unit
     }
 
-    private fun launchTick() = rootScope.launch {
+    private fun launchTick() = supervisorScope.launch {
         val targetTickRate = stageConfig.tickRate
         while (isActive) {
             val stopwatch = Stopwatch.start(clock)
@@ -98,7 +108,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
         }
     }
 
-    private fun requestStop() = rootScope.async {
+    private fun requestStop() = supervisorScope.async {
         logger.info("Orbit stop request received.")
         tickJob?.cancelAndJoin()
         onStop()

@@ -12,7 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlin.coroutines.CoroutineContext
 
-internal class SupervisorScope(
+class SupervisorScope(
     private val dispatcher: CoroutineDispatcher,
     private val exceptionHandler: (CoroutineContext, Throwable) -> Unit
 ) : CoroutineScope {
