@@ -15,6 +15,7 @@ import cloud.orbit.core.runtime.RuntimeContext
 import cloud.orbit.runtime.actor.DefaultActorProxyFactory
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
+import cloud.orbit.runtime.net.NetManager
 import cloud.orbit.runtime.pipeline.PipelineManager
 import cloud.orbit.runtime.remoting.RemoteInterfaceDefinitionDictionary
 import cloud.orbit.runtime.remoting.RemoteInterfaceProxyFactory
@@ -48,9 +49,12 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             instance { supervisorScope }
             instance { errorHandler }
 
-
             // Utils
-            instance { Clock() }
+            definition<Clock>()
+
+            // Net
+            instance{ stageConfig.netConfig }
+            definition<NetManager>()
 
             // Remoting
             definition<RemoteInterfaceProxyFactory>()
@@ -140,12 +144,12 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     private fun logEnvironmentInfo() {
         val versionInfo = VersionUtils.getVersionInfo()
         logger.info {
-            "Orbit Environment: ${stageConfig.clusterName} ${stageConfig.nodeIdentity} $versionInfo"
+            "Orbit Environment: ${stageConfig.netConfig.clusterName} ${stageConfig.netConfig.nodeIdentity} $versionInfo"
         }
 
         loggingContext {
-            put("orbit.clusterName" to stageConfig.clusterName.value)
-            put("orbit.nodeIdentity" to stageConfig.nodeIdentity.value)
+            put("orbit.clusterName" to stageConfig.netConfig.clusterName.value)
+            put("orbit.nodeIdentity" to stageConfig.netConfig.nodeIdentity.value)
             put("orbit.version" to versionInfo.orbitVersion)
             put("orbit.jvmVersion" to versionInfo.jvmVersion)
             put("orbit.jvmBuild" to versionInfo.jvmBuild)

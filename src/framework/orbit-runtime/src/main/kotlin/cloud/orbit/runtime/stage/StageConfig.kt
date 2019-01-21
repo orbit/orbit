@@ -10,6 +10,7 @@ import cloud.orbit.common.concurrent.Pools
 import cloud.orbit.common.util.RandomUtils
 import cloud.orbit.core.net.ClusterName
 import cloud.orbit.core.net.NodeIdentity
+import cloud.orbit.runtime.net.NetConfig
 import kotlinx.coroutines.CoroutineDispatcher
 
 /**
@@ -17,18 +18,9 @@ import kotlinx.coroutines.CoroutineDispatcher
  */
 data class StageConfig(
     /**
-     * The [ClusterName] of the Orbit cluster.
-     *
-     * This value determines which nodes may communicate with one another.
+     * Network related configuration
      */
-    val clusterName: ClusterName = ClusterName("orbit-cluster"),
-
-    /**
-     * The [NodeIdentity] of this Orbit node.
-     *
-     * This value must be unique.
-     */
-    val nodeIdentity: NodeIdentity = NodeIdentity(RandomUtils.secureRandomString()),
+    val netConfig: NetConfig = NetConfig(),
 
     /**
      * The pool where CPU intensive tasks will run.
