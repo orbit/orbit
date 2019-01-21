@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test
 
 class ClockAndStopwatchTest {
     @Test
-    fun testClockAdvance() {
+    fun `check advancing the clock`() {
         val advanceTick = 10000L
         val clock = Clock()
         val start = clock.currentTime
@@ -28,7 +28,7 @@ class ClockAndStopwatchTest {
     }
 
     @Test
-    fun testClockDelay() {
+    fun `check clock time passes`() {
         val sleepTime = 100L
         val clock = Clock()
         val start = clock.currentTime
@@ -39,7 +39,7 @@ class ClockAndStopwatchTest {
     }
 
     @Test
-    fun testStopwatchBasic() {
+    fun `check stopwatch time passes`() {
         val sleepTime = 100L
         val clock = Clock()
         val stopwatch = Stopwatch.start(clock)
@@ -49,7 +49,7 @@ class ClockAndStopwatchTest {
     }
 
     @Test
-    fun testStopwatchInlined() {
+    fun `check stopwatch wrapper time passes`() {
         val sleepTime = 100L
         val clock = Clock()
         val (elapsed, _) = stopwatch(clock) {
@@ -59,7 +59,7 @@ class ClockAndStopwatchTest {
     }
 
     @Test
-    fun testStopwatchSuspend() {
+    fun `check stopwatch suspending wrapper time passes`() {
         runBlocking {
             val sleepTime = 100L
             val clock = Clock()

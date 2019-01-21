@@ -12,11 +12,10 @@ import kotlinx.coroutines.withContext
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.coroutines.coroutineContext
 
 class PoolsTest {
     @Test
-    fun testPools() {
+    fun `check pools behave as expected`() {
         val count = AtomicInteger(0)
         val cpuPool = Pools.createFixedPool("orbit-test-cpu")
         val ioPool = Pools.createCachedPool("orbit-test-io")
