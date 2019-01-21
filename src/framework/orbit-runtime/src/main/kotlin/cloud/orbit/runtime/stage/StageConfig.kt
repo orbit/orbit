@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.runtime.config
+package cloud.orbit.runtime.stage
 
 import cloud.orbit.common.concurrent.Pools
 import cloud.orbit.common.util.RandomUtils

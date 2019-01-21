@@ -4,17 +4,16 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.runtime
+package cloud.orbit.runtime.stage
 
 import cloud.orbit.common.logging.*
 import cloud.orbit.common.time.Clock
-import cloud.orbit.common.time.Stopwatch
+import cloud.orbit.common.time.stopwatch
 import cloud.orbit.common.util.VersionUtils
 import cloud.orbit.core.actor.ActorProxyFactory
 import cloud.orbit.core.runtime.RuntimeContext
 import cloud.orbit.runtime.actor.DefaultActorProxyFactory
 import cloud.orbit.runtime.concurrent.SupervisorScope
-import cloud.orbit.runtime.config.StageConfig
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.pipeline.PipelineManager
 import cloud.orbit.runtime.remoting.RemoteInterfaceDefinitionDictionary
@@ -30,7 +29,9 @@ import kotlin.coroutines.CoroutineContext
  */
 class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     private val logger by logger()
-    private val supervisorScope = SupervisorScope(stageConfig.cpuPool, this::onUnhandledException)
+
+    private val errorHandler = ErrorHandler()
+    private val supervisorScope = SupervisorScope(stageConfig.cpuPool, errorHandler::onUnhandledException)
     private val componentProvider = ComponentProvider()
 
     private var tickJob: Job? = null
@@ -45,6 +46,8 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             instance { this@Stage }
             instance { stageConfig }
             instance { supervisorScope }
+            instance { errorHandler }
+
 
             // Utils
             instance { Clock() }
@@ -72,26 +75,30 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     fun stop() = requestStop().asCompletableFuture()
 
     private fun requestStart() = supervisorScope.async {
-        onStart()
+        logger.info("Starting Orbit...")
+        val (elapsed, _) = stopwatch(clock) {
+            onStart()
+        }
+        logger.info("Orbit started successfully in {}ms.", elapsed)
+
         Unit
     }
 
     private fun launchTick() = supervisorScope.launch {
         val targetTickRate = stageConfig.tickRate
         while (isActive) {
-            val stopwatch = Stopwatch.start(clock)
-            logger.debug { "Begin Orbit tick..." }
+            val (elapsed, _) = stopwatch(clock) {
+                logger.debug { "Begin Orbit tick..." }
 
-            try {
-                onTick()
-            } catch (c: CancellationException) {
-                throw c
-            } catch (t: Throwable) {
-                onUnhandledException(coroutineContext, t)
+                try {
+                    onTick()
+                } catch (c: CancellationException) {
+                    throw c
+                } catch (t: Throwable) {
+                    errorHandler.onUnhandledException(coroutineContext, t)
+                }
             }
 
-
-            val elapsed = stopwatch.elapsed
             val nextTickDelay = (targetTickRate - elapsed).coerceAtLeast(0)
 
             if (elapsed > targetTickRate) {
@@ -104,39 +111,31 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
             logger.debug { "Orbit tick completed in ${elapsed}ms. Next tick in ${nextTickDelay}ms." }
             delay(nextTickDelay)
-
         }
     }
 
     private fun requestStop() = supervisorScope.async {
-        logger.info("Orbit stop request received.")
-        tickJob?.cancelAndJoin()
-        onStop()
+        logger.info("Orbit stopping...")
+        val (elapsed, _) = stopwatch(clock) {
+            tickJob?.cancelAndJoin()
+            onStop()
+        }
+
+        logger.info("Orbit stopped in {}ms.", elapsed)
         Unit
     }
 
     private suspend fun onStart() {
-        val stopwatch = Stopwatch.start(clock)
-        logger.info("Starting Orbit...")
-
         logEnvironmentInfo()
-
-        logger.info("Orbit started successfully in {}ms.", stopwatch.elapsed)
-
         tickJob = launchTick()
     }
 
     private suspend fun onTick() {
-
     }
 
     private suspend fun onStop() {
-        val stopwatch = Stopwatch.start(clock)
-        logger.info("Stopping Orbit...")
 
-        logger.info("Orbit stopped in {}ms.", stopwatch.elapsed)
     }
-
 
     private fun logEnvironmentInfo() {
         val versionInfo = VersionUtils.getVersionInfo()
@@ -156,10 +155,5 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
         logger.trace {
             "Initial Orbit Component Provider State: ${componentProvider.debugString()}"
         }
-    }
-
-    @Suppress("UNUSED_PARAMETER")
-    private fun onUnhandledException(coroutineContext: CoroutineContext, throwable: Throwable) {
-        logger.error("Unhandled exception in Orbit.", throwable)
     }
 }

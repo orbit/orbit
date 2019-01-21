@@ -21,16 +21,22 @@ class Clock {
      *
      * @return The current timestamp.
      */
-    val currentTime: Long get() = System.currentTimeMillis() + offsetTime.get()
+    val currentTime: TimeMs get() = System.currentTimeMillis() + offsetTime.get()
 
     /**
      * Advances the internal time by the specified amount.
+     *
      * @param offset The amount of time to advance by.
      * @param timeUnit The unit of time to advance by.
      */
     @JvmOverloads
-    fun advanceTime(offset: Long, timeUnit: TimeUnit = TimeUnit.MILLISECONDS) {
+    fun advanceTime(offset: TimeMs, timeUnit: TimeUnit = TimeUnit.MILLISECONDS) {
         val toAdd = timeUnit.toMillis(offset)
         offsetTime.addAndGet(toAdd)
     }
 }
+
+/**
+ * Represents a time or duration in milliseconds.
+ */
+typealias TimeMs = Long

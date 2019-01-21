@@ -9,8 +9,8 @@ package orbit.helloworld
 import cloud.orbit.core.actor.AbstractActor
 import cloud.orbit.core.actor.ActorWithStringKey
 import cloud.orbit.core.actor.getReference
-import cloud.orbit.runtime.Stage
-import cloud.orbit.runtime.config.StageConfig
+import cloud.orbit.runtime.stage.Stage
+import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
