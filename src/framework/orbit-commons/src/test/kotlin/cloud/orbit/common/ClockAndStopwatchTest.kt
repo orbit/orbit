@@ -49,7 +49,7 @@ class ClockAndStopwatchTest {
     }
 
     @Test
-    fun `check stopwatch wrapper time passes`() {
+    fun `check stopwatch basic wrapper time passes`() {
         val sleepTime = 100L
         val clock = Clock()
         val (elapsed, _) = stopwatch(clock) {
