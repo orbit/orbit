@@ -11,6 +11,8 @@ import cloud.orbit.common.time.Clock
 import cloud.orbit.common.time.stopwatch
 import cloud.orbit.common.util.VersionUtils
 import cloud.orbit.core.actor.ActorProxyFactory
+import cloud.orbit.core.net.NodeInfo
+import cloud.orbit.core.net.NodeStatus
 import cloud.orbit.core.runtime.RuntimeContext
 import cloud.orbit.runtime.actor.DefaultActorProxyFactory
 import cloud.orbit.runtime.concurrent.SupervisorScope
@@ -21,6 +23,7 @@ import cloud.orbit.runtime.remoting.RemoteInterfaceDefinitionDictionary
 import cloud.orbit.runtime.remoting.RemoteInterfaceProxyFactory
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.asCompletableFuture
+import java.lang.IllegalStateException
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -34,6 +37,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     private val errorHandler = ErrorHandler()
     private val supervisorScope = SupervisorScope(stageConfig.cpuPool, errorHandler::onUnhandledException)
     private val componentProvider = ComponentProvider()
+    private val netManager: NetManager by componentProvider.inject()
 
     private var tickJob: Job? = null
 
@@ -66,6 +70,12 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             // Actors
             definition<ActorProxyFactory> { DefaultActorProxyFactory::class.java }
         }
+
+        netManager.localNodeRef.set(NodeInfo(
+            clusterName = stageConfig.netConfig.clusterName,
+            nodeIdentity = stageConfig.netConfig.nodeIdentity,
+            nodeStatus = NodeStatus.STOPPED
+        ))
     }
 
     /**
@@ -79,6 +89,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     fun stop() = requestStop().asCompletableFuture()
 
     private fun requestStart() = supervisorScope.async {
+        netManager.updateLocalNodeStatus(NodeStatus.STOPPED, NodeStatus.STARTING)
         logger.info("Starting Orbit...")
         val (elapsed, _) = stopwatch(clock) {
             onStart()
@@ -119,6 +130,8 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     }
 
     private fun requestStop() = supervisorScope.async {
+        netManager.updateLocalNodeStatus(NodeStatus.RUNNING, NodeStatus.STOPPING)
+
         logger.info("Orbit stopping...")
         val (elapsed, _) = stopwatch(clock) {
             tickJob?.cancelAndJoin()
@@ -131,6 +144,8 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
     private suspend fun onStart() {
         logEnvironmentInfo()
+
+        netManager.updateLocalNodeStatus(NodeStatus.STARTING, NodeStatus.RUNNING)
         tickJob = launchTick()
     }
 
@@ -138,7 +153,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     }
 
     private suspend fun onStop() {
-
+        netManager.updateLocalNodeStatus(NodeStatus.STOPPING, NodeStatus.STOPPED)
     }
 
     private fun logEnvironmentInfo() {

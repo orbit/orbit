@@ -8,7 +8,9 @@ package cloud.orbit.runtime.pipeline
 
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.remoting.RemoteInvocation
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class PipelineManager(
     private val supervisorScope: SupervisorScope
