@@ -14,7 +14,7 @@ class ErrorHandler {
 
     @Suppress("UNUSED_PARAMETER")
     fun onUnhandledException(coroutineContext: CoroutineContext, throwable: Throwable) =
-            onUnhandledException(throwable)
+        onUnhandledException(throwable)
 
     fun onUnhandledException(throwable: Throwable) {
         logger.error("Unhandled exception in Orbit.", throwable)

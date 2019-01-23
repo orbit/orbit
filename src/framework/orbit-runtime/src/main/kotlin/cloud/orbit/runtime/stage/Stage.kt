@@ -23,8 +23,6 @@ import cloud.orbit.runtime.remoting.RemoteInterfaceDefinitionDictionary
 import cloud.orbit.runtime.remoting.RemoteInterfaceProxyFactory
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.asCompletableFuture
-import java.lang.IllegalStateException
-import kotlin.coroutines.CoroutineContext
 
 /**
  * The Orbit Stage.
@@ -57,7 +55,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<Clock>()
 
             // Net
-            instance{ stageConfig.netConfig }
+            instance { stageConfig.netConfig }
             definition<NetManager>()
 
             // Remoting
@@ -71,11 +69,13 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<ActorProxyFactory> { DefaultActorProxyFactory::class.java }
         }
 
-        netManager.localNodeManipulator.replace(NodeInfo(
-            clusterName = stageConfig.netConfig.clusterName,
-            nodeIdentity = stageConfig.netConfig.nodeIdentity,
-            nodeStatus = NodeStatus.STOPPED
-        ))
+        netManager.localNodeManipulator.replace(
+            NodeInfo(
+                clusterName = stageConfig.netConfig.clusterName,
+                nodeIdentity = stageConfig.netConfig.nodeIdentity,
+                nodeStatus = NodeStatus.STOPPED
+            )
+        )
     }
 
     /**

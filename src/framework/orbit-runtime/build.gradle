@@ -6,4 +6,6 @@
 
 dependencies {
     api(project(":src:framework:orbit-core"))
+
+    compile("io.github.classgraph:classgraph:4.6.18")
 }

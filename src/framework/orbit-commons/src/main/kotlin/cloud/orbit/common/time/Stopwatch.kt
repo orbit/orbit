@@ -6,8 +6,6 @@
 
 package cloud.orbit.common.time
 
-import java.util.concurrent.atomic.AtomicLong
-
 /**
  * A stopwatch for measuring elapsed time.
  * @param clock The clock to use for measuring time

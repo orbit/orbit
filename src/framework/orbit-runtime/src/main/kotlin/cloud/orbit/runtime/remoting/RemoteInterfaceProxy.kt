@@ -10,7 +10,6 @@ import cloud.orbit.core.key.Key
 import cloud.orbit.runtime.pipeline.PipelineManager
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.future.asCompletableFuture
-import java.lang.IllegalArgumentException
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.util.concurrent.CompletableFuture
@@ -36,7 +35,7 @@ class RemoteInterfaceProxy(
     }
 
     private fun wrap(completableDeferred: CompletableDeferred<*>, method: Method): Any =
-        when(method.returnType) {
+        when (method.returnType) {
             CompletableDeferred::class.java -> completableDeferred
             CompletableFuture::class.java -> completableDeferred.asCompletableFuture()
             else -> {
