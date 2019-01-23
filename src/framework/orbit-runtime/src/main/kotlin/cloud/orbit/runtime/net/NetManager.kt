@@ -14,22 +14,6 @@ import java.lang.IllegalStateException
 import java.util.concurrent.atomic.AtomicReference
 
 class NetManager {
-    @PublishedApi
-    internal val localNodeRef = AtomicReference<NodeInfo>()
-    @PublishedApi
-    internal val localClusterInfoRef = AtomicReference<ClusterInfo>()
-
-    val localNode: NodeInfo get() = localNodeRef.get()
-    val localClusterInfo: ClusterInfo get() = localClusterInfoRef.get()
-
-    fun updateLocalNodeStatus(expected: NodeStatus, target: NodeStatus) {
-        localNodeRef.atomicSet {
-            if(it.nodeStatus != expected) {
-                throw IllegalStateException("Can not transition to $target. Expected $expected but was ${it.nodeStatus}.")
-            }
-            it.copy(
-                nodeStatus = target
-            )
-        }
-    }
+    val localNodeManipulator = NodeManipulator()
+    val localNode get() = localNodeManipulator.nodeInfo
 }

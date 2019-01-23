@@ -71,7 +71,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<ActorProxyFactory> { DefaultActorProxyFactory::class.java }
         }
 
-        netManager.localNodeRef.set(NodeInfo(
+        netManager.localNodeManipulator.replace(NodeInfo(
             clusterName = stageConfig.netConfig.clusterName,
             nodeIdentity = stageConfig.netConfig.nodeIdentity,
             nodeStatus = NodeStatus.STOPPED
@@ -89,7 +89,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     fun stop() = requestStop().asCompletableFuture()
 
     private fun requestStart() = supervisorScope.async {
-        netManager.updateLocalNodeStatus(NodeStatus.STOPPED, NodeStatus.STARTING)
+        netManager.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPED, NodeStatus.STARTING)
         logger.info("Starting Orbit...")
         val (elapsed, _) = stopwatch(clock) {
             onStart()
@@ -130,7 +130,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     }
 
     private fun requestStop() = supervisorScope.async {
-        netManager.updateLocalNodeStatus(NodeStatus.RUNNING, NodeStatus.STOPPING)
+        netManager.localNodeManipulator.updateNodeStatus(NodeStatus.RUNNING, NodeStatus.STOPPING)
 
         logger.info("Orbit stopping...")
         val (elapsed, _) = stopwatch(clock) {
@@ -145,7 +145,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     private suspend fun onStart() {
         logEnvironmentInfo()
 
-        netManager.updateLocalNodeStatus(NodeStatus.STARTING, NodeStatus.RUNNING)
+        netManager.localNodeManipulator.updateNodeStatus(NodeStatus.STARTING, NodeStatus.RUNNING)
         tickJob = launchTick()
     }
 
@@ -153,7 +153,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     }
 
     private suspend fun onStop() {
-        netManager.updateLocalNodeStatus(NodeStatus.STOPPING, NodeStatus.STOPPED)
+        netManager.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPING, NodeStatus.STOPPED)
     }
 
     private fun logEnvironmentInfo() {
