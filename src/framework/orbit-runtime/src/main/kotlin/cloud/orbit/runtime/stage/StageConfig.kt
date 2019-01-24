@@ -7,7 +7,10 @@
 package cloud.orbit.runtime.stage
 
 import cloud.orbit.common.concurrent.Pools
-import cloud.orbit.runtime.net.NetConfig
+import cloud.orbit.common.util.RandomUtils
+import cloud.orbit.core.net.ClusterName
+import cloud.orbit.core.net.NodeIdentity
+import cloud.orbit.core.net.NodeMode
 import kotlinx.coroutines.CoroutineDispatcher
 
 /**
@@ -15,9 +18,23 @@ import kotlinx.coroutines.CoroutineDispatcher
  */
 data class StageConfig(
     /**
-     * Network related configuration
+     * The [ClusterName] of the Orbit cluster.
+     *
+     * This value determines which nodes may communicate with one another.
      */
-    val netConfig: NetConfig = NetConfig(),
+    val clusterName: ClusterName = ClusterName("orbit-cluster"),
+
+    /**
+     * The [NodeIdentity] of this Orbit node.
+     *
+     * This value must be unique.
+     */
+    val nodeIdentity: NodeIdentity = NodeIdentity(RandomUtils.secureRandomString()),
+
+    /**
+     * The [NodeMode] of this Orbit node.
+     */
+    val nodeMode: NodeMode = NodeMode.SERVER,
 
     /**
      * The pool where CPU intensive tasks will run.
@@ -32,5 +49,12 @@ data class StageConfig(
     /**
      * The Orbit tick rate in milliseconds.
      */
-    val tickRate: Long = 1000
+    val tickRate: Long = 1000,
+
+    /**
+     * Packages to scan for addressables.
+     *
+     * If blank all packages will be scanned.
+     */
+    val packages: List<String> = listOf()
 )

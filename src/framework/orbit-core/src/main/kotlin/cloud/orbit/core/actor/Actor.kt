@@ -6,34 +6,41 @@
 
 package cloud.orbit.core.actor
 
+import cloud.orbit.core.annotation.NonConcrete
 import cloud.orbit.core.remoting.Addressable
 
 /**
  * Interface marker for actors.
  */
+@NonConcrete
 interface Actor : Addressable
 
 /**
  * An actor with no key.
  */
+@NonConcrete
 interface ActorWithNoKey : Actor
 
 /**
  * An actor with a string key.
  */
+@NonConcrete
 interface ActorWithStringKey : Actor
 
 /**
  * An actor with an int32 key.
  */
+@NonConcrete
 interface ActorWithInt32Key : Actor
 
 /**
  * An actor with an int64 key.
  */
+@NonConcrete
 interface ActorWithInt64Key : Actor
 
 /**
  * An actor with a guid key.
  */
+@NonConcrete
 interface ActorWithGuidKey : Actor

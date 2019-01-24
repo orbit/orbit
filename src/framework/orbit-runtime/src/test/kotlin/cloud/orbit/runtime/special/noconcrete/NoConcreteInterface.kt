@@ -4,14 +4,12 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.core.remoting
+package cloud.orbit.runtime.special.noconcrete
 
 import cloud.orbit.core.annotation.NonConcrete
+import cloud.orbit.core.remoting.Addressable
 
-/**
- * Marker interface that determines an interface is addressable remotely.
- */
 @NonConcrete
-interface Addressable
+interface NoConcreteInterface : Addressable
 
-typealias AddressableClass = Class<out Addressable>
+class NoConcreteClass : NoConcreteInterface

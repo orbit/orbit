@@ -11,10 +11,12 @@ import cloud.orbit.common.time.Clock
 import cloud.orbit.common.time.stopwatch
 import cloud.orbit.common.util.VersionUtils
 import cloud.orbit.core.actor.ActorProxyFactory
+import cloud.orbit.core.net.NodeCapabilities
 import cloud.orbit.core.net.NodeInfo
 import cloud.orbit.core.net.NodeStatus
 import cloud.orbit.core.runtime.RuntimeContext
 import cloud.orbit.runtime.actor.DefaultActorProxyFactory
+import cloud.orbit.runtime.capabilities.CapabilitiesScanner
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.NetManager
@@ -30,6 +32,8 @@ import kotlinx.coroutines.future.asCompletableFuture
  * This represents a single instance of the Orbit runtime.
  */
 class Stage(private val stageConfig: StageConfig) : RuntimeContext {
+    constructor() : this(StageConfig())
+
     private val logger by logger()
 
     private val errorHandler = ErrorHandler()
@@ -55,7 +59,6 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<Clock>()
 
             // Net
-            instance { stageConfig.netConfig }
             definition<NetManager>()
 
             // Remoting
@@ -65,15 +68,22 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             // Pipeline
             definition<PipelineManager>()
 
+            // Capabilities
+            definition<CapabilitiesScanner>()
+
             // Actors
             definition<ActorProxyFactory> { DefaultActorProxyFactory::class.java }
         }
 
         netManager.localNodeManipulator.replace(
             NodeInfo(
-                clusterName = stageConfig.netConfig.clusterName,
-                nodeIdentity = stageConfig.netConfig.nodeIdentity,
-                nodeStatus = NodeStatus.STOPPED
+                clusterName = stageConfig.clusterName,
+                nodeIdentity = stageConfig.nodeIdentity,
+                nodeMode = stageConfig.nodeMode,
+                nodeStatus = NodeStatus.STOPPED,
+                nodeCapabilities = NodeCapabilities(
+                    addressables = listOf()
+                )
             )
         )
     }
@@ -143,9 +153,23 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     }
 
     private suspend fun onStart() {
+        val capabilitiesScanner: CapabilitiesScanner by componentProvider.inject()
+        val remoteInterfaceDefinitionDictionary: RemoteInterfaceDefinitionDictionary by componentProvider.inject()
+
+        // Log some info about the environment
         logEnvironmentInfo()
 
+        // Determine capabilities
+        capabilitiesScanner.scan(*stageConfig.packages.toTypedArray())
+        capabilitiesScanner.addressableInterfaces.forEach { // Pre populate for performance
+            remoteInterfaceDefinitionDictionary.getOrCreate(it)
+        }
+        val capabilities = capabilitiesScanner.generateNodeCapabilities()
+        netManager.localNodeManipulator.updateCapabiltities(capabilities)
+
+        // Flip status to running
         netManager.localNodeManipulator.updateNodeStatus(NodeStatus.STARTING, NodeStatus.RUNNING)
+
         tickJob = launchTick()
     }
 
@@ -159,12 +183,12 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     private fun logEnvironmentInfo() {
         val versionInfo = VersionUtils.getVersionInfo()
         logger.info {
-            "Orbit Environment: ${stageConfig.netConfig.clusterName} ${stageConfig.netConfig.nodeIdentity} $versionInfo"
+            "Orbit Environment: ${stageConfig.clusterName} ${stageConfig.nodeIdentity} $versionInfo"
         }
 
         loggingContext {
-            put("orbit.clusterName" to stageConfig.netConfig.clusterName.value)
-            put("orbit.nodeIdentity" to stageConfig.netConfig.nodeIdentity.value)
+            put("orbit.clusterName" to stageConfig.clusterName.value)
+            put("orbit.nodeIdentity" to stageConfig.nodeIdentity.value)
             put("orbit.version" to versionInfo.orbitVersion)
             put("orbit.jvmVersion" to versionInfo.jvmVersion)
             put("orbit.jvmBuild" to versionInfo.jvmBuild)

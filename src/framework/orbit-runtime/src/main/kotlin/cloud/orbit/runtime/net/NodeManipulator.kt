@@ -7,6 +7,7 @@
 package cloud.orbit.runtime.net
 
 import cloud.orbit.common.concurrent.atomicSet
+import cloud.orbit.core.net.NodeCapabilities
 import cloud.orbit.core.net.NodeInfo
 import cloud.orbit.core.net.NodeStatus
 import java.util.concurrent.atomic.AtomicReference
@@ -32,6 +33,14 @@ class NodeManipulator {
             }
             it.copy(
                 nodeStatus = target
+            )
+        }
+    }
+
+    fun updateCapabiltities(nodeCapabilities: NodeCapabilities) {
+        nodeRef.atomicSet {
+            it.copy(
+                nodeCapabilities = nodeCapabilities
             )
         }
     }
