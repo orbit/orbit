@@ -10,7 +10,6 @@ import cloud.orbit.common.logging.debug
 import cloud.orbit.common.logging.logger
 import cloud.orbit.core.annotation.NonConcrete
 import cloud.orbit.core.remoting.AddressableClass
-import java.lang.IllegalArgumentException
 import java.util.concurrent.ConcurrentHashMap
 
 class RemoteInterfaceDefinitionDictionary {
@@ -23,10 +22,10 @@ class RemoteInterfaceDefinitionDictionary {
         }
 
     private fun generateDefinition(interfaceClass: AddressableClass): RemoteInterfaceDefinition {
-        if(!interfaceClass.isInterface) {
+        if (!interfaceClass.isInterface) {
             throw IllegalArgumentException("${interfaceClass.name} is not an interface.")
         }
-        if(interfaceClass.isAnnotationPresent(NonConcrete::class.java)) {
+        if (interfaceClass.isAnnotationPresent(NonConcrete::class.java)) {
             throw IllegalArgumentException("${interfaceClass.name} is non-concrete and can not be directly addressed")
         }
 

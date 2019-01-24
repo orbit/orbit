@@ -16,7 +16,7 @@ import org.junit.jupiter.api.TestInstance
 abstract class StageBaseTest {
     protected lateinit var stage: Stage
 
-    protected open fun setupStage(stageConfig: StageConfig) : StageConfig {
+    protected open fun setupStage(stageConfig: StageConfig): StageConfig {
         return stageConfig
     }
 

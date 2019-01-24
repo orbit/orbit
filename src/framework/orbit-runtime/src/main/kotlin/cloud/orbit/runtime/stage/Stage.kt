@@ -161,7 +161,8 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
         // Determine capabilities
         capabilitiesScanner.scan(*stageConfig.packages.toTypedArray())
-        capabilitiesScanner.addressableInterfaces.forEach { // Pre populate for performance
+        capabilitiesScanner.addressableInterfaces.forEach {
+            // Pre populate for performance
             remoteInterfaceDefinitionDictionary.getOrCreate(it)
         }
         val capabilities = capabilitiesScanner.generateNodeCapabilities()

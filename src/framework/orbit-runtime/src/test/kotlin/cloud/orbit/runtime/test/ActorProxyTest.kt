@@ -12,7 +12,6 @@ import cloud.orbit.core.annotation.NonConcrete
 import cloud.orbit.runtime.util.StageBaseTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.lang.IllegalArgumentException
 
 @NonConcrete
 interface NonConcreteActor : ActorWithNoKey
