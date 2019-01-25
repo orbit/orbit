@@ -28,17 +28,6 @@ class CapabilitiesTest {
     }
 
     @Test
-    fun `ensure fail when multiple concrete interfaces exist`() {
-
-        val e = assertThatThrownBy {
-            val capabilitiesScanner = CapabilitiesScanner(Clock())
-            capabilitiesScanner.scan("cloud.orbit.runtime.special.capabilities.multiconcrete")
-        }
-
-        e.isInstanceOf(IllegalStateException::class.java).hasMessageContaining("More than one concrete interface found")
-    }
-
-    @Test
     fun `ensure fail when multiple implementations of concrete interface exists`() {
 
         val e = assertThatThrownBy {
@@ -58,10 +47,7 @@ class CapabilitiesTest {
 
         assertThat(capabilitiesScanner.addressableInterfaces.contains(BasicCapabilities::class.java)).isTrue()
 
-        assertThat(capabilitiesScanner.concreteAddressablesByClass[BasicCapabilitiesActor::class.java])
-            .isEqualTo(BasicCapabilities::class.java)
-
-        assertThat(capabilitiesScanner.concreteAddressablesByInterface[BasicCapabilities::class.java])
+        assertThat(capabilitiesScanner.interfaceLookup[BasicCapabilities::class.java])
             .isEqualTo(BasicCapabilitiesActor::class.java)
     }
 

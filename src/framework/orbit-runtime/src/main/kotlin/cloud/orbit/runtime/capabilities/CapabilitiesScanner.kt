@@ -22,8 +22,7 @@ class CapabilitiesScanner(private val clock: Clock) {
 
     lateinit var addressableInterfaces: List<AddressableClass>
     lateinit var addressableClasses: List<AddressableClass>
-    lateinit var concreteAddressablesByClass: Map<AddressableClass, AddressableClass>
-    lateinit var concreteAddressablesByInterface: Map<AddressableClass, AddressableClass>
+    lateinit var interfaceLookup: Map<AddressableClass, AddressableClass>
 
 
     fun scan(vararg packagePaths: String) {
@@ -62,40 +61,38 @@ class CapabilitiesScanner(private val clock: Clock) {
                 }
         }
 
-        concreteAddressablesByClass = addressableClasses.map {
-            val mapped = resolveMapping(it)
-            it to mapped
-        }.toMap()
-
         val tmpMap = mutableMapOf<AddressableClass, AddressableClass>()
-        concreteAddressablesByClass.forEach { (k, v) ->
-            if(tmpMap.containsKey(v)) throw IllegalStateException("Multiple implementations of concrete interface " +
-                    "${v.name} found.")
-            tmpMap[v] = k
+        addressableClasses.forEach {implClass ->
+            val mapped = resolveMapping(implClass)
+            mapped.forEach { iface ->
+                if(tmpMap.containsKey(iface)) throw IllegalStateException("Multiple implementations of concrete " +
+                        "interface ${iface.name} found.")
+                tmpMap[iface] = implClass
+            }
         }
-        concreteAddressablesByInterface = tmpMap
+        interfaceLookup = tmpMap
 
 
         logger.debug { "Addressable Interfaces: $addressableInterfaces" }
         logger.debug { "Addressable Classes: $addressableClasses" }
-        logger.debug { "Concrete Addressables: $concreteAddressablesByClass" }
+        logger.debug { "Implemented Addressables: $interfaceLookup" }
 
         logger.info {
             "Node capabilities scan complete in ${elapsed}ms. " +
-                    "${concreteAddressablesByClass.size} concrete addressable(s) found. " +
+                    "${interfaceLookup.size} implemented addressable(s) found. " +
                     "${addressableInterfaces.size} addressable interface(s) found. " +
                     "${addressableClasses.size} addressable class(es) found. "
         }
     }
 
     fun generateNodeCapabilities(): NodeCapabilities {
-        val addressables = concreteAddressablesByInterface.map { (key, _) -> key.name }
+        val addressables = interfaceLookup.map { (key, _) -> key.name }
         return NodeCapabilities(
             addressables = addressables
         )
     }
 
-    private fun resolveMapping(addressable: AddressableClass): AddressableClass {
+    private fun resolveMapping(addressable: AddressableClass): Collection<AddressableClass> {
         fun doMapping(crawl: Class<*>, list: MutableList<AddressableClass> = mutableListOf()): List<AddressableClass> {
             if(crawl.interfaces.isEmpty()) return list
             for (iface in crawl.interfaces) {
@@ -114,10 +111,8 @@ class CapabilitiesScanner(private val clock: Clock) {
 
         if(results.isEmpty()) {
             throw IllegalStateException("Could not find mapping for ${addressable.name}")
-        } else if(results.size > 1) {
-            throw IllegalStateException("More than one concrete interface found for ${addressable.name}")
         }
 
-        return results.first()
+        return results
     }
 }
