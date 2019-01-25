@@ -86,7 +86,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
                 nodeMode = stageConfig.nodeMode,
                 nodeStatus = NodeStatus.STOPPED,
                 nodeCapabilities = NodeCapabilities(
-                    addressables = listOf()
+                    implementedAddressables = listOf()
                 )
             )
         )

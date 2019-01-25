@@ -88,7 +88,7 @@ class CapabilitiesScanner(private val clock: Clock) {
     fun generateNodeCapabilities(): NodeCapabilities {
         val addressables = interfaceLookup.map { (key, _) -> key.name }
         return NodeCapabilities(
-            addressables = addressables
+            implementedAddressables = addressables
         )
     }
 

@@ -53,7 +53,7 @@ data class NodeCapabilities(
     /**
      * The addressables which have concrete implementations on this node.
      */
-    val addressables: List<String>
+    val implementedAddressables: List<String>
 )
 
 /**
