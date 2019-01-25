@@ -4,12 +4,11 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.runtime.special.noconcrete
+package cloud.orbit.runtime.special.capabilities.multiimpl
 
-import cloud.orbit.core.annotation.NonConcrete
 import cloud.orbit.core.remoting.Addressable
 
-@NonConcrete
-interface NoConcreteInterface : Addressable
+interface MultiImpl : Addressable
 
-class NoConcreteClass : NoConcreteInterface
+class MultiImpl1 : MultiImpl
+class MultiImpl2 : MultiImpl

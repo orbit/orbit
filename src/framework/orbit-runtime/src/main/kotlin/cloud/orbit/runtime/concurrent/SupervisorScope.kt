@@ -13,13 +13,14 @@ import kotlinx.coroutines.SupervisorJob
 import kotlin.coroutines.CoroutineContext
 
 class SupervisorScope(
-    private val dispatcher: CoroutineDispatcher,
+    val cpuPool: CoroutineDispatcher,
+    val ioPool: CoroutineDispatcher,
     private val exceptionHandler: (CoroutineContext, Throwable) -> Unit
 ) : CoroutineScope {
 
     private val job = SupervisorJob()
     override val coroutineContext: CoroutineContext
         get() = job +
-                dispatcher +
+                cpuPool +
                 CoroutineExceptionHandler(exceptionHandler)
 }

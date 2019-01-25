@@ -62,28 +62,18 @@ class CapabilitiesScanner(private val clock: Clock) {
                 }
         }
 
-        tailrec fun resolveMapping(initial: Class<*>, addressableClass: Class<*> = initial): AddressableClass {
-            for (iface in addressableClass.interfaces) {
-                if (Addressable::class.java.isAssignableFrom(iface)) {
-                    if (!iface.isAnnotationPresent(NonConcrete::class.java)) {
-                        @Suppress("UNCHECKED_CAST")
-                        return iface as AddressableClass
-                    }
-
-                    return resolveMapping(initial, iface)
-                }
-            }
-            throw IllegalStateException("Could not find mapping for ${initial.name}")
-        }
-
         concreteAddressablesByClass = addressableClasses.map {
             val mapped = resolveMapping(it)
             it to mapped
         }.toMap()
 
-        concreteAddressablesByInterface = concreteAddressablesByClass.map {
-            it.value to it.key
-        }.toMap()
+        val tmpMap = mutableMapOf<AddressableClass, AddressableClass>()
+        concreteAddressablesByClass.forEach { (k, v) ->
+            if(tmpMap.containsKey(v)) throw IllegalStateException("Multiple implementations of concrete interface " +
+                    "${v.name} found.")
+            tmpMap[v] = k
+        }
+        concreteAddressablesByInterface = tmpMap
 
 
         logger.debug { "Addressable Interfaces: $addressableInterfaces" }
@@ -103,5 +93,31 @@ class CapabilitiesScanner(private val clock: Clock) {
         return NodeCapabilities(
             addressables = addressables
         )
+    }
+
+    private fun resolveMapping(addressable: AddressableClass): AddressableClass {
+        fun doMapping(crawl: Class<*>, list: MutableList<AddressableClass> = mutableListOf()): List<AddressableClass> {
+            if(crawl.interfaces.isEmpty()) return list
+            for (iface in crawl.interfaces) {
+                if (Addressable::class.java.isAssignableFrom(iface)) {
+                    if (!iface.isAnnotationPresent(NonConcrete::class.java)) {
+                        @Suppress("UNCHECKED_CAST")
+                        list.add(iface as AddressableClass)
+                    }
+                    if(iface.interfaces.isNotEmpty()) doMapping(iface, list)
+                }
+            }
+            return list
+        }
+
+        val results = doMapping(addressable)
+
+        if(results.isEmpty()) {
+            throw IllegalStateException("Could not find mapping for ${addressable.name}")
+        } else if(results.size > 1) {
+            throw IllegalStateException("More than one concrete interface found for ${addressable.name}")
+        }
+
+        return results.first()
     }
 }

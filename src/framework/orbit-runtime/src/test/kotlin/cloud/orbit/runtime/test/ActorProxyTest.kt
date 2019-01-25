@@ -10,8 +10,9 @@ import cloud.orbit.core.actor.ActorWithNoKey
 import cloud.orbit.core.actor.getReference
 import cloud.orbit.core.annotation.NonConcrete
 import cloud.orbit.runtime.util.StageBaseTest
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 
 @NonConcrete
 interface NonConcreteActor : ActorWithNoKey
@@ -21,13 +22,16 @@ interface ConcreteActor : ActorWithNoKey
 class ActorProxyTest : StageBaseTest() {
     @Test
     fun `ensure concrete can be proxied`() {
-        stage.actorProxyFactory.getReference<ConcreteActor>()
+        val proxy = stage.actorProxyFactory.getReference<ConcreteActor>()
+        assertThat(proxy).isInstanceOf(ConcreteActor::class.java)
     }
 
     @Test
     fun `ensure non-concrete can not be proxied`() {
-        assertThrows<IllegalArgumentException> {
+        val e = assertThatThrownBy {
             stage.actorProxyFactory.getReference<NonConcreteActor>()
         }
+
+        e.isInstanceOf(IllegalArgumentException::class.java).hasMessageContaining("can not be directly addressed")
     }
 }

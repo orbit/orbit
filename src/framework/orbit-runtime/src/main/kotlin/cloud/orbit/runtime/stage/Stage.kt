@@ -37,7 +37,11 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     private val logger by logger()
 
     private val errorHandler = ErrorHandler()
-    private val supervisorScope = SupervisorScope(stageConfig.cpuPool, errorHandler::onUnhandledException)
+    private val supervisorScope = SupervisorScope(
+        cpuPool = stageConfig.cpuPool,
+        ioPool = stageConfig.ioPool,
+        exceptionHandler = errorHandler::onUnhandledException
+    )
     private val componentProvider = ComponentProvider()
     private val netManager: NetManager by componentProvider.inject()
 
