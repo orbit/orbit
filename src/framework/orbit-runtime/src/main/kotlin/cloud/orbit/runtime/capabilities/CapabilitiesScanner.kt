@@ -18,11 +18,11 @@ import cloud.orbit.core.remoting.AddressableClass
 import io.github.classgraph.ClassGraph
 
 class CapabilitiesScanner(private val clock: Clock) {
-    val logger by logger()
+    private val logger by logger()
 
-    lateinit var addressableInterfaces: List<AddressableClass>
-    lateinit var addressableClasses: List<AddressableClass>
-    lateinit var interfaceLookup: Map<AddressableClass, AddressableClass>
+    lateinit var addressableInterfaces: List<AddressableClass> private set
+    lateinit var addressableClasses: List<AddressableClass> private set
+    lateinit var interfaceLookup: Map<AddressableClass, AddressableClass> private set
 
 
     fun scan(vararg packagePaths: String) {
@@ -61,17 +61,21 @@ class CapabilitiesScanner(private val clock: Clock) {
                 }
         }
 
-        val tmpMap = mutableMapOf<AddressableClass, AddressableClass>()
-        addressableClasses.forEach {implClass ->
-            val mapped = resolveMapping(implClass)
-            mapped.forEach { iface ->
-                if(tmpMap.containsKey(iface)) throw IllegalStateException("Multiple implementations of concrete " +
-                        "interface ${iface.name} found.")
-                tmpMap[iface] = implClass
+        interfaceLookup = mutableMapOf<AddressableClass, AddressableClass>().apply {
+            addressableClasses.forEach { implClass ->
+                val mapped = resolveMapping(implClass)
+                if (mapped.isEmpty()) {
+                    throw IllegalStateException("Could not find mapping for ${implClass.name}")
+                }
+                mapped.forEach { iface ->
+                    if (this.containsKey(iface)) throw IllegalStateException(
+                        "Multiple implementations of concrete " +
+                                "interface ${iface.name} found."
+                    )
+                    this[iface] = implClass
+                }
             }
         }
-        interfaceLookup = tmpMap
-
 
         logger.debug { "Addressable Interfaces: $addressableInterfaces" }
         logger.debug { "Addressable Classes: $addressableClasses" }
@@ -92,27 +96,21 @@ class CapabilitiesScanner(private val clock: Clock) {
         )
     }
 
-    private fun resolveMapping(addressable: AddressableClass): Collection<AddressableClass> {
-        fun doMapping(crawl: Class<*>, list: MutableList<AddressableClass> = mutableListOf()): List<AddressableClass> {
-            if(crawl.interfaces.isEmpty()) return list
-            for (iface in crawl.interfaces) {
-                if (Addressable::class.java.isAssignableFrom(iface)) {
-                    if (!iface.isAnnotationPresent(NonConcrete::class.java)) {
-                        @Suppress("UNCHECKED_CAST")
-                        list.add(iface as AddressableClass)
-                    }
-                    if(iface.interfaces.isNotEmpty()) doMapping(iface, list)
+    private fun resolveMapping(
+        crawl: Class<*>,
+        list: MutableList<AddressableClass> = mutableListOf()
+    ): Collection<AddressableClass> {
+        if (crawl.interfaces.isEmpty()) return list
+        for (iface in crawl.interfaces) {
+            if (Addressable::class.java.isAssignableFrom(iface)) {
+                if (!iface.isAnnotationPresent(NonConcrete::class.java)) {
+                    @Suppress("UNCHECKED_CAST")
+                    list.add(iface as AddressableClass)
                 }
+                if (iface.interfaces.isNotEmpty()) resolveMapping(iface, list)
             }
-            return list
         }
-
-        val results = doMapping(addressable)
-
-        if(results.isEmpty()) {
-            throw IllegalStateException("Could not find mapping for ${addressable.name}")
-        }
-
-        return results
+        return list
     }
+
 }
