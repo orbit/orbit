@@ -58,7 +58,7 @@ ext {
     javaSourceVersion = "1.8"
     kotlinTargetVersion = "1.8"
 
-    coroutinesVersion = "1.1.0"
+    coroutinesVersion = "1.1.1"
 
     junitJupiterVersion = "5.3.2"
     slf4jVersion = "1.7.25"
