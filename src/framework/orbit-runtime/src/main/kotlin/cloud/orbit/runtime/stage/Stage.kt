@@ -117,7 +117,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
         val targetTickRate = stageConfig.tickRate
         while (isActive) {
             val (elapsed, _) = stopwatch(clock) {
-                logger.debug { "Begin Orbit tick..." }
+                logger.trace { "Begin Orbit tick..." }
 
                 try {
                     onTick()
@@ -138,7 +138,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
                 }
             }
 
-            logger.debug { "Orbit tick completed in ${elapsed}ms. Next tick in ${nextTickDelay}ms." }
+            logger.trace { "Orbit tick completed in ${elapsed}ms. Next tick in ${nextTickDelay}ms." }
             delay(nextTickDelay)
         }
     }
@@ -200,7 +200,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             put("orbit.kotlinVersion" to versionInfo.kotlinVersion)
         }
 
-        logger.trace {
+        logger.debug {
             "Initial Orbit Component Provider State: ${componentProvider.debugString()}"
         }
     }
