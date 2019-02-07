@@ -37,20 +37,28 @@ internal class ComponentProvider {
         beanInstances[interfaceClass] = liveObject
     }
 
-    @Suppress("UNCHECKED_CAST")
     fun <T> resolve(interfaceClass: Class<T>): T {
+        @Suppress("UNCHECKED_CAST")
         return beanInstances.getOrPut(interfaceClass) {
-            val beanDef = beanDefinitions.get(interfaceClass)
+            val beanDef = beanDefinitions[interfaceClass]
                 ?: throw IllegalStateException("No bean definition registered for '${interfaceClass.name}'.")
-            if (beanDef.concreteClass.constructors.size != 1)
-                throw IllegalStateException("${beanDef.concreteClass.name} must have one constructor.")
-            val ctr = beanDef.concreteClass.constructors[0]
-            val args = Array<Any?>(ctr.parameterCount) { null }
-            ctr.parameters.forEachIndexed { i, arg ->
-                args[i] = resolve(arg.type)
-            }
-            ctr.newInstance(*args) as T
+            construct(beanDef)
         } as T
+    }
+
+    fun <T> construct(beanDefinition: BeanDefinition<T>) : T =
+            construct(beanDefinition.concreteClass)
+
+    fun <T> construct(concreteClass: Class<out T>): T {
+        if (concreteClass.constructors.size != 1)
+            throw IllegalStateException("${concreteClass.name} must have one constructor.")
+        val ctr = concreteClass.constructors[0]
+        val args = Array<Any?>(ctr.parameterCount) { null }
+        ctr.parameters.forEachIndexed { i, arg ->
+            args[i] = resolve(arg.type)
+        }
+        @Suppress("UNCHECKED_CAST")
+        return ctr.newInstance(*args) as T
     }
 
     inline fun <reified R : Any> inject(): Lazy<R> = lazy {
