@@ -17,6 +17,7 @@ import cloud.orbit.core.net.NodeStatus
 import cloud.orbit.core.runtime.RuntimeContext
 import cloud.orbit.runtime.actor.DefaultActorProxyFactory
 import cloud.orbit.runtime.capabilities.CapabilitiesScanner
+import cloud.orbit.runtime.concurrent.RuntimePools
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.NetManager
@@ -37,9 +38,12 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     private val logger by logger()
 
     private val errorHandler = ErrorHandler()
-    private val supervisorScope = SupervisorScope(
+    private val runtimePools = RuntimePools(
         cpuPool = stageConfig.cpuPool,
-        ioPool = stageConfig.ioPool,
+        ioPool = stageConfig.ioPool
+    )
+    private val supervisorScope = SupervisorScope(
+        runtimePools = runtimePools,
         exceptionHandler = errorHandler::onUnhandledException
     )
     private val componentProvider = ComponentProvider()
@@ -56,6 +60,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             instance<RuntimeContext> { this@Stage }
             instance { this@Stage }
             instance { stageConfig }
+            instance { runtimePools }
             instance { supervisorScope }
             instance { errorHandler }
 
