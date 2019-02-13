@@ -30,6 +30,7 @@ package cloud.orbit.actors.runtime;
 
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
+import com.esotericsoftware.kryo.ClassResolver;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.Serializer;
@@ -91,35 +92,85 @@ public class KryoSerializer implements ExecutionObjectCloner, MessageSerializer
 
     public KryoSerializer(Consumer<Kryo> kryoConsumer)
     {
+        this(kryoConsumer, new DefaultClassResolver());
+    }
+
+    public KryoSerializer(Consumer<Kryo> kryoConsumer, ClassResolver classResolver)
+    {
         KryoFactory factory = new KryoFactory()
         {
             @Override
             public Kryo create()
             {
-                Kryo kryo = new Kryo(new DefaultClassResolver()
+                Kryo kryo = new Kryo(new ClassResolver()
                 {
+                    Kryo kryo;
+
                     @Override
-                    public Registration writeClass(Output output, Class type)
+                    public void setKryo(final Kryo kryo)
+                    {
+                        this.kryo = kryo;
+                        classResolver.setKryo(kryo);
+                    }
+
+                    @Override
+                    public Registration register(final Registration registration)
+                    {
+                        return classResolver.register(registration);
+                    }
+
+                    @Override
+                    public Registration registerImplicit(final Class type)
+                    {
+                        return classResolver.registerImplicit(type);
+                    }
+
+                    @Override
+                    public Registration getRegistration(final Class type)
+                    {
+                        return classResolver.getRegistration(type);
+                    }
+
+                    @Override
+                    public Registration getRegistration(final int classID)
+                    {
+                        return classResolver.getRegistration(classID);
+                    }
+
+                    @Override
+                    public Registration writeClass(final Output output, final Class type)
                     {
                         if (type != null && !type.isInterface())
                         {
                             if (ActorObserver.class.isAssignableFrom(type))
                             {
-                                super.writeClass(output, ActorObserver.class);
+                                classResolver.writeClass(output, ActorObserver.class);
                                 return kryo.getRegistration(type);
                             }
                             else if (AbstractActor.class.isAssignableFrom(type))
                             {
-                                super.writeClass(output, AbstractActor.class);
+                                classResolver.writeClass(output, AbstractActor.class);
                                 return kryo.getRegistration(type);
                             }
                             else if (RemoteReference.class.isAssignableFrom(type))
                             {
-                                super.writeClass(output, RemoteReference.class);
+                                classResolver.writeClass(output, RemoteReference.class);
                                 return kryo.getRegistration(type);
                             }
                         }
-                        return super.writeClass(output, type);
+                        return classResolver.writeClass(output, type);
+                    }
+
+                    @Override
+                    public Registration readClass(final Input input)
+                    {
+                        return classResolver.readClass(input);
+                    }
+
+                    @Override
+                    public void reset()
+                    {
+                        classResolver.reset();
                     }
                 }, new MapReferenceResolver(), new DefaultStreamFactory());
 
