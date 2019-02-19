@@ -47,7 +47,12 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
         exceptionHandler = errorHandler::onUnhandledException
     )
     private val componentProvider = ComponentProvider()
+
     private val netManager: NetManager by componentProvider.inject()
+    private val capabilitiesScanner: CapabilitiesScanner by componentProvider.inject()
+    private val remoteInterfaceDefinitionDictionary: RemoteInterfaceDefinitionDictionary by componentProvider.inject()
+    private val pipelineManager: PipelineManager by componentProvider.inject()
+
 
     private var tickJob: Job? = null
 
@@ -108,7 +113,6 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     fun stop() = requestStop().asCompletableFuture()
 
     private fun requestStart() = supervisorScope.async {
-        netManager.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPED, NodeStatus.STARTING)
         logger.info("Starting Orbit...")
         val (elapsed, _) = stopwatch(clock) {
             onStart()
@@ -149,11 +153,8 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     }
 
     private fun requestStop() = supervisorScope.async {
-        netManager.localNodeManipulator.updateNodeStatus(NodeStatus.RUNNING, NodeStatus.STOPPING)
-
         logger.info("Orbit stopping...")
         val (elapsed, _) = stopwatch(clock) {
-            tickJob?.cancelAndJoin()
             onStop()
         }
 
@@ -162,8 +163,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     }
 
     private suspend fun onStart() {
-        val capabilitiesScanner: CapabilitiesScanner by componentProvider.inject()
-        val remoteInterfaceDefinitionDictionary: RemoteInterfaceDefinitionDictionary by componentProvider.inject()
+        netManager.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPED, NodeStatus.STARTING)
 
         // Log some info about the environment
         logEnvironmentInfo()
@@ -177,6 +177,9 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
         val capabilities = capabilitiesScanner.generateNodeCapabilities()
         netManager.localNodeManipulator.updateCapabiltities(capabilities)
 
+        // Start pipeline
+        pipelineManager.start()
+
         // Flip status to running
         netManager.localNodeManipulator.updateNodeStatus(NodeStatus.STARTING, NodeStatus.RUNNING)
 
@@ -187,6 +190,15 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     }
 
     private suspend fun onStop() {
+        netManager.localNodeManipulator.updateNodeStatus(NodeStatus.RUNNING, NodeStatus.STOPPING)
+
+        // Stop the tick
+        tickJob?.cancelAndJoin()
+
+
+        // Stop pipeline
+        pipelineManager.stop()
+
         netManager.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPING, NodeStatus.STOPPED)
     }
 

@@ -46,6 +46,12 @@ internal class ComponentProvider {
         } as T
     }
 
+    @Suppress("UNCHECKED_CAST")
+    fun <T> findInstances(interfaceClass: Class<T>): Collection<T> =
+        beanInstances.filter { interfaceClass.isAssignableFrom(it.value.javaClass) }.map { it as T }
+
+    inline fun <reified T> findInstances() = findInstances(T::class.java)
+
     fun <T> construct(beanDefinition: BeanDefinition<T>) : T =
             construct(beanDefinition.concreteClass)
 
