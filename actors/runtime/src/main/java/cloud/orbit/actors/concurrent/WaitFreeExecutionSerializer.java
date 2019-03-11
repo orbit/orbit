@@ -189,7 +189,7 @@ public class WaitFreeExecutionSerializer implements ExecutionSerializer, Executo
         try
         {
             final Task<?> task = (Task) toRun.get();
-            if (task == null || task.isDone())
+            if (task == null || (task.isDone() && !task.isCompletedExceptionally()))
             {
                 taskFuture.complete(null);
             }
