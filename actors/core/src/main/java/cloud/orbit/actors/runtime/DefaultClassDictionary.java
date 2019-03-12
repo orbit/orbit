@@ -36,8 +36,9 @@ import cloud.orbit.actors.annotation.ClassIdStrategy;
 import cloud.orbit.actors.reflection.ClassIdGenerationStrategy;
 import cloud.orbit.exception.UncheckedException;
 import cloud.orbit.util.IOUtils;
-import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
-import io.github.lukehutch.fastclasspathscanner.matchprocessor.FileMatchProcessor;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.Resource;
+import io.github.classgraph.ScanResult;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -96,9 +97,15 @@ public class DefaultClassDictionary
             }
 
             long start = System.currentTimeMillis();
-            new FastClasspathScanner(META_INF_SERVICES_ORBIT_CLASSES).matchFilenameExtension(EXTENSION, (FileMatchProcessor) (s, inputStream, i) -> {
-                loadClassInfo(s, inputStream);
-            }).scan();
+            try (ScanResult scanResult = new ClassGraph().enableClassInfo().scan())
+            {
+                scanResult.getResourcesWithExtension(EXTENSION)
+                        .filter(r -> r.getPath().startsWith(META_INF_SERVICES_ORBIT_CLASSES))
+                        .forEachInputStream((Resource resource, InputStream stream) -> {
+                            loadClassInfo(resource.getPath(), stream);
+                        });
+            }
+
             if (logger.isDebugEnabled()) {
                 logger.debug("Took " + (System.currentTimeMillis() - start) + "ms to scan for Orbit class service files.");
             }
@@ -163,14 +170,18 @@ public class DefaultClassDictionary
                 {
                     final ConcurrentHashMap<Integer, String> actualValue = new ConcurrentHashMap<>();
                     long start = System.currentTimeMillis();
-                    for (String candidate : new FastClasspathScanner().scan().getNamesOfAllClasses())
+                    try (ScanResult scanResult = new ClassGraph().enableInterClassDependencies().scan())
                     {
-                        String old = actualValue.put(candidate.hashCode(), candidate);
-                        if (old != null)
+                        for (String candidate : scanResult.getAllClasses().getNames())
                         {
-                            logger.info("Found more than one class with hashCode #" + candidate.hashCode() + " replacing " + old + " with " + candidate);
+                            String old = actualValue.put(candidate.hashCode(), candidate);
+                            if (old != null)
+                            {
+                                logger.info("Found more than one class with hashCode #" + candidate.hashCode() + " replacing " + old + " with " + candidate);
+                            }
                         }
                     }
+
                     if (logger.isDebugEnabled())
                     {
                         logger.debug("Took " + (System.currentTimeMillis() - start) + "ms to scan all classes.");

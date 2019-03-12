@@ -84,9 +84,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>io.github.lukehutch</groupId>
-                <artifactId>fast-classpath-scanner</artifactId>
-                <version>3.1.9</version>
+                <groupId>io.github.classgraph</groupId>
+                <artifactId>classgraph</artifactId>
+                <version>4.8.14</version>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>

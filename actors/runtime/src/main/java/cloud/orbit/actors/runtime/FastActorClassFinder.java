@@ -35,14 +35,14 @@ import cloud.orbit.actors.Actor;
 import cloud.orbit.actors.Remindable;
 import cloud.orbit.actors.extensions.ActorClassFinder;
 import cloud.orbit.concurrent.Task;
-import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,7 +63,7 @@ public class FastActorClassFinder implements ActorClassFinder
 
     private final ExecutorService executor;
     private final int parallelism;
-    private final String[] scanSpec;
+    private final String[] packageNames;
     private volatile Task<Void> scanTask;
 
     public FastActorClassFinder(final String... actorBasePackages)
@@ -75,7 +75,7 @@ public class FastActorClassFinder implements ActorClassFinder
     {
         this.executor = executor;
         this.parallelism = parallelism;
-        this.scanSpec = extractScanSpec(actorBasePackages);
+        this.packageNames = getPackageNames(actorBasePackages);
     }
 
     @Override
@@ -96,25 +96,23 @@ public class FastActorClassFinder implements ActorClassFinder
                 {
                     List<Class<?>> clazzImplementations = new ArrayList<>();
                     long start = System.currentTimeMillis();
-                    FastClasspathScanner scanner = new FastClasspathScanner(scanSpec).matchClassesImplementing(Actor.class, candidate -> {
-                        if (candidate.getSimpleName().toLowerCase(Locale.ENGLISH).startsWith("abstract"))
-                        {
-                            return;
-                        }
-                        clazzImplementations.add(candidate);
-                    });
+                    final ClassGraph classGraph = new ClassGraph().enableClassInfo().whitelistPackages(packageNames);
+
                     if (logger.isTraceEnabled())
                     {
-                        scanner.verbose();
+                        classGraph.verbose();
                     }
-                    if (executor != null)
+                    try (ScanResult scanResult = executor != null ? classGraph.scan(executor, parallelism) : classGraph.scan(parallelism))
                     {
-                        scanner.scan(executor, parallelism);
+                        scanResult.getClassesImplementing(Actor.class.getName()).forEach(classInfo -> {
+                            if (classInfo.isInterface() || classInfo.isAbstract())
+                            {
+                                return;
+                            }
+                            clazzImplementations.add(classInfo.loadClass());
+                        });
                     }
-                    else
-                    {
-                        scanner.scan(parallelism);
-                    }
+
                     for (Class<?> clazzImplementation : clazzImplementations)
                     {
                         Class<?>[] implementationInterfaces = clazzImplementation.getInterfaces();
@@ -139,15 +137,12 @@ public class FastActorClassFinder implements ActorClassFinder
                         }
                     }
                     long end = System.currentTimeMillis() - start;
-                    if (scanSpec.length == 0 && end > TimeUnit.SECONDS.toMillis(10))
+                    if (packageNames.length == 0 && end > TimeUnit.SECONDS.toMillis(10))
                     {
                         logger.info("Took " + end + "ms to scan for Actor implementations, for better performance "
                                 + "set the property orbit.actors.basePackages");
                     }
-                    if (logger.isDebugEnabled())
-                    {
-                        logger.info("Took " + end + "ms to scan for Actor implementations.");
-                    }
+                    logger.info("Took " + end + "ms to scan for Actor implementations.");
                 }
                 catch (RuntimeException e)
                 {
@@ -159,7 +154,7 @@ public class FastActorClassFinder implements ActorClassFinder
         }
     }
 
-    private String[] extractScanSpec(final String[] actorBasePackages)
+    private String[] getPackageNames(final String[] actorBasePackages)
     {
         if (actorBasePackages.length > 0)
         {

@@ -64,7 +64,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                     <include>com.googlecode.gentyref:gentyref</include>
                                     <include>org.javassist:javassist</include>
                                     <include>org.yaml:snakeyaml</include>
-                                    <include>io.github.lukehutch:fast-classpath-scanner</include>
+                                    <include>io.github.classgraph:classgraph</include>
                                     <include>org.ow2.asm:asm</include>
                                 </includes>
                             </artifactSet>
@@ -82,8 +82,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                     <shadedPattern>cloud.orbit.core.shaded.javassist.</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>io.github.lukehutch.</pattern>
-                                    <shadedPattern>cloud.orbit.core.shaded.io.github.lukehutch.</shadedPattern>
+                                    <pattern>io.github.classgraph.</pattern>
+                                    <shadedPattern>cloud.orbit.core.shaded.io.github.classgraph.</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.objectweb.</pattern>
@@ -118,8 +118,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <version>3.23.1-GA</version>
         </dependency>
         <dependency>
-            <groupId>io.github.lukehutch</groupId>
-            <artifactId>fast-classpath-scanner</artifactId>
+            <groupId>io.github.classgraph</groupId>
+            <artifactId>classgraph</artifactId>
         </dependency>
         <dependency>
             <groupId>org.ow2.asm</groupId>

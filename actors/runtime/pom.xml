@@ -59,7 +59,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                     <include>de.javakaffee:kryo-serializers</include>
                                     <include>org.objenesis:*</include>
                                     <include>com.github.ben-manes.caffeine:caffeine</include>
-                                    <include>io.github.lukehutch:fast-classpath-scanner</include>
+                                    <include>io.github.classgraph:classgraph</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -84,8 +84,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                     <shadedPattern>cloud.orbit.runtime.shaded.org.objectweb.</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>io.github.lukehutch.</pattern>
-                                    <shadedPattern>cloud.orbit.runtime.shaded.io.github.lukehutch.</shadedPattern>
+                                    <pattern>io.github.classgraph.</pattern>
+                                    <shadedPattern>cloud.orbit.runtime.shaded.io.github.classgraph.</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
@@ -107,8 +107,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.github.lukehutch</groupId>
-            <artifactId>fast-classpath-scanner</artifactId>
+            <groupId>io.github.classgraph</groupId>
+            <artifactId>classgraph</artifactId>
         </dependency>
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
