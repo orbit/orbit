@@ -26,7 +26,7 @@ object RandomUtils {
     private val secureRNG = SecureRandom()
     private val pseudoRNG get() = ThreadLocalRandom.current()
 
-    private val sequentialLongId = AtomicLong(0)
+    private val sequentialLongId = AtomicLong(1)
 
     private fun generateRandomString(numCharacters: Int, random: Random): String {
         if (numCharacters <= 0) throw IllegalArgumentException("numCharacters must be > 0")

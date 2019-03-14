@@ -6,7 +6,10 @@
 
 package cloud.orbit.runtime.net
 
+import cloud.orbit.core.net.NodeInfo
+
 class NetManager {
     val localNodeManipulator = NodeManipulator()
-    val localNode get() = localNodeManipulator.nodeInfo
+    val localNode: NodeInfo get() = localNodeManipulator.nodeInfo
+    val clusterNodes: List<NodeInfo> get() = listOf(localNode)
 }

@@ -20,6 +20,8 @@ import cloud.orbit.runtime.capabilities.CapabilitiesScanner
 import cloud.orbit.runtime.concurrent.RuntimePools
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
+import cloud.orbit.runtime.hosting.HostingManager
+import cloud.orbit.runtime.hosting.ResponseTracking
 import cloud.orbit.runtime.net.NetManager
 import cloud.orbit.runtime.pipeline.PipelineManager
 import cloud.orbit.runtime.remoting.RemoteInterfaceDefinitionDictionary
@@ -81,6 +83,10 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
             // Pipeline
             definition<PipelineManager>()
+
+            // Hosting
+            definition<HostingManager>()
+            definition<ResponseTracking>()
 
             // Capabilities
             definition<CapabilitiesScanner>()

@@ -11,11 +11,9 @@ import java.lang.reflect.Method
 
 data class RemoteInterfaceDefinition(
     val interfaceClass: AddressableClass,
-    val interfaceName: String,
     val methodDefinitions: Map<Method, RemoteMethodDefinition>
 )
 
 data class RemoteMethodDefinition(
-    val method: Method,
-    val methodName: String
+    val method: Method
 )

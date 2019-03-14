@@ -6,24 +6,45 @@
 
 package cloud.orbit.runtime.net
 
+import cloud.orbit.core.net.NodeIdentity
 import cloud.orbit.runtime.remoting.RemoteInvocation
 import kotlinx.coroutines.CompletableDeferred
 
-sealed class DirectionalMessage {
-    abstract val content: MessageContent
+typealias Completion = CompletableDeferred<Any?>
 
-    data class OutboundMessage(override val content: MessageContent) : DirectionalMessage()
-    data class InboundMessage(override val content: MessageContent) : DirectionalMessage()
-
+enum class MessageDirection {
+    OUTBOUND,
+    INBOUND
 }
 
-sealed class MessageContent {
-    abstract val completion: CompletableDeferred<Any?>
-
-    data class InvocationRequest(
-        override val completion: CompletableDeferred<Any?>,
-        val remoteInvocation: RemoteInvocation
-    ) : MessageContent()
-
+sealed class MessageTarget {
+    data class Unicast(val targetNode: NodeIdentity) : MessageTarget()
+    data class Multicast(val nodes: Iterable<NodeIdentity>) : MessageTarget() {
+        constructor(vararg nodes: NodeIdentity) : this(nodes.asIterable())
+    }
+    object Broadcast: MessageTarget()
 }
+
+data class MessageContainer(
+    val direction: MessageDirection,
+    val completion: Completion,
+    val msg: Message
+)
+
+enum class MessageType {
+    INVOCATION_REQUEST,
+    INVOCATION_RESPONSE_NORMAL,
+    INVOCATION_RESPONSE_ERROR
+}
+
+data class Message(
+    val messageType: MessageType,
+    val messageId: Long? = null,
+    val source: NodeIdentity? = null,
+    val target: MessageTarget? = null,
+    val remoteInvocation: RemoteInvocation? = null,
+    val normalResponse: Any? = null,
+    val errorResponse: Throwable? = null
+
+)
 

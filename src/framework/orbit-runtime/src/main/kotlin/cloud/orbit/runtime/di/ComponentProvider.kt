@@ -8,7 +8,7 @@ package cloud.orbit.runtime.di
 
 import java.util.concurrent.ConcurrentHashMap
 
-internal class ComponentProvider {
+class ComponentProvider {
     data class BeanDefinition<T>(
         val interfaceClass: Class<T>,
         val concreteClass: Class<out T>
@@ -97,7 +97,7 @@ internal class ComponentProvider {
     }
 }
 
-internal class ComponentProviderRoot constructor(private val componentProvider: ComponentProvider) {
+class ComponentProviderRoot constructor(@PublishedApi internal val componentProvider: ComponentProvider) {
     inline fun <reified T : Any> definition(body: () -> Class<out T>) =
         componentProvider.registerDefinition(T::class.java, body())
 

@@ -32,15 +32,13 @@ class RemoteInterfaceDefinitionDictionary {
         val methods = interfaceClass.methods
             .map {
                 RemoteMethodDefinition(
-                    method = it,
-                    methodName = it.name
+                    method = it
                 )
             }.map { it.method to it }
             .toMap()
 
         val interfaceDefinition = RemoteInterfaceDefinition(
             interfaceClass = interfaceClass,
-            interfaceName = interfaceClass.name,
             methodDefinitions = methods
         )
 

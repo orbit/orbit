@@ -17,3 +17,8 @@ open class OrbitException(message: String? = null, cause: Throwable? = null): Ru
  * An exception of this type is thrown when an internal capacity in Orbit is exceeded.
  */
 class CapacityExceededException(message: String): OrbitException(message)
+
+/**
+ * An exception of this type is thrown when a response to a message is not received in time.
+ */
+class ResponseTimeoutException(message: String): OrbitException(message)

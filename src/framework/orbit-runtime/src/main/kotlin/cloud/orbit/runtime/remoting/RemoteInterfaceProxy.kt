@@ -7,6 +7,8 @@
 package cloud.orbit.runtime.remoting
 
 import cloud.orbit.core.key.Key
+import cloud.orbit.runtime.net.Message
+import cloud.orbit.runtime.net.MessageType
 import cloud.orbit.runtime.pipeline.PipelineManager
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.future.asCompletableFuture
@@ -20,16 +22,21 @@ class RemoteInterfaceProxy(
     private val key: Key
 ) : InvocationHandler {
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any {
-        val completion = CompletableDeferred<Any?>()
         val remoteInvocation = RemoteInvocation(
-            interfaceDefinition = interfaceDefinition,
-            methodDefinition = interfaceDefinition.methodDefinitions[method]!!,
-            key = key,
-            args = args ?: arrayOf(),
-            completion = completion
+            target = RemoteInvocationTarget(
+                interfaceDefinition = interfaceDefinition,
+                methodDefinition = interfaceDefinition.methodDefinitions.getValue(method),
+                key = key
+            ),
+            args = args ?: arrayOf()
         )
 
-        pipelineManager.writeInvocation(remoteInvocation)
+        val msg = Message(
+            messageType = MessageType.INVOCATION_REQUEST,
+            remoteInvocation = remoteInvocation
+        )
+
+        val completion = pipelineManager.pushOutbound(msg)
 
         return wrap(completion, method)
     }
@@ -39,7 +46,7 @@ class RemoteInterfaceProxy(
             CompletableDeferred::class.java -> completableDeferred
             CompletableFuture::class.java -> completableDeferred.asCompletableFuture()
             else -> {
-                throw IllegalArgumentException("No async wrapper for ${method.returnType.toString()} found")
+                throw IllegalArgumentException("No async wrapper for ${method.returnType} found")
             }
         }
 }

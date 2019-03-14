@@ -1,0 +1,62 @@
+/*
+ Copyright (C) 2015 - 2019 Electronic Arts Inc.  All rights reserved.
+ This file is part of the Orbit Project <https://www.orbit.cloud>.
+ See license in LICENSE.
+ */
+
+package cloud.orbit.runtime.hosting
+
+import cloud.orbit.common.exception.ResponseTimeoutException
+import cloud.orbit.common.logging.logger
+import cloud.orbit.runtime.concurrent.SupervisorScope
+import cloud.orbit.runtime.net.Completion
+import cloud.orbit.runtime.net.Message
+import cloud.orbit.runtime.net.MessageType
+import cloud.orbit.runtime.stage.StageConfig
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
+
+class ResponseTracking(
+    private val stageConfig: StageConfig,
+    private val supervisorScope: SupervisorScope
+) {
+    private data class ResponseEntry(val msg: Message, val completion: Completion)
+    private val trackingMap: ConcurrentHashMap<Long, ResponseEntry> = ConcurrentHashMap()
+    private val logger by logger()
+
+    fun trackMessage(msg: Message, completion: Completion) {
+        trackingMap.computeIfAbsent(msg.messageId!!) {
+            supervisorScope.launch {
+                delay(stageConfig.messageTimeoutMillis)
+                if(completion.isActive) {
+                    completion.completeExceptionally(
+                        ResponseTimeoutException("Response timed out, took >${stageConfig.messageTimeoutMillis}ms. $msg")
+                    )
+                }
+            }
+            ResponseEntry(
+                msg = msg,
+                completion = completion
+            )
+        }
+    }
+
+    fun handleResponse(msg: Message) {
+        when(msg.messageType) {
+            MessageType.INVOCATION_RESPONSE_NORMAL -> getCompletion(msg.messageId!!)?.complete(msg.normalResponse)
+            MessageType.INVOCATION_RESPONSE_ERROR -> getCompletion(msg.messageId!!)?.completeExceptionally(msg.errorResponse!!)
+            else -> throw NotImplementedError("Response tracking does not handle ${msg.messageType}")
+        }
+    }
+
+    private fun getCompletion(messageId: Long): Completion? {
+        val msg = trackingMap[messageId]
+        if(msg == null) {
+            logger.warn("Response for message $messageId received after timeout " +
+                    "(>${stageConfig.messageTimeoutMillis}ms)."
+            )
+        }
+        return msg?.completion
+    }
+}

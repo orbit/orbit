@@ -9,73 +9,99 @@ package cloud.orbit.runtime.pipeline
 import cloud.orbit.common.exception.CapacityExceededException
 import cloud.orbit.common.logging.logger
 import cloud.orbit.runtime.concurrent.SupervisorScope
-import cloud.orbit.runtime.net.DirectionalMessage
-import cloud.orbit.runtime.net.MessageContent
-import cloud.orbit.runtime.remoting.RemoteInvocation
-import cloud.orbit.runtime.stage.ErrorHandler
+import cloud.orbit.runtime.di.ComponentProvider
+import cloud.orbit.runtime.net.Message
+import cloud.orbit.runtime.net.MessageContainer
+import cloud.orbit.runtime.net.MessageDirection
+import cloud.orbit.runtime.net.NetManager
+import cloud.orbit.runtime.pipeline.steps.PipelineStep
 import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
 
 class PipelineManager(
-    private val supervisorScope: SupervisorScope,
-    private val stageConfig: StageConfig,
-    private val errorHandler: ErrorHandler
+    private val componentProvider: ComponentProvider
 ) {
     private val logger by logger()
+    private val supervisorScope: SupervisorScope by componentProvider.inject()
+    private val stageConfig: StageConfig by componentProvider.inject()
+    private val netManager: NetManager by componentProvider.inject()
 
-    private lateinit var pipelineChannel: Channel<DirectionalMessage>
+
+    private lateinit var pipelineChannel: Channel<MessageContainer>
     private lateinit var pipelinesWorkers: List<Job>
+    private lateinit var pipelineSteps: List<PipelineStep>
 
-    fun writeInvocation(remoteInvocation: RemoteInvocation) {
-        val msg = DirectionalMessage.OutboundMessage(
-            MessageContent.InvocationRequest(
-                completion = remoteInvocation.completion,
-                remoteInvocation = remoteInvocation
-            )
-        )
-
-        // Offer the content to the channel
-        if (!pipelineChannel.offer(msg)) {
-            // If the channel rejected there must be no capacity, we complete the deferred result exceptionally.
-            msg.content.completion.completeExceptionally(
-                CapacityExceededException(
-                    "The Orbit pipeline channel is full. >${stageConfig.pipelineBufferCount} buffered messages."
-                )
-            )
-        }
-    }
 
     fun start() {
         pipelineChannel = Channel(stageConfig.pipelineBufferCount)
         pipelinesWorkers = List(stageConfig.pipelineWorkerCount) {
             launchWorker(pipelineChannel)
         }
+        pipelineSteps = stageConfig.pipelineStepsDefinition.map(componentProvider::construct)
 
         logger.info(
             "Started ${stageConfig.pipelineWorkerCount} workers with a " +
-                    "${stageConfig.pipelineBufferCount} content buffer."
+                    "${stageConfig.pipelineBufferCount} content buffer and ${pipelineSteps.size} steps."
         )
     }
 
-    private fun launchWorker(receiveChannel: ReceiveChannel<DirectionalMessage>) = supervisorScope.launch {
+    private fun launchWorker(receiveChannel: ReceiveChannel<MessageContainer>) = supervisorScope.launch {
         for (msg in receiveChannel) {
             try {
                 onMessage(msg)
             } catch (c: CancellationException) {
                 throw c
-            } catch (e: Throwable) {
-                errorHandler.onUnhandledException(e)
+            } catch (t: Throwable) {
+                msg.completion.completeExceptionally(t)
             }
         }
     }
 
-    private suspend fun onMessage(message: DirectionalMessage) {
-        logger.info(message.toString())
+    private fun writeMessage(msg: Message, direction: MessageDirection): CompletableDeferred<Any?> {
+        val completion = CompletableDeferred<Any?>()
+
+        val container = MessageContainer(
+            direction = direction,
+            completion = completion,
+            msg = msg
+        )
+
+        // Offer the content to the channel
+        if (!pipelineChannel.offer(container)) {
+            // If the channel rejected there must be no capacity, we complete the deferred result exceptionally.
+            completion.completeExceptionally(
+                CapacityExceededException(
+                    "The Orbit pipeline channel is full. >${stageConfig.pipelineBufferCount} buffered messages."
+                )
+            )
+        }
+
+        return container.completion
     }
+
+    fun pushOutbound(msg: Message) =
+        writeMessage(msg, MessageDirection.OUTBOUND)
+
+    fun pushInbound(msg: Message) =
+        writeMessage(msg, MessageDirection.INBOUND)
+
+
+    private suspend fun onMessage(container: MessageContainer) {
+        when (container.direction) {
+            MessageDirection.OUTBOUND ->
+                PipelineContext(pipelineSteps, false, this, container.completion)
+                    .nextOutbound(container.msg)
+            MessageDirection.INBOUND ->
+                PipelineContext(pipelineSteps, true, this, container.completion)
+                    .nextInbound(container.msg)
+        }
+    }
+
 
     fun stop() {
         pipelineChannel.close()

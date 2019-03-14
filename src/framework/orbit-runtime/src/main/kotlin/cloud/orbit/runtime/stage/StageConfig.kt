@@ -11,6 +11,7 @@ import cloud.orbit.common.util.RandomUtils
 import cloud.orbit.core.net.ClusterName
 import cloud.orbit.core.net.NodeIdentity
 import cloud.orbit.core.net.NodeMode
+import cloud.orbit.runtime.pipeline.steps.*
 import kotlinx.coroutines.CoroutineDispatcher
 
 /**
@@ -52,6 +53,11 @@ data class StageConfig(
     val tickRate: Long = 1000,
 
     /**
+     * The default timeout for messages.
+     */
+    val messageTimeoutMillis: Long = 3_000,
+
+    /**
      * Packages to scan for addressables.
      *
      * If blank all packages will be scanned.
@@ -66,5 +72,15 @@ data class StageConfig(
     /**
      * The number of messages (either inbound or outbound) that may be queued before new messages are rejected.
      */
-    val pipelineBufferCount: Int = 100_000
+    val pipelineBufferCount: Int = 100_000,
+
+    /**
+     * The steps the pipeline will run.
+     */
+    val pipelineStepsDefinition: List<Class<out PipelineStep>> = listOf(
+        IdentityStep::class.java,
+        HostingStep::class.java,
+        ResponseTrackingStep::class.java,
+        TransportStep::class.java
+    )
 )
