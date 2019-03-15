@@ -35,7 +35,8 @@ import org.slf4j.LoggerFactory;
 
 import cloud.orbit.actors.Actor;
 import cloud.orbit.concurrent.ConcurrentHashSet;
-import io.github.lukehutch.fastclasspathscanner.FastClasspathScanner;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -119,9 +120,12 @@ public class ClassPathSearch
                 .map(this::getClassInfo)
                 .toArray(ClassInfo[]::new);
 
-        for (String rn : new FastClasspathScanner().scan().getNamesOfAllClasses())
+        try (ScanResult scanResult = new ClassGraph().enableClassInfo().scan())
         {
-            classes.putIfAbsent(rn, new ClassInfo(rn));
+            for (String rn : scanResult.getAllClasses().getNames())
+            {
+                classes.putIfAbsent(rn, new ClassInfo(rn));
+            }
         }
 
         unprocessed.addAll(classes.keySet());
