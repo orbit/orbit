@@ -15,7 +15,7 @@ class ResponseTrackingStep(private val responseTracking: ResponseTracking) : Pip
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
         when (msg.content) {
             is MessageContent.RequestInvocationMessage -> responseTracking.trackMessage(msg, context.completion!!)
-            else -> Unit
+            else -> Unit // Do nothing
         }
         context.nextOutbound(msg)
     }

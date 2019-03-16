@@ -10,7 +10,7 @@ fun <E> Collection<E>.randomOrNull() : E? =
     try {
         this.random()
     } catch(nse: NoSuchElementException) {
-         null
+        null
     } catch(t: Throwable) {
         throw t
     }
