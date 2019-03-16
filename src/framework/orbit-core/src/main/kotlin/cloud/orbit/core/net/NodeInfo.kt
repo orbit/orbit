@@ -6,6 +6,8 @@
 
 package cloud.orbit.core.net
 
+import cloud.orbit.core.remoting.AddressableClass
+
 /**
  * Information about an Orbit node that is shared within the cluster.
  */
@@ -54,7 +56,14 @@ data class NodeCapabilities(
      * The addressables which have concrete implementations on this node.
      */
     val implementedAddressables: List<String>
-)
+) {
+
+    /**
+     * Checks whether a specific addressable type can be hosted.
+     */
+    fun canHost(addressableClass: AddressableClass): Boolean =
+            implementedAddressables.contains(addressableClass.name)
+}
 
 /**
  * The status of an Orbit node.

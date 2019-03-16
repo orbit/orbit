@@ -8,7 +8,7 @@ package cloud.orbit.runtime.remoting
 
 import cloud.orbit.core.key.Key
 import cloud.orbit.runtime.net.Message
-import cloud.orbit.runtime.net.MessageType
+import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.pipeline.PipelineManager
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.future.asCompletableFuture
@@ -32,8 +32,7 @@ class RemoteInterfaceProxy(
         )
 
         val msg = Message(
-            messageType = MessageType.INVOCATION_REQUEST,
-            remoteInvocation = remoteInvocation
+            content = MessageContent.RequestInvocationMessage(remoteInvocation)
         )
 
         val completion = pipelineManager.pushOutbound(msg)

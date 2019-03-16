@@ -31,20 +31,16 @@ data class MessageContainer(
     val msg: Message
 )
 
-enum class MessageType {
-    INVOCATION_REQUEST,
-    INVOCATION_RESPONSE_NORMAL,
-    INVOCATION_RESPONSE_ERROR
-}
-
 data class Message(
-    val messageType: MessageType,
+    val content: MessageContent,
     val messageId: Long? = null,
     val source: NodeIdentity? = null,
-    val target: MessageTarget? = null,
-    val remoteInvocation: RemoteInvocation? = null,
-    val normalResponse: Any? = null,
-    val errorResponse: Throwable? = null
+    val target: MessageTarget? = null
 
 )
 
+sealed class MessageContent {
+    data class RequestInvocationMessage(val remoteInvocation: RemoteInvocation) : MessageContent()
+    data class ResponseNormalMessage(val response: Any?) : MessageContent()
+    data class ResponseErrorMessage(val error: Throwable) : MessageContent()
+}

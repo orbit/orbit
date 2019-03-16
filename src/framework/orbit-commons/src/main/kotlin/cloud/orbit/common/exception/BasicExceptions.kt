@@ -22,3 +22,8 @@ class CapacityExceededException(message: String): OrbitException(message)
  * An exception of this type is thrown when a response to a message is not received in time.
  */
 class ResponseTimeoutException(message: String): OrbitException(message)
+
+/**
+ * An exception of this type is thrown when no node is available to handle a specific action.
+ */
+class NoAvailableNodeException(message: String): OrbitException(message)

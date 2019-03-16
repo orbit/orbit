@@ -8,15 +8,15 @@ package cloud.orbit.runtime.pipeline.steps
 
 import cloud.orbit.runtime.hosting.HostingManager
 import cloud.orbit.runtime.net.Message
+import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.net.MessageTarget
-import cloud.orbit.runtime.net.MessageType
 import cloud.orbit.runtime.pipeline.PipelineContext
 
 class HostingStep(private val hostingManager: HostingManager) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
-        val newMsg = when(msg.messageType) {
-            MessageType.INVOCATION_REQUEST -> {
-                val targetNode = hostingManager.locateOrPlace(msg.remoteInvocation!!.target)
+        val newMsg = when(msg.content) {
+            is MessageContent.RequestInvocationMessage -> {
+                val targetNode = hostingManager.locateOrPlace(msg.content.remoteInvocation.target)
                 msg.copy(
                     target = MessageTarget.Unicast(targetNode)
                 )

@@ -11,7 +11,7 @@ import cloud.orbit.common.logging.logger
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.net.Completion
 import cloud.orbit.runtime.net.Message
-import cloud.orbit.runtime.net.MessageType
+import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -30,8 +30,10 @@ class ResponseTracking(
             supervisorScope.launch {
                 delay(stageConfig.messageTimeoutMillis)
                 if(completion.isActive) {
+                    val content = "Response timed out, took >${stageConfig.messageTimeoutMillis}ms. $msg"
+                    logger.warn(content)
                     completion.completeExceptionally(
-                        ResponseTimeoutException("Response timed out, took >${stageConfig.messageTimeoutMillis}ms. $msg")
+                        ResponseTimeoutException(content)
                     )
                 }
             }
@@ -43,10 +45,10 @@ class ResponseTracking(
     }
 
     fun handleResponse(msg: Message) {
-        when(msg.messageType) {
-            MessageType.INVOCATION_RESPONSE_NORMAL -> getCompletion(msg.messageId!!)?.complete(msg.normalResponse)
-            MessageType.INVOCATION_RESPONSE_ERROR -> getCompletion(msg.messageId!!)?.completeExceptionally(msg.errorResponse!!)
-            else -> throw NotImplementedError("Response tracking does not handle ${msg.messageType}")
+        when(msg.content) {
+            is MessageContent.ResponseNormalMessage -> getCompletion(msg.messageId!!)?.complete(msg.content.response)
+            is MessageContent.ResponseErrorMessage -> getCompletion(msg.messageId!!)?.completeExceptionally(msg.content.error)
+            else -> throw NotImplementedError("Response tracking does not handle ${msg.content}")
         }
     }
 
