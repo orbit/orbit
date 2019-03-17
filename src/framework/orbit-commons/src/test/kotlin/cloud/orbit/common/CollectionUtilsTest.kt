@@ -20,8 +20,8 @@ class CollectionUtilsTest {
 
     @Test
     fun `check randomOrNull value`() {
-        val list = listOf<String>("Hello")
+        val list = listOf("Hello", "World", "!")
         val result = list.randomOrNull()
-        Assertions.assertThat(result).isNotNull().isEqualTo("Hello")
+        Assertions.assertThat(result).isNotNull().isIn(list)
     }
 }

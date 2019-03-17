@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test
 class FlowUtilsTest {
 
     @Test
-    fun `check result returned success`() {
+    fun `check success`() {
         val result = runBlocking {
             attempt {
                 "Some result"
@@ -60,5 +60,43 @@ class FlowUtilsTest {
         }
 
         Assertions.assertThat(elapsed).isGreaterThan(16)
+    }
+
+    @Test
+    fun `check max delay`() {
+        val (elapsed, _) = stopwatch(Clock()) {
+            Assertions.assertThatThrownBy {
+                runBlocking {
+                    attempt(
+                        maxAttempts = 5,
+                        maxDelay = 100,
+                        initialDelay = 1,
+                        factor = 1000.0
+                    ) {
+                        throw RuntimeException("FAIL")
+                    }
+                }
+            }
+        }
+
+        Assertions.assertThat(elapsed).isLessThan(1000)
+    }
+
+    @Test
+    fun `check success after fail`() {
+        var attempts = 0
+        val result = runBlocking {
+            attempt(
+                maxAttempts = 5,
+                initialDelay = 1
+            ) {
+                if(attempts++ < 3) {
+                    throw RuntimeException("FAIL")
+                }
+                "Hello"
+            }
+        }
+
+        Assertions.assertThat(result).isEqualTo("Hello")
     }
 }
