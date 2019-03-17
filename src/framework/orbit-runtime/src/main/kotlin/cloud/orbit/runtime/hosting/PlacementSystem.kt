@@ -10,37 +10,39 @@ import cloud.orbit.common.exception.NoAvailableNodeException
 import cloud.orbit.common.logging.logger
 import cloud.orbit.common.util.attempt
 import cloud.orbit.common.util.randomOrNull
-import cloud.orbit.core.net.NodeIdentity
 import cloud.orbit.core.net.NodeStatus
-import cloud.orbit.runtime.net.NetManager
+import cloud.orbit.runtime.net.MessageTarget
+import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.remoting.RemoteInvocationTarget
 
-class HostingManager(private val netManager: NetManager) {
+class PlacementSystem(private val netSystem: NetSystem) {
     private val logger by logger()
 
-    suspend fun locateOrPlace(rit: RemoteInvocationTarget): NodeIdentity  {
-        return selectNode(rit)
+    suspend fun locateOrPlace(rit: RemoteInvocationTarget): MessageTarget {
+        return selectTarget(rit)
     }
 
-    private suspend fun selectNode(rit: RemoteInvocationTarget): NodeIdentity =
+    private suspend fun selectTarget(rit: RemoteInvocationTarget): MessageTarget =
         attempt(
             maxAttempts = 5,
             initialDelay = 1000,
             logger = logger
         ) {
 
-            val allNodes = netManager.clusterNodes
+            val allNodes = netSystem.clusterNodes
             val candidateNodes = allNodes
                 .filter { it.nodeStatus == NodeStatus.RUNNING }
                 .filter { it.nodeCapabilities.canHost(rit.interfaceDefinition.interfaceClass) }
 
             // TODO: Support multiple placement strategies
             val selectedNode = candidateNodes.randomOrNull()
-
-            selectedNode?.nodeIdentity
-                ?: throw NoAvailableNodeException(
+            if (selectedNode != null) {
+                MessageTarget.Unicast(selectedNode.nodeIdentity)
+            } else {
+                throw NoAvailableNodeException(
                     "Could not find node capable of hosting ${rit.interfaceDefinition.interfaceClass}."
                 )
+            }
         }
 
     suspend fun isLocal(rit: RemoteInvocationTarget): Boolean {

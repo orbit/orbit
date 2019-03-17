@@ -6,19 +6,18 @@
 
 package cloud.orbit.runtime.pipeline.steps
 
-import cloud.orbit.runtime.hosting.HostingManager
+import cloud.orbit.runtime.hosting.PlacementSystem
 import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContent
-import cloud.orbit.runtime.net.MessageTarget
 import cloud.orbit.runtime.pipeline.PipelineContext
 
-class HostingStep(private val hostingManager: HostingManager) : PipelineStep {
+class PlacementStep(private val placementSystem: PlacementSystem) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
         val newMsg = when(msg.content) {
             is MessageContent.RequestInvocationMessage -> {
-                val targetNode = hostingManager.locateOrPlace(msg.content.remoteInvocation.target)
+                val target = placementSystem.locateOrPlace(msg.content.remoteInvocation.target)
                 msg.copy(
-                    target = MessageTarget.Unicast(targetNode)
+                    target = target
                 )
             }
             else ->  msg
@@ -27,6 +26,14 @@ class HostingStep(private val hostingManager: HostingManager) : PipelineStep {
     }
 
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
+        when(msg.content) {
+            is MessageContent.RequestInvocationMessage -> {
+                if(!placementSystem.isLocal(msg.content.remoteInvocation.target)) {
+                    context.newOutbound(msg)
+                    return
+                }
+            }
+        }
         context.nextInbound(msg)
     }
 }

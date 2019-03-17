@@ -8,11 +8,11 @@ package cloud.orbit.runtime.pipeline.steps
 
 import cloud.orbit.common.util.RandomUtils
 import cloud.orbit.runtime.net.Message
-import cloud.orbit.runtime.net.NetManager
+import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.pipeline.PipelineContext
 
 class IdentityStep(
-    private val netManager: NetManager
+    private val netSystem: NetSystem
 ) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
        var newMsg = msg
@@ -25,7 +25,7 @@ class IdentityStep(
 
         if(newMsg.source == null) {
             newMsg = newMsg.copy(
-                source = netManager.localNode.nodeIdentity
+                source = netSystem.localNode.nodeIdentity
             )
         }
 

@@ -9,6 +9,9 @@ package cloud.orbit.runtime.pipeline
 import cloud.orbit.runtime.net.Completion
 import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.pipeline.steps.PipelineStep
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.isActive
+import kotlin.coroutines.coroutineContext
 
 class PipelineContext(
     private val pipeline: List<PipelineStep>,
@@ -19,6 +22,7 @@ class PipelineContext(
     private var pointer = if (startAtEnd) pipeline.size  else -1
 
     suspend fun nextInbound(msg: Message) {
+        if(!coroutineContext.isActive) throw CancellationException()
         if (--pointer < 0) throw IllegalStateException("Beginning of pipeline encountered.")
         val pipelineStep = pipeline[pointer]
         pipelineStep.onInbound(this, msg)
@@ -26,6 +30,7 @@ class PipelineContext(
     }
 
     suspend fun nextOutbound(msg: Message) {
+        if(!coroutineContext.isActive) throw CancellationException()
         if (++pointer >= pipeline.size) throw IllegalStateException("End of pipeline encountered.")
         val pipelineStep = pipeline[pointer]
         pipelineStep.onOutbound(this, msg)

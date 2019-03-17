@@ -20,9 +20,9 @@ import cloud.orbit.runtime.capabilities.CapabilitiesScanner
 import cloud.orbit.runtime.concurrent.RuntimePools
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
-import cloud.orbit.runtime.hosting.HostingManager
-import cloud.orbit.runtime.hosting.ResponseTracking
-import cloud.orbit.runtime.net.NetManager
+import cloud.orbit.runtime.hosting.PlacementSystem
+import cloud.orbit.runtime.hosting.ResponseTrackingSystem
+import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.pipeline.PipelineManager
 import cloud.orbit.runtime.remoting.RemoteInterfaceDefinitionDictionary
 import cloud.orbit.runtime.remoting.RemoteInterfaceProxyFactory
@@ -50,7 +50,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     )
     private val componentProvider = ComponentProvider()
 
-    private val netManager: NetManager by componentProvider.inject()
+    private val netSystem: NetSystem by componentProvider.inject()
     private val capabilitiesScanner: CapabilitiesScanner by componentProvider.inject()
     private val remoteInterfaceDefinitionDictionary: RemoteInterfaceDefinitionDictionary by componentProvider.inject()
     private val pipelineManager: PipelineManager by componentProvider.inject()
@@ -75,7 +75,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<Clock>()
 
             // Net
-            definition<NetManager>()
+            definition<NetSystem>()
 
             // Remoting
             definition<RemoteInterfaceProxyFactory>()
@@ -85,8 +85,8 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<PipelineManager>()
 
             // Hosting
-            definition<HostingManager>()
-            definition<ResponseTracking>()
+            definition<PlacementSystem>()
+            definition<ResponseTrackingSystem>()
 
             // Capabilities
             definition<CapabilitiesScanner>()
@@ -95,7 +95,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<ActorProxyFactory> { DefaultActorProxyFactory::class.java }
         }
 
-        netManager.localNodeManipulator.replace(
+        netSystem.localNodeManipulator.replace(
             NodeInfo(
                 clusterName = stageConfig.clusterName,
                 nodeIdentity = stageConfig.nodeIdentity,
@@ -169,7 +169,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     }
 
     private suspend fun onStart() {
-        netManager.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPED, NodeStatus.STARTING)
+        netSystem.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPED, NodeStatus.STARTING)
 
         // Log some info about the environment
         logEnvironmentInfo()
@@ -181,13 +181,13 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             remoteInterfaceDefinitionDictionary.getOrCreate(it)
         }
         val capabilities = capabilitiesScanner.generateNodeCapabilities()
-        netManager.localNodeManipulator.updateCapabiltities(capabilities)
+        netSystem.localNodeManipulator.updateCapabiltities(capabilities)
 
         // Start pipeline
         pipelineManager.start()
 
         // Flip status to running
-        netManager.localNodeManipulator.updateNodeStatus(NodeStatus.STARTING, NodeStatus.RUNNING)
+        netSystem.localNodeManipulator.updateNodeStatus(NodeStatus.STARTING, NodeStatus.RUNNING)
 
         tickJob = launchTick()
     }
@@ -196,7 +196,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     }
 
     private suspend fun onStop() {
-        netManager.localNodeManipulator.updateNodeStatus(NodeStatus.RUNNING, NodeStatus.STOPPING)
+        netSystem.localNodeManipulator.updateNodeStatus(NodeStatus.RUNNING, NodeStatus.STOPPING)
 
         // Stop the tick
         tickJob?.cancelAndJoin()
@@ -205,7 +205,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
         // Stop pipeline
         pipelineManager.stop()
 
-        netManager.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPING, NodeStatus.STOPPED)
+        netSystem.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPING, NodeStatus.STOPPED)
     }
 
     private fun logEnvironmentInfo() {

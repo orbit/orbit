@@ -79,7 +79,7 @@ data class StageConfig(
      */
     val pipelineStepsDefinition: List<Class<out PipelineStep>> = listOf(
         IdentityStep::class.java,
-        HostingStep::class.java,
+        PlacementStep::class.java,
         ResponseTrackingStep::class.java,
         TransportStep::class.java
     )

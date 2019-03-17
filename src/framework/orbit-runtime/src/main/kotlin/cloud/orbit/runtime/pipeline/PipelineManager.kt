@@ -13,7 +13,7 @@ import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContainer
 import cloud.orbit.runtime.net.MessageDirection
-import cloud.orbit.runtime.net.NetManager
+import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.pipeline.steps.PipelineStep
 import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CancellationException
@@ -29,7 +29,7 @@ class PipelineManager(
     private val logger by logger()
     private val supervisorScope: SupervisorScope by componentProvider.inject()
     private val stageConfig: StageConfig by componentProvider.inject()
-    private val netManager: NetManager by componentProvider.inject()
+    private val netSystem: NetSystem by componentProvider.inject()
 
 
     private lateinit var pipelineChannel: Channel<MessageContainer>
