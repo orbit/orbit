@@ -59,7 +59,7 @@ class FlowUtilsTest {
             }
         }
 
-        Assertions.assertThat(elapsed).isGreaterThan(16)
+        Assertions.assertThat(elapsed).isGreaterThan(10)
     }
 
     @Test
