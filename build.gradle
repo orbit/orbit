@@ -20,6 +20,10 @@ configureProject(":src:framework:orbit-commons", [withKotlin, withTests, publish
 configureProject(":src:framework:orbit-core", [withKotlin, withTests, publish])
 configureProject(":src:framework:orbit-runtime", [withKotlin, withTests, publish])
 
+// DSL
+configureProject(":src:dsl:orbit-codegen", [withKotlin, withTests, publish])
+configureProject(":src:dsl:orbit-codegen-dsl", [withKotlin, withJava, withTests, publish])
+
 // Samples
 configureProject(":samples:helloworld", [withKotlin])
 

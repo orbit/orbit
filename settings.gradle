@@ -13,5 +13,10 @@ include(
 )
 
 include(
+        ":src:dsl:orbit-codegen",
+        ":src:dsl:orbit-codegen-dsl"
+)
+
+include(
         ":samples:helloworld"
 )
