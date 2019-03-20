@@ -142,7 +142,7 @@ class JavaCodeGeneratorTest {
     fun generateGrain_Empty() {
         val cu = CompilationUnit(PACKAGE_NAME, grains = listOf(GrainDeclaration("grain1")))
 
-        val expectedSource = "public interface grain1 extends cloud.orbit.actors.Actor { }"
+        val expectedSource = "public interface grain1 extends cloud.orbit.core.actor.ActorWithStringKey { }"
 
         assertOneElement(generateSource_minimalPipeline(cu)).run {
             Assertions.assertEquals(PACKAGE_NAME, this.packageName)
@@ -159,8 +159,8 @@ class JavaCodeGeneratorTest {
         )
 
         val expectedSource = """
-            public interface grain1 extends cloud.orbit.actors.Actor  {
-                cloud.orbit.concurrent.Task<java.lang.String> method1();
+            public interface grain1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+                java.util.concurrent.CompletableFuture<java.lang.String> method1();
             }
         """
 
@@ -184,9 +184,9 @@ class JavaCodeGeneratorTest {
         )
 
         val expectedSource = """
-            public interface grain1 extends cloud.orbit.actors.Actor  {
-                cloud.orbit.concurrent.Task<java.lang.String> method1();
-                cloud.orbit.concurrent.Task<java.lang.String> method2();
+            public interface grain1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+                java.util.concurrent.CompletableFuture<java.lang.String> method1();
+                java.util.concurrent.CompletableFuture<java.lang.String> method2();
             }
         """
 
@@ -213,8 +213,8 @@ class JavaCodeGeneratorTest {
         )
 
         val expectedSource = """
-            public interface grain1 extends cloud.orbit.actors.Actor  {
-                cloud.orbit.concurrent.Task<java.lang.String> method1(int p1);
+            public interface grain1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+                java.util.concurrent.CompletableFuture<java.lang.String> method1(int p1);
             }
         """
 
@@ -244,8 +244,8 @@ class JavaCodeGeneratorTest {
         )
 
         val expectedSource = """
-            public interface grain1 extends cloud.orbit.actors.Actor  {
-                cloud.orbit.concurrent.Task<java.lang.String> method1(int p1, int p2);
+            public interface grain1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+                java.util.concurrent.CompletableFuture<java.lang.String> method1(int p1, int p2);
             }
         """
 
@@ -272,8 +272,8 @@ class JavaCodeGeneratorTest {
         )
 
         val expectedSource = """
-            public interface grain1 extends cloud.orbit.actors.Actor  {
-                cloud.orbit.concurrent.Task<java.lang.Integer> method1(int p1);
+            public interface grain1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+                java.util.concurrent.CompletableFuture<java.lang.Integer> method1(int p1);
             }
         """
 

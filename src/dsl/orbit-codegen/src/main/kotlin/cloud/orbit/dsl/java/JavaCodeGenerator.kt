@@ -11,8 +11,10 @@ import com.squareup.javapoet.*
 import javax.lang.model.element.Modifier
 
 internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : AstVisitor() {
-    private val orbitActorInterface = ClassName.get("cloud.orbit.actors", "Actor")
-    private val orbitTaskClass = ClassName.get("cloud.orbit.concurrent", "Task")
+    private val orbitActorWithStringKeyInterface =
+        ClassName.get("cloud.orbit.core.actor", "ActorWithStringKey")
+    private val completableFutureClass =
+        ClassName.get("java.util.concurrent", "CompletableFuture")
 
     private var packageName = ""
     private var generatedTypes = mutableListOf<CompiledType>()
@@ -55,9 +57,10 @@ internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : 
                 .addStatement("this.\$L = \$L", varName, varName)
 
             // Getter for this field
+            val getterName = "get${it.name[0].toUpperCase()}${it.name.substring(1)}"
             classSpec.addMethod(
                 MethodSpec
-                    .methodBuilder("get${it.name}")
+                    .methodBuilder(getterName)
                     .addModifiers(Modifier.PUBLIC)
                     .returns(fieldType)
                     .addStatement("return \$L", varName)
@@ -74,11 +77,11 @@ internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : 
         val classSpec = TypeSpec
             .interfaceBuilder(grain.name)
             .addModifiers(Modifier.PUBLIC)
-            .addSuperinterface(orbitActorInterface)
+            .addSuperinterface(orbitActorWithStringKeyInterface)
             .addMethods(grain.methods.map {
                 MethodSpec.methodBuilder(it.name)
                     .addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
-                    .returns(ParameterizedTypeName.get(orbitTaskClass, knownTypes[it.returnType]!!.box()))
+                    .returns(ParameterizedTypeName.get(completableFutureClass, knownTypes[it.returnType]!!.box()))
                     .addParameters(it.params
                         .asSequence()
                         .map { p -> ParameterSpec.builder(knownTypes[p.type], p.name).build() }

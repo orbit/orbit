@@ -12,7 +12,6 @@ import cloud.orbit.core.actor.AbstractActor
 import cloud.orbit.core.actor.ActorWithNoKey
 import cloud.orbit.core.actor.getReference
 import cloud.orbit.runtime.stage.Stage
-import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.future.await

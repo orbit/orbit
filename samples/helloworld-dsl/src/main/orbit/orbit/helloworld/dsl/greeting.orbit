@@ -1,0 +1,3 @@
+data Greeting {
+    string greeting = 1;
+}
