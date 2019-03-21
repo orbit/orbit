@@ -28,7 +28,8 @@ class PlacementStep(private val placementSystem: PlacementSystem) : PipelineStep
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
         when(msg.content) {
             is MessageContent.RequestInvocationMessage -> {
-                if(!placementSystem.isLocal(msg.content.remoteInvocation.target)) {
+                if(!placementSystem.canHandleLocally(msg.content.remoteInvocation.target)) {
+                    // Can't handle locally so we just start it as a new call
                     context.newOutbound(msg)
                     return
                 }

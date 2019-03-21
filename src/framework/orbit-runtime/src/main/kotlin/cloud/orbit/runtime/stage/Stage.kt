@@ -20,6 +20,7 @@ import cloud.orbit.runtime.capabilities.CapabilitiesScanner
 import cloud.orbit.runtime.concurrent.RuntimePools
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
+import cloud.orbit.runtime.hosting.AddressableDirectory
 import cloud.orbit.runtime.hosting.PlacementSystem
 import cloud.orbit.runtime.hosting.ResponseTrackingSystem
 import cloud.orbit.runtime.net.NetSystem
@@ -64,12 +65,12 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     init {
         componentProvider.configure {
             // Stage
-            instance<RuntimeContext> { this@Stage }
-            instance { this@Stage }
-            instance { stageConfig }
-            instance { runtimePools }
-            instance { supervisorScope }
-            instance { errorHandler }
+            instance<RuntimeContext>(this@Stage)
+            instance(this@Stage)
+            instance(stageConfig)
+            instance(runtimePools)
+            instance(supervisorScope)
+            instance(errorHandler)
 
             // Utils
             definition<Clock>()
@@ -93,6 +94,9 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
             // Actors
             definition<ActorProxyFactory> { DefaultActorProxyFactory::class.java }
+
+            // Net Components
+            definition(stageConfig.networkComponents.addressableDirectory)
         }
 
         netSystem.localNodeManipulator.replace(

@@ -15,12 +15,16 @@ import cloud.orbit.runtime.net.MessageTarget
 import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.remoting.RemoteInvocationTarget
 
-class PlacementSystem(private val netSystem: NetSystem) {
+class PlacementSystem(
+    private val netSystem: NetSystem,
+    private val addressableDirectory: AddressableDirectory
+) {
     private val logger by logger()
 
-    suspend fun locateOrPlace(rit: RemoteInvocationTarget): MessageTarget {
-        return selectTarget(rit)
-    }
+    suspend fun locateOrPlace(rit: RemoteInvocationTarget): MessageTarget =
+        addressableDirectory.locate(rit).run {
+            this ?: addressableDirectory.locateOrPlace(rit, selectTarget(rit))
+        }
 
     private suspend fun selectTarget(rit: RemoteInvocationTarget): MessageTarget =
         attempt(
@@ -45,7 +49,13 @@ class PlacementSystem(private val netSystem: NetSystem) {
             }
         }
 
-    suspend fun isLocal(rit: RemoteInvocationTarget): Boolean {
-        return true
+    suspend fun canHandleLocally(rit: RemoteInvocationTarget): Boolean {
+        val currentLocation = addressableDirectory.locate(rit)
+        return when(currentLocation) {
+            is MessageTarget.Unicast -> currentLocation.targetNode == netSystem.localNode.nodeIdentity
+            is MessageTarget.Multicast -> currentLocation.nodes.contains(netSystem.localNode.nodeIdentity)
+            is MessageTarget.Broadcast -> true
+            else -> false
+        }
     }
 }

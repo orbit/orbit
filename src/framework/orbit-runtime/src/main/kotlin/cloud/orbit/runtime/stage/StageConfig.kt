@@ -11,6 +11,8 @@ import cloud.orbit.common.util.RandomUtils
 import cloud.orbit.core.net.ClusterName
 import cloud.orbit.core.net.NodeIdentity
 import cloud.orbit.core.net.NodeMode
+import cloud.orbit.runtime.hosting.AddressableDirectory
+import cloud.orbit.runtime.hosting.DefaultAddressableDirectory
 import cloud.orbit.runtime.pipeline.steps.*
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -36,6 +38,11 @@ data class StageConfig(
      * The [NodeMode] of this Orbit node.
      */
     val nodeMode: NodeMode = NodeMode.SERVER,
+
+    /**
+     * A [StageNetworkComponents] that determines which components will be used for stage networking.
+     */
+    val networkComponents: StageNetworkComponents = StageNetworkComponents(),
 
     /**
      * The pool where CPU intensive tasks will run.
@@ -83,4 +90,14 @@ data class StageConfig(
         ResponseTrackingStep::class.java,
         TransportStep::class.java
     )
+)
+
+/**
+ * Specifies the major networking components
+ */
+data class StageNetworkComponents(
+    /**
+     * The [AddressableDirectory] to be used.
+     */
+    val addressableDirectory: Class<out AddressableDirectory> = DefaultAddressableDirectory::class.java
 )

@@ -98,14 +98,18 @@ class ComponentProvider {
 }
 
 class ComponentProviderRoot constructor(@PublishedApi internal val componentProvider: ComponentProvider) {
-    inline fun <reified T : Any> definition(body: () -> Class<out T>) =
-        componentProvider.registerDefinition(T::class.java, body())
+    inline fun <reified T : Any> definition(clazz: Class<out T>) =
+        componentProvider.registerDefinition(T::class.java, clazz)
+
+    inline fun <reified T : Any> definition(body: () -> Class<out T>) = definition(body())
 
     inline fun <reified T : Any> definition() =
         componentProvider.registerDefinition(T::class.java)
 
-    inline fun <reified T : Any> instance(body: () -> T) =
-        componentProvider.registerInstance(T::class.java, body())
+    inline fun <reified T : Any> instance(obj: T) =
+        componentProvider.registerInstance(T::class.java, obj)
+
+    inline fun <reified T : Any> instance(body: () -> T) = instance(body())
 
     inline fun <reified T : Any> resolve(): T = componentProvider.resolve(T::class.java)
 }
