@@ -30,11 +30,12 @@ configureProject(":samples:helloworld", [withKotlin])
 
 buildscript {
     ext.kotlinVersion = "1.3.21"
-    ext.dokkaVersion = "0.9.17"
+    ext.dokkaVersion = "0.9.18"
+    ext.dokkaRepo = "https://dl.bintray.com/kotlin/dokka"
 
     repositories {
         mavenCentral()
-        jcenter()
+        maven { url(dokkaRepo) }
     }
 
     dependencies {
@@ -43,6 +44,9 @@ buildscript {
     }
 }
 
+repositories {
+    maven { url(dokkaRepo) }
+}
 
 ext {
     orbitGroup = "cloud.orbit"
@@ -191,7 +195,8 @@ configure(publish) {
                 from components.java
 
                 artifact sourcesJar
-                artifact dokkaJavadocJar
+                // TODO: Enable once Dokka has proper JDK10+ support
+                // artifact dokkaJavadocJar
                 artifact dokkaHtmlJar
 
                 groupId = project.group
