@@ -33,32 +33,33 @@ class CapabilitiesScanner(private val clock: Clock) {
                 .enableAllInfo()
                 .whitelistPackages(*packagePaths)
 
-            val scan = classGraph.scan()
+            classGraph.scan().use { scan ->
 
-            addressableInterfaces = scan
-                .getClassesImplementing(Addressable::class.java.name)
-                .interfaces
-                .filter {
-                    !it.hasAnnotation(NonConcrete::class.java.name)
-                }
-                .map {
-                    @Suppress("UNCHECKED_CAST")
-                    it.loadClass() as AddressableClass
-                }
+                addressableInterfaces = scan
+                    .getClassesImplementing(Addressable::class.java.name)
+                    .interfaces
+                    .filter {
+                        !it.hasAnnotation(NonConcrete::class.java.name)
+                    }
+                    .map {
+                        @Suppress("UNCHECKED_CAST")
+                        it.loadClass() as AddressableClass
+                    }
 
-            addressableClasses = scan
-                .getClassesImplementing(Addressable::class.java.name)
-                .standardClasses
-                .filter {
-                    !it.hasAnnotation(NonConcrete::class.java.name)
-                }
-                .filter {
-                    !it.isAbstract
-                }
-                .map {
-                    @Suppress("UNCHECKED_CAST")
-                    it.loadClass() as AddressableClass
-                }
+                addressableClasses = scan
+                    .getClassesImplementing(Addressable::class.java.name)
+                    .standardClasses
+                    .filter {
+                        !it.hasAnnotation(NonConcrete::class.java.name)
+                    }
+                    .filter {
+                        !it.isAbstract
+                    }
+                    .map {
+                        @Suppress("UNCHECKED_CAST")
+                        it.loadClass() as AddressableClass
+                    }
+            }
         }
 
         interfaceLookup = mutableMapOf<AddressableClass, AddressableClass>().apply {
