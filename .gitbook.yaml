@@ -2,3 +2,4 @@ root: ./docs/
 
 structure:
   readme: index.md
+  summary: toc.md
