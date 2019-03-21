@@ -85,6 +85,7 @@ data class StageConfig(
      * The steps the pipeline will run.
      */
     val pipelineStepsDefinition: List<Class<out PipelineStep>> = listOf(
+        ExecutionStep::class.java,
         IdentityStep::class.java,
         PlacementStep::class.java,
         ResponseTrackingStep::class.java,

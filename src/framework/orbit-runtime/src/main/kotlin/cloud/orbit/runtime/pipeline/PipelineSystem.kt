@@ -23,7 +23,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
 
-class PipelineManager(
+class PipelineSystem(
     private val componentProvider: ComponentProvider
 ) {
     private val logger by logger()

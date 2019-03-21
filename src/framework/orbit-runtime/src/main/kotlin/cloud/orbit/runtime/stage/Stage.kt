@@ -20,11 +20,11 @@ import cloud.orbit.runtime.capabilities.CapabilitiesScanner
 import cloud.orbit.runtime.concurrent.RuntimePools
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
-import cloud.orbit.runtime.hosting.AddressableDirectory
+import cloud.orbit.runtime.hosting.ExecutionSystem
 import cloud.orbit.runtime.hosting.PlacementSystem
 import cloud.orbit.runtime.hosting.ResponseTrackingSystem
 import cloud.orbit.runtime.net.NetSystem
-import cloud.orbit.runtime.pipeline.PipelineManager
+import cloud.orbit.runtime.pipeline.PipelineSystem
 import cloud.orbit.runtime.remoting.RemoteInterfaceDefinitionDictionary
 import cloud.orbit.runtime.remoting.RemoteInterfaceProxyFactory
 import kotlinx.coroutines.*
@@ -54,7 +54,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     private val netSystem: NetSystem by componentProvider.inject()
     private val capabilitiesScanner: CapabilitiesScanner by componentProvider.inject()
     private val remoteInterfaceDefinitionDictionary: RemoteInterfaceDefinitionDictionary by componentProvider.inject()
-    private val pipelineManager: PipelineManager by componentProvider.inject()
+    private val pipelineSystem: PipelineSystem by componentProvider.inject()
 
 
     private var tickJob: Job? = null
@@ -83,17 +83,19 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<RemoteInterfaceDefinitionDictionary>()
 
             // Pipeline
-            definition<PipelineManager>()
+            definition<PipelineSystem>()
 
             // Hosting
             definition<PlacementSystem>()
             definition<ResponseTrackingSystem>()
+            definition<ExecutionSystem>()
+
 
             // Capabilities
             definition<CapabilitiesScanner>()
 
             // Actors
-            definition<ActorProxyFactory> { DefaultActorProxyFactory::class.java }
+            definition<ActorProxyFactory>(DefaultActorProxyFactory::class.java)
 
             // Net Components
             definition(stageConfig.networkComponents.addressableDirectory)
@@ -188,7 +190,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
         netSystem.localNodeManipulator.updateCapabiltities(capabilities)
 
         // Start pipeline
-        pipelineManager.start()
+        pipelineSystem.start()
 
         // Flip status to running
         netSystem.localNodeManipulator.updateNodeStatus(NodeStatus.STARTING, NodeStatus.RUNNING)
@@ -207,7 +209,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
 
         // Stop pipeline
-        pipelineManager.stop()
+        pipelineSystem.stop()
 
         netSystem.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPING, NodeStatus.STOPPED)
     }

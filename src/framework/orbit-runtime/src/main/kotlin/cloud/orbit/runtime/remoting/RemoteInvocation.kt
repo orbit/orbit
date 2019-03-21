@@ -13,8 +13,28 @@ data class RemoteInvocationTarget(
     val key: Key
 )
 
-class RemoteInvocation(
+data class RemoteInvocation(
     val target: RemoteInvocationTarget,
     val methodDefinition: RemoteMethodDefinition,
     val args: Array<out Any?>
-)
+)  {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as RemoteInvocation
+
+        if (target != other.target) return false
+        if (methodDefinition != other.methodDefinition) return false
+        if (!args.contentEquals(other.args)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = target.hashCode()
+        result = 31 * result + methodDefinition.hashCode()
+        result = 31 * result + args.contentHashCode()
+        return result
+    }
+}

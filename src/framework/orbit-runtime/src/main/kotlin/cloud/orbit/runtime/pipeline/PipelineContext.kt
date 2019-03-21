@@ -16,7 +16,7 @@ import kotlin.coroutines.coroutineContext
 class PipelineContext(
     private val pipeline: List<PipelineStep>,
     startAtEnd: Boolean,
-    private val pipelineManager: PipelineManager,
+    private val pipelineSystem: PipelineSystem,
     var completion: Completion?
 ) {
     private var pointer = if (startAtEnd) pipeline.size  else -1
@@ -37,11 +37,9 @@ class PipelineContext(
 
     }
 
-    fun newInbound(msg: Message) {
-        pipelineManager.pushInbound(msg)
-    }
+    fun newInbound(msg: Message) =
+        pipelineSystem.pushInbound(msg)
 
-    fun newOutbound(msg: Message) {
-        pipelineManager.pushOutbound(msg)
-    }
+    fun newOutbound(msg: Message) =
+        pipelineSystem.pushOutbound(msg)
 }

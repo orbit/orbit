@@ -12,11 +12,6 @@ import cloud.orbit.runtime.pipeline.PipelineContext
 
 class TransportStep : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
-        // TODO: This just makes the test pass
-        val response = Message(
-            content = MessageContent.ResponseNormalMessage("Hello Orbit!"),
-            messageId = msg.messageId
-        )
-        context.newInbound(response)
+        context.newInbound(msg)
     }
 }

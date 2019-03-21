@@ -8,18 +8,18 @@ package cloud.orbit.runtime.remoting
 
 import cloud.orbit.core.key.Key
 import cloud.orbit.core.remoting.Addressable
-import cloud.orbit.runtime.pipeline.PipelineManager
+import cloud.orbit.runtime.pipeline.PipelineSystem
 import java.lang.reflect.Proxy
 
 class RemoteInterfaceProxyFactory(
-    private val pipelineManager: PipelineManager,
+    private val pipelineSystem: PipelineSystem,
     private val interfaceDefinitionDictionary: RemoteInterfaceDefinitionDictionary
 ) {
     fun <T : Addressable> getReference(interfaceClass: Class<T>, key: Key): T {
         val interfaceDefinition = interfaceDefinitionDictionary.getOrCreate(interfaceClass)
 
         val invocationHandler = RemoteInterfaceProxy(
-            pipelineManager = pipelineManager,
+            pipelineSystem = pipelineSystem,
             interfaceDefinition = interfaceDefinition,
             key = key
         )
