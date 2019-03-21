@@ -7,15 +7,14 @@
 package cloud.orbit.runtime.remoting
 
 import cloud.orbit.core.key.Key
-import kotlinx.coroutines.CompletableDeferred
 
 data class RemoteInvocationTarget(
     val interfaceDefinition: RemoteInterfaceDefinition,
-    val methodDefinition: RemoteMethodDefinition,
     val key: Key
 )
 
 class RemoteInvocation(
     val target: RemoteInvocationTarget,
+    val methodDefinition: RemoteMethodDefinition,
     val args: Array<out Any?>
 )

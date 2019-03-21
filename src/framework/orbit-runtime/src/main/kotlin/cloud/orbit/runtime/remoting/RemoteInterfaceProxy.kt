@@ -25,9 +25,9 @@ class RemoteInterfaceProxy(
         val remoteInvocation = RemoteInvocation(
             target = RemoteInvocationTarget(
                 interfaceDefinition = interfaceDefinition,
-                methodDefinition = interfaceDefinition.methodDefinitions.getValue(method),
                 key = key
             ),
+            methodDefinition = interfaceDefinition.methodDefinitions.getValue(method),
             args = args ?: arrayOf()
         )
 
