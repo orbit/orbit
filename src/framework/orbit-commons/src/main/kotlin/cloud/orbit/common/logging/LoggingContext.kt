@@ -20,35 +20,30 @@ object LoggingContext {
      * @param value The value to set.
      */
     @JvmStatic
-    fun put(key: String, value: String) {
-        MDC.put(key, value)
-    }
+    fun put(key: String, value: String): Unit = MDC.put(key, value)
+
 
     /**
      * Puts a context key with the specified value.
      * @param pair The key/value pair.
      */
     @JvmStatic
-    fun put(pair: Pair<String, String>) {
+    fun put(pair: Pair<String, String>): Unit =
         put(pair.first, pair.second)
-    }
+
 
     /**
      * Removes the specified context key.
      * @param key The key to remove.
      */
     @JvmStatic
-    fun remove(key: String) {
-        MDC.remove(key)
-    }
+    fun remove(key: String): Unit = MDC.remove(key)
 
     /**
      * Clears all keys.
      */
     @JvmStatic
-    fun clear() {
-        MDC.clear()
-    }
+    fun clear(): Unit = MDC.clear()
 
     /**
      * Gets the specified context key.
@@ -56,9 +51,14 @@ object LoggingContext {
      * @return The key value.
      */
     @JvmStatic
-    fun get(key: String): String? {
-        return MDC.get(key)
-    }
+    fun get(key: String): String? = MDC.get(key)
+
+    /**
+     * Gets all current keys.
+     * @return Map of the keys.
+     */
+    @JvmStatic
+    fun getAll(): Map<String, String?> = MDC.getCopyOfContextMap()
 }
 
 inline fun loggingContext(body: LoggingContext.() -> Unit) {
