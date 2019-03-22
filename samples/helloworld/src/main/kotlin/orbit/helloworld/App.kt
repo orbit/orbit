@@ -10,7 +10,6 @@ import cloud.orbit.common.logging.getLogger
 import cloud.orbit.common.logging.logger
 import cloud.orbit.core.actor.AbstractActor
 import cloud.orbit.core.actor.ActorWithNoKey
-import cloud.orbit.core.actor.ActorWithStringKey
 import cloud.orbit.core.actor.getReference
 import cloud.orbit.runtime.stage.Stage
 import cloud.orbit.runtime.stage.StageConfig
