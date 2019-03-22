@@ -7,6 +7,7 @@
 package cloud.orbit.runtime.remoting
 
 import cloud.orbit.core.key.Key
+import cloud.orbit.runtime.hosting.DeferredWrappers
 import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.pipeline.PipelineSystem
@@ -37,15 +38,8 @@ class RemoteInterfaceProxy(
 
         val completion = pipelineSystem.pushOutbound(msg)
 
-        return wrap(completion, method)
+        return DeferredWrappers.wrapReturn(completion, method)
     }
 
-    private fun wrap(completableDeferred: CompletableDeferred<*>, method: Method): Any =
-        when (method.returnType) {
-            CompletableDeferred::class.java -> completableDeferred
-            CompletableFuture::class.java -> completableDeferred.asCompletableFuture()
-            else -> {
-                throw IllegalArgumentException("No async wrapper for ${method.returnType} found")
-            }
-        }
+
 }

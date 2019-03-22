@@ -67,6 +67,8 @@ class ComponentProvider {
         return ctr.newInstance(*args) as T
     }
 
+    inline fun <reified T> construct() = construct(T::class.java)
+
     inline fun <reified R : Any> inject(): Lazy<R> = lazy {
         resolve(R::class.java)
     }

@@ -14,7 +14,8 @@ import org.junit.jupiter.api.TestInstance
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class StageBaseTest {
-    protected lateinit var stage: Stage
+    protected lateinit var stage: Stage private set
+    protected lateinit var stageConfig: StageConfig private set
 
     protected open fun setupStage(stageConfig: StageConfig): StageConfig {
         return stageConfig
@@ -25,7 +26,8 @@ abstract class StageBaseTest {
         val config = StageConfig(
             packages = listOf("cloud.orbit.runtime.test")
         )
-        stage = Stage(setupStage(config))
+        stageConfig = setupStage(config)
+        stage = Stage(stageConfig)
         stage.start().join()
     }
 
