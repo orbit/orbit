@@ -44,10 +44,6 @@ buildscript {
     }
 }
 
-repositories {
-    maven { url(dokkaRepo) }
-}
-
 ext {
     orbitGroup = "cloud.orbit"
     orbitVersion = getProperty("orbit.version")
@@ -79,6 +75,7 @@ allprojects {
 
     repositories {
         mavenCentral()
+        maven { url(dokkaRepo) }
     }
 }
 
