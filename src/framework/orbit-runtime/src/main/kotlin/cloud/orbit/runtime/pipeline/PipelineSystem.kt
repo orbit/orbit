@@ -8,6 +8,7 @@ package cloud.orbit.runtime.pipeline
 
 import cloud.orbit.common.exception.CapacityExceededException
 import cloud.orbit.common.logging.logger
+import cloud.orbit.common.logging.trace
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Message
@@ -51,14 +52,14 @@ class PipelineSystem(
     }
 
     private fun launchRail(receiveChannel: ReceiveChannel<MessageContainer>) = supervisorScope.launch {
-        for (msg in receiveChannel) {
+        for (container in receiveChannel) {
             try {
-                logger.info(msg.toString())
-                onMessage(msg)
+                logger.trace { "Pipeline rail received message: $container" }
+                onMessage(container)
             } catch (c: CancellationException) {
                 throw c
             } catch (t: Throwable) {
-                msg.completion.completeExceptionally(t)
+                container.completion.completeExceptionally(t)
             }
         }
     }
@@ -71,6 +72,8 @@ class PipelineSystem(
             completion = completion,
             msg = msg
         )
+
+        logger.trace { "Writing message to pipeline channel: $container" }
 
         // Offer the content to the channel
         if (!pipelineChannel.offer(container)) {
