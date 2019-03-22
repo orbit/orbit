@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test
 
 interface BasicTestActorInterface : ActorWithNoKey {
     fun echo(msg: String): Deferred<String>
-    fun waitFor(Long: TimeMs): Deferred<Unit>
+    fun waitFor(delayMs: TimeMs): Deferred<Unit>
 }
 
 class BasicTestActorImpl : BasicTestActorInterface {
