@@ -10,6 +10,7 @@ import cloud.orbit.common.logging.debug
 import cloud.orbit.common.logging.logger
 import cloud.orbit.core.annotation.NonConcrete
 import cloud.orbit.core.remoting.AddressableClass
+import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 
 class RemoteInterfaceDefinitionDictionary {
@@ -18,10 +19,10 @@ class RemoteInterfaceDefinitionDictionary {
 
     fun getOrCreate(interfaceClass: AddressableClass): RemoteInterfaceDefinition =
         interfaceDefinitionMap.getOrPut(interfaceClass) {
-            generateDefinition(interfaceClass)
+            generateInterfaceDefinition(interfaceClass)
         }
 
-    private fun generateDefinition(interfaceClass: AddressableClass): RemoteInterfaceDefinition {
+    private fun generateInterfaceDefinition(interfaceClass: AddressableClass): RemoteInterfaceDefinition {
         if (!interfaceClass.isInterface) {
             throw IllegalArgumentException("${interfaceClass.name} is not an interface.")
         }
@@ -30,20 +31,23 @@ class RemoteInterfaceDefinitionDictionary {
         }
 
         val methods = interfaceClass.methods
-            .map {
-                RemoteMethodDefinition(
-                    method = it
-                )
-            }.map { it.method to it }
-            .toMap()
+            .map { method ->
+                generateMethodDefinition(interfaceClass, method)
+            }
 
-        val interfaceDefinition = RemoteInterfaceDefinition(
+        val definition = RemoteInterfaceDefinition(
             interfaceClass = interfaceClass,
-            methodDefinitions = methods
+            methods = methods
         )
 
-        logger.debug { "Created definition: $interfaceDefinition" }
+        logger.debug { "Created definition: $definition" }
 
-        return interfaceDefinition
+        return definition
+    }
+
+    private fun generateMethodDefinition(interfaceClass: AddressableClass, method: Method): RemoteMethodDefinition {
+        return RemoteMethodDefinition(
+            method = method
+        )
     }
 }

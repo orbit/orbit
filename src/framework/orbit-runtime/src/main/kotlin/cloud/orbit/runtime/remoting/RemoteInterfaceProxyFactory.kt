@@ -20,7 +20,7 @@ class RemoteInterfaceProxyFactory(
 
         val invocationHandler = RemoteInterfaceProxy(
             pipelineSystem = pipelineSystem,
-            interfaceDefinition = interfaceDefinition,
+            interfaceClass = interfaceDefinition.interfaceClass,
             key = key
         )
         val javaProxy = Proxy.newProxyInstance(

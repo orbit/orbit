@@ -6,10 +6,10 @@
 
 package cloud.orbit.runtime.pipeline.steps
 
+import cloud.orbit.core.net.NetTarget
 import cloud.orbit.runtime.hosting.ResponseTrackingSystem
 import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContent
-import cloud.orbit.runtime.net.MessageTarget
 import cloud.orbit.runtime.pipeline.PipelineContext
 import kotlinx.coroutines.future.asCompletableFuture
 import java.util.concurrent.CompletionException
@@ -40,7 +40,7 @@ class ResponseTrackingStep(private val responseTracking: ResponseTrackingSystem)
 
                     val newMsg = Message(
                         messageId = msg.messageId,
-                        target = MessageTarget.Unicast(msg.source!!),
+                        target = NetTarget.Unicast(msg.source!!),
                         content = newContent
                     )
 

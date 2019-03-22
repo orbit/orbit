@@ -6,10 +6,10 @@
 
 package cloud.orbit.runtime.hosting
 
-import cloud.orbit.runtime.net.MessageTarget
+import cloud.orbit.core.net.NetTarget
 import cloud.orbit.runtime.remoting.RemoteInvocationTarget
 
 interface AddressableDirectory {
-    suspend fun locate(remoteInvocationTarget: RemoteInvocationTarget) : MessageTarget?
-    suspend fun locateOrPlace(remoteInvocationTarget: RemoteInvocationTarget, messageTarget: MessageTarget): MessageTarget
+    suspend fun locate(remoteInvocationTarget: RemoteInvocationTarget) : NetTarget?
+    suspend fun locateOrPlace(remoteInvocationTarget: RemoteInvocationTarget, messageTarget: NetTarget): NetTarget
 }

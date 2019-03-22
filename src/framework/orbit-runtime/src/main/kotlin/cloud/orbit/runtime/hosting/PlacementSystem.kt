@@ -10,8 +10,8 @@ import cloud.orbit.common.exception.NoAvailableNodeException
 import cloud.orbit.common.logging.logger
 import cloud.orbit.common.util.attempt
 import cloud.orbit.common.util.randomOrNull
+import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.net.NodeStatus
-import cloud.orbit.runtime.net.MessageTarget
 import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.remoting.RemoteInvocationTarget
 
@@ -21,12 +21,12 @@ class PlacementSystem(
 ) {
     private val logger by logger()
 
-    suspend fun locateOrPlace(rit: RemoteInvocationTarget): MessageTarget =
+    suspend fun locateOrPlace(rit: RemoteInvocationTarget): NetTarget =
         addressableDirectory.locate(rit).run {
             this ?: addressableDirectory.locateOrPlace(rit, selectTarget(rit))
         }
 
-    private suspend fun selectTarget(rit: RemoteInvocationTarget): MessageTarget =
+    private suspend fun selectTarget(rit: RemoteInvocationTarget): NetTarget =
         attempt(
             maxAttempts = 5,
             initialDelay = 1000,
@@ -36,15 +36,15 @@ class PlacementSystem(
             val allNodes = netSystem.clusterNodes
             val candidateNodes = allNodes
                 .filter { it.nodeStatus == NodeStatus.RUNNING }
-                .filter { it.nodeCapabilities.canHost(rit.interfaceDefinition.interfaceClass) }
+                .filter { it.nodeCapabilities.canHost(rit.interfaceClass) }
 
             // TODO: Support multiple placement strategies
             val selectedNode = candidateNodes.randomOrNull()
             if (selectedNode != null) {
-                MessageTarget.Unicast(selectedNode.nodeIdentity)
+                NetTarget.Unicast(selectedNode.nodeIdentity)
             } else {
                 throw NoAvailableNodeException(
-                    "Could not find node capable of hosting ${rit.interfaceDefinition.interfaceClass}."
+                    "Could not find node capable of hosting ${rit.interfaceClass}."
                 )
             }
         }
@@ -52,9 +52,9 @@ class PlacementSystem(
     suspend fun canHandleLocally(rit: RemoteInvocationTarget): Boolean {
         val currentLocation = addressableDirectory.locate(rit)
         return when(currentLocation) {
-            is MessageTarget.Unicast -> currentLocation.targetNode == netSystem.localNode.nodeIdentity
-            is MessageTarget.Multicast -> currentLocation.nodes.contains(netSystem.localNode.nodeIdentity)
-            is MessageTarget.Broadcast -> true
+            is NetTarget.Unicast -> currentLocation.targetNode == netSystem.localNode.nodeIdentity
+            is NetTarget.Multicast -> currentLocation.nodes.contains(netSystem.localNode.nodeIdentity)
+            is NetTarget.Broadcast -> true
             else -> false
         }
     }

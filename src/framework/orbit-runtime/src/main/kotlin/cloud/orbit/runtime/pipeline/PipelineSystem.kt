@@ -40,7 +40,7 @@ class PipelineSystem(
     fun start() {
         pipelineChannel = Channel(stageConfig.pipelineBufferCount)
         pipelinesWorkers = List(stageConfig.pipelineRailCount) {
-            launchWorker(pipelineChannel)
+            launchRail(pipelineChannel)
         }
         pipelineSteps = stageConfig.pipelineStepsDefinition.map(componentProvider::construct)
 
@@ -50,9 +50,10 @@ class PipelineSystem(
         )
     }
 
-    private fun launchWorker(receiveChannel: ReceiveChannel<MessageContainer>) = supervisorScope.launch {
+    private fun launchRail(receiveChannel: ReceiveChannel<MessageContainer>) = supervisorScope.launch {
         for (msg in receiveChannel) {
             try {
+                logger.info(msg.toString())
                 onMessage(msg)
             } catch (c: CancellationException) {
                 throw c
@@ -74,10 +75,10 @@ class PipelineSystem(
         // Offer the content to the channel
         if (!pipelineChannel.offer(container)) {
             // If the channel rejected there must be no capacity, we complete the deferred result exceptionally.
+            val errMsg = "The Orbit pipeline channel is full. >${stageConfig.pipelineBufferCount} buffered messages."
+            logger.error(errMsg)
             completion.completeExceptionally(
-                CapacityExceededException(
-                    "The Orbit pipeline channel is full. >${stageConfig.pipelineBufferCount} buffered messages."
-                )
+                CapacityExceededException(errMsg)
             )
         }
 

@@ -34,8 +34,7 @@ class GreeterActor : Greeter, AbstractActor() {
 
 fun main() {
     val logger = getLogger("main")
-    val stageConfig = StageConfig()
-    val stage = Stage(stageConfig)
+    val stage = Stage()
 
     runBlocking {
         stage.start().await()

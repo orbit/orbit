@@ -6,6 +6,7 @@
 
 package cloud.orbit.runtime.net
 
+import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.net.NodeIdentity
 import cloud.orbit.runtime.remoting.RemoteInvocation
 import kotlinx.coroutines.CompletableDeferred
@@ -15,14 +16,6 @@ typealias Completion = CompletableDeferred<Any?>
 enum class MessageDirection {
     OUTBOUND,
     INBOUND
-}
-
-sealed class MessageTarget {
-    data class Unicast(val targetNode: NodeIdentity) : MessageTarget()
-    data class Multicast(val nodes: Iterable<NodeIdentity>) : MessageTarget() {
-        constructor(vararg nodes: NodeIdentity) : this(nodes.asIterable())
-    }
-    object Broadcast: MessageTarget()
 }
 
 data class MessageContainer(
@@ -35,7 +28,7 @@ data class Message(
     val content: MessageContent,
     val messageId: Long? = null,
     val source: NodeIdentity? = null,
-    val target: MessageTarget? = null
+    val target: NetTarget? = null
 
 )
 
