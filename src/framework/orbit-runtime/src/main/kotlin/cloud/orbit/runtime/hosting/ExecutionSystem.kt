@@ -28,10 +28,7 @@ class ExecutionSystem(
 
     suspend fun handleInvocation(remoteInvocation: RemoteInvocation, completion: Completion) {
         // Activate
-        val active = getOrCreateAddressable(remoteInvocation.target)?.get()
-            ?: throw IllegalArgumentException(
-                "Active Addressable  does not exist and can not be created. ${remoteInvocation.target}"
-            )
+        val active = getOrCreateAddressable(remoteInvocation.target)?.get()!!
 
         // Call
         val rawResult = remoteInvocation.methodDefinition.method.invoke(active.instance, *remoteInvocation.args)
@@ -54,12 +51,14 @@ class ExecutionSystem(
                 )
             )
         } else {
-            null
+            throw IllegalArgumentException(
+                "Active addressable does not exist and can not be created. $rit"
+            )
         }
     }
 
     private fun shouldActivate(rit: RemoteInvocationTarget): Boolean {
-        return false
+        return true
     }
 
     private fun createInstance(rit: RemoteInvocationTarget): Any {
