@@ -6,34 +6,43 @@
 
 package orbit.helloworld
 
+import cloud.orbit.common.logging.getLogger
+import cloud.orbit.common.logging.logger
 import cloud.orbit.core.actor.AbstractActor
+import cloud.orbit.core.actor.ActorWithNoKey
 import cloud.orbit.core.actor.ActorWithStringKey
 import cloud.orbit.core.actor.getReference
 import cloud.orbit.runtime.stage.Stage
 import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 
-interface Hello : ActorWithStringKey {
-    fun sayHello(name: String): CompletableDeferred<String>
+interface Greeter : ActorWithNoKey {
+    fun greet(name: String): Deferred<String>
 }
 
-class HelloActor : Hello, AbstractActor() {
-    override fun sayHello(name: String): CompletableDeferred<String> {
-        return CompletableDeferred("Hello $name.")
+@Suppress("UNUSED")
+class GreeterActor : Greeter, AbstractActor() {
+    private val logger by logger()
+
+    override fun greet(name: String): Deferred<String> {
+        logger.info("I was called by: $name")
+        return CompletableDeferred("Hello $name!")
     }
 }
 
-fun main(args: Array<String>) {
+fun main() {
+    val logger = getLogger("main")
     val stageConfig = StageConfig()
     val stage = Stage(stageConfig)
 
     runBlocking {
         stage.start().await()
-        val hello = stage.actorProxyFactory.getReference<Hello>("test")
-        hello.sayHello("Joe").await()
+        val greeter = stage.actorProxyFactory.getReference<Greeter>()
+        val greeting = greeter.greet("Joe").await()
+        logger.info("Response: $greeting")
         stage.stop().await()
-
     }
 }
