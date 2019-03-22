@@ -6,7 +6,6 @@
 
 package cloud.orbit.runtime.hosting
 
-import cloud.orbit.common.concurrent.atomicSet
 import cloud.orbit.common.time.Clock
 import cloud.orbit.common.time.TimeMs
 import cloud.orbit.runtime.capabilities.CapabilitiesScanner
@@ -16,46 +15,55 @@ import cloud.orbit.runtime.remoting.RemoteInvocationTarget
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
-class ExecutionSystem(private val clock: Clock,
-                      private val capabilitiesScanner: CapabilitiesScanner) {
+class ExecutionSystem(
+    private val clock: Clock,
+    private val capabilitiesScanner: CapabilitiesScanner
+) {
     data class ActiveAddressable(
         val lastActivity: TimeMs,
-        val instance: Any? = null
+        val instance: Any
     )
 
     private val activeAddressables = ConcurrentHashMap<RemoteInvocationTarget, AtomicReference<ActiveAddressable>>()
 
     suspend fun handleInvocation(remoteInvocation: RemoteInvocation, completion: Completion) {
-        val addressableRef = getOrCreateRef(remoteInvocation.target)
-        var active = addressableRef.get()!!
-
-        // Activation
-        if(active.instance == null) {
-            active = addressableRef.atomicSet {
-                it.copy(instance = createInstance(remoteInvocation.target))
-            }
-        }
+        // Activate
+        val active = getOrCreateAddressable(remoteInvocation.target)?.get()
+            ?: throw IllegalArgumentException(
+                "Active Addressable  does not exist and can not be created. ${remoteInvocation.target}"
+            )
 
         // Call
         val rawResult = remoteInvocation.methodDefinition.method.invoke(active.instance, *remoteInvocation.args)
         try {
             val result = DeferredWrappers.wrapCall(rawResult).await()
             completion.complete(result)
-        } catch(t: Throwable) {
+        } catch (t: Throwable) {
             completion.completeExceptionally(t)
         }
+    }
+
+
+    private fun getOrCreateAddressable(rit: RemoteInvocationTarget) = activeAddressables.getOrPut(rit) {
+        if (shouldActivate(rit)) {
+            val newInstance = createInstance(rit)
+            AtomicReference(
+                ActiveAddressable(
+                    instance = newInstance,
+                    lastActivity = clock.currentTime
+                )
+            )
+        } else {
+            null
+        }
+    }
+
+    private fun shouldActivate(rit: RemoteInvocationTarget): Boolean {
+        return false
     }
 
     private fun createInstance(rit: RemoteInvocationTarget): Any {
         val newInstanceType = capabilitiesScanner.interfaceLookup.getValue(rit.interfaceDefinition.interfaceClass)
         return newInstanceType.getDeclaredConstructor().newInstance()
-    }
-
-    private fun getOrCreateRef(rit: RemoteInvocationTarget) = activeAddressables.getOrPut(rit) {
-        AtomicReference(
-            ActiveAddressable(
-                lastActivity = clock.currentTime
-            )
-        )
     }
 }

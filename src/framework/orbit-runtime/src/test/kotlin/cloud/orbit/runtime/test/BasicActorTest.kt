@@ -14,13 +14,11 @@ import cloud.orbit.runtime.util.StageBaseTest
 import kotlinx.coroutines.*
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-
 import org.junit.jupiter.api.Test
-import java.lang.IllegalStateException
 
 interface BasicTestActorInterface : ActorWithNoKey {
     fun echo(msg: String): Deferred<String>
-    fun waitFor(Long: TimeMs) : Deferred<Unit>
+    fun waitFor(Long: TimeMs): Deferred<Unit>
 }
 
 class BasicTestActorImpl : BasicTestActorInterface {
