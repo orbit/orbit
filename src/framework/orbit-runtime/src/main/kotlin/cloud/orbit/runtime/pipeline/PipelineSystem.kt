@@ -39,14 +39,14 @@ class PipelineSystem(
 
     fun start() {
         pipelineChannel = Channel(stageConfig.pipelineBufferCount)
-        pipelinesWorkers = List(stageConfig.pipelineWorkerCount) {
+        pipelinesWorkers = List(stageConfig.pipelineRailCount) {
             launchWorker(pipelineChannel)
         }
         pipelineSteps = stageConfig.pipelineStepsDefinition.map(componentProvider::construct)
 
         logger.info(
-            "Started ${stageConfig.pipelineWorkerCount} workers with a " +
-                    "${stageConfig.pipelineBufferCount} content buffer and ${pipelineSteps.size} steps."
+            "Pipeline started on ${stageConfig.pipelineRailCount} rails with a " +
+                    "${stageConfig.pipelineBufferCount} entries buffer and ${pipelineSteps.size} steps."
         )
     }
 

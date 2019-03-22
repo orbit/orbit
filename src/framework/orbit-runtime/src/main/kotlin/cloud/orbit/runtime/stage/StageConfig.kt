@@ -74,7 +74,7 @@ data class StageConfig(
     /**
      * The number of workers that can process a content concurrently.
      */
-    val pipelineWorkerCount: Int = 128,
+    val pipelineRailCount: Int = 128,
 
     /**
      * The number of messages (either inbound or outbound) that may be queued before new messages are rejected.
