@@ -15,13 +15,13 @@ import cloud.orbit.core.net.NodeStatus
 import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.remoting.RemoteInvocationTarget
 
-class PlacementSystem(
+class RoutingSystem(
     private val netSystem: NetSystem,
     private val addressableDirectory: AddressableDirectory
 ) {
     private val logger by logger()
 
-    suspend fun locateOrPlace(rit: RemoteInvocationTarget): NetTarget =
+    suspend fun routeMessage(rit: RemoteInvocationTarget): NetTarget =
         addressableDirectory.locate(rit).run {
             this ?: addressableDirectory.locateOrPlace(rit, selectTarget(rit))
         }

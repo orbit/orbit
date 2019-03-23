@@ -21,7 +21,7 @@ import cloud.orbit.runtime.concurrent.RuntimePools
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.hosting.ExecutionSystem
-import cloud.orbit.runtime.hosting.PlacementSystem
+import cloud.orbit.runtime.hosting.RoutingSystem
 import cloud.orbit.runtime.hosting.ResponseTrackingSystem
 import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.pipeline.PipelineSystem
@@ -86,7 +86,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<PipelineSystem>()
 
             // Hosting
-            definition<PlacementSystem>()
+            definition<RoutingSystem>()
             definition<ResponseTrackingSystem>()
             definition<ExecutionSystem>()
 

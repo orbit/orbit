@@ -6,16 +6,16 @@
 
 package cloud.orbit.runtime.pipeline.steps
 
-import cloud.orbit.runtime.hosting.PlacementSystem
+import cloud.orbit.runtime.hosting.RoutingSystem
 import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.pipeline.PipelineContext
 
-class PlacementStep(private val placementSystem: PlacementSystem) : PipelineStep {
+class RoutingStep(private val routingSystem: RoutingSystem) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
         val newMsg = when(msg.content) {
             is MessageContent.RequestInvocationMessage -> {
-                val target = placementSystem.locateOrPlace(msg.content.remoteInvocation.target)
+                val target = routingSystem.routeMessage(msg.content.remoteInvocation.target)
                 msg.copy(
                     target = target
                 )
@@ -28,7 +28,7 @@ class PlacementStep(private val placementSystem: PlacementSystem) : PipelineStep
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
         when(msg.content) {
             is MessageContent.RequestInvocationMessage -> {
-                if(!placementSystem.canHandleLocally(msg.content.remoteInvocation.target)) {
+                if(!routingSystem.canHandleLocally(msg.content.remoteInvocation.target)) {
                     // Can't handle locally so we just start it as a new call
                     context.newOutbound(msg)
                     return
