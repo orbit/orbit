@@ -8,17 +8,22 @@ package orbit.helloworld.dsl
 
 import cloud.orbit.common.logging.getLogger
 import cloud.orbit.core.actor.AbstractActor
-import cloud.orbit.core.actor.ActorWithStringKey
 import cloud.orbit.core.actor.getReference
 import cloud.orbit.runtime.stage.Stage
-import cloud.orbit.runtime.stage.StageConfig
-import java.util.concurrent.CompletableFuture
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
+import orbit.helloworld.dsl.data.Greeting
+import orbit.helloworld.dsl.data.Language
+import java.util.concurrent.CompletableFuture
 
 class GreeterActor : Greeter, AbstractActor() {
-    override fun greet(name: String): CompletableFuture<Greeting> {
-        return CompletableFuture.completedFuture(Greeting("Hello $name!"))
+    override fun greet(name: String): CompletableFuture<Map<Language, Greeting>> {
+        return CompletableFuture.completedFuture(
+            mapOf(
+                Language.ENGLISH to Greeting(Language.ENGLISH,"Hello $name!"),
+                Language.GERMAN to Greeting(Language.GERMAN,"Hallo, $name!")
+            )
+        )
     }
 }
 
@@ -29,7 +34,9 @@ fun main(args: Array<String>) {
     runBlocking {
         stage.start().await()
         val greeter = stage.actorProxyFactory.getReference<Greeter>("test")
-        logger.info(greeter.greet("Cesar").await().greeting)
+        greeter.greet("Cesar").await().forEach {
+            logger.info("In ${it.key}: ${it.value.text}")
+        }
         stage.stop().await()
     }
 }

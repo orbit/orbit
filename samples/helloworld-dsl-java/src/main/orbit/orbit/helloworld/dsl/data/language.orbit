@@ -1,0 +1,4 @@
+enum Language {
+    ENGLISH = 1;
+    GERMAN = 2;
+}

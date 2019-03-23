@@ -19,7 +19,9 @@ class TypeIndexerTest {
         Type("float") to TypeName.FLOAT,
         Type("int32") to TypeName.INT,
         Type("int64") to TypeName.LONG,
-        Type("string") to ClassName.get(String::class.java)
+        Type("string") to ClassName.get(String::class.java),
+        Type("list") to ClassName.get(java.util.List::class.java),
+        Type("map") to ClassName.get(java.util.Map::class.java)
     )
 
     @Test
