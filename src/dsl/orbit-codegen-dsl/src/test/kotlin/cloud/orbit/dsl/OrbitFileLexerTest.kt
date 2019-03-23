@@ -27,7 +27,7 @@ class OrbitFileLexerTest {
         "a_",
         "Enum",
         "Data",
-        "Grain"
+        "Actor"
     )
         .map { testSingleToken("Id", it, OrbitLexer.ID) }
 
@@ -45,7 +45,7 @@ class OrbitFileLexerTest {
     fun tokenizeKeywords() = mapOf(
         "enum" to OrbitLexer.ENUM,
         "data" to OrbitLexer.DATA,
-        "grain" to OrbitLexer.GRAIN
+        "actor" to OrbitLexer.ACTOR
     )
         .map { testSingleToken("Keyword", it.key, it.value) }
 
@@ -70,7 +70,7 @@ class OrbitFileLexerTest {
             //Lots of comments
 
             // Comment
-            grain MyGrain{
+            actor MyActor{
                 // Comment
                 int no_args();
                 void one_arg(RGB a); // Comment
@@ -126,19 +126,19 @@ class OrbitFileLexerTest {
 
             "}" to OrbitLexer.RC_BRACE,
 
-            // ==== Grain ====
-            "grain" to OrbitLexer.GRAIN,
-            "MyGrain" to OrbitLexer.ID,
+            // ==== Actor ====
+            "actor" to OrbitLexer.ACTOR,
+            "MyActor" to OrbitLexer.ID,
             "{" to OrbitLexer.LC_BRACE,
 
-            // Grain method
+            // Actor method
             "int" to OrbitLexer.ID,
             "no_args" to OrbitLexer.ID,
             "(" to OrbitLexer.L_PAREN,
             ")" to OrbitLexer.R_PAREN,
             ";" to OrbitLexer.SEMI_COLON,
 
-            // Grain method
+            // Actor method
             "void" to OrbitLexer.ID,
             "one_arg" to OrbitLexer.ID,
             "(" to OrbitLexer.L_PAREN,
@@ -147,7 +147,7 @@ class OrbitFileLexerTest {
             ")" to OrbitLexer.R_PAREN,
             ";" to OrbitLexer.SEMI_COLON,
 
-            // Grain method
+            // Actor method
             "RGB" to OrbitLexer.ID,
             "multiple_args" to OrbitLexer.ID,
             "(" to OrbitLexer.L_PAREN,

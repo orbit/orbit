@@ -57,10 +57,10 @@ class TypeIndexerTest {
     }
 
     @Test
-    fun indexGrain() {
+    fun indexActor() {
         val actual = TypeIndexer().visitCompilationUnits(
             listOf(
-                CompilationUnit("foo", grains = listOf(GrainDeclaration("bar")))
+                CompilationUnit("foo", actors = listOf(ActorDeclaration("bar")))
             )
         )
 

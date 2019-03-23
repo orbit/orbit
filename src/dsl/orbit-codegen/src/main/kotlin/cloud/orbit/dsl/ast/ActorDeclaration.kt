@@ -6,7 +6,7 @@
 
 package cloud.orbit.dsl.ast
 
-data class GrainDeclaration(
+data class ActorDeclaration(
     override val name: String,
-    val methods: List<GrainMethod> = emptyList()
+    val methods: List<ActorMethod> = emptyList()
 ) : Declaration

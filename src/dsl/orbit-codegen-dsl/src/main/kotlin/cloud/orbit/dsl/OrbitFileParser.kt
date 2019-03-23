@@ -13,7 +13,7 @@ import org.antlr.v4.runtime.CommonTokenStream
 class OrbitFileParser : OrbitBaseVisitor<Any>() {
     private val enums = mutableListOf<EnumDeclaration>()
     private val data = mutableListOf<DataDeclaration>()
-    private val grains = mutableListOf<GrainDeclaration>()
+    private val actors = mutableListOf<ActorDeclaration>()
 
     // This code is not thread safe. Need to find a way to pass the context into the visitor
     fun parse(input: String, packageName: String): CompilationUnit {
@@ -21,7 +21,7 @@ class OrbitFileParser : OrbitBaseVisitor<Any>() {
         val lexer = OrbitLexer(CharStreams.fromString(input))
         val parser = OrbitParser(CommonTokenStream(lexer))
 
-        grains.clear()
+        actors.clear()
         data.clear()
 
         visitFile(parser.file())
@@ -30,7 +30,7 @@ class OrbitFileParser : OrbitBaseVisitor<Any>() {
             packageName,
             enums,
             data,
-            grains
+            actors
         )
     }
 
@@ -52,14 +52,14 @@ class OrbitFileParser : OrbitBaseVisitor<Any>() {
                 .map { DataField(it.name.text, Type(it.type.text), it.index.text.toInt()) }
                 .toList()))
 
-    override fun visitGrainDeclaration(ctx: OrbitParser.GrainDeclarationContext?) = grains.add(
-        GrainDeclaration(
+    override fun visitActorDeclaration(ctx: OrbitParser.ActorDeclarationContext?) = actors.add(
+        ActorDeclaration(
             ctx!!.name.text,
             ctx.children
                 .asSequence()
-                .filterIsInstance(OrbitParser.GrainMethodContext::class.java)
+                .filterIsInstance(OrbitParser.ActorMethodContext::class.java)
                 .map { m ->
-                    GrainMethod(
+                    ActorMethod(
                         name = m.name.text,
                         returnType = Type(m.returnType.text),
                         params = m.children

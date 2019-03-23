@@ -1,0 +1,3 @@
+actor Greeter {
+    Greeting greet(string name);
+}

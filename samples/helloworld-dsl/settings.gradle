@@ -4,10 +4,4 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.dsl.ast
-
-data class GrainMethod(
-    val name: String,
-    val returnType: Type,
-    val params: List<MethodParameter> = emptyList()
-) : AstNode
+rootProject.name = "orbit-helloworld-dsl"

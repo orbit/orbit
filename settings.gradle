@@ -14,7 +14,8 @@ include(
 
 include(
         ":src:dsl:orbit-codegen",
-        ":src:dsl:orbit-codegen-dsl"
+        ":src:dsl:orbit-codegen-dsl",
+        ":src:dsl:orbit-gradle-plugin"
 )
 
 include(

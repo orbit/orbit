@@ -23,6 +23,7 @@ configureProject(":src:framework:orbit-runtime", [withKotlin, withTests, publish
 // DSL
 configureProject(":src:dsl:orbit-codegen", [withKotlin, withTests, publish])
 configureProject(":src:dsl:orbit-codegen-dsl", [withKotlin, withJava, withTests, publish])
+configureProject(":src:dsl:orbit-gradle-plugin", [withKotlin, withTests, publish])
 
 // Samples
 configureProject(":samples:helloworld", [withKotlin])
@@ -96,7 +97,7 @@ configure(withKotlin) {
     }
 
     dependencies {
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+        compile("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
     }
