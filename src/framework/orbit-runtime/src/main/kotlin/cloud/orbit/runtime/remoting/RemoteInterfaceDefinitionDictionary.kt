@@ -9,6 +9,8 @@ package cloud.orbit.runtime.remoting
 import cloud.orbit.common.logging.debug
 import cloud.orbit.common.logging.logger
 import cloud.orbit.core.annotation.NonConcrete
+import cloud.orbit.core.annotation.Routing
+import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.AddressableClass
 import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
@@ -30,6 +32,9 @@ class RemoteInterfaceDefinitionDictionary {
             throw IllegalArgumentException("${interfaceClass.name} is non-concrete and can not be directly addressed")
         }
 
+        val routing = findAddressableAnnotation(interfaceClass, Routing::class.java)
+            ?: throw IllegalArgumentException("No @Routing found in interface hierarchy for ${interfaceClass.name}")
+
         val methods = interfaceClass.methods
             .map { method ->
                 generateMethodDefinition(interfaceClass, method)
@@ -37,12 +42,30 @@ class RemoteInterfaceDefinitionDictionary {
 
         val definition = RemoteInterfaceDefinition(
             interfaceClass = interfaceClass,
-            methods = methods
+            methods = methods,
+            routing = routing
         )
 
         logger.debug { "Created definition: $definition" }
 
         return definition
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T : Annotation> findAddressableAnnotation(
+        addressableClass: AddressableClass,
+        annotation: Class<T>
+    ): T? {
+        val result = addressableClass.getAnnotation(annotation)
+        if (result != null) return result
+        addressableClass.interfaces
+            .filter { Addressable::class.java.isAssignableFrom(it) }
+            .map { it as AddressableClass }
+            .forEach {
+                val res = findAddressableAnnotation(it, annotation)
+                if (res != null) return res
+            }
+        return null
     }
 
     private fun generateMethodDefinition(interfaceClass: AddressableClass, method: Method): RemoteMethodDefinition {

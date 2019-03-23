@@ -7,11 +7,19 @@
 package cloud.orbit.core.actor
 
 import cloud.orbit.core.annotation.NonConcrete
+import cloud.orbit.core.annotation.Routing
+import cloud.orbit.core.hosting.RandomRouting
 import cloud.orbit.core.remoting.Addressable
 
 /**
  * Interface marker for actors.
  */
+@Routing(
+    isRouted = true,
+    forceRouting = true,
+    routingStrategy = RandomRouting::class,
+    persistentPlacement = true
+)
 @NonConcrete
 interface Actor : Addressable
 
