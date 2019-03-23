@@ -10,5 +10,5 @@ data class CompilationUnit(
     val packageName: String,
     val enums: List<EnumDeclaration> = emptyList(),
     val data: List<DataDeclaration> = emptyList(),
-    val grains: List<GrainDeclaration> = emptyList()
+    val actors: List<ActorDeclaration> = emptyList()
 )

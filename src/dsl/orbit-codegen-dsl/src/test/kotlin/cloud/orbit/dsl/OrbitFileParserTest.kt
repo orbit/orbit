@@ -144,12 +144,12 @@ class OrbitFileParserTest {
     }
 
     @Test
-    fun parseGrain_Empty() {
-        val text = "grain foo{}"
+    fun parseActor_Empty() {
+        val text = "actor foo{}"
 
         val expectedCu = CompilationUnit(
             FAKE_PACKAGE_NAME,
-            grains = listOf(GrainDeclaration("foo"))
+            actors = listOf(ActorDeclaration("foo"))
         )
 
         val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
@@ -158,19 +158,19 @@ class OrbitFileParserTest {
     }
 
     @Test
-    fun parseGrain_SingleMethod() {
+    fun parseActor_SingleMethod() {
         val text = """
-            grain foo {
+            actor foo {
                 void bar();
             }
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
             FAKE_PACKAGE_NAME,
-            grains = listOf(
-                GrainDeclaration(
+            actors = listOf(
+                ActorDeclaration(
                     "foo",
-                    methods = listOf(GrainMethod("bar", Type("void")))
+                    methods = listOf(ActorMethod("bar", Type("void")))
                 )
             )
         )
@@ -181,9 +181,9 @@ class OrbitFileParserTest {
     }
 
     @Test
-    fun parseGrain_MultipleMethods() {
+    fun parseActor_MultipleMethods() {
         val text = """
-            grain foo {
+            actor foo {
                 void bar();
                 void baz();
             }
@@ -191,12 +191,12 @@ class OrbitFileParserTest {
 
         val expectedCu = CompilationUnit(
             FAKE_PACKAGE_NAME,
-            grains = listOf(
-                GrainDeclaration(
+            actors = listOf(
+                ActorDeclaration(
                     "foo",
                     methods = listOf(
-                        GrainMethod("bar", Type("void")),
-                        GrainMethod("baz", Type("void"))
+                        ActorMethod("bar", Type("void")),
+                        ActorMethod("baz", Type("void"))
                     )
                 )
             )
@@ -208,20 +208,20 @@ class OrbitFileParserTest {
     }
 
     @Test
-    fun parseGrain_MethodWithOneParam() {
+    fun parseActor_MethodWithOneParam() {
         val text = """
-            grain foo {
+            actor foo {
                 void bar(int k);
             }
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
             FAKE_PACKAGE_NAME,
-            grains = listOf(
-                GrainDeclaration(
+            actors = listOf(
+                ActorDeclaration(
                     "foo",
                     methods = listOf(
-                        GrainMethod(
+                        ActorMethod(
                             "bar", Type("void"),
                             params = listOf(MethodParameter("k", Type("int")))
                         )
@@ -236,20 +236,20 @@ class OrbitFileParserTest {
     }
 
     @Test
-    fun parseGrain_MethodWithMultipleParams() {
+    fun parseActor_MethodWithMultipleParams() {
         val text = """
-            grain foo {
+            actor foo {
                 void bar(int arg1, RGB arg2);
             }
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
             FAKE_PACKAGE_NAME,
-            grains = listOf(
-                GrainDeclaration(
+            actors = listOf(
+                ActorDeclaration(
                     "foo",
                     methods = listOf(
-                        GrainMethod(
+                        ActorMethod(
                             "bar", Type("void"),
                             params = listOf(
                                 MethodParameter("arg1", Type("int")),
@@ -287,7 +287,7 @@ class OrbitFileParserTest {
             //Lots of comments
 
             // Comment
-            grain MyGrain{
+            actor MyActor{
                 // Comment
                 int no_args();
                 void one_arg(RGB a); // Comment
@@ -318,18 +318,18 @@ class OrbitFileParserTest {
                     )
                 )
             ),
-            grains = listOf(
-                GrainDeclaration(
-                    "MyGrain",
+            actors = listOf(
+                ActorDeclaration(
+                    "MyActor",
                     methods = listOf(
-                        GrainMethod("no_args", Type("int")),
-                        GrainMethod(
+                        ActorMethod("no_args", Type("int")),
+                        ActorMethod(
                             "one_arg", Type("void"),
                             params = listOf(
                                 MethodParameter("a", Type("RGB"))
                             )
                         ),
-                        GrainMethod(
+                        ActorMethod(
                             "multiple_args", Type("RGB"),
                             params = listOf(
                                 MethodParameter("arg1", Type("RGB")),

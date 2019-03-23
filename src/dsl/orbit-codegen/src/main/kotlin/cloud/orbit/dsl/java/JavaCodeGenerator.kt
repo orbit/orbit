@@ -73,12 +73,12 @@ internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : 
         generatedTypes.add(CompiledType(packageName, classSpec.build()))
     }
 
-    override fun visitGrainDeclaration(grain: GrainDeclaration) {
+    override fun visitActorDeclaration(actor: ActorDeclaration) {
         val classSpec = TypeSpec
-            .interfaceBuilder(grain.name)
+            .interfaceBuilder(actor.name)
             .addModifiers(Modifier.PUBLIC)
             .addSuperinterface(orbitActorWithStringKeyInterface)
-            .addMethods(grain.methods.map {
+            .addMethods(actor.methods.map {
                 MethodSpec.methodBuilder(it.name)
                     .addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
                     .returns(ParameterizedTypeName.get(completableFutureClass, knownTypes[it.returnType]!!.box()))

@@ -14,13 +14,13 @@ fragment SPACE: [ \n\r\t] ;
 
 file: declaration+ EOF ;
 
-declaration: enumDeclaration | grainDeclaration | dataDeclaration ;
+declaration: enumDeclaration | actorDeclaration | dataDeclaration ;
 
 enumDeclaration: ENUM name=ID LC_BRACE members=enumMember* RC_BRACE ;
 enumMember: name=ID EQUAL index=INT SEMI_COLON;
 
-grainDeclaration: GRAIN name=ID LC_BRACE methods=grainMethod* RC_BRACE ;
-grainMethod: returnType=ID name=ID L_PAREN (args=methodParam (COMMA args=methodParam)*)? R_PAREN SEMI_COLON;
+actorDeclaration: ACTOR name=ID LC_BRACE methods=actorMethod* RC_BRACE ;
+actorMethod: returnType=ID name=ID L_PAREN (args=methodParam (COMMA args=methodParam)*)? R_PAREN SEMI_COLON;
 methodParam: type=ID name=ID ;
 
 dataDeclaration: DATA name=ID LC_BRACE fields=dataField* RC_BRACE ;
@@ -30,7 +30,7 @@ dataField: type=ID name=ID EQUAL index=INT SEMI_COLON ;
 
 DATA: 'data' ;
 ENUM: 'enum' ;
-GRAIN: 'grain' ;
+ACTOR: 'actor' ;
 
 ID: ALPHA(ALPHA|DIGIT|'_')* ;
 INT: DIGIT+ ;
