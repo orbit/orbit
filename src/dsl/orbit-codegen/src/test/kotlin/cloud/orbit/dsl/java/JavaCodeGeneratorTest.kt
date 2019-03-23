@@ -139,10 +139,10 @@ class JavaCodeGeneratorTest {
     }
 
     @Test
-    fun generateGrain_Empty() {
-        val cu = CompilationUnit(PACKAGE_NAME, grains = listOf(GrainDeclaration("grain1")))
+    fun generateActor_Empty() {
+        val cu = CompilationUnit(PACKAGE_NAME, actors = listOf(ActorDeclaration("actor1")))
 
-        val expectedSource = "public interface grain1 extends cloud.orbit.core.actor.ActorWithStringKey { }"
+        val expectedSource = "public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey { }"
 
         assertOneElement(generateSource_minimalPipeline(cu)).run {
             Assertions.assertEquals(PACKAGE_NAME, this.packageName)
@@ -151,15 +151,15 @@ class JavaCodeGeneratorTest {
     }
 
     @Test
-    fun generateGrain_SingleMethod() {
+    fun generateActor_SingleMethod() {
         val cu = CompilationUnit(
-            PACKAGE_NAME, grains = listOf(
-                GrainDeclaration("grain1", listOf(GrainMethod("method1", Type("string"))))
+            PACKAGE_NAME, actors = listOf(
+                ActorDeclaration("actor1", listOf(ActorMethod("method1", Type("string"))))
             )
         )
 
         val expectedSource = """
-            public interface grain1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
                 java.util.concurrent.CompletableFuture<java.lang.String> method1();
             }
         """
@@ -171,20 +171,20 @@ class JavaCodeGeneratorTest {
     }
 
     @Test
-    fun generateGrain_MultipleMethods() {
+    fun generateActor_MultipleMethods() {
         val cu = CompilationUnit(
-            PACKAGE_NAME, grains = listOf(
-                GrainDeclaration(
-                    "grain1", listOf(
-                        GrainMethod("method1", Type("string")),
-                        GrainMethod("method2", Type("string"))
+            PACKAGE_NAME, actors = listOf(
+                ActorDeclaration(
+                    "actor1", listOf(
+                        ActorMethod("method1", Type("string")),
+                        ActorMethod("method2", Type("string"))
                     )
                 )
             )
         )
 
         val expectedSource = """
-            public interface grain1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
                 java.util.concurrent.CompletableFuture<java.lang.String> method1();
                 java.util.concurrent.CompletableFuture<java.lang.String> method2();
             }
@@ -197,12 +197,12 @@ class JavaCodeGeneratorTest {
     }
 
     @Test
-    fun generateGrain_SingleParamMethod() {
+    fun generateActor_SingleParamMethod() {
         val cu = CompilationUnit(
-            PACKAGE_NAME, grains = listOf(
-                GrainDeclaration(
-                    "grain1", listOf(
-                        GrainMethod(
+            PACKAGE_NAME, actors = listOf(
+                ActorDeclaration(
+                    "actor1", listOf(
+                        ActorMethod(
                             "method1",
                             Type("string"),
                             params = listOf(MethodParameter("p1", Type("int32")))
@@ -213,7 +213,7 @@ class JavaCodeGeneratorTest {
         )
 
         val expectedSource = """
-            public interface grain1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
                 java.util.concurrent.CompletableFuture<java.lang.String> method1(int p1);
             }
         """
@@ -225,12 +225,12 @@ class JavaCodeGeneratorTest {
     }
 
     @Test
-    fun generateGrain_MultipleParamsMethod() {
+    fun generateActor_MultipleParamsMethod() {
         val cu = CompilationUnit(
-            PACKAGE_NAME, grains = listOf(
-                GrainDeclaration(
-                    "grain1", listOf(
-                        GrainMethod(
+            PACKAGE_NAME, actors = listOf(
+                ActorDeclaration(
+                    "actor1", listOf(
+                        ActorMethod(
                             "method1",
                             Type("string"),
                             params = listOf(
@@ -244,7 +244,7 @@ class JavaCodeGeneratorTest {
         )
 
         val expectedSource = """
-            public interface grain1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
                 java.util.concurrent.CompletableFuture<java.lang.String> method1(int p1, int p2);
             }
         """
@@ -256,12 +256,12 @@ class JavaCodeGeneratorTest {
     }
 
     @Test
-    fun generateGrain_PrimitivesAreBoxedInReturnType() {
+    fun generateActor_PrimitivesAreBoxedInReturnType() {
         val cu = CompilationUnit(
-            PACKAGE_NAME, grains = listOf(
-                GrainDeclaration(
-                    "grain1", listOf(
-                        GrainMethod(
+            PACKAGE_NAME, actors = listOf(
+                ActorDeclaration(
+                    "actor1", listOf(
+                        ActorMethod(
                             "method1",
                             Type("int32"),
                             params = listOf(MethodParameter("p1", Type("int32")))
@@ -272,7 +272,7 @@ class JavaCodeGeneratorTest {
         )
 
         val expectedSource = """
-            public interface grain1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
                 java.util.concurrent.CompletableFuture<java.lang.Integer> method1(int p1);
             }
         """

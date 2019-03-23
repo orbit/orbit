@@ -6,7 +6,7 @@
 
 package cloud.orbit.dsl.ast
 
-data class GrainMethod(
+data class ActorMethod(
     val name: String,
     val returnType: Type,
     val params: List<MethodParameter> = emptyList()

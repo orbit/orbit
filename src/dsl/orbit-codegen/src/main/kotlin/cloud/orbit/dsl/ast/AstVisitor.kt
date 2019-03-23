@@ -8,7 +8,7 @@ package cloud.orbit.dsl.ast
 
 abstract class AstVisitor {
     open fun visitCompilationUnit(cu: CompilationUnit) {
-        (cu.enums.asSequence() + cu.data.asSequence() + cu.grains.asSequence())
+        (cu.enums.asSequence() + cu.data.asSequence() + cu.actors.asSequence())
             .forEach { visitNode(it) }
     }
 
@@ -17,7 +17,7 @@ abstract class AstVisitor {
             is Declaration -> visitDeclaration(node)
             is EnumMember -> visitEnumMember(node)
             is DataField -> visitDataField(node)
-            is GrainMethod -> visitGrainMethod(node)
+            is ActorMethod -> visitActorMethod(node)
         }
     }
 
@@ -25,7 +25,7 @@ abstract class AstVisitor {
         when (declaration) {
             is EnumDeclaration -> visitEnumDeclaration(declaration)
             is DataDeclaration -> visitDataDeclaration(declaration)
-            is GrainDeclaration -> visitGrainDeclaration(declaration)
+            is ActorDeclaration -> visitActorDeclaration(declaration)
         }
     }
 
@@ -43,10 +43,10 @@ abstract class AstVisitor {
     open fun visitDataField(field: DataField) {
     }
 
-    open fun visitGrainDeclaration(grain: GrainDeclaration) {
-        grain.methods.forEach { visitNode(it) }
+    open fun visitActorDeclaration(actor: ActorDeclaration) {
+        actor.methods.forEach { visitNode(it) }
     }
 
-    open fun visitGrainMethod(method: GrainMethod) {
+    open fun visitActorMethod(method: ActorMethod) {
     }
 }
