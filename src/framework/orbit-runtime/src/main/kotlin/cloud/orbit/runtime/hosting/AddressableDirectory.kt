@@ -8,8 +8,11 @@ package cloud.orbit.runtime.hosting
 
 import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.AddressableReference
+import cloud.orbit.runtime.cluster.local.LocalAddressableDirectory
 
 interface AddressableDirectory {
     suspend fun locate(addressableReference: AddressableReference) : NetTarget?
     suspend fun locateOrPlace(addressableReference: AddressableReference, messageTarget: NetTarget): NetTarget
 }
+
+typealias DefaultAddressableDirectory = LocalAddressableDirectory

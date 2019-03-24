@@ -26,15 +26,16 @@ class ExecutionSystem(
 
 
     suspend fun handleInvocation(addressableInvocation: AddressableInvocation, completion: Completion) {
-        val rid = interfaceDefinitionDictionary.getOrCreate(addressableInvocation.reference.interfaceClass)
+        val addressableInterfaceDefinition =
+            interfaceDefinitionDictionary.getOrCreate(addressableInvocation.reference.interfaceClass)
         var active = activeAddressables[addressableInvocation.reference]
 
         // Activation
-        if (active == null && rid.lifecycle.autoActivate) {
+        if (active == null && addressableInterfaceDefinition.lifecycle.autoActivate) {
             active = getOrCreateAddressable(addressableInvocation.reference)
         }
         if (active == null) {
-            throw IllegalStateException("No active addressable found for $rid")
+            throw IllegalStateException("No active addressable found for $addressableInterfaceDefinition")
         }
         val instance = active.instance
         if(instance is ActivatedAddressable) {

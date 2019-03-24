@@ -4,13 +4,14 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.runtime.hosting
+package cloud.orbit.runtime.cluster.local
 
 import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.AddressableReference
+import cloud.orbit.runtime.hosting.AddressableDirectory
 import java.util.concurrent.ConcurrentHashMap
 
-class DefaultAddressableDirectory : AddressableDirectory {
+class LocalAddressableDirectory : AddressableDirectory {
     private val concurrentHashMap = ConcurrentHashMap<AddressableReference, NetTarget>()
 
     override suspend fun locate(addressableReference: AddressableReference): NetTarget? =

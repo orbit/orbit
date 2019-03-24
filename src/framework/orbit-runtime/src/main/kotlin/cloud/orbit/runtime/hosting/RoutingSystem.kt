@@ -12,11 +12,11 @@ import cloud.orbit.common.util.attempt
 import cloud.orbit.core.hosting.RoutingStrategy
 import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.net.NodeStatus
+import cloud.orbit.core.remoting.AddressableReference
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinitionDictionary
-import cloud.orbit.core.remoting.AddressableReference
 import java.util.concurrent.ConcurrentHashMap
 
 class RoutingSystem(
@@ -29,26 +29,30 @@ class RoutingSystem(
     private val routingStrategies = ConcurrentHashMap<Class<out RoutingStrategy>, RoutingStrategy>()
 
     suspend fun routeMessage(addressableReference: AddressableReference, existingTarget: NetTarget?): NetTarget {
-        val rid = interfaceDefinitionDictionary.getOrCreate(addressableReference.interfaceClass)
+        val addressableInterfaceDefinition =
+            interfaceDefinitionDictionary.getOrCreate(addressableReference.interfaceClass)
         var netTarget = existingTarget
 
-        if (rid.routing.isRouted) {
-            if (existingTarget == null || rid.routing.forceRouting) {
+        if (addressableInterfaceDefinition.routing.isRouted) {
+            if (existingTarget == null || addressableInterfaceDefinition.routing.forceRouting) {
                 netTarget =
-                    if (rid.routing.persistentPlacement) {
+                    if (addressableInterfaceDefinition.routing.persistentPlacement) {
                         addressableDirectory.locate(addressableReference).run {
-                            this ?: addressableDirectory.locateOrPlace(addressableReference, selectTarget(rid))
+                            this ?: addressableDirectory.locateOrPlace(
+                                addressableReference,
+                                selectTarget(addressableInterfaceDefinition)
+                            )
                         }
                     } else {
-                        selectTarget(rid)
+                        selectTarget(addressableInterfaceDefinition)
                     }
             }
         }
 
-        return netTarget ?: throw IllegalStateException("Failed to determine route. $rid")
+        return netTarget ?: throw IllegalStateException("Failed to determine route. $addressableInterfaceDefinition")
     }
 
-    private suspend fun selectTarget(rid: AddressableInterfaceDefinition): NetTarget =
+    private suspend fun selectTarget(addressableInterfaceDefinition: AddressableInterfaceDefinition): NetTarget =
         attempt(
             maxAttempts = 5,
             initialDelay = 1000,
@@ -57,20 +61,20 @@ class RoutingSystem(
             val allNodes = netSystem.clusterNodes
             val candidateNodes = allNodes
                 .filter { it.nodeStatus == NodeStatus.RUNNING }
-                .filter { it.nodeCapabilities.canHost(rid.interfaceClass) }
+                .filter { it.nodeCapabilities.canHost(addressableInterfaceDefinition.interfaceClass) }
 
-            val strategy = routingStrategies.getOrPut(rid.routing.routingStrategy.java) {
-                componentProvider.construct(rid.routing.routingStrategy.java)
+            val strategy = routingStrategies.getOrPut(addressableInterfaceDefinition.routing.routingStrategy.java) {
+                componentProvider.construct(addressableInterfaceDefinition.routing.routingStrategy.java)
             }
             val selectedTarget = strategy.selectTarget(candidateNodes)
 
             return selectedTarget ?: throw NoAvailableNodeException(
-                "Could not find node capable of hosting ${rid.interfaceClass}."
+                "Could not find node capable of hosting ${addressableInterfaceDefinition.interfaceClass}."
             )
         }
 
-    suspend fun canHandleLocally(rit: AddressableReference): Boolean {
-        val currentLocation = addressableDirectory.locate(rit)
+    suspend fun canHandleLocally(addressableReference: AddressableReference): Boolean {
+        val currentLocation = addressableDirectory.locate(addressableReference)
         return when (currentLocation) {
             is NetTarget.Unicast -> currentLocation.targetNode == netSystem.localNode.nodeIdentity
             is NetTarget.Multicast -> currentLocation.nodes.contains(netSystem.localNode.nodeIdentity)

@@ -98,7 +98,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<ActorProxyFactory>(DefaultActorProxyFactory::class.java)
 
             // Net Components
-            definition(stageConfig.networkComponents.addressableDirectory)
+            definition(stageConfig.clusterConfig.addressableDirectory)
         }
 
         netSystem.localNodeManipulator.replace(
@@ -179,6 +179,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
         // Log some info about the environment
         logEnvironmentInfo()
+        logger.debug { "Orbit Stage Config: $stageConfig"}
 
         // Determine capabilities
         capabilitiesScanner.scan(*stageConfig.packages.toTypedArray())
