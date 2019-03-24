@@ -7,14 +7,10 @@
 package cloud.orbit.runtime.hosting
 
 import cloud.orbit.common.time.Clock
-import cloud.orbit.core.remoting.ActivatedAddressable
-import cloud.orbit.core.remoting.ActiveAddressable
-import cloud.orbit.core.remoting.Addressable
+import cloud.orbit.core.remoting.*
 import cloud.orbit.runtime.capabilities.CapabilitiesScanner
 import cloud.orbit.runtime.net.Completion
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinitionDictionary
-import cloud.orbit.core.remoting.AddressableInvocation
-import cloud.orbit.core.remoting.AddressableReference
 import java.util.concurrent.ConcurrentHashMap
 
 class ExecutionSystem(
@@ -38,7 +34,7 @@ class ExecutionSystem(
             throw IllegalStateException("No active addressable found for $addressableInterfaceDefinition")
         }
         val instance = active.instance
-        if(instance is ActivatedAddressable) {
+        if (instance is ActivatedAddressable) {
             instance.context = ActivatedAddressable.AddressableContext(
                 reference = active.addressableReference
 
@@ -49,7 +45,9 @@ class ExecutionSystem(
         dispatchInvocation(addressableInvocation, completion, active.instance)
 
         // Update timestamp
-        activeAddressables.replace(addressableInvocation.reference, active, active.copy(lastActivity = clock.currentTime))
+        activeAddressables.replace(
+            addressableInvocation.reference, active, active.copy(lastActivity = clock.currentTime)
+        )
     }
 
     private suspend fun dispatchInvocation(
@@ -66,14 +64,15 @@ class ExecutionSystem(
         }
     }
 
-    private fun getOrCreateAddressable(addressableReference: AddressableReference) = activeAddressables.getOrPut(addressableReference) {
-        val newInstance = createInstance(addressableReference)
-        ActiveAddressable(
-            instance = newInstance,
-            lastActivity = clock.currentTime,
-            addressableReference = addressableReference
-        )
-    }
+    private fun getOrCreateAddressable(addressableReference: AddressableReference) =
+        activeAddressables.getOrPut(addressableReference) {
+            val newInstance = createInstance(addressableReference)
+            ActiveAddressable(
+                instance = newInstance,
+                lastActivity = clock.currentTime,
+                addressableReference = addressableReference
+            )
+        }
 
     private fun createInstance(addressableReference: AddressableReference): Addressable {
         val newInstanceType = capabilitiesScanner.interfaceLookup.getValue(addressableReference.interfaceClass)
