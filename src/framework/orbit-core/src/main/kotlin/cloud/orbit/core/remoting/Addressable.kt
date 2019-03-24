@@ -52,7 +52,13 @@ abstract class ActivatedAddressable {
  * A reference to a specific addressable.
  */
 data class AddressableReference(
+    /**
+     * The [Addressable] interface being referenced.
+     */
     val interfaceClass: AddressableClass,
+    /**
+     * A unique key.
+     */
     val key: Key
 )
 
@@ -60,8 +66,17 @@ data class AddressableReference(
  * An invocation of a method on an [Addressable].
  */
 data class AddressableInvocation(
+    /**
+     * A reference to the [Addressable].
+     */
     val reference: AddressableReference,
+    /**
+     * The method being called.
+     */
     val method: Method,
+    /**
+     * The arguments being passed.
+     */
     val args: Array<out Any?>
 ) {
     override fun equals(other: Any?): Boolean {
