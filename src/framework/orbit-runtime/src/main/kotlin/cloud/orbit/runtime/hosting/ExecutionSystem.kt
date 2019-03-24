@@ -23,9 +23,10 @@ class ExecutionSystem(
     private val capabilitiesScanner: CapabilitiesScanner,
     private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary,
     private val clock: Clock,
-    private val stageConfig: StageConfig
+    private val stageConfig: StageConfig,
+    private val directorySystem: DirectorySystem
 ) {
-    private val activeAddressables = ConcurrentHashMap<AddressableReference, ExecutionHandler>()
+    private val activeAddressables = ConcurrentHashMap<AddressableReference, ExecutionHandle>()
 
     suspend fun handleInvocation(invocation: AddressableInvocation, completion: Completion) {
         val definition =
@@ -55,28 +56,34 @@ class ExecutionSystem(
         }
     }
 
-    private suspend fun activate(reference: AddressableReference, definition: AddressableInterfaceDefinition): ExecutionHandler {
+    private suspend fun activate(reference: AddressableReference, definition: AddressableInterfaceDefinition): ExecutionHandle {
         val handler = getOrCreateAddressable(reference, definition)
+        if(handler.definition.routing.persistentPlacement) {
+            directorySystem.localActivation(handler.reference)
+        }
         handler.activate()
         return handler
     }
 
-    private suspend fun invoke(handler: ExecutionHandler, invocation: AddressableInvocation, completion: Completion) {
-        handler.invoke(invocation, completion)
+    private suspend fun invoke(handle: ExecutionHandle, invocation: AddressableInvocation, completion: Completion) {
+        handle.invoke(invocation, completion)
     }
 
-    private suspend fun deactivate(handler: ExecutionHandler) {
-        handler.deactivate()
-        activeAddressables.remove(handler.reference)
+    private suspend fun deactivate(handle: ExecutionHandle) {
+        handle.deactivate()
+        if(handle.definition.routing.persistentPlacement) {
+            directorySystem.localDeactivatiom(handle.reference)
+        }
+        activeAddressables.remove(handle.reference)
     }
 
     private fun getOrCreateAddressable(
         reference: AddressableReference,
         definition: AddressableInterfaceDefinition
-    ): ExecutionHandler =
+    ): ExecutionHandle =
         activeAddressables.getOrPut(reference) {
             val newInstance = createInstance(reference)
-            ExecutionHandler(
+            ExecutionHandle(
                 componentProvider = componentProvider,
                 instance = newInstance,
                 reference = reference,

@@ -16,14 +16,13 @@ import cloud.orbit.runtime.net.Completion
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
 import java.util.concurrent.atomic.AtomicLong
 
-class ExecutionHandler(
+class ExecutionHandle(
     val instance: Addressable,
     val reference: AddressableReference,
     val definition: AddressableInterfaceDefinition,
-    private val componentProvider: ComponentProvider
+    componentProvider: ComponentProvider
 ) {
-    private val clock : Clock by componentProvider.inject()
-    private val directorySystem : DirectorySystem by componentProvider.inject()
+    private val clock: Clock by componentProvider.inject()
 
     val createdTime = clock.currentTime
 
@@ -31,10 +30,7 @@ class ExecutionHandler(
     val lastActivity get() = lastActivityAtomic.get()
 
 
-    suspend fun activate() {
-        if(definition.routing.persistentPlacement) {
-            directorySystem.localActivation(reference)
-        }
+    fun activate() {
         if (instance is ActivatedAddressable) {
             instance.context = ActivatedAddressable.AddressableContext(
                 reference = reference
@@ -56,9 +52,7 @@ class ExecutionHandler(
         }
     }
 
-    suspend fun deactivate() {
-        if(definition.routing.persistentPlacement) {
-            directorySystem.localDeactivatiom(reference)
-        }
+    fun deactivate() {
+
     }
 }
