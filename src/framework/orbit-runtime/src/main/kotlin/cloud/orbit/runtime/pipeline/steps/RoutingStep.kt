@@ -15,7 +15,7 @@ class RoutingStep(private val routingSystem: RoutingSystem) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
         val newMsg = when(msg.content) {
             is MessageContent.RequestInvocationMessage -> {
-                val target = routingSystem.routeMessage(msg.content.remoteInvocation.target, msg.target)
+                val target = routingSystem.routeMessage(msg.content.addressableInvocation.reference, msg.target)
                 msg.copy(
                     target = target
                 )
@@ -28,7 +28,7 @@ class RoutingStep(private val routingSystem: RoutingSystem) : PipelineStep {
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
         when(msg.content) {
             is MessageContent.RequestInvocationMessage -> {
-                if(!routingSystem.canHandleLocally(msg.content.remoteInvocation.target)) {
+                if(!routingSystem.canHandleLocally(msg.content.addressableInvocation.reference)) {
                     // Can't handle locally so we just start it as a new call
                     context.newOutbound(msg)
                     return

@@ -25,8 +25,8 @@ import cloud.orbit.runtime.hosting.RoutingSystem
 import cloud.orbit.runtime.hosting.ResponseTrackingSystem
 import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.pipeline.PipelineSystem
-import cloud.orbit.runtime.remoting.RemoteInterfaceDefinitionDictionary
-import cloud.orbit.runtime.remoting.RemoteInterfaceProxyFactory
+import cloud.orbit.runtime.remoting.AddressableInterfaceDefinitionDictionary
+import cloud.orbit.runtime.remoting.AddressableInterfaceClientProxyFactory
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.asCompletableFuture
 
@@ -53,7 +53,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
     private val netSystem: NetSystem by componentProvider.inject()
     private val capabilitiesScanner: CapabilitiesScanner by componentProvider.inject()
-    private val remoteInterfaceDefinitionDictionary: RemoteInterfaceDefinitionDictionary by componentProvider.inject()
+    private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary by componentProvider.inject()
     private val pipelineSystem: PipelineSystem by componentProvider.inject()
 
 
@@ -79,8 +79,8 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<NetSystem>()
 
             // Remoting
-            definition<RemoteInterfaceProxyFactory>()
-            definition<RemoteInterfaceDefinitionDictionary>()
+            definition<AddressableInterfaceClientProxyFactory>()
+            definition<AddressableInterfaceDefinitionDictionary>()
 
             // Pipeline
             definition<PipelineSystem>()
@@ -154,7 +154,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             if (elapsed > targetTickRate) {
                 logger.warn {
                     "Slow Orbit Tick. The application is unable to maintain its tick rate. " +
-                            "Last tick took ${elapsed}ms and the target tick rate is ${targetTickRate}ms. " +
+                            "Last tick took ${elapsed}ms and the reference tick rate is ${targetTickRate}ms. " +
                             "The next tick will take place immediately."
                 }
             }
@@ -184,7 +184,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
         capabilitiesScanner.scan(*stageConfig.packages.toTypedArray())
         capabilitiesScanner.addressableInterfaces.forEach {
             // Pre populate for performance
-            remoteInterfaceDefinitionDictionary.getOrCreate(it)
+            interfaceDefinitionDictionary.getOrCreate(it)
         }
         val capabilities = capabilitiesScanner.generateNodeCapabilities()
         netSystem.localNodeManipulator.updateCapabiltities(capabilities)

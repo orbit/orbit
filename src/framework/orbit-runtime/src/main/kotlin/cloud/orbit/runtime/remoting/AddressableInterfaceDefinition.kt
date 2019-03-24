@@ -11,13 +11,13 @@ import cloud.orbit.core.annotation.Routing
 import cloud.orbit.core.remoting.AddressableClass
 import java.lang.reflect.Method
 
-data class RemoteInterfaceDefinition(
+data class AddressableInterfaceDefinition(
     val interfaceClass: AddressableClass,
     val routing: Routing,
     val lifecycle: Lifecycle,
-    val methods: List<RemoteMethodDefinition>
+    val methods: List<AddressableMethodDefinition>
 )
 
-data class RemoteMethodDefinition(
+data class AddressableMethodDefinition(
     val method: Method
 )

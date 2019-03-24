@@ -6,7 +6,9 @@
 
 package cloud.orbit.core.actor
 
+import cloud.orbit.core.remoting.ActivatedAddressable
+
 /**
  * Base class to all [Actor] implementations.
  */
-abstract class AbstractActor
+abstract class AbstractActor : ActivatedAddressable()

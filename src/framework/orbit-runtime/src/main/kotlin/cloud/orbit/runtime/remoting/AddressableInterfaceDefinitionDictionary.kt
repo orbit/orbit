@@ -12,21 +12,20 @@ import cloud.orbit.common.util.AnnotationUtils
 import cloud.orbit.core.annotation.Lifecycle
 import cloud.orbit.core.annotation.NonConcrete
 import cloud.orbit.core.annotation.Routing
-import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.AddressableClass
 import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 
-class RemoteInterfaceDefinitionDictionary {
-    private val interfaceDefinitionMap = ConcurrentHashMap<AddressableClass, RemoteInterfaceDefinition>()
+class AddressableInterfaceDefinitionDictionary {
+    private val interfaceDefinitionMap = ConcurrentHashMap<AddressableClass, AddressableInterfaceDefinition>()
     private val logger by logger()
 
-    fun getOrCreate(interfaceClass: AddressableClass): RemoteInterfaceDefinition =
+    fun getOrCreate(interfaceClass: AddressableClass): AddressableInterfaceDefinition =
         interfaceDefinitionMap.getOrPut(interfaceClass) {
             generateInterfaceDefinition(interfaceClass)
         }
 
-    private fun generateInterfaceDefinition(interfaceClass: AddressableClass): RemoteInterfaceDefinition {
+    private fun generateInterfaceDefinition(interfaceClass: AddressableClass): AddressableInterfaceDefinition {
         if (!interfaceClass.isInterface) {
             throw IllegalArgumentException("${interfaceClass.name} is not an interface.")
         }
@@ -45,7 +44,7 @@ class RemoteInterfaceDefinitionDictionary {
                 generateMethodDefinition(interfaceClass, method)
             }
 
-        val definition = RemoteInterfaceDefinition(
+        val definition = AddressableInterfaceDefinition(
             interfaceClass = interfaceClass,
             methods = methods,
             routing = routing,
@@ -57,8 +56,8 @@ class RemoteInterfaceDefinitionDictionary {
         return definition
     }
 
-    private fun generateMethodDefinition(interfaceClass: AddressableClass, method: Method): RemoteMethodDefinition {
-        return RemoteMethodDefinition(
+    private fun generateMethodDefinition(interfaceClass: AddressableClass, method: Method): AddressableMethodDefinition {
+        return AddressableMethodDefinition(
             method = method
         )
     }

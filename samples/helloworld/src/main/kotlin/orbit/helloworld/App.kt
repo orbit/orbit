@@ -26,7 +26,7 @@ class GreeterActor : Greeter, AbstractActor() {
     private val logger by logger()
 
     override fun greet(name: String): Deferred<String> {
-        logger.info("I was called by: $name")
+        logger.info("I was called by: $name. My identity is ${this.context.reference}")
         return CompletableDeferred("Hello $name!")
     }
 }

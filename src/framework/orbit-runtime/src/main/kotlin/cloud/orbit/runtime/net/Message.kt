@@ -8,7 +8,7 @@ package cloud.orbit.runtime.net
 
 import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.net.NodeIdentity
-import cloud.orbit.runtime.remoting.RemoteInvocation
+import cloud.orbit.core.remoting.AddressableInvocation
 import kotlinx.coroutines.CompletableDeferred
 
 typealias Completion = CompletableDeferred<Any?>
@@ -33,7 +33,7 @@ data class Message(
 )
 
 sealed class MessageContent {
-    data class RequestInvocationMessage(val remoteInvocation: RemoteInvocation) : MessageContent()
+    data class RequestInvocationMessage(val addressableInvocation: AddressableInvocation) : MessageContent()
     data class ResponseNormalMessage(val response: Any?) : MessageContent()
     data class ResponseErrorMessage(val error: Throwable) : MessageContent()
 }

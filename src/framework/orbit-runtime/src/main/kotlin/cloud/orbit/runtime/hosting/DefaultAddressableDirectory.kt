@@ -7,20 +7,20 @@
 package cloud.orbit.runtime.hosting
 
 import cloud.orbit.core.net.NetTarget
-import cloud.orbit.runtime.remoting.RemoteInvocationTarget
+import cloud.orbit.core.remoting.AddressableReference
 import java.util.concurrent.ConcurrentHashMap
 
 class DefaultAddressableDirectory : AddressableDirectory {
-    private val concurrentHashMap = ConcurrentHashMap<RemoteInvocationTarget, NetTarget>()
+    private val concurrentHashMap = ConcurrentHashMap<AddressableReference, NetTarget>()
 
-    override suspend fun locate(remoteInvocationTarget: RemoteInvocationTarget): NetTarget? =
-        concurrentHashMap[remoteInvocationTarget]
+    override suspend fun locate(addressableReference: AddressableReference): NetTarget? =
+        concurrentHashMap[addressableReference]
 
     override suspend fun locateOrPlace(
-        remoteInvocationTarget: RemoteInvocationTarget,
+        addressableReference: AddressableReference,
         messageTarget: NetTarget
     ): NetTarget =
-        concurrentHashMap.getOrPut(remoteInvocationTarget) {
+        concurrentHashMap.getOrPut(addressableReference) {
             messageTarget
         }
 }

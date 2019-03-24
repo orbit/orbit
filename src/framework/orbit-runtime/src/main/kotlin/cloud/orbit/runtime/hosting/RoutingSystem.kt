@@ -14,30 +14,30 @@ import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.net.NodeStatus
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.NetSystem
-import cloud.orbit.runtime.remoting.RemoteInterfaceDefinition
-import cloud.orbit.runtime.remoting.RemoteInterfaceDefinitionDictionary
-import cloud.orbit.runtime.remoting.RemoteInvocationTarget
+import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
+import cloud.orbit.runtime.remoting.AddressableInterfaceDefinitionDictionary
+import cloud.orbit.core.remoting.AddressableReference
 import java.util.concurrent.ConcurrentHashMap
 
 class RoutingSystem(
     private val netSystem: NetSystem,
     private val addressableDirectory: AddressableDirectory,
-    private val remoteInterfaceDefinitionDictionary: RemoteInterfaceDefinitionDictionary,
+    private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary,
     private val componentProvider: ComponentProvider
 ) {
     private val logger by logger()
     private val routingStrategies = ConcurrentHashMap<Class<out RoutingStrategy>, RoutingStrategy>()
 
-    suspend fun routeMessage(rit: RemoteInvocationTarget, existingTarget: NetTarget?): NetTarget {
-        val rid = remoteInterfaceDefinitionDictionary.getOrCreate(rit.interfaceClass)
+    suspend fun routeMessage(addressableReference: AddressableReference, existingTarget: NetTarget?): NetTarget {
+        val rid = interfaceDefinitionDictionary.getOrCreate(addressableReference.interfaceClass)
         var netTarget = existingTarget
 
         if (rid.routing.isRouted) {
             if (existingTarget == null || rid.routing.forceRouting) {
                 netTarget =
                     if (rid.routing.persistentPlacement) {
-                        addressableDirectory.locate(rit).run {
-                            this ?: addressableDirectory.locateOrPlace(rit, selectTarget(rid))
+                        addressableDirectory.locate(addressableReference).run {
+                            this ?: addressableDirectory.locateOrPlace(addressableReference, selectTarget(rid))
                         }
                     } else {
                         selectTarget(rid)
@@ -48,7 +48,7 @@ class RoutingSystem(
         return netTarget ?: throw IllegalStateException("Failed to determine route. $rid")
     }
 
-    private suspend fun selectTarget(rid: RemoteInterfaceDefinition): NetTarget =
+    private suspend fun selectTarget(rid: AddressableInterfaceDefinition): NetTarget =
         attempt(
             maxAttempts = 5,
             initialDelay = 1000,
@@ -69,7 +69,7 @@ class RoutingSystem(
             )
         }
 
-    suspend fun canHandleLocally(rit: RemoteInvocationTarget): Boolean {
+    suspend fun canHandleLocally(rit: AddressableReference): Boolean {
         val currentLocation = addressableDirectory.locate(rit)
         return when (currentLocation) {
             is NetTarget.Unicast -> currentLocation.targetNode == netSystem.localNode.nodeIdentity

@@ -7,52 +7,56 @@
 package cloud.orbit.runtime.hosting
 
 import cloud.orbit.common.time.Clock
-import cloud.orbit.common.time.TimeMs
+import cloud.orbit.core.remoting.ActivatedAddressable
+import cloud.orbit.core.remoting.ActiveAddressable
 import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.runtime.capabilities.CapabilitiesScanner
 import cloud.orbit.runtime.net.Completion
-import cloud.orbit.runtime.remoting.RemoteInterfaceDefinitionDictionary
-import cloud.orbit.runtime.remoting.RemoteInvocation
-import cloud.orbit.runtime.remoting.RemoteInvocationTarget
+import cloud.orbit.runtime.remoting.AddressableInterfaceDefinitionDictionary
+import cloud.orbit.core.remoting.AddressableInvocation
+import cloud.orbit.core.remoting.AddressableReference
 import java.util.concurrent.ConcurrentHashMap
 
 class ExecutionSystem(
     private val clock: Clock,
     private val capabilitiesScanner: CapabilitiesScanner,
-    private val remoteInterfaceDefinitionDictionary: RemoteInterfaceDefinitionDictionary
+    private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary
 ) {
-    data class ActiveAddressable(
-        val lastActivity: TimeMs,
-        val instance: Addressable
-    )
-
-    private val activeAddressables = ConcurrentHashMap<RemoteInvocationTarget, ActiveAddressable>()
+    private val activeAddressables = ConcurrentHashMap<AddressableReference, ActiveAddressable>()
 
 
-    suspend fun handleInvocation(remoteInvocation: RemoteInvocation, completion: Completion) {
-        val rid = remoteInterfaceDefinitionDictionary.getOrCreate(remoteInvocation.target.interfaceClass)
-        var active = activeAddressables[remoteInvocation.target]
+    suspend fun handleInvocation(addressableInvocation: AddressableInvocation, completion: Completion) {
+        val rid = interfaceDefinitionDictionary.getOrCreate(addressableInvocation.reference.interfaceClass)
+        var active = activeAddressables[addressableInvocation.reference]
 
         // Activation
-        if (active == null) {
-            if (rid.lifecycle.autoActivate) {
-                active = getOrCreateAddressable(remoteInvocation.target)
-            }
+        if (active == null && rid.lifecycle.autoActivate) {
+            active = getOrCreateAddressable(addressableInvocation.reference)
         }
         if (active == null) {
-            throw IllegalArgumentException("No active addressable found for $rid")
+            throw IllegalStateException("No active addressable found for $rid")
+        }
+        val instance = active.instance
+        if(instance is ActivatedAddressable) {
+            instance.context = ActivatedAddressable.AddressableContext(
+                reference = active.addressableReference
+
+            )
         }
 
         // Call
-        dispatchInvocation(remoteInvocation, completion, active.instance)
+        dispatchInvocation(addressableInvocation, completion, active.instance)
+
+        // Update timestamp
+        activeAddressables.replace(addressableInvocation.reference, active, active.copy(lastActivity = clock.currentTime))
     }
 
     private suspend fun dispatchInvocation(
-        remoteInvocation: RemoteInvocation,
+        addressableInvocation: AddressableInvocation,
         completion: Completion,
         addressable: Addressable
     ) {
-        val rawResult = remoteInvocation.method.invoke(addressable, *remoteInvocation.args)
+        val rawResult = addressableInvocation.method.invoke(addressable, *addressableInvocation.args)
         try {
             val result = DeferredWrappers.wrapCall(rawResult).await()
             completion.complete(result)
@@ -61,16 +65,17 @@ class ExecutionSystem(
         }
     }
 
-    private fun getOrCreateAddressable(rit: RemoteInvocationTarget) = activeAddressables.getOrPut(rit) {
-        val newInstance = createInstance(rit)
+    private fun getOrCreateAddressable(addressableReference: AddressableReference) = activeAddressables.getOrPut(addressableReference) {
+        val newInstance = createInstance(addressableReference)
         ActiveAddressable(
             instance = newInstance,
-            lastActivity = clock.currentTime
+            lastActivity = clock.currentTime,
+            addressableReference = addressableReference
         )
     }
 
-    private fun createInstance(rit: RemoteInvocationTarget): Addressable {
-        val newInstanceType = capabilitiesScanner.interfaceLookup.getValue(rit.interfaceClass)
+    private fun createInstance(addressableReference: AddressableReference): Addressable {
+        val newInstanceType = capabilitiesScanner.interfaceLookup.getValue(addressableReference.interfaceClass)
         return newInstanceType.getDeclaredConstructor().newInstance()
     }
 }
