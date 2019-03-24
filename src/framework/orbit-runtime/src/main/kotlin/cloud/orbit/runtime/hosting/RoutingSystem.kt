@@ -29,8 +29,7 @@ class RoutingSystem(
     private val routingStrategies = ConcurrentHashMap<Class<out RoutingStrategy>, RoutingStrategy>()
 
     suspend fun routeMessage(reference: AddressableReference, existingTarget: NetTarget?): NetTarget {
-        val interfaceDefinition =
-            interfaceDefinitionDictionary.getOrCreate(reference.interfaceClass)
+        val interfaceDefinition = interfaceDefinitionDictionary.getOrCreate(reference.interfaceClass)
         var netTarget = existingTarget
 
         if (interfaceDefinition.routing.isRouted) {
@@ -74,12 +73,18 @@ class RoutingSystem(
         }
 
     suspend fun canHandleLocally(reference: AddressableReference): Boolean {
-        val currentLocation = addressableDirectory.locate(reference)
-        return when (currentLocation) {
-            is NetTarget.Unicast -> currentLocation.targetNode == netSystem.localNode.nodeIdentity
-            is NetTarget.Multicast -> currentLocation.nodes.contains(netSystem.localNode.nodeIdentity)
-            is NetTarget.Broadcast -> true
-            else -> false
+        val interfaceDefinition = interfaceDefinitionDictionary.getOrCreate(reference.interfaceClass)
+
+        return if (interfaceDefinition.routing.persistentPlacement) {
+            val currentLocation = addressableDirectory.locate(reference)
+            when (currentLocation) {
+                is NetTarget.Unicast -> currentLocation.targetNode == netSystem.localNode.nodeIdentity
+                is NetTarget.Multicast -> currentLocation.nodes.contains(netSystem.localNode.nodeIdentity)
+                is NetTarget.Broadcast -> true
+                else -> false
+            }
+        } else {
+            true
         }
     }
 }
