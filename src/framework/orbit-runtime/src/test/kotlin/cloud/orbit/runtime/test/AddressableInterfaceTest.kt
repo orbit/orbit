@@ -46,6 +46,13 @@ class AddressableInterfaceTest {
     }
 
     @Test
+    fun `check fails on missing execution model`() {
+        assertThatThrownBy {
+            addressableInterfaceDefinitionDictionary.getOrCreate(MissingExecutionModelAddressable::class.java)
+        }.isInstanceOf(IllegalArgumentException::class.java).hasMessageContaining("execution model")
+    }
+
+    @Test
     fun `check passes basic valid`() {
         val addressableDef = addressableInterfaceDefinitionDictionary.getOrCreate(BasicValidAddressable::class.java)
         assertThat(addressableDef.interfaceClass).isEqualTo(BasicValidAddressable::class.java)

@@ -9,6 +9,7 @@ package cloud.orbit.runtime.remoting
 import cloud.orbit.common.logging.debug
 import cloud.orbit.common.logging.logger
 import cloud.orbit.common.util.AnnotationUtils
+import cloud.orbit.core.annotation.ExecutionModel
 import cloud.orbit.core.annotation.Lifecycle
 import cloud.orbit.core.annotation.NonConcrete
 import cloud.orbit.core.annotation.Routing
@@ -41,16 +42,21 @@ class AddressableInterfaceDefinitionDictionary {
             ?: throw IllegalArgumentException("No lifecycle annotation found in interface hierarchy for " +
                     interfaceClass.name)
 
+        val executionModel = AnnotationUtils.findAnnotation(interfaceClass, ExecutionModel::class.java)
+            ?: throw IllegalArgumentException("No execution model annotation found in interface hierarchy for " +
+                    interfaceClass.name)
+
         val methods = interfaceClass.methods
             .map { method ->
-                generateMethodDefinition(interfaceClass, method)
-            }
+                method to generateMethodDefinition(interfaceClass, method)
+            }.toMap()
 
         val definition = AddressableInterfaceDefinition(
             interfaceClass = interfaceClass,
             methods = methods,
             routing = routing,
-            lifecycle = lifecycle
+            lifecycle = lifecycle,
+            executionModel = executionModel
         )
 
         logger.debug { "Created definition: $definition" }

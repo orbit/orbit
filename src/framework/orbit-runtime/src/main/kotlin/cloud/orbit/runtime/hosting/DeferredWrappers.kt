@@ -6,6 +6,7 @@
 
 package cloud.orbit.runtime.hosting
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.asDeferred
@@ -15,8 +16,9 @@ import java.util.concurrent.CompletableFuture
 object DeferredWrappers {
     fun wrapReturn(deferred: Deferred<*>, method: Method): Any =
         when (method.returnType) {
-            Deferred::class.java -> deferred
             CompletableFuture::class.java -> deferred.asCompletableFuture()
+            CompletableDeferred::class.java -> deferred
+            Deferred::class.java -> deferred
             else -> {
                 throw IllegalArgumentException("No async wrapper for ${method.returnType} found")
             }
@@ -24,8 +26,9 @@ object DeferredWrappers {
 
     fun wrapCall(result: Any) : Deferred<*> =
         when(result) {
-            is Deferred<*> -> result
             is CompletableFuture<*> -> result.asDeferred()
+            is CompletableDeferred<*> -> result
+            is Deferred<*> -> result
             else -> {
                 throw IllegalArgumentException("No async wrapper for ${result.javaClass} found")
             }

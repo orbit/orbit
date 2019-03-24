@@ -6,6 +6,7 @@
 
 package cloud.orbit.runtime.remoting
 
+import cloud.orbit.core.annotation.ExecutionModel
 import cloud.orbit.core.annotation.Lifecycle
 import cloud.orbit.core.annotation.Routing
 import cloud.orbit.core.remoting.AddressableClass
@@ -15,7 +16,8 @@ data class AddressableInterfaceDefinition(
     val interfaceClass: AddressableClass,
     val routing: Routing,
     val lifecycle: Lifecycle,
-    val methods: List<AddressableMethodDefinition>
+    val executionModel: ExecutionModel,
+    val methods: Map<Method, AddressableMethodDefinition>
 )
 
 data class AddressableMethodDefinition(

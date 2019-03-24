@@ -20,6 +20,7 @@ import cloud.orbit.runtime.capabilities.CapabilitiesScanner
 import cloud.orbit.runtime.concurrent.RuntimePools
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
+import cloud.orbit.runtime.hosting.DirectorySystem
 import cloud.orbit.runtime.hosting.ExecutionSystem
 import cloud.orbit.runtime.hosting.RoutingSystem
 import cloud.orbit.runtime.hosting.ResponseTrackingSystem
@@ -55,6 +56,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     private val capabilitiesScanner: CapabilitiesScanner by componentProvider.inject()
     private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary by componentProvider.inject()
     private val pipelineSystem: PipelineSystem by componentProvider.inject()
+    private val executionSystem: ExecutionSystem by componentProvider.inject()
 
 
     private var tickJob: Job? = null
@@ -89,7 +91,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<RoutingSystem>()
             definition<ResponseTrackingSystem>()
             definition<ExecutionSystem>()
-
+            definition<DirectorySystem>()
 
             // Capabilities
             definition<CapabilitiesScanner>()
@@ -97,7 +99,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             // Actors
             definition<ActorProxyFactory>(ActorProxyFactoryImpl::class.java)
 
-            // Net Components
+            // Cluster Components
             definition(stageConfig.clusterConfig.addressableDirectory)
         }
 
@@ -200,6 +202,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     }
 
     private suspend fun onTick() {
+        executionSystem.onTick()
     }
 
     private suspend fun onStop() {

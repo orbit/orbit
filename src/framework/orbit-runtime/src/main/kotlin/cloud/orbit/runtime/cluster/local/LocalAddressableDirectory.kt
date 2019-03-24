@@ -14,14 +14,21 @@ import java.util.concurrent.ConcurrentHashMap
 class LocalAddressableDirectory : AddressableDirectory {
     private val concurrentHashMap = ConcurrentHashMap<AddressableReference, NetTarget>()
 
-    override suspend fun locate(addressableReference: AddressableReference): NetTarget? =
+    override suspend fun get(addressableReference: AddressableReference): NetTarget? =
         concurrentHashMap[addressableReference]
 
-    override suspend fun locateOrPlace(
+    override suspend fun getOrPut(
         addressableReference: AddressableReference,
         messageTarget: NetTarget
     ): NetTarget =
         concurrentHashMap.getOrPut(addressableReference) {
             messageTarget
         }
+
+    override suspend fun put(addressableReference: AddressableReference, messageTarget: NetTarget): NetTarget
+        = concurrentHashMap.put(addressableReference, messageTarget)!!
+
+    override suspend fun removeIf(addressableReference: AddressableReference, messageTarget: NetTarget): Boolean =
+        concurrentHashMap.remove(addressableReference, messageTarget)
+
 }

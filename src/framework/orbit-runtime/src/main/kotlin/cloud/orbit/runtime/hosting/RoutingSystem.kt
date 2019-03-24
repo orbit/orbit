@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 class RoutingSystem(
     private val netSystem: NetSystem,
-    private val addressableDirectory: AddressableDirectory,
+    private val directorySystem: DirectorySystem,
     private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary,
     private val componentProvider: ComponentProvider
 ) {
@@ -36,8 +36,8 @@ class RoutingSystem(
             if (existingTarget == null || interfaceDefinition.routing.forceRouting) {
                 netTarget =
                     if (interfaceDefinition.routing.persistentPlacement) {
-                        addressableDirectory.locate(reference).run {
-                            this ?: addressableDirectory.locateOrPlace(
+                        directorySystem.locate(reference).run {
+                            this ?: directorySystem.locateOrPlace(
                                 reference,
                                 selectTarget(interfaceDefinition)
                             )
@@ -76,7 +76,7 @@ class RoutingSystem(
         val interfaceDefinition = interfaceDefinitionDictionary.getOrCreate(reference.interfaceClass)
 
         return if (interfaceDefinition.routing.persistentPlacement) {
-            val currentLocation = addressableDirectory.locate(reference)
+            val currentLocation = directorySystem.locate(reference)
             when (currentLocation) {
                 is NetTarget.Unicast -> currentLocation.targetNode == netSystem.localNode.nodeIdentity
                 is NetTarget.Multicast -> currentLocation.nodes.contains(netSystem.localNode.nodeIdentity)

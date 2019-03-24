@@ -6,9 +6,11 @@
 
 package cloud.orbit.core.actor
 
+import cloud.orbit.core.annotation.ExecutionModel
 import cloud.orbit.core.annotation.Lifecycle
 import cloud.orbit.core.annotation.NonConcrete
 import cloud.orbit.core.annotation.Routing
+import cloud.orbit.core.hosting.ExecutionStrategy
 import cloud.orbit.core.hosting.RandomRouting
 import cloud.orbit.core.remoting.Addressable
 
@@ -22,8 +24,10 @@ import cloud.orbit.core.remoting.Addressable
     persistentPlacement = true
 )
 @Lifecycle(
-    autoActivate = true
+    autoActivate = true,
+    autoDeactivate = true
 )
+@ExecutionModel(ExecutionStrategy.SAFE)
 @NonConcrete
 interface Actor : Addressable
 

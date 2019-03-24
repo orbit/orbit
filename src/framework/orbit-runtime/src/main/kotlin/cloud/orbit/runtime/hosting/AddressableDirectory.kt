@@ -11,8 +11,10 @@ import cloud.orbit.core.remoting.AddressableReference
 import cloud.orbit.runtime.cluster.local.LocalAddressableDirectory
 
 interface AddressableDirectory {
-    suspend fun locate(addressableReference: AddressableReference) : NetTarget?
-    suspend fun locateOrPlace(addressableReference: AddressableReference, messageTarget: NetTarget): NetTarget
+    suspend fun get(addressableReference: AddressableReference) : NetTarget?
+    suspend fun getOrPut(addressableReference: AddressableReference, messageTarget: NetTarget): NetTarget
+    suspend fun put(addressableReference: AddressableReference, messageTarget: NetTarget): NetTarget
+    suspend fun removeIf(addressableReference: AddressableReference, messageTarget: NetTarget): Boolean
 }
 
 typealias DefaultAddressableDirectory = LocalAddressableDirectory

@@ -6,6 +6,7 @@
 
 package cloud.orbit.core.annotation
 
+import cloud.orbit.core.hosting.ExecutionStrategy
 import cloud.orbit.core.hosting.RoutingStrategy
 import cloud.orbit.core.remoting.Addressable
 import kotlin.reflect.KClass
@@ -41,5 +42,15 @@ annotation class Lifecycle(
     /**
      * Determines whether Orbit will construct and activate the [Addressable] for you.
      */
-    val autoActivate : Boolean
+    val autoActivate: Boolean,
+    /**
+     * Determiens whether Orbit will deactivate and destroy the [Addressable] for you.
+     */
+    val autoDeactivate: Boolean
+)
+
+
+@Target(AnnotationTarget.CLASS)
+annotation class ExecutionModel(
+    val executionStrategy: ExecutionStrategy
 )

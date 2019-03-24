@@ -64,6 +64,11 @@ data class StageConfig(
     val messageTimeoutMillis: Long = 3_000,
 
     /**
+     * The default time to live for deactivatable addressables.
+     */
+    val timeToLiveMillis: Long = 600_000,
+
+    /**
      * Packages to scan for addressables.
      *
      * If blank all packages will be scanned.

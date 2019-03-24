@@ -7,83 +7,86 @@
 package cloud.orbit.runtime.hosting
 
 import cloud.orbit.common.time.Clock
-import cloud.orbit.core.remoting.ActivatedAddressable
 import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.AddressableInvocation
 import cloud.orbit.core.remoting.AddressableReference
 import cloud.orbit.runtime.capabilities.CapabilitiesScanner
+import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Completion
+import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinitionDictionary
+import cloud.orbit.runtime.stage.StageConfig
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicLong
 
 class ExecutionSystem(
-    private val clock: Clock,
+    private val componentProvider: ComponentProvider,
     private val capabilitiesScanner: CapabilitiesScanner,
-    private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary
+    private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary,
+    private val clock: Clock,
+    private val stageConfig: StageConfig
 ) {
-    private val activeAddressables = ConcurrentHashMap<AddressableReference, ExeuctionHandler>()
+    private val activeAddressables = ConcurrentHashMap<AddressableReference, ExecutionHandler>()
 
     suspend fun handleInvocation(invocation: AddressableInvocation, completion: Completion) {
-        val addressableInterfaceDefinition =
+        val definition =
             interfaceDefinitionDictionary.getOrCreate(invocation.reference.interfaceClass)
         var handler = activeAddressables[invocation.reference]
 
         // Activation
-        if (handler == null && addressableInterfaceDefinition.lifecycle.autoActivate) {
-            handler = getOrCreateAddressable(invocation.reference)
+        if (handler == null && definition.lifecycle.autoActivate) {
+            handler = activate(invocation.reference, definition)
         }
         if (handler == null) {
-            throw IllegalStateException("No active addressable found for $addressableInterfaceDefinition")
-        }
-        val instance = handler.instance
-        if (instance is ActivatedAddressable) {
-            instance.context = ActivatedAddressable.AddressableContext(
-                reference = handler.reference
-
-            )
+            throw IllegalStateException("No active addressable found for $definition")
         }
 
         // Call
-        handler.dispatchInvocation(invocation, completion)
+        invoke(handler, invocation, completion)
     }
 
-    private fun getOrCreateAddressable(reference: AddressableReference) =
+    suspend fun onTick() {
+        val tickTime = clock.currentTime
+        activeAddressables.forEach { (_, handler) ->
+            if(handler.definition.lifecycle.autoDeactivate) {
+                if(tickTime - handler.lastActivity > stageConfig.timeToLiveMillis) {
+                    deactivate(handler)
+                }
+            }
+        }
+    }
+
+    private suspend fun activate(reference: AddressableReference, definition: AddressableInterfaceDefinition): ExecutionHandler {
+        val handler = getOrCreateAddressable(reference, definition)
+        handler.activate()
+        return handler
+    }
+
+    private suspend fun invoke(handler: ExecutionHandler, invocation: AddressableInvocation, completion: Completion) {
+        handler.invoke(invocation, completion)
+    }
+
+    private suspend fun deactivate(handler: ExecutionHandler) {
+        handler.deactivate()
+        activeAddressables.remove(handler.reference)
+    }
+
+    private fun getOrCreateAddressable(
+        reference: AddressableReference,
+        definition: AddressableInterfaceDefinition
+    ): ExecutionHandler =
         activeAddressables.getOrPut(reference) {
             val newInstance = createInstance(reference)
-            ExeuctionHandler(
+            ExecutionHandler(
+                componentProvider = componentProvider,
                 instance = newInstance,
-                reference = reference
+                reference = reference,
+                definition = definition
             )
         }
 
     private fun createInstance(reference: AddressableReference): Addressable {
         val newInstanceType = capabilitiesScanner.interfaceLookup.getValue(reference.interfaceClass)
         return newInstanceType.getDeclaredConstructor().newInstance()
-    }
-
-    private inner class ExeuctionHandler(
-        val instance: Addressable,
-        val reference: AddressableReference
-    ) {
-        val createdTime = clock.currentTime
-        val lastActivity get() = lastActivityAtomic.get()
-
-        private val lastActivityAtomic = AtomicLong(createdTime)
-
-        suspend fun dispatchInvocation(
-            invocation: AddressableInvocation,
-            completion: Completion
-        ) {
-            lastActivityAtomic.set(clock.currentTime)
-            val rawResult = invocation.method.invoke(instance, *invocation.args)
-            try {
-                val result = DeferredWrappers.wrapCall(rawResult).await()
-                completion.complete(result)
-            } catch (t: Throwable) {
-                completion.completeExceptionally(t)
-            }
-        }
     }
 }
 
