@@ -34,10 +34,12 @@ class AddressableInterfaceDefinitionDictionary {
         }
 
         val routing = AnnotationUtils.findAnnotation(interfaceClass, Routing::class.java)
-            ?: throw IllegalArgumentException("No @Routing found in interface hierarchy for ${interfaceClass.name}")
+            ?: throw IllegalArgumentException("No routing annotation found in interface hierarchy for " +
+                    interfaceClass.name)
 
         val lifecycle = AnnotationUtils.findAnnotation(interfaceClass, Lifecycle::class.java)
-            ?: throw IllegalArgumentException("No @Lifecycle found in interface hierarchy for ${interfaceClass.name}")
+            ?: throw IllegalArgumentException("No lifecycle annotation found in interface hierarchy for " +
+                    interfaceClass.name)
 
         val methods = interfaceClass.methods
             .map { method ->
