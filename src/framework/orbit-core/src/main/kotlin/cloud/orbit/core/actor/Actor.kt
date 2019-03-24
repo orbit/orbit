@@ -6,6 +6,7 @@
 
 package cloud.orbit.core.actor
 
+import cloud.orbit.core.annotation.Lifecycle
 import cloud.orbit.core.annotation.NonConcrete
 import cloud.orbit.core.annotation.Routing
 import cloud.orbit.core.hosting.RandomRouting
@@ -19,6 +20,9 @@ import cloud.orbit.core.remoting.Addressable
     forceRouting = true,
     routingStrategy = RandomRouting::class,
     persistentPlacement = true
+)
+@Lifecycle(
+    autoActivate = true
 )
 @NonConcrete
 interface Actor : Addressable

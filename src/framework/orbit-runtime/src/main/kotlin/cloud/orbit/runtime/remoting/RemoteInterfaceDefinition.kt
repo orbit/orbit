@@ -6,6 +6,7 @@
 
 package cloud.orbit.runtime.remoting
 
+import cloud.orbit.core.annotation.Lifecycle
 import cloud.orbit.core.annotation.Routing
 import cloud.orbit.core.remoting.AddressableClass
 import java.lang.reflect.Method
@@ -13,6 +14,7 @@ import java.lang.reflect.Method
 data class RemoteInterfaceDefinition(
     val interfaceClass: AddressableClass,
     val routing: Routing,
+    val lifecycle: Lifecycle,
     val methods: List<RemoteMethodDefinition>
 )
 

@@ -31,5 +31,15 @@ annotation class Routing(
      * Determines whether routing persistently places an entry in the addressable directory.
      */
     val persistentPlacement: Boolean
+)
 
+/**
+ * Determines the lifecycle behavior for an [Addressable].
+ */
+@Target(AnnotationTarget.CLASS)
+annotation class Lifecycle(
+    /**
+     * Determines whether Orbit will construct and activate the [Addressable] for you.
+     */
+    val autoActivate : Boolean
 )
