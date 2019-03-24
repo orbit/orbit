@@ -11,7 +11,9 @@ import cloud.orbit.core.actor.ActorProxyFactory
 import cloud.orbit.core.key.Key
 import cloud.orbit.runtime.remoting.AddressableInterfaceClientProxyFactory
 
-class DefaultActorProxyFactory(private val addressableInterfaceClientProxyFactory: AddressableInterfaceClientProxyFactory) :
+internal class ActorProxyFactoryImpl(
+    private val addressableInterfaceClientProxyFactory: AddressableInterfaceClientProxyFactory
+) :
     ActorProxyFactory {
     override fun <T : Actor> getReferenceInternal(grainType: Class<T>, grainKey: Key): T =
         addressableInterfaceClientProxyFactory.getReference(grainType, grainKey)

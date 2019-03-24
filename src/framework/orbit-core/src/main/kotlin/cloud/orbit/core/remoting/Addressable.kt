@@ -23,24 +23,6 @@ interface Addressable
 typealias AddressableClass = Class<out Addressable>
 
 /**
- * An [Addressable] which is currently activated in memory.
- */
-data class ActiveAddressable(
-    /**
-     * The instance of the [Addressable].
-     */
-    val instance: Addressable,
-    /**
-     * The last time there was activity in this [Addressable].
-     */
-    val lastActivity: TimeMs,
-    /**
-     * The reference used to activate this addressable
-     */
-    val addressableReference: AddressableReference
-)
-
-/**
  * A special class for [Addressable]s which are created by Orbit which makes additional context available at runtime.
  */
 abstract class ActivatedAddressable {

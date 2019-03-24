@@ -28,31 +28,31 @@ class RoutingSystem(
     private val logger by logger()
     private val routingStrategies = ConcurrentHashMap<Class<out RoutingStrategy>, RoutingStrategy>()
 
-    suspend fun routeMessage(addressableReference: AddressableReference, existingTarget: NetTarget?): NetTarget {
-        val addressableInterfaceDefinition =
-            interfaceDefinitionDictionary.getOrCreate(addressableReference.interfaceClass)
+    suspend fun routeMessage(reference: AddressableReference, existingTarget: NetTarget?): NetTarget {
+        val interfaceDefinition =
+            interfaceDefinitionDictionary.getOrCreate(reference.interfaceClass)
         var netTarget = existingTarget
 
-        if (addressableInterfaceDefinition.routing.isRouted) {
-            if (existingTarget == null || addressableInterfaceDefinition.routing.forceRouting) {
+        if (interfaceDefinition.routing.isRouted) {
+            if (existingTarget == null || interfaceDefinition.routing.forceRouting) {
                 netTarget =
-                    if (addressableInterfaceDefinition.routing.persistentPlacement) {
-                        addressableDirectory.locate(addressableReference).run {
+                    if (interfaceDefinition.routing.persistentPlacement) {
+                        addressableDirectory.locate(reference).run {
                             this ?: addressableDirectory.locateOrPlace(
-                                addressableReference,
-                                selectTarget(addressableInterfaceDefinition)
+                                reference,
+                                selectTarget(interfaceDefinition)
                             )
                         }
                     } else {
-                        selectTarget(addressableInterfaceDefinition)
+                        selectTarget(interfaceDefinition)
                     }
             }
         }
 
-        return netTarget ?: throw IllegalStateException("Failed to determine route. $addressableInterfaceDefinition")
+        return netTarget ?: throw IllegalStateException("Failed to determine route. $interfaceDefinition")
     }
 
-    private suspend fun selectTarget(addressableInterfaceDefinition: AddressableInterfaceDefinition): NetTarget =
+    private suspend fun selectTarget(interfaceDefinition: AddressableInterfaceDefinition): NetTarget =
         attempt(
             maxAttempts = 5,
             initialDelay = 1000,
@@ -61,20 +61,20 @@ class RoutingSystem(
             val allNodes = netSystem.clusterNodes
             val candidateNodes = allNodes
                 .filter { it.nodeStatus == NodeStatus.RUNNING }
-                .filter { it.nodeCapabilities.canHost(addressableInterfaceDefinition.interfaceClass) }
+                .filter { it.nodeCapabilities.canHost(interfaceDefinition.interfaceClass) }
 
-            val strategy = routingStrategies.getOrPut(addressableInterfaceDefinition.routing.routingStrategy.java) {
-                componentProvider.construct(addressableInterfaceDefinition.routing.routingStrategy.java)
+            val strategy = routingStrategies.getOrPut(interfaceDefinition.routing.routingStrategy.java) {
+                componentProvider.construct(interfaceDefinition.routing.routingStrategy.java)
             }
             val selectedTarget = strategy.selectTarget(candidateNodes)
 
             return selectedTarget ?: throw NoAvailableNodeException(
-                "Could not find node capable of hosting ${addressableInterfaceDefinition.interfaceClass}."
+                "Could not find node capable of hosting ${interfaceDefinition.interfaceClass}."
             )
         }
 
-    suspend fun canHandleLocally(addressableReference: AddressableReference): Boolean {
-        val currentLocation = addressableDirectory.locate(addressableReference)
+    suspend fun canHandleLocally(reference: AddressableReference): Boolean {
+        val currentLocation = addressableDirectory.locate(reference)
         return when (currentLocation) {
             is NetTarget.Unicast -> currentLocation.targetNode == netSystem.localNode.nodeIdentity
             is NetTarget.Multicast -> currentLocation.nodes.contains(netSystem.localNode.nodeIdentity)

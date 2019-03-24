@@ -15,7 +15,7 @@ import cloud.orbit.core.net.NodeCapabilities
 import cloud.orbit.core.net.NodeInfo
 import cloud.orbit.core.net.NodeStatus
 import cloud.orbit.core.runtime.RuntimeContext
-import cloud.orbit.runtime.actor.DefaultActorProxyFactory
+import cloud.orbit.runtime.actor.ActorProxyFactoryImpl
 import cloud.orbit.runtime.capabilities.CapabilitiesScanner
 import cloud.orbit.runtime.concurrent.RuntimePools
 import cloud.orbit.runtime.concurrent.SupervisorScope
@@ -95,7 +95,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<CapabilitiesScanner>()
 
             // Actors
-            definition<ActorProxyFactory>(DefaultActorProxyFactory::class.java)
+            definition<ActorProxyFactory>(ActorProxyFactoryImpl::class.java)
 
             // Net Components
             definition(stageConfig.clusterConfig.addressableDirectory)
