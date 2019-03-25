@@ -19,10 +19,12 @@ import org.junit.jupiter.api.Test
 interface BasicTestActorInterface : ActorWithNoKey {
     fun echo(msg: String): Deferred<String>
     fun waitFor(delayMs: TimeMs): Deferred<Unit>
+    fun incrementCountAndGet(): Deferred<Int>
 }
 
 class BasicTestActorImpl : BasicTestActorInterface {
-    override fun echo(msg: String): CompletableDeferred<String> {
+    var callCount = 0
+    override fun echo(msg: String): Deferred<String> {
         return CompletableDeferred(msg)
     }
 
@@ -31,6 +33,11 @@ class BasicTestActorImpl : BasicTestActorInterface {
             delay(delayMs)
         }
     }
+
+    override fun incrementCountAndGet(): Deferred<Int> {
+        return CompletableDeferred(++callCount)
+    }
+
 }
 
 class BasicActorTest : StageBaseTest() {
@@ -52,5 +59,27 @@ class BasicActorTest : StageBaseTest() {
                 actor.waitFor(stageConfig.messageTimeoutMillis + 100).await()
             }
         }.isInstanceOf(ResponseTimeoutException::class.java)
+    }
+
+    @Test
+    fun `ensure only one actor instance`() {
+        val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+        runBlocking {
+            val res1 = actor.incrementCountAndGet().await()
+            val res2 = actor.incrementCountAndGet().await()
+            assertThat(res2).isGreaterThan(res1)
+        }
+    }
+
+    @Test
+    fun `ensure actor deactivates`() {
+        val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+        runBlocking {
+            val res1 = actor.incrementCountAndGet().await()
+            stage.clock.advanceTime(stageConfig.timeToLiveMillis * 2) // Make actor eligible for deactivation
+            delay(stageConfig.tickRate * 2) // Wait twice the tick so the deactivation should have happened
+            val res2 = actor.incrementCountAndGet().await()
+            assertThat(res1).isEqualTo(res2)
+        }
     }
 }
