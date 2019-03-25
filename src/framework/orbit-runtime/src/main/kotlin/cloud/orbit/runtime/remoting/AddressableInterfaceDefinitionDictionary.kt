@@ -21,6 +21,12 @@ class AddressableInterfaceDefinitionDictionary {
     private val interfaceDefinitionMap = ConcurrentHashMap<AddressableClass, AddressableInterfaceDefinition>()
     private val logger by logger()
 
+    fun precacheDefinitions(interfaceClasses: Iterable<AddressableClass>) {
+        interfaceClasses.forEach {
+            getOrCreate(it)
+        }
+    }
+
     fun getOrCreate(interfaceClass: AddressableClass): AddressableInterfaceDefinition =
         interfaceDefinitionMap.getOrPut(interfaceClass) {
             generateInterfaceDefinition(interfaceClass)
@@ -35,16 +41,22 @@ class AddressableInterfaceDefinitionDictionary {
         }
 
         val routing = AnnotationUtils.findAnnotation(interfaceClass, Routing::class.java)
-            ?: throw IllegalArgumentException("No routing annotation found in interface hierarchy for " +
-                    interfaceClass.name)
+            ?: throw IllegalArgumentException(
+                "No routing annotation found in interface hierarchy for " +
+                        interfaceClass.name
+            )
 
         val lifecycle = AnnotationUtils.findAnnotation(interfaceClass, Lifecycle::class.java)
-            ?: throw IllegalArgumentException("No lifecycle annotation found in interface hierarchy for " +
-                    interfaceClass.name)
+            ?: throw IllegalArgumentException(
+                "No lifecycle annotation found in interface hierarchy for " +
+                        interfaceClass.name
+            )
 
         val executionModel = AnnotationUtils.findAnnotation(interfaceClass, ExecutionModel::class.java)
-            ?: throw IllegalArgumentException("No execution model annotation found in interface hierarchy for " +
-                    interfaceClass.name)
+            ?: throw IllegalArgumentException(
+                "No execution model annotation found in interface hierarchy for " +
+                        interfaceClass.name
+            )
 
         val methods = interfaceClass.methods
             .map { method ->
@@ -64,7 +76,10 @@ class AddressableInterfaceDefinitionDictionary {
         return definition
     }
 
-    private fun generateMethodDefinition(interfaceClass: AddressableClass, method: Method): AddressableMethodDefinition {
+    private fun generateMethodDefinition(
+        interfaceClass: AddressableClass,
+        method: Method
+    ): AddressableMethodDefinition {
         return AddressableMethodDefinition(
             method = method
         )

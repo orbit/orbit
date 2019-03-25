@@ -183,14 +183,11 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
         logEnvironmentInfo()
         logger.debug { "Orbit Stage Config: $stageConfig"}
 
-        // Determine capabilities
+        // Capabilities and definitions
         capabilitiesScanner.scan(*stageConfig.packages.toTypedArray())
-        capabilitiesScanner.addressableInterfaces.forEach {
-            // Pre populate for performance
-            interfaceDefinitionDictionary.getOrCreate(it)
-        }
         val capabilities = capabilitiesScanner.generateNodeCapabilities()
         netSystem.localNodeManipulator.updateCapabiltities(capabilities)
+        interfaceDefinitionDictionary.precacheDefinitions(capabilitiesScanner.addressableInterfaces)
 
         // Start pipeline
         pipelineSystem.start()
