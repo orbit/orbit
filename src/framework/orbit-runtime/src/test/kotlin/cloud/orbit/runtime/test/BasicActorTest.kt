@@ -63,11 +63,12 @@ class BasicActorTest : StageBaseTest() {
 
     @Test
     fun `ensure only one actor instance`() {
-        val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+        val actor1 = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+        val actor2 = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
         runBlocking {
-            val res1 = actor.incrementCountAndGet().await()
-            val res2 = actor.incrementCountAndGet().await()
-            assertThat(res2).isGreaterThan(res1)
+            val call1 = actor1.incrementCountAndGet().await()
+            val call2 = actor1.incrementCountAndGet().await()
+            assertThat(call2).isGreaterThan(call1)
         }
     }
 
@@ -75,11 +76,11 @@ class BasicActorTest : StageBaseTest() {
     fun `ensure actor deactivates`() {
         val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
         runBlocking {
-            val res1 = actor.incrementCountAndGet().await()
+            val call1 = actor.incrementCountAndGet().await()
             stage.clock.advanceTime(stageConfig.timeToLiveMillis * 2) // Make actor eligible for deactivation
             delay(stageConfig.tickRate * 2) // Wait twice the tick so the deactivation should have happened
-            val res2 = actor.incrementCountAndGet().await()
-            assertThat(res1).isEqualTo(res2)
+            val call2 = actor.incrementCountAndGet().await()
+            assertThat(call1).isEqualTo(call2)
         }
     }
 }
