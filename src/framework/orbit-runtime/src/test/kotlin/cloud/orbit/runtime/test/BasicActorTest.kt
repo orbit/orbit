@@ -67,7 +67,7 @@ class BasicActorTest : StageBaseTest() {
         val actor2 = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
         runBlocking {
             val call1 = actor1.incrementCountAndGet().await()
-            val call2 = actor1.incrementCountAndGet().await()
+            val call2 = actor2.incrementCountAndGet().await()
             assertThat(call2).isGreaterThan(call1)
         }
     }
@@ -80,7 +80,7 @@ class BasicActorTest : StageBaseTest() {
             stage.clock.advanceTime(stageConfig.timeToLiveMillis * 2) // Make actor eligible for deactivation
             delay(stageConfig.tickRate * 2) // Wait twice the tick so the deactivation should have happened
             val call2 = actor.incrementCountAndGet().await()
-            assertThat(call1).isEqualTo(call2)
+            assertThat(call2).isLessThanOrEqualTo(call1)
         }
     }
 }
