@@ -20,6 +20,7 @@ interface BasicTestActorInterface : ActorWithNoKey {
     fun echo(msg: String): Deferred<String>
     fun waitFor(delayMs: TimeMs): Deferred<Unit>
     fun incrementCountAndGet(): Deferred<Int>
+    fun throwIllegalArgumentException(msg: String): Deferred<String>
 }
 
 class BasicTestActorImpl : BasicTestActorInterface {
@@ -38,6 +39,9 @@ class BasicTestActorImpl : BasicTestActorInterface {
         return CompletableDeferred(++callCount)
     }
 
+    override fun throwIllegalArgumentException(msg: String): Deferred<String> {
+        throw IllegalArgumentException(msg)
+    }
 }
 
 class BasicActorTest : StageBaseTest() {
@@ -82,5 +86,16 @@ class BasicActorTest : StageBaseTest() {
             val call2 = actor.incrementCountAndGet().await()
             assertThat(call2).isLessThanOrEqualTo(call1)
         }
+    }
+
+    @Test
+    fun `ensure exception propagated`() {
+        val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+
+        assertThatThrownBy {
+            runBlocking {
+                actor.throwIllegalArgumentException("Faileroony").await()
+            }
+        }.isInstanceOf(IllegalArgumentException::class.java).hasMessageContaining("Faileroony")
     }
 }

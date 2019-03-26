@@ -16,6 +16,7 @@ import cloud.orbit.runtime.net.Completion
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinitionDictionary
 import cloud.orbit.runtime.stage.StageConfig
+import kotlinx.coroutines.CompletableDeferred
 import java.util.concurrent.ConcurrentHashMap
 
 class ExecutionSystem(
@@ -35,7 +36,7 @@ class ExecutionSystem(
 
         // Activation
         if (handler == null && definition.lifecycle.autoActivate) {
-            handler = activate(invocation.reference, definition)
+            handler = activate(invocation.reference, definition, completion)
         }
         if (handler == null) {
             throw IllegalStateException("No active addressable found for $definition")
@@ -48,21 +49,25 @@ class ExecutionSystem(
     suspend fun onTick() {
         val tickTime = clock.currentTime
         activeAddressables.forEach { (_, handler) ->
-            if(handler.definition.lifecycle.autoDeactivate) {
-                if(tickTime - handler.lastActivity > stageConfig.timeToLiveMillis) {
+            if (handler.definition.lifecycle.autoDeactivate) {
+                if (tickTime - handler.lastActivity > stageConfig.timeToLiveMillis) {
                     deactivate(handler)
                 }
             }
         }
     }
 
-    private suspend fun activate(reference: AddressableReference, definition: AddressableInterfaceDefinition): ExecutionHandle {
-        val handler = getOrCreateAddressable(reference, definition)
-        if(handler.definition.routing.persistentPlacement) {
-            directorySystem.localActivation(handler.reference)
+    private suspend fun activate(
+        reference: AddressableReference,
+        definition: AddressableInterfaceDefinition,
+        completion: Completion
+    ): ExecutionHandle {
+        val handle = getOrCreateAddressable(reference, definition)
+        if (handle.definition.routing.persistentPlacement) {
+            directorySystem.localActivation(handle.reference)
         }
-        handler.activate()
-        return handler
+        handle.activate().await()
+        return handle
     }
 
     private suspend fun invoke(handle: ExecutionHandle, invocation: AddressableInvocation, completion: Completion) {
@@ -70,8 +75,9 @@ class ExecutionSystem(
     }
 
     private suspend fun deactivate(handle: ExecutionHandle) {
-        handle.deactivate()
-        if(handle.definition.routing.persistentPlacement) {
+        val completion = CompletableDeferred<Any?>()
+        handle.deactivate().await()
+        if (handle.definition.routing.persistentPlacement) {
             directorySystem.localDeactivatiom(handle.reference)
         }
         activeAddressables.remove(handle.reference)
