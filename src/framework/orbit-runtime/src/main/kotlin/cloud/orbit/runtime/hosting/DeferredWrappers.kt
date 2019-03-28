@@ -13,7 +13,7 @@ import kotlinx.coroutines.future.asDeferred
 import java.lang.reflect.Method
 import java.util.concurrent.CompletableFuture
 
-object DeferredWrappers {
+internal object DeferredWrappers {
     fun wrapReturn(deferred: Deferred<*>, method: Method): Any =
         when (method.returnType) {
             CompletableFuture::class.java -> deferred.asCompletableFuture()

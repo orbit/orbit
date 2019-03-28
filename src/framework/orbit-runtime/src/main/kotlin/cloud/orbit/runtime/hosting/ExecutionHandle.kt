@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.atomic.AtomicLong
 
-class ExecutionHandle(
+internal class ExecutionHandle(
     val instance: Addressable,
     val reference: AddressableReference,
     val definition: AddressableInterfaceDefinition,

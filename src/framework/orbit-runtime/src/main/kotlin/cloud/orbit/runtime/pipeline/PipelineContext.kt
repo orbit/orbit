@@ -13,7 +13,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.isActive
 import kotlin.coroutines.coroutineContext
 
-class PipelineContext(
+internal class PipelineContext(
     private val pipeline: List<PipelineStep>,
     startAtEnd: Boolean,
     private val pipelineSystem: PipelineSystem,

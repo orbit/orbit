@@ -15,7 +15,7 @@ import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContainer
 import cloud.orbit.runtime.net.MessageDirection
 import cloud.orbit.runtime.net.NetSystem
-import cloud.orbit.runtime.pipeline.steps.PipelineStep
+import cloud.orbit.runtime.pipeline.steps.*
 import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -24,13 +24,20 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
 
-class PipelineSystem(
+internal class PipelineSystem(
     private val componentProvider: ComponentProvider
 ) {
+    private val pipelineStepConfig = listOf(
+        ExecutionStep::class.java,
+        IdentityStep::class.java,
+        RoutingStep::class.java,
+        ResponseTrackingStep::class.java,
+        TransportStep::class.java
+    )
+
     private val logger by logger()
     private val supervisorScope: SupervisorScope by componentProvider.inject()
     private val stageConfig: StageConfig by componentProvider.inject()
-    private val netSystem: NetSystem by componentProvider.inject()
 
 
     private lateinit var pipelineChannel: Channel<MessageContainer>
@@ -43,7 +50,7 @@ class PipelineSystem(
         pipelinesWorkers = List(stageConfig.pipelineRailCount) {
             launchRail(pipelineChannel)
         }
-        pipelineSteps = stageConfig.pipelineStepsDefinition.map(componentProvider::construct)
+        pipelineSteps = pipelineStepConfig.map(componentProvider::construct)
 
         logger.info(
             "Pipeline started on ${stageConfig.pipelineRailCount} rails with a " +

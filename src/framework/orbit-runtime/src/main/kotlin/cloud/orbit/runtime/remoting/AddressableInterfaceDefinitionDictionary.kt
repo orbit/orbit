@@ -17,7 +17,7 @@ import cloud.orbit.core.remoting.AddressableClass
 import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 
-class AddressableInterfaceDefinitionDictionary {
+internal class AddressableInterfaceDefinitionDictionary {
     private val interfaceDefinitionMap = ConcurrentHashMap<AddressableClass, AddressableInterfaceDefinition>()
     private val logger by logger()
 

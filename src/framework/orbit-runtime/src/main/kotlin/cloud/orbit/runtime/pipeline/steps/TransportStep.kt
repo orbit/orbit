@@ -10,7 +10,7 @@ import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.pipeline.PipelineContext
 
-class TransportStep : PipelineStep {
+internal class TransportStep : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
         context.newInbound(msg)
     }

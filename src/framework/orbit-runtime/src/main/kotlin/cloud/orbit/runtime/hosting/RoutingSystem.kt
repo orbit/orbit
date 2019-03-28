@@ -19,7 +19,7 @@ import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinitionDictionary
 import java.util.concurrent.ConcurrentHashMap
 
-class RoutingSystem(
+internal class RoutingSystem(
     private val netSystem: NetSystem,
     private val directorySystem: DirectorySystem,
     private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary,

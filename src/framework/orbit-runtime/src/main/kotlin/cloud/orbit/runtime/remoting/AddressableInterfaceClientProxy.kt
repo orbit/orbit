@@ -19,7 +19,7 @@ import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
-class AddressableInterfaceClientProxy(
+internal class AddressableInterfaceClientProxy(
     private val pipelineSystem: PipelineSystem,
     private val interfaceClass: AddressableClass,
     private val key: Key
@@ -44,7 +44,7 @@ class AddressableInterfaceClientProxy(
     }
 }
 
-class AddressableInterfaceClientProxyFactory(
+internal class AddressableInterfaceClientProxyFactory(
     private val pipelineSystem: PipelineSystem,
     private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary
 ) {

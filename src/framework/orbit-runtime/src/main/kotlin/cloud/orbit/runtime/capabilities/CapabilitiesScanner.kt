@@ -17,7 +17,7 @@ import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.AddressableClass
 import io.github.classgraph.ClassGraph
 
-class CapabilitiesScanner(private val clock: Clock) {
+internal class CapabilitiesScanner(private val clock: Clock) {
     private val logger by logger()
 
     lateinit var addressableInterfaces: List<AddressableClass> private set

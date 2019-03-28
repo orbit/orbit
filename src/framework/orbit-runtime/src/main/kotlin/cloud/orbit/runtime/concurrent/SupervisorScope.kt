@@ -11,7 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlin.coroutines.CoroutineContext
 
-class SupervisorScope(
+internal class SupervisorScope(
     private val runtimePools: RuntimePools,
     private val exceptionHandler: (CoroutineContext, Throwable) -> Unit
 ) : CoroutineScope {

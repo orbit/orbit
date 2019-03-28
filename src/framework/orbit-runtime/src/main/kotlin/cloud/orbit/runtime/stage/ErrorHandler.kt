@@ -9,7 +9,7 @@ package cloud.orbit.runtime.stage
 import cloud.orbit.common.logging.logger
 import kotlin.coroutines.CoroutineContext
 
-class ErrorHandler {
+internal class ErrorHandler {
     private val logger by logger()
 
     @Suppress("UNUSED_PARAMETER")

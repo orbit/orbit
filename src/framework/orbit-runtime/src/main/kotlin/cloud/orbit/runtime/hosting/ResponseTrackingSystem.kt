@@ -17,7 +17,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 
-class ResponseTrackingSystem(
+internal class ResponseTrackingSystem(
     private val stageConfig: StageConfig,
     private val supervisorScope: SupervisorScope
 ) {

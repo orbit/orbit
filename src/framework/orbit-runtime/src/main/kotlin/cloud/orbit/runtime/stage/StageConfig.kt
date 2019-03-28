@@ -83,16 +83,5 @@ data class StageConfig(
     /**
      * The number of messages (either inbound or outbound) that may be queued before new messages are rejected.
      */
-    val pipelineBufferCount: Int = 100_000,
-
-    /**
-     * The steps the pipeline will run.
-     */
-    val pipelineStepsDefinition: List<Class<out PipelineStep>> = listOf(
-        ExecutionStep::class.java,
-        IdentityStep::class.java,
-        RoutingStep::class.java,
-        ResponseTrackingStep::class.java,
-        TransportStep::class.java
-    )
+    val pipelineBufferCount: Int = 100_000
 )

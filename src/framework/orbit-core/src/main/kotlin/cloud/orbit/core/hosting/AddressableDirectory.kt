@@ -4,11 +4,10 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.runtime.hosting
+package cloud.orbit.core.hosting
 
 import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.AddressableReference
-import cloud.orbit.runtime.cluster.local.LocalAddressableDirectory
 
 interface AddressableDirectory {
     suspend fun get(addressableReference: AddressableReference) : NetTarget?
@@ -16,5 +15,3 @@ interface AddressableDirectory {
     suspend fun put(addressableReference: AddressableReference, messageTarget: NetTarget): NetTarget
     suspend fun removeIf(addressableReference: AddressableReference, messageTarget: NetTarget): Boolean
 }
-
-typealias DefaultAddressableDirectory = LocalAddressableDirectory

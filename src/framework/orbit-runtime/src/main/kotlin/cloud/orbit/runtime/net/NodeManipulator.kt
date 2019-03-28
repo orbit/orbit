@@ -12,7 +12,7 @@ import cloud.orbit.core.net.NodeInfo
 import cloud.orbit.core.net.NodeStatus
 import java.util.concurrent.atomic.AtomicReference
 
-class NodeManipulator {
+internal class NodeManipulator {
     private val nodeRef = AtomicReference<NodeInfo>()
     val nodeInfo: NodeInfo get() = nodeRef.get()
 

@@ -11,7 +11,7 @@ import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.pipeline.PipelineContext
 
-class IdentityStep(
+internal class IdentityStep(
     private val netSystem: NetSystem
 ) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {

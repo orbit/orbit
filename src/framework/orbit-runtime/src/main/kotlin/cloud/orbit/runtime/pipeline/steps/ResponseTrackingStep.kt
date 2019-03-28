@@ -14,7 +14,7 @@ import cloud.orbit.runtime.pipeline.PipelineContext
 import kotlinx.coroutines.future.asCompletableFuture
 import java.util.concurrent.CompletionException
 
-class ResponseTrackingStep(private val responseTracking: ResponseTrackingSystem) : PipelineStep {
+internal class ResponseTrackingStep(private val responseTracking: ResponseTrackingSystem) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
         when (msg.content) {
             is MessageContent.RequestInvocationMessage -> responseTracking.trackMessage(msg, context.completion!!)

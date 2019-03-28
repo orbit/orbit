@@ -19,7 +19,7 @@ import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CompletableDeferred
 import java.util.concurrent.ConcurrentHashMap
 
-class ExecutionSystem(
+internal class ExecutionSystem(
     private val componentProvider: ComponentProvider,
     private val capabilitiesScanner: CapabilitiesScanner,
     private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary,

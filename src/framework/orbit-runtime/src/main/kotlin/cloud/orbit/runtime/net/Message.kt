@@ -11,20 +11,20 @@ import cloud.orbit.core.net.NodeIdentity
 import cloud.orbit.core.remoting.AddressableInvocation
 import kotlinx.coroutines.CompletableDeferred
 
-typealias Completion = CompletableDeferred<Any?>
+internal typealias Completion = CompletableDeferred<Any?>
 
-enum class MessageDirection {
+internal enum class MessageDirection {
     OUTBOUND,
     INBOUND
 }
 
-data class MessageContainer(
+internal data class MessageContainer(
     val direction: MessageDirection,
     val completion: Completion,
     val msg: Message
 )
 
-data class Message(
+internal data class Message(
     val content: MessageContent,
     val messageId: Long? = null,
     val source: NodeIdentity? = null,
@@ -32,7 +32,7 @@ data class Message(
 
 )
 
-sealed class MessageContent {
+internal sealed class MessageContent {
     data class RequestInvocationMessage(val addressableInvocation: AddressableInvocation) : MessageContent()
     data class ResponseNormalMessage(val response: Any?) : MessageContent()
     data class ResponseErrorMessage(val error: Throwable) : MessageContent()

@@ -6,11 +6,12 @@
 
 package cloud.orbit.runtime.hosting
 
+import cloud.orbit.core.hosting.AddressableDirectory
 import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.AddressableReference
 import cloud.orbit.runtime.net.NetSystem
 
-class DirectorySystem(
+internal class DirectorySystem(
     private val addressableDirectory: AddressableDirectory,
     private val netSystem: NetSystem
 ) {

@@ -11,7 +11,7 @@ import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.pipeline.PipelineContext
 
-class ExecutionStep(
+internal class ExecutionStep(
     private val executionSystem: ExecutionSystem
 ) : PipelineStep {
     override suspend fun onInbound(context: PipelineContext, msg: Message) {

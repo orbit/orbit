@@ -11,7 +11,7 @@ import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.pipeline.PipelineContext
 
-class RoutingStep(private val routingSystem: RoutingSystem) : PipelineStep {
+internal class RoutingStep(private val routingSystem: RoutingSystem) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
         val newMsg = when(msg.content) {
             is MessageContent.RequestInvocationMessage -> {

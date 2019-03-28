@@ -6,9 +6,9 @@
 
 package cloud.orbit.runtime.cluster.local
 
+import cloud.orbit.core.hosting.AddressableDirectory
 import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.AddressableReference
-import cloud.orbit.runtime.hosting.AddressableDirectory
 import java.util.concurrent.ConcurrentHashMap
 
 class LocalAddressableDirectory : AddressableDirectory {
