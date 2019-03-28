@@ -36,7 +36,7 @@ class ExecutionSystem(
 
         // Activation
         if (handler == null && definition.lifecycle.autoActivate) {
-            handler = activate(invocation.reference, definition, completion)
+            handler = activate(invocation.reference, definition)
         }
         if (handler == null) {
             throw IllegalStateException("No active addressable found for $definition")
@@ -59,8 +59,7 @@ class ExecutionSystem(
 
     private suspend fun activate(
         reference: AddressableReference,
-        definition: AddressableInterfaceDefinition,
-        completion: Completion
+        definition: AddressableInterfaceDefinition
     ): ExecutionHandle {
         val handle = getOrCreateAddressable(reference, definition)
         if (handle.definition.routing.persistentPlacement) {
@@ -75,10 +74,9 @@ class ExecutionSystem(
     }
 
     private suspend fun deactivate(handle: ExecutionHandle) {
-        val completion = CompletableDeferred<Any?>()
         handle.deactivate().await()
         if (handle.definition.routing.persistentPlacement) {
-            directorySystem.localDeactivatiom(handle.reference)
+            directorySystem.localDeactivation(handle.reference)
         }
         activeAddressables.remove(handle.reference)
     }

@@ -60,7 +60,7 @@ class AddressableInterfaceDefinitionDictionary {
 
         val methods = interfaceClass.methods
             .map { method ->
-                method to generateMethodDefinition(interfaceClass, method)
+                method to generateMethodDefinition(method)
             }.toMap()
 
         val definition = AddressableInterfaceDefinition(
@@ -77,7 +77,6 @@ class AddressableInterfaceDefinitionDictionary {
     }
 
     private fun generateMethodDefinition(
-        interfaceClass: AddressableClass,
         method: Method
     ): AddressableMethodDefinition {
         return AddressableMethodDefinition(

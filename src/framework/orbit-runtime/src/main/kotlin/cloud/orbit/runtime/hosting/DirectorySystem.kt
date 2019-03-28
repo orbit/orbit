@@ -14,16 +14,19 @@ class DirectorySystem(
     private val addressableDirectory: AddressableDirectory,
     private val netSystem: NetSystem
 ) {
-    suspend fun locate(addressableReference: AddressableReference) : NetTarget? =
-        addressableDirectory.get(addressableReference)
-    suspend fun locateOrPlace(addressableReference: AddressableReference, messageTarget: NetTarget): NetTarget =
-        addressableDirectory.getOrPut(addressableReference, messageTarget)
+    suspend fun locate(addressableReference: AddressableReference): NetTarget? {
+        return addressableDirectory.get(addressableReference)
+    }
+
+    suspend fun locateOrPlace(addressableReference: AddressableReference, messageTarget: NetTarget): NetTarget {
+        return addressableDirectory.getOrPut(addressableReference, messageTarget)
+    }
 
     suspend fun localActivation(addressableReference: AddressableReference) {
         addressableDirectory.put(addressableReference, NetTarget.Unicast(netSystem.localNode.nodeIdentity))
     }
 
-    suspend fun localDeactivatiom(addressableReference: AddressableReference) {
-
+    suspend fun localDeactivation(addressableReference: AddressableReference) {
+        addressableDirectory.removeIf(addressableReference, NetTarget.Unicast(netSystem.localNode.nodeIdentity))
     }
 }
