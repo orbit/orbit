@@ -47,9 +47,9 @@ buildscript {
 
 ext {
     orbitGroup = "cloud.orbit"
-    orbitVersion = getProperty("orbit.version")
-    orbitCodename = getProperty("orbit.codename")
-    orbitCompatVersion = getProperty("orbit.compatVersion")
+    orbitVersion = project.properties["orbit.version"]
+    orbitCodename = project.properties["orbit.codename"]
+    orbitCompatVersion = project.properties["orbit.compatVersion"]
     orbitUrl = "https://www.orbit.cloud"
     orbitScmUrl = "scm:git:git://github.com/orbit/orbit"
     orbitDescription = "The Orbit project is a collection of JVM libraries that makes it easier to build distributed and scalable online services."
@@ -184,7 +184,14 @@ configure(publish) {
     publishing {
         repositories {
             maven {
-                url = "$buildDir/repo"
+                if(project.properties["publish.username"]) {
+                    credentials {
+                        username(project.properties["publish.username"] ?: "")
+                        password(project.properties["publish.password"] ?: "")
+                    }
+                }
+
+                url(project.properties["publish.url"] ?: "$buildDir/repo")
             }
         }
 
