@@ -68,7 +68,7 @@ internal class ExecutionHandle(
     suspend fun invoke(
         invocation: AddressableInvocation,
         completion: Completion
-    ) : Completion{
+    ): Completion {
         channel.send(EventType.InvokeEvent(invocation, completion))
         return completion
     }
@@ -86,9 +86,9 @@ internal class ExecutionHandle(
         try {
             val rawResult = invocation.method.invoke(instance, *invocation.args)
             return DeferredWrappers.wrapCall(rawResult).await()
-        } catch(ite: InvocationTargetException) {
+        } catch (ite: InvocationTargetException) {
             throw ite.targetException
-        } catch(t: Throwable) {
+        } catch (t: Throwable) {
             throw t
         }
     }
