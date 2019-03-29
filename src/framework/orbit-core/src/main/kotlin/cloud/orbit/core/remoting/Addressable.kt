@@ -6,7 +6,6 @@
 
 package cloud.orbit.core.remoting
 
-import cloud.orbit.common.time.TimeMs
 import cloud.orbit.core.annotation.NonConcrete
 import cloud.orbit.core.key.Key
 import java.lang.reflect.Method
@@ -27,6 +26,7 @@ typealias AddressableClass = Class<out Addressable>
  */
 abstract class ActivatedAddressable {
     data class AddressableContext(val reference: AddressableReference)
+
     lateinit var context: AddressableContext
 }
 

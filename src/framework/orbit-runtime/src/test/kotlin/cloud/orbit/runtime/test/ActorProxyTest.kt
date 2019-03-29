@@ -10,8 +10,8 @@ import cloud.orbit.core.actor.ActorWithNoKey
 import cloud.orbit.core.actor.getReference
 import cloud.orbit.core.annotation.NonConcrete
 import cloud.orbit.runtime.util.StageBaseTest
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
 @NonConcrete

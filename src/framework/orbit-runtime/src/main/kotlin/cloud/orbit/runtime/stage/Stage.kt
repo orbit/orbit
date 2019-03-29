@@ -22,12 +22,12 @@ import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.hosting.DirectorySystem
 import cloud.orbit.runtime.hosting.ExecutionSystem
-import cloud.orbit.runtime.hosting.RoutingSystem
 import cloud.orbit.runtime.hosting.ResponseTrackingSystem
+import cloud.orbit.runtime.hosting.RoutingSystem
 import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.pipeline.PipelineSystem
-import cloud.orbit.runtime.remoting.AddressableInterfaceDefinitionDictionary
 import cloud.orbit.runtime.remoting.AddressableInterfaceClientProxyFactory
+import cloud.orbit.runtime.remoting.AddressableInterfaceDefinitionDictionary
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.asCompletableFuture
 
@@ -181,7 +181,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
         // Log some info about the environment
         logEnvironmentInfo()
-        logger.debug { "Orbit Stage Config: $stageConfig"}
+        logger.debug { "Orbit Stage Config: $stageConfig" }
 
         // Capabilities and definitions
         capabilitiesScanner.scan(*stageConfig.packages.toTypedArray())

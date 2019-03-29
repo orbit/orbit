@@ -90,7 +90,7 @@ class FlowUtilsTest {
                 maxAttempts = 5,
                 initialDelay = 1
             ) {
-                if(attempts++ < 3) {
+                if (attempts++ < 3) {
                     throw RuntimeException("FAIL")
                 }
                 "Hello"

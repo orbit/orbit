@@ -22,6 +22,7 @@ internal class ResponseTrackingSystem(
     private val supervisorScope: SupervisorScope
 ) {
     private data class ResponseEntry(val msg: Message, val completion: Completion)
+
     private val trackingMap: ConcurrentHashMap<Long, ResponseEntry> = ConcurrentHashMap()
     private val logger by logger()
 
@@ -29,7 +30,7 @@ internal class ResponseTrackingSystem(
         trackingMap.computeIfAbsent(msg.messageId!!) {
             supervisorScope.launch {
                 delay(stageConfig.messageTimeoutMillis)
-                if(completion.isActive) {
+                if (completion.isActive) {
                     val content = "Response timed out, took >${stageConfig.messageTimeoutMillis}ms. $msg"
                     logger.warn(content)
                     completion.completeExceptionally(
@@ -45,7 +46,7 @@ internal class ResponseTrackingSystem(
     }
 
     fun handleResponse(msg: Message) {
-        when(msg.content) {
+        when (msg.content) {
             is MessageContent.ResponseNormalMessage -> getCompletion(msg.messageId!!)?.complete(msg.content.response)
             is MessageContent.ResponseErrorMessage -> getCompletion(msg.messageId!!)?.completeExceptionally(msg.content.error)
             else -> throw NotImplementedError("Response tracking does not handle ${msg.content}")
@@ -54,9 +55,10 @@ internal class ResponseTrackingSystem(
 
     private fun getCompletion(messageId: Long): Completion? {
         val msg = trackingMap[messageId]
-        if(msg == null) {
-            logger.warn("Response for message $messageId received after timeout " +
-                    "(>${stageConfig.messageTimeoutMillis}ms)."
+        if (msg == null) {
+            logger.warn(
+                "Response for message $messageId received after timeout " +
+                        "(>${stageConfig.messageTimeoutMillis}ms)."
             )
         }
         return msg?.completion

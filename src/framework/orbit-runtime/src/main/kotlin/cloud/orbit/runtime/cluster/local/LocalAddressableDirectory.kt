@@ -25,8 +25,8 @@ class LocalAddressableDirectory : AddressableDirectory {
             messageTarget
         }
 
-    override suspend fun put(addressableReference: AddressableReference, messageTarget: NetTarget): NetTarget
-        = concurrentHashMap.put(addressableReference, messageTarget)!!
+    override suspend fun put(addressableReference: AddressableReference, messageTarget: NetTarget): NetTarget =
+        concurrentHashMap.put(addressableReference, messageTarget)!!
 
     override suspend fun removeIf(addressableReference: AddressableReference, messageTarget: NetTarget): Boolean =
         concurrentHashMap.remove(addressableReference, messageTarget)

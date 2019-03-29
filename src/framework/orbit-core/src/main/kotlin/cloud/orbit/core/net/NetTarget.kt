@@ -11,5 +11,6 @@ sealed class NetTarget {
     data class Multicast(val nodes: Iterable<NodeIdentity>) : NetTarget() {
         constructor(vararg nodes: NodeIdentity) : this(nodes.asIterable())
     }
-    object Broadcast: NetTarget()
+
+    object Broadcast : NetTarget()
 }

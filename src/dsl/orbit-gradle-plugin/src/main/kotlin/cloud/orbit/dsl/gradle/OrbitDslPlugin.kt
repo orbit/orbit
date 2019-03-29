@@ -30,7 +30,8 @@ class OrbitDslPlugin : Plugin<Project> {
         project.convention.getPlugin(JavaPluginConvention::class.java).sourceSets.all { sourceSet ->
             // Add an 'orbit' virtual directory mapping for each source set
             val orbitDirectoryDelegate = OrbitDslSourceVirtualDirectoryImpl(
-                (sourceSet as DefaultSourceSet).displayName, objectFactory)
+                (sourceSet as DefaultSourceSet).displayName, objectFactory
+            )
             DslObject(sourceSet).convention.plugins["orbit"] = orbitDirectoryDelegate
             orbitDirectoryDelegate.orbit.srcDir("src/${sourceSet.name}/orbit")
             sourceSet.allSource.source(orbitDirectoryDelegate.orbit)

@@ -9,9 +9,8 @@ package cloud.orbit.runtime.test
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinitionDictionary
 import cloud.orbit.runtime.special.remoting.*
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Test
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import java.lang.IllegalArgumentException
+import org.junit.jupiter.api.Test
 
 
 class AddressableInterfaceTest {

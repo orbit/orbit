@@ -49,5 +49,5 @@ interface InheritedValidAddressable : NonConcreteAddressable
 @Lifecycle(autoActivate = true, autoDeactivate = true)
 @ExecutionModel(ExecutionStrategy.SAFE)
 interface ValidMethodsAddressable : Addressable {
-    fun getName() : Deferred<String>
+    fun getName(): Deferred<String>
 }

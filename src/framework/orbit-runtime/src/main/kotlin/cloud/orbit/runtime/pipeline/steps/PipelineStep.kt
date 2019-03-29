@@ -12,6 +12,7 @@ import cloud.orbit.runtime.pipeline.PipelineContext
 internal interface PipelineStep {
     @JvmDefault
     suspend fun onOutbound(context: PipelineContext, msg: Message): Unit = context.nextOutbound(msg)
+
     @JvmDefault
     suspend fun onInbound(context: PipelineContext, msg: Message): Unit = context.nextInbound(msg)
 }

@@ -16,9 +16,11 @@ class AnnotationUtilsTest {
     private interface InterfaceNoAnnotation
     @CustomAnnotation
     private open class BasicAnnotated
+
     private class SuperClassAnnotated : BasicAnnotated()
     @CustomAnnotation
     private interface InterfaceAnnotated
+
     private class InheritedInterfaceAnnotated : InterfaceAnnotated
 
     @Test
@@ -53,7 +55,8 @@ class AnnotationUtilsTest {
 
     @Test
     fun `check passes inherited interface annotation`() {
-        val result = AnnotationUtils.findAnnotation(InheritedInterfaceAnnotated::class.java, CustomAnnotation::class.java)
+        val result =
+            AnnotationUtils.findAnnotation(InheritedInterfaceAnnotated::class.java, CustomAnnotation::class.java)
         assertThat(result).isNotNull
     }
 }

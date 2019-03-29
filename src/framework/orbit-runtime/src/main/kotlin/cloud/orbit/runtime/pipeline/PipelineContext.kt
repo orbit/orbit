@@ -19,10 +19,10 @@ internal class PipelineContext(
     private val pipelineSystem: PipelineSystem,
     var completion: Completion?
 ) {
-    private var pointer = if (startAtEnd) pipeline.size  else -1
+    private var pointer = if (startAtEnd) pipeline.size else -1
 
     suspend fun nextInbound(msg: Message) {
-        if(!coroutineContext.isActive) throw CancellationException()
+        if (!coroutineContext.isActive) throw CancellationException()
         if (--pointer < 0) throw IllegalStateException("Beginning of pipeline encountered.")
         val pipelineStep = pipeline[pointer]
         pipelineStep.onInbound(this, msg)
@@ -30,7 +30,7 @@ internal class PipelineContext(
     }
 
     suspend fun nextOutbound(msg: Message) {
-        if(!coroutineContext.isActive) throw CancellationException()
+        if (!coroutineContext.isActive) throw CancellationException()
         if (++pointer >= pipeline.size) throw IllegalStateException("End of pipeline encountered.")
         val pipelineStep = pipeline[pointer]
         pipelineStep.onOutbound(this, msg)

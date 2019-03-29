@@ -24,8 +24,8 @@ internal object DeferredWrappers {
             }
         }
 
-    fun wrapCall(result: Any) : Deferred<*> =
-        when(result) {
+    fun wrapCall(result: Any): Deferred<*> =
+        when (result) {
             is CompletableFuture<*> -> result.asDeferred()
             is CompletableDeferred<*> -> result
             is Deferred<*> -> result

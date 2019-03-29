@@ -10,7 +10,7 @@ import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.AddressableReference
 
 interface AddressableDirectory {
-    suspend fun get(addressableReference: AddressableReference) : NetTarget?
+    suspend fun get(addressableReference: AddressableReference): NetTarget?
     suspend fun getOrPut(addressableReference: AddressableReference, messageTarget: NetTarget): NetTarget
     suspend fun put(addressableReference: AddressableReference, messageTarget: NetTarget): NetTarget
     suspend fun removeIf(addressableReference: AddressableReference, messageTarget: NetTarget): Boolean

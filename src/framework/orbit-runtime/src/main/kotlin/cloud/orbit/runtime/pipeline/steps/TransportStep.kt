@@ -7,7 +7,6 @@
 package cloud.orbit.runtime.pipeline.steps
 
 import cloud.orbit.runtime.net.Message
-import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.pipeline.PipelineContext
 
 internal class TransportStep : PipelineStep {

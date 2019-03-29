@@ -52,8 +52,8 @@ internal class ComponentProvider {
 
     inline fun <reified T> findInstances() = findInstances(T::class.java)
 
-    fun <T> construct(beanDefinition: BeanDefinition<T>) : T =
-            construct(beanDefinition.concreteClass)
+    fun <T> construct(beanDefinition: BeanDefinition<T>): T =
+        construct(beanDefinition.concreteClass)
 
     fun <T> construct(concreteClass: Class<out T>): T {
         if (concreteClass.constructors.size != 1)

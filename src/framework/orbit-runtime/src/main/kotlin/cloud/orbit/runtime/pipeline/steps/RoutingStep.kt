@@ -13,22 +13,22 @@ import cloud.orbit.runtime.pipeline.PipelineContext
 
 internal class RoutingStep(private val routingSystem: RoutingSystem) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
-        val newMsg = when(msg.content) {
+        val newMsg = when (msg.content) {
             is MessageContent.RequestInvocationMessage -> {
                 val target = routingSystem.routeMessage(msg.content.addressableInvocation.reference, msg.target)
                 msg.copy(
                     target = target
                 )
             }
-            else ->  msg
+            else -> msg
         }
         context.nextOutbound(newMsg)
     }
 
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
-        when(msg.content) {
+        when (msg.content) {
             is MessageContent.RequestInvocationMessage -> {
-                if(!routingSystem.canHandleLocally(msg.content.addressableInvocation.reference)) {
+                if (!routingSystem.canHandleLocally(msg.content.addressableInvocation.reference)) {
                     // Can't handle locally so we just start it as a new call
                     context.newOutbound(msg)
                     return

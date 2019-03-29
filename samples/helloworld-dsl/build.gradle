@@ -30,7 +30,7 @@ buildscript {
     }
 
     dependencies {
-        classpath group: 'org.jetbrains.kotlin', name :'kotlin-gradle-plugin', version: kotlinVersion
+        classpath group: 'org.jetbrains.kotlin', name: 'kotlin-gradle-plugin', version: kotlinVersion
         classpath group: 'cloud.orbit', name: 'orbit-gradle-plugin', version: localOrbitVersion
     }
 }

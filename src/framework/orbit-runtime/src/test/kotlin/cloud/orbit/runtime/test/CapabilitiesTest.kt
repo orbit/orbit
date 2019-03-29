@@ -35,7 +35,8 @@ class CapabilitiesTest {
             capabilitiesScanner.scan("cloud.orbit.runtime.special.capabilities.multiimpl")
         }
 
-        e.isInstanceOf(IllegalStateException::class.java).hasMessageContaining("Multiple implementations of concrete interface")
+        e.isInstanceOf(IllegalStateException::class.java)
+            .hasMessageContaining("Multiple implementations of concrete interface")
     }
 
     @Test

@@ -62,7 +62,7 @@ data class NodeCapabilities(
      * Checks whether a specific addressable type can be hosted.
      */
     fun canHost(addressableClass: AddressableClass): Boolean =
-            implementedAddressables.contains(addressableClass.name)
+        implementedAddressables.contains(addressableClass.name)
 }
 
 /**

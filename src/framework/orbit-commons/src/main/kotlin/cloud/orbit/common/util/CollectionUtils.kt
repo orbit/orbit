@@ -6,11 +6,11 @@
 
 package cloud.orbit.common.util
 
-fun <E> Collection<E>.randomOrNull() : E? =
+fun <E> Collection<E>.randomOrNull(): E? =
     try {
         this.random()
-    } catch(nse: NoSuchElementException) {
+    } catch (nse: NoSuchElementException) {
         null
-    } catch(t: Throwable) {
+    } catch (t: Throwable) {
         throw t
     }
