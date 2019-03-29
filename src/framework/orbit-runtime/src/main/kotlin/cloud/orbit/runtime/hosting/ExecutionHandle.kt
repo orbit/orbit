@@ -6,7 +6,10 @@
 
 package cloud.orbit.runtime.hosting
 
+import cloud.orbit.common.logging.debug
+import cloud.orbit.common.logging.logger
 import cloud.orbit.common.time.Clock
+import cloud.orbit.common.time.stopwatch
 import cloud.orbit.core.remoting.ActivatedAddressable
 import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.AddressableInvocation
@@ -30,6 +33,8 @@ internal class ExecutionHandle(
 ) {
     private val clock: Clock by componentProvider.inject()
     private val supervisorScope: SupervisorScope by componentProvider.inject()
+
+    private val logger by logger()
 
     val createdTime = clock.currentTime
 
@@ -74,11 +79,15 @@ internal class ExecutionHandle(
     }
 
     private fun onActivate() {
-        if (instance is ActivatedAddressable) {
-            instance.context = ActivatedAddressable.AddressableContext(
-                reference = reference
-            )
+        logger.debug { "Activating $reference..." }
+        val (elapsed, _) = stopwatch(clock) {
+            if (instance is ActivatedAddressable) {
+                instance.context = ActivatedAddressable.AddressableContext(
+                    reference = reference
+                )
+            }
         }
+        logger.debug { "Activated $reference in ${elapsed}ms. " }
     }
 
     private suspend fun onInvoke(invocation: AddressableInvocation): Any? {
@@ -94,7 +103,11 @@ internal class ExecutionHandle(
     }
 
     private fun onDeactivate() {
-        worker.cancel()
+        logger.debug { "Deactivating $reference..." }
+        val (elapsed, _) = stopwatch(clock) {
+            worker.cancel()
+        }
+        logger.debug { "Deactivated $reference in ${elapsed}ms." }
     }
 
     private sealed class EventType {
