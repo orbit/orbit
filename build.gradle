@@ -184,14 +184,16 @@ configure(publish) {
     publishing {
         repositories {
             maven {
-                if(project.properties["publish.username"]) {
+                String publishUrl = "$buildDir/repo"
+                if(project.properties["remotePublish"]) {
+                    publishUrl = project.properties["publish.url"] ?: publishUrl
                     credentials {
                         username(project.properties["publish.username"] ?: "")
                         password(project.properties["publish.password"] ?: "")
                     }
                 }
 
-                url(project.properties["publish.url"] ?: "$buildDir/repo")
+                url(publishUrl)
             }
         }
 
