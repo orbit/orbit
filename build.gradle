@@ -65,7 +65,7 @@ ext {
 
     coroutinesVersion = "1.1.1"
 
-    junitJupiterVersion = "5.4.0"
+    junitJupiterVersion = "5.4.1"
     slf4jVersion = "1.7.26"
 }
 
@@ -119,7 +119,7 @@ configure(withJava + withKotlin) {
 
 configure(withTests) {
     dependencies {
-        testImplementation("org.assertj:assertj-core:3.12.1")
+        testImplementation("org.assertj:assertj-core:3.12.2")
         testImplementation("org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion")
         testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion")
         testRuntimeOnly("org.slf4j:slf4j-simple:$slf4jVersion")
@@ -185,7 +185,7 @@ configure(publish) {
         repositories {
             maven {
                 String publishUrl = "$buildDir/repo"
-                if(project.properties["remotePublish"]) {
+                if (project.properties["remotePublish"]) {
                     publishUrl = project.properties["publish.url"] ?: publishUrl
                     credentials {
                         username(project.properties["publish.username"] ?: "")
