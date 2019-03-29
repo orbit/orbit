@@ -40,9 +40,9 @@ internal class ExecutionSystem(
             interfaceDefinitionDictionary.getOrCreate(invocation.reference.interfaceClass)
         var handle = activeAddressables[invocation.reference]
 
-        if(handle == null) {
-            if(routingSystem.canHandleLocally(invocation.reference)) {
-                if(definition.lifecycle.autoActivate) {
+        if (handle == null) {
+            if (routingSystem.canHandleLocally(invocation.reference)) {
+                if (definition.lifecycle.autoActivate) {
                     handle = activate(invocation.reference, definition)
                 }
             } else {
@@ -74,7 +74,7 @@ internal class ExecutionSystem(
         reference: AddressableReference,
         definition: AddressableInterfaceDefinition
     ): ExecutionHandle {
-        logger.debug { "Activating $reference..."}
+        logger.debug { "Activating $reference..." }
         val (elapsed, handle) = stopwatch(clock) {
             val handle = getOrCreateAddressable(reference, definition)
             if (handle.definition.routing.persistentPlacement) {
