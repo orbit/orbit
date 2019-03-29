@@ -218,6 +218,7 @@ configure(publish) {
                 artifactId = project.name
 
                 pom {
+                    name = project.name
                     description = project.description
                     url = orbitUrl
 
