@@ -135,7 +135,9 @@ configure(withTests) {
 configure(publish) {
     apply plugin: "maven-publish"
     apply plugin: "signing"
-    apply plugin: 'org.jetbrains.dokka'
+    apply plugin: "org.jetbrains.dokka"
+
+    Boolean canRemotePublish = JavaVersion.current() == JavaVersion.VERSION_1_8
 
     jar {
         manifest {
@@ -186,6 +188,9 @@ configure(publish) {
             maven {
                 String publishUrl = "$buildDir/repo"
                 if (project.properties["remotePublish"]) {
+
+                    if(!canRemotePublish) throw new GradleException("Cannot remote publish with this JDK")
+
                     publishUrl = project.properties["publish.url"] ?: publishUrl
                     credentials {
                         username(project.properties["publish.username"] ?: "")
@@ -202,9 +207,11 @@ configure(publish) {
                 from components.java
 
                 artifact sourcesJar
-                // TODO: Enable once Dokka has proper JDK10+ support
-                // artifact dokkaJavadocJar
                 artifact dokkaHtmlJar
+
+                if(canRemotePublish) {
+                    artifact dokkaJavadocJar
+                }
 
                 groupId = project.group
                 version = project.version
