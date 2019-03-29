@@ -6,6 +6,7 @@
 
 package cloud.orbit.runtime.hosting
 
+import cloud.orbit.common.exception.CapacityExceededException
 import cloud.orbit.common.logging.debug
 import cloud.orbit.common.logging.logger
 import cloud.orbit.common.time.Clock
@@ -18,9 +19,9 @@ import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Completion
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
+import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.launch
 import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.atomic.AtomicLong
@@ -33,6 +34,7 @@ internal class ExecutionHandle(
 ) {
     private val clock: Clock by componentProvider.inject()
     private val supervisorScope: SupervisorScope by componentProvider.inject()
+    private val stageConfig: StageConfig by componentProvider.inject()
 
     private val logger by logger()
 
@@ -41,41 +43,34 @@ internal class ExecutionHandle(
     private val lastActivityAtomic = AtomicLong(createdTime)
     val lastActivity get() = lastActivityAtomic.get()
 
-    private val channel = Channel<EventType>(UNLIMITED)
+    private val channel = Channel<EventType>(stageConfig.addressableBufferCount)
 
-    private val worker = supervisorScope.launch {
-        for (event in channel) {
-            try {
-                val result = when (event) {
-                    is EventType.ActivateEvent -> onActivate()
-                    is EventType.InvokeEvent -> onInvoke(event.invocation)
-                    is EventType.DeactivateEvent -> onDeactivate()
-                }
-                event.completion.complete(result)
-            } catch (t: Throwable) {
-                event.completion.completeExceptionally(t)
-            }
-        }
-    }
-
-    suspend fun activate(): Completion {
+    fun activate(): Completion {
         val completion = CompletableDeferred<Any?>()
-        channel.send(EventType.ActivateEvent(completion))
+        sendEvent(EventType.ActivateEvent(completion))
         return completion
     }
 
-    suspend fun deactivate(): Completion {
+    fun deactivate(): Completion {
         val completion = CompletableDeferred<Any?>()
-        channel.send(EventType.DeactivateEvent(completion))
+        sendEvent(EventType.DeactivateEvent(completion))
         return completion
     }
 
-    suspend fun invoke(
+    fun invoke(
         invocation: AddressableInvocation,
         completion: Completion
     ): Completion {
-        channel.send(EventType.InvokeEvent(invocation, completion))
+        sendEvent(EventType.InvokeEvent(invocation, completion))
         return completion
+    }
+
+    private fun sendEvent(eventType: EventType) {
+        if (!channel.offer(eventType)) {
+            val errMsg = "Buffer capacity exceeded (>${stageConfig.addressableBufferCount}) for $reference"
+            logger.error(errMsg)
+            throw CapacityExceededException(errMsg)
+        }
     }
 
     private fun onActivate() {
@@ -108,6 +103,21 @@ internal class ExecutionHandle(
             worker.cancel()
         }
         logger.debug { "Deactivated $reference in ${elapsed}ms." }
+    }
+
+    private val worker = supervisorScope.launch {
+        for (event in channel) {
+            try {
+                val result = when (event) {
+                    is EventType.ActivateEvent -> onActivate()
+                    is EventType.InvokeEvent -> onInvoke(event.invocation)
+                    is EventType.DeactivateEvent -> onDeactivate()
+                }
+                event.completion.complete(result)
+            } catch (t: Throwable) {
+                event.completion.completeExceptionally(t)
+            }
+        }
     }
 
     private sealed class EventType {

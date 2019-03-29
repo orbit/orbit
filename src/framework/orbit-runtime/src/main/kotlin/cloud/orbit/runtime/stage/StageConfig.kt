@@ -11,6 +11,7 @@ import cloud.orbit.common.util.RandomUtils
 import cloud.orbit.core.net.ClusterName
 import cloud.orbit.core.net.NodeIdentity
 import cloud.orbit.core.net.NodeMode
+import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.runtime.cluster.ClusterConfig
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -82,5 +83,10 @@ data class StageConfig(
     /**
      * The number of messages (either inbound or outbound) that may be queued before new messages are rejected.
      */
-    val pipelineBufferCount: Int = 100_000
+    val pipelineBufferCount: Int = 10_000,
+
+    /**
+     * The number of invocations that may be queued on each [Addressable] instance.
+     */
+    val addressableBufferCount: Int = 100
 )
