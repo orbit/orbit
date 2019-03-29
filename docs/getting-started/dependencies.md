@@ -1,7 +1,5 @@
 # Dependencies
 
-
-
 ## Gradle
 
 ```text
