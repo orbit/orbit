@@ -26,7 +26,3 @@ The following JDKs are currently supported by the Orbit development team. Other 
 * Git is required if you want to build Orbit locally
 * IntelliJ IDEA is our recommended IDE
 
-
-
-
-
