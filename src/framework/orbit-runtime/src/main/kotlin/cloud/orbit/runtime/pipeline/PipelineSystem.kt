@@ -9,12 +9,13 @@ package cloud.orbit.runtime.pipeline
 import cloud.orbit.common.exception.CapacityExceededException
 import cloud.orbit.common.logging.logger
 import cloud.orbit.common.logging.trace
+import cloud.orbit.core.remoting.AddressableInvocation
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContainer
+import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.net.MessageDirection
-import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.pipeline.steps.*
 import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CancellationException
@@ -100,6 +101,13 @@ internal class PipelineSystem(
 
     fun pushInbound(msg: Message) =
         writeMessage(msg, MessageDirection.INBOUND)
+
+    fun pushInvocation(addressableInvocation: AddressableInvocation) =
+        pushOutbound(
+            Message(
+                MessageContent.RequestInvocationMessage(addressableInvocation)
+            )
+        )
 
 
     private suspend fun onMessage(container: MessageContainer) {

@@ -34,11 +34,7 @@ internal class AddressableInterfaceClientProxy(
             args = args ?: arrayOf()
         )
 
-        val msg = Message(
-            content = MessageContent.RequestInvocationMessage(addressableInvocation)
-        )
-
-        val completion = pipelineSystem.pushOutbound(msg)
+        val completion = pipelineSystem.pushInvocation(addressableInvocation)
 
         return DeferredWrappers.wrapReturn(completion, method)
     }

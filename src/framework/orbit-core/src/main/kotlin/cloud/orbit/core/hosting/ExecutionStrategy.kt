@@ -7,6 +7,5 @@
 package cloud.orbit.core.hosting
 
 enum class ExecutionStrategy {
-    SAFE,
-    UNSAFE
+    SAFE
 }
