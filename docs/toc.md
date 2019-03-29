@@ -6,7 +6,7 @@
 
 * [Prerequisities](getting-started/prerequisities.md)
 * [Dependencies](getting-started/dependencies.md)
-* [Hello - Kotlin](getting-started/hello-kotlin.md)
+* [Hello World - Kotlin](getting-started/helloworld-kotlin.md)
 
 ## Core Concepts
 
