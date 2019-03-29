@@ -7,6 +7,10 @@
 * [Prerequisities](getting-started/prerequisities.md)
 * [Hello World](getting-started/hello-world.md)
 
+## Core Concepts
+
+* [Addressables](core-concepts/addressables.md)
+
 ## Actors
 
 * [Overview](actors/overview.md)
