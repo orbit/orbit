@@ -98,22 +98,16 @@ By default, addressables have a strict execution model.
 
 Orbit guarantees that calls to addressables can never be processed in parallel. This means that if two clients call an addressable at the same time, they are guaranteed to be processed serially \(one after the other\) where one call completes before the next one starts.
 
-## Lifecycle
+## Context
 
-The lifecycle of an addressable can be managed by Orbit \(such as with Actors\) or manually by a user \(such as with Observers\).
-
-When the lifecycle is managed by Orbit there are certain additional features available that are not available for non-managed addressables.
-
-### ActivatedAddressable
-
-Implementations of managed addressables may extend ActivatedAddressable which gives access to the `context` member variable, this exposes certain informattion about the addressable and runtime that would otherwise not be available.
+Addressable implementations which implement `AbstractAddressable` gain access to an Orbit managed context object, this exposes certain informattion about the addressable and runtime that would otherwise not be available.
 
 The following is an example of how AbstractActor is implemented in Orbit and what all actors gain as a result.
 
 {% code-tabs %}
 {% code-tabs-item title="Kotlin" %}
 ```kotlin
-abstract class AbstractActor : ActivatedAddressable()
+abstract class AbstractActor : AbstractAddressable()
 
 class IdentityActorImpl : IdentityActor, AbstractActor() {
     override fun identity(): Deferred<String> {
@@ -123,6 +117,12 @@ class IdentityActorImpl : IdentityActor, AbstractActor() {
 ```
 {% endcode-tabs-item %}
 {% endcode-tabs %}
+
+## Lifecycle
+
+The lifecycle of an addressable can be managed by Orbit \(such as with Actors\) or manually by a user \(such as with Observers\).
+
+When the lifecycle is managed by Orbit there are certain additional features available that are not available for non-managed addressables.
 
 ### Lifecycle Events
 
