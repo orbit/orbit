@@ -68,7 +68,7 @@ public class GreeterImpl implements Greeter {
 {% endcode-tabs-item %}
 {% endcode-tabs %}
 
-If you wish an addressable to be purely abstract, you must annotate it with the @NonConcrete annotation. This is how interfaces such as Actor may be implemented more than once but never directly.
+If you wish an addressable to be purely abstract, you must annotate it with the `@NonConcrete` annotation. This is how interfaces such as `Actor` may be implemented more than once but never directly.
 
 {% code-tabs %}
 {% code-tabs-item title="Kotlin" %}
@@ -94,7 +94,7 @@ interface Consumer extends Observable {
 
 ## Execution Model
 
-Addressables in Orbit can have multiple different executuon models. By default addressables will use [Safe Execution Mode](addressables.md#safe-execution-mode).
+Addressables in Orbit can have multiple different execution modes. By default addressables will use [Safe Execution Mode](addressables.md#safe-execution-mode).
 
 ### Safe Execution Mode
 
@@ -104,7 +104,7 @@ In safe execution mode Orbit guarantees that calls to addressables can never be 
 
 Addressable implementations which implement `AbstractAddressable` gain access to an Orbit managed context object, this exposes certain information about the addressable and runtime that would otherwise not be available.
 
-The following is an example of how AbstractActor is implemented in Orbit and what all actors gain as a result.
+The following is an example of how `AbstractActor` is implemented in Orbit and what all actors gain as a result.
 
 {% code-tabs %}
 {% code-tabs-item title="Kotlin" %}

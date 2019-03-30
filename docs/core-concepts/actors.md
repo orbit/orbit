@@ -14,7 +14,7 @@ Like all addressables, every actor in Orbit has a [key](addressables.md#keys). A
 
 | Actor Interface | JDK Type | Orbit Type |
 | :--- | :--- | :--- |
-| ActorWithNoKey | N/A | NoKey |
+| ActorWithNoKey | _N/A_ | NoKey |
 | ActorWithStringKey | String | StringKey |
 | ActorWithInt32Key | Integer | Int32Key |
 | ActorWithInt64Key | Long | Int64Key |
