@@ -8,6 +8,12 @@ At any time an actor may be active or inactive. Usually the state of an inactive
 
 Actors are deactivated based on timeout and on server resource usage.
 
+## Runtime Model
+
+Orbit guarantees that only one activation of an actor with a given identity can exist at any one time in the cluster by default. As such, developers do not need to be concerned about keeping multiple activations/instances of an actor synchronized with one another.
+
+By default, Orbit also guarantees that calls to actors can never be processed in parallel using [safe execution mode](addressables.md#safe-execution-mode). This means that developers do not need to worry about concurrent access to an actor. Two calls to an actor can not be processed in parallel. 
+
 ## Keys
 
 Like all addressables, every actor in Orbit has a [key](addressables.md#keys). Additionally, to ensure they are type safe every actor interface must choose only one key type, this is achieved by extending one of the following actor interfaces.
@@ -20,9 +26,69 @@ Like all addressables, every actor in Orbit has a [key](addressables.md#keys). A
 | ActorWithInt64Key | Long | Int64Key |
 | ActorWithGuidKey | UUID | GuidKey |
 
-## Runtime Model
+## Interface
 
-Orbit guarantees that only one activation of an actor with a given identity can exist at any one time in the cluster by default. As such, developers do not need to be concerned about keeping multiple activations/instances of an actor synchronized with one another.
+Before you can implement an actor you must create an interface for it.
 
-By default, Orbit also guarantees that calls to actors can never be processed in parallel using [safe execution mode](addressables.md#safe-execution-mode). This means that developers do not need to worry about concurrent access to an actor. Two calls to an actor can not be processed in parallel. 
+{% code-tabs %}
+{% code-tabs-item title="Kotlin" %}
+```kotlin
+interface Greeter : ActorWithNoKey {
+    fun greet(name: String): Deferred<String>
+}
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+{% code-tabs %}
+{% code-tabs-item title="Java" %}
+```java
+interface Greeter extends ActorWithNoKey {
+    CompletableFuture<String> greet(String name);
+}
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+* Actor interfaces must extend an Orbit [actor type](actors.md#keys).
+* Interface methods must return an [asynchronous type](addressables.md#asynchronous-return-types).
+
+## Implementation
+
+Once you have created an Actor type, you must offer an implementation of that Actor for Orbit to use.
+
+{% code-tabs %}
+{% code-tabs-item title="Kotlin" %}
+```kotlin
+class GreeterActor : Greeter, AbstractActor() {
+    private val logger by logger()
+
+    override fun greet(name: String): Deferred<String> {
+        logger.info("I was called by: $name. My identity is ${this.context.reference}")
+        return CompletableDeferred("Hello $name!")
+    }
+}
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+{% code-tabs %}
+{% code-tabs-item title="Java" %}
+```java
+public class GreeterActor extends AbstractActor implements Greeter {
+    private static Logger logger = Logging.getLogger(GreeterActor.class);
+
+    @Override
+    public CompletableFuture<String> greet(String name) {
+        logger.info("I was called by: " + name + ". My identity is " + getContext().getReference());
+        return CompletableFuture.completedFuture("Hello " + name + "!");
+    }
+}
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+* Actor implementations must extend AbstractActor.
+* Actor implementations must implement at least one [concrete](addressables.md#concrete-implementation) interface.
+* Only one implementation per [concrete](addressables.md#concrete-implementation) interface is permitted.
 
