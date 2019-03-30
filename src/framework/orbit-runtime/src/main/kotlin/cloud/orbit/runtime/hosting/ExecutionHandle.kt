@@ -11,7 +11,7 @@ import cloud.orbit.common.logging.debug
 import cloud.orbit.common.logging.logger
 import cloud.orbit.common.time.Clock
 import cloud.orbit.common.time.stopwatch
-import cloud.orbit.core.remoting.ActivatedAddressable
+import cloud.orbit.core.remoting.AbstractAddressable
 import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.AddressableInvocation
 import cloud.orbit.core.remoting.AddressableReference
@@ -47,6 +47,14 @@ internal class ExecutionHandle(
 
     private val channel = Channel<EventType>(stageConfig.addressableBufferCount)
 
+    init {
+        if (instance is AbstractAddressable) {
+            instance.context = AbstractAddressable.AddressableContext(
+                reference = reference
+            )
+        }
+    }
+
     fun activate(): Completion {
         val completion = CompletableDeferred<Any?>()
         sendEvent(EventType.ActivateEvent(completion))
@@ -78,12 +86,6 @@ internal class ExecutionHandle(
     private suspend fun onActivate() {
         logger.debug { "Activating $reference..." }
         val (elapsed, _) = stopwatch(clock) {
-            if (instance is ActivatedAddressable) {
-                instance.context = ActivatedAddressable.AddressableContext(
-                    reference = reference
-                )
-            }
-
             implDefinition.onActivateMethod?.also {
                 DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
             }

@@ -22,11 +22,15 @@ interface Addressable
 typealias AddressableClass = Class<out Addressable>
 
 /**
- * A special class for [Addressable]s which are created by Orbit which makes additional context available at runtime.
+ * An abstract [Addressable] which allows Orbit to provide a context.
  */
-abstract class ActivatedAddressable {
+abstract class AbstractAddressable {
     data class AddressableContext(val reference: AddressableReference)
 
+    /**
+     * The Orbit context. It will be available after the [Addressable] is registered with Orbit.
+     * Attempting to access this variable before registration is undefined behavior.
+     */
     lateinit var context: AddressableContext
 }
 
