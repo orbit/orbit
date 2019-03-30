@@ -92,3 +92,31 @@ Once you have created an Actor type, you must offer an implementation of that Ac
 * Actor implementations must implement at least one [concrete](addressables.md#concrete-implementation) interface.
 * Only one implementation per [concrete](addressables.md#concrete-implementation) interface is permitted.
 
+## Calling
+
+Actors are called via a proxy. A proxy is created via the Orbit runtime context, typically [Stage](stage.md) or [AddressableContext](addressables.md#context).
+
+{% code-tabs %}
+{% code-tabs-item title="Kotlin" %}
+```kotlin
+// Via Stage
+stage.actorProxyFactory.getReference<Greeter>()
+
+// From an Addressable
+context.runtime.actorProxyFactory.getReference<Greeter>()
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+{% code-tabs %}
+{% code-tabs-item title="Java" %}
+```java
+// Via Stage
+stage.getActorProxyFactory().getReference(Greeter.class);
+
+// From an Addressable
+getContext().getRuntime().getActorProxyFactory().getReference(Greeter.class);
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
