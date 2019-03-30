@@ -12,11 +12,25 @@ Any remotely addressable object must be represented by an interface that extends
 
 Although it is possible to create a raw Addressable manually, this is an advanced topic. Typically you will extend a well known Addressable type such as Actor.
 
+{% code-tabs %}
+{% code-tabs-item title="Kotlin" %}
 ```kotlin
 interface Greeter : Observable {
-    fun greet(name: String): Deferred<String>
+    fun greet(name: String): Deferred<String>
 }
 ```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+{% code-tabs %}
+{% code-tabs-item title="Java" %}
+```java
+interface Greeter extends Observable {
+    CompletableFuture<String> greet(String name);
+}
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
 
 ## Asynchronous Return Types
 
@@ -33,21 +47,53 @@ The following return types are currently supported.
 
 For each addressable interface, **exactly one** addressable ****class must implement it.
 
+{% code-tabs %}
+{% code-tabs-item title="Kotlin" %}
 ```kotlin
 class GreeterImpl : Greeter {
     override fun greet(name: String): Deferred<String> = 
         CompletableDeferred("Hi $name")
 }
 ```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+{% code-tabs %}
+{% code-tabs-item title="Java" %}
+```java
+public class GreeterImpl implements Greeter {
+    @Override
+    public CompletableFuture<String> greet(String name) {
+        return CompletableFuture.completedFuture("Hi " + name);
+    }
+}
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
 
 If you wish an addressable to be purely abstract, you must annotate it with the @NonConcrete annotation. This is how interfaces such as Actor may be implemented more than once but never directly.
 
+{% code-tabs %}
+{% code-tabs-item title="Kotlin" %}
 ```kotlin
 @NonConcrete
 interface Consumer : Observable {
     fun consume(obj: Any?): Deferred<Unit>
 }
 ```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+{% code-tabs %}
+{% code-tabs-item title="Java" %}
+```java
+@NonConcrete
+interface Consumer extends Observable {
+    CompletableFuture consume(Object obj);
+}
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
 
 ## Execution Model
 
