@@ -208,6 +208,8 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     private suspend fun onStop() {
         netSystem.localNodeManipulator.updateNodeStatus(NodeStatus.RUNNING, NodeStatus.STOPPING)
 
+        executionSystem.onStop()
+
         // Stop the tick
         tickJob?.cancelAndJoin()
 

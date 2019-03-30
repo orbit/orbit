@@ -68,6 +68,12 @@ internal class ExecutionSystem(
         }
     }
 
+    suspend fun onStop() {
+        activeAddressables.forEach { (_, handle) ->
+            deactivate(handle)
+        }
+    }
+
     private suspend fun activate(
         reference: AddressableReference,
         interfaceDefinition: AddressableInterfaceDefinition

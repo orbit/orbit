@@ -66,4 +66,24 @@ class StageStateTest {
             stage.start().await()
             actor.incrementCountAndGet().await() }
     }
+
+    @Test
+    fun `ensure stop deactivates addressables`() {
+        runBlocking {
+            val config = StageConfig(
+                packages = listOf("cloud.orbit.runtime.test")
+            )
+            val stage = Stage(config)
+            val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+
+            stage.start().await()
+            actor.incrementCountAndGet().await()
+
+            wasDeactivated = false
+
+            stage.stop().await()
+
+            assertThat(wasDeactivated).isTrue()
+        }
+    }
 }
