@@ -10,9 +10,7 @@ Actors are deactivated based on timeout and on server resource usage.
 
 ## Runtime Model
 
-Orbit guarantees that only one activation of an actor with a given identity can exist at any one time in the cluster. Orbit also guarantees that calls to actors can never be processed in parallel.
+Orbit guarantees that only one activation of an actor with a given identity can exist at any one time in the cluster by default. As such, developers do not need to be concerned about keeping multiple activations/instances of an actor synchronized with one another.
 
-As such, developers do not need to be concerned about keeping multiple activations/instances of an actor synchronized with one another.
-
-Finally, this also means that developers do not need to worry about concurrent access to an actor. Two calls to an actor can not be processed in parallel.
+By default, Orbit also guarantees that calls to actors can never be processed in parallel using [safe execution mode](addressables.md#safe-execution-mode). This means that developers do not need to worry about concurrent access to an actor. Two calls to an actor can not be processed in parallel. 
 

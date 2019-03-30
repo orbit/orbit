@@ -94,7 +94,9 @@ interface Consumer extends Observable {
 
 ## Execution Model
 
-By default, addressables have a strict execution model. 
+Addressables in Orbit can have multiple different executuon models. By default addressables will use [Safe Execution Mode](addressables.md#safe-execution-mode).
+
+### Safe Execution Mode
 
 Orbit guarantees that calls to addressables can never be processed in parallel. This means that if two clients call an addressable at the same time, they are guaranteed to be processed serially \(one after the other\) where one call completes before the next one starts.
 
