@@ -8,7 +8,7 @@ Any object which can be addressed remotely in Orbit is known as an **Addressable
 
 Any remotely addressable object must be represented by an interface that extends Addressable, this defines the protocol/contract for communicating with the addressable.
 
-Although it is possible to create a raw Addressable manually, this is an advanced topic. Typically you will extend a well known Addressable type such as Actor.
+Although it is possible to create a raw addressable manually, this is an advanced topic. Typically you will extend a well known addressble type such as [Actor](actors.md).
 
 {% code-tabs %}
 {% code-tabs-item title="Kotlin" %}
@@ -33,7 +33,7 @@ interface Greeter extends Observable {
 ## Asynchronous Return Types
 
 Addressables must only contain methods which return asynchronous types \(such as promises\).  
-The following return types \(and subtypes\) are currently supported.
+The following return types \(and their subtypes\) are currently supported.
 
 | Main Type | Common Subtypes | For | Implemented In |
 | :--- | :--- | :--- | :--- |
@@ -102,7 +102,7 @@ In safe execution mode Orbit guarantees that calls to addressables can never be 
 
 ## Context
 
-Addressable implementations which implement `AbstractAddressable` gain access to an Orbit managed context object, this exposes certain informattion about the addressable and runtime that would otherwise not be available.
+Addressable implementations which implement `AbstractAddressable` gain access to an Orbit managed context object, this exposes certain information about the addressable and runtime that would otherwise not be available.
 
 The following is an example of how AbstractActor is implemented in Orbit and what all actors gain as a result.
 
@@ -128,7 +128,7 @@ When the lifecycle is managed by Orbit there are certain additional features ava
 
 ### Lifecycle Events
 
-Implementations of managed addressables may use lifecycle events. A  method in each implementation may be annotated with `@OnActivate` or `@OnDeactivate` and it will automatically be invokved by Orbit.
+Implementations of managed addressables may use lifecycle events. A  method in each implementation may be annotated with `@OnActivate` or `@OnDeactivate` and it will automatically be invoked by Orbit.
 
 {% code-tabs %}
 {% code-tabs-item title="Kotlin" %}

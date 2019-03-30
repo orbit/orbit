@@ -10,7 +10,7 @@ Actors are deactivated based on timeout and on server resource usage.
 
 ## Keys
 
-Like all Addressables, every actor in Orbit has a [key](addressables.md#keys). Additionally, to ensure they are type safe every actor interface must choose only one key type, this is achieved by extending one of the following actor interfaces.
+Like all addressables, every actor in Orbit has a [key](addressables.md#keys). Additionally, to ensure they are type safe every actor interface must choose only one key type, this is achieved by extending one of the following actor interfaces.
 
 | Actor Interface | JDK Type | Orbit Type |
 | :--- | :--- | :--- |
