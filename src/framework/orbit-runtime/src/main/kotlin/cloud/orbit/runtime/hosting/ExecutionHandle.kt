@@ -96,7 +96,7 @@ internal class ExecutionHandle(
     private suspend fun onInvoke(invocation: AddressableInvocation): Any? {
         lastActivityAtomic.set(clock.currentTime)
         try {
-           return MethodInvoker.invokeDeferred(instance, invocation.method, invocation.args).await()
+            return MethodInvoker.invokeDeferred(instance, invocation.method, invocation.args).await()
         } catch (ite: InvocationTargetException) {
             throw ite.targetException
         } catch (t: Throwable) {

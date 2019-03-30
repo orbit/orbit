@@ -30,7 +30,6 @@ configureProject(":samples:helloworld", [withKotlin])
 configureProject(":samples:helloworld-java", [withJava])
 
 
-
 buildscript {
     ext.kotlinVersion = "1.3.21"
     ext.dokkaVersion = "0.9.18"

@@ -12,7 +12,7 @@ import cloud.orbit.core.actor.AbstractActor;
 
 import java.util.concurrent.CompletableFuture;
 
-public class GreeterActor extends AbstractActor implements Greeter  {
+public class GreeterActor extends AbstractActor implements Greeter {
     private static Logger logger = Logging.getLogger(GreeterActor.class);
 
     @Override
