@@ -8,21 +8,15 @@
 * [Dependencies](getting-started/dependencies.md)
 * [Hello World](getting-started/helloworld.md)
 
-## Core Concepts
+## Concepts
 
-* [Stage](core-concepts/stage.md)
-* [Addressables](core-concepts/addressables.md)
-* [Actors](core-concepts/actors.md)
-* [Observables](core-concepts/observables.md)
-* [Streams](core-concepts/streams.md)
-
-## Clustering
-
-* [Overview](clustering/overview.md)
-
-## DSL
-
-* [Overview](dsl/overview.md)
+* [Stage](concepts/stage.md)
+* [Addressables](concepts/addressables.md)
+* [Actors](concepts/actors.md)
+* [Observables](concepts/observables.md)
+* [Streams](concepts/streams.md)
+* [Clustering](concepts/clustering.md)
+* [DSL](concepts/dsl.md)
 
 ## Contributing
 
