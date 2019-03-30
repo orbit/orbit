@@ -27,6 +27,8 @@ configureProject(":src:dsl:orbit-gradle-plugin", [withKotlin, withTests, publish
 
 // Samples
 configureProject(":samples:helloworld", [withKotlin])
+configureProject(":samples:helloworld-java", [withJava])
+
 
 
 buildscript {

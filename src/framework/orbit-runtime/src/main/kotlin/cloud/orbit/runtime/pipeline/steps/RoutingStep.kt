@@ -34,6 +34,7 @@ internal class RoutingStep(private val routingSystem: RoutingSystem) : PipelineS
                     return
                 }
             }
+            else -> Unit
         }
         context.nextInbound(msg)
     }

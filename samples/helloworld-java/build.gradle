@@ -1,0 +1,15 @@
+/*
+ Copyright (C) 2015 - 2019 Electronic Arts Inc.  All rights reserved.
+ This file is part of the Orbit Project <https://www.orbit.cloud>.
+ See license in LICENSE.
+ */
+
+apply plugin: "application"
+
+mainClassName = "orbit.helloworld.App"
+
+dependencies {
+    implementation(project(":src:framework:orbit-runtime"))
+
+    implementation("org.slf4j:slf4j-simple:$slf4jVersion")
+}

@@ -96,8 +96,7 @@ internal class ExecutionHandle(
     private suspend fun onInvoke(invocation: AddressableInvocation): Any? {
         lastActivityAtomic.set(clock.currentTime)
         try {
-            val rawResult = invocation.method.invoke(instance, *invocation.args)
-            return DeferredWrappers.wrapCall(rawResult).await()
+           return MethodInvoker.invokeDeferred(instance, invocation.method, invocation.args).await()
         } catch (ite: InvocationTargetException) {
             throw ite.targetException
         } catch (t: Throwable) {

@@ -10,21 +10,20 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.asDeferred
 import java.lang.reflect.Method
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
 internal object DeferredWrappers {
     private val supportedWrappers = listOf(
-        CompletableFuture::class.java,
+        CompletionStage::class.java,
         Deferred::class.java
     )
 
-    fun canHandle(clazz: Class<*>): Boolean = supportedWrappers.count { clazz.isAssignableFrom(it) } > 0
+    fun canHandle(clazz: Class<*>): Boolean = supportedWrappers.count { it.isAssignableFrom(clazz) } > 0
 
     fun wrapReturn(deferred: Deferred<*>, method: Method): Any =
         when {
-            method.returnType.isAssignableFrom(CompletionStage::class.java) -> deferred.asCompletableFuture()
-            method.returnType.isAssignableFrom(Deferred::class.java) -> deferred
+            CompletionStage::class.java.isAssignableFrom(method.returnType) -> deferred.asCompletableFuture()
+            Deferred::class.java.isAssignableFrom(method.returnType) -> deferred
             else -> {
                 throw IllegalArgumentException("No async wrapper for ${method.returnType} found")
             }
@@ -32,7 +31,7 @@ internal object DeferredWrappers {
 
     fun wrapCall(result: Any): Deferred<*> =
         when (result) {
-            is CompletableFuture<*> -> result.asDeferred()
+            is CompletionStage<*> -> result.asDeferred()
             is Deferred<*> -> result
             else -> {
                 throw IllegalArgumentException("No async wrapper for ${result.javaClass} found")

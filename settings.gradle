@@ -19,5 +19,7 @@ include(
 )
 
 include(
-        ":samples:helloworld"
+        ":samples:helloworld",
+        ":samples:helloworld-java"
+
 )
