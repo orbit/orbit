@@ -8,6 +8,18 @@ At any time an actor may be active or inactive. Usually the state of an inactive
 
 Actors are deactivated based on timeout and on server resource usage.
 
+## Keys
+
+Like all Addressables, every actor in Orbit has a [key](addressables.md#keys). Additionally, to ensure they are type safe every actor interface must choose only one key type, this is achieved by extending one of the following actor interfaces.
+
+| Actor Interface | JDK Type | Orbit Type |
+| :--- | :--- | :--- |
+| ActorWithNoKey | N/A | NoKey |
+| ActorWithStringKey | String | StringKey |
+| ActorWithInt32Key | Integer | Int32Key |
+| ActorWithInt64Key | Long | Int64Key |
+| ActorWithGuidKey | UUID | GuidKey |
+
 ## Runtime Model
 
 Orbit guarantees that only one activation of an actor with a given identity can exist at any one time in the cluster by default. As such, developers do not need to be concerned about keeping multiple activations/instances of an actor synchronized with one another.

@@ -151,3 +151,15 @@ class LifecycleEventActorImpl : LifecycleEventActor, AbstractActor() {
 
 These methods must return asynchronous results as specified earlier in this document. The return value is ignored.
 
+## Keys
+
+Every addressable in Orbit has a unique key of one of the following types which identifies it.
+
+| Orbit Type | JDK Type |
+| :--- | :--- |
+| NoKey | _N/A_ |
+| StringKey | String |
+| Int32Key | Integer |
+| Int64Key | Long |
+| GuidKey | UUID |
+
