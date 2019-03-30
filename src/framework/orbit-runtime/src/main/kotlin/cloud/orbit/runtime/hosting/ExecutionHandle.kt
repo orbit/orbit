@@ -11,15 +11,13 @@ import cloud.orbit.common.logging.debug
 import cloud.orbit.common.logging.logger
 import cloud.orbit.common.time.Clock
 import cloud.orbit.common.time.stopwatch
-import cloud.orbit.core.remoting.AbstractAddressable
-import cloud.orbit.core.remoting.Addressable
-import cloud.orbit.core.remoting.AddressableInvocation
-import cloud.orbit.core.remoting.AddressableReference
+import cloud.orbit.core.remoting.*
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Completion
 import cloud.orbit.runtime.remoting.AddressableImplDefinition
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
+import cloud.orbit.runtime.stage.Stage
 import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
@@ -37,6 +35,7 @@ internal class ExecutionHandle(
     private val clock: Clock by componentProvider.inject()
     private val supervisorScope: SupervisorScope by componentProvider.inject()
     private val stageConfig: StageConfig by componentProvider.inject()
+    private val stage: Stage by componentProvider.inject()
 
     private val logger by logger()
 
@@ -49,8 +48,9 @@ internal class ExecutionHandle(
 
     init {
         if (instance is AbstractAddressable) {
-            instance.context = AbstractAddressable.AddressableContext(
-                reference = reference
+            instance.context = AddressableContext(
+                reference = reference,
+                runtime = stage
             )
         }
     }
