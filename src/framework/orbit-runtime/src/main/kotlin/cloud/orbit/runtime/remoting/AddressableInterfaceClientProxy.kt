@@ -40,10 +40,10 @@ internal class AddressableInterfaceClientProxy(
 
 internal class AddressableInterfaceClientProxyFactory(
     private val pipelineSystem: PipelineSystem,
-    private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary
+    private val definitionDirectory: AddressableDefinitionDirectory
 ) {
     fun <T : Addressable> getReference(interfaceClass: Class<T>, key: Key): T {
-        val interfaceDefinition = interfaceDefinitionDictionary.getOrCreate(interfaceClass)
+        val interfaceDefinition = definitionDirectory.getOrCreateInterfaceDefinition(interfaceClass)
 
         val invocationHandler = AddressableInterfaceClientProxy(
             pipelineSystem = pipelineSystem,

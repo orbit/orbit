@@ -189,7 +189,7 @@ configure(publish) {
                 String publishUrl = "$buildDir/repo"
                 if (project.properties["remotePublish"]) {
 
-                    if(!canRemotePublish) throw new GradleException("Cannot remote publish with this JDK")
+                    if (!canRemotePublish) throw new GradleException("Cannot remote publish with this JDK")
 
                     publishUrl = project.properties["publish.url"] ?: publishUrl
                     credentials {
@@ -209,7 +209,7 @@ configure(publish) {
                 artifact sourcesJar
                 artifact dokkaHtmlJar
 
-                if(canRemotePublish) {
+                if (canRemotePublish) {
                     artifact dokkaJavadocJar
                 }
 

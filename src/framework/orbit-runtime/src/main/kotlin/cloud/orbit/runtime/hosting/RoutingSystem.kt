@@ -15,21 +15,21 @@ import cloud.orbit.core.net.NodeStatus
 import cloud.orbit.core.remoting.AddressableReference
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.NetSystem
+import cloud.orbit.runtime.remoting.AddressableDefinitionDirectory
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
-import cloud.orbit.runtime.remoting.AddressableInterfaceDefinitionDictionary
 import java.util.concurrent.ConcurrentHashMap
 
 internal class RoutingSystem(
     private val netSystem: NetSystem,
     private val directorySystem: DirectorySystem,
-    private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary,
+    private val definitionDirectory: AddressableDefinitionDirectory,
     private val componentProvider: ComponentProvider
 ) {
     private val logger by logger()
     private val routingStrategies = ConcurrentHashMap<Class<out RoutingStrategy>, RoutingStrategy>()
 
     suspend fun routeMessage(reference: AddressableReference, existingTarget: NetTarget?): NetTarget {
-        val interfaceDefinition = interfaceDefinitionDictionary.getOrCreate(reference.interfaceClass)
+        val interfaceDefinition = definitionDirectory.getOrCreateInterfaceDefinition(reference.interfaceClass)
         var netTarget = existingTarget
 
         if (interfaceDefinition.routing.isRouted) {
@@ -73,7 +73,7 @@ internal class RoutingSystem(
         }
 
     suspend fun canHandleLocally(reference: AddressableReference): Boolean {
-        val interfaceDefinition = interfaceDefinitionDictionary.getOrCreate(reference.interfaceClass)
+        val interfaceDefinition = definitionDirectory.getOrCreateInterfaceDefinition(reference.interfaceClass)
 
         return if (interfaceDefinition.routing.persistentPlacement) {
             val currentLocation = directorySystem.locate(reference)

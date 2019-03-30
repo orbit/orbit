@@ -9,21 +9,21 @@ package cloud.orbit.runtime.hosting
 import cloud.orbit.common.logging.logger
 import cloud.orbit.common.time.Clock
 import cloud.orbit.core.remoting.Addressable
+import cloud.orbit.core.remoting.AddressableClass
 import cloud.orbit.core.remoting.AddressableInvocation
 import cloud.orbit.core.remoting.AddressableReference
-import cloud.orbit.runtime.capabilities.CapabilitiesScanner
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Completion
 import cloud.orbit.runtime.pipeline.PipelineSystem
+import cloud.orbit.runtime.remoting.AddressableDefinitionDirectory
+import cloud.orbit.runtime.remoting.AddressableImplDefinition
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
-import cloud.orbit.runtime.remoting.AddressableInterfaceDefinitionDictionary
 import cloud.orbit.runtime.stage.StageConfig
 import java.util.concurrent.ConcurrentHashMap
 
 internal class ExecutionSystem(
     private val componentProvider: ComponentProvider,
-    private val capabilitiesScanner: CapabilitiesScanner,
-    private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary,
+    private val definitionDirectory: AddressableDefinitionDirectory,
     private val clock: Clock,
     private val stageConfig: StageConfig,
     private val directorySystem: DirectorySystem,
@@ -34,14 +34,14 @@ internal class ExecutionSystem(
     private val logger by logger()
 
     suspend fun handleInvocation(invocation: AddressableInvocation, completion: Completion) {
-        val definition =
-            interfaceDefinitionDictionary.getOrCreate(invocation.reference.interfaceClass)
+        val interfaceDefinition =
+            definitionDirectory.getOrCreateInterfaceDefinition(invocation.reference.interfaceClass)
         var handle = activeAddressables[invocation.reference]
 
         if (handle == null) {
             if (routingSystem.canHandleLocally(invocation.reference)) {
-                if (definition.lifecycle.autoActivate) {
-                    handle = activate(invocation.reference, definition)
+                if (interfaceDefinition.lifecycle.autoActivate) {
+                    handle = activate(invocation.reference, interfaceDefinition)
                 }
             } else {
                 logger.warn("Received invocation which can no longer be handled locally. Rerouting... $invocation")
@@ -50,7 +50,7 @@ internal class ExecutionSystem(
         }
 
         if (handle == null) {
-            throw IllegalStateException("No active addressable found for $definition")
+            throw IllegalStateException("No active addressable found for $interfaceDefinition")
         }
 
         // Call
@@ -60,7 +60,7 @@ internal class ExecutionSystem(
     suspend fun onTick() {
         val tickTime = clock.currentTime
         activeAddressables.forEach { (_, handle) ->
-            if (handle.definition.lifecycle.autoDeactivate) {
+            if (handle.interfaceDefinition.lifecycle.autoDeactivate) {
                 if (tickTime - handle.lastActivity > stageConfig.timeToLiveMillis) {
                     deactivate(handle)
                 }
@@ -70,45 +70,46 @@ internal class ExecutionSystem(
 
     private suspend fun activate(
         reference: AddressableReference,
-        definition: AddressableInterfaceDefinition
+        interfaceDefinition: AddressableInterfaceDefinition
     ): ExecutionHandle {
-        val handle = getOrCreateAddressable(reference, definition)
-        if (handle.definition.routing.persistentPlacement) {
+        val implDefinition = definitionDirectory.getImplDefinition(interfaceDefinition.interfaceClass)
+        val handle = getOrCreateAddressable(reference, implDefinition)
+        if (handle.interfaceDefinition.routing.persistentPlacement) {
             directorySystem.localActivation(handle.reference)
         }
         handle.activate().await()
         return handle
     }
 
-    private suspend fun invoke(handle: ExecutionHandle, invocation: AddressableInvocation, completion: Completion) {
+    private fun invoke(handle: ExecutionHandle, invocation: AddressableInvocation, completion: Completion) {
         handle.invoke(invocation, completion)
     }
 
     private suspend fun deactivate(handle: ExecutionHandle) {
         handle.deactivate().await()
         activeAddressables.remove(handle.reference)
-        if (handle.definition.routing.persistentPlacement) {
+        if (handle.interfaceDefinition.routing.persistentPlacement) {
             directorySystem.localDeactivation(handle.reference)
         }
     }
 
     private fun getOrCreateAddressable(
         reference: AddressableReference,
-        definition: AddressableInterfaceDefinition
+        implDefinition: AddressableImplDefinition
     ): ExecutionHandle =
         activeAddressables.getOrPut(reference) {
-            val newInstance = createInstance(reference)
+            val newInstance = createInstance(implDefinition.implClass)
             ExecutionHandle(
                 componentProvider = componentProvider,
                 instance = newInstance,
                 reference = reference,
-                definition = definition
+                interfaceDefinition = implDefinition.interfaceDefinition,
+                implDefinition = implDefinition
             )
         }
 
-    private fun createInstance(reference: AddressableReference): Addressable {
-        val newInstanceType = capabilitiesScanner.interfaceLookup.getValue(reference.interfaceClass)
-        return newInstanceType.getDeclaredConstructor().newInstance()
+    private fun createInstance(addressableClass: AddressableClass): Addressable {
+        return addressableClass.getDeclaredConstructor().newInstance()
     }
 }
 

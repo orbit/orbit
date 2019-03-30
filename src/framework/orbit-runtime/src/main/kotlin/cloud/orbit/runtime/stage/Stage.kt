@@ -26,8 +26,8 @@ import cloud.orbit.runtime.hosting.ResponseTrackingSystem
 import cloud.orbit.runtime.hosting.RoutingSystem
 import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.pipeline.PipelineSystem
+import cloud.orbit.runtime.remoting.AddressableDefinitionDirectory
 import cloud.orbit.runtime.remoting.AddressableInterfaceClientProxyFactory
-import cloud.orbit.runtime.remoting.AddressableInterfaceDefinitionDictionary
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.asCompletableFuture
 
@@ -54,7 +54,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
     private val netSystem: NetSystem by componentProvider.inject()
     private val capabilitiesScanner: CapabilitiesScanner by componentProvider.inject()
-    private val interfaceDefinitionDictionary: AddressableInterfaceDefinitionDictionary by componentProvider.inject()
+    private val definitionDirectory: AddressableDefinitionDirectory by componentProvider.inject()
     private val pipelineSystem: PipelineSystem by componentProvider.inject()
     private val executionSystem: ExecutionSystem by componentProvider.inject()
 
@@ -82,7 +82,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
             // Remoting
             definition<AddressableInterfaceClientProxyFactory>()
-            definition<AddressableInterfaceDefinitionDictionary>()
+            definition<AddressableDefinitionDirectory>()
 
             // Pipeline
             definition<PipelineSystem>()
@@ -187,7 +187,10 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
         capabilitiesScanner.scan(*stageConfig.packages.toTypedArray())
         val capabilities = capabilitiesScanner.generateNodeCapabilities()
         netSystem.localNodeManipulator.updateCapabiltities(capabilities)
-        interfaceDefinitionDictionary.precacheDefinitions(capabilitiesScanner.addressableInterfaces)
+        definitionDirectory.setupDefinition(
+            interfaceClasses = capabilitiesScanner.addressableInterfaces,
+            impls = capabilitiesScanner.interfaceLookup
+        )
 
         // Start pipeline
         pipelineSystem.start()

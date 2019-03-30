@@ -17,9 +17,25 @@ internal data class AddressableInterfaceDefinition(
     val routing: Routing,
     val lifecycle: Lifecycle,
     val executionModel: ExecutionModel,
-    val methods: Map<Method, AddressableMethodDefinition>
+    val methods: Map<Method, AddressableInterfaceMethodDefinition>
 )
 
-internal data class AddressableMethodDefinition(
+internal data class AddressableInterfaceMethodDefinition(
     val method: Method
+)
+
+internal data class AddressableImplDefinition(
+    val implClass: AddressableClass,
+    val interfaceClass: AddressableClass,
+    val interfaceDefinition: AddressableInterfaceDefinition,
+    val methods: Map<Method, AddressableImplMethodDefinition>,
+    val onActivateMethod: AddressableImplMethodDefinition?,
+    val onDeactivateMethod: AddressableImplMethodDefinition?
+
+)
+
+internal data class AddressableImplMethodDefinition(
+    val method: Method,
+    val isOnActivate: Boolean,
+    val isOnDeactivate: Boolean
 )

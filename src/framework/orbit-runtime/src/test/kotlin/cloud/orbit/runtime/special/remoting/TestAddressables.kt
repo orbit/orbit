@@ -51,3 +51,12 @@ interface InheritedValidAddressable : NonConcreteAddressable
 interface ValidMethodsAddressable : Addressable {
     fun getName(): Deferred<String>
 }
+
+@Routing(isRouted = true, persistentPlacement = true, forceRouting = true, routingStrategy = RoutingStrategy::class)
+@Lifecycle(autoActivate = true, autoDeactivate = true)
+@ExecutionModel(ExecutionStrategy.SAFE)
+interface InvalidMethodsAddressable : Addressable {
+    fun getName(): String
+}
+
+class BasicValidAddressableClass : InheritedValidAddressable

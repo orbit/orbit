@@ -18,6 +18,7 @@ import cloud.orbit.core.remoting.AddressableReference
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Completion
+import cloud.orbit.runtime.remoting.AddressableImplDefinition
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
 import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CompletableDeferred
@@ -29,7 +30,8 @@ import java.util.concurrent.atomic.AtomicLong
 internal class ExecutionHandle(
     val instance: Addressable,
     val reference: AddressableReference,
-    val definition: AddressableInterfaceDefinition,
+    val interfaceDefinition: AddressableInterfaceDefinition,
+    val implDefinition: AddressableImplDefinition,
     componentProvider: ComponentProvider
 ) {
     private val clock: Clock by componentProvider.inject()
@@ -73,13 +75,17 @@ internal class ExecutionHandle(
         }
     }
 
-    private fun onActivate() {
+    private suspend fun onActivate() {
         logger.debug { "Activating $reference..." }
         val (elapsed, _) = stopwatch(clock) {
             if (instance is ActivatedAddressable) {
                 instance.context = ActivatedAddressable.AddressableContext(
                     reference = reference
                 )
+            }
+
+            implDefinition.onActivateMethod?.also {
+                DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
             }
         }
         logger.debug { "Activated $reference in ${elapsed}ms. " }
@@ -97,9 +103,13 @@ internal class ExecutionHandle(
         }
     }
 
-    private fun onDeactivate() {
+    private suspend fun onDeactivate() {
         logger.debug { "Deactivating $reference..." }
         val (elapsed, _) = stopwatch(clock) {
+            implDefinition.onDeactivateMethod?.also {
+                DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
+            }
+
             worker.cancel()
         }
         logger.debug { "Deactivated $reference in ${elapsed}ms." }
