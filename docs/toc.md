@@ -32,3 +32,7 @@
 
 * [Overview](dsl/overview.md)
 
+## Contributing
+
+* [Overview](contributing/overview.md)
+
