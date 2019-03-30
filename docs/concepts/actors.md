@@ -96,6 +96,8 @@ Once you have created an Actor type, you must offer an implementation of that Ac
 
 Actors are called via a proxy. A proxy is created via the Orbit runtime context, typically [Stage](stage.md) or [AddressableContext](addressables.md#context).
 
+### Accessing the Proxy Factory
+
 {% code-tabs %}
 {% code-tabs-item title="Kotlin" %}
 ```kotlin
@@ -116,6 +118,42 @@ stage.getActorProxyFactory().getReference(Greeter.class);
 
 // From an Addressable
 getContext().getRuntime().getActorProxyFactory().getReference(Greeter.class);
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+### Type Safe
+
+The identity [key](actors.md#keys) of an actor is specified by the actor interface. This ensures that access is type safe.
+
+{% code-tabs %}
+{% code-tabs-item title="Kotlin" %}
+```kotlin
+interface MyNoKey : ActorWithNoKey
+interface MyStringKey : ActorWithStringKey
+interface MyIntKey : ActorWithInt32Key
+
+actorProxyFactory.getReference<MyNoKey>() // Valid
+actorProxyFactory.getReference<MyNoKey>("beep") // Compile error
+actorProxyFactory.getReference<MyStringKey>("beep") // Valid
+actorProxyFactory.getReference<MyIntKey>(1234) // Valid
+actorProxyFactory.getReference<MyStringKey>(1234) // Compile error
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+{% code-tabs %}
+{% code-tabs-item title="Java" %}
+```java
+public interface MyNoKey extends ActorWithNoKey {}
+public interface MyStringKey extends ActorWithStringKey {}
+public interface MyIntKey extends ActorWithInt32Key {}
+
+getActorProxyFactory().getReference(MyNoKey.class); // Valid
+getActorProxyFactory().getReference(MyNoKey.class, "beep"); // Compile error
+getActorProxyFactory().getReference(MyStringKey.class, "beep"); // Valid
+getActorProxyFactory().getReference(MyIntKey.class, 1234); // Compile error
+getActorProxyFactory().getReference(MyStringKey.class, 123); // Compile error
 ```
 {% endcode-tabs-item %}
 {% endcode-tabs %}
