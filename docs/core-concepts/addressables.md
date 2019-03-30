@@ -8,7 +8,7 @@ Although it is possible to implement a raw Addressable manually, this is an adva
 
 ## Asynchronous Return Types
 
-Addressables must only contain methods which asynchronous types \(such as promises\).  
+Addressables must only contain methods which return asynchronous types \(such as promises\).  
 The following return types are currently supported.
 
 | Type | For | Implemented In |
