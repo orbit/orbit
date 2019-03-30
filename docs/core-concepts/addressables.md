@@ -127,7 +127,7 @@ class IdentityActorImpl : IdentityActor, AbstractActor() {
 {% endcode-tabs-item %}
 {% endcode-tabs %}
 
-#### Lifecycle Events
+### Lifecycle Events
 
 Implementations of managed addressables may use lifecycle events. A  method in each implementation may be annotated with `@OnActivate` or `@OnDeactivate` and it will automatically be invokved by Orbit.
 
