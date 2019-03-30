@@ -152,7 +152,7 @@ public interface MyIntKey extends ActorWithInt32Key {}
 getActorProxyFactory().getReference(MyNoKey.class); // Valid
 getActorProxyFactory().getReference(MyNoKey.class, "beep"); // Compile error
 getActorProxyFactory().getReference(MyStringKey.class, "beep"); // Valid
-getActorProxyFactory().getReference(MyIntKey.class, 1234); // Compile error
+getActorProxyFactory().getReference(MyIntKey.class, 1234); // Valid
 getActorProxyFactory().getReference(MyStringKey.class, 123); // Compile error
 ```
 {% endcode-tabs-item %}
