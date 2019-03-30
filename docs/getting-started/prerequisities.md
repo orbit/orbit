@@ -18,11 +18,17 @@ The following JDKs are currently supported by the Orbit development team. Other 
 
 ### Build Tool
 
-* [Gradle](https://gradle.org/)
-* [Maven](http://maven.apache.org/)
+You will need one of the following tools to manage the Orbit dependencies.
+
+| Tool | Minimum Version |
+| :--- | :--- |
+| [Gradle](https://gradle.org/) | 5.0 |
+| [Maven](http://maven.apache.org/) | 3.6 |
 
 ## Recommended
 
-* Git is required if you want to build Orbit locally
-* IntelliJ IDEA is our recommended IDE
+| Tool | Reason |
+| :--- | :--- |
+| [Git](https://git-scm.com/) | To sync and build Orbit locally |
+| [IntelliJ IDEA](https://www.jetbrains.com/idea/) | Our recommended IDE for Orbit development |
 
