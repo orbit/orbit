@@ -40,7 +40,7 @@ class GreeterImpl : Greeter {
 }
 ```
 
-If you wish an addressable to be purely abstract, you must annotate it with the @NonConcrete annotation.
+If you wish an addressable to be purely abstract, you must annotate it with the @NonConcrete annotation. This is how interfaces such as Actor may be implemented more than once but never directly.
 
 ```kotlin
 @NonConcrete
@@ -51,7 +51,7 @@ interface Consumer : Observable {
 
 ## Execution Model
 
-By default, addressable have a strict execution model. 
+By default, addressables have a strict execution model. 
 
 Orbit guarantees that calls to addressables can never be processed in parallel. This means that if two clients call an addressable at the same time, they are guaranteed to be processed serially \(one after the other\) where one call completes before the next one starts.
 
