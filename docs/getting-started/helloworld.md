@@ -1,14 +1,28 @@
-# Hello World - Kotlin
+# Hello World
 
 ## Actor Interface
 
 In Orbit all actors must have an interface, below we’ll create a very simple actor interface.
 
+{% code-tabs %}
+{% code-tabs-item title="Kotlin" %}
 ```kotlin
 interface Greeter : ActorWithNoKey {
     fun greet(name: String): Deferred<String>
+}
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+{% code-tabs %}
+{% code-tabs-item title="Java" %}
+```java
+interface Greeter extends ActorWithNoKey {
+    CompletableFuture<String> greet(String name);
 }
 ```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
 
 * Actor interfaces are standard interfaces with special constraints.
 * All Actor interfaces must extend an Actor type.
@@ -19,6 +33,8 @@ interface Greeter : ActorWithNoKey {
 
 Once you have an actor interface in place, the final step to complete the actor is to create an actor implementation.
 
+{% code-tabs %}
+{% code-tabs-item title="Kotlin" %}
 ```kotlin
 class GreeterActor : Greeter, AbstractActor() {
     private val logger by logger()
@@ -29,6 +45,24 @@ class GreeterActor : Greeter, AbstractActor() {
     }
 }
 ```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+{% code-tabs %}
+{% code-tabs-item title="Java" %}
+```java
+public class GreeterActor implements Greeter extends AbstractActor {
+    private static Logger logger = getLogger(GreeterActor::class);
+    
+    @Override
+    public CompletableFuture<String> greet(String name) {
+        logger.info("I was called by: " + name + ".");
+        return CompletableFuture.completedFuture("Hello " + name + "!");
+    }
+}
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
 
 * An actor implementation is a standard class.
 * All actors must extend AbstractActor.
@@ -39,6 +73,8 @@ class GreeterActor : Greeter, AbstractActor() {
 
 The final step to get a working example is for us to actually use the actor.
 
+{% code-tabs %}
+{% code-tabs-item title="Kotlin" %}
 ```kotlin
 fun main() {
     val logger = getLogger("main")
@@ -53,6 +89,25 @@ fun main() {
     }
 }
 ```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+{% code-tabs %}
+{% code-tabs-item title="Java" %}
+```java
+public static void main(String[] args) {
+    Logger logger = getLogger("main");
+    Stage stage = new Stage();
+
+    stage.start().join();
+    Greeter greeter = stage.getActorProxyFactory().getReference(Greeter.class);
+    String greeting = greeter.greet("Joe").join(); 
+    logger.info("Response: " + greeting);
+    stage.stop();
+}
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
 
 * We create an orbit execution environment known as a stage.
 * We get a reference to the actor.
