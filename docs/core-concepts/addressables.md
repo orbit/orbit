@@ -111,7 +111,7 @@ abstract class AbstractActor : AbstractAddressable()
 
 class IdentityActorImpl : IdentityActor, AbstractActor() {
     override fun identity(): Deferred<String> {
-        return this.context.reference.toString()
+        return context.reference.toString()
     }
 }
 ```
