@@ -16,7 +16,7 @@ By default, Orbit also guarantees that calls to actors can never be processed in
 
 ## Keys
 
-Like all addressables, every actor in Orbit has a [key](addressables.md#keys). Additionally, to ensure they are type safe every actor interface must choose only one key type, this is achieved by extending one of the following actor interfaces.
+Like all addressables, every actor in Orbit has a [key](addressables.md#keys). Additionally, to ensure they are type safe every actor interface must choose only one key type, this is achieved by extending one of the following actor interfaces. An [example](actors.md#type-safe) of how this works can be seen below.
 
 | Actor Interface | JDK Type | Orbit Type |
 | :--- | :--- | :--- |
@@ -124,7 +124,7 @@ getContext().getRuntime().getActorProxyFactory().getReference(Greeter.class);
 
 ### Type Safe
 
-The identity [key](actors.md#keys) of an actor is specified by the actor interface. This ensures that access is type safe.
+The identity [key](actors.md#keys) of an actor is specified by the actor interface. This ensures that access is type safe at compile time.
 
 {% code-tabs %}
 {% code-tabs-item title="Kotlin" %}

@@ -113,7 +113,8 @@ abstract class AbstractActor : AbstractAddressable()
 
 class IdentityActorImpl : IdentityActor, AbstractActor() {
     override fun identity(): Deferred<String> {
-        return context.reference.toString()
+        val id = context.reference.toString()
+        return context.actorProxyFactory.getReference<IdentityResolver>().resolve(id)
     }
 }
 ```
@@ -150,7 +151,7 @@ class LifecycleEventActorImpl : LifecycleEventActor, AbstractActor() {
 {% endcode-tabs-item %}
 {% endcode-tabs %}
 
-These methods must return asynchronous results as specified earlier in this document. The return value is ignored.
+These methods must return [asynchronous](addressables.md#asynchronous-return-types) results as with other methods which are called by Orbit.
 
 ## Keys
 
