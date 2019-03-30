@@ -11,18 +11,9 @@
 ## Core Concepts
 
 * [Addressables](core-concepts/addressables.md)
-
-## Actors
-
-* [Overview](actors/overview.md)
-
-## Observables
-
-* [Overview](observables/overview.md)
-
-## Streams
-
-* [Overview](streams/overview.md)
+* [Actors](core-concepts/actors.md)
+* [Observables](core-concepts/observables.md)
+* [Streams](core-concepts/streams.md)
 
 ## Clustering
 
