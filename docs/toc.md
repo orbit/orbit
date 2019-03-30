@@ -10,6 +10,7 @@
 
 ## Core Concepts
 
+* [Stage](core-concepts/stage.md)
 * [Addressables](core-concepts/addressables.md)
 * [Actors](core-concepts/actors.md)
 * [Observables](core-concepts/observables.md)
