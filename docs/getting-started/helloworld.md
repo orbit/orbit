@@ -128,6 +128,5 @@ If all went well you should now be able to run your application, the output shou
 [main] INFO main - Response: Hello Joe!
 [orbit-cpu-9] INFO cloud.orbit.runtime.stage.Stage - Orbit stopping...
 [orbit-cpu-1] INFO cloud.orbit.runtime.stage.Stage - Orbit stopped in 8ms.
-
 ```
 

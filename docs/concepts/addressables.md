@@ -145,6 +145,7 @@ class LifecycleEventActorImpl : LifecycleEventActor, AbstractActor() {
         // Do something
         return CompletableDeferred(Unit)
     }
+}
 ```
 {% endcode-tabs-item %}
 {% endcode-tabs %}
