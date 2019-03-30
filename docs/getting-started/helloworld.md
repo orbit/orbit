@@ -51,9 +51,9 @@ class GreeterActor : Greeter, AbstractActor() {
 {% code-tabs %}
 {% code-tabs-item title="Java" %}
 ```java
-public class GreeterActor implements Greeter extends AbstractActor {
-    private static Logger logger = getLogger(GreeterActor::class);
-    
+public class GreeterActor extends AbstractActor implements Greeter  {
+    private static Logger logger = Logging.getLogger(GreeterActor.class);
+
     @Override
     public CompletableFuture<String> greet(String name) {
         logger.info("I was called by: " + name + ".");
@@ -96,15 +96,14 @@ fun main() {
 {% code-tabs-item title="Java" %}
 ```java
 public static void main(String[] args) {
-    Logger logger = getLogger("main");
-    Stage stage = new Stage();
-
-    stage.start().join();
-    Greeter greeter = stage.getActorProxyFactory().getReference(Greeter.class);
-    String greeting = greeter.greet("Joe").join(); 
-    logger.info("Response: " + greeting);
-    stage.stop();
-}
+        Logger logger = Logging.getLogger("main");
+        Stage stage = new Stage();
+        stage.start().join();
+        Greeter greeter = stage.getActorProxyFactory().getReference(Greeter.class);
+        String greeting = greeter.greet("Joe").join();
+        logger.info("Response: " + greeting);
+        stage.stop();
+    }
 ```
 {% endcode-tabs-item %}
 {% endcode-tabs %}
