@@ -101,3 +101,56 @@ By default, addressables have a strict execution model.
 
 Orbit guarantees that calls to addressables can never be processed in parallel. This means that if two clients call an addressable at the same time, they are guaranteed to be processed serially \(one after the other\) where one call completes before the next one starts.
 
+## Lifecycle
+
+The lifecycle of an addressable can be managed by Orbit \(such as with Actors\) or manually by a user \(such as with Observers\).
+
+### Orbit Managed Lifecycle
+
+When the lifecycle is managed by Orbit there are certain additional features available that are not available for custom lifecycle managed addressables.
+
+#### ActivatedAddressable
+
+Implementations of managed addressables may extend ActivatedAddressable which gives access to the `context` member variable, this exposes certain informattion about the addressable and runtime that would otherwise not be available.
+
+The following is an example of how AbstractActor is implemented in Orbit.
+
+{% code-tabs %}
+{% code-tabs-item title="Kotlin" %}
+```kotlin
+abstract class AbstractActor : ActivatedAddressable()
+
+class IdentityActorImpl : IdentityActor, AbstractActor() {
+    override fun identity(): Deferred<String> {
+        return this.context.reference.toString()
+    }
+}
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+#### Lifecycle Events
+
+Implementations of managed addressables may use lifecycle events. 
+
+{% code-tabs %}
+{% code-tabs-item title="Kotlin" %}
+```kotlin
+class LifecycleEventActorImpl : LifecycleEventActor, AbstractActor() {
+    @OnActivate
+    fun onActivate(): Deferred<Unit> {
+        // Do something
+        return CompletableDeferred(Unit)
+    }
+
+    @OnDeactivate
+    fun onDeactivate(): Deferred<Unit> {
+        // Do something
+        return CompletableDeferred(Unit)
+    }
+```
+{% endcode-tabs-item %}
+{% endcode-tabs %}
+
+These events must return asynchronous methods as specified earlier in this document. The return value is ignored.
+
