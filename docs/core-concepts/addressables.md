@@ -4,8 +4,6 @@
 
 Any object which can be addressed remotely in Orbit is known as an **Addressable.** This includes [**Actors**](actors.md), [**Observables**](observables.md) and [**Streams**](streams.md). 
 
-Although it is possible to create a raw Addressable manually, this is an advanced topic. Typically you will extend a well known Addressable type such as Actor.
-
 ## Making an Object Addressable
 
 Any remotely addressable object must be represented by an interface that extends Addressable, this defines the protocol/contract for communicating with the addressable.
