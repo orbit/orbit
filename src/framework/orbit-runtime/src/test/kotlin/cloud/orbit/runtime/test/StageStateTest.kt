@@ -14,7 +14,6 @@ import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import java.lang.IllegalStateException
 
 class StageStateTest {
     @Test
@@ -64,7 +63,8 @@ class StageStateTest {
 
             stage.stop().await()
             stage.start().await()
-            actor.incrementCountAndGet().await() }
+            actor.incrementCountAndGet().await()
+        }
     }
 
     @Test

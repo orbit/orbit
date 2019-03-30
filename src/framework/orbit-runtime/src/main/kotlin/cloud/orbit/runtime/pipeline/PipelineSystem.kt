@@ -18,10 +18,12 @@ import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.net.MessageDirection
 import cloud.orbit.runtime.pipeline.steps.*
 import cloud.orbit.runtime.stage.StageConfig
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import java.lang.IllegalStateException
+import kotlinx.coroutines.launch
 
 internal class PipelineSystem(
     private val componentProvider: ComponentProvider
@@ -71,9 +73,11 @@ internal class PipelineSystem(
     }
 
     private fun writeMessage(msg: Message, direction: MessageDirection): CompletableDeferred<Any?> {
-        if(!this::pipelineChannel.isInitialized || pipelineChannel.isClosedForSend) {
-            throw IllegalStateException("The Orbit pipeline is not in a state to receive messages. " +
-                    "Did you start the Orbit stage?")
+        if (!this::pipelineChannel.isInitialized || pipelineChannel.isClosedForSend) {
+            throw IllegalStateException(
+                "The Orbit pipeline is not in a state to receive messages. " +
+                        "Did you start the Orbit stage?"
+            )
         }
 
         val completion = CompletableDeferred<Any?>()
