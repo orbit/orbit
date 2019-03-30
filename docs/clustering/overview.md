@@ -1,4 +1,4 @@
 # Overview
 
-Not available in Alpha.
+Not available in the current Orbit preview.
 
