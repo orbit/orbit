@@ -105,15 +105,13 @@ Orbit guarantees that calls to addressables can never be processed in parallel. 
 
 The lifecycle of an addressable can be managed by Orbit \(such as with Actors\) or manually by a user \(such as with Observers\).
 
-### Orbit Managed Lifecycle
+When the lifecycle is managed by Orbit there are certain additional features available that are not available for non-managed addressables.
 
-When the lifecycle is managed by Orbit there are certain additional features available that are not available for custom lifecycle managed addressables.
-
-#### ActivatedAddressable
+### ActivatedAddressable
 
 Implementations of managed addressables may extend ActivatedAddressable which gives access to the `context` member variable, this exposes certain informattion about the addressable and runtime that would otherwise not be available.
 
-The following is an example of how AbstractActor is implemented in Orbit.
+The following is an example of how AbstractActor is implemented in Orbit and what all actors gain as a result.
 
 {% code-tabs %}
 {% code-tabs-item title="Kotlin" %}
@@ -131,7 +129,7 @@ class IdentityActorImpl : IdentityActor, AbstractActor() {
 
 #### Lifecycle Events
 
-Implementations of managed addressables may use lifecycle events. 
+Implementations of managed addressables may use lifecycle events. A  method in each implementation may be annotated with `@OnActivate` or `@OnDeactivate` and it will automatically be invokved by Orbit.
 
 {% code-tabs %}
 {% code-tabs-item title="Kotlin" %}
@@ -152,5 +150,5 @@ class LifecycleEventActorImpl : LifecycleEventActor, AbstractActor() {
 {% endcode-tabs-item %}
 {% endcode-tabs %}
 
-These events must return asynchronous methods as specified earlier in this document. The return value is ignored.
+These methods must return asynchronous results as specified earlier in this document. The return value is ignored.
 
