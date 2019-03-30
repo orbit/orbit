@@ -45,7 +45,7 @@ The following return types are currently supported.
 
 ## Concrete Implementation
 
-For each addressable interface, **exactly one** addressable ****class must implement it.
+For each addressable interface, **exactly one** addressable class must implement it.
 
 {% code-tabs %}
 {% code-tabs-item title="Kotlin" %}
