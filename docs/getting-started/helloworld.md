@@ -51,7 +51,7 @@ class GreeterActor : Greeter, AbstractActor() {
 {% code-tabs %}
 {% code-tabs-item title="Java" %}
 ```java
-public class GreeterActor extends AbstractActor implements Greeter  {
+public class GreeterActor extends AbstractActor implements Greeter {
     private static Logger logger = Logging.getLogger(GreeterActor.class);
 
     @Override
