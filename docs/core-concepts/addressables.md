@@ -33,13 +33,12 @@ interface Greeter extends Observable {
 ## Asynchronous Return Types
 
 Addressables must only contain methods which return asynchronous types \(such as promises\).  
-The following return types are currently supported.
+The following return types \(and subtypes\) are currently supported.
 
-| Type | For | Implemented In |
-| :--- | :--- | :--- |
-| [Deferred](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-deferred/) | Kotlin | orbit-runtime |
-| [CompletableDeferred](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-completable-deferred/index.html) | Kotlin | orbit-runtime |
-| [CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html) | JDK8+ | orbit-runtime |
+| Main Type | Common Subtypes | For | Implemented In |
+| :--- | :--- | :--- | :--- |
+| [Deferred](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-deferred/) | [CompletableDeferred](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-completable-deferred/) | Kotlin | orbit-runtime |
+| [CompletionStage](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletionStage.html) | [CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html) | JDK8+ | orbit-runtime |
 
 ## Concrete Implementation
 
