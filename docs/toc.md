@@ -13,7 +13,7 @@
 * [Stage](concepts/stage.md)
 * [Addressables](concepts/addressables.md)
 * [Actors](concepts/actors.md)
-* [Observables](concepts/observables.md)
+* [Observers](concepts/observables.md)
 * [Streams](concepts/streams.md)
 * [Clustering](concepts/clustering.md)
 * [DSL](concepts/dsl.md)

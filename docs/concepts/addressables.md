@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Any object which can be addressed remotely in Orbit is known as an **Addressable.** This includes [**Actors**](actors.md), [**Observables**](observables.md) and [**Streams**](streams.md). 
+Any object which can be addressed remotely in Orbit is known as an **Addressable.** This includes [**Actors**](actors.md), [**Observers**](observables.md) and [**Streams**](streams.md). 
 
 ## Making an Object Addressable
 
@@ -13,7 +13,7 @@ Although it is possible to create a raw addressable manually, this is an advance
 {% code-tabs %}
 {% code-tabs-item title="Kotlin" %}
 ```kotlin
-interface Greeter : Observable {
+interface Greeter : Observer {
     fun greet(name: String): Deferred<String>
 }
 ```
@@ -23,7 +23,7 @@ interface Greeter : Observable {
 {% code-tabs %}
 {% code-tabs-item title="Java" %}
 ```java
-interface Greeter extends Observable {
+interface Greeter extends Observer {
     CompletableFuture<String> greet(String name);
 }
 ```
@@ -74,7 +74,7 @@ If you wish an addressable to be purely abstract, you must annotate it with the 
 {% code-tabs-item title="Kotlin" %}
 ```kotlin
 @NonConcrete
-interface Consumer : Observable {
+interface Consumer : Observer {
     fun consume(obj: Any?): Deferred<Unit>
 }
 ```
@@ -85,7 +85,7 @@ interface Consumer : Observable {
 {% code-tabs-item title="Java" %}
 ```java
 @NonConcrete
-interface Consumer extends Observable {
+interface Consumer extends Observer {
     CompletableFuture consume(Object obj);
 }
 ```
