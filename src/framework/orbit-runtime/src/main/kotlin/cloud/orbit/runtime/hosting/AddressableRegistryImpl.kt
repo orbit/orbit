@@ -30,12 +30,12 @@ internal class AddressableRegistryImpl(
         deregisterAddressableInternal(instance)
     }.asCompletableFuture()
 
-    override fun <T : Addressable> getReference(
+    override fun <T : Addressable> createProxy(
         interfaceClass: Class<T>,
         key: Key,
         target: NetTarget?
     ): T =
-        proxyFactory.getReference(interfaceClass, key, target)
+        proxyFactory.createProxy(interfaceClass, key, target)
 
 
     private suspend fun registerAddressableInternal(reference: AddressableReference, instance: Addressable) {

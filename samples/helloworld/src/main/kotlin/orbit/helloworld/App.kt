@@ -10,7 +10,7 @@ import cloud.orbit.common.logging.getLogger
 import cloud.orbit.common.logging.logger
 import cloud.orbit.core.actor.AbstractActor
 import cloud.orbit.core.actor.ActorWithNoKey
-import cloud.orbit.core.actor.getReference
+import cloud.orbit.core.actor.createProxy
 import cloud.orbit.runtime.stage.Stage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
@@ -37,7 +37,7 @@ fun main() {
 
     runBlocking {
         stage.start().await()
-        val greeter = stage.actorProxyFactory.getReference<Greeter>()
+        val greeter = stage.actorProxyFactory.createProxy<Greeter>()
         val greeting = greeter.greet("Joe").await()
         logger.info("Response: $greeting")
         stage.stop().await()

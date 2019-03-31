@@ -9,7 +9,7 @@ package cloud.orbit.runtime.test
 import cloud.orbit.common.exception.ResponseTimeoutException
 import cloud.orbit.common.time.TimeMs
 import cloud.orbit.core.actor.ActorWithNoKey
-import cloud.orbit.core.actor.getReference
+import cloud.orbit.core.actor.createProxy
 import cloud.orbit.core.annotation.OnActivate
 import cloud.orbit.core.annotation.OnDeactivate
 import cloud.orbit.runtime.util.StageBaseTest
@@ -75,7 +75,7 @@ class BasicTestActorImpl : BasicTestActorInterface {
 class BasicActorTest : StageBaseTest() {
     @Test
     fun `ensure onActivate runs`() {
-        val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+        val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
         val result = runBlocking {
             actor.getWasActivated().await()
         }
@@ -84,7 +84,7 @@ class BasicActorTest : StageBaseTest() {
 
     @Test
     fun `ensure onDeactivate runs`() {
-        val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+        val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
         runBlocking {
             wasDeactivated = false
             actor.incrementCountAndGet().await()
@@ -97,7 +97,7 @@ class BasicActorTest : StageBaseTest() {
     @Test
     fun `ensure basic echo has expected result`() {
         val echoMsg = "Hello Orbit!"
-        val echo = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+        val echo = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
         val result = runBlocking {
             echo.echo(echoMsg).await()
         }
@@ -106,7 +106,7 @@ class BasicActorTest : StageBaseTest() {
 
     @Test
     fun `ensure basic delay causes timeout`() {
-        val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+        val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
         assertThatThrownBy {
             runBlocking {
                 actor.waitFor(stageConfig.messageTimeoutMillis + 100).await()
@@ -116,8 +116,8 @@ class BasicActorTest : StageBaseTest() {
 
     @Test
     fun `ensure only one actor instance`() {
-        val actor1 = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
-        val actor2 = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+        val actor1 = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
+        val actor2 = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
         runBlocking {
             val call1 = actor1.incrementCountAndGet().await()
             val call2 = actor2.incrementCountAndGet().await()
@@ -127,7 +127,7 @@ class BasicActorTest : StageBaseTest() {
 
     @Test
     fun `ensure actor deactivates`() {
-        val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+        val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
         runBlocking {
             val call1 = actor.incrementCountAndGet().await()
             stage.clock.advanceTime(stageConfig.timeToLiveMillis * 2) // Make actor eligible for deactivation
@@ -139,7 +139,7 @@ class BasicActorTest : StageBaseTest() {
 
     @Test
     fun `ensure exception propagated`() {
-        val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+        val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
 
         assertThatThrownBy {
             runBlocking {

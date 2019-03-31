@@ -15,6 +15,6 @@ internal class ActorProxyFactoryImpl(
     private val addressableRegistry: AddressableRegistry
 ) :
     ActorProxyFactory {
-    override fun <T : Actor> getReferenceInternal(grainType: Class<T>, grainKey: Key): T =
-        addressableRegistry.getReference(grainType, grainKey)
+    override fun <T : Actor> createProxyInternal(grainType: Class<T>, grainKey: Key): T =
+        addressableRegistry.createProxy(grainType, grainKey)
 }

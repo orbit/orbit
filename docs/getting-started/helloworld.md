@@ -9,7 +9,8 @@ In Orbit all actors must have an interface, below we’ll create a very simple a
 ```kotlin
 interface Greeter : ActorWithNoKey {
     fun greet(name: String): Deferred<String>
-}
+}
+
 ```
 {% endcode-tabs-item %}
 {% endcode-tabs %}
@@ -17,7 +18,8 @@ interface Greeter : ActorWithNoKey {
 {% code-tabs %}
 {% code-tabs-item title="Java" %}
 ```java
-interface Greeter extends ActorWithNoKey {
+
+interface Greeter extends ActorWithNoKey {
     CompletableFuture<String> greet(String name);
 }
 ```
@@ -82,7 +84,7 @@ fun main() {
 
     runBlocking {
         stage.start().await()
-        val greeter = stage.actorProxyFactory.getReference<Greeter>()
+        val greeter = stage.actorProxyFactory.createProxy<Greeter>()
         val greeting = greeter.greet("Joe").await()
         logger.info("Response: $greeting")
         stage.stop().await()
@@ -99,7 +101,7 @@ public static void main(String[] args) {
         Logger logger = Logging.getLogger("main");
         Stage stage = new Stage();
         stage.start().join();
-        Greeter greeter = stage.getActorProxyFactory().getReference(Greeter.class);
+        Greeter greeter = stage.getActorProxyFactory().createProxy(Greeter.class);
         String greeting = greeter.greet("Joe").join();
         logger.info("Response: " + greeting);
         stage.stop();

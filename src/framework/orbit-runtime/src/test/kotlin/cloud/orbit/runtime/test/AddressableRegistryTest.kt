@@ -14,7 +14,7 @@ import cloud.orbit.core.hosting.RandomRouting
 import cloud.orbit.core.key.Key
 import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.Addressable
-import cloud.orbit.core.remoting.getReference
+import cloud.orbit.core.remoting.createProxy
 import cloud.orbit.runtime.util.StageBaseTest
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
@@ -49,7 +49,7 @@ class AddressableRegistryTest : StageBaseTest() {
     fun `ensure basic passes`() {
         val instance = RandomRoutingAddressableImpl()
         val proxy = stage.addressableRegistry
-            .getReference<RandomRoutingAddressable>(Key.NoKey, NetTarget.Unicast(stage.config.nodeIdentity))
+            .createProxy<RandomRoutingAddressable>(Key.NoKey, NetTarget.Unicast(stage.config.nodeIdentity))
 
         runBlocking {
             stage.addressableRegistry.registerAddressable(RandomRoutingAddressable::class.java, Key.NoKey, instance).await()
@@ -64,7 +64,7 @@ class AddressableRegistryTest : StageBaseTest() {
     fun `ensure random routing passes`() {
         val instance = RandomRoutingAddressableImpl()
         val proxy = stage.addressableRegistry
-            .getReference<RandomRoutingAddressable>(Key.NoKey)
+            .createProxy<RandomRoutingAddressable>(Key.NoKey)
 
         runBlocking {
             stage.addressableRegistry.registerAddressable(RandomRoutingAddressable::class.java, Key.NoKey, instance).await()
@@ -78,7 +78,7 @@ class AddressableRegistryTest : StageBaseTest() {
     @Test
     fun `ensure fails when not registered`() {
         val proxy = stage.addressableRegistry
-            .getReference<RandomRoutingAddressable>(Key.NoKey, NetTarget.Unicast(stage.config.nodeIdentity))
+            .createProxy<RandomRoutingAddressable>(Key.NoKey, NetTarget.Unicast(stage.config.nodeIdentity))
 
         assertThatThrownBy {
             runBlocking {
@@ -90,7 +90,7 @@ class AddressableRegistryTest : StageBaseTest() {
     @Test
     fun `ensure fails with no target`() {
         val proxy = stage.addressableRegistry
-            .getReference<NoRoutingAddressable>(Key.NoKey)
+            .createProxy<NoRoutingAddressable>(Key.NoKey)
 
         assertThatThrownBy {
             runBlocking {
@@ -103,7 +103,7 @@ class AddressableRegistryTest : StageBaseTest() {
     fun `ensure deregister removes`() {
         val instance = RandomRoutingAddressableImpl()
         val proxy = stage.addressableRegistry
-            .getReference<RandomRoutingAddressable>(Key.NoKey, NetTarget.Unicast(stage.config.nodeIdentity))
+            .createProxy<RandomRoutingAddressable>(Key.NoKey, NetTarget.Unicast(stage.config.nodeIdentity))
 
         assertThatThrownBy {
             runBlocking {

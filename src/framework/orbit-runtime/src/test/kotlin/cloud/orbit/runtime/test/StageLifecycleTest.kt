@@ -6,7 +6,7 @@
 
 package cloud.orbit.runtime.test
 
-import cloud.orbit.core.actor.getReference
+import cloud.orbit.core.actor.createProxy
 import cloud.orbit.runtime.stage.Stage
 import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.future.await
@@ -24,7 +24,7 @@ class StageLifecycleTest {
                     packages = listOf("cloud.orbit.runtime.test")
                 )
                 val stage = Stage(config)
-                val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+                val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
 
                 actor.incrementCountAndGet().await()
 
@@ -41,7 +41,7 @@ class StageLifecycleTest {
                 )
                 val stage = Stage(config)
                 stage.start().await()
-                val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+                val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
                 stage.stop().await()
                 actor.incrementCountAndGet().await()
 
@@ -56,7 +56,7 @@ class StageLifecycleTest {
                 packages = listOf("cloud.orbit.runtime.test")
             )
             val stage = Stage(config)
-            val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+            val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
 
             stage.start().await()
             actor.incrementCountAndGet().await()
@@ -74,7 +74,7 @@ class StageLifecycleTest {
                 packages = listOf("cloud.orbit.runtime.test")
             )
             val stage = Stage(config)
-            val actor = stage.actorProxyFactory.getReference<BasicTestActorInterface>()
+            val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
 
             stage.start().await()
             actor.incrementCountAndGet().await()

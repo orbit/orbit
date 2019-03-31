@@ -44,7 +44,7 @@ internal class AddressableInterfaceClientProxyFactory(
     private val pipelineSystem: PipelineSystem,
     private val definitionDirectory: AddressableDefinitionDirectory
 ) {
-    fun <T : Addressable> getReference(interfaceClass: Class<T>, key: Key, target: NetTarget? = null): T {
+    fun <T : Addressable> createProxy(interfaceClass: Class<T>, key: Key, target: NetTarget? = null): T {
         val interfaceDefinition = definitionDirectory.getOrCreateInterfaceDefinition(interfaceClass)
 
         val invocationHandler = AddressableInterfaceClientProxy(

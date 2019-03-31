@@ -13,7 +13,7 @@ import java.util.*
  * A proxy factory for generating references to [Actor]'s.
  */
 interface ActorProxyFactory {
-    fun <T : Actor> getReferenceInternal(grainType: Class<T>, grainKey: Key): T
+    fun <T : Actor> createProxyInternal(grainType: Class<T>, grainKey: Key): T
 
     /**
      * Gets a reference to an [Actor].
@@ -22,8 +22,8 @@ interface ActorProxyFactory {
      * @return The [Actor] reference.
      */
     @JvmDefault
-    fun <T : ActorWithNoKey> getReference(grainType: Class<T>): T =
-        getReferenceInternal(grainType, Key.none())
+    fun <T : ActorWithNoKey> createProxy(grainType: Class<T>): T =
+        createProxyInternal(grainType, Key.none())
 
     /**
      * Gets a reference to an [Actor] with a string key.
@@ -33,8 +33,8 @@ interface ActorProxyFactory {
      * @return The [Actor] reference.
      */
     @JvmDefault
-    fun <T : ActorWithStringKey> getReference(grainType: Class<T>, key: String): T =
-        getReferenceInternal(grainType, Key.of(key))
+    fun <T : ActorWithStringKey> createProxy(grainType: Class<T>, key: String): T =
+        createProxyInternal(grainType, Key.of(key))
 
     /**
      * Gets a reference to an [Actor] with an int32 key.
@@ -44,8 +44,8 @@ interface ActorProxyFactory {
      * @return The [Actor] reference.
      */
     @JvmDefault
-    fun <T : ActorWithInt32Key> getReference(grainType: Class<T>, key: Int): T =
-        getReferenceInternal(grainType, Key.of(key))
+    fun <T : ActorWithInt32Key> createProxy(grainType: Class<T>, key: Int): T =
+        createProxyInternal(grainType, Key.of(key))
 
     /**
      * Gets a reference to an [Actor] with an int64 key.
@@ -55,8 +55,8 @@ interface ActorProxyFactory {
      * @return The [Actor] reference.
      */
     @JvmDefault
-    fun <T : ActorWithInt64Key> getReference(grainType: Class<T>, key: Long): T =
-        getReferenceInternal(grainType, Key.of(key))
+    fun <T : ActorWithInt64Key> createProxy(grainType: Class<T>, key: Long): T =
+        createProxyInternal(grainType, Key.of(key))
 
     /**
      * Gets a reference to an [Actor] with a guid key.
@@ -66,8 +66,8 @@ interface ActorProxyFactory {
      * @return The [Actor] reference.
      */
     @JvmDefault
-    fun <T : ActorWithGuidKey> getReference(grainType: Class<T>, key: UUID): T =
-        getReferenceInternal(grainType, Key.of(key))
+    fun <T : ActorWithGuidKey> createProxy(grainType: Class<T>, key: UUID): T =
+        createProxyInternal(grainType, Key.of(key))
 }
 
 /**
@@ -76,8 +76,8 @@ interface ActorProxyFactory {
  * @param T The type of [Actor].
  * @return The [Actor] reference.
  */
-inline fun <reified T : ActorWithNoKey> ActorProxyFactory.getReference(): T =
-    getReference(T::class.java)
+inline fun <reified T : ActorWithNoKey> ActorProxyFactory.createProxy(): T =
+    createProxy(T::class.java)
 
 /**
  * Gets a reference to an [Actor] with a string key.
@@ -86,8 +86,8 @@ inline fun <reified T : ActorWithNoKey> ActorProxyFactory.getReference(): T =
  * @param key The key.
  * @return The [Actor] reference.
  */
-inline fun <reified T : ActorWithStringKey> ActorProxyFactory.getReference(key: String): T =
-    getReference(T::class.java, key)
+inline fun <reified T : ActorWithStringKey> ActorProxyFactory.createProxy(key: String): T =
+    createProxy(T::class.java, key)
 
 /**
  * Gets a reference to an [Actor] with an int32 key.
@@ -96,8 +96,8 @@ inline fun <reified T : ActorWithStringKey> ActorProxyFactory.getReference(key: 
  * @param key The key.
  * @return The [Actor] reference.
  */
-inline fun <reified T : ActorWithInt32Key> ActorProxyFactory.getReference(key: Int): T =
-    getReference(T::class.java, key)
+inline fun <reified T : ActorWithInt32Key> ActorProxyFactory.createProxy(key: Int): T =
+    createProxy(T::class.java, key)
 
 /**
  * Gets a reference to an [Actor] with a int64 key.
@@ -106,8 +106,8 @@ inline fun <reified T : ActorWithInt32Key> ActorProxyFactory.getReference(key: I
  * @param key The key.
  * @return The [Actor] reference.
  */
-inline fun <reified T : ActorWithInt64Key> ActorProxyFactory.getReference(key: Long): T =
-    getReference(T::class.java, key)
+inline fun <reified T : ActorWithInt64Key> ActorProxyFactory.createProxy(key: Long): T =
+    createProxy(T::class.java, key)
 
 /**
  * Gets a reference to an [Actor] with a guid key.
@@ -116,5 +116,5 @@ inline fun <reified T : ActorWithInt64Key> ActorProxyFactory.getReference(key: L
  * @param key The key.
  * @return The [Actor] reference.
  */
-inline fun <reified T : ActorWithGuidKey> ActorProxyFactory.getReference(key: UUID): T =
-    getReference(T::class.java, key)
+inline fun <reified T : ActorWithGuidKey> ActorProxyFactory.createProxy(key: UUID): T =
+    createProxy(T::class.java, key)

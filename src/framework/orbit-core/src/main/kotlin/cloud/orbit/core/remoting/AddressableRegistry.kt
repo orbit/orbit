@@ -19,11 +19,11 @@ interface AddressableRegistry {
 
     fun deregisterAddressable(instance: Addressable): CompletableFuture<Unit>
 
-    fun <T : Addressable> getReference(interfaceClass: Class<T>, key: Key, target: NetTarget? = null): T
+    fun <T : Addressable> createProxy(interfaceClass: Class<T>, key: Key, target: NetTarget? = null): T
 }
 
 inline fun <reified T : Addressable> AddressableRegistry.registerAddressable(key: Key, instance: Addressable) =
     registerAddressable(T::class.java, key, instance)
 
-inline fun <reified T : Addressable> AddressableRegistry.getReference(key: Key, target: NetTarget? = null) =
-    getReference(T::class.java, key, target)
+inline fun <reified T : Addressable> AddressableRegistry.createProxy(key: Key, target: NetTarget? = null) =
+    createProxy(T::class.java, key, target)

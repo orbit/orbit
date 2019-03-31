@@ -14,7 +14,8 @@ Although it is possible to create a raw addressable manually, this is an advance
 {% code-tabs-item title="Kotlin" %}
 ```kotlin
 interface Greeter : Observer {
-    fun greet(name: String): Deferred<String>
+    fun greet
+(name: String): Deferred<String>
 }
 ```
 {% endcode-tabs-item %}
@@ -84,7 +85,8 @@ interface Consumer : Observer {
 {% code-tabs %}
 {% code-tabs-item title="Java" %}
 ```java
-@NonConcrete
+@NonConcrete
+
 interface Consumer extends Observer {
     CompletableFuture consume(Object obj);
 }
@@ -114,7 +116,7 @@ abstract class AbstractActor : AbstractAddressable()
 class IdentityActorImpl : IdentityActor, AbstractActor() {
     override fun identity(): Deferred<String> {
         val id = context.reference.toString()
-        return context.actorProxyFactory.getReference<IdentityResolver>().resolve(id)
+        return context.actorProxyFactory.createProxy<IdentityResolver>().resolve(id)
     }
 }
 ```

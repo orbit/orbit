@@ -15,7 +15,7 @@ public class Main {
         Logger logger = Logging.getLogger("main");
         Stage stage = new Stage();
         stage.start().join();
-        Greeter greeter = stage.getActorProxyFactory().getReference(Greeter.class);
+        Greeter greeter = stage.getActorProxyFactory().createProxy(Greeter.class);
         String greeting = greeter.greet("Joe").join();
         logger.info("Response: " + greeting);
         stage.stop();

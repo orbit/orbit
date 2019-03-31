@@ -43,7 +43,8 @@ interface Greeter : ActorWithNoKey {
 {% code-tabs %}
 {% code-tabs-item title="Java" %}
 ```java
-interface Greeter extends ActorWithNoKey {
+
+interface Greeter extends ActorWithNoKey {
     CompletableFuture<String> greet(String name);
 }
 ```
@@ -60,7 +61,8 @@ Once you have created an Actor type, you must offer an implementation of that Ac
 {% code-tabs %}
 {% code-tabs-item title="Kotlin" %}
 ```kotlin
-class GreeterActor : Greeter, AbstractActor() {
+
+class GreeterActor : Greeter, AbstractActor() {
     private val logger by logger()
 
     override fun greet(name: String): Deferred<String> {
@@ -75,7 +77,8 @@ Once you have created an Actor type, you must offer an implementation of that Ac
 {% code-tabs %}
 {% code-tabs-item title="Java" %}
 ```java
-public class GreeterActor extends AbstractActor implements Greeter {
+
+public class GreeterActor extends AbstractActor implements Greeter {
     private static Logger logger = Logging.getLogger(GreeterActor.class);
 
     @Override
@@ -102,10 +105,11 @@ Actors are called via a proxy. A proxy is created via the Orbit runtime context,
 {% code-tabs-item title="Kotlin" %}
 ```kotlin
 // Via Stage
-stage.actorProxyFactory.getReference<Greeter>()
+
+stage.actorProxyFactory.createProxy<Greeter>()
 
 // From an Addressable
-context.runtime.actorProxyFactory.getReference<Greeter>()
+context.runtime.actorProxyFactory.createProxy<Greeter>()
 ```
 {% endcode-tabs-item %}
 {% endcode-tabs %}
@@ -113,11 +117,12 @@ context.runtime.actorProxyFactory.getReference<Greeter>()
 {% code-tabs %}
 {% code-tabs-item title="Java" %}
 ```java
-// Via Stage
-stage.getActorProxyFactory().getReference(Greeter.class);
+
+// Via Stage
+stage.getActorProxyFactory().createProxy(Greeter.class);
 
 // From an Addressable
-getContext().getRuntime().getActorProxyFactory().getReference(Greeter.class);
+getContext().getRuntime().getActorProxyFactory().createProxy(Greeter.class);
 ```
 {% endcode-tabs-item %}
 {% endcode-tabs %}
@@ -133,11 +138,11 @@ interface MyNoKey : ActorWithNoKey
 interface MyStringKey : ActorWithStringKey
 interface MyIntKey : ActorWithInt32Key
 
-actorProxyFactory.getReference<MyNoKey>() // Valid
-actorProxyFactory.getReference<MyNoKey>("beep") // Compile error
-actorProxyFactory.getReference<MyStringKey>("beep") // Valid
-actorProxyFactory.getReference<MyIntKey>(1234) // Valid
-actorProxyFactory.getReference<MyStringKey>(1234) // Compile error
+actorProxyFactory.createProxy<MyNoKey>() // Valid
+actorProxyFactory.createProxy<MyNoKey>("beep") // Compile error
+actorProxyFactory.createProxy<MyStringKey>("beep") // Valid
+actorProxyFactory.createProxy<MyIntKey>(1234) // Valid
+actorProxyFactory.createProxy<MyStringKey>(1234) // Compile error
 ```
 {% endcode-tabs-item %}
 {% endcode-tabs %}
@@ -149,11 +154,11 @@ public interface MyNoKey extends ActorWithNoKey {}
 public interface MyStringKey extends ActorWithStringKey {}
 public interface MyIntKey extends ActorWithInt32Key {}
 
-getActorProxyFactory().getReference(MyNoKey.class); // Valid
-getActorProxyFactory().getReference(MyNoKey.class, "beep"); // Compile error
-getActorProxyFactory().getReference(MyStringKey.class, "beep"); // Valid
-getActorProxyFactory().getReference(MyIntKey.class, 1234); // Valid
-getActorProxyFactory().getReference(MyStringKey.class, 123); // Compile error
+getActorProxyFactory().createProxy(MyNoKey.class); // Valid
+getActorProxyFactory().createProxy(MyNoKey.class, "beep"); // Compile error
+getActorProxyFactory().createProxy(MyStringKey.class, "beep"); // Valid
+getActorProxyFactory().createProxy(MyIntKey.class, 1234); // Valid
+getActorProxyFactory().createProxy(MyStringKey.class, 123); // Compile error
 ```
 {% endcode-tabs-item %}
 {% endcode-tabs %}

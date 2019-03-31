@@ -8,7 +8,7 @@ package orbit.helloworld.dsl
 
 import cloud.orbit.common.logging.getLogger
 import cloud.orbit.core.actor.AbstractActor
-import cloud.orbit.core.actor.getReference
+import cloud.orbit.core.actor.createProxy
 import cloud.orbit.runtime.stage.Stage
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -33,7 +33,7 @@ fun main(args: Array<String>) {
 
     runBlocking {
         stage.start().await()
-        val greeter = stage.actorProxyFactory.getReference<Greeter>("test")
+        val greeter = stage.actorProxyFactory.createProxy<Greeter>("test")
         greeter.greet("Cesar").await().forEach {
             logger.info("In ${it.key}: ${it.value.text}")
         }
