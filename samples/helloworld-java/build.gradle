@@ -6,7 +6,7 @@
 
 apply plugin: "application"
 
-mainClassName = "orbit.helloworld.App"
+mainClassName = "orbit.helloworld.Main"
 
 dependencies {
     implementation(project(":src:framework:orbit-runtime"))
