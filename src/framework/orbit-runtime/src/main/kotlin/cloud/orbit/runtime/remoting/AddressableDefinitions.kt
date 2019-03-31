@@ -15,8 +15,6 @@ import java.lang.reflect.Method
 internal data class AddressableInterfaceDefinition(
     val interfaceClass: AddressableClass,
     val routing: Routing,
-    val lifecycle: Lifecycle,
-    val executionModel: ExecutionModel,
     val methods: Map<Method, AddressableInterfaceMethodDefinition>
 )
 
@@ -29,6 +27,8 @@ internal data class AddressableImplDefinition(
     val interfaceClass: AddressableClass,
     val interfaceDefinition: AddressableInterfaceDefinition,
     val methods: Map<Method, AddressableImplMethodDefinition>,
+    val lifecycle: Lifecycle,
+    val executionModel: ExecutionModel,
     val onActivateMethod: AddressableImplMethodDefinition?,
     val onDeactivateMethod: AddressableImplMethodDefinition?
 

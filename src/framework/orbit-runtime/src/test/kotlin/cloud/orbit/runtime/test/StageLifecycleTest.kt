@@ -15,7 +15,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
-class StageStateTest {
+class StageLifecycleTest {
     @Test
     fun `ensure fails when not started`() {
         assertThatThrownBy {

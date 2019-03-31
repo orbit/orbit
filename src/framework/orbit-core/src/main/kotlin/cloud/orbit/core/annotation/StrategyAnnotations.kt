@@ -13,6 +13,7 @@ import kotlin.reflect.KClass
 
 /**
  * Determines the routing behavior for an [Addressable].
+ * Must be present on the [Addressable] interface.
  */
 @Target(AnnotationTarget.CLASS)
 annotation class Routing(
@@ -36,6 +37,7 @@ annotation class Routing(
 
 /**
  * Determines the lifecycle behavior for an [Addressable].
+ * Must be present on the [Addressable] implementation or interface.
  */
 @Target(AnnotationTarget.CLASS)
 annotation class Lifecycle(
@@ -49,7 +51,10 @@ annotation class Lifecycle(
     val autoDeactivate: Boolean
 )
 
-
+/**
+ * Determines the execution behavior for an [Addressable].
+ * Must be present on the [Addressable] implementation or interface.
+ */
 @Target(AnnotationTarget.CLASS)
 annotation class ExecutionModel(
     val executionStrategy: ExecutionStrategy

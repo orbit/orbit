@@ -42,9 +42,7 @@ internal class ExecutionSystem(
 
         if (handle == null) {
             if (routingSystem.canHandleLocally(invocation.reference)) {
-                if (interfaceDefinition.lifecycle.autoActivate) {
-                    handle = activate(invocation.reference, interfaceDefinition)
-                }
+                handle = activate(invocation.reference, interfaceDefinition)
             } else {
                 logger.warn("Received invocation which can no longer be handled locally. Rerouting... $invocation")
                 pipelineSystem.pushInvocation(invocation)
@@ -62,7 +60,7 @@ internal class ExecutionSystem(
     suspend fun onTick() {
         val tickTime = clock.currentTime
         activeAddressables.forEach { (_, handle) ->
-            if (handle.interfaceDefinition.lifecycle.autoDeactivate) {
+            if (handle.implDefinition.lifecycle.autoDeactivate) {
                 if (tickTime - handle.lastActivity > stageConfig.timeToLiveMillis) {
                     deactivate(handle)
                 }
@@ -79,14 +77,17 @@ internal class ExecutionSystem(
     private suspend fun activate(
         reference: AddressableReference,
         interfaceDefinition: AddressableInterfaceDefinition
-    ): ExecutionHandle {
+    ): ExecutionHandle? {
         val implDefinition = definitionDirectory.getImplDefinition(interfaceDefinition.interfaceClass)
-        val handle = getOrCreateAddressable(reference, implDefinition)
-        if (handle.interfaceDefinition.routing.persistentPlacement) {
-            directorySystem.localActivation(handle.reference)
+        if (implDefinition.lifecycle.autoActivate) {
+            val handle = getOrCreateAddressable(reference, implDefinition)
+            if (handle.interfaceDefinition.routing.persistentPlacement) {
+                directorySystem.localActivation(handle.reference)
+            }
+            handle.activate().await()
+            return handle
         }
-        handle.activate().await()
-        return handle
+        return null
     }
 
     private fun invoke(handle: ExecutionHandle, invocation: AddressableInvocation, completion: Completion) {

@@ -50,19 +50,7 @@ internal class AddressableDefinitionDirectory {
 
         val routing = AnnotationUtils.findAnnotation(interfaceClass, Routing::class.java)
             ?: throw IllegalArgumentException(
-                "No routing annotation found in interface hierarchy for " +
-                        interfaceClass.name
-            )
-
-        val lifecycle = AnnotationUtils.findAnnotation(interfaceClass, Lifecycle::class.java)
-            ?: throw IllegalArgumentException(
-                "No lifecycle annotation found in interface hierarchy for " +
-                        interfaceClass.name
-            )
-
-        val executionModel = AnnotationUtils.findAnnotation(interfaceClass, ExecutionModel::class.java)
-            ?: throw IllegalArgumentException(
-                "No execution model annotation found in interface hierarchy for " +
+                "No routing annotation found in hierarchy for " +
                         interfaceClass.name
             )
 
@@ -74,9 +62,7 @@ internal class AddressableDefinitionDirectory {
         val definition = AddressableInterfaceDefinition(
             interfaceClass = interfaceClass,
             methods = methods,
-            routing = routing,
-            lifecycle = lifecycle,
-            executionModel = executionModel
+            routing = routing
         )
 
         logger.debug { "Created interface definition: $definition" }
@@ -101,6 +87,18 @@ internal class AddressableDefinitionDirectory {
     ): AddressableImplDefinition {
         val interfaceDef = getOrCreateInterfaceDefinition(interfaceClass)
 
+        val lifecycle = AnnotationUtils.findAnnotation(implClass, Lifecycle::class.java)
+            ?: throw IllegalArgumentException(
+                "No lifecycle annotation found in hierarchy for " +
+                        interfaceClass.name
+            )
+
+        val executionModel = AnnotationUtils.findAnnotation(implClass, ExecutionModel::class.java)
+            ?: throw IllegalArgumentException(
+                "No execution model annotation found in hierarchy for " +
+                        interfaceClass.name
+            )
+
         val methods = implClass.methods
             .map { method ->
                 method to generateImplMethodDefinition(method)
@@ -115,7 +113,9 @@ internal class AddressableDefinitionDirectory {
             interfaceDefinition = interfaceDef,
             methods = methods,
             onActivateMethod = onActivateMethod,
-            onDeactivateMethod = onDeactivateMethod
+            onDeactivateMethod = onDeactivateMethod,
+            lifecycle = lifecycle,
+            executionModel = executionModel
         )
 
         logger.debug { "Created implementation definition: $definition" }

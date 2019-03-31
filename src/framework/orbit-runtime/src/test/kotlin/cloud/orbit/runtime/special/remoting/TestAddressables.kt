@@ -6,57 +6,47 @@
 
 package cloud.orbit.runtime.special.remoting
 
-import cloud.orbit.core.annotation.ExecutionModel
-import cloud.orbit.core.annotation.Lifecycle
-import cloud.orbit.core.annotation.NonConcrete
-import cloud.orbit.core.annotation.Routing
+import cloud.orbit.core.annotation.*
 import cloud.orbit.core.hosting.ExecutionStrategy
 import cloud.orbit.core.hosting.RoutingStrategy
 import cloud.orbit.core.remoting.Addressable
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 
-@Routing(isRouted = true, persistentPlacement = true, forceRouting = true, routingStrategy = RoutingStrategy::class)
-@Lifecycle(autoActivate = true, autoDeactivate = true)
+class EmptyClassAddressable : Addressable
+
+interface EmptyInterfaceAddressable : Addressable
+
+@Routing(isRouted = false, forceRouting = true, routingStrategy = RoutingStrategy::class, persistentPlacement = false)
+interface RoutingInterfaceAddressable : Addressable
+
+@Routing(isRouted = false, forceRouting = true, routingStrategy = RoutingStrategy::class, persistentPlacement = false)
+@Lifecycle(autoActivate = false, autoDeactivate = true)
+class RoutingLifecycleClassAddressable : Addressable
+
+@Routing(isRouted = false, forceRouting = true, routingStrategy = RoutingStrategy::class, persistentPlacement = false)
 @ExecutionModel(ExecutionStrategy.SAFE)
-class ClassAddressable : Addressable
+class RoutingExecutionClassAddressable : Addressable
 
-@Routing(isRouted = true, persistentPlacement = true, forceRouting = true, routingStrategy = RoutingStrategy::class)
-@Lifecycle(autoActivate = true, autoDeactivate = true)
+@Routing(isRouted = false, forceRouting = true, routingStrategy = RoutingStrategy::class, persistentPlacement = false)
+@Lifecycle(autoActivate = false, autoDeactivate = true)
 @ExecutionModel(ExecutionStrategy.SAFE)
-@NonConcrete
-interface NonConcreteAddressable : Addressable
+interface FullInterfaceAddressable : Addressable
 
-@Lifecycle(autoActivate = true, autoDeactivate = true)
-@ExecutionModel(ExecutionStrategy.SAFE)
-interface MissingRoutingAddressable : Addressable
-
-@Routing(isRouted = true, persistentPlacement = true, forceRouting = true, routingStrategy = RoutingStrategy::class)
-@ExecutionModel(ExecutionStrategy.SAFE)
-interface MissingLifecycleAddressable : Addressable
-
-@Routing(isRouted = true, persistentPlacement = true, forceRouting = true, routingStrategy = RoutingStrategy::class)
-@Lifecycle(autoActivate = true, autoDeactivate = true)
-interface MissingExecutionModelAddressable : Addressable
-
-@Routing(isRouted = true, persistentPlacement = true, forceRouting = true, routingStrategy = RoutingStrategy::class)
-@Lifecycle(autoActivate = true, autoDeactivate = true)
-@ExecutionModel(ExecutionStrategy.SAFE)
-interface BasicValidAddressable : Addressable
-
-interface InheritedValidAddressable : NonConcreteAddressable
-
-@Routing(isRouted = true, persistentPlacement = true, forceRouting = true, routingStrategy = RoutingStrategy::class)
-@Lifecycle(autoActivate = true, autoDeactivate = true)
-@ExecutionModel(ExecutionStrategy.SAFE)
-interface ValidMethodsAddressable : Addressable {
-    fun getName(): Deferred<String>
+interface InvalidMethodInterfaceAddressable : FullInterfaceAddressable {
+    fun meep(): String
 }
 
-@Routing(isRouted = true, persistentPlacement = true, forceRouting = true, routingStrategy = RoutingStrategy::class)
-@Lifecycle(autoActivate = true, autoDeactivate = true)
-@ExecutionModel(ExecutionStrategy.SAFE)
-interface InvalidMethodsAddressable : Addressable {
-    fun getName(): String
+interface ValidMethodInterfaceAddressable : FullInterfaceAddressable {
+    fun meep(): Deferred<String>
 }
 
-class BasicValidAddressableClass : InheritedValidAddressable
+class FullInheritedClassAddressable : FullInterfaceAddressable
+
+class LifecycleEventsClassAddressable : FullInterfaceAddressable {
+    @OnActivate
+    fun onActivate() = CompletableDeferred(Unit)
+
+    @OnDeactivate
+    fun onDeactivate() = CompletableDeferred(Unit)
+}
