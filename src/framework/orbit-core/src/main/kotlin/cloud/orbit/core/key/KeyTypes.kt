@@ -41,7 +41,11 @@ sealed class Key {
     /**
      * A key that represents no value.
      */
-    object NoKey : Key()
+    object NoKey : Key() {
+        override fun toString(): String {
+            return "${this::class.java.simpleName}()"
+        }
+    }
 
     /**
      * A key that uses a string identity.
