@@ -9,7 +9,15 @@ package cloud.orbit.runtime.test
 import cloud.orbit.core.remoting.AddressableClass
 import cloud.orbit.runtime.remoting.AddressableDefinitionDirectory
 import cloud.orbit.runtime.remoting.AddressableImplDefinition
-import cloud.orbit.runtime.special.remoting.*
+import cloud.orbit.runtime.special.remoting.EmptyClassAddressable
+import cloud.orbit.runtime.special.remoting.EmptyInterfaceAddressable
+import cloud.orbit.runtime.special.remoting.FullInheritedClassAddressable
+import cloud.orbit.runtime.special.remoting.InvalidMethodInterfaceAddressable
+import cloud.orbit.runtime.special.remoting.LifecycleEventsClassAddressable
+import cloud.orbit.runtime.special.remoting.RoutingExecutionClassAddressable
+import cloud.orbit.runtime.special.remoting.RoutingInterfaceAddressable
+import cloud.orbit.runtime.special.remoting.RoutingLifecycleClassAddressable
+import cloud.orbit.runtime.special.remoting.ValidMethodInterfaceAddressable
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test

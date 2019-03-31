@@ -6,8 +6,18 @@
 
 package cloud.orbit.dsl.java
 
-import cloud.orbit.dsl.ast.*
-import com.squareup.javapoet.*
+import cloud.orbit.dsl.ast.ActorDeclaration
+import cloud.orbit.dsl.ast.AstVisitor
+import cloud.orbit.dsl.ast.CompilationUnit
+import cloud.orbit.dsl.ast.DataDeclaration
+import cloud.orbit.dsl.ast.EnumDeclaration
+import cloud.orbit.dsl.ast.Type
+import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.MethodSpec
+import com.squareup.javapoet.ParameterSpec
+import com.squareup.javapoet.ParameterizedTypeName
+import com.squareup.javapoet.TypeName
+import com.squareup.javapoet.TypeSpec
 import javax.lang.model.element.Modifier
 
 internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : AstVisitor() {

@@ -13,7 +13,12 @@ import cloud.orbit.core.actor.getReference
 import cloud.orbit.core.annotation.OnActivate
 import cloud.orbit.core.annotation.OnDeactivate
 import cloud.orbit.runtime.util.StageBaseTest
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test

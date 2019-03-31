@@ -6,7 +6,15 @@
 
 package cloud.orbit.dsl
 
-import cloud.orbit.dsl.ast.*
+import cloud.orbit.dsl.ast.ActorDeclaration
+import cloud.orbit.dsl.ast.ActorMethod
+import cloud.orbit.dsl.ast.CompilationUnit
+import cloud.orbit.dsl.ast.DataDeclaration
+import cloud.orbit.dsl.ast.DataField
+import cloud.orbit.dsl.ast.EnumDeclaration
+import cloud.orbit.dsl.ast.EnumMember
+import cloud.orbit.dsl.ast.MethodParameter
+import cloud.orbit.dsl.ast.Type
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
