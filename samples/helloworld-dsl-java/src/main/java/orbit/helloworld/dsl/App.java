@@ -10,8 +10,13 @@ import cloud.orbit.common.logging.Logger;
 import cloud.orbit.core.actor.AbstractActor;
 import cloud.orbit.runtime.stage.Stage;
 import orbit.helloworld.dsl.data.Greeting;
+import orbit.helloworld.dsl.data.Language;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static cloud.orbit.common.logging.Logging.getLogger;
 
@@ -22,8 +27,9 @@ public class App {
 
         stage.start().thenCompose(ignored -> {
             Greeter greeter = stage.getActorProxyFactory().getReference(Greeter.class, "test");
-            return greeter.greet("Cesar").thenCompose(greeting -> {
-                logger.info(greeting.getGreeting());
+            return greeter.greet("Cesar").thenCompose(greetings -> {
+                greetings.forEach((language, greeting) ->
+                        logger.info("In {}: {}", greeting.getLanguage(), greeting.getText()));
                 return stage.stop();
             });
         }).join();
@@ -31,8 +37,12 @@ public class App {
 
     public static class GreeterActor extends AbstractActor implements Greeter {
         @Override
-        public CompletableFuture<Greeting> greet(String name) {
-            return CompletableFuture.completedFuture(new Greeting("Hello " + name + "!"));
+        public CompletableFuture<Map<Language, Greeting>> greet(String name) {
+            return CompletableFuture.completedFuture(
+                    Stream.of(
+                            new Greeting(Language.ENGLISH, "Hello, " + name + "!"),
+                            new Greeting(Language.GERMAN, "Hello, " + name + "!"))
+                            .collect(Collectors.toMap(Greeting::getLanguage, Function.identity())));
         }
     }
 }

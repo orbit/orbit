@@ -20,11 +20,13 @@ enumDeclaration: ENUM name=ID LC_BRACE members=enumMember* RC_BRACE ;
 enumMember: name=ID EQUAL index=INT SEMI_COLON;
 
 actorDeclaration: ACTOR name=ID LC_BRACE methods=actorMethod* RC_BRACE ;
-actorMethod: returnType=ID name=ID L_PAREN (args=methodParam (COMMA args=methodParam)*)? R_PAREN SEMI_COLON;
-methodParam: type=ID name=ID ;
+actorMethod: returnType=type name=ID L_PAREN (args=methodParam (COMMA args=methodParam)*)? R_PAREN SEMI_COLON;
+methodParam: type name=ID ;
 
 dataDeclaration: DATA name=ID LC_BRACE fields=dataField* RC_BRACE ;
-dataField: type=ID name=ID EQUAL index=INT SEMI_COLON ;
+dataField: type name=ID EQUAL index=INT SEMI_COLON ;
+
+type: name=ID (L_ANGLE of=type (COMMA of=type)* R_ANGLE)? ;
 
 /* ====== LEXER ===== */
 
@@ -39,8 +41,10 @@ COMMA: ',' ;
 EQUAL: '=' ;
 L_PAREN: '(' ;
 LC_BRACE: '{' ;
+L_ANGLE: '<' ;
 R_PAREN: ')' ;
 RC_BRACE: '}' ;
+R_ANGLE: '>' ;
 SEMI_COLON: ';' ;
 
 COMMENT: '//' ~[\r\n]+ -> skip ;

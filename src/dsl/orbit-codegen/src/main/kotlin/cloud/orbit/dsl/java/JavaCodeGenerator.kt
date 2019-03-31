@@ -46,7 +46,7 @@ internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : 
             .addModifiers(Modifier.PUBLIC)
 
         data.fields.forEach {
-            val fieldType = knownTypes[it.type]
+            val fieldType = typeName(it.type)
             val varName = fieldToVariableName(it.name)
 
             // Variable backing the data field
@@ -57,7 +57,7 @@ internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : 
                 .addStatement("this.\$L = \$L", varName, varName)
 
             // Getter for this field
-            val getterName = "get${it.name[0].toUpperCase()}${it.name.substring(1)}"
+            val getterName = "get${it.name.capitalize()}"
             classSpec.addMethod(
                 MethodSpec
                     .methodBuilder(getterName)
@@ -81,10 +81,10 @@ internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : 
             .addMethods(actor.methods.map {
                 MethodSpec.methodBuilder(it.name)
                     .addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
-                    .returns(ParameterizedTypeName.get(completableFutureClass, knownTypes[it.returnType]!!.box()))
+                    .returns(ParameterizedTypeName.get(completableFutureClass, typeName(it.returnType).box()))
                     .addParameters(it.params
                         .asSequence()
-                        .map { p -> ParameterSpec.builder(knownTypes[p.type], p.name).build() }
+                        .map { p -> ParameterSpec.builder(typeName(p.type), p.name).build() }
                         .toList())
                     .build()
             })
@@ -94,4 +94,17 @@ internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : 
     }
 
     private fun fieldToVariableName(fieldName: String) = fieldName.decapitalize()
+
+    private fun typeName(type: Type): TypeName =
+        if (!type.isGeneric) {
+            knownTypes.getValue(type)
+        } else {
+            ParameterizedTypeName.get(
+                knownTypes.getValue(Type(type.name)) as ClassName,
+                *type.of
+                    .map(::typeName)
+                    .map(TypeName::box)
+                    .toTypedArray()
+            )
+        }
 }

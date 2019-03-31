@@ -11,12 +11,12 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class JavaCodeGeneratorTest {
-    private val PACKAGE_NAME = "cloud.orbit.test"
+    private val packageName = "cloud.orbit.test"
 
     @Test
     fun generateEnum_OneMember() {
         val cu = CompilationUnit(
-            PACKAGE_NAME,
+            packageName,
             enums = listOf(EnumDeclaration("enum1", listOf(EnumMember("member1", 3))))
         )
 
@@ -27,7 +27,7 @@ class JavaCodeGeneratorTest {
         """
 
         assertOneElement(generateSource_minimalPipeline(cu)).run {
-            Assertions.assertEquals(PACKAGE_NAME, this.packageName)
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
             assertSourceMatch(expectedSource, this.toString())
         }
     }
@@ -35,7 +35,7 @@ class JavaCodeGeneratorTest {
     @Test
     fun generateEnum_MultipleMember() {
         val cu = CompilationUnit(
-            PACKAGE_NAME,
+            packageName,
             enums = listOf(
                 EnumDeclaration(
                     "enum1", listOf(
@@ -54,24 +54,23 @@ class JavaCodeGeneratorTest {
         """
 
         assertOneElement(generateSource_minimalPipeline(cu)).run {
-            Assertions.assertEquals(PACKAGE_NAME, this.packageName)
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
             assertSourceMatch(expectedSource, this.toString())
         }
     }
 
     @Test
     fun generateData_NoFields() {
-        val cu = CompilationUnit(PACKAGE_NAME, data = listOf(DataDeclaration("data1")))
+        val cu = CompilationUnit(packageName, data = listOf(DataDeclaration("data1")))
 
         val expectedSource = """
             public class data1 {
                 public data1() {}
             }
-
         """
 
         assertOneElement(generateSource_minimalPipeline(cu)).run {
-            Assertions.assertEquals(PACKAGE_NAME, this.packageName)
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
             assertSourceMatch(expectedSource, this.toString())
         }
     }
@@ -79,7 +78,7 @@ class JavaCodeGeneratorTest {
     @Test
     fun generateData_SingleField() {
         val cu = CompilationUnit(
-            PACKAGE_NAME, data = listOf(
+            packageName, data = listOf(
                 DataDeclaration("data1", listOf(DataField("Field1", Type("string"), 3)))
             )
         )
@@ -94,11 +93,10 @@ class JavaCodeGeneratorTest {
 
                 public java.lang.String getField1() { return field1; }
             }
-
         """
 
         assertOneElement(generateSource_minimalPipeline(cu)).run {
-            Assertions.assertEquals(PACKAGE_NAME, this.packageName)
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
             assertSourceMatch(expectedSource, this.toString())
         }
     }
@@ -106,7 +104,7 @@ class JavaCodeGeneratorTest {
     @Test
     fun generateData_MultipleFields() {
         val cu = CompilationUnit(
-            PACKAGE_NAME, data = listOf(
+            packageName, data = listOf(
                 DataDeclaration(
                     "data1", listOf(
                         DataField("Field1", Type("string"), 3),
@@ -129,23 +127,141 @@ class JavaCodeGeneratorTest {
                 public java.lang.String getField1() { return field1; }
                 public int getField2() { return field2; }
             }
-
         """
 
         assertOneElement(generateSource_minimalPipeline(cu)).run {
-            Assertions.assertEquals(PACKAGE_NAME, this.packageName)
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
             assertSourceMatch(expectedSource, this.toString())
         }
     }
 
     @Test
+    fun generateData_GenericField_PrimitiveTypes() {
+        val cu = CompilationUnit(
+            packageName, data = listOf(
+                DataDeclaration(
+                    "data1", listOf(
+                        DataField(
+                            "field1", Type(
+                                "list", of = listOf(
+                                    Type(
+                                        "map", of = listOf(
+                                            Type("string"),
+                                            Type("int32")
+                                        )
+                                    )
+                                )
+                            ),
+                            3
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSource = """
+            public class data1 {
+                private final java.util.List<java.util.Map<java.lang.String, java.lang.Integer>> field1;
+
+                public data1(java.util.List<java.util.Map<java.lang.String, java.lang.Integer>> field1) {
+                    this.field1 = field1;
+                }
+
+                public java.util.List<java.util.Map<java.lang.String, java.lang.Integer>> getField1() {
+                    return field1;
+                }
+            }
+        """
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun generateData_GenericField_CustomTypes() {
+        val cu = CompilationUnit(
+            packageName,
+            enums = listOf(
+                EnumDeclaration(
+                    "enum1",
+                    members = listOf(
+                        EnumMember("A", 1),
+                        EnumMember(
+                            "B", 2
+                        )
+                    )
+                )
+            ),
+            data = listOf(
+                DataDeclaration(
+                    "data1", fields = listOf(DataField("field1", Type("string"), 1))
+                ),
+                DataDeclaration(
+                    "data2", fields = listOf(
+                        DataField("field1", Type("list", of = listOf(Type("enum1"))), 1),
+                        DataField("field2", Type("list", of = listOf(Type("data1"))), 2)
+                    )
+                )
+            )
+        )
+
+        val expectedSources = listOf(
+            """
+            public enum enum1 {
+                A,
+                B
+            }
+            """,
+            """
+            public class data1 {
+                private final java.lang.String field1;
+
+                public data1(java.lang.String field1) {
+                    this.field1 = field1;
+                }
+
+                public java.lang.String getField1() {
+                    return field1;
+                }
+            }
+            """,
+            """
+            public class data2 {
+                private final java.util.List<$packageName.enum1> field1;
+                private final java.util.List<$packageName.data1> field2;
+
+                public data2(java.util.List<$packageName.enum1> field1, java.util.List<$packageName.data1> field2) {
+                    this.field1 = field1;
+                    this.field2 = field2;
+                }
+
+                public java.util.List<$packageName.enum1> getField1() {
+                    return field1;
+                }
+
+                public java.util.List<$packageName.data1> getField2() {
+                    return field2;
+                }
+            }
+            """
+        )
+
+        generateSource_minimalPipeline(cu).forEachIndexed { index, compiledType ->
+            Assertions.assertEquals(packageName, compiledType.packageName)
+            assertSourceMatch(expectedSources[index], compiledType.toString())
+        }
+    }
+
+    @Test
     fun generateActor_Empty() {
-        val cu = CompilationUnit(PACKAGE_NAME, actors = listOf(ActorDeclaration("actor1")))
+        val cu = CompilationUnit(packageName, actors = listOf(ActorDeclaration("actor1")))
 
         val expectedSource = "public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey { }"
 
         assertOneElement(generateSource_minimalPipeline(cu)).run {
-            Assertions.assertEquals(PACKAGE_NAME, this.packageName)
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
             assertSourceMatch(expectedSource, this.toString())
         }
     }
@@ -153,7 +269,7 @@ class JavaCodeGeneratorTest {
     @Test
     fun generateActor_SingleMethod() {
         val cu = CompilationUnit(
-            PACKAGE_NAME, actors = listOf(
+            packageName, actors = listOf(
                 ActorDeclaration("actor1", listOf(ActorMethod("method1", Type("string"))))
             )
         )
@@ -165,7 +281,7 @@ class JavaCodeGeneratorTest {
         """
 
         assertOneElement(generateSource_minimalPipeline(cu)).run {
-            Assertions.assertEquals(PACKAGE_NAME, this.packageName)
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
             assertSourceMatch(expectedSource, this.toString())
         }
     }
@@ -173,7 +289,7 @@ class JavaCodeGeneratorTest {
     @Test
     fun generateActor_MultipleMethods() {
         val cu = CompilationUnit(
-            PACKAGE_NAME, actors = listOf(
+            packageName, actors = listOf(
                 ActorDeclaration(
                     "actor1", listOf(
                         ActorMethod("method1", Type("string")),
@@ -191,7 +307,7 @@ class JavaCodeGeneratorTest {
         """
 
         assertOneElement(generateSource_minimalPipeline(cu)).run {
-            Assertions.assertEquals(PACKAGE_NAME, this.packageName)
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
             assertSourceMatch(expectedSource, this.toString())
         }
     }
@@ -199,7 +315,7 @@ class JavaCodeGeneratorTest {
     @Test
     fun generateActor_SingleParamMethod() {
         val cu = CompilationUnit(
-            PACKAGE_NAME, actors = listOf(
+            packageName, actors = listOf(
                 ActorDeclaration(
                     "actor1", listOf(
                         ActorMethod(
@@ -219,7 +335,7 @@ class JavaCodeGeneratorTest {
         """
 
         assertOneElement(generateSource_minimalPipeline(cu)).run {
-            Assertions.assertEquals(PACKAGE_NAME, this.packageName)
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
             assertSourceMatch(expectedSource, this.toString())
         }
     }
@@ -227,7 +343,7 @@ class JavaCodeGeneratorTest {
     @Test
     fun generateActor_MultipleParamsMethod() {
         val cu = CompilationUnit(
-            PACKAGE_NAME, actors = listOf(
+            packageName, actors = listOf(
                 ActorDeclaration(
                     "actor1", listOf(
                         ActorMethod(
@@ -250,7 +366,7 @@ class JavaCodeGeneratorTest {
         """
 
         assertOneElement(generateSource_minimalPipeline(cu)).run {
-            Assertions.assertEquals(PACKAGE_NAME, this.packageName)
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
             assertSourceMatch(expectedSource, this.toString())
         }
     }
@@ -258,7 +374,7 @@ class JavaCodeGeneratorTest {
     @Test
     fun generateActor_PrimitivesAreBoxedInReturnType() {
         val cu = CompilationUnit(
-            PACKAGE_NAME, actors = listOf(
+            packageName, actors = listOf(
                 ActorDeclaration(
                     "actor1", listOf(
                         ActorMethod(
@@ -278,8 +394,233 @@ class JavaCodeGeneratorTest {
         """
 
         assertOneElement(generateSource_minimalPipeline(cu)).run {
-            Assertions.assertEquals(PACKAGE_NAME, this.packageName)
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
             assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun generateActor_GenericReturnType_PrimitiveDataTypes() {
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    "actor1", listOf(
+                        ActorMethod(
+                            "method1",
+                            Type(
+                                "map", of = listOf(
+                                    Type("string"),
+                                    Type(
+                                        "list", of = listOf(
+                                            Type("list", of = listOf(Type("int64")))
+                                        )
+                                    )
+                                )
+                            ),
+                            params = emptyList()
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSource = """
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+                java.util.concurrent.CompletableFuture<java.util.Map<java.lang.String, java.util.List<java.util.List<java.lang.Long>>>> method1();
+            }
+        """
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun generateActor_GenericReturnType_CustomDataTypes() {
+        val cu = CompilationUnit(
+            packageName,
+            enums = listOf(
+                EnumDeclaration(
+                    "enum1",
+                    members = listOf(
+                        EnumMember("A", 1),
+                        EnumMember("B", 2)
+                    )
+                )
+            ),
+            data = listOf(
+                DataDeclaration(
+                    "data1",
+                    fields = listOf(
+                        DataField(
+                            "field1", Type("string"), 1
+                        )
+                    )
+                )
+            ),
+            actors = listOf(
+                ActorDeclaration(
+                    "actor1", listOf(
+                        ActorMethod(
+                            "method1",
+                            Type("map", of = listOf(Type("enum1"), Type("data1"))),
+                            params = emptyList()
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSources = listOf(
+            """
+            public enum enum1 {
+                A,
+                B
+            }
+            """,
+            """
+            public class data1 {
+                private final java.lang.String field1;
+
+                public data1(java.lang.String field1) {
+                    this.field1 = field1;
+                }
+
+                public java.lang.String getField1() {
+                    return field1;
+                }
+            }
+            """,
+            """
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+                java.util.concurrent.CompletableFuture<java.util.Map<$packageName.enum1, $packageName.data1>> method1();
+            }
+            """
+        )
+
+        generateSource_minimalPipeline(cu).forEachIndexed { index, compiledType ->
+            Assertions.assertEquals(packageName, compiledType.packageName)
+            assertSourceMatch(expectedSources[index], compiledType.toString())
+        }
+    }
+
+    @Test
+    fun generateActor_GenericParameterType_PrimitiveDataTypes() {
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    "actor1", listOf(
+                        ActorMethod(
+                            "method1",
+                            Type("int32"),
+                            params = listOf(
+                                MethodParameter(
+                                    "arg1", type = Type(
+                                        "map", of = listOf(
+                                            Type("string"),
+                                            Type(
+                                                "list", of = listOf(
+                                                    Type("list", of = listOf(Type("int64")))
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSource = """
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+                java.util.concurrent.CompletableFuture<java.lang.Integer> method1(java.util.Map<java.lang.String, java.util.List<java.util.List<java.lang.Long>>> arg1);
+            }
+        """
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun generateActor_GenericParameterType_CustomDataTypes() {
+        val cu = CompilationUnit(
+            packageName,
+            enums = listOf(
+                EnumDeclaration(
+                    "enum1",
+                    members = listOf(
+                        EnumMember("A", 1),
+                        EnumMember("B", 2)
+                    )
+                )
+            ),
+            data = listOf(
+                DataDeclaration(
+                    "data1",
+                    fields = listOf(
+                        DataField(
+                            "field1", Type("string"), 1
+                        )
+                    )
+                )
+            ),
+            actors = listOf(
+                ActorDeclaration(
+                    "actor1", listOf(
+                        ActorMethod(
+                            "method1",
+                            Type("int32"),
+                            params = listOf(
+                                MethodParameter(
+                                    "arg1", type = Type(
+                                        "map", of =
+                                        listOf(Type("enum1"), Type("data1"))
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSources = listOf(
+            """
+            public enum enum1 {
+                A,
+                B
+            }
+            """,
+            """
+            public class data1 {
+                private final java.lang.String field1;
+
+                public data1(java.lang.String field1) {
+                    this.field1 = field1;
+                }
+
+                public java.lang.String getField1() {
+                    return field1;
+                }
+            }
+            """,
+            """
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+                java.util.concurrent.CompletableFuture<java.lang.Integer> method1(java.util.Map<$packageName.enum1, $packageName.data1> arg1);
+            }
+            """
+        )
+
+        generateSource_minimalPipeline(cu).forEachIndexed { index, compiledType ->
+            Assertions.assertEquals(packageName, compiledType.packageName)
+            assertSourceMatch(expectedSources[index], compiledType.toString())
         }
     }
 

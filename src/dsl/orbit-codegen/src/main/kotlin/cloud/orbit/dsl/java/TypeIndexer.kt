@@ -6,12 +6,8 @@
 
 package cloud.orbit.dsl.java
 
-import cloud.orbit.dsl.ast.AstVisitor
-import cloud.orbit.dsl.ast.CompilationUnit
-import cloud.orbit.dsl.ast.Declaration
-import cloud.orbit.dsl.ast.Type
-import com.squareup.javapoet.ClassName
-import com.squareup.javapoet.TypeName
+import cloud.orbit.dsl.ast.*
+import com.squareup.javapoet.*
 
 internal class TypeIndexer : AstVisitor() {
     private val types = mutableMapOf(
@@ -20,14 +16,16 @@ internal class TypeIndexer : AstVisitor() {
         Type("float") to TypeName.FLOAT,
         Type("int32") to TypeName.INT,
         Type("int64") to TypeName.LONG,
-        Type("string") to ClassName.get(String::class.java)
+        Type("string") to ClassName.get(String::class.java),
+        Type("list") to ClassName.get(java.util.List::class.java),
+        Type("map") to ClassName.get(java.util.Map::class.java)
     )
 
     private var packageName: String = ""
 
     fun visitCompilationUnits(compilationUnits: List<CompilationUnit>): Map<Type, TypeName> {
         compilationUnits.forEach { visitCompilationUnit(it) }
-        return types;
+        return types
     }
 
     override fun visitCompilationUnit(cu: CompilationUnit) {

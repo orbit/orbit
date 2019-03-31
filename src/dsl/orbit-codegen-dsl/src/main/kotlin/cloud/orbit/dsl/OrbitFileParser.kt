@@ -49,7 +49,7 @@ class OrbitFileParser : OrbitBaseVisitor<Any>() {
             ctx.children
                 .asSequence()
                 .filterIsInstance(OrbitParser.DataFieldContext::class.java)
-                .map { DataField(it.name.text, Type(it.type.text), it.index.text.toInt()) }
+                .map { DataField(it.name.text, makeType(it.type()), it.index.text.toInt()) }
                 .toList()))
 
     override fun visitActorDeclaration(ctx: OrbitParser.ActorDeclarationContext?) = actors.add(
@@ -61,12 +61,19 @@ class OrbitFileParser : OrbitBaseVisitor<Any>() {
                 .map { m ->
                     ActorMethod(
                         name = m.name.text,
-                        returnType = Type(m.returnType.text),
+                        returnType = makeType(m.returnType),
                         params = m.children
                             .asSequence()
                             .filterIsInstance(OrbitParser.MethodParamContext::class.java)
-                            .map { p -> MethodParameter(p.name.text, Type(p.type.text)) }
+                            .map { p -> MethodParameter(p.name.text, makeType(p.type())) }
                             .toList())
                 }
                 .toList()))
+
+    private fun makeType(ctx: OrbitParser.TypeContext): Type =
+        Type(ctx.name.text, ctx.children
+            .asSequence()
+            .filterIsInstance(OrbitParser.TypeContext::class.java)
+            .map(::makeType)
+            .toList())
 }

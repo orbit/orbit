@@ -144,6 +144,134 @@ class OrbitFileParserTest {
     }
 
     @Test
+    fun parseData_SimpleGenericField_SingleType() {
+        val text = """
+            data foo {
+                list<int32> f1 = 3;
+            }
+        """.trimIndent()
+
+        val expectedCu = CompilationUnit(
+            FAKE_PACKAGE_NAME,
+            data = listOf(
+                DataDeclaration(
+                    "foo",
+                    fields = listOf(
+                        DataField("f1", Type("list", listOf(Type("int32"))), 3)
+                    )
+                )
+            )
+        )
+
+        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+
+        Assertions.assertEquals(expectedCu, actualCu)
+    }
+
+    @Test
+    fun parseData_ComplexGenericField_SingleType() {
+        val text = """
+            data foo {
+                list<list<string>> f1 = 3;
+            }
+        """.trimIndent()
+
+        val expectedCu = CompilationUnit(
+            FAKE_PACKAGE_NAME,
+            data = listOf(
+                DataDeclaration(
+                    "foo",
+                    fields = listOf(
+                        DataField(
+                            "f1",
+                            Type(
+                                "list", listOf(
+                                    Type(
+                                        "list", listOf(
+                                            Type("string")
+                                        )
+                                    )
+                                )
+                            ),
+                            3
+                        )
+                    )
+                )
+            )
+        )
+
+        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+
+        Assertions.assertEquals(expectedCu, actualCu)
+    }
+
+    @Test
+    fun parseData_SimpleGenericField_MultipleTypes() {
+        val text = """
+            data foo {
+                map<string, int32> f1 = 3;
+            }
+        """.trimIndent()
+
+        val expectedCu = CompilationUnit(
+            FAKE_PACKAGE_NAME,
+            data = listOf(
+                DataDeclaration(
+                    "foo",
+                    fields = listOf(
+                        DataField(
+                            "f1",
+                            Type(
+                                "map", listOf(
+                                    Type("string"), Type("int32")
+                                )
+                            ),
+                            3
+                        )
+                    )
+                )
+            )
+        )
+
+        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+
+        Assertions.assertEquals(expectedCu, actualCu)
+    }
+
+    @Test
+    fun parseData_ComplexGenericField_MultipleTypes() {
+        val text = """
+            data foo {
+                map<string, list<int32>> f1 = 3;
+            }
+        """.trimIndent()
+
+        val expectedCu = CompilationUnit(
+            FAKE_PACKAGE_NAME,
+            data = listOf(
+                DataDeclaration(
+                    "foo",
+                    fields = listOf(
+                        DataField(
+                            "f1",
+                            Type(
+                                "map", listOf(
+                                    Type("string"), Type("list", listOf(Type("int32")))
+                                )
+                            ),
+                            3
+                        )
+                    )
+                )
+            )
+        )
+
+        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+
+        Assertions.assertEquals(expectedCu, actualCu)
+    }
+
+    @Test
     fun parseActor_Empty() {
         val text = "actor foo{}"
 
@@ -293,6 +421,10 @@ class OrbitFileParserTest {
                 void one_arg(RGB a); // Comment
                 RGB multiple_args(RGB arg1, RGB arg2);
                 // RGB multiple_args(RGB arg1, RGB arg2); This should be ignored
+                list<string> generic_return();
+                void generic_arg(list<int> arg1);
+                map<RGB, string> generic_multi(map<string, Payload> arg1);
+                list<map<string, RGB>> generics_nested(map<string, list<list<Payload>>> arg1);
             }
         """.trimIndent()
 
@@ -324,16 +456,68 @@ class OrbitFileParserTest {
                     methods = listOf(
                         ActorMethod("no_args", Type("int")),
                         ActorMethod(
-                            "one_arg", Type("void"),
+                            "one_arg",
+                            Type("void"),
                             params = listOf(
                                 MethodParameter("a", Type("RGB"))
                             )
                         ),
                         ActorMethod(
-                            "multiple_args", Type("RGB"),
+                            "multiple_args",
+                            Type("RGB"),
                             params = listOf(
                                 MethodParameter("arg1", Type("RGB")),
                                 MethodParameter("arg2", Type("RGB"))
+                            )
+                        ),
+                        ActorMethod("generic_return", Type("list", of = listOf(Type("string")))),
+                        ActorMethod(
+                            "generic_arg",
+                            Type("void"),
+                            params = listOf(
+                                MethodParameter("arg1", Type("list", of = listOf(Type("int"))))
+                            )
+                        ),
+                        ActorMethod(
+                            "generic_multi",
+                            Type("map", of = listOf(Type("RGB"), Type("string"))),
+                            params = listOf(
+                                MethodParameter(
+                                    "arg1",
+                                    Type("map", of = listOf(Type("string"), Type("Payload")))
+                                )
+                            )
+                        ),
+                        ActorMethod(
+                            "generics_nested",
+                            Type(
+                                "list", of = listOf(
+                                    Type(
+                                        "map", of = listOf(
+                                            Type("string"),
+                                            Type("RGB")
+                                        )
+                                    )
+                                )
+                            ),
+                            params = listOf(
+                                MethodParameter(
+                                    "arg1",
+                                    Type(
+                                        "map", of = listOf(
+                                            Type("string"),
+                                            Type(
+                                                "list", of = listOf(
+                                                    Type(
+                                                        "list", of = listOf(
+                                                            Type("Payload")
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
                             )
                         )
                     )
