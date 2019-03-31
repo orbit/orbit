@@ -13,7 +13,7 @@ Orbit is published to [Maven Central ](https://repo.maven.apache.org/maven2/)and
 {% code-tabs %}
 {% code-tabs-item title="Maven" %}
 ```markup
-<dependencies>
+<dependencies>
     <dependency>
         <groupId>cloud.orbit</groupId>
         <artifactId>orbit-runtime</artifactId>
