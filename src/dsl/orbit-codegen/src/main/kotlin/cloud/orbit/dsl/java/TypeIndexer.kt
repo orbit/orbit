@@ -6,8 +6,12 @@
 
 package cloud.orbit.dsl.java
 
-import cloud.orbit.dsl.ast.*
-import com.squareup.javapoet.*
+import cloud.orbit.dsl.ast.AstVisitor
+import cloud.orbit.dsl.ast.CompilationUnit
+import cloud.orbit.dsl.ast.Declaration
+import cloud.orbit.dsl.ast.Type
+import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.TypeName
 
 internal class TypeIndexer : AstVisitor() {
     private val types = mutableMapOf(

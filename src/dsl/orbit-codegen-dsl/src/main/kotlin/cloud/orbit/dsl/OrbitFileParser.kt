@@ -71,9 +71,11 @@ class OrbitFileParser : OrbitBaseVisitor<Any>() {
                 .toList()))
 
     private fun makeType(ctx: OrbitParser.TypeContext): Type =
-        Type(ctx.name.text, ctx.children
-            .asSequence()
-            .filterIsInstance(OrbitParser.TypeContext::class.java)
-            .map(::makeType)
-            .toList())
+        Type(
+            ctx.name.text, ctx.children
+                .asSequence()
+                .filterIsInstance(OrbitParser.TypeContext::class.java)
+                .map(::makeType)
+                .toList()
+        )
 }

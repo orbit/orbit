@@ -14,16 +14,14 @@ import cloud.orbit.core.actor.ActorProxyFactory
 import cloud.orbit.core.net.NodeCapabilities
 import cloud.orbit.core.net.NodeInfo
 import cloud.orbit.core.net.NodeStatus
+import cloud.orbit.core.remoting.AddressableRegistry
 import cloud.orbit.core.runtime.RuntimeContext
 import cloud.orbit.runtime.actor.ActorProxyFactoryImpl
 import cloud.orbit.runtime.capabilities.CapabilitiesScanner
 import cloud.orbit.runtime.concurrent.RuntimePools
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
-import cloud.orbit.runtime.hosting.DirectorySystem
-import cloud.orbit.runtime.hosting.ExecutionSystem
-import cloud.orbit.runtime.hosting.ResponseTrackingSystem
-import cloud.orbit.runtime.hosting.RoutingSystem
+import cloud.orbit.runtime.hosting.*
 import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.pipeline.PipelineSystem
 import cloud.orbit.runtime.remoting.AddressableDefinitionDirectory
@@ -36,15 +34,15 @@ import kotlinx.coroutines.future.asCompletableFuture
  *
  * This represents a single instance of the Orbit runtime.
  */
-class Stage(private val stageConfig: StageConfig) : RuntimeContext {
+class Stage(val config: StageConfig) : RuntimeContext {
     constructor() : this(StageConfig())
 
     private val logger by logger()
 
     private val errorHandler = ErrorHandler()
     private val runtimePools = RuntimePools(
-        cpuPool = stageConfig.cpuPool,
-        ioPool = stageConfig.ioPool
+        cpuPool = config.cpuPool,
+        ioPool = config.ioPool
     )
     private val supervisorScope = SupervisorScope(
         runtimePools = runtimePools,
@@ -63,13 +61,14 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
     override val clock: Clock by componentProvider.inject()
     override val actorProxyFactory: ActorProxyFactory by componentProvider.inject()
+    override val addressableRegistry: AddressableRegistry by componentProvider.inject()
 
     init {
         componentProvider.configure {
             // Stage
             instance<RuntimeContext>(this@Stage)
             instance(this@Stage)
-            instance(stageConfig)
+            instance(config)
             instance(runtimePools)
             instance(supervisorScope)
             instance(errorHandler)
@@ -92,6 +91,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<ResponseTrackingSystem>()
             definition<ExecutionSystem>()
             definition<DirectorySystem>()
+            definition<AddressableRegistry>(AddressableRegistryImpl::class.java)
 
             // Capabilities
             definition<CapabilitiesScanner>()
@@ -100,14 +100,14 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
             definition<ActorProxyFactory>(ActorProxyFactoryImpl::class.java)
 
             // Cluster Components
-            definition(stageConfig.clusterConfig.addressableDirectory)
+            definition(config.clusterConfig.addressableDirectory)
         }
 
         netSystem.localNodeManipulator.replace(
             NodeInfo(
-                clusterName = stageConfig.clusterName,
-                nodeIdentity = stageConfig.nodeIdentity,
-                nodeMode = stageConfig.nodeMode,
+                clusterName = config.clusterName,
+                nodeIdentity = config.nodeIdentity,
+                nodeMode = config.nodeMode,
                 nodeStatus = NodeStatus.STOPPED,
                 nodeCapabilities = NodeCapabilities(
                     implementedAddressables = listOf()
@@ -137,7 +137,7 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     }
 
     private fun launchTick() = supervisorScope.launch {
-        val targetTickRate = stageConfig.tickRate
+        val targetTickRate = config.tickRate
         while (isActive) {
             val (elapsed, _) = stopwatch(clock) {
                 logger.trace { "Begin Orbit tick..." }
@@ -181,10 +181,10 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
 
         // Log some info about the environment
         logEnvironmentInfo()
-        logger.debug { "Orbit Stage Config: $stageConfig" }
+        logger.debug { "Orbit Stage Config: $config" }
 
         // Capabilities and definitions
-        capabilitiesScanner.scan(*stageConfig.packages.toTypedArray())
+        capabilitiesScanner.scan(*config.packages.toTypedArray())
         val capabilities = capabilitiesScanner.generateNodeCapabilities()
         netSystem.localNodeManipulator.updateCapabiltities(capabilities)
         definitionDirectory.setupDefinition(
@@ -223,12 +223,12 @@ class Stage(private val stageConfig: StageConfig) : RuntimeContext {
     private fun logEnvironmentInfo() {
         val versionInfo = VersionUtils.getVersionInfo()
         logger.info {
-            "Orbit Environment: ${stageConfig.clusterName} ${stageConfig.nodeIdentity} $versionInfo"
+            "Orbit Environment: ${config.clusterName} ${config.nodeIdentity} $versionInfo"
         }
 
         loggingContext {
-            put("orbit.clusterName" to stageConfig.clusterName.value)
-            put("orbit.nodeIdentity" to stageConfig.nodeIdentity.value)
+            put("orbit.clusterName" to config.clusterName.value)
+            put("orbit.nodeIdentity" to config.nodeIdentity.value)
             put("orbit.version" to versionInfo.orbitVersion)
             put("orbit.jvmVersion" to versionInfo.jvmVersion)
             put("orbit.jvmBuild" to versionInfo.jvmBuild)

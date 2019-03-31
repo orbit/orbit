@@ -23,11 +23,11 @@ internal class DirectorySystem(
         return addressableDirectory.getOrPut(addressableReference, messageTarget)
     }
 
-    suspend fun localActivation(addressableReference: AddressableReference) {
+    suspend fun forcePlaceLocal(addressableReference: AddressableReference) {
         addressableDirectory.put(addressableReference, NetTarget.Unicast(netSystem.localNode.nodeIdentity))
     }
 
-    suspend fun localDeactivation(addressableReference: AddressableReference) {
+    suspend fun removeIfLocal(addressableReference: AddressableReference) {
         addressableDirectory.removeIf(addressableReference, NetTarget.Unicast(netSystem.localNode.nodeIdentity))
     }
 }

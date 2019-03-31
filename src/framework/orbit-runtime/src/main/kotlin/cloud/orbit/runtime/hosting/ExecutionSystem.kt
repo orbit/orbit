@@ -33,6 +33,8 @@ internal class ExecutionSystem(
     private val pipelineSystem: PipelineSystem
 ) {
     private val activeAddressables = ConcurrentHashMap<AddressableReference, ExecutionHandle>()
+    private val instanceAddressableMap = ConcurrentHashMap<Addressable, ExecutionHandle>()
+
     private val logger by logger()
 
     suspend fun handleInvocation(invocation: AddressableInvocation, completion: Completion) {
@@ -60,10 +62,11 @@ internal class ExecutionSystem(
     suspend fun onTick() {
         val tickTime = clock.currentTime
         activeAddressables.forEach { (_, handle) ->
-            if (handle.implDefinition.lifecycle.autoDeactivate) {
-                if (tickTime - handle.lastActivity > stageConfig.timeToLiveMillis) {
-                    deactivate(handle)
-                }
+            val ttlDeactivate = handle.implDefinition.lifecycle.autoDeactivate &&
+                    (tickTime - handle.lastActivity > stageConfig.timeToLiveMillis)
+
+            if (ttlDeactivate || handle.deactivateNextTick) {
+                deactivate(handle)
             }
         }
     }
@@ -74,6 +77,26 @@ internal class ExecutionSystem(
         }
     }
 
+    suspend fun registerAddressableInstance(reference: AddressableReference, addressable: Addressable) {
+        val handle = createHandle(
+            reference, definitionDirectory.onDemandImplClass(
+                reference.interfaceClass,
+                addressable.javaClass
+            ), addressable
+        )
+        registerHandle(handle)
+        updatePlacement(handle, true)
+    }
+
+    suspend fun deregisterAddressableInstance(addressable: Addressable) {
+        instanceAddressableMap[addressable]?.also {
+            deactivate(it)
+        }
+    }
+
+    fun getReferenceByInstance(addressable: Addressable): AddressableReference? =
+        instanceAddressableMap[addressable]?.reference
+
     private suspend fun activate(
         reference: AddressableReference,
         interfaceDefinition: AddressableInterfaceDefinition
@@ -81,9 +104,7 @@ internal class ExecutionSystem(
         val implDefinition = definitionDirectory.getImplDefinition(interfaceDefinition.interfaceClass)
         if (implDefinition.lifecycle.autoActivate) {
             val handle = getOrCreateAddressable(reference, implDefinition)
-            if (handle.interfaceDefinition.routing.persistentPlacement) {
-                directorySystem.localActivation(handle.reference)
-            }
+            updatePlacement(handle, true)
             handle.activate().await()
             return handle
         }
@@ -106,25 +127,49 @@ internal class ExecutionSystem(
             logger.error(msg)
         }
         activeAddressables.remove(handle.reference)
-        if (handle.interfaceDefinition.routing.persistentPlacement) {
-            directorySystem.localDeactivation(handle.reference)
-        }
+        instanceAddressableMap.remove(handle.instance)
+        updatePlacement(handle, false)
     }
 
     private fun getOrCreateAddressable(
         reference: AddressableReference,
         implDefinition: AddressableImplDefinition
-    ): ExecutionHandle =
-        activeAddressables.getOrPut(reference) {
+    ): ExecutionHandle {
+        val handle = activeAddressables.getOrPut(reference) {
             val newInstance = createInstance(implDefinition.implClass)
-            ExecutionHandle(
-                componentProvider = componentProvider,
-                instance = newInstance,
-                reference = reference,
-                interfaceDefinition = implDefinition.interfaceDefinition,
-                implDefinition = implDefinition
-            )
+            createHandle(reference, implDefinition, newInstance)
         }
+        registerHandle(handle)
+        return handle
+    }
+
+    private fun createHandle(
+        reference: AddressableReference,
+        implDefinition: AddressableImplDefinition,
+        instance: Addressable
+    ): ExecutionHandle =
+        ExecutionHandle(
+            componentProvider = componentProvider,
+            instance = instance,
+            reference = reference,
+            interfaceDefinition = implDefinition.interfaceDefinition,
+            implDefinition = implDefinition
+        )
+
+    private suspend fun updatePlacement(handle: ExecutionHandle, adding: Boolean) {
+        if (handle.interfaceDefinition.routing.persistentPlacement) {
+            if (adding) {
+                directorySystem.forcePlaceLocal(handle.reference)
+            } else {
+                directorySystem.removeIfLocal(handle.reference)
+            }
+        }
+    }
+
+    private fun registerHandle(handle: ExecutionHandle) {
+        activeAddressables[handle.reference] = handle
+        instanceAddressableMap[handle.instance] = handle
+    }
 
     private fun createInstance(addressableClass: AddressableClass): Addressable {
         return addressableClass.getDeclaredConstructor().newInstance()

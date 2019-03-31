@@ -9,6 +9,7 @@ package cloud.orbit.runtime.pipeline
 import cloud.orbit.common.exception.CapacityExceededException
 import cloud.orbit.common.logging.logger
 import cloud.orbit.common.logging.trace
+import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.AddressableInvocation
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
@@ -109,10 +110,11 @@ internal class PipelineSystem(
     fun pushInbound(msg: Message) =
         writeMessage(msg, MessageDirection.INBOUND)
 
-    fun pushInvocation(addressableInvocation: AddressableInvocation) =
+    fun pushInvocation(addressableInvocation: AddressableInvocation, target: NetTarget? = null) =
         pushOutbound(
             Message(
-                MessageContent.RequestInvocationMessage(addressableInvocation)
+                content = MessageContent.RequestInvocationMessage(addressableInvocation),
+                target = target
             )
         )
 

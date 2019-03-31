@@ -40,6 +40,9 @@ internal class AddressableDefinitionDirectory {
     fun getImplDefinition(interfaceClass: AddressableClass): AddressableImplDefinition =
         implDefinitionMap[interfaceClass] ?: throw IllegalStateException("No implementation found for $interfaceClass")
 
+    fun onDemandImplClass(interfaceClass: AddressableClass, implClass: AddressableClass): AddressableImplDefinition =
+        generateImplDefinition(interfaceClass, implClass)
+
     private fun generateInterfaceDefinition(interfaceClass: AddressableClass): AddressableInterfaceDefinition {
         if (!interfaceClass.isInterface) {
             throw IllegalArgumentException("${interfaceClass.name} is not an interface.")

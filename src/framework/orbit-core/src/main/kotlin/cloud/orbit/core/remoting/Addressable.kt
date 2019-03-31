@@ -11,10 +11,11 @@ import cloud.orbit.core.key.Key
 import cloud.orbit.core.runtime.RuntimeContext
 import java.lang.reflect.Method
 
+
+@NonConcrete
 /**
  * Marker interface that determines an interface is addressable remotely.
  */
-@NonConcrete
 interface Addressable
 
 /**

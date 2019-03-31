@@ -8,6 +8,7 @@ package cloud.orbit.core.runtime
 
 import cloud.orbit.common.time.Clock
 import cloud.orbit.core.actor.ActorProxyFactory
+import cloud.orbit.core.remoting.AddressableRegistry
 
 /**
  * The Orbit runtime context.
@@ -15,4 +16,5 @@ import cloud.orbit.core.actor.ActorProxyFactory
 interface RuntimeContext {
     val clock: Clock
     val actorProxyFactory: ActorProxyFactory
+    val addressableRegistry: AddressableRegistry
 }

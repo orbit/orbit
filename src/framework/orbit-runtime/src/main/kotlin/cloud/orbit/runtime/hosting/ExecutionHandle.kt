@@ -43,6 +43,9 @@ internal class ExecutionHandle(
 
     val createdTime = clock.currentTime
 
+    @Volatile
+    var deactivateNextTick = false
+
     private val lastActivityAtomic = AtomicLong(createdTime)
     val lastActivity get() = lastActivityAtomic.get()
 
@@ -88,8 +91,10 @@ internal class ExecutionHandle(
     private suspend fun onActivate() {
         logger.debug { "Activating $reference..." }
         val (elapsed, _) = stopwatch(clock) {
-            implDefinition.onActivateMethod?.also {
-                DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
+            if (implDefinition.lifecycle.autoActivate) {
+                implDefinition.onActivateMethod?.also {
+                    DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
+                }
             }
         }
         logger.debug { "Activated $reference in ${elapsed}ms. " }
@@ -107,8 +112,10 @@ internal class ExecutionHandle(
     private suspend fun onDeactivate() {
         logger.debug { "Deactivating $reference..." }
         val (elapsed, _) = stopwatch(clock) {
-            implDefinition.onDeactivateMethod?.also {
-                DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
+            if (implDefinition.lifecycle.autoDeactivate) {
+                implDefinition.onDeactivateMethod?.also {
+                    DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
+                }
             }
 
             worker.cancel()

@@ -20,8 +20,8 @@ class GreeterActor : Greeter, AbstractActor() {
     override fun greet(name: String): CompletableFuture<Map<Language, Greeting>> {
         return CompletableFuture.completedFuture(
             mapOf(
-                Language.ENGLISH to Greeting(Language.ENGLISH,"Hello $name!"),
-                Language.GERMAN to Greeting(Language.GERMAN,"Hallo, $name!")
+                Language.ENGLISH to Greeting(Language.ENGLISH, "Hello $name!"),
+                Language.GERMAN to Greeting(Language.GERMAN, "Hallo, $name!")
             )
         )
     }
