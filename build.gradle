@@ -53,7 +53,7 @@ ext {
     orbitCodename = project.properties["orbit.codename"]
     orbitCompatVersion = project.properties["orbit.compatVersion"]
     orbitUrl = "https://www.orbit.cloud"
-    orbitScmUrl = "scm:git:git://github.com/orbit/orbit"
+    orbitScmUrl = "https://github.com/orbit/orbit.git"
     orbitDescription = "The Orbit project is a collection of JVM libraries that makes it easier to build distributed and scalable online services."
     orgName = "Electronic Arts"
     orgUrl = "https://www.ea.com"
