@@ -5,6 +5,7 @@
  */
 
 plugins {
+    id "com.gradle.plugin-publish" version "0.10.1"
     id 'java-gradle-plugin'
 }
 
@@ -14,9 +15,23 @@ dependencies {
 
 gradlePlugin {
     plugins {
-        orbitPlugin {
+        orbitDslPlugin {
             id = 'cloud.orbit.dsl'
             implementationClass = 'cloud.orbit.dsl.gradle.OrbitDslPlugin'
+        }
+    }
+}
+
+pluginBundle {
+    website = orbitUrl
+    vcsUrl = orbitScmUrl
+    description = "A plugin to generate code from Orbit DSL files"
+
+    plugins {
+        orbitDslPlugin {
+            displayName = "Orbit DSL plugin"
+            tags = ['orbit']
+            version = orbitVersion
         }
     }
 }
