@@ -11,6 +11,4 @@ fun <E> Collection<E>.randomOrNull(): E? =
         this.random()
     } catch (nse: NoSuchElementException) {
         null
-    } catch (t: Throwable) {
-        throw t
     }

@@ -15,6 +15,7 @@ import cloud.orbit.core.remoting.*
 import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Completion
+import cloud.orbit.runtime.pipeline.PipelineSystem
 import cloud.orbit.runtime.remoting.AddressableImplDefinition
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
 import cloud.orbit.runtime.stage.Stage
@@ -36,6 +37,7 @@ internal class ExecutionHandle(
     private val supervisorScope: SupervisorScope by componentProvider.inject()
     private val stageConfig: StageConfig by componentProvider.inject()
     private val stage: Stage by componentProvider.inject()
+    private val pipelineSystem: PipelineSystem by componentProvider.inject()
 
     private val logger by logger()
 
@@ -99,8 +101,6 @@ internal class ExecutionHandle(
             return MethodInvoker.invokeDeferred(instance, invocation.method, invocation.args).await()
         } catch (ite: InvocationTargetException) {
             throw ite.targetException
-        } catch (t: Throwable) {
-            throw t
         }
     }
 
@@ -112,8 +112,24 @@ internal class ExecutionHandle(
             }
 
             worker.cancel()
+            channel.close()
+            drainChannel()
+
         }
         logger.debug { "Deactivated $reference in ${elapsed}ms." }
+    }
+
+    private suspend fun drainChannel() {
+        for (event in channel) {
+            if (event is EventType.InvokeEvent) {
+                logger.warn(
+                    "Received invocation which can no longer be handled locally. " +
+                            "Rerouting... ${event.invocation}"
+                )
+
+                pipelineSystem.pushInvocation(event.invocation)
+            }
+        }
     }
 
     private val worker = supervisorScope.launch {

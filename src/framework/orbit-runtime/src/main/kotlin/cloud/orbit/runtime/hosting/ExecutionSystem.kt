@@ -19,6 +19,8 @@ import cloud.orbit.runtime.remoting.AddressableDefinitionDirectory
 import cloud.orbit.runtime.remoting.AddressableImplDefinition
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
 import cloud.orbit.runtime.stage.StageConfig
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 import java.util.concurrent.ConcurrentHashMap
 
 internal class ExecutionSystem(
@@ -92,7 +94,16 @@ internal class ExecutionSystem(
     }
 
     private suspend fun deactivate(handle: ExecutionHandle) {
-        handle.deactivate().await()
+        try {
+            withTimeout(stageConfig.deactivationTimeoutMillis) {
+                handle.deactivate().await()
+            }
+        } catch (t: TimeoutCancellationException) {
+            val msg = "A timeout occurred (>${stageConfig.deactivationTimeoutMillis}ms) during deactivation of " +
+                    "${handle.reference}. This addressable is now considered deactivated, this may cause state " +
+                    "corruption."
+            logger.error(msg)
+        }
         activeAddressables.remove(handle.reference)
         if (handle.interfaceDefinition.routing.persistentPlacement) {
             directorySystem.localDeactivation(handle.reference)
