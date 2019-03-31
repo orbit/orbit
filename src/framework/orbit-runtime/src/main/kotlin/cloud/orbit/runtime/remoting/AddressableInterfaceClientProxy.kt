@@ -20,16 +20,12 @@ import java.lang.reflect.Proxy
 
 internal class AddressableInterfaceClientProxy(
     private val pipelineSystem: PipelineSystem,
-    private val interfaceClass: AddressableClass,
-    private val key: Key,
+    private val reference: AddressableReference,
     private val target: NetTarget?
 ) : InvocationHandler {
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any {
         val addressableInvocation = AddressableInvocation(
-            reference = AddressableReference(
-                interfaceClass = interfaceClass,
-                key = key
-            ),
+            reference = reference,
             method = method,
             args = args ?: arrayOf()
         )
@@ -49,8 +45,10 @@ internal class AddressableInterfaceClientProxyFactory(
 
         val invocationHandler = AddressableInterfaceClientProxy(
             pipelineSystem = pipelineSystem,
-            interfaceClass = interfaceDefinition.interfaceClass,
-            key = key,
+            reference = AddressableReference(
+                interfaceClass = interfaceDefinition.interfaceClass,
+                key = key
+            ),
             target = target
         )
         val javaProxy = Proxy.newProxyInstance(
