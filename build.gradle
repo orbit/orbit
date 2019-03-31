@@ -33,7 +33,8 @@ configureProject(":samples:helloworld-java", [withJava])
 
 buildscript {
     ext.kotlinVersion = "1.3.21"
-    ext.dokkaVersion = "0.9.18"
+    // TODO: Upgrade once bug is fixed with orbit-core doc generation - https://github.com/Kotlin/dokka/issues/455
+    ext.dokkaVersion = "0.9.17"
     ext.dokkaRepo = "https://dl.bintray.com/kotlin/dokka"
 
     repositories {
