@@ -6,11 +6,4 @@
 
 package cloud.orbit.dsl.gradle
 
-import java.io.File
-
-data class OrbitDslSpec(
-    val projectDirectory: File,
-    val orbitFiles: Set<File>,
-    val inputDirectories: Set<File>,
-    val outputDirectory: File
-)
+class OrbitDslException(message: String) : RuntimeException(message)

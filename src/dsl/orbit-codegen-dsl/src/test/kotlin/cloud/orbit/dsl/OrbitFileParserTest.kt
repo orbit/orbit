@@ -15,22 +15,33 @@ import cloud.orbit.dsl.ast.EnumDeclaration
 import cloud.orbit.dsl.ast.EnumMember
 import cloud.orbit.dsl.ast.MethodParameter
 import cloud.orbit.dsl.ast.Type
+import org.antlr.v4.runtime.misc.ParseCancellationException
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class OrbitFileParserTest {
-    private val FAKE_PACKAGE_NAME = "cloud.orbit.test.some.package"
+    private val packageName = "cloud.orbit.test"
+
+    @Test
+    fun throwsOnSyntaxError() {
+        val text = "actor a {"
+
+        assertThrows<ParseCancellationException> {
+            OrbitFileParser().parse(text, packageName)
+        }
+    }
 
     @Test
     fun parseEnum_Empty() {
         val text = "enum foo{}"
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             enums = listOf(EnumDeclaration("foo"))
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -44,7 +55,7 @@ class OrbitFileParserTest {
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             enums = listOf(
                 EnumDeclaration(
                     "foo",
@@ -53,7 +64,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -68,7 +79,7 @@ class OrbitFileParserTest {
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             enums = listOf(
                 EnumDeclaration(
                     "foo",
@@ -80,7 +91,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -90,11 +101,11 @@ class OrbitFileParserTest {
         val text = "data foo{}"
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             data = listOf(DataDeclaration("foo"))
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -108,7 +119,7 @@ class OrbitFileParserTest {
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             data = listOf(
                 DataDeclaration(
                     "foo",
@@ -119,7 +130,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -134,7 +145,7 @@ class OrbitFileParserTest {
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             data = listOf(
                 DataDeclaration(
                     "foo",
@@ -146,7 +157,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -160,7 +171,7 @@ class OrbitFileParserTest {
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             data = listOf(
                 DataDeclaration(
                     "foo",
@@ -171,7 +182,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -185,7 +196,7 @@ class OrbitFileParserTest {
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             data = listOf(
                 DataDeclaration(
                     "foo",
@@ -208,7 +219,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -222,7 +233,7 @@ class OrbitFileParserTest {
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             data = listOf(
                 DataDeclaration(
                     "foo",
@@ -241,7 +252,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -255,7 +266,7 @@ class OrbitFileParserTest {
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             data = listOf(
                 DataDeclaration(
                     "foo",
@@ -274,7 +285,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -284,11 +295,11 @@ class OrbitFileParserTest {
         val text = "actor foo{}"
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             actors = listOf(ActorDeclaration("foo"))
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -302,7 +313,7 @@ class OrbitFileParserTest {
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             actors = listOf(
                 ActorDeclaration(
                     "foo",
@@ -311,7 +322,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -326,7 +337,7 @@ class OrbitFileParserTest {
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             actors = listOf(
                 ActorDeclaration(
                     "foo",
@@ -338,7 +349,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -352,7 +363,7 @@ class OrbitFileParserTest {
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             actors = listOf(
                 ActorDeclaration(
                     "foo",
@@ -366,7 +377,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -380,7 +391,7 @@ class OrbitFileParserTest {
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             actors = listOf(
                 ActorDeclaration(
                     "foo",
@@ -397,7 +408,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -437,7 +448,7 @@ class OrbitFileParserTest {
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
-            FAKE_PACKAGE_NAME,
+            packageName,
             enums = listOf(
                 EnumDeclaration(
                     "RGB",
@@ -533,7 +544,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, FAKE_PACKAGE_NAME)
+        val actualCu = OrbitFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
