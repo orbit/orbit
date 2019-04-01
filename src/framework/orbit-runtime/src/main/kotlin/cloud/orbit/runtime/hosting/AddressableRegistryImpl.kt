@@ -15,16 +15,21 @@ import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.remoting.AddressableInterfaceClientProxyFactory
 import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
+import java.util.concurrent.CompletableFuture
 
 internal class AddressableRegistryImpl(
     private val proxyFactory: AddressableInterfaceClientProxyFactory,
     private val executionSystem: ExecutionSystem,
     private val supervisorScope: SupervisorScope
 ) : AddressableRegistry {
-    override fun registerAddressable(reference: AddressableReference, instance: Addressable) = supervisorScope.async {
-        registerAddressableInternal(reference, instance)
-    }.asCompletableFuture()
 
+    override fun <T : Addressable> registerAddressable(
+        interfaceClass: Class<T>,
+        key: Key,
+        instance: T
+    ): CompletableFuture<Unit> = supervisorScope.async {
+        registerAddressableInternal(AddressableReference(interfaceClass = interfaceClass, key = key), instance)
+    }.asCompletableFuture()
 
     override fun deregisterAddressable(instance: Addressable) = supervisorScope.async {
         deregisterAddressableInternal(instance)
