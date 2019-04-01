@@ -25,12 +25,12 @@ gradlePlugin {
 pluginBundle {
     website = orbitUrl
     vcsUrl = orbitScmUrl
-    description = "A plugin to generate code from Orbit DSL files"
+    description = "A plugin to generate code from the Orbit DSL."
 
     plugins {
         orbitDslPlugin {
-            displayName = "Orbit DSL plugin"
-            tags = ['orbit']
+            displayName = "Orbit DSL Plugin"
+            tags = ['orbit', 'codegen', 'dsl']
             version = orbitVersion
         }
     }
