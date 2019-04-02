@@ -28,9 +28,7 @@ internal class ExecutionSystem(
     private val definitionDirectory: AddressableDefinitionDirectory,
     private val clock: Clock,
     private val stageConfig: StageConfig,
-    private val directorySystem: DirectorySystem,
-    private val routingSystem: RoutingSystem,
-    private val pipelineSystem: PipelineSystem
+    private val directorySystem: DirectorySystem
 ) {
     private val activeAddressables = ConcurrentHashMap<AddressableReference, ExecutionHandle>()
     private val instanceAddressableMap = ConcurrentHashMap<Addressable, ExecutionHandle>()
@@ -43,12 +41,7 @@ internal class ExecutionSystem(
         var handle = activeAddressables[invocation.reference]
 
         if (handle == null) {
-            if (routingSystem.canHandleLocally(invocation.reference)) {
-                handle = activate(invocation.reference, interfaceDefinition)
-            } else {
-                logger.warn("Received invocation which can no longer be handled locally. Rerouting... $invocation")
-                pipelineSystem.pushInvocation(invocation)
-            }
+            handle = activate(invocation.reference, interfaceDefinition)
         }
 
         if (handle == null) {
@@ -85,7 +78,6 @@ internal class ExecutionSystem(
             ), addressable
         )
         registerHandle(handle)
-        updatePlacement(handle, true)
     }
 
     suspend fun deregisterAddressableInstance(addressable: Addressable) {
@@ -104,7 +96,6 @@ internal class ExecutionSystem(
         val implDefinition = definitionDirectory.getImplDefinition(interfaceDefinition.interfaceClass)
         if (implDefinition.lifecycle.autoActivate) {
             val handle = getOrCreateAddressable(reference, implDefinition)
-            updatePlacement(handle, true)
             handle.activate().await()
             return handle
         }
@@ -126,12 +117,10 @@ internal class ExecutionSystem(
                     "corruption."
             logger.error(msg)
         }
-        activeAddressables.remove(handle.reference)
-        instanceAddressableMap.remove(handle.instance)
-        updatePlacement(handle, false)
+        deregisterHandle(handle)
     }
 
-    private fun getOrCreateAddressable(
+    private suspend fun getOrCreateAddressable(
         reference: AddressableReference,
         implDefinition: AddressableImplDefinition
     ): ExecutionHandle {
@@ -156,6 +145,18 @@ internal class ExecutionSystem(
             implDefinition = implDefinition
         )
 
+    private suspend fun registerHandle(handle: ExecutionHandle) {
+        activeAddressables[handle.reference] = handle
+        instanceAddressableMap[handle.instance] = handle
+        updatePlacement(handle, true)
+    }
+
+    private suspend fun deregisterHandle(handle: ExecutionHandle) {
+        activeAddressables.remove(handle.reference)
+        instanceAddressableMap.remove(handle.instance)
+        updatePlacement(handle, false)
+    }
+
     private suspend fun updatePlacement(handle: ExecutionHandle, adding: Boolean) {
         if (handle.interfaceDefinition.routing.persistentPlacement) {
             if (adding) {
@@ -166,10 +167,6 @@ internal class ExecutionSystem(
         }
     }
 
-    private fun registerHandle(handle: ExecutionHandle) {
-        activeAddressables[handle.reference] = handle
-        instanceAddressableMap[handle.instance] = handle
-    }
 
     private fun createInstance(addressableClass: AddressableClass): Addressable {
         return addressableClass.getDeclaredConstructor().newInstance()
