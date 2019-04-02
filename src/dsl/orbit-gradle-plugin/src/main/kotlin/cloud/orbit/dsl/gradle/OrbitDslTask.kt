@@ -28,7 +28,7 @@ open class OrbitDslTask : SourceTask() {
         GFileUtils.cleanDirectory(outputDirectory!!)
         orbitFiles.addAll(sourceFiles)
 
-        val spec = OrbitDslSpec(orbitFiles, sourceDirectorySet!!.srcDirs, outputDirectory!!)
+        val spec = OrbitDslSpec(project.projectDir, orbitFiles, sourceDirectorySet!!.srcDirs, outputDirectory!!)
         OrbitDslCompilerRunner().run(spec)
     }
 

@@ -17,6 +17,7 @@ import cloud.orbit.dsl.ast.MethodParameter
 import cloud.orbit.dsl.ast.Type
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
+import org.antlr.v4.runtime.ConsoleErrorListener
 
 class OrbitFileParser : OrbitBaseVisitor<Any>() {
     private val enums = mutableListOf<EnumDeclaration>()
@@ -25,9 +26,11 @@ class OrbitFileParser : OrbitBaseVisitor<Any>() {
 
     // This code is not thread safe. Need to find a way to pass the context into the visitor
     fun parse(input: String, packageName: String): CompilationUnit {
-
         val lexer = OrbitLexer(CharStreams.fromString(input))
-        val parser = OrbitParser(CommonTokenStream(lexer))
+        val parser = OrbitParser(CommonTokenStream(lexer)).also {
+            it.addErrorListener(ThrowingErrorListener())
+            it.removeErrorListener(ConsoleErrorListener.INSTANCE)
+        }
 
         actors.clear()
         data.clear()
