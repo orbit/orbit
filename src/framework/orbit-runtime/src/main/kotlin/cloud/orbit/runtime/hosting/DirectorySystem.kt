@@ -24,10 +24,10 @@ internal class DirectorySystem(
     }
 
     suspend fun forcePlaceLocal(addressableReference: AddressableReference) {
-        addressableDirectory.put(addressableReference, NetTarget.Unicast(netSystem.localNode.nodeIdentity))
+        addressableDirectory.put(addressableReference, netSystem.localNode.nodeIdentity.asTarget())
     }
 
     suspend fun removeIfLocal(addressableReference: AddressableReference) {
-        addressableDirectory.removeIf(addressableReference, NetTarget.Unicast(netSystem.localNode.nodeIdentity))
+        addressableDirectory.removeIf(addressableReference, netSystem.localNode.nodeIdentity.asTarget())
     }
 }

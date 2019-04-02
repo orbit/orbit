@@ -18,7 +18,7 @@ class RandomRouting : RoutingStrategy {
     override fun selectTarget(nodes: List<NodeInfo>): NetTarget? {
         val node = nodes.randomOrNull()
         return if (node != null) {
-            NetTarget.Unicast(node.nodeIdentity)
+            node.nodeIdentity.asTarget()
         } else {
             null
         }

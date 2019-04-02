@@ -9,7 +9,6 @@ package cloud.orbit.runtime.remoting
 import cloud.orbit.core.key.Key
 import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.Addressable
-import cloud.orbit.core.remoting.AddressableClass
 import cloud.orbit.core.remoting.AddressableInvocation
 import cloud.orbit.core.remoting.AddressableReference
 import cloud.orbit.runtime.hosting.DeferredWrappers

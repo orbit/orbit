@@ -18,4 +18,6 @@ data class ClusterName(val value: String)
  *
  * This value must be unique within a cluster.
  */
-data class NodeIdentity(val value: String)
+data class NodeIdentity(val value: String) {
+    fun asTarget(): NetTarget = NetTarget.Unicast(this)
+}

@@ -22,7 +22,7 @@ interface AddressableRegistry {
      * @param instance The instance of the addressable.
      * @return A future which is completed once registration is complete.
      */
-    fun <T : Addressable> registerAddressable(interfaceClass: Class<T>, key: Key, instance: T): CompletableFuture<Unit>
+    fun <T : Addressable> registerAddressable(interfaceClass: Class<T>, key: Key, instance: T): CompletableFuture<T>
 
     /**
      * Deregisters an active addressable from the current Orbit runtime.
