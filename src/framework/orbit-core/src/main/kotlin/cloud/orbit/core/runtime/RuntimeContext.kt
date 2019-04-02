@@ -14,7 +14,16 @@ import cloud.orbit.core.remoting.AddressableRegistry
  * The Orbit runtime context.
  */
 interface RuntimeContext {
+    /**
+     * The Orbit wall [Clock].
+     */
     val clock: Clock
+    /**
+     * The Obit [ActorProxyFactory].
+     */
     val actorProxyFactory: ActorProxyFactory
+    /**
+     * The Orbit [AddressableRegistry].
+     */
     val addressableRegistry: AddressableRegistry
 }

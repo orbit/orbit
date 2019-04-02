@@ -38,7 +38,13 @@ abstract class AbstractAddressable {
  * A context available to an [Addressable] which gives access to Orbit runtime information.
  */
 data class AddressableContext(
+    /**
+     * A reference to this [Addressable].
+     */
     val reference: AddressableReference,
+    /**
+     * A reference to the Orbit [RuntimeContext].
+     */
     val runtime: RuntimeContext
 )
 

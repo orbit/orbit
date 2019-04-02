@@ -10,17 +10,22 @@ import cloud.orbit.common.util.randomOrNull
 import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.net.NodeInfo
 
+/**
+ * A routing strategy determines how a message is routed based on a set of rules.
+ */
 interface RoutingStrategy {
+    /**
+     * Selects a target.
+     *
+     * @param nodes The nodes to choose from.
+     * @return A target or null if no suitable node found.
+     */
     fun selectTarget(nodes: List<NodeInfo>): NetTarget?
 }
 
+/**
+ * A routing strategy that selects a random single node as its target.
+ */
 class RandomRouting : RoutingStrategy {
-    override fun selectTarget(nodes: List<NodeInfo>): NetTarget? {
-        val node = nodes.randomOrNull()
-        return if (node != null) {
-            node.nodeIdentity.asTarget()
-        } else {
-            null
-        }
-    }
+    override fun selectTarget(nodes: List<NodeInfo>): NetTarget? = nodes.randomOrNull()?.nodeIdentity?.asTarget()
 }

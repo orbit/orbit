@@ -20,7 +20,7 @@ interface AddressableRegistry {
      * @param interfaceClass The interface of this addressable.
      * @param key The key that identitifies this addressable.
      * @param instance The instance of the addressable.
-     * @return A future which is completed once registration is complete.
+     * @return A future containing a proxy to the registered object that completes once registration is confirmed.
      */
     fun <T : Addressable> registerAddressable(interfaceClass: Class<T>, key: Key, instance: T): CompletableFuture<T>
 
