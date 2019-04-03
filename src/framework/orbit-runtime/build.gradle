@@ -8,4 +8,6 @@ dependencies {
     api(project(":src:framework:orbit-core"))
 
     compile("io.github.classgraph:classgraph:4.8.22")
+    compile("com.esotericsoftware:kryo:5.0.0-RC2")
+
 }

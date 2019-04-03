@@ -26,6 +26,9 @@ configureProject(":src:dsl:orbit-codegen", [withKotlin, withTests, publish])
 configureProject(":src:dsl:orbit-codegen-dsl", [withKotlin, withJava, withTests, publish])
 configureProject(":src:dsl:orbit-gradle-plugin", [withKotlin, withTests, localPublish])
 
+// Benchmark
+configureProject(":src:benchmarks", [withKotlin, withJava])
+
 // Samples
 configureProject(":samples:helloworld", [withKotlin])
 configureProject(":samples:helloworld-java", [withJava])
