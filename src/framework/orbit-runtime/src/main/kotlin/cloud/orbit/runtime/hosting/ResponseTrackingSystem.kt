@@ -54,7 +54,7 @@ internal class ResponseTrackingSystem(
     }
 
     private fun getCompletion(messageId: Long): Completion? {
-        val msg = trackingMap[messageId]
+        val msg = trackingMap.remove(messageId)
         if (msg == null) {
             logger.warn(
                 "Response for message $messageId received after timeout " +
