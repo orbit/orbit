@@ -20,5 +20,7 @@
 
 ## Contributing
 
-* [Overview](contributing/overview.md)
+* [Standards & Policies](contributing/standards-and-policies.md)
+* [Legal](contributing/legal.md)
+* [Governance](contributing/governance.md)
 

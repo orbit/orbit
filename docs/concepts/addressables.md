@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Any object which can be addressed remotely in Orbit is known as an **Addressable.** This includes [**Actors**](actors.md), [**Observers**](observables.md) and [**Streams**](streams.md). 
+Any object which can be addressed remotely in Orbit is known as an **Addressable.** This includes [**Actors**](actors.md), [**Observers**](observables.md) and [**Streams**](streams.md).
 
 ## Making an Object Addressable
 
@@ -131,7 +131,7 @@ When the lifecycle is managed by Orbit there are certain additional features ava
 
 ### Lifecycle Events
 
-Implementations of managed addressables may use lifecycle events. A  method in each implementation may be annotated with `@OnActivate` or `@OnDeactivate` and it will automatically be invoked by Orbit.
+Implementations of managed addressables may use lifecycle events. A method in each implementation may be annotated with `@OnActivate` or `@OnDeactivate` and it will automatically be invoked by Orbit.
 
 {% code-tabs %}
 {% code-tabs-item title="Kotlin" %}

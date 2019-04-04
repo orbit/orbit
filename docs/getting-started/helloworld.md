@@ -10,7 +10,6 @@ In Orbit all actors must have an interface, below we’ll create a very simple a
 interface Greeter : ActorWithNoKey {
     fun greet(name: String): Deferred<String>
 }
-
 ```
 {% endcode-tabs-item %}
 {% endcode-tabs %}
@@ -18,7 +17,6 @@ interface Greeter : ActorWithNoKey {
 {% code-tabs %}
 {% code-tabs-item title="Java" %}
 ```java
-
 interface Greeter extends ActorWithNoKey {
     CompletableFuture<String> greet(String name);
 }
