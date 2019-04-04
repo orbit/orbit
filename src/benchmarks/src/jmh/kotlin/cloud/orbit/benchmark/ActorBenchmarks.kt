@@ -7,7 +7,7 @@
 package cloud.orbit.benchmark
 
 import cloud.orbit.core.actor.AbstractActor
-import cloud.orbit.core.actor.ActorWithStringKey
+import cloud.orbit.core.actor.ActorWithInt32Key
 import cloud.orbit.core.actor.createProxy
 import cloud.orbit.runtime.stage.Stage
 import kotlinx.coroutines.CompletableDeferred
@@ -31,8 +31,10 @@ import org.openjdk.jmh.annotations.Warmup
 import java.util.concurrent.TimeUnit
 
 private const val REQUESTS_PER_BATCH = 500
+private const val ACTOR_POOL = 1000
 
-interface BasicBenchmarkActor : ActorWithStringKey {
+
+interface BasicBenchmarkActor : ActorWithInt32Key {
     fun echo(string: String): Deferred<String>
 }
 
@@ -47,29 +49,32 @@ class BasicBenchmarkActorImpl : BasicBenchmarkActor, AbstractActor() {
 @Warmup(iterations = 5)
 @Measurement(iterations = 20)
 open class ActorBenchmarks {
-    var stage: Stage? = null
-    val actors = ArrayList<BasicBenchmarkActor>()
+    private var stage: Stage? = null
+    private val actors = ArrayList<BasicBenchmarkActor>()
 
     @Setup
     fun setup() {
         stage = Stage()
         runBlocking {
             stage!!.start().await()
-        }
-        repeat(1000) {
-            actors.add(stage!!.actorProxyFactory.createProxy(it.toString()))
+
+            repeat(ACTOR_POOL) {
+                val actor = stage!!.actorProxyFactory.createProxy<BasicBenchmarkActor>(it)
+                actor.echo("Warmup").await()
+                actors.add(actor)
+            }
         }
     }
 
     @Benchmark
-    @Threads(8)
+    @Threads(1)
     @OperationsPerInvocation(REQUESTS_PER_BATCH)
     fun echoThroughputBenchmark() {
         batchIteration()
     }
 
     @Benchmark
-    @Threads(8)
+    @Threads(1)
     @OperationsPerInvocation(REQUESTS_PER_BATCH)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
