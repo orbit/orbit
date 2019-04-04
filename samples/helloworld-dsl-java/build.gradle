@@ -6,7 +6,7 @@
 
 buildscript {
     ext {
-        localOrbitVersion = '2.0.0a4-SNAPSHOT'
+        localOrbitVersion = "2.0.0a5-SNAPSHOT"
         slf4jVersion = "1.7.26"
     }
 
