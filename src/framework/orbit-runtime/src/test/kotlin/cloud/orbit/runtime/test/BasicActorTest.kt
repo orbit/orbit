@@ -109,7 +109,7 @@ class BasicActorTest : StageBaseTest() {
         val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
         assertThatThrownBy {
             runBlocking {
-                actor.waitFor(stageConfig.messageTimeoutMillis + 100).await()
+                actor.waitFor(stageConfig.messageTimeoutMillis + (stageConfig.tickRate * 2)).await()
             }
         }.isInstanceOf(ResponseTimeoutException::class.java)
     }

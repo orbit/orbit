@@ -28,7 +28,6 @@ import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.TearDown
 import org.openjdk.jmh.annotations.Threads
 import org.openjdk.jmh.annotations.Warmup
-import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.TimeUnit
 
 private const val REQUESTS_PER_BATCH = 500
@@ -49,12 +48,16 @@ class BasicBenchmarkActorImpl : BasicBenchmarkActor, AbstractActor() {
 @Measurement(iterations = 20)
 open class ActorBenchmarks {
     var stage: Stage? = null
+    val actors = ArrayList<BasicBenchmarkActor>()
 
     @Setup
     fun setup() {
         stage = Stage()
         runBlocking {
             stage!!.start().await()
+        }
+        repeat(1000) {
+            actors.add(stage!!.actorProxyFactory.createProxy(it.toString()))
         }
     }
 
@@ -70,18 +73,14 @@ open class ActorBenchmarks {
     @OperationsPerInvocation(REQUESTS_PER_BATCH)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    fun echoBenchmark() {
+    fun echoTimingBenchmark() {
         batchIteration()
     }
 
     private fun batchIteration() {
         val myList = ArrayList<Deferred<String>>(REQUESTS_PER_BATCH)
         repeat(REQUESTS_PER_BATCH) {
-            val actor = stage!!.actorProxyFactory
-                .createProxy<BasicBenchmarkActor>(
-                    ThreadLocalRandom.current().nextInt(1000)
-                        .toString()
-                )
+            val actor = actors.random()
             myList.add(actor.echo("Joe"))
         }
         runBlocking {

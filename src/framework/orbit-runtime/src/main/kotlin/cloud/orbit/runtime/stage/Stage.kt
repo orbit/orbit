@@ -70,6 +70,7 @@ class Stage(val config: StageConfig) : RuntimeContext {
     private val definitionDirectory: AddressableDefinitionDirectory by componentProvider.inject()
     private val pipelineSystem: PipelineSystem by componentProvider.inject()
     private val executionSystem: ExecutionSystem by componentProvider.inject()
+    private val responseTrackingSystem: ResponseTrackingSystem by componentProvider.inject()
 
 
     private var tickJob: Job? = null
@@ -217,6 +218,7 @@ class Stage(val config: StageConfig) : RuntimeContext {
     }
 
     private suspend fun onTick() {
+        responseTrackingSystem.onTick()
         executionSystem.onTick()
     }
 

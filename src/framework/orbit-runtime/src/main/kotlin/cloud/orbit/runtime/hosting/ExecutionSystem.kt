@@ -14,7 +14,6 @@ import cloud.orbit.core.remoting.AddressableInvocation
 import cloud.orbit.core.remoting.AddressableReference
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Completion
-import cloud.orbit.runtime.pipeline.PipelineSystem
 import cloud.orbit.runtime.remoting.AddressableDefinitionDirectory
 import cloud.orbit.runtime.remoting.AddressableImplDefinition
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
