@@ -67,14 +67,14 @@ open class ActorBenchmarks {
     }
 
     @Benchmark
-    @Threads(1)
+    @Threads(8)
     @OperationsPerInvocation(REQUESTS_PER_BATCH)
     fun echoThroughputBenchmark() {
         batchIteration()
     }
 
     @Benchmark
-    @Threads(1)
+    @Threads(8)
     @OperationsPerInvocation(REQUESTS_PER_BATCH)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)

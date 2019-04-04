@@ -19,7 +19,6 @@ import java.util.concurrent.ConcurrentHashMap
 
 internal class ResponseTrackingSystem(
     private val stageConfig: StageConfig,
-    private val supervisorScope: SupervisorScope,
     private val clock: Clock
 ) {
     private data class ResponseEntry(
