@@ -11,7 +11,7 @@ import cloud.orbit.common.logging.logger
 import cloud.orbit.common.logging.trace
 import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.AddressableInvocation
-import cloud.orbit.runtime.concurrent.SupervisorScope
+import cloud.orbit.runtime.concurrent.RuntimeScopes
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContainer
@@ -43,7 +43,7 @@ internal class PipelineSystem(
     )
 
     private val logger by logger()
-    private val supervisorScope: SupervisorScope by componentProvider.inject()
+    private val runtimeScopes: RuntimeScopes by componentProvider.inject()
     private val stageConfig: StageConfig by componentProvider.inject()
 
 
@@ -65,7 +65,7 @@ internal class PipelineSystem(
         )
     }
 
-    private fun launchRail(receiveChannel: ReceiveChannel<MessageContainer>) = supervisorScope.launch {
+    private fun launchRail(receiveChannel: ReceiveChannel<MessageContainer>) = runtimeScopes.cpuScope.launch {
         for (container in receiveChannel) {
             try {
                 logger.trace { "Pipeline rail received message: $container" }

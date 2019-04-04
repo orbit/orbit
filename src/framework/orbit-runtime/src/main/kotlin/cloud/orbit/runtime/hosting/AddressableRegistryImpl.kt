@@ -11,7 +11,7 @@ import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.AddressableReference
 import cloud.orbit.core.remoting.AddressableRegistry
-import cloud.orbit.runtime.concurrent.SupervisorScope
+import cloud.orbit.runtime.concurrent.RuntimeScopes
 import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.remoting.AddressableInterfaceClientProxyFactory
 import kotlinx.coroutines.async
@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture
 internal class AddressableRegistryImpl(
     private val proxyFactory: AddressableInterfaceClientProxyFactory,
     private val executionSystem: ExecutionSystem,
-    private val supervisorScope: SupervisorScope,
+    private val runtimeScopes: RuntimeScopes,
     private val netSystem: NetSystem
 ) : AddressableRegistry {
 
@@ -29,12 +29,12 @@ internal class AddressableRegistryImpl(
         interfaceClass: Class<T>,
         key: Key,
         instance: T
-    ): CompletableFuture<T> = supervisorScope.async {
+    ): CompletableFuture<T> = runtimeScopes.cpuScope.async {
         registerAddressableInternal(AddressableReference(interfaceClass = interfaceClass, key = key), instance)
         createProxy(interfaceClass, key, netSystem.localNode.nodeIdentity.asTarget())
     }.asCompletableFuture()
 
-    override fun deregisterAddressable(instance: Addressable) = supervisorScope.async {
+    override fun deregisterAddressable(instance: Addressable) = runtimeScopes.cpuScope.async {
         deregisterAddressableInternal(instance)
     }.asCompletableFuture()
 

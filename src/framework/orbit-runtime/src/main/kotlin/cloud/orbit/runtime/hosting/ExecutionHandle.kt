@@ -16,7 +16,7 @@ import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.AddressableContext
 import cloud.orbit.core.remoting.AddressableInvocation
 import cloud.orbit.core.remoting.AddressableReference
-import cloud.orbit.runtime.concurrent.SupervisorScope
+import cloud.orbit.runtime.concurrent.RuntimeScopes
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Completion
 import cloud.orbit.runtime.pipeline.PipelineSystem
@@ -38,7 +38,7 @@ internal class ExecutionHandle(
     componentProvider: ComponentProvider
 ) {
     private val clock: Clock by componentProvider.inject()
-    private val supervisorScope: SupervisorScope by componentProvider.inject()
+    private val runtimeScopes: RuntimeScopes by componentProvider.inject()
     private val stageConfig: StageConfig by componentProvider.inject()
     private val stage: Stage by componentProvider.inject()
     private val pipelineSystem: PipelineSystem by componentProvider.inject()
@@ -143,7 +143,7 @@ internal class ExecutionHandle(
         }
     }
 
-    private val worker = supervisorScope.launch {
+    private val worker = runtimeScopes.cpuScope.launch {
         for (event in channel) {
             try {
                 val result = when (event) {

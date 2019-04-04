@@ -24,7 +24,7 @@ import cloud.orbit.core.runtime.RuntimeContext
 import cloud.orbit.runtime.actor.ActorProxyFactoryImpl
 import cloud.orbit.runtime.capabilities.CapabilitiesScanner
 import cloud.orbit.runtime.concurrent.RuntimePools
-import cloud.orbit.runtime.concurrent.SupervisorScope
+import cloud.orbit.runtime.concurrent.RuntimeScopes
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.hosting.AddressableRegistryImpl
 import cloud.orbit.runtime.hosting.DirectorySystem
@@ -59,7 +59,7 @@ class Stage(val config: StageConfig) : RuntimeContext {
         cpuPool = config.cpuPool,
         ioPool = config.ioPool
     )
-    private val supervisorScope = SupervisorScope(
+    private val runtimeScopes = RuntimeScopes(
         runtimePools = runtimePools,
         exceptionHandler = errorHandler::onUnhandledException
     )
@@ -86,7 +86,7 @@ class Stage(val config: StageConfig) : RuntimeContext {
             instance(this@Stage)
             instance(config)
             instance(runtimePools)
-            instance(supervisorScope)
+            instance(runtimeScopes)
             instance(errorHandler)
 
             // Utils
@@ -142,7 +142,7 @@ class Stage(val config: StageConfig) : RuntimeContext {
      */
     fun stop() = requestStop().asCompletableFuture()
 
-    private fun requestStart() = supervisorScope.async {
+    private fun requestStart() = runtimeScopes.cpuScope.async {
         logger.info("Starting Orbit...")
         val (elapsed, _) = stopwatch(clock) {
             onStart()
@@ -152,7 +152,18 @@ class Stage(val config: StageConfig) : RuntimeContext {
         Unit
     }
 
-    private fun launchTick() = supervisorScope.launch {
+
+    private fun requestStop() = runtimeScopes.cpuScope.async {
+        logger.info("Orbit stopping...")
+        val (elapsed, _) = stopwatch(clock) {
+            onStop()
+        }
+
+        logger.info("Orbit stopped in {}ms.", elapsed)
+        Unit
+    }
+
+    private fun launchTick() = runtimeScopes.cpuScope.launch {
         val targetTickRate = config.tickRate
         while (isActive) {
             val (elapsed, _) = stopwatch(clock) {
@@ -182,15 +193,6 @@ class Stage(val config: StageConfig) : RuntimeContext {
         }
     }
 
-    private fun requestStop() = supervisorScope.async {
-        logger.info("Orbit stopping...")
-        val (elapsed, _) = stopwatch(clock) {
-            onStop()
-        }
-
-        logger.info("Orbit stopped in {}ms.", elapsed)
-        Unit
-    }
 
     private suspend fun onStart() {
         netSystem.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPED, NodeStatus.STARTING)
