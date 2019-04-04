@@ -49,7 +49,7 @@ internal class PipelineSystem(
 
     private lateinit var pipelineChannel: Channel<MessageContainer>
     private lateinit var pipelinesWorkers: List<Job>
-    private lateinit var pipelineSteps: List<PipelineStep>
+    private lateinit var pipelineSteps: Array<PipelineStep>
 
 
     fun start() {
@@ -57,7 +57,7 @@ internal class PipelineSystem(
         pipelinesWorkers = List(stageConfig.pipelineRailCount) {
             launchRail(pipelineChannel)
         }
-        pipelineSteps = pipelineStepConfig.map(componentProvider::construct)
+        pipelineSteps = pipelineStepConfig.map(componentProvider::construct).toTypedArray()
 
         logger.info(
             "Pipeline started on ${stageConfig.pipelineRailCount} rails with a " +

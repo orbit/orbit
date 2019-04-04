@@ -10,7 +10,6 @@ import cloud.orbit.common.exception.ResponseTimeoutException
 import cloud.orbit.common.logging.logger
 import cloud.orbit.common.time.Clock
 import cloud.orbit.common.time.TimeMs
-import cloud.orbit.runtime.concurrent.SupervisorScope
 import cloud.orbit.runtime.net.Completion
 import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContent

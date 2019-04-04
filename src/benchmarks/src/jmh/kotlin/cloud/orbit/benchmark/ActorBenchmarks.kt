@@ -10,6 +10,7 @@ import cloud.orbit.core.actor.AbstractActor
 import cloud.orbit.core.actor.ActorWithInt32Key
 import cloud.orbit.core.actor.createProxy
 import cloud.orbit.runtime.stage.Stage
+import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.awaitAll
@@ -54,13 +55,16 @@ open class ActorBenchmarks {
 
     @Setup
     fun setup() {
-        stage = Stage()
+        val stageConfig = StageConfig(
+            pipelineRailCount = 1
+        )
+        stage = Stage(stageConfig)
         runBlocking {
             stage!!.start().await()
 
             repeat(ACTOR_POOL) {
                 val actor = stage!!.actorProxyFactory.createProxy<BasicBenchmarkActor>(it)
-                actor.echo("Warmup").await()
+                actor.echo("warmup$it").await()
                 actors.add(actor)
             }
         }
@@ -86,7 +90,7 @@ open class ActorBenchmarks {
         val myList = ArrayList<Deferred<String>>(REQUESTS_PER_BATCH)
         repeat(REQUESTS_PER_BATCH) {
             val actor = actors.random()
-            myList.add(actor.echo("Joe"))
+            myList.add(actor.echo("call$it"))
         }
         runBlocking {
             myList.awaitAll()

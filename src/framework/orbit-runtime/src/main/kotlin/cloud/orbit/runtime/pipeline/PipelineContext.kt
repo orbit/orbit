@@ -14,12 +14,13 @@ import kotlinx.coroutines.isActive
 import kotlin.coroutines.coroutineContext
 
 internal class PipelineContext(
-    private val pipeline: List<PipelineStep>,
+    private val pipeline: Array<PipelineStep>,
     startAtEnd: Boolean,
     private val pipelineSystem: PipelineSystem,
     var completion: Completion?
 ) {
-    private var pointer = if (startAtEnd) pipeline.size else -1
+    private val pipelineSize = pipeline.size
+    private var pointer = if (startAtEnd) pipelineSize else -1
 
     suspend fun nextInbound(msg: Message) {
         if (!coroutineContext.isActive) throw CancellationException()
@@ -31,7 +32,7 @@ internal class PipelineContext(
 
     suspend fun nextOutbound(msg: Message) {
         if (!coroutineContext.isActive) throw CancellationException()
-        if (++pointer >= pipeline.size) throw IllegalStateException("End of pipeline encountered.")
+        if (++pointer >= pipelineSize) throw IllegalStateException("End of pipeline encountered.")
         val pipelineStep = pipeline[pointer]
         pipelineStep.onOutbound(this, msg)
 
