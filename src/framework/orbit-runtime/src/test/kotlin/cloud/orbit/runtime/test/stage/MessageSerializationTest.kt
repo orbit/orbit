@@ -82,7 +82,7 @@ abstract class MessageSerializationTest : BaseStageTest() {
             val nothingRes = echo.doNothing().await()
             assertThat(nothingRes).isEqualTo(nothingVal)
 
-            val strVal = "Hola"
+            val strVal = "Pegasus Galaxy"
             val strRes = echo.echoString(strVal).await()
             assertThat(strRes).isEqualTo(strVal)
 
@@ -94,7 +94,7 @@ abstract class MessageSerializationTest : BaseStageTest() {
             val uuidRes = echo.echoGuid(uuidVal).await()
             assertThat(uuidRes).isEqualTo(uuidVal)
 
-            val listVal = listOf("John", "Ringo", "Paul", "George")
+            val listVal = listOf("Jack O'Neill", "Samantha Carter", "Daniel Jackson", "Teal'c")
             val listRes = echo.echoList(listVal).await()
             assertThat(listRes).isEqualTo(listVal)
 
@@ -112,7 +112,7 @@ abstract class MessageSerializationTest : BaseStageTest() {
     fun `ensure copy really happens`() {
         val echo = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.NoKey)
         runBlocking {
-            val listVal = listOf("John", "Ringo", "Paul", "George")
+            val listVal = listOf("Abydos", "Dakara", "Othala", "Orilla")
             val listRes = echo.echoList(listVal).await()
             assertThat(listRes).isNotSameAs(listVal)
             assertThat(listRes).isEqualTo(listVal)
@@ -123,11 +123,11 @@ abstract class MessageSerializationTest : BaseStageTest() {
     fun `ensure method overloading has expected result`() {
         val echo = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.NoKey)
         runBlocking {
-            val strVal = "Horizon"
+            val strVal = "Unscheduled off-world activation!"
             val strRes = echo.overloaded(strVal).await()
             assertThat(strRes).isEqualTo("String=$strVal")
 
-            val intVal = 64323
+            val intVal = 1969
             val intRes = echo.overloaded(intVal).await()
             assertThat(intRes).isEqualTo("Int=$intVal")
         }

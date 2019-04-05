@@ -23,6 +23,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
+private const val HELLO_MESSAGE = "Kree!"
+
 @Routing(isRouted = true, persistentPlacement = false, forceRouting = false, routingStrategy = RandomRouting::class)
 @Lifecycle(autoActivate = false, autoDeactivate = false)
 @ExecutionModel(ExecutionStrategy.SAFE)
@@ -32,7 +34,7 @@ interface RandomRoutingAddressable : Addressable {
 
 class RandomRoutingAddressableImpl : RandomRoutingAddressable {
     override fun sayHello(): Deferred<String> {
-        return CompletableDeferred("HELLO!")
+        return CompletableDeferred(HELLO_MESSAGE)
     }
 }
 
@@ -54,7 +56,7 @@ class AddressableRegistryTest : BaseStageTest() {
             stage.addressableRegistry.registerAddressable(RandomRoutingAddressable::class.java, Key.NoKey, instance)
                 .await()
             val result = proxy.sayHello().await()
-            assertThat(result).isEqualTo("HELLO!")
+            assertThat(result).isEqualTo(HELLO_MESSAGE)
             stage.addressableRegistry.deregisterAddressable(instance).await()
 
         }
@@ -70,7 +72,7 @@ class AddressableRegistryTest : BaseStageTest() {
             stage.addressableRegistry.registerAddressable(RandomRoutingAddressable::class.java, Key.NoKey, instance)
                 .await()
             val result = proxy.sayHello().await()
-            assertThat(result).isEqualTo("HELLO!")
+            assertThat(result).isEqualTo(HELLO_MESSAGE)
             stage.addressableRegistry.deregisterAddressable(instance).await()
 
         }
@@ -111,7 +113,7 @@ class AddressableRegistryTest : BaseStageTest() {
                 stage.addressableRegistry
                     .registerAddressable(RandomRoutingAddressable::class.java, Key.NoKey, instance).await()
                 val result = proxy.sayHello().await()
-                assertThat(result).isEqualTo("HELLO!")
+                assertThat(result).isEqualTo(HELLO_MESSAGE)
                 stage.addressableRegistry.deregisterAddressable(instance).await()
                 proxy.sayHello().await()
             }

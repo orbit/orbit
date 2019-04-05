@@ -96,7 +96,7 @@ class BasicActorTest : BaseStageTest() {
 
     @Test
     fun `ensure basic echo has expected result`() {
-        val echoMsg = "Hello Orbit!"
+        val echoMsg = "Chevron one encoded..."
         val echo = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
         val result = runBlocking {
             echo.echo(echoMsg).await()
@@ -139,12 +139,13 @@ class BasicActorTest : BaseStageTest() {
 
     @Test
     fun `ensure exception propagated`() {
+        val errMsg = "Chevron seven will not lock."
         val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
 
         assertThatThrownBy {
             runBlocking {
-                actor.throwIllegalArgumentException("Faileroony").await()
+                actor.throwIllegalArgumentException(errMsg).await()
             }
-        }.isInstanceOf(IllegalArgumentException::class.java).hasMessageContaining("Faileroony")
+        }.isInstanceOf(IllegalArgumentException::class.java).hasMessage(errMsg)
     }
 }
