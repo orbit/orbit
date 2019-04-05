@@ -35,6 +35,8 @@ interface SerializationTestAddressable : Addressable {
     fun echoList(value: List<String>): Deferred<List<String>>
     fun echoClass(value: Class<out Any>): Deferred<Class<out Any>>
     fun echoMethod(value: Method): Deferred<Method>
+    fun overloaded(value: String): Deferred<String>
+    fun overloaded(value: Int): Deferred<String>
 }
 
 @ExecutionModel(ExecutionStrategy.SAFE)
@@ -48,8 +50,8 @@ class SerializationTestAddressableImpl : SerializationTestAddressable {
     override fun echoList(value: List<String>) = CompletableDeferred(value)
     override fun echoClass(value: Class<out Any>) = CompletableDeferred(value)
     override fun echoMethod(value: Method) = CompletableDeferred(value)
-
-
+    override fun overloaded(value: String) = CompletableDeferred("String=$value")
+    override fun overloaded(value: Int) = CompletableDeferred("Int=$value")
 }
 
 abstract class MessageSerializationTest : BaseStageTest() {
@@ -114,6 +116,20 @@ abstract class MessageSerializationTest : BaseStageTest() {
             val listRes = echo.echoList(listVal).await()
             assertThat(listRes).isNotSameAs(listVal)
             assertThat(listRes).isEqualTo(listVal)
+        }
+    }
+
+    @Test
+    fun `ensure method overloading has expected result`() {
+        val echo = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.NoKey)
+        runBlocking {
+            val strVal = "Horizon"
+            val strRes = echo.overloaded(strVal).await()
+            assertThat(strRes).isEqualTo("String=$strVal")
+
+            val intVal = 64323
+            val intRes = echo.overloaded(intVal).await()
+            assertThat(intRes).isEqualTo("Int=$intVal")
         }
     }
 
