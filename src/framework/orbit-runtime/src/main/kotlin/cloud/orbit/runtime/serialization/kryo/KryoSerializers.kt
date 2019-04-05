@@ -12,6 +12,26 @@ import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
 import java.lang.reflect.Method
 
+internal class KotlinObjectSerializer<T>(private val objectInstance: T) :
+    Serializer<T>(true, true) {
+    override fun write(kryo: Kryo, output: Output, obj: T?): Unit =
+        if (obj != null) {
+            output.writeBoolean(true)
+        } else {
+            output.writeBoolean(false)
+        }
+
+    override fun read(kryo: Kryo, input: Input, type: Class<out T>): T? =
+        if (input.readBoolean()) {
+            objectInstance
+        } else {
+            null
+        }
+
+    override fun copy(kryo: Kryo, original: T?): T? = original
+}
+
+
 internal class MethodSerializer : Serializer<Method>(false, true) {
     override fun write(kryo: Kryo, output: Output, method: Method) {
         kryo.writeClass(output, method.declaringClass)

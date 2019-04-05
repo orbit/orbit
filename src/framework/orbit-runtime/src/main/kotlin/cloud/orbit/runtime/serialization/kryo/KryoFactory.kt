@@ -23,10 +23,13 @@ internal class KryoFactory(private val componentProvider: ComponentProvider) {
         kryo.instantiatorStrategy = DefaultInstantiatorStrategy(StdInstantiatorStrategy())
 
         // Orbit types
-        kryo.addDefaultSerializer(Key.NoKey::class.java, componentProvider.construct<NoKeySerializer>())
+        kryo.addDefaultSerializer(Key.NoKey::class.java, KotlinObjectSerializer(Key.NoKey))
 
         // JDK Types
         kryo.addDefaultSerializer(Method::class.java, MethodSerializer())
+
+        // Kotlin Types
+        kryo.addDefaultSerializer(Unit::class.java, KotlinObjectSerializer(Unit))
 
         return kryo
     }

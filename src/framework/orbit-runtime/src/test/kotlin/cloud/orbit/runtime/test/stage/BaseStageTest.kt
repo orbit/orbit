@@ -13,7 +13,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.TestInstance
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-abstract class StageBaseTest {
+abstract class BaseStageTest {
     protected lateinit var stage: Stage private set
     protected lateinit var stageConfig: StageConfig private set
 

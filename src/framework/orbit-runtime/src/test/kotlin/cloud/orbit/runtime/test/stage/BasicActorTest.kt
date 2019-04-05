@@ -32,6 +32,7 @@ interface BasicTestActorInterface : ActorWithNoKey {
     fun getWasActivated(): Deferred<Boolean>
 }
 
+@Suppress("UNUSED")
 class BasicTestActorImpl : BasicTestActorInterface {
     var callCount = 0
     var wasActivated = false
@@ -71,7 +72,7 @@ class BasicTestActorImpl : BasicTestActorInterface {
     }
 }
 
-class BasicActorTest : StageBaseTest() {
+class BasicActorTest : BaseStageTest() {
     @Test
     fun `ensure onActivate runs`() {
         val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()

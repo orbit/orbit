@@ -12,7 +12,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class SerializerTest : StageBaseTest() {
+class SerializerTest : BaseStageTest() {
     private lateinit var serializationSystem: SerializationSystem
 
     @BeforeEach

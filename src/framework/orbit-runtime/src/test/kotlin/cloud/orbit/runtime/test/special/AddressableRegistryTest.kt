@@ -14,7 +14,7 @@ import cloud.orbit.core.hosting.RandomRouting
 import cloud.orbit.core.key.Key
 import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.createProxy
-import cloud.orbit.runtime.test.stage.StageBaseTest
+import cloud.orbit.runtime.test.stage.BaseStageTest
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.future.await
@@ -43,7 +43,7 @@ interface NoRoutingAddressable : Addressable {
     fun sayHello(): Deferred<String>
 }
 
-class AddressableRegistryTest : StageBaseTest() {
+class AddressableRegistryTest : BaseStageTest() {
     @Test
     fun `ensure basic passes`() {
         val instance = RandomRoutingAddressableImpl()

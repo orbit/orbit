@@ -18,7 +18,7 @@ interface NonConcreteActor : ActorWithNoKey
 
 interface ConcreteActor : ActorWithNoKey
 
-class ActorProxyTest : StageBaseTest() {
+class ActorProxyTest : BaseStageTest() {
     @Test
     fun `ensure concrete can be proxied`() {
         val proxy = stage.actorProxyFactory.createProxy<ConcreteActor>()
