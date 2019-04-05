@@ -25,11 +25,13 @@ import org.junit.jupiter.api.Test
 var wasDeactivated: Boolean = false
 
 interface BasicTestActorInterface : ActorWithNoKey {
-    fun echo(msg: String): Deferred<String>
     fun waitFor(delayMs: TimeMs): Deferred<Unit>
+    fun echo(msg: String): Deferred<String>
     fun incrementCountAndGet(): Deferred<Int>
-    fun throwIllegalArgumentException(msg: String): Deferred<String>
     fun getWasActivated(): Deferred<Boolean>
+    fun throwIllegalArgumentException(msg: String): Deferred<String>
+
+
 }
 
 @Suppress("UNUSED")
@@ -49,27 +51,14 @@ class BasicTestActorImpl : BasicTestActorInterface {
         return CompletableDeferred(Unit)
     }
 
-    override fun getWasActivated(): Deferred<Boolean> {
-        return CompletableDeferred(wasActivated)
+    override fun waitFor(delayMs: TimeMs) = GlobalScope.async {
+        delay(delayMs)
     }
 
-    override fun echo(msg: String): Deferred<String> {
-        return CompletableDeferred(msg)
-    }
-
-    override fun waitFor(delayMs: TimeMs): Deferred<Unit> {
-        return GlobalScope.async {
-            delay(delayMs)
-        }
-    }
-
-    override fun incrementCountAndGet(): Deferred<Int> {
-        return CompletableDeferred(++callCount)
-    }
-
-    override fun throwIllegalArgumentException(msg: String): Deferred<String> {
-        throw IllegalArgumentException(msg)
-    }
+    override fun echo(msg: String) = CompletableDeferred(msg)
+    override fun incrementCountAndGet() = CompletableDeferred(++callCount)
+    override fun getWasActivated() = CompletableDeferred(wasActivated)
+    override fun throwIllegalArgumentException(msg: String): Deferred<String> = throw IllegalArgumentException(msg)
 }
 
 class BasicActorTest : BaseStageTest() {

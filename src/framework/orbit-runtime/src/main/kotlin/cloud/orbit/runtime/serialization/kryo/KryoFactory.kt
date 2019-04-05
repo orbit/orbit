@@ -7,7 +7,6 @@
 package cloud.orbit.runtime.serialization.kryo
 
 import cloud.orbit.core.key.Key
-import cloud.orbit.runtime.di.ComponentProvider
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.util.DefaultClassResolver
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
@@ -15,7 +14,7 @@ import com.esotericsoftware.kryo.util.MapReferenceResolver
 import org.objenesis.strategy.StdInstantiatorStrategy
 import java.lang.reflect.Method
 
-internal class KryoFactory(private val componentProvider: ComponentProvider) {
+internal class KryoFactory {
     fun create(): Kryo {
         val kryo = Kryo(DefaultClassResolver(), MapReferenceResolver())
 

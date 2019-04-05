@@ -60,7 +60,5 @@ internal class KryoSerializer(componentProvider: ComponentProvider) {
         }
     }
 
-    fun <T> cloneObject(obj: T): T {
-        return kryoRef.get().copy(obj)
-    }
+    fun <T> cloneObject(obj: T) = kryoRef.get().copy(obj)
 }

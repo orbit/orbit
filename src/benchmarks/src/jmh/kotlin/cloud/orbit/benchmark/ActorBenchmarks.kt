@@ -65,7 +65,7 @@ open class ActorBenchmarks {
 
             repeat(ACTOR_POOL) {
                 val actor = stage!!.actorProxyFactory.createProxy<BasicBenchmarkActor>(it)
-                actor.echo("warmup$it").await()
+                actor.echo("Chevron $it encoded...").await()
                 actors.add(actor)
             }
         }
@@ -74,24 +74,21 @@ open class ActorBenchmarks {
     @Benchmark
     @Threads(8)
     @OperationsPerInvocation(REQUESTS_PER_BATCH)
-    fun echoThroughputBenchmark() {
-        batchIteration()
-    }
+    fun echoThroughputBenchmark() = batchIteration()
+
 
     @Benchmark
     @Threads(8)
     @OperationsPerInvocation(REQUESTS_PER_BATCH)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MICROSECONDS)
-    fun echoTimingBenchmark() {
-        batchIteration()
-    }
+    fun echoTimingBenchmark() = batchIteration()
 
     private fun batchIteration() {
         val myList = ArrayList<Deferred<String>>(REQUESTS_PER_BATCH)
         repeat(REQUESTS_PER_BATCH) {
             val actor = actors.random()
-            myList.add(actor.echo("call$it"))
+            myList.add(actor.echo("Chevron $it locked."))
         }
         runBlocking {
             myList.awaitAll()
@@ -99,9 +96,8 @@ open class ActorBenchmarks {
     }
 
     @TearDown
-    fun teardown() {
+    fun teardown() =
         runBlocking {
             stage!!.stop().await()
         }
-    }
 }
