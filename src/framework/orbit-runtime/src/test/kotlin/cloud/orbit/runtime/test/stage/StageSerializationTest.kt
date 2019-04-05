@@ -22,6 +22,16 @@ class StageSerializationTest : StageBaseTest() {
     }
 
     @Test
+    fun `ensure basic call succeeds`() {
+        val echoMsg = "Hi Joeh!"
+        val echo = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
+        val result = runBlocking {
+            echo.echo(echoMsg).await()
+        }
+        Assertions.assertThat(result).isEqualTo(echoMsg)
+    }
+
+    @Test
     fun `ensure too large message succeeds`() {
         val echoMsg = RandomUtils.pseudoRandomString(DEFAULT_KRYO_BUFFER_SIZE * 2)
         val echo = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()

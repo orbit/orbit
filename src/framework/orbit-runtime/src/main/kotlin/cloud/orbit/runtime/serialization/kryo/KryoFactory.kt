@@ -13,6 +13,7 @@ import com.esotericsoftware.kryo.util.DefaultClassResolver
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
 import com.esotericsoftware.kryo.util.MapReferenceResolver
 import org.objenesis.strategy.StdInstantiatorStrategy
+import java.lang.reflect.Method
 
 internal class KryoFactory(private val componentProvider: ComponentProvider) {
     fun create(): Kryo {
@@ -23,6 +24,9 @@ internal class KryoFactory(private val componentProvider: ComponentProvider) {
 
         // Orbit types
         kryo.addDefaultSerializer(Key.NoKey::class.java, componentProvider.construct<NoKeySerializer>())
+
+        // JDK Types
+        kryo.addDefaultSerializer(Method::class.java, MethodSerializer())
 
         return kryo
     }
