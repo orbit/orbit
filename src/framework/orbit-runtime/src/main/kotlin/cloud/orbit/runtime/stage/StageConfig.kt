@@ -61,7 +61,7 @@ data class StageConfig(
     /**
      * The default timeout for messages.
      */
-    val messageTimeoutMillis: Long = 30_000,
+    val messageTimeoutMillis: Long = 3_000,
 
     /**
      * The default time to live for deactivatable addressables.

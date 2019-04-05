@@ -25,7 +25,7 @@ abstract class BaseStageTest {
     fun startStage() {
         val config = StageConfig(
             packages = listOf("cloud.orbit.runtime.test"),
-            messageTimeoutMillis = 10_000
+            messageTimeoutMillis = 5000
         )
         stageConfig = setupStage(config)
         stage = Stage(stageConfig)
