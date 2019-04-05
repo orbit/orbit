@@ -6,14 +6,12 @@
 
 package cloud.orbit.runtime.serialization.kryo
 
-import cloud.orbit.common.logging.logger
 import cloud.orbit.runtime.di.ComponentProvider
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
 
 internal class KryoSerializer(componentProvider: ComponentProvider) {
-    private val logger by logger()
     private val kryoFactory: KryoFactory = componentProvider.construct()
 
     private val kryoRef = object : ThreadLocal<Kryo>() {
@@ -42,22 +40,13 @@ internal class KryoSerializer(componentProvider: ComponentProvider) {
         return output.toBytes()
     }
 
-    fun <T> deserializeObject(data: ByteArray, clazz: Class<T>): T {
+    fun <T> deserializeObject(data: ByteArray): T {
         val kryo = kryoRef.get()
         val input = inputRef.get()
         input.reset()
         input.buffer = data
-
-        val result = kryo.readClassAndObject(input)
-        try {
-            @Suppress("UNCHECKED_CAST")
-            return result as T
-        } catch (classCastException: ClassCastException) {
-            val err =
-                "Error deserializing. Was expecting ${clazz.simpleName} but received ${result.javaClass.simpleName}"
-            logger.error(err)
-            throw classCastException
-        }
+        @Suppress("UNCHECKED_CAST")
+        return kryo.readClassAndObject(input) as T
     }
 
     fun <T> cloneObject(obj: T) = kryoRef.get().copy(obj)

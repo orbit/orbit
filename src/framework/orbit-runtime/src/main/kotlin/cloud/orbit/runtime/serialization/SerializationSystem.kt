@@ -13,7 +13,7 @@ internal class SerializationSystem(componentProvider: ComponentProvider) {
     private val kryoSerializer: KryoSerializer = componentProvider.construct()
 
     fun <T> serializeObject(obj: T): ByteArray = kryoSerializer.serializeObject(obj)
-    fun <T> deserializeObject(data: ByteArray, clazz: Class<T>): T = kryoSerializer.deserializeObject(data, clazz)
-    inline fun <reified T> deserializeObject(data: ByteArray) = deserializeObject(data, T::class.java)
+    fun <T> deserializeObject(data: ByteArray): T = kryoSerializer.deserializeObject(data)
+
     fun <T> cloneObject(obj: T): T = kryoSerializer.cloneObject(obj)
 }
