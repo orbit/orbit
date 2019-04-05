@@ -12,8 +12,6 @@ import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.pipeline.PipelineContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.future.asCompletableFuture
-import java.util.concurrent.CompletionException
 
 internal class ResponseTrackingStep(private val responseTracking: ResponseTrackingSystem) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
@@ -32,7 +30,7 @@ internal class ResponseTrackingStep(private val responseTracking: ResponseTracki
 
             is MessageContent.RequestInvocationMessage -> {
                 context.completion.invokeOnCompletion {
-                    val newContent = if(it != null) {
+                    val newContent = if (it != null) {
                         MessageContent.ResponseErrorMessage(it)
                     } else {
                         @UseExperimental(ExperimentalCoroutinesApi::class)
