@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.runtime.test
+package cloud.orbit.runtime.test.stage
 
 import cloud.orbit.common.exception.ResponseTimeoutException
 import cloud.orbit.common.time.TimeMs
@@ -12,7 +12,6 @@ import cloud.orbit.core.actor.ActorWithNoKey
 import cloud.orbit.core.actor.createProxy
 import cloud.orbit.core.annotation.OnActivate
 import cloud.orbit.core.annotation.OnDeactivate
-import cloud.orbit.runtime.util.StageBaseTest
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope

@@ -56,7 +56,8 @@ open class ActorBenchmarks {
     @Setup
     fun setup() {
         val stageConfig = StageConfig(
-            pipelineRailCount = 1
+            pipelineRailCount = 16,
+            allowLoopback = false
         )
         stage = Stage(stageConfig)
         runBlocking {

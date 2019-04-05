@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.runtime.test
+package cloud.orbit.runtime.test.stage
 
 import cloud.orbit.core.actor.createProxy
 import cloud.orbit.runtime.stage.Stage
@@ -21,7 +21,8 @@ class StageLifecycleTest {
         assertThatThrownBy {
             runBlocking {
                 val config = StageConfig(
-                    packages = listOf("cloud.orbit.runtime.test")
+                    packages = listOf("cloud.orbit.runtime.test"),
+                    messageTimeoutMillis = 10_000
                 )
                 val stage = Stage(config)
                 val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()

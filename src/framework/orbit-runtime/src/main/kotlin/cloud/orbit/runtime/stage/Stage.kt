@@ -35,6 +35,7 @@ import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.pipeline.PipelineSystem
 import cloud.orbit.runtime.remoting.AddressableDefinitionDirectory
 import cloud.orbit.runtime.remoting.AddressableInterfaceClientProxyFactory
+import cloud.orbit.runtime.serialization.SerializationSystem
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -63,7 +64,8 @@ class Stage(val config: StageConfig) : RuntimeContext {
         runtimePools = runtimePools,
         exceptionHandler = errorHandler::onUnhandledException
     )
-    private val componentProvider = ComponentProvider()
+
+    internal val componentProvider = ComponentProvider()
 
     private val netSystem: NetSystem by componentProvider.inject()
     private val capabilitiesScanner: CapabilitiesScanner by componentProvider.inject()
@@ -108,6 +110,9 @@ class Stage(val config: StageConfig) : RuntimeContext {
             definition<ExecutionSystem>()
             definition<DirectorySystem>()
             definition<AddressableRegistry>(AddressableRegistryImpl::class.java)
+
+            // Serializer
+            definition<SerializationSystem>()
 
             // Capabilities
             definition<CapabilitiesScanner>()

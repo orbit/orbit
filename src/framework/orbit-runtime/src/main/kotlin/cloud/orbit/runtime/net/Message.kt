@@ -36,4 +36,5 @@ internal sealed class MessageContent {
     data class RequestInvocationMessage(val addressableInvocation: AddressableInvocation) : MessageContent()
     data class ResponseNormalMessage(val response: Any?) : MessageContent()
     data class ResponseErrorMessage(val error: Throwable) : MessageContent()
+    class RawMessage(val data: ByteArray) : MessageContent()
 }

@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.runtime.util
+package cloud.orbit.runtime.test.stage
 
 import cloud.orbit.runtime.stage.Stage
 import cloud.orbit.runtime.stage.StageConfig
@@ -24,7 +24,8 @@ abstract class StageBaseTest {
     @BeforeAll
     fun startStage() {
         val config = StageConfig(
-            packages = listOf("cloud.orbit.runtime.test")
+            packages = listOf("cloud.orbit.runtime.test"),
+            messageTimeoutMillis = 10_000
         )
         stageConfig = setupStage(config)
         stage = Stage(stageConfig)

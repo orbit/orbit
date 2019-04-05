@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.runtime.test
+package cloud.orbit.runtime.test.special
 
 import cloud.orbit.core.remoting.AddressableClass
 import cloud.orbit.runtime.remoting.AddressableDefinitionDirectory

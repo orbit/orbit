@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.runtime.test
+package cloud.orbit.runtime.test.special
 
 import cloud.orbit.core.annotation.ExecutionModel
 import cloud.orbit.core.annotation.Lifecycle
@@ -14,7 +14,7 @@ import cloud.orbit.core.hosting.RandomRouting
 import cloud.orbit.core.key.Key
 import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.createProxy
-import cloud.orbit.runtime.util.StageBaseTest
+import cloud.orbit.runtime.test.stage.StageBaseTest
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.future.await

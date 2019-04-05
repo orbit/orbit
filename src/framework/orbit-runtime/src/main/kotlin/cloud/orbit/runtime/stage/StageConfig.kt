@@ -61,7 +61,7 @@ data class StageConfig(
     /**
      * The default timeout for messages.
      */
-    val messageTimeoutMillis: Long = 3_000,
+    val messageTimeoutMillis: Long = 30_000,
 
     /**
      * The default time to live for deactivatable addressables.
@@ -93,5 +93,10 @@ data class StageConfig(
     /**
      * The number of invocations that may be queued on each [Addressable] instance.
      */
-    val addressableBufferCount: Int = 100
+    val addressableBufferCount: Int = 1000,
+
+    /**
+     * Allows Orbit to optimize by skipping serialization and transport when the destination node is the local node.
+     */
+    val allowLoopback: Boolean = true
 )

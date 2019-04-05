@@ -45,6 +45,16 @@ sealed class Key {
         override fun toString(): String {
             return "${this::class.java.simpleName}()"
         }
+
+        override fun equals(other: Any?): Boolean {
+            if (other == null) return false
+            if (other.javaClass == NoKey::class.java) return true
+            return false
+        }
+
+        override fun hashCode(): Int {
+            return 194837
+        }
     }
 
     /**

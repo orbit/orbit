@@ -19,9 +19,11 @@ import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.net.MessageDirection
 import cloud.orbit.runtime.pipeline.steps.ExecutionStep
 import cloud.orbit.runtime.pipeline.steps.IdentityStep
+import cloud.orbit.runtime.pipeline.steps.LoopbackStep
 import cloud.orbit.runtime.pipeline.steps.PipelineStep
 import cloud.orbit.runtime.pipeline.steps.ResponseTrackingStep
 import cloud.orbit.runtime.pipeline.steps.RoutingStep
+import cloud.orbit.runtime.pipeline.steps.SerializationStep
 import cloud.orbit.runtime.pipeline.steps.TransportStep
 import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CancellationException
@@ -39,6 +41,8 @@ internal class PipelineSystem(
         IdentityStep::class.java,
         RoutingStep::class.java,
         ResponseTrackingStep::class.java,
+        LoopbackStep::class.java,
+        SerializationStep::class.java,
         TransportStep::class.java
     )
 

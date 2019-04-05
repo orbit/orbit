@@ -55,7 +55,7 @@ internal class ResponseTrackingSystem(
         }
 
         timedOut.forEach {
-            val content = "Response timed out after ${clock.currentTime - it.timeAdded}, timeout is" +
+            val content = "Response timed out after ${clock.currentTime - it.timeAdded}ms, timeout is" +
                     " ${stageConfig.messageTimeoutMillis}ms. ${it.msg}"
             logger.warn(content)
             it.completion.completeExceptionally(
