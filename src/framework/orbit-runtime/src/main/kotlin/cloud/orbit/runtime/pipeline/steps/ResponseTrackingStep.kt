@@ -11,13 +11,14 @@ import cloud.orbit.runtime.hosting.ResponseTrackingSystem
 import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.pipeline.PipelineContext
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.future.asCompletableFuture
 import java.util.concurrent.CompletionException
 
 internal class ResponseTrackingStep(private val responseTracking: ResponseTrackingSystem) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
         when (msg.content) {
-            is MessageContent.RequestInvocationMessage -> responseTracking.trackMessage(msg, context.completion!!)
+            is MessageContent.RequestInvocationMessage -> responseTracking.trackMessage(msg, context.completion)
             else -> Unit // Do nothing
         }
         context.nextOutbound(msg)
@@ -30,12 +31,12 @@ internal class ResponseTrackingStep(private val responseTracking: ResponseTracki
                 responseTracking.handleResponse(msg)
 
             is MessageContent.RequestInvocationMessage -> {
-                // TODO: Don't convert to CF
-                context.completion!!.asCompletableFuture().handle { res, err ->
-                    val newContent = if (err != null && err !is CompletionException) {
-                        MessageContent.ResponseErrorMessage(err)
+                context.completion.invokeOnCompletion {
+                    val newContent = if(it != null) {
+                        MessageContent.ResponseErrorMessage(it)
                     } else {
-                        MessageContent.ResponseNormalMessage(res)
+                        @UseExperimental(ExperimentalCoroutinesApi::class)
+                        MessageContent.ResponseNormalMessage(context.completion.getCompleted())
                     }
 
                     val newMsg = Message(
@@ -48,6 +49,8 @@ internal class ResponseTrackingStep(private val responseTracking: ResponseTracki
                 }
                 context.nextInbound(msg)
             }
+
+            else -> Unit
         }
     }
 }

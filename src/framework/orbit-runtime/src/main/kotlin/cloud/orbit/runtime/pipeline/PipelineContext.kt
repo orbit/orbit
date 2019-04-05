@@ -17,7 +17,7 @@ internal class PipelineContext(
     private val pipeline: Array<PipelineStep>,
     startAtEnd: Boolean,
     private val pipelineSystem: PipelineSystem,
-    var completion: Completion?
+    var completion: Completion
 ) {
     private val pipelineSize = pipeline.size
     private var pointer = if (startAtEnd) pipelineSize else -1

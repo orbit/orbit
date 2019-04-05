@@ -93,7 +93,7 @@ data class StageConfig(
     /**
      * The number of invocations that may be queued on each [Addressable] instance.
      */
-    val addressableBufferCount: Int = 1000,
+    val addressableBufferCount: Int = 100,
 
     /**
      * Allows Orbit to optimize by skipping serialization and transport when the destination node is the local node.

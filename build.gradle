@@ -92,7 +92,7 @@ configure(withKotlin) {
     compileKotlin {
         kotlinOptions {
             jvmTarget = kotlinTargetVersion
-            freeCompilerArgs = ["-Xjvm-default=enable"]
+            freeCompilerArgs = ["-Xjvm-default=enable", "-Xuse-experimental=kotlin.Experimental"]
         }
     }
 

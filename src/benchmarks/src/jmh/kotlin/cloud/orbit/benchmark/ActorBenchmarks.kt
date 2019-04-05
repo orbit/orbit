@@ -57,7 +57,7 @@ open class ActorBenchmarks {
     fun setup() {
         val stageConfig = StageConfig(
             pipelineRailCount = 16,
-            allowLoopback = false
+            allowLoopback = true
         )
         stage = Stage(stageConfig)
         runBlocking {
@@ -75,7 +75,6 @@ open class ActorBenchmarks {
     @Threads(8)
     @OperationsPerInvocation(REQUESTS_PER_BATCH)
     fun echoThroughputBenchmark() = batchIteration()
-
 
     @Benchmark
     @Threads(8)
@@ -96,8 +95,9 @@ open class ActorBenchmarks {
     }
 
     @TearDown
-    fun teardown() =
+    fun teardown() {
         runBlocking {
             stage!!.stop().await()
         }
+    }
 }

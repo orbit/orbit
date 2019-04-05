@@ -17,7 +17,7 @@ internal class ExecutionStep(
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
         when (msg.content) {
             is MessageContent.RequestInvocationMessage ->
-                executionSystem.handleInvocation(msg.content.addressableInvocation, context.completion!!)
+                executionSystem.handleInvocation(msg.content.addressableInvocation, context.completion)
             else -> context.nextInbound(msg)
         }
     }

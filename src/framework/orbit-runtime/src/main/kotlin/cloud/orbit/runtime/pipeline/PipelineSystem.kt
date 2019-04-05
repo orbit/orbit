@@ -28,6 +28,7 @@ import cloud.orbit.runtime.pipeline.steps.TransportStep
 import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -83,6 +84,7 @@ internal class PipelineSystem(
     }
 
     private fun writeMessage(msg: Message, direction: MessageDirection): CompletableDeferred<Any?> {
+        @UseExperimental(ExperimentalCoroutinesApi::class)
         if (!this::pipelineChannel.isInitialized || pipelineChannel.isClosedForSend) {
             throw IllegalStateException(
                 "The Orbit pipeline is not in a state to receive messages. " +
