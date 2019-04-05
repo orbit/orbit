@@ -12,7 +12,7 @@ import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
 import java.lang.reflect.Method
 
-internal class MethodSerializer : Serializer<Method>() {
+internal class MethodSerializer: Serializer<Method>(false, true) {
     override fun write(kryo: Kryo, output: Output, method: Method) {
         kryo.writeClass(output, method.declaringClass)
         output.writeString(method.name)

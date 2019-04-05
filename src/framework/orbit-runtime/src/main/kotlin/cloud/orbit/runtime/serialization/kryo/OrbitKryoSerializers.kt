@@ -12,7 +12,7 @@ import com.esotericsoftware.kryo.Serializer
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
 
-internal class NoKeySerializer : Serializer<Key.NoKey>(true) {
+internal class NoKeySerializer : Serializer<Key.NoKey>(true, true) {
     override fun write(kryo: Kryo, output: Output, obj: Key.NoKey?): Unit =
         if (obj != null) {
             output.writeBoolean(true)
