@@ -3,9 +3,3 @@
  This file is part of the Orbit Project <https://www.orbit.cloud>.
  See license in LICENSE.
  */
-
-ext.javapoetVersion = "1.11.1"
-
-dependencies {
-    compile("com.squareup:javapoet:$javapoetVersion")
-}
