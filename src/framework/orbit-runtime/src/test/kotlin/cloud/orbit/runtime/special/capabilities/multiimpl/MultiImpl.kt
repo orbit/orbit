@@ -10,5 +10,8 @@ import cloud.orbit.core.remoting.Addressable
 
 interface MultiImpl : Addressable
 
+@Suppress("UNUSED")
 class MultiImpl1 : MultiImpl
+
+@Suppress("UNUSED")
 class MultiImpl2 : MultiImpl

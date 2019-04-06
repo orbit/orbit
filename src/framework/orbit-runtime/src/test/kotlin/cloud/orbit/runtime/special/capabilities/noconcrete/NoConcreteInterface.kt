@@ -12,4 +12,5 @@ import cloud.orbit.core.remoting.Addressable
 @NonConcrete
 interface NoConcreteInterface : Addressable
 
+@Suppress("UNUSED")
 class NoConcreteClass : NoConcreteInterface

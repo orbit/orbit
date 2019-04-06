@@ -71,11 +71,11 @@ class SerializationTestAddressableImpl : SerializationTestAddressable, AbstractA
 abstract class MessageSerializationTest : BaseStageTest() {
     @Test
     fun `ensure all key types succeed`() {
-        val echoMsg = "Hello"
+        val echoMsg = "Wormhole"
         val noKey = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.NoKey)
         val intKey = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.Int32Key(1234))
         val longKey = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.Int64Key(5432))
-        val stringKey = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.StringKey("MyKey"))
+        val stringKey = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.StringKey("Milky Way"))
         val guidKey =
             stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.GuidKey(UUID.randomUUID()))
 

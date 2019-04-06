@@ -38,19 +38,23 @@ class RoutingExecutionClassAddressable : Addressable
 interface FullInterfaceAddressable : Addressable
 
 interface InvalidMethodInterfaceAddressable : FullInterfaceAddressable {
-    fun meep(): String
+    @Suppress("UNUSED")
+    fun dialTheGate(): String
 }
 
 interface ValidMethodInterfaceAddressable : FullInterfaceAddressable {
-    fun meep(): Deferred<String>
+    @Suppress("UNUSED")
+    fun dialTheGate(): Deferred<String>
 }
 
 class FullInheritedClassAddressable : FullInterfaceAddressable
 
 class LifecycleEventsClassAddressable : FullInterfaceAddressable {
+    @Suppress("UNUSED")
     @OnActivate
     fun onActivate() = CompletableDeferred(Unit)
 
+    @Suppress("UNUSED")
     @OnDeactivate
     fun onDeactivate() = CompletableDeferred(Unit)
 }

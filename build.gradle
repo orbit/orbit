@@ -19,7 +19,7 @@ def localPublish = []
 // Framework
 configureProject(":src:framework:orbit-commons", [withKotlin, withTests, publish])
 configureProject(":src:framework:orbit-core", [withKotlin, withTests, publish])
-configureProject(":src:framework:orbit-runtime", [withKotlin, withTests, publish])
+configureProject(":src:framework:orbit-runtime", [withKotlin, withJava, withTests, publish])
 
 // DSL
 configureProject(":src:dsl:orbit-codegen", [withKotlin, withTests, publish])

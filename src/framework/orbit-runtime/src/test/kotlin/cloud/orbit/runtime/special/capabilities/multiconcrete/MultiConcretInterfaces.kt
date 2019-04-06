@@ -10,4 +10,6 @@ import cloud.orbit.core.remoting.Addressable
 
 interface Concrete1 : Addressable
 interface Concrete2 : Addressable
+
+@Suppress("UNUSED")
 class ConcreteClass : Concrete1, Concrete2
