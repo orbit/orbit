@@ -26,16 +26,15 @@ internal class KryoFactory(private val componentProvider: ComponentProvider) {
         override fun getRegistration(type: Class<*>?): Registration {
             if (type != null && !type.isInterface) {
                 if (Addressable::class.java.isAssignableFrom(type)) {
-                    return classResolver.registerImplicit(Addressable::class.java)
+                    return getOrRegister(Addressable::class.java)
                 }
             }
 
             return super.getRegistration(type)
         }
 
-        override fun <T : Any?> copy(`object`: T): T {
-            return super.copy(`object`)
-        }
+        private fun getOrRegister(clazz: Class<*>) =
+            classResolver.getRegistration(clazz) ?: classResolver.registerImplicit(clazz)
     }
 
     fun create(): Kryo {
