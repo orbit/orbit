@@ -35,8 +35,12 @@ class SerializerTest : BaseStageTest() {
 
     @Test
     fun `check null NoKey serialized is null`() {
-        val rawData = serializationSystem.serializeObject<Key.NoKey?>(null)
-        val newKey: Key.NoKey? = serializationSystem.deserializeObject(rawData)
-        assertThat(newKey).isNull()
+        class Test {
+            val noKey: Key.NoKey? = null
+        }
+
+        val rawData = serializationSystem.serializeObject(Test())
+        val newKey: Test = serializationSystem.deserializeObject(rawData)
+        assertThat(newKey.noKey).isNull()
     }
 }

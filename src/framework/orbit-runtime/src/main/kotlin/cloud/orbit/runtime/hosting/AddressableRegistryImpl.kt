@@ -45,7 +45,6 @@ internal class AddressableRegistryImpl(
     ): T =
         proxyFactory.createProxy(interfaceClass, key, target)
 
-
     private suspend fun registerAddressableInternal(reference: AddressableReference, instance: Addressable) {
         executionSystem.registerAddressableInstance(
             reference = reference,

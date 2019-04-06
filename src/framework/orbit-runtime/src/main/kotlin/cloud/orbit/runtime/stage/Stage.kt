@@ -29,6 +29,7 @@ import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.hosting.AddressableRegistryImpl
 import cloud.orbit.runtime.hosting.DirectorySystem
 import cloud.orbit.runtime.hosting.ExecutionSystem
+import cloud.orbit.runtime.hosting.ReferenceResolver
 import cloud.orbit.runtime.hosting.ResponseTrackingSystem
 import cloud.orbit.runtime.hosting.RoutingSystem
 import cloud.orbit.runtime.net.NetSystem
@@ -109,6 +110,7 @@ class Stage(val config: StageConfig) : RuntimeContext {
             definition<ResponseTrackingSystem>()
             definition<ExecutionSystem>()
             definition<DirectorySystem>()
+            definition<ReferenceResolver>()
             definition<AddressableRegistry>(AddressableRegistryImpl::class.java)
 
             // Serializer

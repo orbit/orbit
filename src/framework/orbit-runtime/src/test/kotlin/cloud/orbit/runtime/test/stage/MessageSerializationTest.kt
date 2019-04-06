@@ -13,6 +13,7 @@ import cloud.orbit.core.annotation.Routing
 import cloud.orbit.core.hosting.ExecutionStrategy
 import cloud.orbit.core.hosting.RandomRouting
 import cloud.orbit.core.key.Key
+import cloud.orbit.core.remoting.AbstractAddressable
 import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.createProxy
 import cloud.orbit.runtime.serialization.kryo.DEFAULT_KRYO_BUFFER_SIZE
@@ -37,12 +38,14 @@ interface SerializationTestAddressable : Addressable {
     fun echoMethod(value: Method): Deferred<Method>
     fun overloaded(value: String): Deferred<String>
     fun overloaded(value: Int): Deferred<String>
+    fun getKey(): Deferred<Key>
+    fun selfRefGetId(value: SerializationTestAddressable): Deferred<Key>
 }
 
 @ExecutionModel(ExecutionStrategy.SAFE)
 @Lifecycle(true, true)
 @Suppress("UNUSED")
-class SerializationTestAddressableImpl : SerializationTestAddressable {
+class SerializationTestAddressableImpl : SerializationTestAddressable, AbstractAddressable() {
     override fun doNothing() = CompletableDeferred(Unit)
     override fun echoString(value: String) = CompletableDeferred(value)
     override fun echoInt(value: Int) = CompletableDeferred(value)
@@ -52,6 +55,8 @@ class SerializationTestAddressableImpl : SerializationTestAddressable {
     override fun echoMethod(value: Method) = CompletableDeferred(value)
     override fun overloaded(value: String) = CompletableDeferred("String=$value")
     override fun overloaded(value: Int) = CompletableDeferred("Int=$value")
+    override fun getKey() = CompletableDeferred(context.reference.key)
+    override fun selfRefGetId(value: SerializationTestAddressable) = value.getKey()
 }
 
 abstract class MessageSerializationTest : BaseStageTest() {
@@ -116,6 +121,18 @@ abstract class MessageSerializationTest : BaseStageTest() {
             val listRes = echo.echoList(listVal).await()
             assertThat(listRes).isNotSameAs(listVal)
             assertThat(listRes).isEqualTo(listVal)
+        }
+    }
+
+    @Test
+    fun `ensure can pass reference`() {
+        val otherId = "Other"
+        val mainRef = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.NoKey)
+        val otherRef = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.StringKey(otherId))
+
+        runBlocking {
+            val result = mainRef.selfRefGetId(otherRef).await()
+            assertThat(result).isNotSameAs(otherId)
         }
     }
 
