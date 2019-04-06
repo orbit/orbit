@@ -14,7 +14,7 @@ import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
 
-class OrbitFileLexerTest {
+class OrbitDslFileLexerTest {
     @TestFactory
     fun tokenizeId() = listOf(
         "a",
@@ -29,7 +29,7 @@ class OrbitFileLexerTest {
         "Data",
         "Actor"
     )
-        .map { testSingleToken("Id", it, OrbitLexer.ID) }
+        .map { testSingleToken("Id", it, OrbitDslLexer.ID) }
 
     @TestFactory
     fun tokenizeInt() = listOf(
@@ -39,13 +39,13 @@ class OrbitFileLexerTest {
         "2147483647",
         "9223372036854775807"
     )
-        .map { testSingleToken("Int", it, OrbitLexer.INT) }
+        .map { testSingleToken("Int", it, OrbitDslLexer.INT) }
 
     @TestFactory
     fun tokenizeKeywords() = mapOf(
-        "enum" to OrbitLexer.ENUM,
-        "data" to OrbitLexer.DATA,
-        "actor" to OrbitLexer.ACTOR
+        "enum" to OrbitDslLexer.ENUM,
+        "data" to OrbitDslLexer.DATA,
+        "actor" to OrbitDslLexer.ACTOR
     )
         .map { testSingleToken("Keyword", it.key, it.value) }
 
@@ -81,90 +81,90 @@ class OrbitFileLexerTest {
 
         val expectedTokens = listOf(
             // ==== Enum ====
-            "enum" to OrbitLexer.ENUM,
-            "RGB" to OrbitLexer.ID,
-            "{" to OrbitLexer.LC_BRACE,
+            "enum" to OrbitDslLexer.ENUM,
+            "RGB" to OrbitDslLexer.ID,
+            "{" to OrbitDslLexer.LC_BRACE,
 
             // Enum value
-            "R" to OrbitLexer.ID,
-            "=" to OrbitLexer.EQUAL,
-            "1" to OrbitLexer.INT,
-            ";" to OrbitLexer.SEMI_COLON,
+            "R" to OrbitDslLexer.ID,
+            "=" to OrbitDslLexer.EQUAL,
+            "1" to OrbitDslLexer.INT,
+            ";" to OrbitDslLexer.SEMI_COLON,
 
             // Enum value
-            "G" to OrbitLexer.ID,
-            "=" to OrbitLexer.EQUAL,
-            "2" to OrbitLexer.INT,
-            ";" to OrbitLexer.SEMI_COLON,
+            "G" to OrbitDslLexer.ID,
+            "=" to OrbitDslLexer.EQUAL,
+            "2" to OrbitDslLexer.INT,
+            ";" to OrbitDslLexer.SEMI_COLON,
 
             // Enum value
-            "B" to OrbitLexer.ID,
-            "=" to OrbitLexer.EQUAL,
-            "3" to OrbitLexer.INT,
-            ";" to OrbitLexer.SEMI_COLON,
+            "B" to OrbitDslLexer.ID,
+            "=" to OrbitDslLexer.EQUAL,
+            "3" to OrbitDslLexer.INT,
+            ";" to OrbitDslLexer.SEMI_COLON,
 
-            "}" to OrbitLexer.RC_BRACE,
+            "}" to OrbitDslLexer.RC_BRACE,
 
             // ==== Data ====
-            "data" to OrbitLexer.DATA,
-            "Payload" to OrbitLexer.ID,
-            "{" to OrbitLexer.LC_BRACE,
+            "data" to OrbitDslLexer.DATA,
+            "Payload" to OrbitDslLexer.ID,
+            "{" to OrbitDslLexer.LC_BRACE,
 
             // Data field
-            "int" to OrbitLexer.ID,
-            "field1" to OrbitLexer.ID,
-            "=" to OrbitLexer.EQUAL,
-            "1" to OrbitLexer.INT,
-            ";" to OrbitLexer.SEMI_COLON,
+            "int" to OrbitDslLexer.ID,
+            "field1" to OrbitDslLexer.ID,
+            "=" to OrbitDslLexer.EQUAL,
+            "1" to OrbitDslLexer.INT,
+            ";" to OrbitDslLexer.SEMI_COLON,
 
             // Data field
-            "RGB" to OrbitLexer.ID,
-            "field2" to OrbitLexer.ID,
-            "=" to OrbitLexer.EQUAL,
-            "2" to OrbitLexer.INT,
-            ";" to OrbitLexer.SEMI_COLON,
+            "RGB" to OrbitDslLexer.ID,
+            "field2" to OrbitDslLexer.ID,
+            "=" to OrbitDslLexer.EQUAL,
+            "2" to OrbitDslLexer.INT,
+            ";" to OrbitDslLexer.SEMI_COLON,
 
-            "}" to OrbitLexer.RC_BRACE,
+            "}" to OrbitDslLexer.RC_BRACE,
 
             // ==== Actor ====
-            "actor" to OrbitLexer.ACTOR,
-            "MyActor" to OrbitLexer.ID,
-            "{" to OrbitLexer.LC_BRACE,
+            "actor" to OrbitDslLexer.ACTOR,
+            "MyActor" to OrbitDslLexer.ID,
+            "{" to OrbitDslLexer.LC_BRACE,
 
             // Actor method
-            "int" to OrbitLexer.ID,
-            "no_args" to OrbitLexer.ID,
-            "(" to OrbitLexer.L_PAREN,
-            ")" to OrbitLexer.R_PAREN,
-            ";" to OrbitLexer.SEMI_COLON,
+            "int" to OrbitDslLexer.ID,
+            "no_args" to OrbitDslLexer.ID,
+            "(" to OrbitDslLexer.L_PAREN,
+            ")" to OrbitDslLexer.R_PAREN,
+            ";" to OrbitDslLexer.SEMI_COLON,
 
             // Actor method
-            "void" to OrbitLexer.ID,
-            "one_arg" to OrbitLexer.ID,
-            "(" to OrbitLexer.L_PAREN,
-            "RGB" to OrbitLexer.ID,
-            "a" to OrbitLexer.ID,
-            ")" to OrbitLexer.R_PAREN,
-            ";" to OrbitLexer.SEMI_COLON,
+            "void" to OrbitDslLexer.ID,
+            "one_arg" to OrbitDslLexer.ID,
+            "(" to OrbitDslLexer.L_PAREN,
+            "RGB" to OrbitDslLexer.ID,
+            "a" to OrbitDslLexer.ID,
+            ")" to OrbitDslLexer.R_PAREN,
+            ";" to OrbitDslLexer.SEMI_COLON,
 
             // Actor method
-            "RGB" to OrbitLexer.ID,
-            "multiple_args" to OrbitLexer.ID,
-            "(" to OrbitLexer.L_PAREN,
-            "RGB" to OrbitLexer.ID,
-            "arg1" to OrbitLexer.ID,
-            "," to OrbitLexer.COMMA,
-            "RGB" to OrbitLexer.ID,
-            "arg2" to OrbitLexer.ID,
-            ")" to OrbitLexer.R_PAREN,
-            ";" to OrbitLexer.SEMI_COLON,
+            "RGB" to OrbitDslLexer.ID,
+            "multiple_args" to OrbitDslLexer.ID,
+            "(" to OrbitDslLexer.L_PAREN,
+            "RGB" to OrbitDslLexer.ID,
+            "arg1" to OrbitDslLexer.ID,
+            "," to OrbitDslLexer.COMMA,
+            "RGB" to OrbitDslLexer.ID,
+            "arg2" to OrbitDslLexer.ID,
+            ")" to OrbitDslLexer.R_PAREN,
+            ";" to OrbitDslLexer.SEMI_COLON,
 
-            "}" to OrbitLexer.RC_BRACE,
+            "}" to OrbitDslLexer.RC_BRACE,
 
             "<EOF>" to Lexer.EOF
         )
 
-        val lexer = OrbitLexer(CharStreams.fromString(file))
+        val lexer = OrbitDslLexer(CharStreams.fromString(file))
 
         expectedTokens.forEachIndexed { idx, expected ->
             val token = lexer.nextToken()
@@ -177,7 +177,7 @@ class OrbitFileLexerTest {
         return DynamicTest.dynamicTest(
             String.format("\"%s\" is tokenized as %s", text, dataType)
         ) {
-            val lexer = OrbitLexer(CharStreams.fromString(text))
+            val lexer = OrbitDslLexer(CharStreams.fromString(text))
             val token = lexer.nextToken()
 
             Assertions.assertEquals(expectedTokenType, token.type)

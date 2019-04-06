@@ -6,9 +6,9 @@
 
 package cloud.orbit.dsl.gradle
 
-import cloud.orbit.dsl.OrbitFileParser
+import cloud.orbit.dsl.OrbitDslFileParser
 import cloud.orbit.dsl.ast.CompilationUnit
-import cloud.orbit.dsl.java.OrbitJavaCompiler
+import cloud.orbit.dsl.java.OrbitDslJavaCompiler
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import java.io.File
 
@@ -24,7 +24,7 @@ class OrbitDslCompilerRunner {
         spec.orbitFiles.forEach { file ->
             try {
                 parsedOrbitFiles.add(
-                    OrbitFileParser().parse(
+                    OrbitDslFileParser().parse(
                         file.readText(), getPackageNameFromFile(inputDirectory.getValue(file), file)
                     )
                 )
@@ -37,7 +37,7 @@ class OrbitDslCompilerRunner {
             throw OrbitDslException(errors.joinToString(System.lineSeparator()))
         }
 
-        OrbitJavaCompiler()
+        OrbitDslJavaCompiler()
             .compile(parsedOrbitFiles)
             .forEach {
                 it.writeToDirectory(spec.outputDirectory)

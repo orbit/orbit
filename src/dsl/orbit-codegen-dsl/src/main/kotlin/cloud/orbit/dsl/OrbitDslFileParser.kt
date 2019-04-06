@@ -19,15 +19,15 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ConsoleErrorListener
 
-class OrbitFileParser : OrbitBaseVisitor<Any>() {
+class OrbitDslFileParser : OrbitDslBaseVisitor<Any>() {
     private val enums = mutableListOf<EnumDeclaration>()
     private val data = mutableListOf<DataDeclaration>()
     private val actors = mutableListOf<ActorDeclaration>()
 
     // This code is not thread safe. Need to find a way to pass the context into the visitor
     fun parse(input: String, packageName: String): CompilationUnit {
-        val lexer = OrbitLexer(CharStreams.fromString(input))
-        val parser = OrbitParser(CommonTokenStream(lexer)).also {
+        val lexer = OrbitDslLexer(CharStreams.fromString(input))
+        val parser = OrbitDslParser(CommonTokenStream(lexer)).also {
             it.addErrorListener(ThrowingErrorListener())
             it.removeErrorListener(ConsoleErrorListener.INSTANCE)
         }
@@ -45,47 +45,47 @@ class OrbitFileParser : OrbitBaseVisitor<Any>() {
         )
     }
 
-    override fun visitEnumDeclaration(ctx: OrbitParser.EnumDeclarationContext?) = enums.add(
+    override fun visitEnumDeclaration(ctx: OrbitDslParser.EnumDeclarationContext?) = enums.add(
         EnumDeclaration(
             ctx!!.name.text,
             ctx.children
                 .asSequence()
-                .filterIsInstance(OrbitParser.EnumMemberContext::class.java)
+                .filterIsInstance(OrbitDslParser.EnumMemberContext::class.java)
                 .map { EnumMember(it.name.text, it.index.text.toInt()) }
                 .toList()))
 
-    override fun visitDataDeclaration(ctx: OrbitParser.DataDeclarationContext?) = data.add(
+    override fun visitDataDeclaration(ctx: OrbitDslParser.DataDeclarationContext?) = data.add(
         DataDeclaration(
             ctx!!.name.text,
             ctx.children
                 .asSequence()
-                .filterIsInstance(OrbitParser.DataFieldContext::class.java)
+                .filterIsInstance(OrbitDslParser.DataFieldContext::class.java)
                 .map { DataField(it.name.text, makeType(it.type()), it.index.text.toInt()) }
                 .toList()))
 
-    override fun visitActorDeclaration(ctx: OrbitParser.ActorDeclarationContext?) = actors.add(
+    override fun visitActorDeclaration(ctx: OrbitDslParser.ActorDeclarationContext?) = actors.add(
         ActorDeclaration(
             ctx!!.name.text,
             ctx.children
                 .asSequence()
-                .filterIsInstance(OrbitParser.ActorMethodContext::class.java)
+                .filterIsInstance(OrbitDslParser.ActorMethodContext::class.java)
                 .map { m ->
                     ActorMethod(
                         name = m.name.text,
                         returnType = makeType(m.returnType),
                         params = m.children
                             .asSequence()
-                            .filterIsInstance(OrbitParser.MethodParamContext::class.java)
+                            .filterIsInstance(OrbitDslParser.MethodParamContext::class.java)
                             .map { p -> MethodParameter(p.name.text, makeType(p.type())) }
                             .toList())
                 }
                 .toList()))
 
-    private fun makeType(ctx: OrbitParser.TypeContext): Type =
+    private fun makeType(ctx: OrbitDslParser.TypeContext): Type =
         Type(
             ctx.name.text, ctx.children
                 .asSequence()
-                .filterIsInstance(OrbitParser.TypeContext::class.java)
+                .filterIsInstance(OrbitDslParser.TypeContext::class.java)
                 .map(::makeType)
                 .toList()
         )
