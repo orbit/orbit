@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.dsl.gradle
+package cloud.orbit.plugin.gradle
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -16,7 +16,7 @@ import org.gradle.api.plugins.JavaPluginConvention
 import java.io.File
 import javax.inject.Inject
 
-class OrbitDslPlugin : Plugin<Project> {
+class OrbitPlugin : Plugin<Project> {
     private val objectFactory: ObjectFactory
 
     @Inject

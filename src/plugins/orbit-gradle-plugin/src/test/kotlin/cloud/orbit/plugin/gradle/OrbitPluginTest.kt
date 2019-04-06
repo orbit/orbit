@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.dsl.gradle
+package cloud.orbit.plugin.gradle
 
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -12,17 +12,17 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class OrbitDslPluginTest {
+class OrbitPluginTest {
     private val project = ProjectBuilder.builder().build()
 
     @BeforeEach
     fun setup() {
-        project.pluginManager.apply("cloud.orbit.dsl")
+        project.pluginManager.apply("cloud.orbit.plugin")
     }
 
     @Test
     fun applyingPluginWorks() {
-        assertTrue(project.pluginManager.hasPlugin("cloud.orbit.dsl"))
+        assertTrue(project.pluginManager.hasPlugin("cloud.orbit.plugin"))
     }
 
     @Test
