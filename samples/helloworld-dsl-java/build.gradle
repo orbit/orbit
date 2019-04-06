@@ -24,7 +24,7 @@ buildscript {
         }
 
         maven {
-            url "$projectDir/../../src/dsl/orbit-gradle-plugin/build/repo"
+            url "$projectDir/../../src/plugins/orbit-gradle-plugin/build/repo"
         }
 
         mavenCentral()
@@ -37,7 +37,7 @@ buildscript {
 }
 
 apply plugin: 'application'
-apply plugin: 'cloud.orbit.dsl'
+apply plugin: 'cloud.orbit.plugin'
 
 mainClassName = "orbit.helloworld.dsl.App"
 

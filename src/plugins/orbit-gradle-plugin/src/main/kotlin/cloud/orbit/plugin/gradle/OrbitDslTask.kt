@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.dsl.gradle
+package cloud.orbit.plugin.gradle
 
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.tasks.OutputDirectory
@@ -28,7 +28,12 @@ open class OrbitDslTask : SourceTask() {
         GFileUtils.cleanDirectory(outputDirectory!!)
         orbitFiles.addAll(sourceFiles)
 
-        val spec = OrbitDslSpec(project.projectDir, orbitFiles, sourceDirectorySet!!.srcDirs, outputDirectory!!)
+        val spec = OrbitDslSpec(
+            project.projectDir,
+            orbitFiles,
+            sourceDirectorySet!!.srcDirs,
+            outputDirectory!!
+        )
         OrbitDslCompilerRunner().run(spec)
     }
 

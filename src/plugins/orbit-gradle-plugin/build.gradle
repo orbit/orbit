@@ -16,9 +16,9 @@ dependencies {
 
 gradlePlugin {
     plugins {
-        orbitDslPlugin {
-            id = 'cloud.orbit.dsl'
-            implementationClass = 'cloud.orbit.dsl.gradle.OrbitDslPlugin'
+        orbitPlugin {
+            id = 'cloud.orbit.plugin'
+            implementationClass = 'cloud.orbit.plugin.gradle.OrbitPlugin'
         }
     }
 }
@@ -26,12 +26,12 @@ gradlePlugin {
 pluginBundle {
     website = orbitUrl
     vcsUrl = orbitScmUrl
-    description = "A plugin to generate code from the Orbit DSL."
+    description = "A plugin for the Orbit distributed systems framework."
 
     plugins {
         orbitDslPlugin {
-            displayName = "Orbit DSL Plugin"
-            tags = ['orbit', 'codegen', 'dsl']
+            displayName = "Orbit Plugin"
+            tags = ['orbit', 'actor', 'distributed', 'framework']
             version = orbitVersion
         }
     }

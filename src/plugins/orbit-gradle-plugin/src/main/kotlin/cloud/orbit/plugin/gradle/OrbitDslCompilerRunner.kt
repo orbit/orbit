@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.dsl.gradle
+package cloud.orbit.plugin.gradle
 
 import cloud.orbit.dsl.OrbitDslFileParser
 import cloud.orbit.dsl.ast.CompilationUnit

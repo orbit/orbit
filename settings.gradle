@@ -15,8 +15,11 @@ include(
 include(
         ":src:dsl:orbit-dsl-ast",
         ":src:dsl:orbit-dsl-java",
-        ":src:dsl:orbit-dsl-parsing",
-        ":src:dsl:orbit-gradle-plugin"
+        ":src:dsl:orbit-dsl-parsing"
+)
+
+include(
+        ":src:plugins:orbit-gradle-plugin"
 )
 
 include(
