@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-grammar Orbit;
+grammar OrbitDsl;
 
 fragment ALPHA: [A-Za-z] ;
 fragment DIGIT: [0-9] ;

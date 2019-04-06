@@ -8,7 +8,7 @@ package cloud.orbit.dsl.java
 
 import cloud.orbit.dsl.ast.CompilationUnit
 
-class OrbitJavaCompiler {
+class OrbitDslJavaCompiler {
     fun compile(compilationUnits: List<CompilationUnit>) =
         JavaCodeGenerator(knownTypes = TypeIndexer().visitCompilationUnits(compilationUnits))
             .visitCompilationUnits(compilationUnits)

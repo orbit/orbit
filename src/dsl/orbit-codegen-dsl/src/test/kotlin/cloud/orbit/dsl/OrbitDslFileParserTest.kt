@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
-class OrbitFileParserTest {
+class OrbitDslFileParserTest {
     private val packageName = "cloud.orbit.test"
 
     @Test
@@ -28,7 +28,7 @@ class OrbitFileParserTest {
         val text = "actor a {"
 
         assertThrows<ParseCancellationException> {
-            OrbitFileParser().parse(text, packageName)
+            OrbitDslFileParser().parse(text, packageName)
         }
     }
 
@@ -41,7 +41,7 @@ class OrbitFileParserTest {
             enums = listOf(EnumDeclaration("foo"))
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -64,7 +64,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -91,7 +91,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -105,7 +105,7 @@ class OrbitFileParserTest {
             data = listOf(DataDeclaration("foo"))
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -130,7 +130,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -157,7 +157,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -182,7 +182,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -219,7 +219,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -252,7 +252,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -285,7 +285,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -299,7 +299,7 @@ class OrbitFileParserTest {
             actors = listOf(ActorDeclaration("foo"))
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -322,7 +322,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -349,7 +349,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -377,7 +377,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -408,7 +408,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
@@ -544,7 +544,7 @@ class OrbitFileParserTest {
             )
         )
 
-        val actualCu = OrbitFileParser().parse(text, packageName)
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
 
         Assertions.assertEquals(expectedCu, actualCu)
     }
