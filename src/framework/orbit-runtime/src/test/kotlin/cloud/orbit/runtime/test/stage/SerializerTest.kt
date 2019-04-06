@@ -12,6 +12,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
+class WrappedNoKey {
+    val noKey: Key.NoKey? = null
+}
+
 class SerializerTest : BaseStageTest() {
     private lateinit var serializationSystem: SerializationSystem
 
@@ -35,12 +39,8 @@ class SerializerTest : BaseStageTest() {
 
     @Test
     fun `check null NoKey serialized is null`() {
-        class Test {
-            val noKey: Key.NoKey? = null
-        }
-
-        val rawData = serializationSystem.serializeObject(Test())
-        val newKey: Test = serializationSystem.deserializeObject(rawData)
+        val rawData = serializationSystem.serializeObject(WrappedNoKey())
+        val newKey: WrappedNoKey = serializationSystem.deserializeObject(rawData)
         assertThat(newKey.noKey).isNull()
     }
 }

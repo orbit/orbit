@@ -126,7 +126,7 @@ abstract class MessageSerializationTest : BaseStageTest() {
 
     @Test
     fun `ensure can pass reference`() {
-        val otherId = "Other"
+        val otherId = "Kawoosh!"
         val mainRef = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.NoKey)
         val otherRef = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.StringKey(otherId))
 
