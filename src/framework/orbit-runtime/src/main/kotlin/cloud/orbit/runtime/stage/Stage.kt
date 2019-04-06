@@ -16,10 +16,10 @@ import cloud.orbit.common.time.Clock
 import cloud.orbit.common.time.stopwatch
 import cloud.orbit.common.util.VersionUtils
 import cloud.orbit.core.actor.ActorProxyFactory
+import cloud.orbit.core.hosting.AddressableRegistry
 import cloud.orbit.core.net.NodeCapabilities
 import cloud.orbit.core.net.NodeInfo
 import cloud.orbit.core.net.NodeStatus
-import cloud.orbit.core.remoting.AddressableRegistry
 import cloud.orbit.core.runtime.RuntimeContext
 import cloud.orbit.runtime.actor.ActorProxyFactoryImpl
 import cloud.orbit.runtime.capabilities.CapabilitiesScanner

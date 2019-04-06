@@ -6,16 +6,13 @@
 
 package cloud.orbit.runtime.hosting
 
-import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.Addressable
-import cloud.orbit.core.remoting.AddressableReference
+import cloud.orbit.core.remoting.RemoteAddressableReference
 import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.remoting.AddressableInterfaceClientProxy
 import java.lang.reflect.Proxy
 
 internal class ReferenceResolver(private val executionSystem: ExecutionSystem, private val netSystem: NetSystem) {
-    data class RemoteAddressableReference(val reference: AddressableReference, val target: NetTarget)
-
     fun resolveAddressableReference(obj: Any): RemoteAddressableReference? {
         if (obj is Addressable) {
             if (obj is Proxy) {

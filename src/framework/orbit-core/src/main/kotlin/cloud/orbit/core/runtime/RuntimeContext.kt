@@ -8,7 +8,7 @@ package cloud.orbit.core.runtime
 
 import cloud.orbit.common.time.Clock
 import cloud.orbit.core.actor.ActorProxyFactory
-import cloud.orbit.core.remoting.AddressableRegistry
+import cloud.orbit.core.hosting.AddressableRegistry
 
 /**
  * The Orbit runtime context.

@@ -6,7 +6,8 @@
 
 package cloud.orbit.runtime.serialization.kryo
 
-import cloud.orbit.core.remoting.AddressableRegistry
+import cloud.orbit.core.hosting.AddressableRegistry
+import cloud.orbit.core.remoting.RemoteAddressableReference
 import cloud.orbit.runtime.hosting.ReferenceResolver
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.Serializer
@@ -37,7 +38,7 @@ internal class AddressableReferenceSerializer(
     override fun read(kryo: Kryo, input: Input, type: Class<out Any?>): Any? {
         val isNotNull = input.readBoolean()
         return if (isNotNull) {
-            val reference = kryo.readObject(input, ReferenceResolver.RemoteAddressableReference::class.java)
+            val reference = kryo.readObject(input, RemoteAddressableReference::class.java)
             addressableRegistry.createProxy(
                 reference.reference.interfaceClass,
                 reference.reference.key,

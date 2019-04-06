@@ -8,8 +8,8 @@ package cloud.orbit.runtime.actor
 
 import cloud.orbit.core.actor.Actor
 import cloud.orbit.core.actor.ActorProxyFactory
+import cloud.orbit.core.hosting.AddressableRegistry
 import cloud.orbit.core.key.Key
-import cloud.orbit.core.remoting.AddressableRegistry
 
 internal class ActorProxyFactoryImpl(
     private val addressableRegistry: AddressableRegistry

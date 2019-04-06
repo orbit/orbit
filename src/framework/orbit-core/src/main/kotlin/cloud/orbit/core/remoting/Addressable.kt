@@ -8,6 +8,7 @@ package cloud.orbit.core.remoting
 
 import cloud.orbit.core.annotation.NonConcrete
 import cloud.orbit.core.key.Key
+import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.runtime.RuntimeContext
 import java.lang.reflect.Method
 
@@ -62,6 +63,21 @@ data class AddressableReference(
      */
     val key: Key
 )
+
+/**
+ * A reference to a specific addressable on a specific target.
+ */
+data class RemoteAddressableReference(
+    /**
+     * The referenced addressable.
+     */
+    val reference: AddressableReference,
+    /**
+     * The current known target.
+     */
+    val target: NetTarget
+)
+
 
 /**
  * An invocation of a method on an [Addressable].

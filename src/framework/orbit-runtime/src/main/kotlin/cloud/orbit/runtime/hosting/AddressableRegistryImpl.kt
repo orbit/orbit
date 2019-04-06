@@ -6,11 +6,11 @@
 
 package cloud.orbit.runtime.hosting
 
+import cloud.orbit.core.hosting.AddressableRegistry
 import cloud.orbit.core.key.Key
 import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.AddressableReference
-import cloud.orbit.core.remoting.AddressableRegistry
 import cloud.orbit.runtime.concurrent.RuntimeScopes
 import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.remoting.AddressableInterfaceClientProxyFactory

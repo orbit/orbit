@@ -11,9 +11,9 @@ import cloud.orbit.core.annotation.Lifecycle
 import cloud.orbit.core.annotation.Routing
 import cloud.orbit.core.hosting.ExecutionStrategy
 import cloud.orbit.core.hosting.RandomRouting
+import cloud.orbit.core.hosting.createProxy
 import cloud.orbit.core.key.Key
 import cloud.orbit.core.remoting.Addressable
-import cloud.orbit.core.remoting.createProxy
 import cloud.orbit.runtime.test.stage.BaseStageTest
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred

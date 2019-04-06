@@ -4,10 +4,11 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.core.remoting
+package cloud.orbit.core.hosting
 
 import cloud.orbit.core.key.Key
 import cloud.orbit.core.net.NetTarget
+import cloud.orbit.core.remoting.Addressable
 import java.util.concurrent.CompletableFuture
 
 /**
