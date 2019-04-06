@@ -40,6 +40,8 @@ interface SerializationTestAddressable : Addressable {
     fun overloaded(value: Int): Deferred<String>
     fun getKey(): Deferred<Key>
     fun selfRefGetId(value: SerializationTestAddressable): Deferred<Key>
+    fun returnRef(value: Key): Deferred<SerializationTestAddressable>
+    fun returnSelfRef(): Deferred<SerializationTestAddressable>
 }
 
 @ExecutionModel(ExecutionStrategy.SAFE)
@@ -57,6 +59,13 @@ class SerializationTestAddressableImpl : SerializationTestAddressable, AbstractA
     override fun overloaded(value: Int) = CompletableDeferred("Int=$value")
     override fun getKey() = CompletableDeferred(context.reference.key)
     override fun selfRefGetId(value: SerializationTestAddressable) = value.getKey()
+    override fun returnRef(value: Key): Deferred<SerializationTestAddressable> =
+        CompletableDeferred(
+            context.runtime.addressableRegistry.createProxy(SerializationTestAddressable::class.java, value)
+        )
+
+    override fun returnSelfRef() = CompletableDeferred(this)
+
 }
 
 abstract class MessageSerializationTest : BaseStageTest() {
@@ -126,13 +135,37 @@ abstract class MessageSerializationTest : BaseStageTest() {
 
     @Test
     fun `ensure can pass reference`() {
-        val otherId = "Kawoosh!"
+        val otherId = "Daedalus"
         val mainRef = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.NoKey)
         val otherRef = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.StringKey(otherId))
 
         runBlocking {
             val result = mainRef.selfRefGetId(otherRef).await()
             assertThat(result).isNotSameAs(otherId)
+        }
+    }
+
+    @Test
+    fun `ensure can receive reference`() {
+        val otherId = Key.StringKey("Prometheus")
+        val mainRef = stage.addressableRegistry.createProxy<SerializationTestAddressable>(Key.NoKey)
+
+        runBlocking {
+            val resultRef = mainRef.returnRef(otherId).await()
+            val resultKey = resultRef.getKey().await()
+            assertThat(resultKey).isEqualTo(otherId)
+        }
+    }
+
+    @Test
+    fun `ensure real instance gets boxed`() {
+        val thisKey = Key.StringKey("Death Glider")
+        val mainRef = stage.addressableRegistry.createProxy<SerializationTestAddressable>(thisKey)
+
+        runBlocking {
+            val resultRef = mainRef.returnSelfRef().await()
+            val resultKey = resultRef.getKey().await()
+            assertThat(resultKey).isEqualTo(thisKey)
         }
     }
 
