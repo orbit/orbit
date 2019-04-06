@@ -4,4 +4,10 @@
  See license in LICENSE.
  */
 
-rootProject.name = "helloworld-dsl-java"
+ext.javapoetVersion = "1.11.1"
+
+dependencies {
+    compile(project(":src:dsl:orbit-dsl-ast"))
+
+    compile("com.squareup:javapoet:$javapoetVersion")
+}

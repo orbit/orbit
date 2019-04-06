@@ -12,11 +12,15 @@ buildscript {
 
     repositories {
         maven {
-            url "$projectDir/../../src/dsl/orbit-codegen/build/repo"
+            url "$projectDir/../../src/dsl/orbit-dsl-ast/build/repo"
         }
 
         maven {
-            url "$projectDir/../../src/dsl/orbit-codegen-dsl/build/repo"
+            url "$projectDir/../../src/dsl/orbit-dsl-java/build/repo"
+        }
+
+        maven {
+            url "$projectDir/../../src/dsl/orbit-dsl-parsing/build/repo"
         }
 
         maven {

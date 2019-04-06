@@ -13,8 +13,9 @@ include(
 )
 
 include(
-        ":src:dsl:orbit-codegen",
-        ":src:dsl:orbit-codegen-dsl",
+        ":src:dsl:orbit-dsl-ast",
+        ":src:dsl:orbit-dsl-java",
+        ":src:dsl:orbit-dsl-parsing",
         ":src:dsl:orbit-gradle-plugin"
 )
 
@@ -26,5 +27,4 @@ include(
 include(
         ":samples:helloworld",
         ":samples:helloworld-java"
-
 )

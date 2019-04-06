@@ -22,8 +22,9 @@ configureProject(":src:framework:orbit-core", [withKotlin, withTests, publish])
 configureProject(":src:framework:orbit-runtime", [withKotlin, withJava, withTests, publish])
 
 // DSL
-configureProject(":src:dsl:orbit-codegen", [withKotlin, withTests, publish])
-configureProject(":src:dsl:orbit-codegen-dsl", [withKotlin, withJava, withTests, publish])
+configureProject(":src:dsl:orbit-dsl-ast", [withKotlin, withTests, publish])
+configureProject(":src:dsl:orbit-dsl-java", [withKotlin, withTests, publish])
+configureProject(":src:dsl:orbit-dsl-parsing", [withKotlin, withJava, withTests, publish])
 configureProject(":src:dsl:orbit-gradle-plugin", [withKotlin, withTests, localPublish])
 
 // Benchmark

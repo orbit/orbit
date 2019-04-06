@@ -4,4 +4,4 @@
  See license in LICENSE.
  */
 
-rootProject.name = "orbit-helloworld-dsl"
+rootProject.name = "helloworld-dsl"
