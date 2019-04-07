@@ -6,15 +6,12 @@
 
 package cloud.orbit.runtime.pipeline.steps
 
-import cloud.orbit.common.logging.logger
 import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.pipeline.PipelineContext
 import cloud.orbit.runtime.serialization.SerializationSystem
 
 internal class SerializationStep(private val serializationSystem: SerializationSystem) : PipelineStep {
-    private val logger by logger()
-
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
         val buffer = serializationSystem.serializeObject(msg)
         val newMsg = msg.copy(
@@ -24,20 +21,14 @@ internal class SerializationStep(private val serializationSystem: SerializationS
     }
 
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
-        try {
-            if (msg.content !is MessageContent.RawMessage) {
-                throw IllegalArgumentException(
-                    "Expected ${MessageContent.RawMessage::class.java.simpleName}, " +
-                            "instead got ${msg.content::class.java.simpleName}."
-                )
-            }
-
-            val realContent = serializationSystem.deserializeObject<Message>(msg.content.data)
-            context.nextInbound(realContent)
-
-        } catch (t: Throwable) {
-            logger.error("Error occurred during deserialization step.", t)
-            throw t
+        if (msg.content !is MessageContent.RawMessage) {
+            throw IllegalArgumentException(
+                "Expected ${MessageContent.RawMessage::class.java.simpleName}, " +
+                        "instead got ${msg.content::class.java.simpleName}."
+            )
         }
+
+        val realContent = serializationSystem.deserializeObject<Message>(msg.content.data)
+        context.nextInbound(realContent)
     }
 }

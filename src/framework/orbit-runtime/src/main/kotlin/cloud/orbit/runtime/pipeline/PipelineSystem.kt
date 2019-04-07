@@ -72,14 +72,8 @@ internal class PipelineSystem(
 
     private fun launchRail(receiveChannel: ReceiveChannel<MessageContainer>) = runtimeScopes.cpuScope.launch {
         for (container in receiveChannel) {
-            try {
-                logger.trace { "Pipeline rail received message: $container" }
-                onMessage(container)
-            } catch (c: CancellationException) {
-                throw c
-            } catch (t: Throwable) {
-                container.completion.completeExceptionally(t)
-            }
+            logger.trace { "Pipeline rail received message: $container" }
+            onMessage(container)
         }
     }
 
@@ -131,13 +125,30 @@ internal class PipelineSystem(
 
 
     private suspend fun onMessage(container: MessageContainer) {
-        when (container.direction) {
-            MessageDirection.OUTBOUND ->
-                PipelineContext(pipelineSteps, false, this, container.completion)
-                    .nextOutbound(container.msg)
-            MessageDirection.INBOUND ->
-                PipelineContext(pipelineSteps, true, this, container.completion)
-                    .nextInbound(container.msg)
+        val startAtEnd = container.direction == MessageDirection.INBOUND
+        val errorsAreHandled = container.direction == MessageDirection.OUTBOUND
+
+        val context = PipelineContext(
+            pipeline = pipelineSteps,
+            startAtEnd = startAtEnd,
+            pipelineSystem = this,
+            completion = container.completion,
+            suppressErrors = errorsAreHandled
+        )
+
+        try {
+            when (container.direction) {
+                MessageDirection.OUTBOUND -> context.nextOutbound(container.msg)
+                MessageDirection.INBOUND -> context.nextInbound(container.msg)
+            }
+        } catch (c: CancellationException) {
+            throw c
+        } catch (t: Throwable) {
+            if (context.suppressErrors) {
+                container.completion.completeExceptionally(t)
+            } else {
+                throw t
+            }
         }
     }
 

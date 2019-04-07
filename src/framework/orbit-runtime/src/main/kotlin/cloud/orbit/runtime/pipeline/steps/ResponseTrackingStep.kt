@@ -29,6 +29,8 @@ internal class ResponseTrackingStep(private val responseTracking: ResponseTracki
                 responseTracking.handleResponse(msg)
 
             is MessageContent.RequestInvocationMessage -> {
+                context.suppressErrors = true
+
                 context.completion.invokeOnCompletion {
                     val newContent = if (it != null) {
                         MessageContent.ResponseErrorMessage(it)
