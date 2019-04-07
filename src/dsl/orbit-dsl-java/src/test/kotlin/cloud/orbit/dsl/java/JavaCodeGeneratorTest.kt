@@ -7,6 +7,7 @@
 package cloud.orbit.dsl.java
 
 import cloud.orbit.dsl.ast.ActorDeclaration
+import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.DataDeclaration
@@ -266,7 +267,67 @@ class JavaCodeGeneratorTest {
     fun generateActor_Empty() {
         val cu = CompilationUnit(packageName, actors = listOf(ActorDeclaration("actor1")))
 
+        val expectedSource = "public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey { }"
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun generatorActor_NoKeyType() {
+        val cu = CompilationUnit(packageName, actors = listOf(ActorDeclaration("actor1")))
+
+        val expectedSource = "public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey { }"
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun generatorActor_StringKey() {
+        val cu = CompilationUnit(packageName, actors = listOf(ActorDeclaration("actor1", ActorKeyType.STRING)))
+
         val expectedSource = "public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey { }"
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun generatorActor_Int32Key() {
+        val cu = CompilationUnit(packageName, actors = listOf(ActorDeclaration("actor1", ActorKeyType.INT32)))
+
+        val expectedSource = "public interface actor1 extends cloud.orbit.core.actor.ActorWithInt32Key { }"
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun generatorActor_Int64Key() {
+        val cu = CompilationUnit(packageName, actors = listOf(ActorDeclaration("actor1", ActorKeyType.INT64)))
+
+        val expectedSource = "public interface actor1 extends cloud.orbit.core.actor.ActorWithInt64Key { }"
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun generatorActor_GuidKey() {
+        val cu = CompilationUnit(packageName, actors = listOf(ActorDeclaration("actor1", ActorKeyType.GUID)))
+
+        val expectedSource = "public interface actor1 extends cloud.orbit.core.actor.ActorWithGuidKey { }"
 
         assertOneElement(generateSource_minimalPipeline(cu)).run {
             Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
@@ -278,12 +339,12 @@ class JavaCodeGeneratorTest {
     fun generateActor_SingleMethod() {
         val cu = CompilationUnit(
             packageName, actors = listOf(
-                ActorDeclaration("actor1", listOf(ActorMethod("method1", Type("string"))))
+                ActorDeclaration("actor1", methods = listOf(ActorMethod("method1", Type("string"))))
             )
         )
 
         val expectedSource = """
-            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey  {
                 java.util.concurrent.CompletableFuture<java.lang.String> method1();
             }
         """
@@ -299,7 +360,8 @@ class JavaCodeGeneratorTest {
         val cu = CompilationUnit(
             packageName, actors = listOf(
                 ActorDeclaration(
-                    "actor1", listOf(
+                    "actor1",
+                    methods = listOf(
                         ActorMethod("method1", Type("string")),
                         ActorMethod("method2", Type("string"))
                     )
@@ -308,7 +370,7 @@ class JavaCodeGeneratorTest {
         )
 
         val expectedSource = """
-            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey  {
                 java.util.concurrent.CompletableFuture<java.lang.String> method1();
                 java.util.concurrent.CompletableFuture<java.lang.String> method2();
             }
@@ -325,7 +387,8 @@ class JavaCodeGeneratorTest {
         val cu = CompilationUnit(
             packageName, actors = listOf(
                 ActorDeclaration(
-                    "actor1", listOf(
+                    "actor1",
+                    methods = listOf(
                         ActorMethod(
                             "method1",
                             Type("string"),
@@ -337,7 +400,7 @@ class JavaCodeGeneratorTest {
         )
 
         val expectedSource = """
-            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey  {
                 java.util.concurrent.CompletableFuture<java.lang.String> method1(int p1);
             }
         """
@@ -353,7 +416,8 @@ class JavaCodeGeneratorTest {
         val cu = CompilationUnit(
             packageName, actors = listOf(
                 ActorDeclaration(
-                    "actor1", listOf(
+                    "actor1",
+                    methods = listOf(
                         ActorMethod(
                             "method1",
                             Type("string"),
@@ -368,7 +432,7 @@ class JavaCodeGeneratorTest {
         )
 
         val expectedSource = """
-            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey  {
                 java.util.concurrent.CompletableFuture<java.lang.String> method1(int p1, int p2);
             }
         """
@@ -384,7 +448,8 @@ class JavaCodeGeneratorTest {
         val cu = CompilationUnit(
             packageName, actors = listOf(
                 ActorDeclaration(
-                    "actor1", listOf(
+                    "actor1",
+                    methods = listOf(
                         ActorMethod(
                             "method1",
                             Type("int32"),
@@ -396,7 +461,7 @@ class JavaCodeGeneratorTest {
         )
 
         val expectedSource = """
-            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey  {
                 java.util.concurrent.CompletableFuture<java.lang.Integer> method1(int p1);
             }
         """
@@ -413,7 +478,8 @@ class JavaCodeGeneratorTest {
             packageName,
             actors = listOf(
                 ActorDeclaration(
-                    "actor1", listOf(
+                    "actor1",
+                    methods = listOf(
                         ActorMethod(
                             "method1",
                             Type(
@@ -434,8 +500,9 @@ class JavaCodeGeneratorTest {
         )
 
         val expectedSource = """
-            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
-                java.util.concurrent.CompletableFuture<java.util.Map<java.lang.String, java.util.List<java.util.List<java.lang.Long>>>> method1();
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey  {
+                java.util.concurrent.CompletableFuture<
+                    java.util.Map<java.lang.String, java.util.List<java.util.List<java.lang.Long>>>> method1();
             }
         """
 
@@ -470,7 +537,8 @@ class JavaCodeGeneratorTest {
             ),
             actors = listOf(
                 ActorDeclaration(
-                    "actor1", listOf(
+                    "actor1",
+                    methods = listOf(
                         ActorMethod(
                             "method1",
                             Type("map", of = listOf(Type("enum1"), Type("data1"))),
@@ -502,7 +570,7 @@ class JavaCodeGeneratorTest {
             }
             """,
             """
-            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey  {
                 java.util.concurrent.CompletableFuture<java.util.Map<$packageName.enum1, $packageName.data1>> method1();
             }
             """
@@ -520,7 +588,8 @@ class JavaCodeGeneratorTest {
             packageName,
             actors = listOf(
                 ActorDeclaration(
-                    "actor1", listOf(
+                    "actor1",
+                    methods = listOf(
                         ActorMethod(
                             "method1",
                             Type("int32"),
@@ -545,7 +614,7 @@ class JavaCodeGeneratorTest {
         )
 
         val expectedSource = """
-            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey  {
                 java.util.concurrent.CompletableFuture<java.lang.Integer> method1(java.util.Map<java.lang.String, java.util.List<java.util.List<java.lang.Long>>> arg1);
             }
         """
@@ -581,7 +650,8 @@ class JavaCodeGeneratorTest {
             ),
             actors = listOf(
                 ActorDeclaration(
-                    "actor1", listOf(
+                    "actor1",
+                    methods = listOf(
                         ActorMethod(
                             "method1",
                             Type("int32"),
@@ -620,7 +690,7 @@ class JavaCodeGeneratorTest {
             }
             """,
             """
-            public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey  {
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey  {
                 java.util.concurrent.CompletableFuture<java.lang.Integer> method1(java.util.Map<$packageName.enum1, $packageName.data1> arg1);
             }
             """

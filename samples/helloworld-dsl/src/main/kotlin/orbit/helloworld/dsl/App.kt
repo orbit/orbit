@@ -33,7 +33,7 @@ fun main(args: Array<String>) {
 
     runBlocking {
         stage.start().await()
-        val greeter = stage.actorProxyFactory.createProxy<Greeter>("test")
+        val greeter = stage.actorProxyFactory.createProxy<Greeter>()
         greeter.greet("Cesar").await().forEach {
             logger.info("In ${it.key}: ${it.value.text}")
         }

@@ -6,8 +6,10 @@
 
 package cloud.orbit.dsl.ast
 
-data class ActorDeclaration(
-    override val name: String,
-    val keyType: ActorKeyType = ActorKeyType.NO_KEY,
-    val methods: List<ActorMethod> = emptyList()
-) : Declaration
+enum class ActorKeyType {
+    NO_KEY,
+    STRING,
+    INT32,
+    INT64,
+    GUID
+}
