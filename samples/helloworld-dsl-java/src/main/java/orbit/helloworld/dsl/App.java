@@ -26,7 +26,7 @@ public class App {
         Stage stage = new Stage();
 
         stage.start().thenCompose(ignored -> {
-            Greeter greeter = stage.getActorProxyFactory().createProxy(Greeter.class, "test");
+            Greeter greeter = stage.getActorProxyFactory().createProxy(Greeter.class);
             return greeter.greet("Cesar").thenCompose(greetings -> {
                 greetings.forEach((language, greeting) ->
                         logger.info("In {}: {}", greeting.getLanguage(), greeting.getText()));

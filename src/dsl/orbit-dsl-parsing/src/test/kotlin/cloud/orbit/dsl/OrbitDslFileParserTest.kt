@@ -7,6 +7,7 @@
 package cloud.orbit.dsl
 
 import cloud.orbit.dsl.ast.ActorDeclaration
+import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.DataDeclaration
@@ -291,12 +292,96 @@ class OrbitDslFileParserTest {
     }
 
     @Test
+    fun parseActor_NoKeyType() {
+        val text = "actor foo {}"
+
+        val expectedCu = CompilationUnit(
+            packageName,
+            actors = listOf(ActorDeclaration("foo", ActorKeyType.NO_KEY))
+        )
+
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
+
+        Assertions.assertEquals(expectedCu, actualCu)
+    }
+
+    @Test
+    fun parseActor_StringKey() {
+        val text = "actor foo<string> {}"
+
+        val expectedCu = CompilationUnit(
+            packageName,
+            actors = listOf(ActorDeclaration("foo", ActorKeyType.STRING))
+        )
+
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
+
+        Assertions.assertEquals(expectedCu, actualCu)
+    }
+
+    @Test
+    fun parseActor_Int32Key() {
+        val text = "actor foo<int32> {}"
+
+        val expectedCu = CompilationUnit(
+            packageName,
+            actors = listOf(ActorDeclaration("foo", ActorKeyType.INT32))
+        )
+
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
+
+        Assertions.assertEquals(expectedCu, actualCu)
+    }
+
+    @Test
+    fun parseActor_Int64Key() {
+        val text = "actor foo<int64> {}"
+
+        val expectedCu = CompilationUnit(
+            packageName,
+            actors = listOf(ActorDeclaration("foo", ActorKeyType.INT64))
+        )
+
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
+
+        Assertions.assertEquals(expectedCu, actualCu)
+    }
+
+    @Test
+    fun parseActor_GuidKey() {
+        val text = "actor foo<guid> {}"
+
+        val expectedCu = CompilationUnit(
+            packageName,
+            actors = listOf(ActorDeclaration("foo", ActorKeyType.GUID))
+        )
+
+        val actualCu = OrbitDslFileParser().parse(text, packageName)
+
+        Assertions.assertEquals(expectedCu, actualCu)
+    }
+
+    @Test
+    fun parseActor_InvalidKeyType() {
+        val text = "actor foo<bar> {}"
+
+        val exception = assertThrows<OrbitDslException> {
+            OrbitDslFileParser().parse(text, packageName)
+        }
+
+        Assertions.assertEquals(
+            "Actor key type must be string, int32, int64, or guid; found 'bar'",
+            exception.message
+        )
+    }
+
+    @Test
     fun parseActor_Empty() {
         val text = "actor foo{}"
 
         val expectedCu = CompilationUnit(
             packageName,
-            actors = listOf(ActorDeclaration("foo"))
+            actors = listOf(ActorDeclaration("foo", ActorKeyType.NO_KEY))
         )
 
         val actualCu = OrbitDslFileParser().parse(text, packageName)
@@ -317,6 +402,7 @@ class OrbitDslFileParserTest {
             actors = listOf(
                 ActorDeclaration(
                     "foo",
+                    ActorKeyType.NO_KEY,
                     methods = listOf(ActorMethod("bar", Type("void")))
                 )
             )
@@ -341,6 +427,7 @@ class OrbitDslFileParserTest {
             actors = listOf(
                 ActorDeclaration(
                     "foo",
+                    ActorKeyType.NO_KEY,
                     methods = listOf(
                         ActorMethod("bar", Type("void")),
                         ActorMethod("baz", Type("void"))
@@ -367,6 +454,7 @@ class OrbitDslFileParserTest {
             actors = listOf(
                 ActorDeclaration(
                     "foo",
+                    ActorKeyType.NO_KEY,
                     methods = listOf(
                         ActorMethod(
                             "bar", Type("void"),
@@ -395,6 +483,7 @@ class OrbitDslFileParserTest {
             actors = listOf(
                 ActorDeclaration(
                     "foo",
+                    ActorKeyType.NO_KEY,
                     methods = listOf(
                         ActorMethod(
                             "bar", Type("void"),
@@ -445,6 +534,16 @@ class OrbitDslFileParserTest {
                 map<RGB, string> generic_multi(map<string, Payload> arg1);
                 list<map<string, RGB>> generics_nested(map<string, list<list<Payload>>> arg1);
             }
+
+            actor MyKeylessActor { }
+
+            actor MyStringKeyedActor<string> { }
+
+            actor MyInt32KeyedActor<int32> { }
+
+            actor MyInt64KeyedActor<int64> { }
+
+            actor MyGuidKeyedActor<guid> { }
         """.trimIndent()
 
         val expectedCu = CompilationUnit(
@@ -472,6 +571,7 @@ class OrbitDslFileParserTest {
             actors = listOf(
                 ActorDeclaration(
                     "MyActor",
+                    ActorKeyType.NO_KEY,
                     methods = listOf(
                         ActorMethod("no_args", Type("int")),
                         ActorMethod(
@@ -540,6 +640,26 @@ class OrbitDslFileParserTest {
                             )
                         )
                     )
+                ),
+                ActorDeclaration(
+                    "MyKeylessActor",
+                    ActorKeyType.NO_KEY
+                ),
+                ActorDeclaration(
+                    "MyStringKeyedActor",
+                    ActorKeyType.STRING
+                ),
+                ActorDeclaration(
+                    "MyInt32KeyedActor",
+                    ActorKeyType.INT32
+                ),
+                ActorDeclaration(
+                    "MyInt64KeyedActor",
+                    ActorKeyType.INT64
+                ),
+                ActorDeclaration(
+                    "MyGuidKeyedActor",
+                    ActorKeyType.GUID
                 )
             )
         )
