@@ -23,6 +23,8 @@ import java.util.concurrent.ConcurrentHashMap
 internal class AddressableDefinitionDirectory {
     private val interfaceDefinitionMap = ConcurrentHashMap<AddressableClass, AddressableInterfaceDefinition>()
     private val implDefinitionMap = ConcurrentHashMap<AddressableClass, AddressableImplDefinition>()
+    private val interfaceImplComboImplDefinitionMap =
+        ConcurrentHashMap<Pair<AddressableClass, AddressableClass>, AddressableImplDefinition>()
 
     private val logger by logger()
 
@@ -46,7 +48,9 @@ internal class AddressableDefinitionDirectory {
         implDefinitionMap[interfaceClass] ?: throw IllegalStateException("No implementation found for $interfaceClass")
 
     fun onDemandImplClass(interfaceClass: AddressableClass, implClass: AddressableClass): AddressableImplDefinition =
-        generateImplDefinition(interfaceClass, implClass)
+        interfaceImplComboImplDefinitionMap.getOrPut(interfaceClass to implClass) {
+            generateImplDefinition(interfaceClass, implClass)
+        }
 
     private fun generateInterfaceDefinition(interfaceClass: AddressableClass): AddressableInterfaceDefinition {
         if (!interfaceClass.isInterface) {
