@@ -7,6 +7,7 @@
 package cloud.orbit.dsl.java
 
 import cloud.orbit.dsl.ast.ActorDeclaration
+import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.AstVisitor
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.DataDeclaration
@@ -21,8 +22,6 @@ import com.squareup.javapoet.TypeSpec
 import javax.lang.model.element.Modifier
 
 internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : AstVisitor() {
-    private val orbitActorWithStringKeyInterface =
-        ClassName.get("cloud.orbit.core.actor", "ActorWithStringKey")
     private val completableFutureClass =
         ClassName.get("java.util.concurrent", "CompletableFuture")
 
@@ -87,7 +86,7 @@ internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : 
         val classSpec = TypeSpec
             .interfaceBuilder(actor.name)
             .addModifiers(Modifier.PUBLIC)
-            .addSuperinterface(orbitActorWithStringKeyInterface)
+            .addSuperinterface(orbitActorKeyInterface(actor.keyType))
             .addMethods(actor.methods.map {
                 MethodSpec.methodBuilder(it.name)
                     .addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
@@ -116,5 +115,16 @@ internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : 
                     .map(TypeName::box)
                     .toTypedArray()
             )
+        }
+
+    private fun orbitActorKeyInterface(keyType: ActorKeyType): TypeName =
+        when (keyType) {
+            ActorKeyType.NO_KEY -> "ActorWithNoKey"
+            ActorKeyType.STRING -> "ActorWithStringKey"
+            ActorKeyType.INT32 -> "ActorWithInt32Key"
+            ActorKeyType.INT64 -> "ActorWithInt64Key"
+            ActorKeyType.GUID -> "ActorWithGuidKey"
+        }.let {
+            ClassName.get("cloud.orbit.core.actor", it)
         }
 }

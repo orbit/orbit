@@ -17,10 +17,10 @@ file: declaration+ EOF ;
 declaration: enumDeclaration | actorDeclaration | dataDeclaration ;
 
 enumDeclaration: ENUM name=ID LC_BRACE members=enumMember* RC_BRACE ;
-enumMember: name=ID EQUAL index=INT SEMI_COLON;
+enumMember: name=ID EQUAL index=INT SEMI_COLON ;
 
-actorDeclaration: ACTOR name=ID LC_BRACE methods=actorMethod* RC_BRACE ;
-actorMethod: returnType=type name=ID L_PAREN (args=methodParam (COMMA args=methodParam)*)? R_PAREN SEMI_COLON;
+actorDeclaration: ACTOR name=ID (L_ANGLE keyType=type R_ANGLE)? LC_BRACE methods=actorMethod* RC_BRACE ;
+actorMethod: returnType=type name=ID L_PAREN (args=methodParam (COMMA args=methodParam)*)? R_PAREN SEMI_COLON ;
 methodParam: type name=ID ;
 
 dataDeclaration: DATA name=ID LC_BRACE fields=dataField* RC_BRACE ;

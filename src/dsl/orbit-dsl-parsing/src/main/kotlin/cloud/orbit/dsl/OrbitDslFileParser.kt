@@ -7,6 +7,7 @@
 package cloud.orbit.dsl
 
 import cloud.orbit.dsl.ast.ActorDeclaration
+import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.DataDeclaration
@@ -66,6 +67,7 @@ class OrbitDslFileParser : OrbitDslBaseVisitor<Any>() {
     override fun visitActorDeclaration(ctx: OrbitDslParser.ActorDeclarationContext?) = actors.add(
         ActorDeclaration(
             ctx!!.name.text,
+            ctx.keyType?.toActorKeyType() ?: ActorKeyType.NO_KEY,
             ctx.children
                 .asSequence()
                 .filterIsInstance(OrbitDslParser.ActorMethodContext::class.java)
@@ -89,4 +91,15 @@ class OrbitDslFileParser : OrbitDslBaseVisitor<Any>() {
                 .map(::makeType)
                 .toList()
         )
+
+    private fun OrbitDslParser.TypeContext.toActorKeyType() =
+        when (this.text) {
+            "string" -> ActorKeyType.STRING
+            "int32" -> ActorKeyType.INT32
+            "int64" -> ActorKeyType.INT64
+            "guid" -> ActorKeyType.GUID
+            else -> throw OrbitDslException(
+                "Actor key type must be string, int32, int64, or guid; found '${this.text}'"
+            )
+        }
 }
