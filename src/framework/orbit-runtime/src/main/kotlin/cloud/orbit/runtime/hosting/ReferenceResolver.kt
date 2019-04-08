@@ -14,17 +14,22 @@ import java.lang.reflect.Proxy
 
 internal class ReferenceResolver(private val executionSystem: ExecutionSystem, private val netSystem: NetSystem) {
     fun resolveAddressableReference(obj: Any): RemoteAddressableReference? {
+        // First we check if this is an addressable at all
         if (obj is Addressable) {
+            // The easiest case is if it's already a proxy, we basically just clone it.
             if (obj is Proxy) {
                 val handler = Proxy.getInvocationHandler(obj)
                 if (handler is AddressableInterfaceClientProxy) {
                     return RemoteAddressableReference(
                         handler.reference,
+                        // We copy the address if we already have it, otherwise we assume it's local.
+                        // Routing will override the target if appropriate.
                         handler.target ?: netSystem.localNode.nodeIdentity.asTarget()
                     )
                 }
             }
 
+            // If it's not a proxy we check to see if the actual object reference is being tracked by execution.
             val realRef = executionSystem.getReferenceByInstance(obj)
             if (realRef != null) {
                 return RemoteAddressableReference(realRef, netSystem.localNode.nodeIdentity.asTarget())

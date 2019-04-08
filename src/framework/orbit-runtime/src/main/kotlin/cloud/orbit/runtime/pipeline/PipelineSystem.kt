@@ -125,7 +125,11 @@ internal class PipelineSystem(
 
 
     private suspend fun onMessage(container: MessageContainer) {
+        // Inbound starts at bottom, outbound at top.
         val startAtEnd = container.direction == MessageDirection.INBOUND
+
+        // Outbound messages have a listener (the caller) so errors are considered handled by default.
+        // Inbound messages have no listener until later in the pipeline so are considered unhandled by default.
         val errorsAreHandled = container.direction == MessageDirection.OUTBOUND
 
         val context = PipelineContext(
@@ -144,6 +148,8 @@ internal class PipelineSystem(
         } catch (c: CancellationException) {
             throw c
         } catch (t: Throwable) {
+            // We check to see if errors are suppressed (and therefore handled) and raise the event.
+            // If not we consider it an unhandled error and throw it to the Orbit root error handling.
             if (context.suppressErrors) {
                 container.completion.completeExceptionally(t)
             } else {

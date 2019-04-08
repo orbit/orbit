@@ -47,11 +47,11 @@ internal class AddressableInterfaceClientProxyFactory(
             ),
             target = target
         ).let {
-                @Suppress("UNCHECKED_CAST")
-                Proxy.newProxyInstance(
-                    javaClass.classLoader,
-                    arrayOf(interfaceClass),
-                    it
-                ) as T
-            }
+            @Suppress("UNCHECKED_CAST")
+            Proxy.newProxyInstance(
+                javaClass.classLoader,
+                arrayOf(interfaceClass),
+                it
+            ) as T
+        }
 }

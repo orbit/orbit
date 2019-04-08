@@ -29,6 +29,8 @@ internal class ResponseTrackingStep(private val responseTracking: ResponseTracki
                 responseTracking.handleResponse(msg)
 
             is MessageContent.RequestInvocationMessage -> {
+                // We are about to register a listener than will propagate errors back to the original caller.
+                // So errors can now be considered handled.
                 context.suppressErrors = true
 
                 context.completion.invokeOnCompletion { exception ->

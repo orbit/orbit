@@ -13,7 +13,7 @@ import cloud.orbit.runtime.serialization.SerializationSystem
 
 internal class SerializationStep(private val serializationSystem: SerializationSystem) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
-       serializationSystem.serializeObject(msg).let {
+        serializationSystem.serializeObject(msg).let {
             msg.copy(
                 content = MessageContent.RawMessage(it)
             )
