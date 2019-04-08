@@ -64,25 +64,24 @@ internal class ExecutionHandle(
         }
     }
 
-    fun activate(): Completion {
-        val completion = CompletableDeferred<Any?>()
-        sendEvent(EventType.ActivateEvent(completion))
-        return completion
-    }
+    fun activate(): Completion =
+        CompletableDeferred<Any?>().also {
+            sendEvent(EventType.ActivateEvent(it))
+        }
 
-    fun deactivate(): Completion {
-        val completion = CompletableDeferred<Any?>()
-        sendEvent(EventType.DeactivateEvent(completion))
-        return completion
-    }
+    fun deactivate(): Completion =
+        CompletableDeferred<Any?>().also {
+            sendEvent(EventType.DeactivateEvent(it))
+        }
 
     fun invoke(
         invocation: AddressableInvocation,
         completion: Completion
-    ): Completion {
-        sendEvent(EventType.InvokeEvent(invocation, completion))
-        return completion
-    }
+    ): Completion =
+        completion.also {
+            sendEvent(EventType.InvokeEvent(invocation, completion))
+        }
+
 
     private fun sendEvent(eventType: EventType) {
         if (!channel.offer(eventType)) {
@@ -94,14 +93,15 @@ internal class ExecutionHandle(
 
     private suspend fun onActivate() {
         logger.debug { "Activating $reference..." }
-        val (elapsed, _) = stopwatch(clock) {
+        stopwatch(clock) {
             if (implDefinition.lifecycle.autoActivate) {
                 implDefinition.onActivateMethod?.also {
                     DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
                 }
             }
+        }.also { (elapsed, _) ->
+            logger.debug { "Activated $reference in ${elapsed}ms. " }
         }
-        logger.debug { "Activated $reference in ${elapsed}ms. " }
     }
 
     private suspend fun onInvoke(invocation: AddressableInvocation): Any? {
@@ -115,7 +115,7 @@ internal class ExecutionHandle(
 
     private suspend fun onDeactivate() {
         logger.debug { "Deactivating $reference..." }
-        val (elapsed, _) = stopwatch(clock) {
+        stopwatch(clock) {
             if (implDefinition.lifecycle.autoDeactivate) {
                 implDefinition.onDeactivateMethod?.also {
                     DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
@@ -126,8 +126,9 @@ internal class ExecutionHandle(
             channel.close()
             drainChannel()
 
+        }.also { (elapsed, _) ->
+            logger.debug { "Deactivated $reference in ${elapsed}ms." }
         }
-        logger.debug { "Deactivated $reference in ${elapsed}ms." }
     }
 
     private suspend fun drainChannel() {
@@ -146,12 +147,13 @@ internal class ExecutionHandle(
     private val worker = runtimeScopes.cpuScope.launch {
         for (event in channel) {
             try {
-                val result = when (event) {
+                when (event) {
                     is EventType.ActivateEvent -> onActivate()
                     is EventType.InvokeEvent -> onInvoke(event.invocation)
                     is EventType.DeactivateEvent -> onDeactivate()
+                }.also {
+                    event.completion.complete(it)
                 }
-                event.completion.complete(result)
             } catch (t: Throwable) {
                 event.completion.completeExceptionally(t)
             }

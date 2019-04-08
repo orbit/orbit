@@ -37,23 +37,21 @@ internal class KryoFactory(private val componentProvider: ComponentProvider) {
             classResolver.getRegistration(clazz) ?: classResolver.registerImplicit(clazz)
     }
 
-    fun create(): Kryo {
-        val kryo = WrappedKryo(DefaultClassResolver(), MapReferenceResolver())
+    fun create(): Kryo =
+        WrappedKryo(DefaultClassResolver(), MapReferenceResolver())
+            .apply {
+                isRegistrationRequired = false
+                instantiatorStrategy = DefaultInstantiatorStrategy(StdInstantiatorStrategy())
 
-        kryo.isRegistrationRequired = false
-        kryo.instantiatorStrategy = DefaultInstantiatorStrategy(StdInstantiatorStrategy())
+                // Orbit types
+                addDefaultSerializer(
+                    Addressable::class.java,
+                    componentProvider.construct<AddressableReferenceSerializer>()
+                )
+                addDefaultSerializer(Key.NoKey::class.java, KotlinObjectSerializer(Key.NoKey))
 
-        // Orbit types
-        kryo.addDefaultSerializer(
-            Addressable::class.java,
-            componentProvider.construct<AddressableReferenceSerializer>()
-        )
-        kryo.addDefaultSerializer(Key.NoKey::class.java, KotlinObjectSerializer(Key.NoKey))
-
-        // Basic Types
-        kryo.addDefaultSerializer(Method::class.java, MethodSerializer())
-        kryo.addDefaultSerializer(Unit::class.java, KotlinObjectSerializer(Unit))
-
-        return kryo
-    }
+                // Basic Types
+                addDefaultSerializer(Method::class.java, MethodSerializer())
+                addDefaultSerializer(Unit::class.java, KotlinObjectSerializer(Unit))
+            }
 }

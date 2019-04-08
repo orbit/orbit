@@ -17,50 +17,43 @@ import com.esotericsoftware.kryo.io.Output
 internal class AddressableReferenceSerializer(
     private val referenceResolver: ReferenceResolver,
     private val addressableRegistry: AddressableRegistry
-) :
-    Serializer<Any?>(true, false) {
+) : Serializer<Any?>(true, false) {
 
     override fun write(kryo: Kryo, output: Output, addressable: Any?) {
         if (addressable != null) {
-            val reference = referenceResolver.resolveAddressableReference(addressable)
-            if (reference != null) {
+            addressable.let {
+                referenceResolver.resolveAddressableReference(addressable)
+            }?.also {
                 output.writeBoolean(true)
-                kryo.writeObject(output, reference)
-                return
-            } else {
-                throw IllegalArgumentException("Addressable could not be resolved. $addressable")
-            }
-        }
 
-        output.writeBoolean(false)
-    }
-
-    override fun read(kryo: Kryo, input: Input, type: Class<out Any?>): Any? {
-        val isNotNull = input.readBoolean()
-        return if (isNotNull) {
-            val reference = kryo.readObject(input, RemoteAddressableReference::class.java)
-            addressableRegistry.createProxy(
-                reference.reference.interfaceClass,
-                reference.reference.key,
-                reference.target
-            )
+                kryo.writeObject(output, it)
+            } ?: IllegalArgumentException("Addressable could not be resolved. $addressable")
         } else {
-            null
+            output.writeBoolean(false)
         }
     }
 
-    override fun copy(kryo: Kryo, original: Any?): Any? {
-        if (original != null) {
-            val reference = referenceResolver.resolveAddressableReference(original)
-            if (reference != null) {
-                return addressableRegistry.createProxy(
-                    reference.reference.interfaceClass,
-                    reference.reference.key,
-                    reference.target
-                )
-            }
-            throw IllegalArgumentException("Addressable could not be resolved. $original")
+    override fun read(kryo: Kryo, input: Input, type: Class<out Any?>): Any? =
+        when (input.readBoolean()) {
+            true -> kryo.readObject(input, RemoteAddressableReference::class.java)
+                .let {
+                    addressableRegistry.createProxy(
+                        it.reference.interfaceClass,
+                        it.reference.key,
+                        it.target
+                    )
+                }
+            false -> null
         }
-        return null
-    }
+
+    override fun copy(kryo: Kryo, original: Any?): Any? =
+        original?.let {
+            referenceResolver.resolveAddressableReference(original)
+        }?.let {
+            addressableRegistry.createProxy(
+                it.reference.interfaceClass,
+                it.reference.key,
+                it.target
+            )
+        } ?: IllegalArgumentException("Addressable could not be resolved. $original")
 }

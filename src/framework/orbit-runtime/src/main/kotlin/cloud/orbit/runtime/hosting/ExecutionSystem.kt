@@ -70,13 +70,14 @@ internal class ExecutionSystem(
     }
 
     suspend fun registerAddressableInstance(reference: AddressableReference, addressable: Addressable) {
-        val handle = createHandle(
+        createHandle(
             reference, definitionDirectory.onDemandImplClass(
                 reference.interfaceClass,
                 addressable.javaClass
             ), addressable
-        )
-        registerHandle(handle)
+        ).also {
+            registerHandle(it)
+        }
     }
 
     suspend fun deregisterAddressableInstance(addressable: Addressable) {
@@ -91,15 +92,17 @@ internal class ExecutionSystem(
     private suspend fun activate(
         reference: AddressableReference,
         interfaceDefinition: AddressableInterfaceDefinition
-    ): ExecutionHandle? {
-        val implDefinition = definitionDirectory.getImplDefinition(interfaceDefinition.interfaceClass)
-        if (implDefinition.lifecycle.autoActivate) {
-            val handle = getOrCreateAddressable(reference, implDefinition)
-            handle.activate().await()
-            return handle
+    ): ExecutionHandle? =
+        definitionDirectory.getImplDefinition(interfaceDefinition.interfaceClass).let {
+            if (it.lifecycle.autoActivate) {
+                val handle = getOrCreateAddressable(reference, it)
+                handle.activate().await()
+                handle
+            } else {
+                null
+            }
         }
-        return null
-    }
+
 
     private fun invoke(handle: ExecutionHandle, invocation: AddressableInvocation, completion: Completion) {
         handle.invoke(invocation, completion)
@@ -122,14 +125,14 @@ internal class ExecutionSystem(
     private suspend fun getOrCreateAddressable(
         reference: AddressableReference,
         implDefinition: AddressableImplDefinition
-    ): ExecutionHandle {
-        val handle = activeAddressables.getOrPut(reference) {
+    ): ExecutionHandle =
+        activeAddressables.getOrPut(reference) {
             val newInstance = createInstance(implDefinition.implClass)
             createHandle(reference, implDefinition, newInstance)
+        }.also {
+            registerHandle(it)
         }
-        registerHandle(handle)
-        return handle
-    }
+
 
     private fun createHandle(
         reference: AddressableReference,

@@ -13,11 +13,13 @@ import cloud.orbit.runtime.serialization.SerializationSystem
 
 internal class SerializationStep(private val serializationSystem: SerializationSystem) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
-        val buffer = serializationSystem.serializeObject(msg)
-        val newMsg = msg.copy(
-            content = MessageContent.RawMessage(buffer)
-        )
-        context.nextOutbound(newMsg)
+       serializationSystem.serializeObject(msg).let {
+            msg.copy(
+                content = MessageContent.RawMessage(it)
+            )
+        }.also {
+            context.nextOutbound(it)
+        }
     }
 
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
@@ -28,7 +30,8 @@ internal class SerializationStep(private val serializationSystem: SerializationS
             )
         }
 
-        val realContent = serializationSystem.deserializeObject<Message>(msg.content.data)
-        context.nextInbound(realContent)
+        serializationSystem.deserializeObject<Message>(msg.content.data).also {
+            context.nextInbound(it)
+        }
     }
 }

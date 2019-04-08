@@ -28,7 +28,7 @@ internal class CapabilitiesScanner(private val clock: Clock) {
     fun scan(vararg packagePaths: String) {
         logger.info("Scanning for node capabilities...")
 
-        val (elapsed, _) = stopwatch(clock) {
+        stopwatch(clock) {
             val classGraph = ClassGraph()
                 .enableAllInfo()
                 .whitelistPackages(*packagePaths)
@@ -60,42 +60,45 @@ internal class CapabilitiesScanner(private val clock: Clock) {
                         it.loadClass() as AddressableClass
                     }
             }
-        }
 
-        interfaceLookup = mutableMapOf<AddressableClass, AddressableClass>().apply {
-            addressableClasses.forEach { implClass ->
-                val mapped = resolveMapping(implClass)
-                if (mapped.isEmpty()) {
-                    throw IllegalStateException("Could not find mapping for ${implClass.name}")
-                }
-                mapped.forEach { iface ->
-                    if (this.containsKey(iface)) throw IllegalStateException(
-                        "Multiple implementations of concrete " +
-                                "interface ${iface.name} found."
-                    )
-                    this[iface] = implClass
+            interfaceLookup = mutableMapOf<AddressableClass, AddressableClass>().apply {
+                addressableClasses.forEach { implClass ->
+                    resolveMapping(implClass).also { mapped ->
+                        if (mapped.isEmpty()) {
+                            throw IllegalStateException("Could not find mapping for ${implClass.name}")
+                        }
+                        mapped.forEach { iface ->
+                            if (this.containsKey(iface)) throw IllegalStateException(
+                                "Multiple implementations of concrete " +
+                                        "interface ${iface.name} found."
+                            )
+                            this[iface] = implClass
+                        }
+                    }
                 }
             }
-        }
+        }.also { (elapsed, _) ->
+            logger.debug { "Addressable Interfaces: $addressableInterfaces" }
+            logger.debug { "Addressable Classes: $addressableClasses" }
+            logger.debug { "Implemented Addressables: $interfaceLookup" }
 
-        logger.debug { "Addressable Interfaces: $addressableInterfaces" }
-        logger.debug { "Addressable Classes: $addressableClasses" }
-        logger.debug { "Implemented Addressables: $interfaceLookup" }
-
-        logger.info {
-            "Node capabilities scan complete in ${elapsed}ms. " +
-                    "${interfaceLookup.size} implemented addressable(s) found. " +
-                    "${addressableInterfaces.size} addressable interface(s) found. " +
-                    "${addressableClasses.size} addressable class(es) found. "
+            logger.info {
+                "Node capabilities scan complete in ${elapsed}ms. " +
+                        "${interfaceLookup.size} implemented addressable(s) found. " +
+                        "${addressableInterfaces.size} addressable interface(s) found. " +
+                        "${addressableClasses.size} addressable class(es) found. "
+            }
         }
     }
 
-    fun generateNodeCapabilities(): NodeCapabilities {
-        val addressables = interfaceLookup.map { (key, _) -> key.name }
-        return NodeCapabilities(
-            implementedAddressables = addressables
-        )
-    }
+    fun generateNodeCapabilities(): NodeCapabilities =
+        interfaceLookup
+            .map { (key, _) -> key.name }
+            .let {
+                NodeCapabilities(
+                    implementedAddressables = it
+                )
+            }
 
     private fun resolveMapping(
         crawl: Class<*>,

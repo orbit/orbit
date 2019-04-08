@@ -15,8 +15,8 @@ internal object MethodInvoker {
         return method.invoke(instance, *args)
     }
 
-    fun invokeDeferred(instance: Any, method: Method, args: Array<out Any?>): Deferred<*> {
-        val rawResult = invokeRaw(instance, method, args)
-        return DeferredWrappers.wrapCall(rawResult)
-    }
+    fun invokeDeferred(instance: Any, method: Method, args: Array<out Any?>): Deferred<*> =
+        invokeRaw(instance, method, args).let {
+            DeferredWrappers.wrapCall(it)
+        }
 }

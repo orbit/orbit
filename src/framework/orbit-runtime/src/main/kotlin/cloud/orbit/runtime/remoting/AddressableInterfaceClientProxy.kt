@@ -22,40 +22,36 @@ internal class AddressableInterfaceClientProxy(
     val reference: AddressableReference,
     val target: NetTarget?
 ) : InvocationHandler {
-    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any {
-        val addressableInvocation = AddressableInvocation(
+    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any =
+        AddressableInvocation(
             reference = reference,
             method = method,
             args = args ?: arrayOf()
-        )
-
-        val completion = pipelineSystem.pushInvocation(addressableInvocation, target)
-
-        return DeferredWrappers.wrapReturn(completion, method)
-    }
+        ).let {
+            pipelineSystem.pushInvocation(it, target)
+        }.let {
+            return DeferredWrappers.wrapReturn(it, method)
+        }
 }
 
 internal class AddressableInterfaceClientProxyFactory(
     private val pipelineSystem: PipelineSystem,
     private val definitionDirectory: AddressableDefinitionDirectory
 ) {
-    fun <T : Addressable> createProxy(interfaceClass: Class<T>, key: Key, target: NetTarget? = null): T {
-        val interfaceDefinition = definitionDirectory.getOrCreateInterfaceDefinition(interfaceClass)
-
-        val invocationHandler = AddressableInterfaceClientProxy(
+    fun <T : Addressable> createProxy(interfaceClass: Class<T>, key: Key, target: NetTarget? = null): T =
+        AddressableInterfaceClientProxy(
             pipelineSystem = pipelineSystem,
             reference = AddressableReference(
-                interfaceClass = interfaceDefinition.interfaceClass,
+                interfaceClass = definitionDirectory.getOrCreateInterfaceDefinition(interfaceClass).interfaceClass,
                 key = key
             ),
             target = target
-        )
-        val javaProxy = Proxy.newProxyInstance(
-            javaClass.classLoader,
-            arrayOf(interfaceClass),
-            invocationHandler
-        )
-        @Suppress("UNCHECKED_CAST")
-        return javaProxy as T
-    }
+        ).let {
+                @Suppress("UNCHECKED_CAST")
+                Proxy.newProxyInstance(
+                    javaClass.classLoader,
+                    arrayOf(interfaceClass),
+                    it
+                ) as T
+            }
 }

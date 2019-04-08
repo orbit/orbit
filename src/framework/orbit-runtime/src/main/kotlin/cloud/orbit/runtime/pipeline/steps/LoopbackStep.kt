@@ -24,11 +24,13 @@ internal class LoopbackStep(
             && msg.target is NetTarget.Unicast
             && msg.target.targetNode == netSystem.localNode.nodeIdentity
         ) {
-            val clone = serializationSystem.cloneObject(msg.content)
-            val newMsg = msg.copy(
-                content = clone
-            )
-            context.nextInbound(newMsg)
+            serializationSystem.cloneObject(msg.content).let {
+                msg.copy(
+                    content = it
+                )
+            }.also {
+                context.nextInbound(it)
+            }
         } else {
             context.nextOutbound(msg)
         }

@@ -31,21 +31,19 @@ internal class ResponseTrackingStep(private val responseTracking: ResponseTracki
             is MessageContent.RequestInvocationMessage -> {
                 context.suppressErrors = true
 
-                context.completion.invokeOnCompletion {
-                    val newContent = if (it != null) {
-                        MessageContent.ResponseErrorMessage(it)
-                    } else {
-                        @UseExperimental(ExperimentalCoroutinesApi::class)
-                        MessageContent.ResponseNormalMessage(context.completion.getCompleted())
-                    }
-
-                    val newMsg = Message(
+                context.completion.invokeOnCompletion { exception ->
+                    Message(
                         messageId = msg.messageId,
                         target = NetTarget.Unicast(msg.source!!),
-                        content = newContent
-                    )
-
-                    context.newOutbound(newMsg)
+                        content = if (exception != null) {
+                            MessageContent.ResponseErrorMessage(exception)
+                        } else {
+                            @UseExperimental(ExperimentalCoroutinesApi::class)
+                            MessageContent.ResponseNormalMessage(context.completion.getCompleted())
+                        }
+                    ).also {
+                        context.newOutbound(it)
+                    }
                 }
                 context.nextInbound(msg)
             }

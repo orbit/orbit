@@ -15,10 +15,12 @@ internal class RoutingStep(private val routingSystem: RoutingSystem) : PipelineS
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
         val newMsg = when (msg.content) {
             is MessageContent.RequestInvocationMessage -> {
-                val target = routingSystem.routeMessage(msg.content.addressableInvocation.reference, msg.target)
-                msg.copy(
-                    target = target
-                )
+                routingSystem.routeMessage(msg.content.addressableInvocation.reference, msg.target).let {
+                    msg.copy(
+                        target = it
+                    )
+                }
+
             }
             else -> msg
         }

@@ -15,11 +15,11 @@ internal class IdentityStep(
     private val netSystem: NetSystem
 ) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
-        val newMsg = msg.copy(
+        msg.copy(
             messageId = msg.messageId ?: RandomUtils.sequentialId(),
             source = msg.source ?: netSystem.localNode.nodeIdentity
-        )
-
-        context.nextOutbound(newMsg)
+        ).also {
+            context.nextOutbound(it)
+        }
     }
 }

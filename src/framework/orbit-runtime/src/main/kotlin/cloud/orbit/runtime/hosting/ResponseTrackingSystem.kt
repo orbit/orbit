@@ -50,11 +50,9 @@ internal class ResponseTrackingSystem(
     }
 
     fun onTick() {
-        val timedOut = trackingMap.values.filter {
+        trackingMap.values.filter {
             it.timeAdded < clock.currentTime - stageConfig.messageTimeoutMillis
-        }
-
-        timedOut.forEach {
+        }.forEach {
             val content = "Response timed out after ${clock.currentTime - it.timeAdded}ms, timeout is" +
                     " ${stageConfig.messageTimeoutMillis}ms. ${it.msg}"
             logger.warn(content)

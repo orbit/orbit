@@ -34,8 +34,9 @@ internal class AddressableDefinitionDirectory {
         }
 
         impls.forEach { (interfaceClass, implClass) ->
-            val implDef = generateImplDefinition(interfaceClass, implClass)
-            implDefinitionMap[interfaceClass] = implDef
+            generateImplDefinition(interfaceClass, implClass).also {
+                implDefinitionMap[interfaceClass] = it
+            }
         }
     }
 

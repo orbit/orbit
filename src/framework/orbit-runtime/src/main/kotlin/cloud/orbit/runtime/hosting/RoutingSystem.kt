@@ -36,12 +36,10 @@ internal class RoutingSystem(
             if (existingTarget == null || interfaceDefinition.routing.forceRouting) {
                 netTarget =
                     if (interfaceDefinition.routing.persistentPlacement) {
-                        directorySystem.locate(reference).run {
-                            this ?: directorySystem.locateOrPlace(
-                                reference,
-                                selectTarget(interfaceDefinition)
-                            )
-                        }
+                        directorySystem.locate(reference) ?: directorySystem.locateOrPlace(
+                            reference,
+                            selectTarget(interfaceDefinition)
+                        )
                     } else {
                         selectTarget(interfaceDefinition)
                     }
