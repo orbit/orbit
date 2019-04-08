@@ -17,6 +17,7 @@ import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.NetSystem
 import cloud.orbit.runtime.remoting.AddressableDefinitionDirectory
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
+import cloud.orbit.runtime.remoting.getOrCreateInterfaceDefinition
 import java.util.concurrent.ConcurrentHashMap
 
 internal class RoutingSystem(
@@ -30,7 +31,7 @@ internal class RoutingSystem(
 
     // Determines where a message will be routed.
     suspend fun routeMessage(reference: AddressableReference, existingTarget: NetTarget?): NetTarget {
-        val interfaceDefinition = definitionDirectory.getOrCreateInterfaceDefinition(reference.interfaceClass)
+        val interfaceDefinition = reference.getOrCreateInterfaceDefinition(definitionDirectory)
         var netTarget = existingTarget
 
         // We check to see if routing should happen at all. If not, target should have been set externally already.
@@ -85,7 +86,7 @@ internal class RoutingSystem(
 
     // Determines whether this node can handle a specific addressable reference.
     suspend fun canHandleLocally(reference: AddressableReference): Boolean {
-        val interfaceDefinition = definitionDirectory.getOrCreateInterfaceDefinition(reference.interfaceClass)
+        val interfaceDefinition = reference.getOrCreateInterfaceDefinition(definitionDirectory)
 
         return if (interfaceDefinition.routing.persistentPlacement) {
             // If placement is persistent then we need to check the directory and ensure we're a valid target.

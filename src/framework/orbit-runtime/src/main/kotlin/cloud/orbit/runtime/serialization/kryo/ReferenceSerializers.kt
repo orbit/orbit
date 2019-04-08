@@ -25,7 +25,6 @@ internal class AddressableReferenceSerializer(
                 referenceResolver.resolveAddressableReference(addressable)
             }?.also {
                 output.writeBoolean(true)
-
                 kryo.writeObject(output, it)
             } ?: IllegalArgumentException("Addressable could not be resolved. $addressable")
         } else {

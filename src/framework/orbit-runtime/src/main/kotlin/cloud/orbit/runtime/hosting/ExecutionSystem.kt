@@ -16,7 +16,7 @@ import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Completion
 import cloud.orbit.runtime.remoting.AddressableDefinitionDirectory
 import cloud.orbit.runtime.remoting.AddressableImplDefinition
-import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
+import cloud.orbit.runtime.remoting.getImplDefinition
 import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
@@ -35,16 +35,14 @@ internal class ExecutionSystem(
     private val logger by logger()
 
     suspend fun handleInvocation(invocation: AddressableInvocation, completion: Completion) {
-        val interfaceDefinition =
-            definitionDirectory.getOrCreateInterfaceDefinition(invocation.reference.interfaceClass)
         var handle = activeAddressables[invocation.reference]
 
         if (handle == null) {
-            handle = activate(invocation.reference, interfaceDefinition)
+            handle = activate(invocation.reference)
         }
 
         if (handle == null) {
-            throw IllegalStateException("No active addressable found for $interfaceDefinition")
+            throw IllegalStateException("No active addressable found for ${invocation.reference}")
         }
 
         // Call
@@ -90,10 +88,9 @@ internal class ExecutionSystem(
         instanceAddressableMap[addressable]?.reference
 
     private suspend fun activate(
-        reference: AddressableReference,
-        interfaceDefinition: AddressableInterfaceDefinition
+        reference: AddressableReference
     ): ExecutionHandle? =
-        definitionDirectory.getImplDefinition(interfaceDefinition.interfaceClass).let {
+        reference.getImplDefinition(definitionDirectory).let {
             if (it.lifecycle.autoActivate) {
                 val handle = getOrCreateAddressable(reference, it)
                 handle.activate().await()
