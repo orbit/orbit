@@ -88,6 +88,10 @@ data class AddressableInvocation(
      */
     val reference: AddressableReference,
     /**
+     * The type of invocation.
+     */
+    val invocationType: AddressableInvocationType,
+    /**
      * The method being called.
      */
     val method: Method,
@@ -103,6 +107,7 @@ data class AddressableInvocation(
         other as AddressableInvocation
 
         if (reference != other.reference) return false
+        if (invocationType != other.invocationType) return false
         if (method != other.method) return false
         if (!args.contentEquals(other.args)) return false
 
@@ -111,8 +116,14 @@ data class AddressableInvocation(
 
     override fun hashCode(): Int {
         var result = reference.hashCode()
+        result = 31 * result + invocationType.hashCode()
         result = 31 * result + method.hashCode()
         result = 31 * result + args.contentHashCode()
         return result
     }
+}
+
+enum class AddressableInvocationType {
+    REQUEST_RESPONSE,
+    ONE_WAY
 }

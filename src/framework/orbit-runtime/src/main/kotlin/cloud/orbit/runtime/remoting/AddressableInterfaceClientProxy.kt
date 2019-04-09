@@ -20,18 +20,23 @@ import java.lang.reflect.Proxy
 internal class AddressableInterfaceClientProxy(
     private val pipelineSystem: PipelineSystem,
     val reference: AddressableReference,
+    val interfaceDefinition: AddressableInterfaceDefinition,
     val target: NetTarget?
 ) : InvocationHandler {
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any =
-        AddressableInvocation(
-            reference = reference,
-            method = method,
-            args = args ?: arrayOf()
-        ).let {
-            pipelineSystem.pushInvocation(it, target)
-        }.let {
-            return DeferredWrappers.wrapReturn(it, method)
-        }
+        interfaceDefinition.getMethod(method).invocationType
+            .let {
+                AddressableInvocation(
+                    reference = reference,
+                    invocationType = it,
+                    method = method,
+                    args = args ?: arrayOf()
+                )
+            }.let {
+                pipelineSystem.pushInvocation(it, target)
+            }.let {
+                return DeferredWrappers.wrapReturn(it, method)
+            }
 }
 
 internal class AddressableInterfaceClientProxyFactory(
@@ -39,14 +44,17 @@ internal class AddressableInterfaceClientProxyFactory(
     private val definitionDirectory: AddressableDefinitionDirectory
 ) {
     fun <T : Addressable> createProxy(interfaceClass: Class<T>, key: Key, target: NetTarget? = null): T =
-        AddressableInterfaceClientProxy(
-            pipelineSystem = pipelineSystem,
-            reference = AddressableReference(
-                interfaceClass = definitionDirectory.getOrCreateInterfaceDefinition(interfaceClass).interfaceClass,
-                key = key
-            ),
-            target = target
-        ).let {
+        interfaceClass.getOrCreateInterfaceDefinition(definitionDirectory).let {
+            AddressableInterfaceClientProxy(
+                pipelineSystem = pipelineSystem,
+                interfaceDefinition = it,
+                reference = AddressableReference(
+                    interfaceClass = it.interfaceClass,
+                    key = key
+                ),
+                target = target
+            )
+        }.let {
             @Suppress("UNCHECKED_CAST")
             Proxy.newProxyInstance(
                 javaClass.classLoader,

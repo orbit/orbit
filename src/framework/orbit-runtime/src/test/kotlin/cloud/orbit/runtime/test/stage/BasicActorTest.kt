@@ -10,8 +10,10 @@ import cloud.orbit.common.exception.ResponseTimeoutException
 import cloud.orbit.common.time.TimeMs
 import cloud.orbit.core.actor.ActorWithNoKey
 import cloud.orbit.core.actor.createProxy
+import cloud.orbit.core.annotation.MessageType
 import cloud.orbit.core.annotation.OnActivate
 import cloud.orbit.core.annotation.OnDeactivate
+import cloud.orbit.core.remoting.AddressableInvocationType
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
@@ -25,13 +27,18 @@ import org.junit.jupiter.api.Test
 var wasDeactivated: Boolean = false
 
 interface BasicTestActorInterface : ActorWithNoKey {
+
     fun waitFor(delayMs: TimeMs): Deferred<Unit>
     fun echo(msg: String): Deferred<String>
     fun incrementCountAndGet(): Deferred<Int>
     fun getWasActivated(): Deferred<Boolean>
     fun throwIllegalArgumentException(msg: String): Deferred<String>
 
+    @MessageType(AddressableInvocationType.ONE_WAY)
+    fun throwIllegalArgumentOneWay(msg: String): Deferred<String>
 
+    @MessageType(AddressableInvocationType.ONE_WAY)
+    fun oneWayWait(delayMs: TimeMs): Deferred<Unit>
 }
 
 @Suppress("UNUSED")
@@ -54,6 +61,12 @@ class BasicTestActorImpl : BasicTestActorInterface {
     override fun waitFor(delayMs: TimeMs) = GlobalScope.async {
         delay(delayMs)
     }
+
+    override fun oneWayWait(delayMs: TimeMs) = GlobalScope.async {
+        delay(delayMs)
+    }
+
+    override fun throwIllegalArgumentOneWay(msg: String) = throw IllegalArgumentException(msg)
 
     override fun echo(msg: String) = CompletableDeferred(msg)
     override fun incrementCountAndGet() = CompletableDeferred(++callCount)
@@ -101,6 +114,24 @@ class BasicActorTest : BaseStageTest() {
                 actor.waitFor(stageConfig.messageTimeoutMillis + (stageConfig.tickRate * 2)).await()
             }
         }.isInstanceOf(ResponseTimeoutException::class.java)
+    }
+
+    @Test
+    fun `ensure one way doesn't time out`() {
+        val delayTime = stageConfig.messageTimeoutMillis + (stageConfig.tickRate * 2)
+        val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
+        runBlocking {
+            actor.oneWayWait(delayTime).await()
+            delay(delayTime)
+        }
+    }
+
+    @Test
+    fun `ensure one way doesn't propagate exception`() {
+        val actor = stage.actorProxyFactory.createProxy<BasicTestActorInterface>()
+        runBlocking {
+            actor.throwIllegalArgumentOneWay("Hyperdrive failure.").await()
+        }
     }
 
     @Test

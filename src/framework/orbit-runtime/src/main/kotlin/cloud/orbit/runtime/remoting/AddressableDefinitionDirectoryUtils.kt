@@ -9,6 +9,7 @@ package cloud.orbit.runtime.remoting
 import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.AddressableInvocation
 import cloud.orbit.core.remoting.AddressableReference
+import java.lang.reflect.Method
 
 internal fun <T : Addressable> Class<T>.getOrCreateInterfaceDefinition(definitionDirectory: AddressableDefinitionDirectory)
         : AddressableInterfaceDefinition = definitionDirectory.getOrCreateInterfaceDefinition(this)
@@ -27,3 +28,21 @@ internal fun AddressableReference.getImplDefinition(definitionDirectory: Address
 
 internal fun AddressableInvocation.getImplDefinition(definitionDirectory: AddressableDefinitionDirectory)
         : AddressableImplDefinition = this.reference.getImplDefinition(definitionDirectory)
+
+internal fun AddressableInvocation.getInterfaceMethodDefinition(definitionDirectory: AddressableDefinitionDirectory)
+        : AddressableInterfaceMethodDefinition =
+    getOrCreateInterfaceDefinition(definitionDirectory).let {
+        it.methods.getValue(method)
+    }
+
+internal fun AddressableInvocation.getImplMethodDefinition(definitionDirectory: AddressableDefinitionDirectory)
+        : AddressableImplMethodDefinition =
+    getImplDefinition(definitionDirectory).let {
+        it.methods.getValue(method)
+    }
+
+internal fun AddressableInterfaceDefinition.getMethod(method: Method): AddressableInterfaceMethodDefinition =
+    this.methods.getValue(method)
+
+internal fun AddressableImplDefinition.getMethod(method: Method): AddressableImplMethodDefinition =
+    this.methods.getValue(method)

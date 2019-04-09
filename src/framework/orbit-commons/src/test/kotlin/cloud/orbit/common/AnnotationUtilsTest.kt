@@ -25,38 +25,39 @@ class AnnotationUtilsTest {
 
     @Test
     fun `check fails class no annotation`() {
-        val result = AnnotationUtils.findAnnotation(ClassNoAnnotation::class.java, CustomAnnotation::class.java)
+        val result = AnnotationUtils.findAnnotationInTree(ClassNoAnnotation::class.java, CustomAnnotation::class.java)
         assertThat(result).isNull()
     }
 
     @Test
     fun `check fails interface no annotation`() {
-        val result = AnnotationUtils.findAnnotation(InterfaceNoAnnotation::class.java, CustomAnnotation::class.java)
+        val result =
+            AnnotationUtils.findAnnotationInTree(InterfaceNoAnnotation::class.java, CustomAnnotation::class.java)
         assertThat(result).isNull()
     }
 
     @Test
     fun `check passes basic class annotation`() {
-        val result = AnnotationUtils.findAnnotation(BasicAnnotated::class.java, CustomAnnotation::class.java)
+        val result = AnnotationUtils.findAnnotationInTree(BasicAnnotated::class.java, CustomAnnotation::class.java)
         assertThat(result).isNotNull
     }
 
     @Test
     fun `check passes basic interface annotation`() {
-        val result = AnnotationUtils.findAnnotation(InterfaceAnnotated::class.java, CustomAnnotation::class.java)
+        val result = AnnotationUtils.findAnnotationInTree(InterfaceAnnotated::class.java, CustomAnnotation::class.java)
         assertThat(result).isNotNull
     }
 
     @Test
     fun `check passes superclass annotation`() {
-        val result = AnnotationUtils.findAnnotation(SuperClassAnnotated::class.java, CustomAnnotation::class.java)
+        val result = AnnotationUtils.findAnnotationInTree(SuperClassAnnotated::class.java, CustomAnnotation::class.java)
         assertThat(result).isNotNull
     }
 
     @Test
     fun `check passes inherited interface annotation`() {
         val result =
-            AnnotationUtils.findAnnotation(InheritedInterfaceAnnotated::class.java, CustomAnnotation::class.java)
+            AnnotationUtils.findAnnotationInTree(InheritedInterfaceAnnotated::class.java, CustomAnnotation::class.java)
         assertThat(result).isNotNull
     }
 }

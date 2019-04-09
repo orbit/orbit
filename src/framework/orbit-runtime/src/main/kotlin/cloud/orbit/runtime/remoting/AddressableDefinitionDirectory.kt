@@ -11,11 +11,13 @@ import cloud.orbit.common.logging.logger
 import cloud.orbit.common.util.AnnotationUtils
 import cloud.orbit.core.annotation.ExecutionModel
 import cloud.orbit.core.annotation.Lifecycle
+import cloud.orbit.core.annotation.MessageType
 import cloud.orbit.core.annotation.NonConcrete
 import cloud.orbit.core.annotation.OnActivate
 import cloud.orbit.core.annotation.OnDeactivate
 import cloud.orbit.core.annotation.Routing
 import cloud.orbit.core.remoting.AddressableClass
+import cloud.orbit.core.remoting.AddressableInvocationType
 import cloud.orbit.runtime.hosting.DeferredWrappers
 import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
@@ -61,21 +63,27 @@ internal class AddressableDefinitionDirectory {
             throw IllegalArgumentException("${interfaceClass.name} is non-concrete and can not be directly addressed")
         }
 
-        val routing = AnnotationUtils.findAnnotation(interfaceClass, Routing::class.java)
+        val routing = AnnotationUtils.findAnnotationInTree(interfaceClass, Routing::class.java)
             ?: throw IllegalArgumentException(
                 "No routing annotation found in hierarchy for " +
                         interfaceClass.name
             )
 
+        val defaultInvocationType =
+            AnnotationUtils.findAnnotationInTree(interfaceClass, MessageType::class.java)?.invocationType
+                ?: AddressableInvocationType.REQUEST_RESPONSE
+
+
         val methods = interfaceClass.methods
             .map { method ->
-                method to generateInterfaceMethodDefinition(method)
+                method to generateInterfaceMethodDefinition(method, defaultInvocationType)
             }.toMap()
 
         val definition = AddressableInterfaceDefinition(
             interfaceClass = interfaceClass,
             methods = methods,
-            routing = routing
+            routing = routing,
+            defaultInvocationType = defaultInvocationType
         )
 
         logger.debug { "Created interface definition: $definition" }
@@ -84,13 +92,18 @@ internal class AddressableDefinitionDirectory {
     }
 
     private fun generateInterfaceMethodDefinition(
-        method: Method
+        method: Method,
+        defaultInvocationType: AddressableInvocationType
     ): AddressableInterfaceMethodDefinition {
 
         verifyMethodIsAsync(method)
 
+        val invocationType =
+            method.getDeclaredAnnotation(MessageType::class.java)?.invocationType ?: defaultInvocationType
+
         return AddressableInterfaceMethodDefinition(
-            method = method
+            method = method,
+            invocationType = invocationType
         )
     }
 
@@ -100,13 +113,13 @@ internal class AddressableDefinitionDirectory {
     ): AddressableImplDefinition {
         val interfaceDef = getOrCreateInterfaceDefinition(interfaceClass)
 
-        val lifecycle = AnnotationUtils.findAnnotation(implClass, Lifecycle::class.java)
+        val lifecycle = AnnotationUtils.findAnnotationInTree(implClass, Lifecycle::class.java)
             ?: throw IllegalArgumentException(
                 "No lifecycle annotation found in hierarchy for " +
                         interfaceClass.name
             )
 
-        val executionModel = AnnotationUtils.findAnnotation(implClass, ExecutionModel::class.java)
+        val executionModel = AnnotationUtils.findAnnotationInTree(implClass, ExecutionModel::class.java)
             ?: throw IllegalArgumentException(
                 "No execution model annotation found in hierarchy for " +
                         interfaceClass.name

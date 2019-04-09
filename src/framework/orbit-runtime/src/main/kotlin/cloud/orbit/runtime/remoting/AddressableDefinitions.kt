@@ -10,16 +10,19 @@ import cloud.orbit.core.annotation.ExecutionModel
 import cloud.orbit.core.annotation.Lifecycle
 import cloud.orbit.core.annotation.Routing
 import cloud.orbit.core.remoting.AddressableClass
+import cloud.orbit.core.remoting.AddressableInvocationType
 import java.lang.reflect.Method
 
 internal data class AddressableInterfaceDefinition(
     val interfaceClass: AddressableClass,
     val routing: Routing,
+    val defaultInvocationType: AddressableInvocationType,
     val methods: Map<Method, AddressableInterfaceMethodDefinition>
 )
 
 internal data class AddressableInterfaceMethodDefinition(
-    val method: Method
+    val method: Method,
+    val invocationType: AddressableInvocationType
 )
 
 internal data class AddressableImplDefinition(

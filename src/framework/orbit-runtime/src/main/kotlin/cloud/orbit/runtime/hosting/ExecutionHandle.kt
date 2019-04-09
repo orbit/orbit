@@ -146,16 +146,12 @@ internal class ExecutionHandle(
 
     private val worker = runtimeScopes.cpuScope.launch {
         for (event in channel) {
-            try {
-                when (event) {
-                    is EventType.ActivateEvent -> onActivate()
-                    is EventType.InvokeEvent -> onInvoke(event.invocation)
-                    is EventType.DeactivateEvent -> onDeactivate()
-                }.also {
-                    event.completion.complete(it)
-                }
-            } catch (t: Throwable) {
-                event.completion.completeExceptionally(t)
+            when (event) {
+                is EventType.ActivateEvent -> onActivate()
+                is EventType.InvokeEvent -> onInvoke(event.invocation)
+                is EventType.DeactivateEvent -> onDeactivate()
+            }.also {
+                event.completion.complete(it)
             }
         }
     }

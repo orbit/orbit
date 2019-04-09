@@ -9,6 +9,7 @@ package cloud.orbit.core.annotation
 import cloud.orbit.core.hosting.ExecutionStrategy
 import cloud.orbit.core.hosting.RoutingStrategy
 import cloud.orbit.core.remoting.Addressable
+import cloud.orbit.core.remoting.AddressableInvocationType
 import kotlin.reflect.KClass
 
 /**
@@ -88,4 +89,15 @@ annotation class Lifecycle(
 @Target(AnnotationTarget.CLASS)
 annotation class ExecutionModel(
     val executionStrategy: ExecutionStrategy
+)
+
+/**
+ * Signifies the type of invocation.
+ * May be applied directly on methods or on the [Addressable] interface.
+ */
+@MustBeDocumented
+@Retention(AnnotationRetention.RUNTIME)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+annotation class MessageType(
+    val invocationType: AddressableInvocationType
 )
