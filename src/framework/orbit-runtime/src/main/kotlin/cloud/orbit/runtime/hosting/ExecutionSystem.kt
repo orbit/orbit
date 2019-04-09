@@ -101,8 +101,9 @@ internal class ExecutionSystem(
         }
 
 
-    private fun invoke(handle: ExecutionHandle, invocation: AddressableInvocation, completion: Completion) {
-        handle.invoke(invocation, completion)
+    private suspend fun invoke(handle: ExecutionHandle, invocation: AddressableInvocation, completion: Completion) {
+        val result = handle.invoke(invocation).await()
+        completion.complete(result)
     }
 
     private suspend fun deactivate(handle: ExecutionHandle) {

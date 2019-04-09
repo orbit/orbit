@@ -75,11 +75,10 @@ internal class ExecutionHandle(
         }
 
     fun invoke(
-        invocation: AddressableInvocation,
-        completion: Completion
+        invocation: AddressableInvocation
     ): Completion =
-        completion.also {
-            sendEvent(EventType.InvokeEvent(invocation, completion))
+        CompletableDeferred<Any?>().also {
+            sendEvent(EventType.InvokeEvent(invocation, it))
         }
 
 
@@ -146,12 +145,16 @@ internal class ExecutionHandle(
 
     private val worker = runtimeScopes.cpuScope.launch {
         for (event in channel) {
-            when (event) {
-                is EventType.ActivateEvent -> onActivate()
-                is EventType.InvokeEvent -> onInvoke(event.invocation)
-                is EventType.DeactivateEvent -> onDeactivate()
-            }.also {
-                event.completion.complete(it)
+            try {
+                when (event) {
+                    is EventType.ActivateEvent -> onActivate()
+                    is EventType.InvokeEvent -> onInvoke(event.invocation)
+                    is EventType.DeactivateEvent -> onDeactivate()
+                }.also {
+                    event.completion.complete(it)
+                }
+            } catch (t: Throwable) {
+                event.completion.completeExceptionally(t)
             }
         }
     }
