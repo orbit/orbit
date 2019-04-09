@@ -24,19 +24,16 @@ internal class AddressableInterfaceClientProxy(
     val target: NetTarget?
 ) : InvocationHandler {
     override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any =
-        interfaceDefinition.getMethod(method).invocationType
-            .let {
-                AddressableInvocation(
-                    reference = reference,
-                    invocationType = it,
-                    method = method,
-                    args = args ?: arrayOf()
-                )
-            }.let {
-                pipelineSystem.pushInvocation(it, target)
-            }.let {
-                return DeferredWrappers.wrapReturn(it, method)
-            }
+        AddressableInvocation(
+            reference = reference,
+            invocationType = interfaceDefinition.getMethod(method).invocationType,
+            method = method,
+            args = args ?: arrayOf()
+        ).let {
+            pipelineSystem.pushInvocation(it, target)
+        }.let {
+            DeferredWrappers.wrapReturn(it, method)
+        }
 }
 
 internal class AddressableInterfaceClientProxyFactory(
