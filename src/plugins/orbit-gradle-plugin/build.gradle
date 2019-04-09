@@ -29,7 +29,7 @@ pluginBundle {
     description = "A plugin for the Orbit distributed systems framework."
 
     plugins {
-        orbitDslPlugin {
+        orbitPlugin {
             displayName = "Orbit Plugin"
             tags = ['orbit', 'actor', 'distributed', 'framework']
             version = orbitVersion
