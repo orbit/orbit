@@ -6,7 +6,7 @@
 
 buildscript {
     ext {
-        localOrbitVersion = "2.0.0a6-SNAPSHOT"
+        localOrbitVersion = "2.0.0a7-SNAPSHOT"
         kotlinVersion = "1.3.21"
         coroutinesVersion = "1.1.1"
         slf4jVersion = "1.7.26"
