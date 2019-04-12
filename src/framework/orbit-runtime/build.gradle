@@ -7,6 +7,6 @@
 dependencies {
     api(project(":src:framework:orbit-core"))
 
-    implementation("io.github.classgraph:classgraph:4.8.22")
-    implementation("com.esotericsoftware:kryo:5.0.0-RC2")
+    implementation("io.github.classgraph:classgraph:4.8.24")
+    implementation("com.esotericsoftware:kryo:5.0.0-RC3")
 }
