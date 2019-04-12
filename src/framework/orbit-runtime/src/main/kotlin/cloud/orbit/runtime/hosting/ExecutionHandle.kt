@@ -16,6 +16,7 @@ import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.AddressableContext
 import cloud.orbit.core.remoting.AddressableInvocation
 import cloud.orbit.core.remoting.AddressableReference
+import cloud.orbit.core.runtime.RuntimeContext
 import cloud.orbit.runtime.concurrent.RuntimeScopes
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Completion
@@ -40,7 +41,7 @@ internal class ExecutionHandle(
     private val clock: Clock by componentProvider.inject()
     private val runtimeScopes: RuntimeScopes by componentProvider.inject()
     private val stageConfig: StageConfig by componentProvider.inject()
-    private val stage: Stage by componentProvider.inject()
+    private val runtimeContext: RuntimeContext by componentProvider.inject()
     private val pipelineSystem: PipelineSystem by componentProvider.inject()
 
     private val logger by logger()
@@ -59,7 +60,7 @@ internal class ExecutionHandle(
         if (instance is AbstractAddressable) {
             instance.context = AddressableContext(
                 reference = reference,
-                runtime = stage
+                runtime = runtimeContext
             )
         }
     }
