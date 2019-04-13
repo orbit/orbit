@@ -30,9 +30,8 @@ internal class ReferenceResolver(private val executionSystem: ExecutionSystem, p
             }
 
             // If it's not a proxy we check to see if the actual object reference is being tracked by execution.
-            val realRef = executionSystem.getReferenceByInstance(obj)
-            if (realRef != null) {
-                return RemoteAddressableReference(realRef, netSystem.localNode.nodeIdentity.asTarget())
+            executionSystem.getReferenceByInstance(obj)?.also {
+                return RemoteAddressableReference(it, netSystem.localNode.nodeIdentity.asTarget())
             }
         }
 
