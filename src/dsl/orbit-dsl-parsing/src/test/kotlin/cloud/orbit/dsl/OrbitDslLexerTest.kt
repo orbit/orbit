@@ -14,7 +14,7 @@ import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
 
-class OrbitDslFileLexerTest {
+class OrbitDslLexerTest {
     @TestFactory
     fun tokenizeId() = listOf(
         "a",

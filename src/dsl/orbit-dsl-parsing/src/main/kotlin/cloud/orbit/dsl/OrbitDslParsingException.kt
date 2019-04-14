@@ -6,4 +6,4 @@
 
 package cloud.orbit.dsl
 
-class OrbitDslException(message: String) : RuntimeException(message)
+class OrbitDslParsingException(val syntaxErrors: Collection<OrbitDslSyntaxError>) : RuntimeException()
