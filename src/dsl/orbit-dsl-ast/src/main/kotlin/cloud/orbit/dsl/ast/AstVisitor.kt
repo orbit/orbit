@@ -8,7 +8,7 @@ package cloud.orbit.dsl.ast
 
 abstract class AstVisitor {
     open fun visitCompilationUnit(cu: CompilationUnit) {
-        (cu.enums.asSequence() + cu.data.asSequence() + cu.actors.asSequence())
+        (cu.enums.asSequence<AstNode>() + cu.data.asSequence() + cu.actors.asSequence())
             .forEach { visitNode(it) }
     }
 

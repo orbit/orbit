@@ -9,4 +9,4 @@ package cloud.orbit.dsl.ast
 data class EnumMember(
     val name: String,
     val index: Int
-) : AstNode
+) : AstNode()
