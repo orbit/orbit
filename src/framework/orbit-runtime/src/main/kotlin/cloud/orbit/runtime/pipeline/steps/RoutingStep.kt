@@ -6,16 +6,16 @@
 
 package cloud.orbit.runtime.pipeline.steps
 
-import cloud.orbit.runtime.hosting.RoutingSystem
+import cloud.orbit.runtime.hosting.Routing
 import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.pipeline.PipelineContext
 
-internal class RoutingStep(private val routingSystem: RoutingSystem) : PipelineStep {
+internal class RoutingStep(private val routing: Routing) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
         val newMsg = when (msg.content) {
             is MessageContent.RequestInvocationMessage -> {
-                routingSystem.routeMessage(msg.content.addressableInvocation.reference, msg.target).let {
+                routing.routeMessage(msg.content.addressableInvocation.reference, msg.target).let {
                     msg.copy(
                         target = it
                     )
@@ -30,7 +30,7 @@ internal class RoutingStep(private val routingSystem: RoutingSystem) : PipelineS
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
         when (msg.content) {
             is MessageContent.RequestInvocationMessage -> {
-                if (!routingSystem.canHandleLocally(msg.content.addressableInvocation.reference)) {
+                if (!routing.canHandleLocally(msg.content.addressableInvocation.reference)) {
                     // Can't handle locally so we just start it as a new call
                     context.newOutbound(msg)
                     return

@@ -27,16 +27,16 @@ import cloud.orbit.runtime.concurrent.RuntimePools
 import cloud.orbit.runtime.concurrent.RuntimeScopes
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.hosting.AddressableRegistryImpl
-import cloud.orbit.runtime.hosting.DirectorySystem
+import cloud.orbit.runtime.hosting.Directory
 import cloud.orbit.runtime.hosting.ExecutionSystem
 import cloud.orbit.runtime.hosting.ReferenceResolver
-import cloud.orbit.runtime.hosting.ResponseTrackingSystem
-import cloud.orbit.runtime.hosting.RoutingSystem
-import cloud.orbit.runtime.net.NetSystem
-import cloud.orbit.runtime.pipeline.PipelineSystem
+import cloud.orbit.runtime.hosting.ResponseTracking
+import cloud.orbit.runtime.hosting.Routing
+import cloud.orbit.runtime.net.Networking
+import cloud.orbit.runtime.pipeline.Pipeline
 import cloud.orbit.runtime.remoting.AddressableDefinitionDirectory
 import cloud.orbit.runtime.remoting.AddressableInterfaceClientProxyFactory
-import cloud.orbit.runtime.serialization.SerializationSystem
+import cloud.orbit.runtime.serialization.Serialization
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -68,12 +68,12 @@ class Stage(val config: StageConfig) : RuntimeContext {
 
     internal val componentProvider = ComponentProvider()
 
-    private val netSystem: NetSystem by componentProvider.inject()
+    private val networking: Networking by componentProvider.inject()
     private val capabilitiesScanner: CapabilitiesScanner by componentProvider.inject()
     private val definitionDirectory: AddressableDefinitionDirectory by componentProvider.inject()
-    private val pipelineSystem: PipelineSystem by componentProvider.inject()
+    private val pipeline: Pipeline by componentProvider.inject()
     private val executionSystem: ExecutionSystem by componentProvider.inject()
-    private val responseTrackingSystem: ResponseTrackingSystem by componentProvider.inject()
+    private val responseTracking: ResponseTracking by componentProvider.inject()
 
 
     private var tickJob: Job? = null
@@ -96,25 +96,25 @@ class Stage(val config: StageConfig) : RuntimeContext {
             definition<Clock>()
 
             // Net
-            definition<NetSystem>()
+            definition<Networking>()
 
             // Remoting
             definition<AddressableInterfaceClientProxyFactory>()
             definition<AddressableDefinitionDirectory>()
 
             // Pipeline
-            definition<PipelineSystem>()
+            definition<Pipeline>()
 
             // Hosting
-            definition<RoutingSystem>()
-            definition<ResponseTrackingSystem>()
+            definition<Routing>()
+            definition<ResponseTracking>()
             definition<ExecutionSystem>()
-            definition<DirectorySystem>()
+            definition<Directory>()
             definition<ReferenceResolver>()
             definition<AddressableRegistry>(AddressableRegistryImpl::class.java)
 
             // Serializer
-            definition<SerializationSystem>()
+            definition<Serialization>()
 
             // Capabilities
             definition<CapabilitiesScanner>()
@@ -126,7 +126,7 @@ class Stage(val config: StageConfig) : RuntimeContext {
             definition(config.clusterConfig.addressableDirectory)
         }
 
-        netSystem.localNodeManipulator.replace(
+        networking.localNodeManipulator.replace(
             NodeInfo(
                 clusterName = config.clusterName,
                 nodeIdentity = config.nodeIdentity,
@@ -202,7 +202,7 @@ class Stage(val config: StageConfig) : RuntimeContext {
 
 
     private suspend fun onStart() {
-        netSystem.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPED, NodeStatus.STARTING)
+        networking.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPED, NodeStatus.STARTING)
 
         // Log some info about the environment
         logEnvironmentInfo()
@@ -211,28 +211,28 @@ class Stage(val config: StageConfig) : RuntimeContext {
         // Capabilities and definitions
         capabilitiesScanner.scan(*config.packages.toTypedArray())
         val capabilities = capabilitiesScanner.generateNodeCapabilities()
-        netSystem.localNodeManipulator.updateCapabiltities(capabilities)
+        networking.localNodeManipulator.updateCapabiltities(capabilities)
         definitionDirectory.setupDefinition(
             interfaceClasses = capabilitiesScanner.addressableInterfaces,
             impls = capabilitiesScanner.interfaceLookup
         )
 
         // Start pipeline
-        pipelineSystem.start()
+        pipeline.start()
 
         // Flip status to running
-        netSystem.localNodeManipulator.updateNodeStatus(NodeStatus.STARTING, NodeStatus.RUNNING)
+        networking.localNodeManipulator.updateNodeStatus(NodeStatus.STARTING, NodeStatus.RUNNING)
 
         tickJob = launchTick()
     }
 
     private suspend fun onTick() {
-        responseTrackingSystem.onTick()
+        responseTracking.onTick()
         executionSystem.onTick()
     }
 
     private suspend fun onStop() {
-        netSystem.localNodeManipulator.updateNodeStatus(NodeStatus.RUNNING, NodeStatus.STOPPING)
+        networking.localNodeManipulator.updateNodeStatus(NodeStatus.RUNNING, NodeStatus.STOPPING)
 
         executionSystem.onStop()
 
@@ -241,9 +241,9 @@ class Stage(val config: StageConfig) : RuntimeContext {
 
 
         // Stop pipeline
-        pipelineSystem.stop()
+        pipeline.stop()
 
-        netSystem.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPING, NodeStatus.STOPPED)
+        networking.localNodeManipulator.updateNodeStatus(NodeStatus.STOPPING, NodeStatus.STOPPED)
     }
 
     private fun logEnvironmentInfo() {

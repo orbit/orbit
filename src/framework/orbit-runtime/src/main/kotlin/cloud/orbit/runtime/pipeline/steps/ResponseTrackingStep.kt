@@ -8,13 +8,13 @@ package cloud.orbit.runtime.pipeline.steps
 
 import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.AddressableInvocationType
-import cloud.orbit.runtime.hosting.ResponseTrackingSystem
+import cloud.orbit.runtime.hosting.ResponseTracking
 import cloud.orbit.runtime.net.Message
 import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.pipeline.PipelineContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
-internal class ResponseTrackingStep(private val responseTracking: ResponseTrackingSystem) : PipelineStep {
+internal class ResponseTrackingStep(private val responseTracking: ResponseTracking) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
         when (msg.content) {
             is MessageContent.RequestInvocationMessage -> {

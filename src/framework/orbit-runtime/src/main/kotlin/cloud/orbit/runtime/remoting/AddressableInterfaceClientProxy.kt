@@ -12,13 +12,13 @@ import cloud.orbit.core.remoting.Addressable
 import cloud.orbit.core.remoting.AddressableInvocation
 import cloud.orbit.core.remoting.AddressableReference
 import cloud.orbit.runtime.hosting.DeferredWrappers
-import cloud.orbit.runtime.pipeline.PipelineSystem
+import cloud.orbit.runtime.pipeline.Pipeline
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
 internal class AddressableInterfaceClientProxy(
-    private val pipelineSystem: PipelineSystem,
+    private val pipeline: Pipeline,
     val reference: AddressableReference,
     val interfaceDefinition: AddressableInterfaceDefinition,
     val target: NetTarget?
@@ -30,20 +30,20 @@ internal class AddressableInterfaceClientProxy(
             method = method,
             args = args ?: arrayOf()
         ).let {
-            pipelineSystem.pushInvocation(it, target)
+            pipeline.pushInvocation(it, target)
         }.let {
             DeferredWrappers.wrapReturn(it, method)
         }
 }
 
 internal class AddressableInterfaceClientProxyFactory(
-    private val pipelineSystem: PipelineSystem,
+    private val pipeline: Pipeline,
     private val definitionDirectory: AddressableDefinitionDirectory
 ) {
     fun <T : Addressable> createProxy(interfaceClass: Class<T>, key: Key, target: NetTarget? = null): T =
         interfaceClass.getOrCreateInterfaceDefinition(definitionDirectory).let {
             AddressableInterfaceClientProxy(
-                pipelineSystem = pipelineSystem,
+                pipeline = pipeline,
                 interfaceDefinition = it,
                 reference = AddressableReference(
                     interfaceClass = it.interfaceClass,

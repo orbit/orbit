@@ -9,11 +9,11 @@ package cloud.orbit.runtime.hosting
 import cloud.orbit.core.hosting.AddressableDirectory
 import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.remoting.AddressableReference
-import cloud.orbit.runtime.net.NetSystem
+import cloud.orbit.runtime.net.Networking
 
-internal class DirectorySystem(
+internal class Directory(
     private val addressableDirectory: AddressableDirectory,
-    private val netSystem: NetSystem
+    private val networking: Networking
 ) {
     suspend fun locate(addressableReference: AddressableReference): NetTarget? {
         return addressableDirectory.get(addressableReference)
@@ -24,10 +24,10 @@ internal class DirectorySystem(
     }
 
     suspend fun forcePlaceLocal(addressableReference: AddressableReference) {
-        addressableDirectory.put(addressableReference, netSystem.localNode.nodeIdentity.asTarget())
+        addressableDirectory.put(addressableReference, networking.localNode.nodeIdentity.asTarget())
     }
 
     suspend fun removeIfLocal(addressableReference: AddressableReference) {
-        addressableDirectory.removeIf(addressableReference, netSystem.localNode.nodeIdentity.asTarget())
+        addressableDirectory.removeIf(addressableReference, networking.localNode.nodeIdentity.asTarget())
     }
 }

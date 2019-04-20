@@ -7,7 +7,7 @@
 package cloud.orbit.runtime.test.stage
 
 import cloud.orbit.core.key.Key
-import cloud.orbit.runtime.serialization.SerializationSystem
+import cloud.orbit.runtime.serialization.Serialization
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -17,30 +17,30 @@ class WrappedNoKey {
 }
 
 class SerializerTest : BaseStageTest() {
-    private lateinit var serializationSystem: SerializationSystem
+    private lateinit var serialization: Serialization
 
     @BeforeEach
     fun setup() {
-        serializationSystem = stage.componentProvider.construct()
+        serialization = stage.componentProvider.construct()
     }
 
     @Test
     fun `check NoKey serialized is same instance`() {
-        val rawData = serializationSystem.serializeObject(Key.NoKey)
-        val newKey: Key.NoKey = serializationSystem.deserializeObject(rawData)
+        val rawData = serialization.serializeObject(Key.NoKey)
+        val newKey: Key.NoKey = serialization.deserializeObject(rawData)
         assertThat(newKey).isSameAs(Key.NoKey)
     }
 
     @Test
     fun `check NoKey clone is same instance`() {
-        val cloned = serializationSystem.cloneObject(Key.NoKey)
+        val cloned = serialization.cloneObject(Key.NoKey)
         assertThat(cloned).isSameAs(Key.NoKey)
     }
 
     @Test
     fun `check null NoKey serialized is null`() {
-        val rawData = serializationSystem.serializeObject(WrappedNoKey())
-        val newKey: WrappedNoKey = serializationSystem.deserializeObject(rawData)
+        val rawData = serialization.serializeObject(WrappedNoKey())
+        val newKey: WrappedNoKey = serialization.deserializeObject(rawData)
         assertThat(newKey.noKey).isNull()
     }
 }

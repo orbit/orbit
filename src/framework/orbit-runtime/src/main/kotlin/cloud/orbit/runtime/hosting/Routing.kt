@@ -14,15 +14,15 @@ import cloud.orbit.core.net.NetTarget
 import cloud.orbit.core.net.NodeStatus
 import cloud.orbit.core.remoting.AddressableReference
 import cloud.orbit.runtime.di.ComponentProvider
-import cloud.orbit.runtime.net.NetSystem
+import cloud.orbit.runtime.net.Networking
 import cloud.orbit.runtime.remoting.AddressableDefinitionDirectory
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
 import cloud.orbit.runtime.remoting.getOrCreateInterfaceDefinition
 import java.util.concurrent.ConcurrentHashMap
 
-internal class RoutingSystem(
-    private val netSystem: NetSystem,
-    private val directorySystem: DirectorySystem,
+internal class Routing(
+    private val networking: Networking,
+    private val directory: Directory,
     private val definitionDirectory: AddressableDefinitionDirectory,
     private val componentProvider: ComponentProvider
 ) {
@@ -43,7 +43,7 @@ internal class RoutingSystem(
                     if (interfaceDefinition.routing.persistentPlacement) {
                         // This is placed persistently so we check if the directory already knows where.
                         // If not we select a spot.
-                        directorySystem.locate(reference) ?: directorySystem.locateOrPlace(
+                        directory.locate(reference) ?: directory.locateOrPlace(
                             reference,
                             selectTarget(interfaceDefinition)
                         )
@@ -65,7 +65,7 @@ internal class RoutingSystem(
             initialDelay = 1000,
             logger = logger
         ) {
-            val allNodes = netSystem.clusterNodes
+            val allNodes = networking.clusterNodes
 
             // We filter out nodes where it's impossible for them to host currently.
             val candidateNodes = allNodes
@@ -90,17 +90,17 @@ internal class RoutingSystem(
 
         return if (interfaceDefinition.routing.persistentPlacement) {
             // If placement is persistent then we need to check the directory and ensure we're a valid target.
-            val currentLocation = directorySystem.locate(reference)
+            val currentLocation = directory.locate(reference)
             when (currentLocation) {
-                is NetTarget.Unicast -> currentLocation.targetNode == netSystem.localNode.nodeIdentity
-                is NetTarget.Multicast -> currentLocation.nodes.contains(netSystem.localNode.nodeIdentity)
+                is NetTarget.Unicast -> currentLocation.targetNode == networking.localNode.nodeIdentity
+                is NetTarget.Multicast -> currentLocation.nodes.contains(networking.localNode.nodeIdentity)
                 is NetTarget.Broadcast -> true
                 else -> false
             }
 
         } else {
             // Otherwise we assume that as long as we can theoretically host it's ok.
-            netSystem.localNode.nodeCapabilities.canHost(reference.interfaceClass)
+            networking.localNode.nodeCapabilities.canHost(reference.interfaceClass)
         }
     }
 }

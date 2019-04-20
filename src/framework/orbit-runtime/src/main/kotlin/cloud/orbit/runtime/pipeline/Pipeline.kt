@@ -34,7 +34,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
 
-internal class PipelineSystem(
+internal class Pipeline(
     private val componentProvider: ComponentProvider
 ) {
     private val pipelineStepConfig = listOf(
@@ -133,9 +133,9 @@ internal class PipelineSystem(
         val errorsAreHandled = container.direction == MessageDirection.OUTBOUND
 
         val context = PipelineContext(
-            pipeline = pipelineSteps,
+            pipelineSteps = pipelineSteps,
             startAtEnd = startAtEnd,
-            pipelineSystem = this,
+            pipeline = this,
             completion = container.completion,
             suppressErrors = errorsAreHandled
         )

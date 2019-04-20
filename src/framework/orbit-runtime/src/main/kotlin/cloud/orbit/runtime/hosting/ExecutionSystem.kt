@@ -27,7 +27,7 @@ internal class ExecutionSystem(
     private val definitionDirectory: AddressableDefinitionDirectory,
     private val clock: Clock,
     private val stageConfig: StageConfig,
-    private val directorySystem: DirectorySystem
+    private val directory: Directory
 ) {
     private val activeAddressables = ConcurrentHashMap<AddressableReference, ExecutionHandle>()
     private val instanceAddressableMap = ConcurrentHashMap<Addressable, ExecutionHandle>()
@@ -160,9 +160,9 @@ internal class ExecutionSystem(
     private suspend fun updatePlacement(handle: ExecutionHandle, adding: Boolean) {
         if (handle.interfaceDefinition.routing.persistentPlacement) {
             if (adding) {
-                directorySystem.forcePlaceLocal(handle.reference)
+                directory.forcePlaceLocal(handle.reference)
             } else {
-                directorySystem.removeIfLocal(handle.reference)
+                directory.removeIfLocal(handle.reference)
             }
         }
     }

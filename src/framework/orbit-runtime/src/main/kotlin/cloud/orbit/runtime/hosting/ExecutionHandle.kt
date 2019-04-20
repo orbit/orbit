@@ -20,10 +20,9 @@ import cloud.orbit.core.runtime.RuntimeContext
 import cloud.orbit.runtime.concurrent.RuntimeScopes
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.net.Completion
-import cloud.orbit.runtime.pipeline.PipelineSystem
+import cloud.orbit.runtime.pipeline.Pipeline
 import cloud.orbit.runtime.remoting.AddressableImplDefinition
 import cloud.orbit.runtime.remoting.AddressableInterfaceDefinition
-import cloud.orbit.runtime.stage.Stage
 import cloud.orbit.runtime.stage.StageConfig
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
@@ -42,7 +41,7 @@ internal class ExecutionHandle(
     private val runtimeScopes: RuntimeScopes by componentProvider.inject()
     private val stageConfig: StageConfig by componentProvider.inject()
     private val runtimeContext: RuntimeContext by componentProvider.inject()
-    private val pipelineSystem: PipelineSystem by componentProvider.inject()
+    private val pipeline: Pipeline by componentProvider.inject()
 
     private val logger by logger()
 
@@ -139,7 +138,7 @@ internal class ExecutionHandle(
                             "Rerouting... ${event.invocation}"
                 )
 
-                pipelineSystem.pushInvocation(event.invocation)
+                pipeline.pushInvocation(event.invocation)
             }
         }
     }

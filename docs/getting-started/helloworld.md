@@ -122,7 +122,7 @@ If all went well you should now be able to run your application, the output shou
 [orbit-cpu-1] INFO cloud.orbit.runtime.stage.Stage - Orbit Environment: ClusterName(value=orbit-cluster) NodeIdentity(value=dHXsdERmqcCcXy3A) VersionInfo(orbitVersion=dev, orbitSpecVersion=dev, orbitCodename=Orbit, jvmVersion=1.8.0_202, jvmBuild=Azul Systems, Inc. OpenJDK 64-Bit Server VM 25.202-b05, kotlinVersion=1.3.21)
 [orbit-cpu-1] INFO cloud.orbit.runtime.capabilities.CapabilitiesScanner - Scanning for node capabilities...
 [orbit-cpu-1] INFO cloud.orbit.runtime.capabilities.CapabilitiesScanner - Node capabilities scan complete in 607ms. 1 implemented addressable(s) found. 1 addressable interface(s) found. 1 addressable class(es) found. 
-[orbit-cpu-1] INFO cloud.orbit.runtime.pipeline.PipelineSystem - Pipeline started on 128 rails with a 10000 entries buffer and 5 steps.
+[orbit-cpu-1] INFO cloud.orbit.runtime.pipeline.Pipeline - Pipeline started on 128 rails with a 10000 entries buffer and 5 steps.
 [orbit-cpu-1] INFO cloud.orbit.runtime.stage.Stage - Orbit started successfully in 744ms.
 [orbit-cpu-3] INFO orbit.helloworld.GreeterActor - I was called by: Joe. My identity is AddressableReference(interfaceClass=interface orbit.helloworld.Greeter, key=cloud.orbit.core.key.Key$NoKey@18e8d229)
 [main] INFO main - Response: Hello Joe!

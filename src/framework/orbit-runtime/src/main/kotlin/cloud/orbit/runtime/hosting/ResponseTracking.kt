@@ -16,7 +16,7 @@ import cloud.orbit.runtime.net.MessageContent
 import cloud.orbit.runtime.stage.StageConfig
 import java.util.concurrent.ConcurrentHashMap
 
-internal class ResponseTrackingSystem(
+internal class ResponseTracking(
     private val stageConfig: StageConfig,
     private val clock: Clock
 ) {

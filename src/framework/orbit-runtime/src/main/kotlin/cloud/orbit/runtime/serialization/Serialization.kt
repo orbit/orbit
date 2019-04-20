@@ -9,7 +9,7 @@ package cloud.orbit.runtime.serialization
 import cloud.orbit.runtime.di.ComponentProvider
 import cloud.orbit.runtime.serialization.kryo.KryoSerializer
 
-internal class SerializationSystem(componentProvider: ComponentProvider) {
+internal class Serialization(componentProvider: ComponentProvider) {
     private val kryoSerializer: KryoSerializer = componentProvider.construct()
 
     fun <T> serializeObject(obj: T): ByteArray = kryoSerializer.serializeObject(obj)
