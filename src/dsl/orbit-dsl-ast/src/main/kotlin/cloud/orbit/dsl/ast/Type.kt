@@ -9,6 +9,6 @@ package cloud.orbit.dsl.ast
 data class Type(
     val name: String,
     val of: List<Type> = emptyList()
-) : AstNode {
+) : AstNode() {
     val isGeneric = of.isNotEmpty()
 }

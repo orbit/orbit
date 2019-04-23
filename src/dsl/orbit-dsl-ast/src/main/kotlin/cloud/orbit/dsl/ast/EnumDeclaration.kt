@@ -9,4 +9,4 @@ package cloud.orbit.dsl.ast
 data class EnumDeclaration(
     override val name: String,
     val members: List<EnumMember> = emptyList()
-) : Declaration
+) : AstNode(), Declaration

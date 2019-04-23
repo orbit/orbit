@@ -6,6 +6,6 @@
 
 package cloud.orbit.dsl.ast
 
-interface Declaration : AstNode {
+interface Declaration {
     val name: String
 }

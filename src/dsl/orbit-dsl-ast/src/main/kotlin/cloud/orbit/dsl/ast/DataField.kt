@@ -10,4 +10,4 @@ data class DataField(
     val name: String,
     val type: Type,
     val index: Int
-) : AstNode
+) : AstNode()

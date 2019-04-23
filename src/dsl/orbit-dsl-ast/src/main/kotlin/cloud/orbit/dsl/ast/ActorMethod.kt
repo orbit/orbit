@@ -10,4 +10,4 @@ data class ActorMethod(
     val name: String,
     val returnType: Type,
     val params: List<MethodParameter> = emptyList()
-) : AstNode
+) : AstNode()

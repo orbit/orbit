@@ -9,4 +9,4 @@ package cloud.orbit.dsl.ast
 data class MethodParameter(
     val name: String,
     val type: Type
-) : AstNode
+) : AstNode()
