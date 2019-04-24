@@ -11,11 +11,13 @@ import cloud.orbit.dsl.OrbitDslParser
 import cloud.orbit.dsl.ast.Type
 import cloud.orbit.dsl.ast.annotated
 
-class TypeVisitor : OrbitDslBaseVisitor<Type>() {
+class TypeVisitor(
+    private val parseContextProvider: ParseContextProvider
+) : OrbitDslBaseVisitor<Type>() {
     override fun visitType(ctx: OrbitDslParser.TypeContext?) =
         Type(ctx!!.name.text, ctx.children
             .filterIsInstance(OrbitDslParser.TypeContext::class.java)
-            .map { it.accept(TypeVisitor()) }
+            .map { it.accept(TypeVisitor(parseContextProvider)) }
             .toList()
-        )
+        ).annotated(parseContextProvider.fromToken(ctx.name))
 }
