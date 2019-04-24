@@ -9,9 +9,10 @@ package cloud.orbit.dsl
 import org.antlr.v4.runtime.BaseErrorListener
 import org.antlr.v4.runtime.RecognitionException
 import org.antlr.v4.runtime.Recognizer
-import org.antlr.v4.runtime.misc.ParseCancellationException
 
-class ThrowingErrorListener : BaseErrorListener() {
+class CollectingErrorListener(private val filePath: String) : BaseErrorListener() {
+    val syntaxErrors = mutableListOf<OrbitDslSyntaxError>()
+
     override fun syntaxError(
         recognizer: Recognizer<*, *>?,
         offendingSymbol: Any?,
@@ -20,6 +21,7 @@ class ThrowingErrorListener : BaseErrorListener() {
         msg: String?,
         e: RecognitionException?
     ) {
-        throw ParseCancellationException("line $line:$charPositionInLine: ${msg ?: "syntax error"}")
+        syntaxErrors.add(OrbitDslSyntaxError(filePath, line, charPositionInLine, msg))
+        super.syntaxError(recognizer, offendingSymbol, line, charPositionInLine, msg, e)
     }
 }

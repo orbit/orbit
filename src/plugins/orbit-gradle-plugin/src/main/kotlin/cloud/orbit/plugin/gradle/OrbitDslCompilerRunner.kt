@@ -7,34 +7,37 @@
 package cloud.orbit.plugin.gradle
 
 import cloud.orbit.dsl.OrbitDslFileParser
+import cloud.orbit.dsl.OrbitDslParsingException
+import cloud.orbit.dsl.OrbitDslSyntaxError
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.java.OrbitDslJavaCompiler
-import org.antlr.v4.runtime.misc.ParseCancellationException
 import java.io.File
 
 class OrbitDslCompilerRunner {
     fun run(spec: OrbitDslSpec) {
-        val inputDirectory = spec.orbitFiles.map { file ->
-            file to spec.inputDirectories.first { it.contains(file) }
-        }.toMap()
+        val inputDirectory = spec.orbitFiles.associateWith { file ->
+            spec.inputDirectories.first { it.contains(file) }
+        }
 
-        val errors = mutableListOf<String>()
+        val syntaxErrors = mutableListOf<OrbitDslSyntaxError>()
         val parsedOrbitFiles = mutableListOf<CompilationUnit>()
 
         spec.orbitFiles.forEach { file ->
             try {
                 parsedOrbitFiles.add(
                     OrbitDslFileParser().parse(
-                        file.readText(), getPackageNameFromFile(inputDirectory.getValue(file), file)
+                        file.readText(),
+                        computePackageNameFromFile(inputDirectory.getValue(file), file),
+                        file.relativeTo(spec.projectDirectory).path
                     )
                 )
-            } catch (e: ParseCancellationException) {
-                errors.add("${file.relativeTo(spec.projectDirectory)}: error: ${e.message}")
+            } catch (e: OrbitDslParsingException) {
+                syntaxErrors.addAll(e.syntaxErrors)
             }
         }
 
-        if (errors.isNotEmpty()) {
-            throw OrbitDslException(errors.joinToString(System.lineSeparator()))
+        if (syntaxErrors.isNotEmpty()) {
+            error(syntaxErrors.joinToString(System.lineSeparator()) { it.errorMessage })
         }
 
         OrbitDslJavaCompiler()
@@ -42,23 +45,6 @@ class OrbitDslCompilerRunner {
             .forEach {
                 it.writeToDirectory(spec.outputDirectory)
             }
-    }
-
-    private fun getPackageNameFromFile(inputDirectory: File, f: File): String {
-        tailrec fun getPackageNameFromFile(file: File?, acc: MutableList<String>): List<String> {
-            if (file == null) {
-                return acc
-            }
-
-            acc.add(0, file.name)
-            return getPackageNameFromFile(file.parentFile, acc)
-        }
-
-        return getPackageNameFromFile(
-            f.relativeTo(inputDirectory).parentFile,
-            mutableListOf()
-        )
-            .joinToString(separator = ".")
     }
 
     private fun File.contains(file: File): Boolean {
@@ -73,5 +59,9 @@ class OrbitDslCompilerRunner {
         }
 
         return false
+    }
+
+    private fun computePackageNameFromFile(inputDirectory: File, f: File): String {
+        return f.relativeTo(inputDirectory).parentFile.toPath().joinToString(".")
     }
 }
