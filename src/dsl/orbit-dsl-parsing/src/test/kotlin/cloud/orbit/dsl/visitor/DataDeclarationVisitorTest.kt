@@ -11,11 +11,14 @@ import cloud.orbit.dsl.ast.DataDeclaration
 import cloud.orbit.dsl.ast.DataField
 import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeOccurrenceContext
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class DataDeclarationVisitorTest {
-    private val visitor = DataDeclarationVisitor(TypeVisitor(FakeParseContextProvider), FakeParseContextProvider)
+    private val visitor = DataDeclarationVisitor(
+        TypeVisitor(TypeOccurrenceContext.DATA_FIELD, FakeParseContextProvider),
+        FakeParseContextProvider)
 
     @Test
     fun buildsDataDeclaration() {

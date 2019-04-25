@@ -9,11 +9,17 @@ package cloud.orbit.dsl.visitor
 import cloud.orbit.dsl.OrbitDslParser
 import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeOccurrenceContext
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class TypeVisitorTest {
-    private val visitor = TypeVisitor(FakeParseContextProvider)
+    private val typeOccurrenceContext = TypeOccurrenceContext.values().random()
+    private val visitor = TypeVisitor(
+        typeOccurrenceContext,
+        TypeVisitor(TypeOccurrenceContext.TYPE_PARAMETER, FakeParseContextProvider),
+        FakeParseContextProvider
+    )
 
     @Test
     fun buildsSimpleType() {
@@ -47,6 +53,23 @@ class TypeVisitorTest {
     fun annotatesTypeWithParseContext() {
         Assertions.assertEquals(
             FakeParseContextProvider.fakeParseContext,
-            visitor.parse("int32", OrbitDslParser::type).getAnnotation<ParseContext>())
+            visitor.parse("int32", OrbitDslParser::type).getAnnotation<ParseContext>()
+        )
+    }
+
+    @Test
+    fun annotatesTypeWithTypeOccurrenceContext() {
+        Assertions.assertEquals(
+            typeOccurrenceContext,
+            visitor.parse("int32", OrbitDslParser::type).getAnnotation<TypeOccurrenceContext>()
+        )
+    }
+
+    @Test
+    fun annotatesTypeParameterWithTypeOccurrenceContext() {
+        Assertions.assertEquals(
+            TypeOccurrenceContext.TYPE_PARAMETER,
+            visitor.parse("list<int32>", OrbitDslParser::type).of[0].getAnnotation<TypeOccurrenceContext>()
+        )
     }
 }
