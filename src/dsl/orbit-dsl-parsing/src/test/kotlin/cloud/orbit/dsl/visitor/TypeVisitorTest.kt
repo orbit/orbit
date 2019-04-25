@@ -7,12 +7,13 @@
 package cloud.orbit.dsl.visitor
 
 import cloud.orbit.dsl.OrbitDslParser
+import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.ast.Type
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class TypeVisitorTest {
-    private val visitor = TypeVisitor()
+    private val visitor = TypeVisitor(FakeParseContextProvider)
 
     @Test
     fun buildsSimpleType() {
@@ -40,5 +41,12 @@ class TypeVisitorTest {
             ),
             visitor.parse("map<string, list<int32>>", OrbitDslParser::type)
         )
+    }
+
+    @Test
+    fun annotatesTypeWithParseContext() {
+        Assertions.assertEquals(
+            FakeParseContextProvider.fakeParseContext,
+            visitor.parse("int32", OrbitDslParser::type).getAnnotation<ParseContext>())
     }
 }

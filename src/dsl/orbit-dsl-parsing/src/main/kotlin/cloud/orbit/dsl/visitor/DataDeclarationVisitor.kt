@@ -10,9 +10,11 @@ import cloud.orbit.dsl.OrbitDslBaseVisitor
 import cloud.orbit.dsl.OrbitDslParser
 import cloud.orbit.dsl.ast.DataDeclaration
 import cloud.orbit.dsl.ast.DataField
+import cloud.orbit.dsl.ast.annotated
 
 class DataDeclarationVisitor(
-    private val dataFieldTypeVisitor: TypeVisitor
+    private val dataFieldTypeVisitor: TypeVisitor,
+    private val parseContextProvider: ParseContextProvider
 ) : OrbitDslBaseVisitor<DataDeclaration>() {
     override fun visitDataDeclaration(ctx: OrbitDslParser.DataDeclarationContext?) =
         DataDeclaration(
@@ -24,7 +26,8 @@ class DataDeclarationVisitor(
                         it.name.text,
                         it.type().accept(dataFieldTypeVisitor),
                         it.index.text.toInt()
-                    )
+                    ).annotated(parseContextProvider.fromToken(it.name))
                 }
                 .toList())
+            .annotated(parseContextProvider.fromToken(ctx.name))
 }

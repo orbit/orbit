@@ -15,6 +15,7 @@ import cloud.orbit.dsl.ast.DataField
 import cloud.orbit.dsl.ast.EnumDeclaration
 import cloud.orbit.dsl.ast.EnumMember
 import cloud.orbit.dsl.ast.MethodParameter
+import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.ast.Type
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -210,5 +211,86 @@ class OrbitDslFileParserTest {
         val actualCompilationUnit = OrbitDslFileParser().parse(text, testPackageName, testFilePath)
 
         assertEquals(expectedCompilationUnit, actualCompilationUnit)
+    }
+
+    @Test
+    fun parseFile_ParseContextAnnotationsAreCorrect() {
+        val text = """
+            enum
+                AnEnum {
+                    A_VALUE
+                        = 1;
+            }
+
+             data
+                SomeData {
+                    string
+                        a_field
+                            = 1;
+            }
+
+            actor
+                TheActor
+                    <
+                        string
+                    >
+            {
+                map<
+                    string,
+                        list<
+                            int32
+                            >
+                    >
+                        a_method
+                        (
+                            int32
+                                param
+                        );
+            }
+        """.trimIndent()
+
+        val compilationUnit = OrbitDslFileParser().parse(text, testPackageName, testFilePath)
+
+        assertEquals(
+            ParseContext(testFilePath, 2, 4),
+            compilationUnit.enums[0].getAnnotation<ParseContext>())
+        assertEquals(
+            ParseContext(testFilePath, 3, 8),
+            compilationUnit.enums[0].members[0].getAnnotation<ParseContext>())
+
+        assertEquals(
+            ParseContext(testFilePath, 8, 4),
+            compilationUnit.data[0].getAnnotation<ParseContext>())
+        assertEquals(
+            ParseContext(testFilePath, 9, 8),
+            compilationUnit.data[0].fields[0].type.getAnnotation<ParseContext>())
+        assertEquals(
+            ParseContext(testFilePath, 10, 12),
+            compilationUnit.data[0].fields[0].getAnnotation<ParseContext>())
+
+        assertEquals(
+            ParseContext(testFilePath, 15, 4),
+            compilationUnit.actors[0].getAnnotation<ParseContext>())
+        assertEquals(
+            ParseContext(testFilePath, 20, 4),
+            compilationUnit.actors[0].methods[0].returnType.getAnnotation<ParseContext>())
+        assertEquals(
+            ParseContext(testFilePath, 21, 8),
+            compilationUnit.actors[0].methods[0].returnType.of[0].getAnnotation<ParseContext>())
+        assertEquals(
+            ParseContext(testFilePath, 22, 12),
+            compilationUnit.actors[0].methods[0].returnType.of[1].getAnnotation<ParseContext>())
+        assertEquals(
+            ParseContext(testFilePath, 23, 16),
+            compilationUnit.actors[0].methods[0].returnType.of[1].of[0].getAnnotation<ParseContext>())
+        assertEquals(
+            ParseContext(testFilePath, 26, 12),
+            compilationUnit.actors[0].methods[0].getAnnotation<ParseContext>())
+        assertEquals(
+            ParseContext(testFilePath, 28, 16),
+            compilationUnit.actors[0].methods[0].params[0].type.getAnnotation<ParseContext>())
+        assertEquals(
+            ParseContext(testFilePath, 29, 20),
+            compilationUnit.actors[0].methods[0].params[0].getAnnotation<ParseContext>())
     }
 }

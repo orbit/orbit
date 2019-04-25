@@ -13,9 +13,11 @@ import cloud.orbit.dsl.ast.ActorDeclaration
 import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.MethodParameter
+import cloud.orbit.dsl.ast.annotated
 
 class ActorDeclarationVisitor(
-    private val typeVisitor: TypeVisitor
+    private val typeVisitor: TypeVisitor,
+    private val parseContextProvider: ParseContextProvider
 ) : OrbitDslBaseVisitor<ActorDeclaration>() {
     override fun visitActorDeclaration(ctx: OrbitDslParser.ActorDeclarationContext?) =
         ActorDeclaration(
@@ -31,10 +33,13 @@ class ActorDeclarationVisitor(
                             .filterIsInstance(OrbitDslParser.MethodParamContext::class.java)
                             .map { p ->
                                 MethodParameter(p.name.text, p.type().accept(typeVisitor))
+                                    .annotated(parseContextProvider.fromToken(p.name))
                             }
                             .toList())
+                        .annotated(parseContextProvider.fromToken(m.name))
                 }
                 .toList())
+            .annotated(parseContextProvider.fromToken(ctx.name))
 
     private fun TypeContext.toActorKeyType() =
         when (this.text) {
@@ -43,6 +48,7 @@ class ActorDeclarationVisitor(
             "int64" -> ActorKeyType.INT64
             "guid" -> ActorKeyType.GUID
             else -> throw UnsupportedActorKeyTypeException(
-                this.text, this.name.line, this.name.charPositionInLine)
+                this.text, this.name.line, this.name.charPositionInLine
+            )
         }
 }

@@ -9,12 +9,13 @@ package cloud.orbit.dsl.visitor
 import cloud.orbit.dsl.OrbitDslParser
 import cloud.orbit.dsl.ast.DataDeclaration
 import cloud.orbit.dsl.ast.DataField
+import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.ast.Type
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class DataDeclarationVisitorTest {
-    private val visitor = DataDeclarationVisitor(TypeVisitor())
+    private val visitor = DataDeclarationVisitor(TypeVisitor(FakeParseContextProvider), FakeParseContextProvider)
 
     @Test
     fun buildsDataDeclaration() {
@@ -43,6 +44,33 @@ class DataDeclarationVisitorTest {
                 """,
                 OrbitDslParser::dataDeclaration
             )
+        )
+    }
+
+    @Test
+    fun annotatesDataDeclarationWithParseContext() {
+        val dataDeclaration = visitor.parse("data data1 {}", OrbitDslParser::dataDeclaration)
+
+        Assertions.assertEquals(
+            FakeParseContextProvider.fakeParseContext,
+            dataDeclaration.getAnnotation<ParseContext>()
+        )
+    }
+
+    @Test
+    fun annotatesDataFieldWithParseContext() {
+        val dataDeclaration = visitor.parse(
+            """
+                data data1 {
+                    int32 field = 1;
+                }
+                """,
+            OrbitDslParser::dataDeclaration
+        )
+
+        Assertions.assertEquals(
+            FakeParseContextProvider.fakeParseContext,
+            dataDeclaration.fields[0].getAnnotation<ParseContext>()
         )
     }
 }

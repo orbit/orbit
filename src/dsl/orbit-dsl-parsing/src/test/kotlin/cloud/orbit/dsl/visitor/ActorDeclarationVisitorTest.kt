@@ -11,13 +11,14 @@ import cloud.orbit.dsl.ast.ActorDeclaration
 import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.MethodParameter
+import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.ast.Type
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class ActorDeclarationVisitorTest {
-    private val visitor = ActorDeclarationVisitor(TypeVisitor())
+    private val visitor = ActorDeclarationVisitor(TypeVisitor(FakeParseContextProvider), FakeParseContextProvider)
 
     @Test
     fun buildsKeylessActorDeclaration() {
@@ -105,6 +106,50 @@ class ActorDeclarationVisitorTest {
                 """,
                 OrbitDslParser::actorDeclaration
             )
+        )
+    }
+
+    @Test
+    fun annotatesActorDeclarationWithParseContext() {
+        val actorDeclaration = visitor.parse("actor actor1 { }", OrbitDslParser::actorDeclaration)
+
+        Assertions.assertEquals(
+            FakeParseContextProvider.fakeParseContext,
+            actorDeclaration.getAnnotation<ParseContext>()
+        )
+    }
+
+    @Test
+    fun annotatesActorMethodWithParseContext() {
+        val actorDeclaration = visitor.parse(
+            """
+                actor actor1 {
+                    void m();
+                }
+            """,
+            OrbitDslParser::actorDeclaration
+        )
+
+        Assertions.assertEquals(
+            FakeParseContextProvider.fakeParseContext,
+            actorDeclaration.methods[0].getAnnotation<ParseContext>()
+        )
+    }
+
+    @Test
+    fun annotatesMethodParameterWithParseContext() {
+        val actorDeclaration = visitor.parse(
+            """
+                actor actor1 {
+                    void m(int32 p);
+                }
+            """,
+            OrbitDslParser::actorDeclaration
+        )
+
+        Assertions.assertEquals(
+            FakeParseContextProvider.fakeParseContext,
+            actorDeclaration.methods[0].params[0].getAnnotation<ParseContext>()
         )
     }
 }
