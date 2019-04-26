@@ -16,7 +16,8 @@ import cloud.orbit.dsl.ast.MethodParameter
 import cloud.orbit.dsl.ast.annotated
 
 class ActorDeclarationVisitor(
-    private val typeVisitor: TypeVisitor,
+    private val methodReturnTypeVisitor: TypeVisitor,
+    private val methodParameterTypeVisitor: TypeVisitor,
     private val parseContextProvider: ParseContextProvider
 ) : OrbitDslBaseVisitor<ActorDeclaration>() {
     override fun visitActorDeclaration(ctx: OrbitDslParser.ActorDeclarationContext?) =
@@ -28,11 +29,11 @@ class ActorDeclarationVisitor(
                 .map { m ->
                     ActorMethod(
                         name = m.name.text,
-                        returnType = m.returnType.accept(typeVisitor),
+                        returnType = m.returnType.accept(methodReturnTypeVisitor),
                         params = m.children
                             .filterIsInstance(OrbitDslParser.MethodParamContext::class.java)
                             .map { p ->
-                                MethodParameter(p.name.text, p.type().accept(typeVisitor))
+                                MethodParameter(p.name.text, p.type().accept(methodParameterTypeVisitor))
                                     .annotated(parseContextProvider.fromToken(p.name))
                             }
                             .toList())

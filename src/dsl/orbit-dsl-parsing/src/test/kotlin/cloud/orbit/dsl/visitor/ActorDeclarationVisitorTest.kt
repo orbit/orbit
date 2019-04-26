@@ -13,12 +13,16 @@ import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.MethodParameter
 import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeOccurrenceContext
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class ActorDeclarationVisitorTest {
-    private val visitor = ActorDeclarationVisitor(TypeVisitor(FakeParseContextProvider), FakeParseContextProvider)
+    private val visitor = ActorDeclarationVisitor(
+        TypeVisitor(TypeOccurrenceContext.METHOD_RETURN, FakeParseContextProvider),
+        TypeVisitor(TypeOccurrenceContext.METHOD_PARAMETER, FakeParseContextProvider),
+        FakeParseContextProvider)
 
     @Test
     fun buildsKeylessActorDeclaration() {
