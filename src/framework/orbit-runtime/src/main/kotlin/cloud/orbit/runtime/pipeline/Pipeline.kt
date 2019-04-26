@@ -161,6 +161,8 @@ internal class Pipeline(
 
     fun stop() {
         pipelineChannel.close()
-        pipelinesWorkers.forEach(Job::cancel)
+        pipelinesWorkers.forEach {
+            it.cancel()
+        }
     }
 }
