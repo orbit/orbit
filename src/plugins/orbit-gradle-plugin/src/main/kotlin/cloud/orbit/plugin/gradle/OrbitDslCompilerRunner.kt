@@ -7,9 +7,8 @@
 package cloud.orbit.plugin.gradle
 
 import cloud.orbit.dsl.OrbitDslFileParser
+import cloud.orbit.dsl.OrbitDslParseInput
 import cloud.orbit.dsl.OrbitDslParsingException
-import cloud.orbit.dsl.OrbitDslSyntaxError
-import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.java.OrbitDslJavaCompiler
 import java.io.File
 
@@ -19,32 +18,25 @@ class OrbitDslCompilerRunner {
             spec.inputDirectories.first { it.contains(file) }
         }
 
-        val syntaxErrors = mutableListOf<OrbitDslSyntaxError>()
-        val parsedOrbitFiles = mutableListOf<CompilationUnit>()
-
-        spec.orbitFiles.forEach { file ->
-            try {
-                parsedOrbitFiles.add(
-                    OrbitDslFileParser().parse(
-                        file.readText(),
-                        computePackageNameFromFile(inputDirectory.getValue(file), file),
-                        file.relativeTo(spec.projectDirectory).path
+        try {
+            val parsedOrbitFiles = OrbitDslFileParser().parse(
+                spec.orbitFiles.map {
+                    OrbitDslParseInput(
+                        it.readText(),
+                        computePackageNameFromFile(inputDirectory.getValue(it), it),
+                        it.relativeTo(spec.projectDirectory).path
                     )
-                )
-            } catch (e: OrbitDslParsingException) {
-                syntaxErrors.addAll(e.syntaxErrors)
-            }
-        }
+                }
+            )
 
-        if (syntaxErrors.isNotEmpty()) {
-            error(syntaxErrors.joinToString(System.lineSeparator()) { it.errorMessage })
+            OrbitDslJavaCompiler()
+                .compile(parsedOrbitFiles)
+                .forEach {
+                    it.writeToDirectory(spec.outputDirectory)
+                }
+        } catch(e: OrbitDslParsingException) {
+            error(e.syntaxErrors.joinToString(System.lineSeparator()) { it.errorMessage })
         }
-
-        OrbitDslJavaCompiler()
-            .compile(parsedOrbitFiles)
-            .forEach {
-                it.writeToDirectory(spec.outputDirectory)
-            }
     }
 
     private fun File.contains(file: File): Boolean {
