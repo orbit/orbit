@@ -7,6 +7,8 @@
 package cloud.orbit.dsl.ast
 
 abstract class AstVisitor {
+    private val errorListeners = mutableSetOf<ErrorListener>()
+
     open fun visitCompilationUnit(cu: CompilationUnit) {
         (cu.enums.asSequence<AstNode>() + cu.data.asSequence() + cu.actors.asSequence())
             .forEach { visitNode(it) }
@@ -48,5 +50,19 @@ abstract class AstVisitor {
     }
 
     open fun visitActorMethod(method: ActorMethod) {
+    }
+
+    open fun addErrorListener(errorListener: ErrorListener) {
+        errorListeners.add(errorListener)
+    }
+
+    open fun removeErrorListener(errorListener: ErrorListener) {
+        errorListeners.remove(errorListener)
+    }
+
+    fun reportError(node: AstNode, message: String) {
+        errorListeners.forEach {
+            it.onError(node, message)
+        }
     }
 }

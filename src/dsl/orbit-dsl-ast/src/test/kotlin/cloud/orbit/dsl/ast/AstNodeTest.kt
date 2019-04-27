@@ -7,6 +7,7 @@
 package cloud.orbit.dsl.ast
 
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class AstNodeTest {
@@ -55,5 +56,61 @@ class AstNodeTest {
 
         Assertions.assertSame(astNode, returnedNode)
         Assertions.assertSame(annotation, astNode.getAnnotation<TestAnnotation>())
+    }
+
+    @Test
+    fun reportsErrorToErrorListeners() {
+        val errorListener1 = TestErrorListener()
+        val errorListener2 = TestErrorListener()
+
+        val visitor = ErrorReportingVisitor()
+        visitor.addErrorListener(errorListener1)
+        visitor.addErrorListener(errorListener2)
+
+        visitor.visitCompilationUnit(CompilationUnit("cloud.orbit.test"))
+
+        assertEquals(1, errorListener1.errorCount)
+        assertEquals(1, errorListener2.errorCount)
+    }
+
+    @Test
+    fun errorReportedOncePerErrorListener() {
+        val errorListener = TestErrorListener()
+
+        val visitor = ErrorReportingVisitor()
+        visitor.addErrorListener(errorListener)
+        visitor.addErrorListener(errorListener)
+
+        visitor.visitCompilationUnit(CompilationUnit("cloud.orbit.test"))
+
+        assertEquals(1, errorListener.errorCount)
+    }
+
+    @Test
+    fun errorListenerCanBeRemoved() {
+        val errorListener = TestErrorListener()
+
+        val visitor = ErrorReportingVisitor()
+        visitor.addErrorListener(errorListener)
+        visitor.visitCompilationUnit(CompilationUnit("cloud.orbit.test"))
+
+        visitor.removeErrorListener(errorListener)
+        visitor.visitCompilationUnit(CompilationUnit("cloud.orbit.test"))
+
+        assertEquals(1, errorListener.errorCount)
+    }
+
+    private class TestErrorListener : ErrorListener {
+        var errorCount = 0
+
+        override fun onError(astNode: AstNode, message: String) {
+            ++errorCount
+        }
+    }
+
+    private class ErrorReportingVisitor : AstVisitor() {
+        override fun visitCompilationUnit(cu: CompilationUnit) {
+            reportError(object : AstNode() {}, "")
+        }
     }
 }
