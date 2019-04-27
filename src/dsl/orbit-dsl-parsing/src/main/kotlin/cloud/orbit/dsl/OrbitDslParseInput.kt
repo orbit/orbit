@@ -6,8 +6,10 @@
 
 package cloud.orbit.dsl
 /**
+ * Represents an input to [OrbitDslFileParser].
+ *
  * @param text a string containing Orbit DSL source code.
- * @param packageName the package name the resulting [CompilationUnit] will be associated with.
- * @param filePath the filesystem path that syntax errors and syntax tree annotations will be associated with.
+ * @param packageName the fully qualified name of the package containing this input.
+ * @param filePath the filesystem path where this input resides.
  */
 data class OrbitDslParseInput(val text: String, val packageName: String, val filePath: String)
