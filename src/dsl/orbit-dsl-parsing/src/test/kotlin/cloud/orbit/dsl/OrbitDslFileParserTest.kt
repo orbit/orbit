@@ -29,7 +29,11 @@ class OrbitDslFileParserTest {
     @Test
     fun throwsOnSyntaxError() {
         val exception = assertThrows<OrbitDslParsingException> {
-            OrbitDslFileParser().parse("actor a {", testPackageName, testFilePath)
+            OrbitDslFileParser().parse(
+                listOf(
+                    OrbitDslParseInput("actor a {", testPackageName, testFilePath)
+                )
+            )
         }
 
         assertEquals(1, exception.syntaxErrors.size)
@@ -38,13 +42,47 @@ class OrbitDslFileParserTest {
     @Test
     fun convertsUnsupportedActorKeyTypeExceptionToSyntaxError() {
         val exception = assertThrows<OrbitDslParsingException> {
-            OrbitDslFileParser().parse("actor a<boolean> { }", testPackageName, testFilePath)
+            OrbitDslFileParser().parse(
+                listOf(
+                    OrbitDslParseInput("actor a<boolean> { }", testPackageName, testFilePath)
+                )
+            )
         }
 
         assertEquals(1, exception.syntaxErrors.size)
         assertEquals("cloud/orbit/test/hello.orbit", exception.syntaxErrors.first().filePath)
         assertEquals(1, exception.syntaxErrors.first().line)
         assertEquals(8, exception.syntaxErrors.first().column)
+    }
+
+    @Test
+    fun parsesMultipleFiles() {
+        val compilationUnits = OrbitDslFileParser().parse(
+            listOf(
+                OrbitDslParseInput("enum e {}", "package1", "/path/to/file1.orbit"),
+                OrbitDslParseInput("data d {}", "package2", "/path/to/file2.orbit"),
+                OrbitDslParseInput("actor a {}", "package3", "/path/to/file3.orbit")
+            )
+        )
+
+        assertEquals(
+            CompilationUnit(
+                "package1", enums = listOf(EnumDeclaration("e"))
+            ),
+            compilationUnits[0]
+        )
+        assertEquals(
+            CompilationUnit(
+                "package2", data = listOf(DataDeclaration("d"))
+            ),
+            compilationUnits[1]
+        )
+        assertEquals(
+            CompilationUnit(
+                "package3", actors = listOf(ActorDeclaration("a"))
+            ),
+            compilationUnits[2]
+        )
     }
 
     @Test
@@ -209,13 +247,17 @@ class OrbitDslFileParserTest {
             )
         )
 
-        val actualCompilationUnit = OrbitDslFileParser().parse(text, testPackageName, testFilePath)
+        val actualCompilationUnit = OrbitDslFileParser().parse(
+            listOf(
+                OrbitDslParseInput(text, testPackageName, testFilePath)
+            )
+        ).first()
 
         assertEquals(expectedCompilationUnit, actualCompilationUnit)
     }
 
     @Test
-    fun parseFile_ParseContextAnnotationsAreCorrect() {
+    fun astNodesAreAnnotatedWithParseContext() {
         val text = """
             enum
                 AnEnum {
@@ -250,7 +292,11 @@ class OrbitDslFileParserTest {
             }
         """.trimIndent()
 
-        val compilationUnit = OrbitDslFileParser().parse(text, testPackageName, testFilePath)
+        val compilationUnit = OrbitDslFileParser().parse(
+            listOf(
+                OrbitDslParseInput(text, testPackageName, testFilePath)
+            )
+        ).first()
 
         assertEquals(
             ParseContext(testFilePath, 2, 4),
@@ -309,7 +355,7 @@ class OrbitDslFileParserTest {
     }
 
     @Test
-    fun parseFile_TypeOccurrenceContextAnnotationsAreCorrect() {
+    fun typeNodesAreAnnotatedWithTypeOccurrenceContext() {
         val text = """
             data SomeData {
                 string a_field = 1;
@@ -319,7 +365,11 @@ class OrbitDslFileParserTest {
             }
         """.trimIndent()
 
-        val compilationUnit = OrbitDslFileParser().parse(text, testPackageName, testFilePath)
+        val compilationUnit = OrbitDslFileParser().parse(
+            listOf(
+                OrbitDslParseInput(text, testPackageName, testFilePath)
+            )
+        ).first()
 
         assertEquals(
             TypeOccurrenceContext.DATA_FIELD,

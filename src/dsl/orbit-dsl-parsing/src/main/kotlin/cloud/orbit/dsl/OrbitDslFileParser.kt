@@ -24,47 +24,44 @@ import org.antlr.v4.runtime.Token
 
 class OrbitDslFileParser {
     /**
-     * Obtain an Orbit DSL [CompilationUnit] from source code stored in a string.
+     * Obtain a list of Orbit DSL [CompilationUnit] instances from input source code.
      *
-     * @param input the string containing Orbit DSL source code.
-     * @param packageName the package name the resulting [CompilationUnit] will be associated with.
-     * @param filePath the filesystem path that syntax errors and syntax tree annotations will be associated with.
-     * @return A [CompilationUnit] with abstract syntax trees for the entities parsed from the input source code.
+     * @param inputs A list of [OrbitDslParseInput] instances containing the source code to be parsed.
+     * @return A list of [CompilationUnit] instances with abstract syntax trees for the entities parsed
+     * from the input source code.
      */
-    fun parse(input: String, packageName: String, filePath: String): CompilationUnit {
-        checkSyntax(input, filePath)
-        return buildCompilationUnit(input, packageName, filePath)
+    fun parse(inputs: List<OrbitDslParseInput>): List<CompilationUnit> {
+        checkSyntax(inputs)
+        return inputs.map(::buildCompilationUnit)
     }
 
-    private fun checkSyntax(contents: String, filePath: String) {
-        val errorListener = CollectingErrorListener(filePath)
-        val lexer = OrbitDslLexer(CharStreams.fromString(contents))
-        val parser = OrbitDslParser(CommonTokenStream(lexer)).also {
-            it.removeErrorListener(ConsoleErrorListener.INSTANCE)
-        }
-
-        try {
-            parser.addErrorListener(errorListener)
+    private fun checkSyntax(inputs: List<OrbitDslParseInput>) {
+        val syntaxErrors = inputs.flatMap { input ->
+            val errorListener = CollectingErrorListener(input.filePath)
+            val lexer = OrbitDslLexer(CharStreams.fromString(input.text))
+            val parser = OrbitDslParser(CommonTokenStream(lexer)).also {
+                it.addErrorListener(errorListener)
+                it.removeErrorListener(ConsoleErrorListener.INSTANCE)
+            }
 
             SyntaxVisitor().visitFile(parser.file())
+            errorListener.syntaxErrors
+        }
 
-            if (errorListener.syntaxErrors.isNotEmpty()) {
-                throw OrbitDslParsingException(errorListener.syntaxErrors)
-            }
-        } finally {
-            parser.removeErrorListener(errorListener)
+        if (syntaxErrors.isNotEmpty()) {
+            throw OrbitDslParsingException(syntaxErrors)
         }
     }
 
-    private fun buildCompilationUnit(contents: String, packageName: String, filePath: String): CompilationUnit {
-        val lexer = OrbitDslLexer(CharStreams.fromString(contents))
+    private fun buildCompilationUnit(input: OrbitDslParseInput): CompilationUnit {
+        val lexer = OrbitDslLexer(CharStreams.fromString(input.text))
         val parser = OrbitDslParser(CommonTokenStream(lexer)).also {
             it.removeErrorListener(ConsoleErrorListener.INSTANCE)
         }
 
         val parseContextProvider = object : ParseContextProvider {
             override fun fromToken(token: Token) =
-                ParseContext(filePath, token.line, token.charPositionInLine)
+                ParseContext(input.filePath, token.line, token.charPositionInLine)
         }
 
         val typeParameterVisitor = TypeVisitor(TypeOccurrenceContext.TYPE_PARAMETER, parseContextProvider)
@@ -81,7 +78,7 @@ class OrbitDslFileParser {
 
         try {
             return CompilationUnitBuilderVisitor(
-                packageName,
+                input.packageName,
                 enumDeclarationVisitor,
                 dataDeclarationVisitor,
                 actorDeclarationVisitor
@@ -90,7 +87,7 @@ class OrbitDslFileParser {
             throw OrbitDslParsingException(
                 listOf(
                     OrbitDslSyntaxError(
-                        filePath,
+                        input.filePath,
                         e.line,
                         e.column,
                         e.message
