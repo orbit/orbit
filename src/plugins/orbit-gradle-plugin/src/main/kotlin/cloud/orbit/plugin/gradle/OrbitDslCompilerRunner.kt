@@ -9,7 +9,11 @@ package cloud.orbit.plugin.gradle
 import cloud.orbit.dsl.OrbitDslFileParser
 import cloud.orbit.dsl.OrbitDslParseInput
 import cloud.orbit.dsl.OrbitDslParsingException
+import cloud.orbit.dsl.OrbitDslTypeChecker
+import cloud.orbit.dsl.OrbitDslTypeCheckingException
 import cloud.orbit.dsl.java.OrbitDslJavaCompiler
+import cloud.orbit.dsl.TypeCheckingVisitor
+import cloud.orbit.dsl.TypeErrorListener
 import java.io.File
 
 class OrbitDslCompilerRunner {
@@ -19,7 +23,7 @@ class OrbitDslCompilerRunner {
         }
 
         try {
-            val parsedOrbitFiles = OrbitDslFileParser().parse(
+            val compilationUnits = OrbitDslFileParser().parse(
                 spec.orbitFiles.map {
                     OrbitDslParseInput(
                         it.readText(),
@@ -29,13 +33,17 @@ class OrbitDslCompilerRunner {
                 }
             )
 
+            OrbitDslTypeChecker.checkTypes(compilationUnits)
+
             OrbitDslJavaCompiler()
-                .compile(parsedOrbitFiles)
+                .compile(compilationUnits)
                 .forEach {
                     it.writeToDirectory(spec.outputDirectory)
                 }
-        } catch(e: OrbitDslParsingException) {
+        } catch (e: OrbitDslParsingException) {
             error(e.syntaxErrors.joinToString(System.lineSeparator()) { it.errorMessage })
+        } catch (e: OrbitDslTypeCheckingException) {
+            error(e.typeErrors.joinToString(System.lineSeparator()) { it.errorMessage })
         }
     }
 

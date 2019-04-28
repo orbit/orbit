@@ -6,4 +6,8 @@
 
 package cloud.orbit.dsl.ast
 
-data class ParseContext(val filePath: String, val line: Int, val column: Int) : AstAnnotation
+data class ParseContext(val filePath: String, val line: Int, val column: Int) : AstAnnotation {
+    companion object {
+        val UNKNOWN = ParseContext("<unknown>", 0, 0)
+    }
+}
