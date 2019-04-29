@@ -18,6 +18,7 @@ import cloud.orbit.dsl.ast.MethodParameter
 import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.ast.Type
 import cloud.orbit.dsl.ast.TypeOccurrenceContext
+import cloud.orbit.dsl.error.OrbitDslCompilationException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -28,7 +29,7 @@ class OrbitDslFileParserTest {
 
     @Test
     fun throwsOnSyntaxError() {
-        val exception = assertThrows<OrbitDslParsingException> {
+        val exception = assertThrows<OrbitDslCompilationException> {
             OrbitDslFileParser().parse(
                 listOf(
                     OrbitDslParseInput("actor a {", testPackageName, testFilePath)
@@ -36,12 +37,12 @@ class OrbitDslFileParserTest {
             )
         }
 
-        assertEquals(1, exception.syntaxErrors.size)
+        assertEquals(1, exception.errors.size)
     }
 
     @Test
     fun convertsUnsupportedActorKeyTypeExceptionToSyntaxError() {
-        val exception = assertThrows<OrbitDslParsingException> {
+        val exception = assertThrows<OrbitDslCompilationException> {
             OrbitDslFileParser().parse(
                 listOf(
                     OrbitDslParseInput("actor a<boolean> { }", testPackageName, testFilePath)
@@ -49,10 +50,10 @@ class OrbitDslFileParserTest {
             )
         }
 
-        assertEquals(1, exception.syntaxErrors.size)
-        assertEquals("cloud/orbit/test/hello.orbit", exception.syntaxErrors.first().filePath)
-        assertEquals(1, exception.syntaxErrors.first().line)
-        assertEquals(8, exception.syntaxErrors.first().column)
+        assertEquals(1, exception.errors.size)
+        assertEquals("cloud/orbit/test/hello.orbit", exception.errors.first().filePath)
+        assertEquals(1, exception.errors.first().line)
+        assertEquals(8, exception.errors.first().column)
     }
 
     @Test

@@ -6,12 +6,13 @@
 
 package cloud.orbit.dsl
 
+import cloud.orbit.dsl.error.OrbitDslError
 import org.antlr.v4.runtime.BaseErrorListener
 import org.antlr.v4.runtime.RecognitionException
 import org.antlr.v4.runtime.Recognizer
 
-class CollectingErrorListener(private val filePath: String) : BaseErrorListener() {
-    val syntaxErrors = mutableListOf<OrbitDslSyntaxError>()
+class SyntaxErrorListener(private val filePath: String) : BaseErrorListener() {
+    val syntaxErrors = mutableListOf<OrbitDslError>()
 
     override fun syntaxError(
         recognizer: Recognizer<*, *>?,
@@ -21,7 +22,7 @@ class CollectingErrorListener(private val filePath: String) : BaseErrorListener(
         msg: String?,
         e: RecognitionException?
     ) {
-        syntaxErrors.add(OrbitDslSyntaxError(filePath, line, charPositionInLine, msg))
+        syntaxErrors.add(OrbitDslError(filePath, line, charPositionInLine, msg ?: "syntax error"))
         super.syntaxError(recognizer, offendingSymbol, line, charPositionInLine, msg, e)
     }
 }

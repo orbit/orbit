@@ -23,6 +23,7 @@ configureProject(":src:framework:orbit-runtime", [withKotlin, withJava, withTest
 
 // DSL
 configureProject(":src:dsl:orbit-dsl-ast", [withKotlin, withTests, publish])
+configureProject(":src:dsl:orbit-dsl-common", [withKotlin, withTests, publish])
 configureProject(":src:dsl:orbit-dsl-java", [withKotlin, withTests, publish])
 configureProject(":src:dsl:orbit-dsl-parsing", [withKotlin, withJava, withTests, publish])
 configureProject(":src:dsl:orbit-dsl-typecheck", [withKotlin, withTests, publish])

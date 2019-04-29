@@ -9,6 +9,7 @@ package cloud.orbit.dsl
 import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.ast.Type
 import cloud.orbit.dsl.ast.annotated
+import cloud.orbit.dsl.error.OrbitDslError
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -29,7 +30,12 @@ class TypeErrorListenerTest {
         )
 
         assertEquals(
-            OrbitDslTypeError("path/to/file.orbit", line = 2, column = 17, message = "error here"),
+            OrbitDslError(
+                "path/to/file.orbit",
+                line = 2,
+                column = 17,
+                message = "error here"
+            ),
             typeErrorListener.typeErrors.first()
         )
     }
@@ -43,7 +49,7 @@ class TypeErrorListenerTest {
         )
 
         assertEquals(
-            OrbitDslTypeError("<unknown>", line = 0, column = 0, message = "error here"),
+            OrbitDslError("<unknown>", line = 0, column = 0, message = "error here"),
             typeErrorListener.typeErrors.first()
         )
     }

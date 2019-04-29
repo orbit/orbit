@@ -4,6 +4,6 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.dsl
+package cloud.orbit.dsl.error
 
-class OrbitDslParsingException(val syntaxErrors: Collection<OrbitDslSyntaxError>) : RuntimeException()
+class OrbitDslCompilationException(val errors: Collection<OrbitDslError>) : RuntimeException()

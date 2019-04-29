@@ -7,6 +7,7 @@
 package cloud.orbit.dsl
 
 import cloud.orbit.dsl.ast.CompilationUnit
+import cloud.orbit.dsl.error.OrbitDslCompilationException
 
 object OrbitDslTypeChecker {
     private val checks = listOf(
@@ -28,7 +29,7 @@ object OrbitDslTypeChecker {
         }
 
         if (errorListener.typeErrors.isNotEmpty()) {
-            throw OrbitDslTypeCheckingException(errorListener.typeErrors)
+            throw OrbitDslCompilationException(errorListener.typeErrors)
         }
     }
 }

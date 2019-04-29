@@ -6,4 +6,5 @@
 
 dependencies {
     compile(project(":src:dsl:orbit-dsl-ast"))
+    compile(project(":src:dsl:orbit-dsl-common"))
 }
