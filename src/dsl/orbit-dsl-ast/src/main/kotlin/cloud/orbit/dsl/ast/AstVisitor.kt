@@ -10,8 +10,9 @@ abstract class AstVisitor {
     private val errorListeners = mutableSetOf<ErrorListener>()
 
     open fun visitCompilationUnit(cu: CompilationUnit) {
-        (cu.enums.asSequence<AstNode>() + cu.data.asSequence() + cu.actors.asSequence())
-            .forEach { visitNode(it) }
+        cu.enums.forEach { visitNode(it) }
+        cu.data.forEach { visitNode(it) }
+        cu.actors.forEach { visitNode(it) }
     }
 
     open fun visitNode(node: AstNode) {
@@ -20,6 +21,8 @@ abstract class AstVisitor {
             is EnumMember -> visitEnumMember(node)
             is DataField -> visitDataField(node)
             is ActorMethod -> visitActorMethod(node)
+            is MethodParameter -> visitMethodParameter(node)
+            is Type -> visitType(node)
         }
     }
 
@@ -43,6 +46,7 @@ abstract class AstVisitor {
     }
 
     open fun visitDataField(field: DataField) {
+        visitNode(field.type)
     }
 
     open fun visitActorDeclaration(actor: ActorDeclaration) {
@@ -50,13 +54,23 @@ abstract class AstVisitor {
     }
 
     open fun visitActorMethod(method: ActorMethod) {
+        visitNode(method.returnType)
+        method.params.forEach { visitNode(it) }
     }
 
-    open fun addErrorListener(errorListener: ErrorListener) {
+    open fun visitMethodParameter(methodParameter: MethodParameter) {
+        visitNode(methodParameter.type)
+    }
+
+    open fun visitType(type: Type) {
+        type.of.forEach { visitNode(it) }
+    }
+
+    fun addErrorListener(errorListener: ErrorListener) {
         errorListeners.add(errorListener)
     }
 
-    open fun removeErrorListener(errorListener: ErrorListener) {
+    fun removeErrorListener(errorListener: ErrorListener) {
         errorListeners.remove(errorListener)
     }
 

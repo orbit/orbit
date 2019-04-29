@@ -24,6 +24,10 @@ buildscript {
         }
 
         maven {
+            url "$projectDir/../../src/dsl/orbit-dsl-typecheck/build/repo"
+        }
+
+        maven {
             url "$projectDir/../../src/plugins/orbit-gradle-plugin/build/repo"
         }
 
