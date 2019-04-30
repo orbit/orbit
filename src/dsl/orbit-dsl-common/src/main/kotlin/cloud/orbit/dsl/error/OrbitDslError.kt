@@ -4,8 +4,6 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.dsl
+package cloud.orbit.dsl.error
 
-import java.lang.RuntimeException
-
-class OrbitDslTypeCheckingException(val typeErrors: Collection<OrbitDslTypeError>) : RuntimeException()
+data class OrbitDslError(val filePath: String, val line: Int, val column: Int, val message: String)

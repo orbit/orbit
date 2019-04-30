@@ -9,6 +9,8 @@ package cloud.orbit.dsl
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.ast.TypeOccurrenceContext
+import cloud.orbit.dsl.error.OrbitDslCompilationException
+import cloud.orbit.dsl.error.OrbitDslError
 import cloud.orbit.dsl.visitor.ActorDeclarationVisitor
 import cloud.orbit.dsl.visitor.CompilationUnitBuilderVisitor
 import cloud.orbit.dsl.visitor.DataDeclarationVisitor
@@ -37,7 +39,7 @@ class OrbitDslFileParser {
 
     private fun checkSyntax(inputs: List<OrbitDslParseInput>) {
         val syntaxErrors = inputs.flatMap { input ->
-            val errorListener = CollectingErrorListener(input.filePath)
+            val errorListener = SyntaxErrorListener(input.filePath)
             val lexer = OrbitDslLexer(CharStreams.fromString(input.text))
             val parser = OrbitDslParser(CommonTokenStream(lexer)).also {
                 it.addErrorListener(errorListener)
@@ -49,7 +51,7 @@ class OrbitDslFileParser {
         }
 
         if (syntaxErrors.isNotEmpty()) {
-            throw OrbitDslParsingException(syntaxErrors)
+            throw OrbitDslCompilationException(syntaxErrors)
         }
     }
 
@@ -84,13 +86,13 @@ class OrbitDslFileParser {
                 actorDeclarationVisitor
             ).visitFile(parser.file())
         } catch (e: UnsupportedActorKeyTypeException) {
-            throw OrbitDslParsingException(
+            throw OrbitDslCompilationException(
                 listOf(
-                    OrbitDslSyntaxError(
+                    OrbitDslError(
                         input.filePath,
                         e.line,
                         e.column,
-                        e.message
+                        e.message!!
                     )
                 )
             )
