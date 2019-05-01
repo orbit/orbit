@@ -18,6 +18,10 @@ buildscript {
         }
 
         maven {
+            url "$projectDir/../../src/dsl/orbit-dsl-common/build/repo"
+        }
+
+        maven {
             url "$projectDir/../../src/dsl/orbit-dsl-java/build/repo"
         }
 
