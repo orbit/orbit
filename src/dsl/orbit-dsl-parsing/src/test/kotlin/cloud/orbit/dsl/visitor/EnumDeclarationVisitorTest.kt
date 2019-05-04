@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class EnumDeclarationVisitorTest {
-    private val visitor = EnumDeclarationVisitor(TestParseContextProvider)
+    private val visitor = EnumDeclarationVisitor(TestAstNodeContextProvider)
 
     @Test
     fun buildsEnumDeclaration() {

@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class TypeVisitorTest {
-    private val visitor = TypeVisitor(TestParseContextProvider)
+    private val visitor = TypeVisitor(TestAstNodeContextProvider)
 
     @Test
     fun buildsSimpleType() {

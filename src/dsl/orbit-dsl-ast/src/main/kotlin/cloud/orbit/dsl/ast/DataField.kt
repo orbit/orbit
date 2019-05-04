@@ -10,5 +10,5 @@ data class DataField(
     val name: String,
     val type: Type,
     val index: Int,
-    override val parseContext: ParseContext = ParseContext.NONE
+    override val context: AstNode.Context = AstNode.Context.NONE
 ) : AstNode

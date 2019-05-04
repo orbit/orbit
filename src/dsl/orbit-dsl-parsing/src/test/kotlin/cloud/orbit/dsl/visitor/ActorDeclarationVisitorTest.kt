@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class ActorDeclarationVisitorTest {
-    private val visitor = ActorDeclarationVisitor(TypeVisitor(TestParseContextProvider), TestParseContextProvider)
+    private val visitor = ActorDeclarationVisitor(TypeVisitor(TestAstNodeContextProvider), TestAstNodeContextProvider)
 
     @Test
     fun buildsKeylessActorDeclaration() {

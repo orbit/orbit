@@ -16,7 +16,7 @@ import cloud.orbit.dsl.ast.MethodParameter
 
 class ActorDeclarationVisitor(
     private val typeVisitor: TypeVisitor,
-    private val parseContextProvider: ParseContextProvider
+    private val contextProvider: AstNodeContextProvider
 ) : OrbitDslBaseVisitor<ActorDeclaration>() {
     override fun visitActorDeclaration(ctx: OrbitDslParser.ActorDeclarationContext) =
         ActorDeclaration(
@@ -34,14 +34,14 @@ class ActorDeclarationVisitor(
                                 MethodParameter(
                                     name = p.name.text,
                                     type = p.type().accept(typeVisitor),
-                                    parseContext = parseContextProvider.fromToken(p.name)
+                                    context = contextProvider.fromToken(p.name)
                                 )
                             }
                             .toList(),
-                        parseContext = parseContextProvider.fromToken(m.name))
+                        context = contextProvider.fromToken(m.name))
                 }
                 .toList(),
-            parseContext = parseContextProvider.fromToken(ctx.name))
+            context = contextProvider.fromToken(ctx.name))
 
     private fun TypeContext.toActorKeyType() =
         when (this.text) {

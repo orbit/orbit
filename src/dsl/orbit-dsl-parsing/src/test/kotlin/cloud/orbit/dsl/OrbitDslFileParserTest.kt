@@ -9,6 +9,7 @@ package cloud.orbit.dsl
 import cloud.orbit.dsl.ast.ActorDeclaration
 import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.ActorMethod
+import cloud.orbit.dsl.ast.AstNode
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.DataDeclaration
 import cloud.orbit.dsl.ast.DataField
@@ -69,10 +70,12 @@ class OrbitDslFileParserTest {
             CompilationUnit(
                 "package1", enums = listOf(
                     EnumDeclaration(
-                        parseContext = ParseContext(
-                            "/path/to/file1.orbit",
-                            line = 1,
-                            column = 5
+                        context = AstNode.Context(
+                            ParseContext(
+                                "/path/to/file1.orbit",
+                                line = 1,
+                                column = 5
+                            )
                         ),
                         name = "e"
                     )
@@ -85,10 +88,12 @@ class OrbitDslFileParserTest {
             CompilationUnit(
                 "package2", data = listOf(
                     DataDeclaration(
-                        parseContext = ParseContext(
-                            "/path/to/file2.orbit",
-                            line = 1,
-                            column = 5
+                        context = AstNode.Context(
+                            ParseContext(
+                                "/path/to/file2.orbit",
+                                line = 1,
+                                column = 5
+                            )
                         ),
                         name = "d"
                     )
@@ -101,10 +106,12 @@ class OrbitDslFileParserTest {
             CompilationUnit(
                 "package3", actors = listOf(
                     ActorDeclaration(
-                        parseContext = ParseContext(
-                            "/path/to/file3.orbit",
-                            line = 1,
-                            column = 6
+                        context = AstNode.Context(
+                            ParseContext(
+                                "/path/to/file3.orbit",
+                                line = 1,
+                                column = 6
+                            )
                         ),
                         name = "a"
                     )
@@ -162,36 +169,44 @@ class OrbitDslFileParserTest {
             testPackageName,
             enums = listOf(
                 EnumDeclaration(
-                    parseContext = ParseContext(
-                        filePath = testFilePath,
-                        line = 2,
-                        column = 5
+                    context = AstNode.Context(
+                        ParseContext(
+                            filePath = testFilePath,
+                            line = 2,
+                            column = 5
+                        )
                     ),
                     name = "RGB",
                     members = listOf(
                         EnumMember(
-                            parseContext = ParseContext(
-                                filePath = testFilePath,
-                                line = 4,
-                                column = 4
+                            context = AstNode.Context(
+                                ParseContext(
+                                    filePath = testFilePath,
+                                    line = 4,
+                                    column = 4
+                                )
                             ),
                             name = "R",
                             index = 1
                         ),
                         EnumMember(
-                            parseContext = ParseContext(
-                                filePath = testFilePath,
-                                line = 5,
-                                column = 4
+                            context = AstNode.Context(
+                                ParseContext(
+                                    filePath = testFilePath,
+                                    line = 5,
+                                    column = 4
+                                )
                             ),
                             name = "G",
                             index = 2
                         ),
                         EnumMember(
-                            parseContext = ParseContext(
-                                filePath = testFilePath,
-                                line = 6,
-                                column = 4
+                            context = AstNode.Context(
+                                ParseContext(
+                                    filePath = testFilePath,
+                                    line = 6,
+                                    column = 4
+                                )
                             ),
                             name = "B",
                             index = 3
@@ -201,42 +216,52 @@ class OrbitDslFileParserTest {
             ),
             data = listOf(
                 DataDeclaration(
-                    parseContext = ParseContext(
-                        filePath = testFilePath,
-                        line = 9,
-                        column = 5
+                    context = AstNode.Context(
+                        ParseContext(
+                            filePath = testFilePath,
+                            line = 9,
+                            column = 5
+                        )
                     ),
                     name = "Payload",
                     fields = listOf(
                         DataField(
-                            parseContext = ParseContext(
-                                filePath = testFilePath,
-                                line = 10,
-                                column = 8
+                            context = AstNode.Context(
+                                ParseContext(
+                                    filePath = testFilePath,
+                                    line = 10,
+                                    column = 8
+                                )
                             ),
                             name = "field1",
                             type = Type(
-                                parseContext = ParseContext(
-                                    filePath = testFilePath,
-                                    line = 10,
-                                    column = 4
+                                context = AstNode.Context(
+                                    ParseContext(
+                                        filePath = testFilePath,
+                                        line = 10,
+                                        column = 4
+                                    )
                                 ),
                                 name = "int"
                             ),
                             index = 1
                         ),
                         DataField(
-                            parseContext = ParseContext(
-                                filePath = testFilePath,
-                                line = 12,
-                                column = 8
+                            context = AstNode.Context(
+                                ParseContext(
+                                    filePath = testFilePath,
+                                    line = 12,
+                                    column = 8
+                                )
                             ),
                             name = "field2",
                             type = Type(
-                                parseContext = ParseContext(
-                                    filePath = testFilePath,
-                                    line = 12,
-                                    column = 4
+                                context = AstNode.Context(
+                                    ParseContext(
+                                        filePath = testFilePath,
+                                        line = 12,
+                                        column = 4
+                                    )
                                 ),
                                 name = "RGB"
                             ),
@@ -247,58 +272,72 @@ class OrbitDslFileParserTest {
             ),
             actors = listOf(
                 ActorDeclaration(
-                    parseContext = ParseContext(
-                        filePath = testFilePath,
-                        line = 19,
-                        column = 6
+                    context = AstNode.Context(
+                        ParseContext(
+                            filePath = testFilePath,
+                            line = 19,
+                            column = 6
+                        )
                     ),
                     name = "MyActor",
                     keyType = ActorKeyType.NO_KEY,
                     methods = listOf(
                         ActorMethod(
-                            parseContext = ParseContext(
-                                filePath = testFilePath,
-                                line = 21,
-                                column = 8
+                            context = AstNode.Context(
+                                ParseContext(
+                                    filePath = testFilePath,
+                                    line = 21,
+                                    column = 8
+                                )
                             ),
                             name = "no_args",
                             returnType = Type(
-                                parseContext = ParseContext(
-                                    filePath = testFilePath,
-                                    line = 21,
-                                    column = 4
+                                context = AstNode.Context(
+                                    ParseContext(
+                                        filePath = testFilePath,
+                                        line = 21,
+                                        column = 4
+                                    )
                                 ),
                                 name = "int"
                             )
                         ),
                         ActorMethod(
-                            parseContext = ParseContext(
-                                filePath = testFilePath,
-                                line = 22,
-                                column = 9
+                            context = AstNode.Context(
+                                ParseContext(
+                                    filePath = testFilePath,
+                                    line = 22,
+                                    column = 9
+                                )
                             ),
                             name = "one_arg",
                             returnType = Type(
-                                parseContext = ParseContext(
-                                    filePath = testFilePath,
-                                    line = 22,
-                                    column = 4
+                                context = AstNode.Context(
+                                    ParseContext(
+                                        filePath = testFilePath,
+                                        line = 22,
+                                        column = 4
+                                    )
                                 ),
                                 name = "void"
                             ),
                             params = listOf(
                                 MethodParameter(
-                                    parseContext = ParseContext(
-                                        filePath = testFilePath,
-                                        line = 22,
-                                        column = 21
+                                    context = AstNode.Context(
+                                        ParseContext(
+                                            filePath = testFilePath,
+                                            line = 22,
+                                            column = 21
+                                        )
                                     ),
                                     name = "a",
                                     type = Type(
-                                        parseContext = ParseContext(
-                                            filePath = testFilePath,
-                                            line = 22,
-                                            column = 17
+                                        context = AstNode.Context(
+                                            ParseContext(
+                                                filePath = testFilePath,
+                                                line = 22,
+                                                column = 17
+                                            )
                                         ),
                                         name = "RGB"
                                     )
@@ -306,49 +345,61 @@ class OrbitDslFileParserTest {
                             )
                         ),
                         ActorMethod(
-                            parseContext = ParseContext(
-                                filePath = testFilePath,
-                                line = 23,
-                                column = 8
+                            context = AstNode.Context(
+                                ParseContext(
+                                    filePath = testFilePath,
+                                    line = 23,
+                                    column = 8
+                                )
                             ),
                             name = "multiple_args",
                             returnType = Type(
-                                parseContext = ParseContext(
-                                    filePath = testFilePath,
-                                    line = 23,
-                                    column = 4
+                                context = AstNode.Context(
+                                    ParseContext(
+                                        filePath = testFilePath,
+                                        line = 23,
+                                        column = 4
+                                    )
                                 ),
                                 name = "RGB"
                             ),
                             params = listOf(
                                 MethodParameter(
-                                    parseContext = ParseContext(
-                                        filePath = testFilePath,
-                                        line = 23,
-                                        column = 26
+                                    context = AstNode.Context(
+                                        ParseContext(
+                                            filePath = testFilePath,
+                                            line = 23,
+                                            column = 26
+                                        )
                                     ),
                                     name = "arg1",
                                     type = Type(
-                                        parseContext = ParseContext(
-                                            filePath = testFilePath,
-                                            line = 23,
-                                            column = 22
+                                        context = AstNode.Context(
+                                            ParseContext(
+                                                filePath = testFilePath,
+                                                line = 23,
+                                                column = 22
+                                            )
                                         ),
                                         name = "RGB"
                                     )
                                 ),
                                 MethodParameter(
-                                    parseContext = ParseContext(
-                                        filePath = testFilePath,
-                                        line = 23,
-                                        column = 36
+                                    context = AstNode.Context(
+                                        ParseContext(
+                                            filePath = testFilePath,
+                                            line = 23,
+                                            column = 36
+                                        )
                                     ),
                                     name = "arg2",
                                     type = Type(
-                                        parseContext = ParseContext(
-                                            filePath = testFilePath,
-                                            line = 23,
-                                            column = 32
+                                        context = AstNode.Context(
+                                            ParseContext(
+                                                filePath = testFilePath,
+                                                line = 23,
+                                                column = 32
+                                            )
                                         ),
                                         name = "RGB"
                                     )
@@ -356,25 +407,31 @@ class OrbitDslFileParserTest {
                             )
                         ),
                         ActorMethod(
-                            parseContext = ParseContext(
-                                filePath = testFilePath,
-                                line = 25,
-                                column = 17
+                            context = AstNode.Context(
+                                ParseContext(
+                                    filePath = testFilePath,
+                                    line = 25,
+                                    column = 17
+                                )
                             ),
                             name = "generic_return",
                             returnType = Type(
-                                parseContext = ParseContext(
-                                    filePath = testFilePath,
-                                    line = 25,
-                                    column = 4
+                                context = AstNode.Context(
+                                    ParseContext(
+                                        filePath = testFilePath,
+                                        line = 25,
+                                        column = 4
+                                    )
                                 ),
                                 name = "list",
                                 of = listOf(
                                     Type(
-                                        parseContext = ParseContext(
-                                            filePath = testFilePath,
-                                            line = 25,
-                                            column = 9
+                                        context = AstNode.Context(
+                                            ParseContext(
+                                                filePath = testFilePath,
+                                                line = 25,
+                                                column = 9
+                                            )
                                         ),
                                         name = "string"
                                     )
@@ -382,40 +439,50 @@ class OrbitDslFileParserTest {
                             )
                         ),
                         ActorMethod(
-                            parseContext = ParseContext(
-                                filePath = testFilePath,
-                                line = 26,
-                                column = 9
+                            context = AstNode.Context(
+                                ParseContext(
+                                    filePath = testFilePath,
+                                    line = 26,
+                                    column = 9
+                                )
                             ),
                             name = "generic_arg",
                             returnType = Type(
-                                parseContext = ParseContext(
-                                    filePath = testFilePath,
-                                    line = 26,
-                                    column = 4
+                                context = AstNode.Context(
+                                    ParseContext(
+                                        filePath = testFilePath,
+                                        line = 26,
+                                        column = 4
+                                    )
                                 ),
                                 name = "void"
                             ),
                             params = listOf(
                                 MethodParameter(
-                                    parseContext = ParseContext(
-                                        filePath = testFilePath,
-                                        line = 26,
-                                        column = 31
+                                    context = AstNode.Context(
+                                        ParseContext(
+                                            filePath = testFilePath,
+                                            line = 26,
+                                            column = 31
+                                        )
                                     ),
                                     name = "arg1",
                                     type = Type(
-                                        parseContext = ParseContext(
-                                            filePath = testFilePath,
-                                            line = 26,
-                                            column = 21
+                                        context = AstNode.Context(
+                                            ParseContext(
+                                                filePath = testFilePath,
+                                                line = 26,
+                                                column = 21
+                                            )
                                         ),
                                         name = "list", of = listOf(
                                             Type(
-                                                parseContext = ParseContext(
-                                                    filePath = testFilePath,
-                                                    line = 26,
-                                                    column = 26
+                                                context = AstNode.Context(
+                                                    ParseContext(
+                                                        filePath = testFilePath,
+                                                        line = 26,
+                                                        column = 26
+                                                    )
                                                 ),
                                                 name = "int"
                                             )
@@ -425,33 +492,41 @@ class OrbitDslFileParserTest {
                             )
                         ),
                         ActorMethod(
-                            parseContext = ParseContext(
-                                filePath = testFilePath,
-                                line = 27,
-                                column = 21
+                            context = AstNode.Context(
+                                ParseContext(
+                                    filePath = testFilePath,
+                                    line = 27,
+                                    column = 21
+                                )
                             ),
                             name = "generic_multi",
                             returnType = Type(
-                                parseContext = ParseContext(
-                                    filePath = testFilePath,
-                                    line = 27,
-                                    column = 4
+                                context = AstNode.Context(
+                                    ParseContext(
+                                        filePath = testFilePath,
+                                        line = 27,
+                                        column = 4
+                                    )
                                 ),
                                 name = "map",
                                 of = listOf(
                                     Type(
-                                        parseContext = ParseContext(
-                                            filePath = testFilePath,
-                                            line = 27,
-                                            column = 8
+                                        context = AstNode.Context(
+                                            ParseContext(
+                                                filePath = testFilePath,
+                                                line = 27,
+                                                column = 8
+                                            )
                                         ),
                                         name = "RGB"
                                     ),
                                     Type(
-                                        parseContext = ParseContext(
-                                            filePath = testFilePath,
-                                            line = 27,
-                                            column = 13
+                                        context = AstNode.Context(
+                                            ParseContext(
+                                                filePath = testFilePath,
+                                                line = 27,
+                                                column = 13
+                                            )
                                         ),
                                         name = "string"
                                     )
@@ -459,33 +534,41 @@ class OrbitDslFileParserTest {
                             ),
                             params = listOf(
                                 MethodParameter(
-                                    parseContext = ParseContext(
-                                        filePath = testFilePath,
-                                        line = 27,
-                                        column = 56
+                                    context = AstNode.Context(
+                                        ParseContext(
+                                            filePath = testFilePath,
+                                            line = 27,
+                                            column = 56
+                                        )
                                     ),
                                     name = "arg1",
                                     type = Type(
-                                        parseContext = ParseContext(
-                                            filePath = testFilePath,
-                                            line = 27,
-                                            column = 35
+                                        context = AstNode.Context(
+                                            ParseContext(
+                                                filePath = testFilePath,
+                                                line = 27,
+                                                column = 35
+                                            )
                                         ),
                                         name = "map",
                                         of = listOf(
                                             Type(
-                                                parseContext = ParseContext(
-                                                    filePath = testFilePath,
-                                                    line = 27,
-                                                    column = 39
+                                                context = AstNode.Context(
+                                                    ParseContext(
+                                                        filePath = testFilePath,
+                                                        line = 27,
+                                                        column = 39
+                                                    )
                                                 ),
                                                 name = "string"
                                             ),
                                             Type(
-                                                parseContext = ParseContext(
-                                                    filePath = testFilePath,
-                                                    line = 27,
-                                                    column = 47
+                                                context = AstNode.Context(
+                                                    ParseContext(
+                                                        filePath = testFilePath,
+                                                        line = 27,
+                                                        column = 47
+                                                    )
                                                 ),
                                                 name = "Payload"
                                             )
@@ -495,41 +578,51 @@ class OrbitDslFileParserTest {
                             )
                         ),
                         ActorMethod(
-                            parseContext = ParseContext(
-                                filePath = testFilePath,
-                                line = 28,
-                                column = 27
+                            context = AstNode.Context(
+                                ParseContext(
+                                    filePath = testFilePath,
+                                    line = 28,
+                                    column = 27
+                                )
                             ),
                             name = "generics_nested",
                             returnType = Type(
-                                parseContext = ParseContext(
-                                    filePath = testFilePath,
-                                    line = 28,
-                                    column = 4
+                                context = AstNode.Context(
+                                    ParseContext(
+                                        filePath = testFilePath,
+                                        line = 28,
+                                        column = 4
+                                    )
                                 ),
                                 name = "list",
                                 of = listOf(
                                     Type(
-                                        parseContext = ParseContext(
-                                            filePath = testFilePath,
-                                            line = 28,
-                                            column = 9
+                                        context = AstNode.Context(
+                                            ParseContext(
+                                                filePath = testFilePath,
+                                                line = 28,
+                                                column = 9
+                                            )
                                         ),
                                         name = "map",
                                         of = listOf(
                                             Type(
-                                                parseContext = ParseContext(
-                                                    filePath = testFilePath,
-                                                    line = 28,
-                                                    column = 13
+                                                context = AstNode.Context(
+                                                    ParseContext(
+                                                        filePath = testFilePath,
+                                                        line = 28,
+                                                        column = 13
+                                                    )
                                                 ),
                                                 name = "string"
                                             ),
                                             Type(
-                                                parseContext = ParseContext(
-                                                    filePath = testFilePath,
-                                                    line = 28,
-                                                    column = 21
+                                                context = AstNode.Context(
+                                                    ParseContext(
+                                                        filePath = testFilePath,
+                                                        line = 28,
+                                                        column = 21
+                                                    )
                                                 ),
                                                 name = "RGB"
                                             )
@@ -539,49 +632,61 @@ class OrbitDslFileParserTest {
                             ),
                             params = listOf(
                                 MethodParameter(
-                                    parseContext = ParseContext(
-                                        filePath = testFilePath,
-                                        line = 28,
-                                        column = 76
+                                    context = AstNode.Context(
+                                        ParseContext(
+                                            filePath = testFilePath,
+                                            line = 28,
+                                            column = 76
+                                        )
                                     ),
                                     name = "arg1",
                                     type = Type(
-                                        parseContext = ParseContext(
-                                            filePath = testFilePath,
-                                            line = 28,
-                                            column = 43
+                                        context = AstNode.Context(
+                                            ParseContext(
+                                                filePath = testFilePath,
+                                                line = 28,
+                                                column = 43
+                                            )
                                         ),
                                         name = "map",
                                         of = listOf(
                                             Type(
-                                                parseContext = ParseContext(
-                                                    filePath = testFilePath,
-                                                    line = 28,
-                                                    column = 47
+                                                context = AstNode.Context(
+                                                    ParseContext(
+                                                        filePath = testFilePath,
+                                                        line = 28,
+                                                        column = 47
+                                                    )
                                                 ),
                                                 name = "string"
                                             ),
                                             Type(
-                                                parseContext = ParseContext(
-                                                    filePath = testFilePath,
-                                                    line = 28,
-                                                    column = 55
+                                                context = AstNode.Context(
+                                                    ParseContext(
+                                                        filePath = testFilePath,
+                                                        line = 28,
+                                                        column = 55
+                                                    )
                                                 ),
                                                 name = "list",
                                                 of = listOf(
                                                     Type(
-                                                        parseContext = ParseContext(
-                                                            filePath = testFilePath,
-                                                            line = 28,
-                                                            column = 60
+                                                        context = AstNode.Context(
+                                                            ParseContext(
+                                                                filePath = testFilePath,
+                                                                line = 28,
+                                                                column = 60
+                                                            )
                                                         ),
                                                         name = "list",
                                                         of = listOf(
                                                             Type(
-                                                                parseContext = ParseContext(
-                                                                    filePath = testFilePath,
-                                                                    line = 28,
-                                                                    column = 65
+                                                                context = AstNode.Context(
+                                                                    ParseContext(
+                                                                        filePath = testFilePath,
+                                                                        line = 28,
+                                                                        column = 65
+                                                                    )
                                                                 ),
                                                                 name = "Payload"
                                                             )
@@ -597,46 +702,56 @@ class OrbitDslFileParserTest {
                     )
                 ),
                 ActorDeclaration(
-                    parseContext = ParseContext(
-                        filePath = testFilePath,
-                        line = 31,
-                        column = 6
+                    context = AstNode.Context(
+                        ParseContext(
+                            filePath = testFilePath,
+                            line = 31,
+                            column = 6
+                        )
                     ),
                     name = "MyKeylessActor",
                     keyType = ActorKeyType.NO_KEY
                 ),
                 ActorDeclaration(
-                    parseContext = ParseContext(
-                        filePath = testFilePath,
-                        line = 33,
-                        column = 6
+                    context = AstNode.Context(
+                        ParseContext(
+                            filePath = testFilePath,
+                            line = 33,
+                            column = 6
+                        )
                     ),
                     name = "MyStringKeyedActor",
                     keyType = ActorKeyType.STRING
                 ),
                 ActorDeclaration(
-                    parseContext = ParseContext(
-                        filePath = testFilePath,
-                        line = 35,
-                        column = 6
+                    context = AstNode.Context(
+                        ParseContext(
+                            filePath = testFilePath,
+                            line = 35,
+                            column = 6
+                        )
                     ),
                     name = "MyInt32KeyedActor",
                     keyType = ActorKeyType.INT32
                 ),
                 ActorDeclaration(
-                    parseContext = ParseContext(
-                        filePath = testFilePath,
-                        line = 37,
-                        column = 6
+                    context = AstNode.Context(
+                        ParseContext(
+                            filePath = testFilePath,
+                            line = 37,
+                            column = 6
+                        )
                     ),
                     name = "MyInt64KeyedActor",
                     keyType = ActorKeyType.INT64
                 ),
                 ActorDeclaration(
-                    parseContext = ParseContext(
-                        filePath = testFilePath,
-                        line = 39,
-                        column = 6
+                    context = AstNode.Context(
+                        ParseContext(
+                            filePath = testFilePath,
+                            line = 39,
+                            column = 6
+                        )
                     ),
                     name = "MyGuidKeyedActor",
                     keyType = ActorKeyType.GUID

@@ -9,5 +9,5 @@ package cloud.orbit.dsl.ast
 data class MethodParameter(
     val name: String,
     val type: Type,
-    override val parseContext: ParseContext = ParseContext.NONE
+    override val context: AstNode.Context = AstNode.Context.NONE
 ) : AstNode

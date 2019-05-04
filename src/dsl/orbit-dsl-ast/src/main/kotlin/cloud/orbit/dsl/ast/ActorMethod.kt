@@ -10,5 +10,5 @@ data class ActorMethod(
     val name: String,
     val returnType: Type,
     val params: List<MethodParameter> = emptyList(),
-    override val parseContext: ParseContext = ParseContext.NONE
+    override val context: AstNode.Context = AstNode.Context.NONE
 ) : AstNode

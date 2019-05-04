@@ -9,5 +9,5 @@ package cloud.orbit.dsl.ast
 data class EnumDeclaration(
     override val name: String,
     val members: List<EnumMember> = emptyList(),
-    override val parseContext: ParseContext = ParseContext.NONE
+    override val context: AstNode.Context = AstNode.Context.NONE
 ) : Declaration

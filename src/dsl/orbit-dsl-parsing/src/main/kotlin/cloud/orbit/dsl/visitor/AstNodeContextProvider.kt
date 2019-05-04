@@ -6,9 +6,9 @@
 
 package cloud.orbit.dsl.visitor
 
-import cloud.orbit.dsl.ast.ParseContext
+import cloud.orbit.dsl.ast.AstNode
 import org.antlr.v4.runtime.Token
 
-interface ParseContextProvider {
-    fun fromToken(token: Token): ParseContext
+interface AstNodeContextProvider {
+    fun fromToken(token: Token): AstNode.Context
 }

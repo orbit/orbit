@@ -7,5 +7,11 @@
 package cloud.orbit.dsl.ast
 
 interface AstNode {
-    val parseContext: ParseContext
+    val context: Context
+
+    data class Context(val parseContext: ParseContext) {
+        companion object {
+            val NONE = Context(ParseContext.NONE)
+        }
+    }
 }

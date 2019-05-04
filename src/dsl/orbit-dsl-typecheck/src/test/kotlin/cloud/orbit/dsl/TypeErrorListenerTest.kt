@@ -6,6 +6,7 @@
 
 package cloud.orbit.dsl
 
+import cloud.orbit.dsl.ast.AstNode
 import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.ast.Type
 import cloud.orbit.dsl.error.OrbitDslError
@@ -19,10 +20,12 @@ class TypeErrorListenerTest {
         typeErrorListener.onError(
             Type(
                 "t",
-                parseContext = ParseContext(
-                    "path/to/file.orbit",
-                    line = 2,
-                    column = 17
+                context = AstNode.Context(
+                    ParseContext(
+                        "path/to/file.orbit",
+                        line = 2,
+                        column = 17
+                    )
                 )
             ),
             "error here"

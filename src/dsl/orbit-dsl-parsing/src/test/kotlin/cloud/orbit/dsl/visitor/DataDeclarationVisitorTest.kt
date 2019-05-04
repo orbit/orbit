@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class DataDeclarationVisitorTest {
-    private val visitor = DataDeclarationVisitor(TypeVisitor(TestParseContextProvider), TestParseContextProvider)
+    private val visitor = DataDeclarationVisitor(TypeVisitor(TestAstNodeContextProvider), TestAstNodeContextProvider)
 
     @Test
     fun buildsDataDeclaration() {

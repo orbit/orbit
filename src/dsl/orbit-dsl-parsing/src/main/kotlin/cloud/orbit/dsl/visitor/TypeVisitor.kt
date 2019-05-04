@@ -11,7 +11,7 @@ import cloud.orbit.dsl.OrbitDslParser
 import cloud.orbit.dsl.ast.Type
 
 class TypeVisitor(
-    private val parseContextProvider: ParseContextProvider
+    private val contextProvider: AstNodeContextProvider
 ) : OrbitDslBaseVisitor<Type>() {
     override fun visitType(ctx: OrbitDslParser.TypeContext) =
         Type(
@@ -20,6 +20,6 @@ class TypeVisitor(
                 .filterIsInstance(OrbitDslParser.TypeContext::class.java)
                 .map { it.accept(this) }
                 .toList(),
-            parseContext = parseContextProvider.fromToken(ctx.name)
+            context = contextProvider.fromToken(ctx.name)
         )
 }

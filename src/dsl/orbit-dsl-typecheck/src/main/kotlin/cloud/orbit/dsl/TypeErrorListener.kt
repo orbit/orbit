@@ -8,7 +8,6 @@ package cloud.orbit.dsl
 
 import cloud.orbit.dsl.ast.AstNode
 import cloud.orbit.dsl.ast.error.ErrorListener
-import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.error.OrbitDslError
 
 class TypeErrorListener : ErrorListener {
@@ -17,9 +16,9 @@ class TypeErrorListener : ErrorListener {
     override fun onError(astNode: AstNode, message: String) {
         typeErrors.add(
             OrbitDslError(
-                astNode.parseContext.filePath,
-                astNode.parseContext.line,
-                astNode.parseContext.column,
+                astNode.context.parseContext.filePath,
+                astNode.context.parseContext.line,
+                astNode.context.parseContext.column,
                 message
             )
         )

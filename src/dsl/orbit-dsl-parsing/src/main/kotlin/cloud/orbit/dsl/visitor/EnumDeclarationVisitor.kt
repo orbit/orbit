@@ -12,7 +12,7 @@ import cloud.orbit.dsl.ast.EnumDeclaration
 import cloud.orbit.dsl.ast.EnumMember
 
 class EnumDeclarationVisitor(
-    private val parseContextProvider: ParseContextProvider
+    private val contextProvider: AstNodeContextProvider
 ) : OrbitDslBaseVisitor<EnumDeclaration>() {
     override fun visitEnumDeclaration(ctx: OrbitDslParser.EnumDeclarationContext) =
         EnumDeclaration(
@@ -23,9 +23,9 @@ class EnumDeclarationVisitor(
                     EnumMember(
                         name = it.name.text,
                         index = it.index.text.toInt(),
-                        parseContext = parseContextProvider.fromToken(it.name)
+                        context = contextProvider.fromToken(it.name)
                     )
                 }
                 .toList(),
-            parseContext = parseContextProvider.fromToken(ctx.name))
+            context = contextProvider.fromToken(ctx.name))
 }

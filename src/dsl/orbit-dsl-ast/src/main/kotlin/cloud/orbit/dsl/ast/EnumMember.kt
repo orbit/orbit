@@ -9,5 +9,5 @@ package cloud.orbit.dsl.ast
 data class EnumMember(
     val name: String,
     val index: Int,
-    override val parseContext: ParseContext = ParseContext.NONE
+    override val context: AstNode.Context = AstNode.Context.NONE
 ) : AstNode
