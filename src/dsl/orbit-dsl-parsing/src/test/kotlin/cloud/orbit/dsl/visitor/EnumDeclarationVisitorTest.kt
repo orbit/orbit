@@ -9,12 +9,11 @@ package cloud.orbit.dsl.visitor
 import cloud.orbit.dsl.OrbitDslParser
 import cloud.orbit.dsl.ast.EnumDeclaration
 import cloud.orbit.dsl.ast.EnumMember
-import cloud.orbit.dsl.ast.ParseContext
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class EnumDeclarationVisitorTest {
-    private val visitor = EnumDeclarationVisitor(FakeParseContextProvider)
+    private val visitor = EnumDeclarationVisitor(TestParseContextProvider)
 
     @Test
     fun buildsEnumDeclaration() {
@@ -41,33 +40,6 @@ class EnumDeclarationVisitorTest {
                 """,
                 OrbitDslParser::enumDeclaration
             )
-        )
-    }
-
-    @Test
-    fun annotatesEnumDeclarationWithParseContext() {
-        val enumDeclaration = visitor.parse("enum enum1 { }", OrbitDslParser::enumDeclaration)
-
-        Assertions.assertEquals(
-            FakeParseContextProvider.fakeParseContext,
-            enumDeclaration.getAnnotation<ParseContext>()
-        )
-    }
-
-    @Test
-    fun annotatesEnumMemberWithParseContext() {
-        val enumDeclaration = visitor.parse(
-            """
-            enum enum1 {
-                MEMBER = 1;
-            }
-            """,
-            OrbitDslParser::enumDeclaration
-        )
-
-        Assertions.assertEquals(
-            FakeParseContextProvider.fakeParseContext,
-            enumDeclaration.members[0].getAnnotation<ParseContext>()
         )
     }
 }

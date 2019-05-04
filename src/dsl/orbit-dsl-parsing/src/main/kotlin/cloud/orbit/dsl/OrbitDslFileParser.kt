@@ -8,7 +8,6 @@ package cloud.orbit.dsl
 
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.ParseContext
-import cloud.orbit.dsl.ast.TypeOccurrenceContext
 import cloud.orbit.dsl.error.OrbitDslCompilationException
 import cloud.orbit.dsl.error.OrbitDslError
 import cloud.orbit.dsl.visitor.ActorDeclarationVisitor
@@ -66,17 +65,10 @@ class OrbitDslFileParser {
                 ParseContext(input.filePath, token.line, token.charPositionInLine)
         }
 
-        val typeParameterVisitor = TypeVisitor(TypeOccurrenceContext.TYPE_PARAMETER, parseContextProvider)
+        val typeVisitor = TypeVisitor(parseContextProvider)
         val enumDeclarationVisitor = EnumDeclarationVisitor(parseContextProvider)
-        val dataDeclarationVisitor = DataDeclarationVisitor(
-            TypeVisitor(TypeOccurrenceContext.DATA_FIELD, typeParameterVisitor, parseContextProvider),
-            parseContextProvider
-        )
-        val actorDeclarationVisitor = ActorDeclarationVisitor(
-            TypeVisitor(TypeOccurrenceContext.METHOD_RETURN, typeParameterVisitor, parseContextProvider),
-            TypeVisitor(TypeOccurrenceContext.METHOD_PARAMETER, typeParameterVisitor, parseContextProvider),
-            parseContextProvider
-        )
+        val dataDeclarationVisitor = DataDeclarationVisitor(typeVisitor, parseContextProvider)
+        val actorDeclarationVisitor = ActorDeclarationVisitor(typeVisitor, parseContextProvider)
 
         try {
             return CompilationUnitBuilderVisitor(

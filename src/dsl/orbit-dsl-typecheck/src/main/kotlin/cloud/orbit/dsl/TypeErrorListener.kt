@@ -7,7 +7,7 @@
 package cloud.orbit.dsl
 
 import cloud.orbit.dsl.ast.AstNode
-import cloud.orbit.dsl.ast.ErrorListener
+import cloud.orbit.dsl.ast.error.ErrorListener
 import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.error.OrbitDslError
 
@@ -15,12 +15,11 @@ class TypeErrorListener : ErrorListener {
     val typeErrors = mutableListOf<OrbitDslError>()
 
     override fun onError(astNode: AstNode, message: String) {
-        val parseContext = astNode.getAnnotation() ?: ParseContext.UNKNOWN
         typeErrors.add(
             OrbitDslError(
-                parseContext.filePath,
-                parseContext.line,
-                parseContext.column,
+                astNode.parseContext.filePath,
+                astNode.parseContext.line,
+                astNode.parseContext.column,
                 message
             )
         )

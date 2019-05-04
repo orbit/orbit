@@ -10,24 +10,24 @@ import cloud.orbit.dsl.OrbitDslBaseVisitor
 import cloud.orbit.dsl.OrbitDslParser
 import cloud.orbit.dsl.ast.DataDeclaration
 import cloud.orbit.dsl.ast.DataField
-import cloud.orbit.dsl.ast.annotated
 
 class DataDeclarationVisitor(
-    private val dataFieldTypeVisitor: TypeVisitor,
+    private val typeVisitor: TypeVisitor,
     private val parseContextProvider: ParseContextProvider
 ) : OrbitDslBaseVisitor<DataDeclaration>() {
-    override fun visitDataDeclaration(ctx: OrbitDslParser.DataDeclarationContext?) =
+    override fun visitDataDeclaration(ctx: OrbitDslParser.DataDeclarationContext) =
         DataDeclaration(
-            ctx!!.name.text,
-            ctx.children
+            name = ctx.name.text,
+            fields = ctx.children
                 .filterIsInstance(OrbitDslParser.DataFieldContext::class.java)
                 .map {
                     DataField(
-                        it.name.text,
-                        it.type().accept(dataFieldTypeVisitor),
-                        it.index.text.toInt()
-                    ).annotated(parseContextProvider.fromToken(it.name))
+                        name = it.name.text,
+                        type = it.type().accept(typeVisitor),
+                        index = it.index.text.toInt(),
+                        parseContext = parseContextProvider.fromToken(it.name)
+                    )
                 }
-                .toList())
-            .annotated(parseContextProvider.fromToken(ctx.name))
+                .toList(),
+            parseContext = parseContextProvider.fromToken(ctx.name))
 }

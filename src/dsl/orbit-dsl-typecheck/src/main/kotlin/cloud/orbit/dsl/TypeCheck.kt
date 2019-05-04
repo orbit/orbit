@@ -6,24 +6,27 @@
 
 package cloud.orbit.dsl
 
-import cloud.orbit.dsl.ast.AstVisitor
 import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.error.ErrorReporter
 
 /**
- * A type check for a single [Type] AST node.
+ * A type check.
  *
- * Derived classes should not visit type parameters. The invoking [TypeCheckingVisitor] is responsible for that.
- *
+ * Implementations are not required to visit type parameters.
  */
-abstract class TypeCheck : AstVisitor() {
+interface TypeCheck {
     /**
      * Runs a check against a type.
      *
      * @param type the type to check.
+     * @param context the context in which this type is being used (e.g. as a data field type).
      */
-    abstract fun check(type: Type)
+    fun check(type: Type, context: Context, errorReporter: ErrorReporter)
 
-    override fun visitType(type: Type) {
-        check(type)
+    enum class Context {
+        DATA_FIELD,
+        METHOD_RETURN,
+        METHOD_PARAMETER,
+        TYPE_PARAMETER
     }
 }

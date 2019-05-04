@@ -10,20 +10,22 @@ import cloud.orbit.dsl.OrbitDslBaseVisitor
 import cloud.orbit.dsl.OrbitDslParser
 import cloud.orbit.dsl.ast.EnumDeclaration
 import cloud.orbit.dsl.ast.EnumMember
-import cloud.orbit.dsl.ast.annotated
 
 class EnumDeclarationVisitor(
     private val parseContextProvider: ParseContextProvider
 ) : OrbitDslBaseVisitor<EnumDeclaration>() {
-    override fun visitEnumDeclaration(ctx: OrbitDslParser.EnumDeclarationContext?) =
+    override fun visitEnumDeclaration(ctx: OrbitDslParser.EnumDeclarationContext) =
         EnumDeclaration(
-            ctx!!.name.text,
-            ctx.children
+            name = ctx.name.text,
+            members = ctx.children
                 .filterIsInstance(OrbitDslParser.EnumMemberContext::class.java)
                 .map {
-                    EnumMember(it.name.text, it.index.text.toInt())
-                        .annotated(parseContextProvider.fromToken(it.name))
+                    EnumMember(
+                        name = it.name.text,
+                        index = it.index.text.toInt(),
+                        parseContext = parseContextProvider.fromToken(it.name)
+                    )
                 }
-                .toList())
-            .annotated(parseContextProvider.fromToken(ctx.name))
+                .toList(),
+            parseContext = parseContextProvider.fromToken(ctx.name))
 }

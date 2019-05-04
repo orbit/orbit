@@ -4,7 +4,9 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.dsl.ast
+package cloud.orbit.dsl.ast.error
+
+import cloud.orbit.dsl.ast.AstNode
 
 interface ErrorListener {
     fun onError(astNode: AstNode, message: String)

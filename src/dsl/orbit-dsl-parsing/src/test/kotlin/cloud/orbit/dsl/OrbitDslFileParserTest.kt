@@ -17,7 +17,6 @@ import cloud.orbit.dsl.ast.EnumMember
 import cloud.orbit.dsl.ast.MethodParameter
 import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.ast.Type
-import cloud.orbit.dsl.ast.TypeOccurrenceContext
 import cloud.orbit.dsl.error.OrbitDslCompilationException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -68,26 +67,55 @@ class OrbitDslFileParserTest {
 
         assertEquals(
             CompilationUnit(
-                "package1", enums = listOf(EnumDeclaration("e"))
+                "package1", enums = listOf(
+                    EnumDeclaration(
+                        parseContext = ParseContext(
+                            "/path/to/file1.orbit",
+                            line = 1,
+                            column = 5
+                        ),
+                        name = "e"
+                    )
+                )
             ),
             compilationUnits[0]
         )
+
         assertEquals(
             CompilationUnit(
-                "package2", data = listOf(DataDeclaration("d"))
+                "package2", data = listOf(
+                    DataDeclaration(
+                        parseContext = ParseContext(
+                            "/path/to/file2.orbit",
+                            line = 1,
+                            column = 5
+                        ),
+                        name = "d"
+                    )
+                )
             ),
             compilationUnits[1]
         )
+
         assertEquals(
             CompilationUnit(
-                "package3", actors = listOf(ActorDeclaration("a"))
+                "package3", actors = listOf(
+                    ActorDeclaration(
+                        parseContext = ParseContext(
+                            "/path/to/file3.orbit",
+                            line = 1,
+                            column = 6
+                        ),
+                        name = "a"
+                    )
+                )
             ),
             compilationUnits[2]
         )
     }
 
     @Test
-    fun parseFile_allConcepts() {
+    fun parsesAllConcepts() {
         val text = """
             // Comments
             enum RGB {
@@ -134,86 +162,429 @@ class OrbitDslFileParserTest {
             testPackageName,
             enums = listOf(
                 EnumDeclaration(
-                    "RGB",
+                    parseContext = ParseContext(
+                        filePath = testFilePath,
+                        line = 2,
+                        column = 5
+                    ),
+                    name = "RGB",
                     members = listOf(
-                        EnumMember("R", 1),
-                        EnumMember("G", 2),
-                        EnumMember("B", 3)
+                        EnumMember(
+                            parseContext = ParseContext(
+                                filePath = testFilePath,
+                                line = 4,
+                                column = 4
+                            ),
+                            name = "R",
+                            index = 1
+                        ),
+                        EnumMember(
+                            parseContext = ParseContext(
+                                filePath = testFilePath,
+                                line = 5,
+                                column = 4
+                            ),
+                            name = "G",
+                            index = 2
+                        ),
+                        EnumMember(
+                            parseContext = ParseContext(
+                                filePath = testFilePath,
+                                line = 6,
+                                column = 4
+                            ),
+                            name = "B",
+                            index = 3
+                        )
                     )
                 )
             ),
-
             data = listOf(
                 DataDeclaration(
-                    "Payload",
+                    parseContext = ParseContext(
+                        filePath = testFilePath,
+                        line = 9,
+                        column = 5
+                    ),
+                    name = "Payload",
                     fields = listOf(
-                        DataField("field1", Type("int"), 1),
-                        DataField("field2", Type("RGB"), 2)
+                        DataField(
+                            parseContext = ParseContext(
+                                filePath = testFilePath,
+                                line = 10,
+                                column = 8
+                            ),
+                            name = "field1",
+                            type = Type(
+                                parseContext = ParseContext(
+                                    filePath = testFilePath,
+                                    line = 10,
+                                    column = 4
+                                ),
+                                name = "int"
+                            ),
+                            index = 1
+                        ),
+                        DataField(
+                            parseContext = ParseContext(
+                                filePath = testFilePath,
+                                line = 12,
+                                column = 8
+                            ),
+                            name = "field2",
+                            type = Type(
+                                parseContext = ParseContext(
+                                    filePath = testFilePath,
+                                    line = 12,
+                                    column = 4
+                                ),
+                                name = "RGB"
+                            ),
+                            index = 2
+                        )
                     )
                 )
             ),
             actors = listOf(
                 ActorDeclaration(
-                    "MyActor",
-                    ActorKeyType.NO_KEY,
+                    parseContext = ParseContext(
+                        filePath = testFilePath,
+                        line = 19,
+                        column = 6
+                    ),
+                    name = "MyActor",
+                    keyType = ActorKeyType.NO_KEY,
                     methods = listOf(
-                        ActorMethod("no_args", Type("int")),
                         ActorMethod(
-                            "one_arg",
-                            Type("void"),
-                            params = listOf(
-                                MethodParameter("a", Type("RGB"))
+                            parseContext = ParseContext(
+                                filePath = testFilePath,
+                                line = 21,
+                                column = 8
+                            ),
+                            name = "no_args",
+                            returnType = Type(
+                                parseContext = ParseContext(
+                                    filePath = testFilePath,
+                                    line = 21,
+                                    column = 4
+                                ),
+                                name = "int"
                             )
                         ),
                         ActorMethod(
-                            "multiple_args",
-                            Type("RGB"),
-                            params = listOf(
-                                MethodParameter("arg1", Type("RGB")),
-                                MethodParameter("arg2", Type("RGB"))
-                            )
-                        ),
-                        ActorMethod("generic_return", Type("list", of = listOf(Type("string")))),
-                        ActorMethod(
-                            "generic_arg",
-                            Type("void"),
-                            params = listOf(
-                                MethodParameter("arg1", Type("list", of = listOf(Type("int"))))
-                            )
-                        ),
-                        ActorMethod(
-                            "generic_multi",
-                            Type("map", of = listOf(Type("RGB"), Type("string"))),
+                            parseContext = ParseContext(
+                                filePath = testFilePath,
+                                line = 22,
+                                column = 9
+                            ),
+                            name = "one_arg",
+                            returnType = Type(
+                                parseContext = ParseContext(
+                                    filePath = testFilePath,
+                                    line = 22,
+                                    column = 4
+                                ),
+                                name = "void"
+                            ),
                             params = listOf(
                                 MethodParameter(
-                                    "arg1",
-                                    Type("map", of = listOf(Type("string"), Type("Payload")))
+                                    parseContext = ParseContext(
+                                        filePath = testFilePath,
+                                        line = 22,
+                                        column = 21
+                                    ),
+                                    name = "a",
+                                    type = Type(
+                                        parseContext = ParseContext(
+                                            filePath = testFilePath,
+                                            line = 22,
+                                            column = 17
+                                        ),
+                                        name = "RGB"
+                                    )
                                 )
                             )
                         ),
                         ActorMethod(
-                            "generics_nested",
-                            Type(
-                                "list", of = listOf(
+                            parseContext = ParseContext(
+                                filePath = testFilePath,
+                                line = 23,
+                                column = 8
+                            ),
+                            name = "multiple_args",
+                            returnType = Type(
+                                parseContext = ParseContext(
+                                    filePath = testFilePath,
+                                    line = 23,
+                                    column = 4
+                                ),
+                                name = "RGB"
+                            ),
+                            params = listOf(
+                                MethodParameter(
+                                    parseContext = ParseContext(
+                                        filePath = testFilePath,
+                                        line = 23,
+                                        column = 26
+                                    ),
+                                    name = "arg1",
+                                    type = Type(
+                                        parseContext = ParseContext(
+                                            filePath = testFilePath,
+                                            line = 23,
+                                            column = 22
+                                        ),
+                                        name = "RGB"
+                                    )
+                                ),
+                                MethodParameter(
+                                    parseContext = ParseContext(
+                                        filePath = testFilePath,
+                                        line = 23,
+                                        column = 36
+                                    ),
+                                    name = "arg2",
+                                    type = Type(
+                                        parseContext = ParseContext(
+                                            filePath = testFilePath,
+                                            line = 23,
+                                            column = 32
+                                        ),
+                                        name = "RGB"
+                                    )
+                                )
+                            )
+                        ),
+                        ActorMethod(
+                            parseContext = ParseContext(
+                                filePath = testFilePath,
+                                line = 25,
+                                column = 17
+                            ),
+                            name = "generic_return",
+                            returnType = Type(
+                                parseContext = ParseContext(
+                                    filePath = testFilePath,
+                                    line = 25,
+                                    column = 4
+                                ),
+                                name = "list",
+                                of = listOf(
                                     Type(
-                                        "map", of = listOf(
-                                            Type("string"),
-                                            Type("RGB")
+                                        parseContext = ParseContext(
+                                            filePath = testFilePath,
+                                            line = 25,
+                                            column = 9
+                                        ),
+                                        name = "string"
+                                    )
+                                )
+                            )
+                        ),
+                        ActorMethod(
+                            parseContext = ParseContext(
+                                filePath = testFilePath,
+                                line = 26,
+                                column = 9
+                            ),
+                            name = "generic_arg",
+                            returnType = Type(
+                                parseContext = ParseContext(
+                                    filePath = testFilePath,
+                                    line = 26,
+                                    column = 4
+                                ),
+                                name = "void"
+                            ),
+                            params = listOf(
+                                MethodParameter(
+                                    parseContext = ParseContext(
+                                        filePath = testFilePath,
+                                        line = 26,
+                                        column = 31
+                                    ),
+                                    name = "arg1",
+                                    type = Type(
+                                        parseContext = ParseContext(
+                                            filePath = testFilePath,
+                                            line = 26,
+                                            column = 21
+                                        ),
+                                        name = "list", of = listOf(
+                                            Type(
+                                                parseContext = ParseContext(
+                                                    filePath = testFilePath,
+                                                    line = 26,
+                                                    column = 26
+                                                ),
+                                                name = "int"
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        ActorMethod(
+                            parseContext = ParseContext(
+                                filePath = testFilePath,
+                                line = 27,
+                                column = 21
+                            ),
+                            name = "generic_multi",
+                            returnType = Type(
+                                parseContext = ParseContext(
+                                    filePath = testFilePath,
+                                    line = 27,
+                                    column = 4
+                                ),
+                                name = "map",
+                                of = listOf(
+                                    Type(
+                                        parseContext = ParseContext(
+                                            filePath = testFilePath,
+                                            line = 27,
+                                            column = 8
+                                        ),
+                                        name = "RGB"
+                                    ),
+                                    Type(
+                                        parseContext = ParseContext(
+                                            filePath = testFilePath,
+                                            line = 27,
+                                            column = 13
+                                        ),
+                                        name = "string"
+                                    )
+                                )
+                            ),
+                            params = listOf(
+                                MethodParameter(
+                                    parseContext = ParseContext(
+                                        filePath = testFilePath,
+                                        line = 27,
+                                        column = 56
+                                    ),
+                                    name = "arg1",
+                                    type = Type(
+                                        parseContext = ParseContext(
+                                            filePath = testFilePath,
+                                            line = 27,
+                                            column = 35
+                                        ),
+                                        name = "map",
+                                        of = listOf(
+                                            Type(
+                                                parseContext = ParseContext(
+                                                    filePath = testFilePath,
+                                                    line = 27,
+                                                    column = 39
+                                                ),
+                                                name = "string"
+                                            ),
+                                            Type(
+                                                parseContext = ParseContext(
+                                                    filePath = testFilePath,
+                                                    line = 27,
+                                                    column = 47
+                                                ),
+                                                name = "Payload"
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        ActorMethod(
+                            parseContext = ParseContext(
+                                filePath = testFilePath,
+                                line = 28,
+                                column = 27
+                            ),
+                            name = "generics_nested",
+                            returnType = Type(
+                                parseContext = ParseContext(
+                                    filePath = testFilePath,
+                                    line = 28,
+                                    column = 4
+                                ),
+                                name = "list",
+                                of = listOf(
+                                    Type(
+                                        parseContext = ParseContext(
+                                            filePath = testFilePath,
+                                            line = 28,
+                                            column = 9
+                                        ),
+                                        name = "map",
+                                        of = listOf(
+                                            Type(
+                                                parseContext = ParseContext(
+                                                    filePath = testFilePath,
+                                                    line = 28,
+                                                    column = 13
+                                                ),
+                                                name = "string"
+                                            ),
+                                            Type(
+                                                parseContext = ParseContext(
+                                                    filePath = testFilePath,
+                                                    line = 28,
+                                                    column = 21
+                                                ),
+                                                name = "RGB"
+                                            )
                                         )
                                     )
                                 )
                             ),
                             params = listOf(
                                 MethodParameter(
-                                    "arg1",
-                                    Type(
-                                        "map", of = listOf(
-                                            Type("string"),
+                                    parseContext = ParseContext(
+                                        filePath = testFilePath,
+                                        line = 28,
+                                        column = 76
+                                    ),
+                                    name = "arg1",
+                                    type = Type(
+                                        parseContext = ParseContext(
+                                            filePath = testFilePath,
+                                            line = 28,
+                                            column = 43
+                                        ),
+                                        name = "map",
+                                        of = listOf(
                                             Type(
-                                                "list", of = listOf(
+                                                parseContext = ParseContext(
+                                                    filePath = testFilePath,
+                                                    line = 28,
+                                                    column = 47
+                                                ),
+                                                name = "string"
+                                            ),
+                                            Type(
+                                                parseContext = ParseContext(
+                                                    filePath = testFilePath,
+                                                    line = 28,
+                                                    column = 55
+                                                ),
+                                                name = "list",
+                                                of = listOf(
                                                     Type(
-                                                        "list", of = listOf(
-                                                            Type("Payload")
+                                                        parseContext = ParseContext(
+                                                            filePath = testFilePath,
+                                                            line = 28,
+                                                            column = 60
+                                                        ),
+                                                        name = "list",
+                                                        of = listOf(
+                                                            Type(
+                                                                parseContext = ParseContext(
+                                                                    filePath = testFilePath,
+                                                                    line = 28,
+                                                                    column = 65
+                                                                ),
+                                                                name = "Payload"
+                                                            )
                                                         )
                                                     )
                                                 )
@@ -226,24 +597,49 @@ class OrbitDslFileParserTest {
                     )
                 ),
                 ActorDeclaration(
-                    "MyKeylessActor",
-                    ActorKeyType.NO_KEY
+                    parseContext = ParseContext(
+                        filePath = testFilePath,
+                        line = 31,
+                        column = 6
+                    ),
+                    name = "MyKeylessActor",
+                    keyType = ActorKeyType.NO_KEY
                 ),
                 ActorDeclaration(
-                    "MyStringKeyedActor",
-                    ActorKeyType.STRING
+                    parseContext = ParseContext(
+                        filePath = testFilePath,
+                        line = 33,
+                        column = 6
+                    ),
+                    name = "MyStringKeyedActor",
+                    keyType = ActorKeyType.STRING
                 ),
                 ActorDeclaration(
-                    "MyInt32KeyedActor",
-                    ActorKeyType.INT32
+                    parseContext = ParseContext(
+                        filePath = testFilePath,
+                        line = 35,
+                        column = 6
+                    ),
+                    name = "MyInt32KeyedActor",
+                    keyType = ActorKeyType.INT32
                 ),
                 ActorDeclaration(
-                    "MyInt64KeyedActor",
-                    ActorKeyType.INT64
+                    parseContext = ParseContext(
+                        filePath = testFilePath,
+                        line = 37,
+                        column = 6
+                    ),
+                    name = "MyInt64KeyedActor",
+                    keyType = ActorKeyType.INT64
                 ),
                 ActorDeclaration(
-                    "MyGuidKeyedActor",
-                    ActorKeyType.GUID
+                    parseContext = ParseContext(
+                        filePath = testFilePath,
+                        line = 39,
+                        column = 6
+                    ),
+                    name = "MyGuidKeyedActor",
+                    keyType = ActorKeyType.GUID
                 )
             )
         )
@@ -255,158 +651,5 @@ class OrbitDslFileParserTest {
         ).first()
 
         assertEquals(expectedCompilationUnit, actualCompilationUnit)
-    }
-
-    @Test
-    fun astNodesAreAnnotatedWithParseContext() {
-        val text = """
-            enum
-                AnEnum {
-                    A_VALUE
-                        = 1;
-            }
-
-             data
-                SomeData {
-                    string
-                        a_field
-                            = 1;
-            }
-
-            actor
-                TheActor
-                    <
-                        string
-                    >
-            {
-                map<
-                    string,
-                        list<
-                            int32
-                            >
-                    >
-                        a_method
-                        (
-                            int32
-                                param
-                        );
-            }
-        """.trimIndent()
-
-        val compilationUnit = OrbitDslFileParser().parse(
-            listOf(
-                OrbitDslParseInput(text, testPackageName, testFilePath)
-            )
-        ).first()
-
-        assertEquals(
-            ParseContext(testFilePath, 2, 4),
-            compilationUnit.enums[0].getAnnotation<ParseContext>()
-        )
-        assertEquals(
-            ParseContext(testFilePath, 3, 8),
-            compilationUnit.enums[0].members[0].getAnnotation<ParseContext>()
-        )
-
-        assertEquals(
-            ParseContext(testFilePath, 8, 4),
-            compilationUnit.data[0].getAnnotation<ParseContext>()
-        )
-        assertEquals(
-            ParseContext(testFilePath, 9, 8),
-            compilationUnit.data[0].fields[0].type.getAnnotation<ParseContext>()
-        )
-        assertEquals(
-            ParseContext(testFilePath, 10, 12),
-            compilationUnit.data[0].fields[0].getAnnotation<ParseContext>()
-        )
-
-        assertEquals(
-            ParseContext(testFilePath, 15, 4),
-            compilationUnit.actors[0].getAnnotation<ParseContext>()
-        )
-        assertEquals(
-            ParseContext(testFilePath, 20, 4),
-            compilationUnit.actors[0].methods[0].returnType.getAnnotation<ParseContext>()
-        )
-        assertEquals(
-            ParseContext(testFilePath, 21, 8),
-            compilationUnit.actors[0].methods[0].returnType.of[0].getAnnotation<ParseContext>()
-        )
-        assertEquals(
-            ParseContext(testFilePath, 22, 12),
-            compilationUnit.actors[0].methods[0].returnType.of[1].getAnnotation<ParseContext>()
-        )
-        assertEquals(
-            ParseContext(testFilePath, 23, 16),
-            compilationUnit.actors[0].methods[0].returnType.of[1].of[0].getAnnotation<ParseContext>()
-        )
-        assertEquals(
-            ParseContext(testFilePath, 26, 12),
-            compilationUnit.actors[0].methods[0].getAnnotation<ParseContext>()
-        )
-        assertEquals(
-            ParseContext(testFilePath, 28, 16),
-            compilationUnit.actors[0].methods[0].params[0].type.getAnnotation<ParseContext>()
-        )
-        assertEquals(
-            ParseContext(testFilePath, 29, 20),
-            compilationUnit.actors[0].methods[0].params[0].getAnnotation<ParseContext>()
-        )
-    }
-
-    @Test
-    fun typeNodesAreAnnotatedWithTypeOccurrenceContext() {
-        val text = """
-            data SomeData {
-                string a_field = 1;
-            }
-             actor TheActor<string> {
-                map<string, list<int32>> a_method(map<string, list<int32>> param);
-            }
-        """.trimIndent()
-
-        val compilationUnit = OrbitDslFileParser().parse(
-            listOf(
-                OrbitDslParseInput(text, testPackageName, testFilePath)
-            )
-        ).first()
-
-        assertEquals(
-            TypeOccurrenceContext.DATA_FIELD,
-            compilationUnit.data[0].fields[0].type.getAnnotation<TypeOccurrenceContext>()
-        )
-        assertEquals(
-            TypeOccurrenceContext.METHOD_RETURN,
-            compilationUnit.actors[0].methods[0].returnType.getAnnotation<TypeOccurrenceContext>()
-        )
-        assertEquals(
-            TypeOccurrenceContext.TYPE_PARAMETER,
-            compilationUnit.actors[0].methods[0].returnType.of[0].getAnnotation<TypeOccurrenceContext>()
-        )
-        assertEquals(
-            TypeOccurrenceContext.TYPE_PARAMETER,
-            compilationUnit.actors[0].methods[0].returnType.of[1].getAnnotation<TypeOccurrenceContext>()
-        )
-        assertEquals(
-            TypeOccurrenceContext.TYPE_PARAMETER,
-            compilationUnit.actors[0].methods[0].returnType.of[1].of[0].getAnnotation<TypeOccurrenceContext>()
-        )
-        assertEquals(
-            TypeOccurrenceContext.METHOD_PARAMETER,
-            compilationUnit.actors[0].methods[0].params[0].type.getAnnotation<TypeOccurrenceContext>()
-        )
-        assertEquals(
-            TypeOccurrenceContext.TYPE_PARAMETER,
-            compilationUnit.actors[0].methods[0].params[0].type.of[0].getAnnotation<TypeOccurrenceContext>()
-        )
-        assertEquals(
-            TypeOccurrenceContext.TYPE_PARAMETER,
-            compilationUnit.actors[0].methods[0].params[0].type.of[1].getAnnotation<TypeOccurrenceContext>()
-        )
-        assertEquals(
-            TypeOccurrenceContext.TYPE_PARAMETER,
-            compilationUnit.actors[0].methods[0].params[0].type.of[1].of[0].getAnnotation<TypeOccurrenceContext>()
-        )
     }
 }
