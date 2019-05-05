@@ -6,9 +6,9 @@
 
 package cloud.orbit.dsl
 
+import cloud.orbit.dsl.ast.AstNode
 import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.ast.Type
-import cloud.orbit.dsl.ast.annotated
 import cloud.orbit.dsl.error.OrbitDslError
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -18,14 +18,16 @@ class TypeErrorListenerTest {
     fun reportsErrorWithParseContext() {
         val typeErrorListener = TypeErrorListener()
         typeErrorListener.onError(
-            Type("t")
-                .annotated(
+            Type(
+                "t",
+                context = AstNode.Context(
                     ParseContext(
                         "path/to/file.orbit",
                         line = 2,
                         column = 17
                     )
-                ),
+                )
+            ),
             "error here"
         )
 
@@ -49,7 +51,7 @@ class TypeErrorListenerTest {
         )
 
         assertEquals(
-            OrbitDslError("<unknown>", line = 0, column = 0, message = "error here"),
+            OrbitDslError("", line = 0, column = 0, message = "error here"),
             typeErrorListener.typeErrors.first()
         )
     }

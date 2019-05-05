@@ -9,5 +9,6 @@ package cloud.orbit.dsl.ast
 data class DataField(
     val name: String,
     val type: Type,
-    val index: Int
-) : AstNode()
+    val index: Int,
+    override val context: AstNode.Context = AstNode.Context.NONE
+) : AstNode

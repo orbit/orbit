@@ -12,4 +12,4 @@ package cloud.orbit.dsl
  * @param name the type name.
  * @param arity the number of type parameters this type takes.
  */
-data class TypeDescriptor (val name: String, val arity: Int)
+data class TypeDescriptor(val name: String, val arity: Int)

@@ -4,6 +4,10 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.dsl.ast
+package cloud.orbit.dsl.ast.error
 
-interface AstAnnotation
+import cloud.orbit.dsl.ast.AstNode
+
+interface ErrorReporter {
+    fun reportError(astNode: AstNode, message: String)
+}

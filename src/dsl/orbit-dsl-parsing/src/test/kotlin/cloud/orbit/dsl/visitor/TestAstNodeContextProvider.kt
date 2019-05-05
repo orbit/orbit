@@ -6,11 +6,9 @@
 
 package cloud.orbit.dsl.visitor
 
-import cloud.orbit.dsl.ast.ParseContext
+import cloud.orbit.dsl.ast.AstNode
 import org.antlr.v4.runtime.Token
 
-object FakeParseContextProvider : ParseContextProvider {
-    val fakeParseContext = ParseContext("", 0, 0)
-
-    override fun fromToken(token: Token): ParseContext = fakeParseContext
+object TestAstNodeContextProvider : AstNodeContextProvider {
+    override fun fromToken(token: Token) = AstNode.Context.NONE
 }

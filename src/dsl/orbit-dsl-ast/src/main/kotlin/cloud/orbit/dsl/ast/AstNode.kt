@@ -6,21 +6,12 @@
 
 package cloud.orbit.dsl.ast
 
-abstract class AstNode {
-    private val annotations = mutableMapOf<Class<*>, AstAnnotation>()
+interface AstNode {
+    val context: Context
 
-    fun annotate(annotation: AstAnnotation) {
-        this.annotations[annotation.javaClass] = annotation
+    data class Context(val parseContext: ParseContext) {
+        companion object {
+            val NONE = Context(ParseContext.NONE)
+        }
     }
-
-    inline fun <reified T : AstAnnotation> getAnnotation(): T? = getAnnotation(T::class.java)
-
-    @Suppress("UNCHECKED_CAST")
-    fun <T : AstAnnotation> getAnnotation(type: Class<T>): T? = annotations[type] as T?
 }
-
-inline fun <reified T : AstNode> T.annotated(annotation: AstAnnotation) =
-    this.also {
-        this.annotate(annotation)
-    }
-

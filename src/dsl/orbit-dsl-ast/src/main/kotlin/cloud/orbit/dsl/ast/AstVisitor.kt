@@ -6,7 +6,10 @@
 
 package cloud.orbit.dsl.ast
 
-abstract class AstVisitor {
+import cloud.orbit.dsl.ast.error.ErrorListener
+import cloud.orbit.dsl.ast.error.ErrorReporter
+
+abstract class AstVisitor : ErrorReporter {
     private val errorListeners = mutableSetOf<ErrorListener>()
 
     open fun visitCompilationUnit(cu: CompilationUnit) {
@@ -74,9 +77,9 @@ abstract class AstVisitor {
         errorListeners.remove(errorListener)
     }
 
-    fun reportError(node: AstNode, message: String) {
+    override fun reportError(astNode: AstNode, message: String) {
         errorListeners.forEach {
-            it.onError(node, message)
+            it.onError(astNode, message)
         }
     }
 }

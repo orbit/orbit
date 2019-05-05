@@ -6,16 +6,16 @@
 
 package cloud.orbit.dsl
 
+import cloud.orbit.dsl.ast.AstNode
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.ParseContext
-import cloud.orbit.dsl.ast.TypeOccurrenceContext
 import cloud.orbit.dsl.error.OrbitDslCompilationException
 import cloud.orbit.dsl.error.OrbitDslError
 import cloud.orbit.dsl.visitor.ActorDeclarationVisitor
 import cloud.orbit.dsl.visitor.CompilationUnitBuilderVisitor
 import cloud.orbit.dsl.visitor.DataDeclarationVisitor
 import cloud.orbit.dsl.visitor.EnumDeclarationVisitor
-import cloud.orbit.dsl.visitor.ParseContextProvider
+import cloud.orbit.dsl.visitor.AstNodeContextProvider
 import cloud.orbit.dsl.visitor.SyntaxVisitor
 import cloud.orbit.dsl.visitor.TypeVisitor
 import cloud.orbit.dsl.visitor.UnsupportedActorKeyTypeException
@@ -61,22 +61,15 @@ class OrbitDslFileParser {
             it.removeErrorListener(ConsoleErrorListener.INSTANCE)
         }
 
-        val parseContextProvider = object : ParseContextProvider {
+        val contextProvider = object : AstNodeContextProvider {
             override fun fromToken(token: Token) =
-                ParseContext(input.filePath, token.line, token.charPositionInLine)
+                AstNode.Context(ParseContext(input.filePath, token.line, token.charPositionInLine))
         }
 
-        val typeParameterVisitor = TypeVisitor(TypeOccurrenceContext.TYPE_PARAMETER, parseContextProvider)
-        val enumDeclarationVisitor = EnumDeclarationVisitor(parseContextProvider)
-        val dataDeclarationVisitor = DataDeclarationVisitor(
-            TypeVisitor(TypeOccurrenceContext.DATA_FIELD, typeParameterVisitor, parseContextProvider),
-            parseContextProvider
-        )
-        val actorDeclarationVisitor = ActorDeclarationVisitor(
-            TypeVisitor(TypeOccurrenceContext.METHOD_RETURN, typeParameterVisitor, parseContextProvider),
-            TypeVisitor(TypeOccurrenceContext.METHOD_PARAMETER, typeParameterVisitor, parseContextProvider),
-            parseContextProvider
-        )
+        val typeVisitor = TypeVisitor(contextProvider)
+        val enumDeclarationVisitor = EnumDeclarationVisitor(contextProvider)
+        val dataDeclarationVisitor = DataDeclarationVisitor(typeVisitor, contextProvider)
+        val actorDeclarationVisitor = ActorDeclarationVisitor(typeVisitor, contextProvider)
 
         try {
             return CompilationUnitBuilderVisitor(

@@ -8,5 +8,6 @@ package cloud.orbit.dsl.ast
 
 data class DataDeclaration(
     override val name: String,
-    val fields: List<DataField> = emptyList()
-) : AstNode(), Declaration
+    val fields: List<DataField> = emptyList(),
+    override val context: AstNode.Context = AstNode.Context.NONE
+) : Declaration

@@ -72,7 +72,7 @@ class CompilationUnitBuilderVisitorTest {
                 data = listOf(
                     DataDeclaration("d1"),
                     DataDeclaration("d2")
-                    ),
+                ),
                 actors = listOf(
                     ActorDeclaration("a1"),
                     ActorDeclaration("a2")

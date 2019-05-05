@@ -13,34 +13,35 @@ import cloud.orbit.dsl.ast.ActorDeclaration
 import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.MethodParameter
-import cloud.orbit.dsl.ast.annotated
 
 class ActorDeclarationVisitor(
-    private val methodReturnTypeVisitor: TypeVisitor,
-    private val methodParameterTypeVisitor: TypeVisitor,
-    private val parseContextProvider: ParseContextProvider
+    private val typeVisitor: TypeVisitor,
+    private val contextProvider: AstNodeContextProvider
 ) : OrbitDslBaseVisitor<ActorDeclaration>() {
-    override fun visitActorDeclaration(ctx: OrbitDslParser.ActorDeclarationContext?) =
+    override fun visitActorDeclaration(ctx: OrbitDslParser.ActorDeclarationContext) =
         ActorDeclaration(
-            ctx!!.name.text,
+            name = ctx.name.text,
             keyType = ctx.keyType?.toActorKeyType() ?: ActorKeyType.NO_KEY,
             methods = ctx.children
                 .filterIsInstance(OrbitDslParser.ActorMethodContext::class.java)
                 .map { m ->
                     ActorMethod(
                         name = m.name.text,
-                        returnType = m.returnType.accept(methodReturnTypeVisitor),
+                        returnType = m.returnType.accept(typeVisitor),
                         params = m.children
                             .filterIsInstance(OrbitDslParser.MethodParamContext::class.java)
                             .map { p ->
-                                MethodParameter(p.name.text, p.type().accept(methodParameterTypeVisitor))
-                                    .annotated(parseContextProvider.fromToken(p.name))
+                                MethodParameter(
+                                    name = p.name.text,
+                                    type = p.type().accept(typeVisitor),
+                                    context = contextProvider.fromToken(p.name)
+                                )
                             }
-                            .toList())
-                        .annotated(parseContextProvider.fromToken(m.name))
+                            .toList(),
+                        context = contextProvider.fromToken(m.name))
                 }
-                .toList())
-            .annotated(parseContextProvider.fromToken(ctx.name))
+                .toList(),
+            context = contextProvider.fromToken(ctx.name))
 
     private fun TypeContext.toActorKeyType() =
         when (this.text) {
