@@ -106,7 +106,7 @@ internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : 
 
     private fun typeName(type: Type): TypeName =
         if (!type.isGeneric) {
-            knownTypes.getValue(type)
+            knownTypes.getValue(Type(type.name))
         } else {
             ParameterizedTypeName.get(
                 knownTypes.getValue(Type(type.name)) as ClassName,
