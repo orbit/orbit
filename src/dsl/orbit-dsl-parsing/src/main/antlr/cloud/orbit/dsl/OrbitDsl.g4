@@ -19,14 +19,14 @@ declaration: enumDeclaration | actorDeclaration | dataDeclaration ;
 enumDeclaration: ENUM name=ID LC_BRACE members=enumMember* RC_BRACE ;
 enumMember: name=ID EQUAL index=INT SEMI_COLON ;
 
-actorDeclaration: ACTOR name=ID (L_ANGLE keyType=type R_ANGLE)? LC_BRACE methods=actorMethod* RC_BRACE ;
-actorMethod: returnType=type name=ID L_PAREN (args=methodParam (COMMA args=methodParam)*)? R_PAREN SEMI_COLON ;
-methodParam: type name=ID ;
+actorDeclaration: ACTOR name=ID (L_ANGLE keyType=typeReference R_ANGLE)? LC_BRACE methods=actorMethod* RC_BRACE ;
+actorMethod: returnType=typeReference name=ID L_PAREN (args=methodParam (COMMA args=methodParam)*)? R_PAREN SEMI_COLON ;
+methodParam: typeReference name=ID ;
 
 dataDeclaration: DATA name=ID LC_BRACE fields=dataField* RC_BRACE ;
-dataField: type name=ID EQUAL index=INT SEMI_COLON ;
+dataField: typeReference name=ID EQUAL index=INT SEMI_COLON ;
 
-type: name=ID (L_ANGLE of=type (COMMA of=type)* R_ANGLE)? ;
+typeReference: name=ID (L_ANGLE of=typeReference (COMMA of=typeReference)* R_ANGLE)? ;
 
 /* ====== LEXER ===== */
 

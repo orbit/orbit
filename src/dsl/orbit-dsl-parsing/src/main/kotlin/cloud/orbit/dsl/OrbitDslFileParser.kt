@@ -17,7 +17,7 @@ import cloud.orbit.dsl.visitor.DataDeclarationVisitor
 import cloud.orbit.dsl.visitor.EnumDeclarationVisitor
 import cloud.orbit.dsl.visitor.AstNodeContextProvider
 import cloud.orbit.dsl.visitor.SyntaxVisitor
-import cloud.orbit.dsl.visitor.TypeVisitor
+import cloud.orbit.dsl.visitor.TypeReferenceVisitor
 import cloud.orbit.dsl.visitor.UnsupportedActorKeyTypeException
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
@@ -66,10 +66,10 @@ class OrbitDslFileParser {
                 AstNode.Context(ParseContext(input.filePath, token.line, token.charPositionInLine))
         }
 
-        val typeVisitor = TypeVisitor(contextProvider)
+        val typeReferenceVisitor = TypeReferenceVisitor(contextProvider)
         val enumDeclarationVisitor = EnumDeclarationVisitor(contextProvider)
-        val dataDeclarationVisitor = DataDeclarationVisitor(typeVisitor, contextProvider)
-        val actorDeclarationVisitor = ActorDeclarationVisitor(typeVisitor, contextProvider)
+        val dataDeclarationVisitor = DataDeclarationVisitor(typeReferenceVisitor, contextProvider)
+        val actorDeclarationVisitor = ActorDeclarationVisitor(typeReferenceVisitor, contextProvider)
 
         try {
             return CompilationUnitBuilderVisitor(

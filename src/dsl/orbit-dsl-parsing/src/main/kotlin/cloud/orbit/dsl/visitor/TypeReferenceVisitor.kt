@@ -10,14 +10,14 @@ import cloud.orbit.dsl.OrbitDslBaseVisitor
 import cloud.orbit.dsl.OrbitDslParser
 import cloud.orbit.dsl.ast.Type
 
-class TypeVisitor(
+class TypeReferenceVisitor(
     private val contextProvider: AstNodeContextProvider
 ) : OrbitDslBaseVisitor<Type>() {
-    override fun visitType(ctx: OrbitDslParser.TypeContext) =
+    override fun visitTypeReference(ctx: OrbitDslParser.TypeReferenceContext) =
         Type(
             name = ctx.name.text,
             of = ctx.children
-                .filterIsInstance(OrbitDslParser.TypeContext::class.java)
+                .filterIsInstance(OrbitDslParser.TypeReferenceContext::class.java)
                 .map { it.accept(this) }
                 .toList(),
             context = contextProvider.fromToken(ctx.name)
