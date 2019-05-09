@@ -12,7 +12,7 @@ import cloud.orbit.dsl.ast.DataDeclaration
 import cloud.orbit.dsl.ast.DataField
 
 class DataDeclarationVisitor(
-    private val typeVisitor: TypeVisitor,
+    private val typeReferenceVisitor: TypeReferenceVisitor,
     private val contextProvider: AstNodeContextProvider
 ) : OrbitDslBaseVisitor<DataDeclaration>() {
     override fun visitDataDeclaration(ctx: OrbitDslParser.DataDeclarationContext) =
@@ -23,7 +23,7 @@ class DataDeclarationVisitor(
                 .map {
                     DataField(
                         name = it.name.text,
-                        type = it.type().accept(typeVisitor),
+                        type = it.typeReference().accept(typeReferenceVisitor),
                         index = it.index.text.toInt(),
                         context = contextProvider.fromToken(it.name)
                     )

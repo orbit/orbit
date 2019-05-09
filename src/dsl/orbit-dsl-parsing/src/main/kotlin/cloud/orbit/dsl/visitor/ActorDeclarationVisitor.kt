@@ -8,14 +8,14 @@ package cloud.orbit.dsl.visitor
 
 import cloud.orbit.dsl.OrbitDslBaseVisitor
 import cloud.orbit.dsl.OrbitDslParser
-import cloud.orbit.dsl.OrbitDslParser.TypeContext
+import cloud.orbit.dsl.OrbitDslParser.TypeReferenceContext
 import cloud.orbit.dsl.ast.ActorDeclaration
 import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.MethodParameter
 
 class ActorDeclarationVisitor(
-    private val typeVisitor: TypeVisitor,
+    private val typeReferenceVisitor: TypeReferenceVisitor,
     private val contextProvider: AstNodeContextProvider
 ) : OrbitDslBaseVisitor<ActorDeclaration>() {
     override fun visitActorDeclaration(ctx: OrbitDslParser.ActorDeclarationContext) =
@@ -27,13 +27,13 @@ class ActorDeclarationVisitor(
                 .map { m ->
                     ActorMethod(
                         name = m.name.text,
-                        returnType = m.returnType.accept(typeVisitor),
+                        returnType = m.returnType.accept(typeReferenceVisitor),
                         params = m.children
                             .filterIsInstance(OrbitDslParser.MethodParamContext::class.java)
                             .map { p ->
                                 MethodParameter(
                                     name = p.name.text,
-                                    type = p.type().accept(typeVisitor),
+                                    type = p.typeReference().accept(typeReferenceVisitor),
                                     context = contextProvider.fromToken(p.name)
                                 )
                             }
@@ -43,7 +43,7 @@ class ActorDeclarationVisitor(
                 .toList(),
             context = contextProvider.fromToken(ctx.name))
 
-    private fun TypeContext.toActorKeyType() =
+    private fun TypeReferenceContext.toActorKeyType() =
         when (this.text) {
             "string" -> ActorKeyType.STRING
             "int32" -> ActorKeyType.INT32

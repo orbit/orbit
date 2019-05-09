@@ -11,8 +11,8 @@ import cloud.orbit.dsl.ast.Type
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
-class TypeVisitorTest {
-    private val visitor = TypeVisitor(TestAstNodeContextProvider)
+class TypeReferenceVisitorTest {
+    private val visitor = TypeReferenceVisitor(TestAstNodeContextProvider)
 
     @Test
     fun buildsSimpleType() {
@@ -24,7 +24,7 @@ class TypeVisitorTest {
                     Type("list", of = listOf(Type("int32")))
                 )
             ),
-            visitor.parse("map<string, list<int32>>", OrbitDslParser::type)
+            visitor.parse("map<string, list<int32>>", OrbitDslParser::typeReference)
         )
     }
 
@@ -38,7 +38,7 @@ class TypeVisitorTest {
                     Type("list", of = listOf(Type("int32")))
                 )
             ),
-            visitor.parse("map<string, list<int32>>", OrbitDslParser::type)
+            visitor.parse("map<string, list<int32>>", OrbitDslParser::typeReference)
         )
     }
 }
