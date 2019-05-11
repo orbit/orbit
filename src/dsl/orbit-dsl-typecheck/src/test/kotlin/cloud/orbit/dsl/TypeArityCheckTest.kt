@@ -6,7 +6,7 @@
 
 package cloud.orbit.dsl
 
-import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeReference
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -23,25 +23,25 @@ class TypeArityCheckTest {
 
     @Test
     fun noOpWhenTypeIsUnknown() {
-        typeArityCheck.check(Type("t"), context, errorReporter)
+        typeArityCheck.check(TypeReference("t"), context, errorReporter)
 
         assertTrue(errorReporter.errors.isEmpty())
     }
 
     @Test
     fun noErrorsWhenTypeArityIsCorrect() {
-        typeArityCheck.check(Type("t0"), context, errorReporter)
-        typeArityCheck.check(Type("t1", of = listOf(Type("t"))), context, errorReporter)
-        typeArityCheck.check(Type("t2", of = listOf(Type("t"), Type("t"))), context, errorReporter)
+        typeArityCheck.check(TypeReference("t0"), context, errorReporter)
+        typeArityCheck.check(TypeReference("t1", of = listOf(TypeReference("t"))), context, errorReporter)
+        typeArityCheck.check(TypeReference("t2", of = listOf(TypeReference("t"), TypeReference("t"))), context, errorReporter)
 
         assertTrue(errorReporter.errors.isEmpty())
     }
 
     @Test
     fun reportsErrorWhenTypeArityIsIncorrect() {
-        typeArityCheck.check(Type("t0", of = listOf(Type("t"))), context, errorReporter)
-        typeArityCheck.check(Type("t1"), context, errorReporter)
-        typeArityCheck.check(Type("t2", of = listOf(Type("t"))), context, errorReporter)
+        typeArityCheck.check(TypeReference("t0", of = listOf(TypeReference("t"))), context, errorReporter)
+        typeArityCheck.check(TypeReference("t1"), context, errorReporter)
+        typeArityCheck.check(TypeReference("t2", of = listOf(TypeReference("t"))), context, errorReporter)
 
         assertTrue(errorReporter.errors.contains("expected parameter count for type 't0' is 0, found 1"))
         assertTrue(errorReporter.errors.contains("expected parameter count for type 't1' is 1, found 0"))

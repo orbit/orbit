@@ -6,19 +6,19 @@
 
 package cloud.orbit.dsl
 
-import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeReference
 import cloud.orbit.dsl.ast.error.ErrorReporter
 
 class TypeArityCheck(
     private val knownTypes: Map<String, TypeDescriptor>
 ) : TypeCheck {
-    override fun check(type: Type, context: TypeCheck.Context, errorReporter: ErrorReporter) {
-        val descriptor = knownTypes[type.name] ?: return
+    override fun check(typeReference: TypeReference, context: TypeCheck.Context, errorReporter: ErrorReporter) {
+        val descriptor = knownTypes[typeReference.name] ?: return
 
-        if (type.of.size != descriptor.arity) {
+        if (typeReference.of.size != descriptor.arity) {
             errorReporter.reportError(
-                type,
-                "expected parameter count for type '${type.name}' is ${descriptor.arity}, found ${type.of.size}"
+                typeReference,
+                "expected parameter count for type '${typeReference.name}' is ${descriptor.arity}, found ${typeReference.of.size}"
             )
         }
     }

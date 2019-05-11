@@ -12,7 +12,7 @@ import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.DataDeclaration
 import cloud.orbit.dsl.ast.DataField
 import cloud.orbit.dsl.ast.MethodParameter
-import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeReference
 import cloud.orbit.dsl.ast.error.ErrorReporter
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -30,7 +30,7 @@ class TypeCheckingVisitorTest {
                     DataDeclaration(
                         "d",
                         fields = listOf(
-                            DataField("f", Type("t"), index = 1)
+                            DataField("f", TypeReference("t"), index = 1)
                         )
                     )
                 )
@@ -39,7 +39,7 @@ class TypeCheckingVisitorTest {
 
         assertTrue(
             collectingTypeCheck.typesChecked.contains(
-                TypeCheckInvocation(Type("t"), TypeCheck.Context.DATA_FIELD)
+                TypeCheckInvocation(TypeReference("t"), TypeCheck.Context.DATA_FIELD)
             )
         )
     }
@@ -58,7 +58,7 @@ class TypeCheckingVisitorTest {
                         methods = listOf(
                             ActorMethod(
                                 "m",
-                                returnType = Type("t")
+                                returnType = TypeReference("t")
                             )
                         )
                     )
@@ -68,7 +68,7 @@ class TypeCheckingVisitorTest {
 
         assertTrue(
             collectingTypeCheck.typesChecked.contains(
-                TypeCheckInvocation(Type("t"), TypeCheck.Context.METHOD_RETURN)
+                TypeCheckInvocation(TypeReference("t"), TypeCheck.Context.METHOD_RETURN)
             )
         )
     }
@@ -87,11 +87,11 @@ class TypeCheckingVisitorTest {
                         methods = listOf(
                             ActorMethod(
                                 "m",
-                                returnType = Type("r"),
+                                returnType = TypeReference("r"),
                                 params = listOf(
                                     MethodParameter(
                                         "p",
-                                        type = Type("t")
+                                        type = TypeReference("t")
                                     )
                                 )
                             )
@@ -103,7 +103,7 @@ class TypeCheckingVisitorTest {
 
         assertTrue(
             collectingTypeCheck.typesChecked.contains(
-                TypeCheckInvocation(Type("t"), TypeCheck.Context.METHOD_PARAMETER)
+                TypeCheckInvocation(TypeReference("t"), TypeCheck.Context.METHOD_PARAMETER)
             )
         )
     }
@@ -122,14 +122,14 @@ class TypeCheckingVisitorTest {
                         fields = listOf(
                             DataField(
                                 "f",
-                                type = Type(
+                                type = TypeReference(
                                     "t1", of = listOf(
-                                        Type(
+                                        TypeReference(
                                             "t2", of = listOf(
-                                                Type("t3")
+                                                TypeReference("t3")
                                             )
                                         ),
-                                        Type("t4")
+                                        TypeReference("t4")
                                     )
                                 ),
                                 index = 1
@@ -143,14 +143,14 @@ class TypeCheckingVisitorTest {
         assertTrue(
             collectingTypeCheck.typesChecked.contains(
                 TypeCheckInvocation(
-                    Type(
+                    TypeReference(
                         "t1", of = listOf(
-                            Type(
+                            TypeReference(
                                 "t2", of = listOf(
-                                    Type("t3")
+                                    TypeReference("t3")
                                 )
                             ),
-                            Type("t4")
+                            TypeReference("t4")
                         )
                     ),
                     TypeCheck.Context.DATA_FIELD
@@ -160,9 +160,9 @@ class TypeCheckingVisitorTest {
         assertTrue(
             collectingTypeCheck.typesChecked.contains(
                 TypeCheckInvocation(
-                    Type(
+                    TypeReference(
                         "t2", of = listOf(
-                            Type("t3")
+                            TypeReference("t3")
                         )
                     ),
                     TypeCheck.Context.TYPE_PARAMETER
@@ -172,7 +172,7 @@ class TypeCheckingVisitorTest {
         assertTrue(
             collectingTypeCheck.typesChecked.contains(
                 TypeCheckInvocation(
-                    Type("t3"),
+                    TypeReference("t3"),
                     TypeCheck.Context.TYPE_PARAMETER
                 )
             )
@@ -180,20 +180,20 @@ class TypeCheckingVisitorTest {
         assertTrue(
             collectingTypeCheck.typesChecked.contains(
                 TypeCheckInvocation(
-                    Type("t4"),
+                    TypeReference("t4"),
                     TypeCheck.Context.TYPE_PARAMETER
                 )
             )
         )
     }
 
-    private data class TypeCheckInvocation(val type: Type, val context: TypeCheck.Context)
+    private data class TypeCheckInvocation(val type: TypeReference, val context: TypeCheck.Context)
 
     private class CollectingTypeCheck : TypeCheck {
         val typesChecked = mutableListOf<TypeCheckInvocation>()
 
-        override fun check(type: Type, context: TypeCheck.Context, errorReporter: ErrorReporter) {
-            typesChecked.add(TypeCheckInvocation(type, context))
+        override fun check(typeReference: TypeReference, context: TypeCheck.Context, errorReporter: ErrorReporter) {
+            typesChecked.add(TypeCheckInvocation(typeReference, context))
         }
     }
 }

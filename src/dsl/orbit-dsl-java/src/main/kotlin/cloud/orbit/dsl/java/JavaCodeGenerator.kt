@@ -12,7 +12,7 @@ import cloud.orbit.dsl.ast.AstVisitor
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.DataDeclaration
 import cloud.orbit.dsl.ast.EnumDeclaration
-import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeReference
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.ParameterSpec
@@ -21,7 +21,7 @@ import com.squareup.javapoet.TypeName
 import com.squareup.javapoet.TypeSpec
 import javax.lang.model.element.Modifier
 
-internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : AstVisitor() {
+internal class JavaCodeGenerator(private val knownTypes: Map<TypeReference, TypeName>) : AstVisitor() {
     private val completableFutureClass =
         ClassName.get("java.util.concurrent", "CompletableFuture")
 
@@ -104,12 +104,12 @@ internal class JavaCodeGenerator(private val knownTypes: Map<Type, TypeName>) : 
 
     private fun fieldToVariableName(fieldName: String) = fieldName.decapitalize()
 
-    private fun typeName(type: Type): TypeName =
+    private fun typeName(type: TypeReference): TypeName =
         if (!type.isGeneric) {
-            knownTypes.getValue(Type(type.name))
+            knownTypes.getValue(TypeReference(type.name))
         } else {
             ParameterizedTypeName.get(
-                knownTypes.getValue(Type(type.name)) as ClassName,
+                knownTypes.getValue(TypeReference(type.name)) as ClassName,
                 *type.of
                     .map(::typeName)
                     .map(TypeName::box)

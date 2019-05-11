@@ -6,9 +6,9 @@
 
 package cloud.orbit.dsl.ast
 
-data class Type(
+data class TypeReference(
     val name: String,
-    val of: List<Type> = emptyList(),
+    val of: List<TypeReference> = emptyList(),
     override val context: AstNode.Context = AstNode.Context.NONE
 ) : AstNode {
     val isGeneric = of.isNotEmpty()

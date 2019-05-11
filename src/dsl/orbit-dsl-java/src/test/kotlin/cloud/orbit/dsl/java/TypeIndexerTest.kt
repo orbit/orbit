@@ -10,7 +10,7 @@ import cloud.orbit.dsl.ast.ActorDeclaration
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.DataDeclaration
 import cloud.orbit.dsl.ast.EnumDeclaration
-import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeReference
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.TypeName
 import org.junit.jupiter.api.Assertions
@@ -18,14 +18,14 @@ import org.junit.jupiter.api.Test
 
 class TypeIndexerTest {
     private val expectedPredefinedTypes = mapOf(
-        Type("boolean") to TypeName.BOOLEAN,
-        Type("double") to TypeName.DOUBLE,
-        Type("float") to TypeName.FLOAT,
-        Type("int32") to TypeName.INT,
-        Type("int64") to TypeName.LONG,
-        Type("string") to ClassName.get(String::class.java),
-        Type("list") to ClassName.get(java.util.List::class.java),
-        Type("map") to ClassName.get(java.util.Map::class.java)
+        TypeReference("boolean") to TypeName.BOOLEAN,
+        TypeReference("double") to TypeName.DOUBLE,
+        TypeReference("float") to TypeName.FLOAT,
+        TypeReference("int32") to TypeName.INT,
+        TypeReference("int64") to TypeName.LONG,
+        TypeReference("string") to ClassName.get(String::class.java),
+        TypeReference("list") to ClassName.get(java.util.List::class.java),
+        TypeReference("map") to ClassName.get(java.util.Map::class.java)
     )
 
     @Test
@@ -42,7 +42,7 @@ class TypeIndexerTest {
             )
         )
 
-        val expectedTypes = mutableMapOf<Type, TypeName>(Type("bar") to ClassName.get("foo", "bar"))
+        val expectedTypes = mutableMapOf<TypeReference, TypeName>(TypeReference("bar") to ClassName.get("foo", "bar"))
         expectedTypes.putAll(expectedPredefinedTypes)
 
         Assertions.assertEquals(expectedTypes, actual)
@@ -56,7 +56,7 @@ class TypeIndexerTest {
             )
         )
 
-        val expectedTypes = mutableMapOf<Type, TypeName>(Type("bar") to ClassName.get("foo", "bar"))
+        val expectedTypes = mutableMapOf<TypeReference, TypeName>(TypeReference("bar") to ClassName.get("foo", "bar"))
         expectedTypes.putAll(expectedPredefinedTypes)
 
         Assertions.assertEquals(expectedTypes, actual)
@@ -70,7 +70,7 @@ class TypeIndexerTest {
             )
         )
 
-        val expectedTypes = mutableMapOf<Type, TypeName>(Type("bar") to ClassName.get("foo", "bar"))
+        val expectedTypes = mutableMapOf<TypeReference, TypeName>(TypeReference("bar") to ClassName.get("foo", "bar"))
         expectedTypes.putAll(expectedPredefinedTypes)
 
         Assertions.assertEquals(expectedTypes, actual)

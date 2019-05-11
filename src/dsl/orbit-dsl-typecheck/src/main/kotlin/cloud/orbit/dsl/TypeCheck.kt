@@ -6,7 +6,7 @@
 
 package cloud.orbit.dsl
 
-import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeReference
 import cloud.orbit.dsl.ast.error.ErrorReporter
 
 /**
@@ -18,10 +18,10 @@ interface TypeCheck {
     /**
      * Runs a check against a type.
      *
-     * @param type the type to check.
-     * @param context the context in which this type is being used (e.g. as a data field type).
+     * @param typeReference the reference to the type to check.
+     * @param context the context in which this type is being referenced (e.g. as a data field type).
      */
-    fun check(type: Type, context: Context, errorReporter: ErrorReporter)
+    fun check(typeReference: TypeReference, context: Context, errorReporter: ErrorReporter)
 
     enum class Context {
         DATA_FIELD,

@@ -8,7 +8,7 @@ package cloud.orbit.dsl.ast
 
 data class ActorMethod(
     val name: String,
-    val returnType: Type,
+    val returnType: TypeReference,
     val params: List<MethodParameter> = emptyList(),
     override val context: AstNode.Context = AstNode.Context.NONE
 ) : AstNode
