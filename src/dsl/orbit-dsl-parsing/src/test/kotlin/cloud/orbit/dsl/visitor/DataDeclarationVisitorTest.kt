@@ -9,7 +9,7 @@ package cloud.orbit.dsl.visitor
 import cloud.orbit.dsl.OrbitDslParser
 import cloud.orbit.dsl.ast.DataDeclaration
 import cloud.orbit.dsl.ast.DataField
-import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeReference
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -24,12 +24,12 @@ class DataDeclarationVisitorTest {
                 fields = listOf(
                     DataField(
                         "field1",
-                        type = Type("int32"),
+                        type = TypeReference("int32"),
                         index = 2
                     ),
                     DataField(
                         "field2",
-                        type = Type("string"),
+                        type = TypeReference("string"),
                         index = 5
                     )
                 )

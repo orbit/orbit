@@ -15,7 +15,7 @@ import cloud.orbit.dsl.ast.DataField
 import cloud.orbit.dsl.ast.EnumDeclaration
 import cloud.orbit.dsl.ast.EnumMember
 import cloud.orbit.dsl.ast.MethodParameter
-import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeReference
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -88,7 +88,7 @@ class JavaCodeGeneratorTest {
     fun generateData_SingleField() {
         val cu = CompilationUnit(
             packageName, data = listOf(
-                DataDeclaration("data1", listOf(DataField("Field1", Type("string"), 3)))
+                DataDeclaration("data1", listOf(DataField("Field1", TypeReference("string"), 3)))
             )
         )
 
@@ -116,8 +116,8 @@ class JavaCodeGeneratorTest {
             packageName, data = listOf(
                 DataDeclaration(
                     "data1", listOf(
-                        DataField("Field1", Type("string"), 3),
-                        DataField("Field2", Type("int32"), 5)
+                        DataField("Field1", TypeReference("string"), 3),
+                        DataField("Field2", TypeReference("int32"), 5)
                     )
                 )
             )
@@ -151,12 +151,12 @@ class JavaCodeGeneratorTest {
                 DataDeclaration(
                     "data1", listOf(
                         DataField(
-                            "field1", Type(
+                            "field1", TypeReference(
                                 "list", of = listOf(
-                                    Type(
+                                    TypeReference(
                                         "map", of = listOf(
-                                            Type("string"),
-                                            Type("int32")
+                                            TypeReference("string"),
+                                            TypeReference("int32")
                                         )
                                     )
                                 )
@@ -205,12 +205,12 @@ class JavaCodeGeneratorTest {
             ),
             data = listOf(
                 DataDeclaration(
-                    "data1", fields = listOf(DataField("field1", Type("string"), 1))
+                    "data1", fields = listOf(DataField("field1", TypeReference("string"), 1))
                 ),
                 DataDeclaration(
                     "data2", fields = listOf(
-                        DataField("field1", Type("list", of = listOf(Type("enum1"))), 1),
-                        DataField("field2", Type("list", of = listOf(Type("data1"))), 2)
+                        DataField("field1", TypeReference("list", of = listOf(TypeReference("enum1"))), 1),
+                        DataField("field2", TypeReference("list", of = listOf(TypeReference("data1"))), 2)
                     )
                 )
             )
@@ -339,7 +339,7 @@ class JavaCodeGeneratorTest {
     fun generateActor_SingleMethod() {
         val cu = CompilationUnit(
             packageName, actors = listOf(
-                ActorDeclaration("actor1", methods = listOf(ActorMethod("method1", Type("string"))))
+                ActorDeclaration("actor1", methods = listOf(ActorMethod("method1", TypeReference("string"))))
             )
         )
 
@@ -362,8 +362,8 @@ class JavaCodeGeneratorTest {
                 ActorDeclaration(
                     "actor1",
                     methods = listOf(
-                        ActorMethod("method1", Type("string")),
-                        ActorMethod("method2", Type("string"))
+                        ActorMethod("method1", TypeReference("string")),
+                        ActorMethod("method2", TypeReference("string"))
                     )
                 )
             )
@@ -391,8 +391,8 @@ class JavaCodeGeneratorTest {
                     methods = listOf(
                         ActorMethod(
                             "method1",
-                            Type("string"),
-                            params = listOf(MethodParameter("p1", Type("int32")))
+                            TypeReference("string"),
+                            params = listOf(MethodParameter("p1", TypeReference("int32")))
                         )
                     )
                 )
@@ -420,10 +420,10 @@ class JavaCodeGeneratorTest {
                     methods = listOf(
                         ActorMethod(
                             "method1",
-                            Type("string"),
+                            TypeReference("string"),
                             params = listOf(
-                                MethodParameter("p1", Type("int32")),
-                                MethodParameter("p2", Type("int32"))
+                                MethodParameter("p1", TypeReference("int32")),
+                                MethodParameter("p2", TypeReference("int32"))
                             )
                         )
                     )
@@ -452,8 +452,8 @@ class JavaCodeGeneratorTest {
                     methods = listOf(
                         ActorMethod(
                             "method1",
-                            Type("int32"),
-                            params = listOf(MethodParameter("p1", Type("int32")))
+                            TypeReference("int32"),
+                            params = listOf(MethodParameter("p1", TypeReference("int32")))
                         )
                     )
                 )
@@ -482,12 +482,12 @@ class JavaCodeGeneratorTest {
                     methods = listOf(
                         ActorMethod(
                             "method1",
-                            Type(
+                            TypeReference(
                                 "map", of = listOf(
-                                    Type("string"),
-                                    Type(
+                                    TypeReference("string"),
+                                    TypeReference(
                                         "list", of = listOf(
-                                            Type("list", of = listOf(Type("int64")))
+                                            TypeReference("list", of = listOf(TypeReference("int64")))
                                         )
                                     )
                                 )
@@ -530,7 +530,7 @@ class JavaCodeGeneratorTest {
                     "data1",
                     fields = listOf(
                         DataField(
-                            "field1", Type("string"), 1
+                            "field1", TypeReference("string"), 1
                         )
                     )
                 )
@@ -541,7 +541,7 @@ class JavaCodeGeneratorTest {
                     methods = listOf(
                         ActorMethod(
                             "method1",
-                            Type("map", of = listOf(Type("enum1"), Type("data1"))),
+                            TypeReference("map", of = listOf(TypeReference("enum1"), TypeReference("data1"))),
                             params = emptyList()
                         )
                     )
@@ -592,15 +592,15 @@ class JavaCodeGeneratorTest {
                     methods = listOf(
                         ActorMethod(
                             "method1",
-                            Type("int32"),
+                            TypeReference("int32"),
                             params = listOf(
                                 MethodParameter(
-                                    "arg1", type = Type(
+                                    "arg1", type = TypeReference(
                                         "map", of = listOf(
-                                            Type("string"),
-                                            Type(
+                                            TypeReference("string"),
+                                            TypeReference(
                                                 "list", of = listOf(
-                                                    Type("list", of = listOf(Type("int64")))
+                                                    TypeReference("list", of = listOf(TypeReference("int64")))
                                                 )
                                             )
                                         )
@@ -643,7 +643,7 @@ class JavaCodeGeneratorTest {
                     "data1",
                     fields = listOf(
                         DataField(
-                            "field1", Type("string"), 1
+                            "field1", TypeReference("string"), 1
                         )
                     )
                 )
@@ -654,12 +654,12 @@ class JavaCodeGeneratorTest {
                     methods = listOf(
                         ActorMethod(
                             "method1",
-                            Type("int32"),
+                            TypeReference("int32"),
                             params = listOf(
                                 MethodParameter(
-                                    "arg1", type = Type(
+                                    "arg1", type = TypeReference(
                                         "map", of =
-                                        listOf(Type("enum1"), Type("data1"))
+                                        listOf(TypeReference("enum1"), TypeReference("data1"))
                                     )
                                 )
                             )

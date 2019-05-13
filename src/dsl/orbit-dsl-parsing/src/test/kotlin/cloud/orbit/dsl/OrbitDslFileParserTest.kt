@@ -17,7 +17,7 @@ import cloud.orbit.dsl.ast.EnumDeclaration
 import cloud.orbit.dsl.ast.EnumMember
 import cloud.orbit.dsl.ast.MethodParameter
 import cloud.orbit.dsl.ast.ParseContext
-import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeReference
 import cloud.orbit.dsl.error.OrbitDslCompilationException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -234,7 +234,7 @@ class OrbitDslFileParserTest {
                                 )
                             ),
                             name = "field1",
-                            type = Type(
+                            type = TypeReference(
                                 context = AstNode.Context(
                                     ParseContext(
                                         filePath = testFilePath,
@@ -255,7 +255,7 @@ class OrbitDslFileParserTest {
                                 )
                             ),
                             name = "field2",
-                            type = Type(
+                            type = TypeReference(
                                 context = AstNode.Context(
                                     ParseContext(
                                         filePath = testFilePath,
@@ -291,7 +291,7 @@ class OrbitDslFileParserTest {
                                 )
                             ),
                             name = "no_args",
-                            returnType = Type(
+                            returnType = TypeReference(
                                 context = AstNode.Context(
                                     ParseContext(
                                         filePath = testFilePath,
@@ -311,7 +311,7 @@ class OrbitDslFileParserTest {
                                 )
                             ),
                             name = "one_arg",
-                            returnType = Type(
+                            returnType = TypeReference(
                                 context = AstNode.Context(
                                     ParseContext(
                                         filePath = testFilePath,
@@ -331,7 +331,7 @@ class OrbitDslFileParserTest {
                                         )
                                     ),
                                     name = "a",
-                                    type = Type(
+                                    type = TypeReference(
                                         context = AstNode.Context(
                                             ParseContext(
                                                 filePath = testFilePath,
@@ -353,7 +353,7 @@ class OrbitDslFileParserTest {
                                 )
                             ),
                             name = "multiple_args",
-                            returnType = Type(
+                            returnType = TypeReference(
                                 context = AstNode.Context(
                                     ParseContext(
                                         filePath = testFilePath,
@@ -373,7 +373,7 @@ class OrbitDslFileParserTest {
                                         )
                                     ),
                                     name = "arg1",
-                                    type = Type(
+                                    type = TypeReference(
                                         context = AstNode.Context(
                                             ParseContext(
                                                 filePath = testFilePath,
@@ -393,7 +393,7 @@ class OrbitDslFileParserTest {
                                         )
                                     ),
                                     name = "arg2",
-                                    type = Type(
+                                    type = TypeReference(
                                         context = AstNode.Context(
                                             ParseContext(
                                                 filePath = testFilePath,
@@ -415,7 +415,7 @@ class OrbitDslFileParserTest {
                                 )
                             ),
                             name = "generic_return",
-                            returnType = Type(
+                            returnType = TypeReference(
                                 context = AstNode.Context(
                                     ParseContext(
                                         filePath = testFilePath,
@@ -425,7 +425,7 @@ class OrbitDslFileParserTest {
                                 ),
                                 name = "list",
                                 of = listOf(
-                                    Type(
+                                    TypeReference(
                                         context = AstNode.Context(
                                             ParseContext(
                                                 filePath = testFilePath,
@@ -447,7 +447,7 @@ class OrbitDslFileParserTest {
                                 )
                             ),
                             name = "generic_arg",
-                            returnType = Type(
+                            returnType = TypeReference(
                                 context = AstNode.Context(
                                     ParseContext(
                                         filePath = testFilePath,
@@ -467,7 +467,7 @@ class OrbitDslFileParserTest {
                                         )
                                     ),
                                     name = "arg1",
-                                    type = Type(
+                                    type = TypeReference(
                                         context = AstNode.Context(
                                             ParseContext(
                                                 filePath = testFilePath,
@@ -476,7 +476,7 @@ class OrbitDslFileParserTest {
                                             )
                                         ),
                                         name = "list", of = listOf(
-                                            Type(
+                                            TypeReference(
                                                 context = AstNode.Context(
                                                     ParseContext(
                                                         filePath = testFilePath,
@@ -500,7 +500,7 @@ class OrbitDslFileParserTest {
                                 )
                             ),
                             name = "generic_multi",
-                            returnType = Type(
+                            returnType = TypeReference(
                                 context = AstNode.Context(
                                     ParseContext(
                                         filePath = testFilePath,
@@ -510,7 +510,7 @@ class OrbitDslFileParserTest {
                                 ),
                                 name = "map",
                                 of = listOf(
-                                    Type(
+                                    TypeReference(
                                         context = AstNode.Context(
                                             ParseContext(
                                                 filePath = testFilePath,
@@ -520,7 +520,7 @@ class OrbitDslFileParserTest {
                                         ),
                                         name = "RGB"
                                     ),
-                                    Type(
+                                    TypeReference(
                                         context = AstNode.Context(
                                             ParseContext(
                                                 filePath = testFilePath,
@@ -542,7 +542,7 @@ class OrbitDslFileParserTest {
                                         )
                                     ),
                                     name = "arg1",
-                                    type = Type(
+                                    type = TypeReference(
                                         context = AstNode.Context(
                                             ParseContext(
                                                 filePath = testFilePath,
@@ -552,7 +552,7 @@ class OrbitDslFileParserTest {
                                         ),
                                         name = "map",
                                         of = listOf(
-                                            Type(
+                                            TypeReference(
                                                 context = AstNode.Context(
                                                     ParseContext(
                                                         filePath = testFilePath,
@@ -562,7 +562,7 @@ class OrbitDslFileParserTest {
                                                 ),
                                                 name = "string"
                                             ),
-                                            Type(
+                                            TypeReference(
                                                 context = AstNode.Context(
                                                     ParseContext(
                                                         filePath = testFilePath,
@@ -586,7 +586,7 @@ class OrbitDslFileParserTest {
                                 )
                             ),
                             name = "generics_nested",
-                            returnType = Type(
+                            returnType = TypeReference(
                                 context = AstNode.Context(
                                     ParseContext(
                                         filePath = testFilePath,
@@ -596,7 +596,7 @@ class OrbitDslFileParserTest {
                                 ),
                                 name = "list",
                                 of = listOf(
-                                    Type(
+                                    TypeReference(
                                         context = AstNode.Context(
                                             ParseContext(
                                                 filePath = testFilePath,
@@ -606,7 +606,7 @@ class OrbitDslFileParserTest {
                                         ),
                                         name = "map",
                                         of = listOf(
-                                            Type(
+                                            TypeReference(
                                                 context = AstNode.Context(
                                                     ParseContext(
                                                         filePath = testFilePath,
@@ -616,7 +616,7 @@ class OrbitDslFileParserTest {
                                                 ),
                                                 name = "string"
                                             ),
-                                            Type(
+                                            TypeReference(
                                                 context = AstNode.Context(
                                                     ParseContext(
                                                         filePath = testFilePath,
@@ -640,7 +640,7 @@ class OrbitDslFileParserTest {
                                         )
                                     ),
                                     name = "arg1",
-                                    type = Type(
+                                    type = TypeReference(
                                         context = AstNode.Context(
                                             ParseContext(
                                                 filePath = testFilePath,
@@ -650,7 +650,7 @@ class OrbitDslFileParserTest {
                                         ),
                                         name = "map",
                                         of = listOf(
-                                            Type(
+                                            TypeReference(
                                                 context = AstNode.Context(
                                                     ParseContext(
                                                         filePath = testFilePath,
@@ -660,7 +660,7 @@ class OrbitDslFileParserTest {
                                                 ),
                                                 name = "string"
                                             ),
-                                            Type(
+                                            TypeReference(
                                                 context = AstNode.Context(
                                                     ParseContext(
                                                         filePath = testFilePath,
@@ -670,7 +670,7 @@ class OrbitDslFileParserTest {
                                                 ),
                                                 name = "list",
                                                 of = listOf(
-                                                    Type(
+                                                    TypeReference(
                                                         context = AstNode.Context(
                                                             ParseContext(
                                                                 filePath = testFilePath,
@@ -680,7 +680,7 @@ class OrbitDslFileParserTest {
                                                         ),
                                                         name = "list",
                                                         of = listOf(
-                                                            Type(
+                                                            TypeReference(
                                                                 context = AstNode.Context(
                                                                     ParseContext(
                                                                         filePath = testFilePath,

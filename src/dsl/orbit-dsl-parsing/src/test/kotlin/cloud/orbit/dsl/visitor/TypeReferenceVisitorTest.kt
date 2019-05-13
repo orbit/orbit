@@ -7,7 +7,7 @@
 package cloud.orbit.dsl.visitor
 
 import cloud.orbit.dsl.OrbitDslParser
-import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeReference
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -17,11 +17,11 @@ class TypeReferenceVisitorTest {
     @Test
     fun buildsSimpleType() {
         Assertions.assertEquals(
-            Type(
+            TypeReference(
                 "map",
                 of = listOf(
-                    Type("string"),
-                    Type("list", of = listOf(Type("int32")))
+                    TypeReference("string"),
+                    TypeReference("list", of = listOf(TypeReference("int32")))
                 )
             ),
             visitor.parse("map<string, list<int32>>", OrbitDslParser::typeReference)
@@ -31,11 +31,11 @@ class TypeReferenceVisitorTest {
     @Test
     fun buildsParameterizedType() {
         Assertions.assertEquals(
-            Type(
+            TypeReference(
                 "map",
                 of = listOf(
-                    Type("string"),
-                    Type("list", of = listOf(Type("int32")))
+                    TypeReference("string"),
+                    TypeReference("list", of = listOf(TypeReference("int32")))
                 )
             ),
             visitor.parse("map<string, list<int32>>", OrbitDslParser::typeReference)

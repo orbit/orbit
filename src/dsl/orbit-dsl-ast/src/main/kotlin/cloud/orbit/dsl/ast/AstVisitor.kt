@@ -25,7 +25,7 @@ abstract class AstVisitor : ErrorReporter {
             is DataField -> visitDataField(node)
             is ActorMethod -> visitActorMethod(node)
             is MethodParameter -> visitMethodParameter(node)
-            is Type -> visitType(node)
+            is TypeReference -> visitTypeReference(node)
         }
     }
 
@@ -65,8 +65,8 @@ abstract class AstVisitor : ErrorReporter {
         visitNode(methodParameter.type)
     }
 
-    open fun visitType(type: Type) {
-        type.of.forEach { visitNode(it) }
+    open fun visitTypeReference(typeReference: TypeReference) {
+        typeReference.of.forEach { visitNode(it) }
     }
 
     fun addErrorListener(errorListener: ErrorListener) {

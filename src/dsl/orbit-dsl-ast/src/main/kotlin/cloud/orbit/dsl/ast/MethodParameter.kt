@@ -8,6 +8,6 @@ package cloud.orbit.dsl.ast
 
 data class MethodParameter(
     val name: String,
-    val type: Type,
+    val type: TypeReference,
     override val context: AstNode.Context = AstNode.Context.NONE
 ) : AstNode

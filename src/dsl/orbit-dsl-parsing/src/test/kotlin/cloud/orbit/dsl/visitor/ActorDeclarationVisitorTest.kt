@@ -11,7 +11,7 @@ import cloud.orbit.dsl.ast.ActorDeclaration
 import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.MethodParameter
-import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeReference
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -76,21 +76,21 @@ class ActorDeclarationVisitorTest {
                 methods = listOf(
                     ActorMethod(
                         "method1",
-                        returnType = Type("void"),
+                        returnType = TypeReference("void"),
                         params = listOf(
                             MethodParameter(
                                 "n",
-                                type = Type("int32")
+                                type = TypeReference("int32")
                             )
                         )
                     ),
                     ActorMethod(
                         "method2",
-                        returnType = Type("int64"),
+                        returnType = TypeReference("int64"),
                         params = listOf(
                             MethodParameter(
                                 "s",
-                                type = Type("string")
+                                type = TypeReference("string")
                             )
                         )
                     )

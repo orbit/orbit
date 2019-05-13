@@ -9,25 +9,25 @@ package cloud.orbit.dsl.java
 import cloud.orbit.dsl.ast.AstVisitor
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.Declaration
-import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeReference
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.TypeName
 
 internal class TypeIndexer : AstVisitor() {
     private val types = mutableMapOf(
-        Type("boolean") to TypeName.BOOLEAN,
-        Type("double") to TypeName.DOUBLE,
-        Type("float") to TypeName.FLOAT,
-        Type("int32") to TypeName.INT,
-        Type("int64") to TypeName.LONG,
-        Type("string") to ClassName.get(String::class.java),
-        Type("list") to ClassName.get(java.util.List::class.java),
-        Type("map") to ClassName.get(java.util.Map::class.java)
+        TypeReference("boolean") to TypeName.BOOLEAN,
+        TypeReference("double") to TypeName.DOUBLE,
+        TypeReference("float") to TypeName.FLOAT,
+        TypeReference("int32") to TypeName.INT,
+        TypeReference("int64") to TypeName.LONG,
+        TypeReference("string") to ClassName.get(String::class.java),
+        TypeReference("list") to ClassName.get(java.util.List::class.java),
+        TypeReference("map") to ClassName.get(java.util.Map::class.java)
     )
 
     private var packageName: String = ""
 
-    fun visitCompilationUnits(compilationUnits: List<CompilationUnit>): Map<Type, TypeName> {
+    fun visitCompilationUnits(compilationUnits: List<CompilationUnit>): Map<TypeReference, TypeName> {
         compilationUnits.forEach { visitCompilationUnit(it) }
         return types
     }
@@ -38,6 +38,6 @@ internal class TypeIndexer : AstVisitor() {
     }
 
     override fun visitDeclaration(declaration: Declaration) {
-        types[Type(declaration.name)] = ClassName.get(packageName, declaration.name)
+        types[TypeReference(declaration.name)] = ClassName.get(packageName, declaration.name)
     }
 }

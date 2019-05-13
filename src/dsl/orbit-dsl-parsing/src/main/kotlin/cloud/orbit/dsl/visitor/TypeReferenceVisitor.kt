@@ -8,13 +8,13 @@ package cloud.orbit.dsl.visitor
 
 import cloud.orbit.dsl.OrbitDslBaseVisitor
 import cloud.orbit.dsl.OrbitDslParser
-import cloud.orbit.dsl.ast.Type
+import cloud.orbit.dsl.ast.TypeReference
 
 class TypeReferenceVisitor(
     private val contextProvider: AstNodeContextProvider
-) : OrbitDslBaseVisitor<Type>() {
+) : OrbitDslBaseVisitor<TypeReference>() {
     override fun visitTypeReference(ctx: OrbitDslParser.TypeReferenceContext) =
-        Type(
+        TypeReference(
             name = ctx.name.text,
             of = ctx.children
                 .filterIsInstance(OrbitDslParser.TypeReferenceContext::class.java)
