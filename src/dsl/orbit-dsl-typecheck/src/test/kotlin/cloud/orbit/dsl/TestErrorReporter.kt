@@ -15,5 +15,4 @@ class TestErrorReporter : ErrorReporter {
     override fun reportError(astNode: AstNode, message: String) {
         errors.add(message)
     }
-
 }

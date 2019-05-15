@@ -10,19 +10,21 @@ import cloud.orbit.dsl.ast.AstVisitor
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.Declaration
 import cloud.orbit.dsl.ast.TypeReference
+import cloud.orbit.dsl.type.PrimitiveType
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.TypeName
 
 internal class TypeIndexer : AstVisitor() {
     private val types = mutableMapOf(
-        TypeReference("boolean") to TypeName.BOOLEAN,
-        TypeReference("double") to TypeName.DOUBLE,
-        TypeReference("float") to TypeName.FLOAT,
-        TypeReference("int32") to TypeName.INT,
-        TypeReference("int64") to TypeName.LONG,
-        TypeReference("string") to ClassName.get(String::class.java),
-        TypeReference("list") to ClassName.get(java.util.List::class.java),
-        TypeReference("map") to ClassName.get(java.util.Map::class.java)
+        TypeReference(PrimitiveType.BOOLEAN) to TypeName.BOOLEAN,
+        TypeReference(PrimitiveType.DOUBLE) to TypeName.DOUBLE,
+        TypeReference(PrimitiveType.FLOAT) to TypeName.FLOAT,
+        TypeReference(PrimitiveType.INT32) to TypeName.INT,
+        TypeReference(PrimitiveType.INT64) to TypeName.LONG,
+        TypeReference(PrimitiveType.LIST) to ClassName.get(java.util.List::class.java),
+        TypeReference(PrimitiveType.MAP) to ClassName.get(java.util.Map::class.java),
+        TypeReference(PrimitiveType.STRING) to ClassName.get(String::class.java),
+        TypeReference(PrimitiveType.VOID) to ClassName.get(Void::class.java)
     )
 
     private var packageName: String = ""

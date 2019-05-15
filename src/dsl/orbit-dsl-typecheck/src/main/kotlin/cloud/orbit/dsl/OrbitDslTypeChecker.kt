@@ -11,6 +11,7 @@ import cloud.orbit.dsl.error.OrbitDslCompilationException
 
 object OrbitDslTypeChecker {
     private val checks = listOf(
+        VoidUsageCheck(),
         TypeArityCheck(
             mapOf(
                 "list" to TypeDescriptor("list", 1),
