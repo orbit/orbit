@@ -23,12 +23,13 @@ class TypeIndexerTest {
             TypeReference("boolean") to TypeName.BOOLEAN,
             TypeReference("double") to TypeName.DOUBLE,
             TypeReference("float") to TypeName.FLOAT,
+            TypeReference("guid") to ClassName.get(java.util.UUID::class.java),
             TypeReference("int32") to TypeName.INT,
             TypeReference("int64") to TypeName.LONG,
-            TypeReference("string") to ClassName.get(String::class.java),
-            TypeReference("void") to ClassName.get(Void::class.java),
             TypeReference("list") to ClassName.get(java.util.List::class.java),
-            TypeReference("map") to ClassName.get(java.util.Map::class.java)
+            TypeReference("map") to ClassName.get(java.util.Map::class.java),
+            TypeReference("string") to ClassName.get(java.lang.String::class.java),
+            TypeReference("void") to ClassName.get(java.lang.Void::class.java)
         )
 
         val types = TypeIndexer().visitCompilationUnits(emptyList())

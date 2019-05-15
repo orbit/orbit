@@ -10,6 +10,7 @@ object PrimitiveType {
     const val BOOLEAN = "boolean"
     const val DOUBLE = "double"
     const val FLOAT = "float"
+    const val GUID = "guid"
     const val INT32 = "int32"
     const val INT64 = "int64"
     const val LIST = "list"
