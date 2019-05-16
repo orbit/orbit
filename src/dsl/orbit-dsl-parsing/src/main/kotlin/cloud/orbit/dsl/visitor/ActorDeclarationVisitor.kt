@@ -13,6 +13,7 @@ import cloud.orbit.dsl.ast.ActorDeclaration
 import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.MethodParameter
+import cloud.orbit.dsl.type.PrimitiveType
 
 class ActorDeclarationVisitor(
     private val typeReferenceVisitor: TypeReferenceVisitor,
@@ -45,10 +46,10 @@ class ActorDeclarationVisitor(
 
     private fun TypeReferenceContext.toActorKeyType() =
         when (this.text) {
-            "string" -> ActorKeyType.STRING
-            "int32" -> ActorKeyType.INT32
-            "int64" -> ActorKeyType.INT64
-            "guid" -> ActorKeyType.GUID
+            PrimitiveType.STRING -> ActorKeyType.STRING
+            PrimitiveType.INT32 -> ActorKeyType.INT32
+            PrimitiveType.INT64 -> ActorKeyType.INT64
+            PrimitiveType.GUID -> ActorKeyType.GUID
             else -> throw UnsupportedActorKeyTypeException(
                 this.text, this.name.line, this.name.charPositionInLine
             )

@@ -16,11 +16,362 @@ import cloud.orbit.dsl.ast.EnumDeclaration
 import cloud.orbit.dsl.ast.EnumMember
 import cloud.orbit.dsl.ast.MethodParameter
 import cloud.orbit.dsl.ast.TypeReference
+import cloud.orbit.dsl.type.PrimitiveType
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class JavaCodeGeneratorTest {
     private val packageName = "cloud.orbit.test"
+
+    @Test
+    fun primitiveTypeBooleanIsJavaBoolean() {
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    methods = listOf(
+                        ActorMethod(
+                            name = "m",
+                            returnType = TypeReference(PrimitiveType.BOOLEAN),
+                            params = listOf(
+                                MethodParameter(
+                                    name = "p",
+                                    type = TypeReference(PrimitiveType.BOOLEAN)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSource = """
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey {
+              java.util.concurrent.CompletableFuture<java.lang.Boolean> m(boolean p);
+            }
+        """
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun primitiveTypeDoubleIsJavaDouble() {
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    methods = listOf(
+                        ActorMethod(
+                            name = "m",
+                            returnType = TypeReference(PrimitiveType.DOUBLE),
+                            params = listOf(
+                                MethodParameter(
+                                    name = "p",
+                                    type = TypeReference(PrimitiveType.DOUBLE)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSource = """
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey {
+              java.util.concurrent.CompletableFuture<java.lang.Double> m(double p);
+            }
+        """
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun primitiveTypeFloatIsJavaFloat() {
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    methods = listOf(
+                        ActorMethod(
+                            name = "m",
+                            returnType = TypeReference(PrimitiveType.FLOAT),
+                            params = listOf(
+                                MethodParameter(
+                                    name = "p",
+                                    type = TypeReference(PrimitiveType.FLOAT)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSource = """
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey {
+              java.util.concurrent.CompletableFuture<java.lang.Float> m(float p);
+            }
+        """
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun primitiveTypeGuidIsJavaUuid() {
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    methods = listOf(
+                        ActorMethod(
+                            name = "m",
+                            returnType = TypeReference(PrimitiveType.GUID),
+                            params = listOf(
+                                MethodParameter(
+                                    name = "p",
+                                    type = TypeReference(PrimitiveType.GUID)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSource = """
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey {
+              java.util.concurrent.CompletableFuture<java.util.UUID> m(java.util.UUID p);
+            }
+        """
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun primitiveTypeInt32IsJavaInteger() {
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    methods = listOf(
+                        ActorMethod(
+                            name = "m",
+                            returnType = TypeReference(PrimitiveType.INT32),
+                            params = listOf(
+                                MethodParameter(
+                                    name = "p",
+                                    type = TypeReference(PrimitiveType.INT32)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSource = """
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey {
+              java.util.concurrent.CompletableFuture<java.lang.Integer> m(int p);
+            }
+        """
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun primitiveTypeInt64IsJavaLong() {
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    methods = listOf(
+                        ActorMethod(
+                            name = "m",
+                            returnType = TypeReference(PrimitiveType.INT64),
+                            params = listOf(
+                                MethodParameter(
+                                    name = "p",
+                                    type = TypeReference(PrimitiveType.INT64)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSource = """
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey {
+              java.util.concurrent.CompletableFuture<java.lang.Long> m(long p);
+            }
+        """
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun primitiveTypeListIsJavaList() {
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    methods = listOf(
+                        ActorMethod(
+                            name = "m",
+                            returnType = TypeReference(PrimitiveType.LIST),
+                            params = listOf(
+                                MethodParameter(
+                                    name = "p",
+                                    type = TypeReference(PrimitiveType.LIST)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSource = """
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey {
+              java.util.concurrent.CompletableFuture<java.util.List> m(java.util.List p);
+            }
+        """
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun primitiveTypeMapIsJavaMap() {
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    methods = listOf(
+                        ActorMethod(
+                            name = "m",
+                            returnType = TypeReference(PrimitiveType.MAP),
+                            params = listOf(
+                                MethodParameter(
+                                    name = "p",
+                                    type = TypeReference(PrimitiveType.MAP)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSource = """
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey {
+              java.util.concurrent.CompletableFuture<java.util.Map> m(java.util.Map p);
+            }
+        """
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun primitiveTypeStringIsJavaString() {
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    methods = listOf(
+                        ActorMethod(
+                            name = "m",
+                            returnType = TypeReference(PrimitiveType.STRING),
+                            params = listOf(
+                                MethodParameter(
+                                    name = "p",
+                                    type = TypeReference(PrimitiveType.STRING)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSource = """
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey {
+              java.util.concurrent.CompletableFuture<java.lang.String> m(java.lang.String p);
+            }
+        """
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
+
+    @Test
+    fun primitiveTypeVoidIsJavaVoid() {
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    methods = listOf(
+                        ActorMethod(
+                            name = "m",
+                            returnType = TypeReference(PrimitiveType.VOID),
+                            params = listOf(
+                                MethodParameter(
+                                    name = "p",
+                                    type = TypeReference(PrimitiveType.VOID)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val expectedSource = """
+            public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey {
+              java.util.concurrent.CompletableFuture<java.lang.Void> m(java.lang.Void p);
+            }
+        """
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
+    }
 
     @Test
     fun generateEnum_OneMember() {

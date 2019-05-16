@@ -19,6 +19,7 @@ internal class TypeIndexer : AstVisitor() {
         TypeReference(PrimitiveType.BOOLEAN) to TypeName.BOOLEAN,
         TypeReference(PrimitiveType.DOUBLE) to TypeName.DOUBLE,
         TypeReference(PrimitiveType.FLOAT) to TypeName.FLOAT,
+        TypeReference(PrimitiveType.GUID) to ClassName.get(java.util.UUID::class.java),
         TypeReference(PrimitiveType.INT32) to TypeName.INT,
         TypeReference(PrimitiveType.INT64) to TypeName.LONG,
         TypeReference(PrimitiveType.LIST) to ClassName.get(java.util.List::class.java),
