@@ -7,12 +7,12 @@
 package cloud.orbit.dsl.java
 
 import cloud.orbit.dsl.ast.ActorDeclaration
-import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.AstVisitor
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.DataDeclaration
 import cloud.orbit.dsl.ast.EnumDeclaration
 import cloud.orbit.dsl.ast.TypeReference
+import cloud.orbit.dsl.type.PrimitiveType
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.ParameterSpec
@@ -117,13 +117,14 @@ internal class JavaCodeGenerator(private val knownTypes: Map<TypeReference, Type
             )
         }
 
-    private fun orbitActorKeyInterface(keyType: ActorKeyType): TypeName =
-        when (keyType) {
-            ActorKeyType.NO_KEY -> "ActorWithNoKey"
-            ActorKeyType.STRING -> "ActorWithStringKey"
-            ActorKeyType.INT32 -> "ActorWithInt32Key"
-            ActorKeyType.INT64 -> "ActorWithInt64Key"
-            ActorKeyType.GUID -> "ActorWithGuidKey"
+    private fun orbitActorKeyInterface(keyType: TypeReference): TypeName =
+        when (keyType.name) {
+            PrimitiveType.GUID -> "ActorWithGuidKey"
+            PrimitiveType.INT32 -> "ActorWithInt32Key"
+            PrimitiveType.INT64 -> "ActorWithInt64Key"
+            PrimitiveType.STRING -> "ActorWithStringKey"
+            PrimitiveType.VOID -> "ActorWithNoKey"
+            else -> throw IllegalStateException("Illegal actor key type ${keyType.name}")
         }.let {
             ClassName.get("cloud.orbit.core.actor", it)
         }

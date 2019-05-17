@@ -6,6 +6,7 @@
 
 package cloud.orbit.dsl
 
+import cloud.orbit.dsl.ast.ActorDeclaration
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.AstVisitor
 import cloud.orbit.dsl.ast.DataField
@@ -24,6 +25,14 @@ class TypeCheckingVisitor(private val typeChecks: Collection<TypeCheck>) : AstVi
         }
 
         super.visitDataField(field)
+    }
+
+    override fun visitActorDeclaration(actor: ActorDeclaration) {
+        typeChecks.forEach {
+            it.check(actor.keyType, TypeCheck.Context.ACTOR_KEY, errorReporter = this)
+        }
+
+        super.visitActorDeclaration(actor)
     }
 
     override fun visitActorMethod(method: ActorMethod) {

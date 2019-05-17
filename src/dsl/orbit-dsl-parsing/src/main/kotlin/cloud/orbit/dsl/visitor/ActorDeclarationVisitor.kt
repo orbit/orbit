@@ -8,11 +8,10 @@ package cloud.orbit.dsl.visitor
 
 import cloud.orbit.dsl.OrbitDslBaseVisitor
 import cloud.orbit.dsl.OrbitDslParser
-import cloud.orbit.dsl.OrbitDslParser.TypeReferenceContext
 import cloud.orbit.dsl.ast.ActorDeclaration
-import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.MethodParameter
+import cloud.orbit.dsl.ast.TypeReference
 import cloud.orbit.dsl.type.PrimitiveType
 
 class ActorDeclarationVisitor(
@@ -22,7 +21,7 @@ class ActorDeclarationVisitor(
     override fun visitActorDeclaration(ctx: OrbitDslParser.ActorDeclarationContext) =
         ActorDeclaration(
             name = ctx.name.text,
-            keyType = ctx.keyType?.toActorKeyType() ?: ActorKeyType.NO_KEY,
+            keyType = ctx.keyType?.accept(typeReferenceVisitor) ?: TypeReference(PrimitiveType.VOID),
             methods = ctx.children
                 .filterIsInstance(OrbitDslParser.ActorMethodContext::class.java)
                 .map { m ->
@@ -43,15 +42,4 @@ class ActorDeclarationVisitor(
                 }
                 .toList(),
             context = contextProvider.fromToken(ctx.name))
-
-    private fun TypeReferenceContext.toActorKeyType() =
-        when (this.text) {
-            PrimitiveType.STRING -> ActorKeyType.STRING
-            PrimitiveType.INT32 -> ActorKeyType.INT32
-            PrimitiveType.INT64 -> ActorKeyType.INT64
-            PrimitiveType.GUID -> ActorKeyType.GUID
-            else -> throw UnsupportedActorKeyTypeException(
-                this.text, this.name.line, this.name.charPositionInLine
-            )
-        }
 }

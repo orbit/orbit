@@ -30,6 +30,13 @@ class VoidUsageCheckTest {
     }
 
     @Test
+    fun doesNotReportErrorOnActorKeyTypeReturn() {
+        check.check(TypeReference("void"), TypeCheck.Context.ACTOR_KEY, errorReporter)
+
+        assertTrue(errorReporter.errors.isEmpty())
+    }
+
+    @Test
     fun doesNotReportErrorOnMethodReturn() {
         check.check(TypeReference("void"), TypeCheck.Context.METHOD_RETURN, errorReporter)
 
@@ -37,9 +44,9 @@ class VoidUsageCheckTest {
     }
 
     @Test
-    fun reportsErrorOnNonMethodReturn() {
+    fun reportsErrorOnIllegalUsage() {
         val typeCheckContexts = TypeCheck.Context.values().filter {
-            it != TypeCheck.Context.METHOD_RETURN
+            it !in setOf(TypeCheck.Context.ACTOR_KEY, TypeCheck.Context.METHOD_RETURN)
         }
 
         typeCheckContexts.forEach {

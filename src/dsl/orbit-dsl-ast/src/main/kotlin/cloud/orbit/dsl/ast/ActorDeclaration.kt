@@ -6,9 +6,11 @@
 
 package cloud.orbit.dsl.ast
 
+import cloud.orbit.dsl.type.PrimitiveType
+
 data class ActorDeclaration(
     override val name: String,
-    val keyType: ActorKeyType = ActorKeyType.NO_KEY,
+    val keyType: TypeReference = TypeReference(PrimitiveType.VOID),
     val methods: List<ActorMethod> = emptyList(),
     override val context: AstNode.Context = AstNode.Context.NONE
 ) : Declaration

@@ -7,7 +7,6 @@
 package cloud.orbit.dsl
 
 import cloud.orbit.dsl.ast.ActorDeclaration
-import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.AstNode
 import cloud.orbit.dsl.ast.CompilationUnit
@@ -19,6 +18,7 @@ import cloud.orbit.dsl.ast.MethodParameter
 import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.ast.TypeReference
 import cloud.orbit.dsl.error.OrbitDslCompilationException
+import cloud.orbit.dsl.type.PrimitiveType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -38,22 +38,6 @@ class OrbitDslFileParserTest {
         }
 
         assertEquals(1, exception.errors.size)
-    }
-
-    @Test
-    fun convertsUnsupportedActorKeyTypeExceptionToSyntaxError() {
-        val exception = assertThrows<OrbitDslCompilationException> {
-            OrbitDslFileParser().parse(
-                listOf(
-                    OrbitDslParseInput("actor a<boolean> { }", testPackageName, testFilePath)
-                )
-            )
-        }
-
-        assertEquals(1, exception.errors.size)
-        assertEquals("cloud/orbit/test/hello.orbit", exception.errors.first().filePath)
-        assertEquals(1, exception.errors.first().line)
-        assertEquals(8, exception.errors.first().column)
     }
 
     @Test
@@ -156,13 +140,7 @@ class OrbitDslFileParserTest {
 
             actor MyKeylessActor { }
 
-            actor MyStringKeyedActor<string> { }
-
-            actor MyInt32KeyedActor<int32> { }
-
-            actor MyInt64KeyedActor<int64> { }
-
-            actor MyGuidKeyedActor<guid> { }
+            actor MyKeyedActor<KeyType> { }
         """.trimIndent()
 
         val expectedCompilationUnit = CompilationUnit(
@@ -280,7 +258,7 @@ class OrbitDslFileParserTest {
                         )
                     ),
                     name = "MyActor",
-                    keyType = ActorKeyType.NO_KEY,
+                    keyType = TypeReference(PrimitiveType.VOID),
                     methods = listOf(
                         ActorMethod(
                             context = AstNode.Context(
@@ -710,7 +688,7 @@ class OrbitDslFileParserTest {
                         )
                     ),
                     name = "MyKeylessActor",
-                    keyType = ActorKeyType.NO_KEY
+                    keyType = TypeReference(PrimitiveType.VOID)
                 ),
                 ActorDeclaration(
                     context = AstNode.Context(
@@ -720,41 +698,16 @@ class OrbitDslFileParserTest {
                             column = 6
                         )
                     ),
-                    name = "MyStringKeyedActor",
-                    keyType = ActorKeyType.STRING
-                ),
-                ActorDeclaration(
-                    context = AstNode.Context(
-                        ParseContext(
-                            filePath = testFilePath,
-                            line = 35,
-                            column = 6
-                        )
-                    ),
-                    name = "MyInt32KeyedActor",
-                    keyType = ActorKeyType.INT32
-                ),
-                ActorDeclaration(
-                    context = AstNode.Context(
-                        ParseContext(
-                            filePath = testFilePath,
-                            line = 37,
-                            column = 6
-                        )
-                    ),
-                    name = "MyInt64KeyedActor",
-                    keyType = ActorKeyType.INT64
-                ),
-                ActorDeclaration(
-                    context = AstNode.Context(
-                        ParseContext(
-                            filePath = testFilePath,
-                            line = 39,
-                            column = 6
-                        )
-                    ),
-                    name = "MyGuidKeyedActor",
-                    keyType = ActorKeyType.GUID
+                    name = "MyKeyedActor",
+                    keyType = TypeReference(
+                        name = "KeyType",
+                        context = AstNode.Context(
+                            ParseContext(
+                                filePath = testFilePath,
+                                line = 33,
+                                column = 19
+                            )
+                        ))
                 )
             )
         )

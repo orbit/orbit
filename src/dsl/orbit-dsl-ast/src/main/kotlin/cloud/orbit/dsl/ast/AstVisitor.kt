@@ -53,6 +53,7 @@ abstract class AstVisitor : ErrorReporter {
     }
 
     open fun visitActorDeclaration(actor: ActorDeclaration) {
+        visitNode(actor.keyType)
         actor.methods.forEach { visitNode(it) }
     }
 

@@ -3,3 +3,7 @@
  This file is part of the Orbit Project <https://www.orbit.cloud>.
  See license in LICENSE.
  */
+
+dependencies {
+    compile(project(":src:dsl:orbit-dsl-common"))
+}

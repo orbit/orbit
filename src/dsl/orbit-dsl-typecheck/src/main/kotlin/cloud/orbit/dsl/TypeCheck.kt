@@ -24,6 +24,7 @@ interface TypeCheck {
     fun check(typeReference: TypeReference, context: Context, errorReporter: ErrorReporter)
 
     enum class Context {
+        ACTOR_KEY,
         DATA_FIELD,
         METHOD_RETURN,
         METHOD_PARAMETER,
