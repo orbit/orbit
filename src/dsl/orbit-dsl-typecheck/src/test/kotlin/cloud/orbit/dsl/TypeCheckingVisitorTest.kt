@@ -19,6 +19,30 @@ import org.junit.jupiter.api.Test
 
 class TypeCheckingVisitorTest {
     @Test
+    fun checksActorKeyType() {
+        val collectingTypeCheck = CollectingTypeCheck()
+        val visitor = TypeCheckingVisitor(listOf(collectingTypeCheck))
+
+        visitor.visitCompilationUnit(
+            CompilationUnit(
+                "cloud.orbit.test",
+                actors = listOf(
+                    ActorDeclaration(
+                        "a",
+                        keyType = TypeReference("t")
+                    )
+                )
+            )
+        )
+
+        assertTrue(
+            collectingTypeCheck.typesChecked.contains(
+                TypeCheckInvocation(TypeReference("t"), TypeCheck.Context.ACTOR_KEY)
+            )
+        )
+    }
+
+    @Test
     fun checksDataFieldType() {
         val collectingTypeCheck = CollectingTypeCheck()
         val visitor = TypeCheckingVisitor(listOf(collectingTypeCheck))

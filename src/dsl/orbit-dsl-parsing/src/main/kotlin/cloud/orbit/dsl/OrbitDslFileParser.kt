@@ -10,15 +10,13 @@ import cloud.orbit.dsl.ast.AstNode
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.error.OrbitDslCompilationException
-import cloud.orbit.dsl.error.OrbitDslError
 import cloud.orbit.dsl.visitor.ActorDeclarationVisitor
+import cloud.orbit.dsl.visitor.AstNodeContextProvider
 import cloud.orbit.dsl.visitor.CompilationUnitBuilderVisitor
 import cloud.orbit.dsl.visitor.DataDeclarationVisitor
 import cloud.orbit.dsl.visitor.EnumDeclarationVisitor
-import cloud.orbit.dsl.visitor.AstNodeContextProvider
 import cloud.orbit.dsl.visitor.SyntaxVisitor
 import cloud.orbit.dsl.visitor.TypeReferenceVisitor
-import cloud.orbit.dsl.visitor.UnsupportedActorKeyTypeException
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ConsoleErrorListener
@@ -71,24 +69,11 @@ class OrbitDslFileParser {
         val dataDeclarationVisitor = DataDeclarationVisitor(typeReferenceVisitor, contextProvider)
         val actorDeclarationVisitor = ActorDeclarationVisitor(typeReferenceVisitor, contextProvider)
 
-        try {
-            return CompilationUnitBuilderVisitor(
-                input.packageName,
-                enumDeclarationVisitor,
-                dataDeclarationVisitor,
-                actorDeclarationVisitor
-            ).visitFile(parser.file())
-        } catch (e: UnsupportedActorKeyTypeException) {
-            throw OrbitDslCompilationException(
-                listOf(
-                    OrbitDslError(
-                        input.filePath,
-                        e.line,
-                        e.column,
-                        e.message!!
-                    )
-                )
-            )
-        }
+        return CompilationUnitBuilderVisitor(
+            input.packageName,
+            enumDeclarationVisitor,
+            dataDeclarationVisitor,
+            actorDeclarationVisitor
+        ).visitFile(parser.file())
     }
 }

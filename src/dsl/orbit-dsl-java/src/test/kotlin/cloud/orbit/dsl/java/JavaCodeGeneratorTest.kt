@@ -7,7 +7,6 @@
 package cloud.orbit.dsl.java
 
 import cloud.orbit.dsl.ast.ActorDeclaration
-import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.DataDeclaration
@@ -627,8 +626,16 @@ class JavaCodeGeneratorTest {
     }
 
     @Test
-    fun generatorActor_NoKeyType() {
-        val cu = CompilationUnit(packageName, actors = listOf(ActorDeclaration("actor1")))
+    fun generatorActor_NoKey() {
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    keyType = TypeReference(PrimitiveType.VOID)
+                )
+            )
+        )
 
         val expectedSource = "public interface actor1 extends cloud.orbit.core.actor.ActorWithNoKey { }"
 
@@ -640,7 +647,15 @@ class JavaCodeGeneratorTest {
 
     @Test
     fun generatorActor_StringKey() {
-        val cu = CompilationUnit(packageName, actors = listOf(ActorDeclaration("actor1", ActorKeyType.STRING)))
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    keyType = TypeReference(PrimitiveType.STRING)
+                )
+            )
+        )
 
         val expectedSource = "public interface actor1 extends cloud.orbit.core.actor.ActorWithStringKey { }"
 
@@ -652,7 +667,15 @@ class JavaCodeGeneratorTest {
 
     @Test
     fun generatorActor_Int32Key() {
-        val cu = CompilationUnit(packageName, actors = listOf(ActorDeclaration("actor1", ActorKeyType.INT32)))
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    keyType = TypeReference(PrimitiveType.INT32)
+                )
+            )
+        )
 
         val expectedSource = "public interface actor1 extends cloud.orbit.core.actor.ActorWithInt32Key { }"
 
@@ -664,19 +687,28 @@ class JavaCodeGeneratorTest {
 
     @Test
     fun generatorActor_Int64Key() {
-        val cu = CompilationUnit(packageName, actors = listOf(ActorDeclaration("actor1", ActorKeyType.INT64)))
-
-        val expectedSource = "public interface actor1 extends cloud.orbit.core.actor.ActorWithInt64Key { }"
-
-        assertOneElement(generateSource_minimalPipeline(cu)).run {
-            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
-            assertSourceMatch(expectedSource, this.toString())
-        }
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    keyType = TypeReference(PrimitiveType.INT64)
+                )
+            )
+        )
     }
 
     @Test
     fun generatorActor_GuidKey() {
-        val cu = CompilationUnit(packageName, actors = listOf(ActorDeclaration("actor1", ActorKeyType.GUID)))
+        val cu = CompilationUnit(
+            packageName,
+            actors = listOf(
+                ActorDeclaration(
+                    name = "actor1",
+                    keyType = TypeReference(PrimitiveType.GUID)
+                )
+            )
+        )
 
         val expectedSource = "public interface actor1 extends cloud.orbit.core.actor.ActorWithGuidKey { }"
 

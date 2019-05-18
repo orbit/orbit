@@ -8,13 +8,12 @@ package cloud.orbit.dsl.visitor
 
 import cloud.orbit.dsl.OrbitDslParser
 import cloud.orbit.dsl.ast.ActorDeclaration
-import cloud.orbit.dsl.ast.ActorKeyType
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.MethodParameter
 import cloud.orbit.dsl.ast.TypeReference
+import cloud.orbit.dsl.type.PrimitiveType
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 
 class ActorDeclarationVisitorTest {
     private val visitor = ActorDeclarationVisitor(TypeReferenceVisitor(TestAstNodeContextProvider), TestAstNodeContextProvider)
@@ -22,57 +21,25 @@ class ActorDeclarationVisitorTest {
     @Test
     fun buildsKeylessActorDeclaration() {
         Assertions.assertEquals(
-            ActorDeclaration("actor1", keyType = ActorKeyType.NO_KEY),
+            ActorDeclaration("actor1", keyType = TypeReference(PrimitiveType.VOID)),
             visitor.parse("actor actor1 { }", OrbitDslParser::actorDeclaration)
         )
     }
 
     @Test
-    fun buildsStringKeyedActorDeclaration() {
+    fun buildsKeyedActorDeclaration() {
         Assertions.assertEquals(
-            ActorDeclaration("actor1", keyType = ActorKeyType.STRING),
-            visitor.parse("actor actor1<string> {}", OrbitDslParser::actorDeclaration)
+            ActorDeclaration("actor1", keyType = TypeReference("anything")),
+            visitor.parse("actor actor1<anything> {}", OrbitDslParser::actorDeclaration)
         )
     }
 
     @Test
-    fun buildsInt32KeyedActorDeclaration() {
-        Assertions.assertEquals(
-            ActorDeclaration("actor1", keyType = ActorKeyType.INT32),
-            visitor.parse("actor actor1<int32> {}", OrbitDslParser::actorDeclaration)
-        )
-    }
-
-    @Test
-    fun buildsInt64KeyedActorDeclaration() {
-        Assertions.assertEquals(
-            ActorDeclaration("actor1", keyType = ActorKeyType.INT64),
-            visitor.parse("actor actor1<int64> {}", OrbitDslParser::actorDeclaration)
-        )
-    }
-
-    @Test
-    fun buildsGuidKeyedActorDeclaration() {
-        Assertions.assertEquals(
-            ActorDeclaration("actor1", keyType = ActorKeyType.GUID),
-            visitor.parse("actor actor1<guid> {}", OrbitDslParser::actorDeclaration)
-        )
-    }
-
-    @Test
-    fun throwsOnInvalidKeyType() {
-        assertThrows<UnsupportedActorKeyTypeException>() {
-            visitor.parse("actor actor1<float> {}", OrbitDslParser::actorDeclaration)
-        }
-    }
-
-
-    @Test
-    fun buildsActorDeclaration() {
+    fun buildsActorDeclarationWithMethods() {
         Assertions.assertEquals(
             ActorDeclaration(
                 "actor1",
-                keyType = ActorKeyType.NO_KEY,
+                keyType = TypeReference(PrimitiveType.VOID),
                 methods = listOf(
                     ActorMethod(
                         "method1",

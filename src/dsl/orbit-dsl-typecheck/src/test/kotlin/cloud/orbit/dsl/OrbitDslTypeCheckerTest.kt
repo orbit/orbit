@@ -6,6 +6,7 @@
 
 package cloud.orbit.dsl
 
+import cloud.orbit.dsl.ast.ActorDeclaration
 import cloud.orbit.dsl.ast.CompilationUnit
 import cloud.orbit.dsl.ast.DataDeclaration
 import cloud.orbit.dsl.ast.DataField
@@ -15,6 +16,23 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class OrbitDslTypeCheckerTest {
+    @Test
+    fun checksActorKeyType() {
+        val compilationUnit = CompilationUnit(
+            "cloud.orbit.test",
+            actors = listOf(
+                ActorDeclaration(
+                    name = "a1",
+                    keyType = TypeReference("foo")
+                )
+            )
+        )
+
+        assertThrows<OrbitDslCompilationException> {
+            OrbitDslTypeChecker.checkTypes(listOf(compilationUnit))
+        }
+    }
+
     @Test
     fun checksTypeArity() {
         val compilationUnit = CompilationUnit(
