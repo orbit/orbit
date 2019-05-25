@@ -13,7 +13,7 @@ import cloud.orbit.dsl.ast.DataDeclaration
 import cloud.orbit.dsl.ast.DataField
 import cloud.orbit.dsl.ast.MethodParameter
 import cloud.orbit.dsl.ast.TypeReference
-import cloud.orbit.dsl.ast.error.ErrorReporter
+import cloud.orbit.dsl.ast.ErrorReporter
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 

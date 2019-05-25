@@ -4,10 +4,14 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.dsl.ast.error
-
-import cloud.orbit.dsl.ast.AstNode
+package cloud.orbit.dsl.ast
 
 interface ErrorListener {
     fun onError(astNode: AstNode, message: String)
+
+    companion object {
+        val DEFAULT = object : ErrorListener {
+            override fun onError(astNode: AstNode, message: String) {}
+        }
+    }
 }

@@ -10,6 +10,7 @@ import cloud.orbit.dsl.ast.ActorDeclaration
 import cloud.orbit.dsl.ast.ActorMethod
 import cloud.orbit.dsl.ast.AstVisitor
 import cloud.orbit.dsl.ast.DataField
+import cloud.orbit.dsl.ast.ErrorListener
 import cloud.orbit.dsl.ast.MethodParameter
 import cloud.orbit.dsl.ast.TypeReference
 
@@ -18,7 +19,10 @@ import cloud.orbit.dsl.ast.TypeReference
  *
  * @param typeChecks the type checks to run.
  */
-class TypeCheckingVisitor(private val typeChecks: Collection<TypeCheck>) : AstVisitor() {
+class TypeCheckingVisitor(
+    private val typeChecks: Collection<TypeCheck>,
+    private val errorListener: ErrorListener = ErrorListener.DEFAULT
+) : AstVisitor(errorListener) {
     override fun visitDataField(field: DataField) {
         typeChecks.forEach {
             it.check(field.type, TypeCheck.Context.DATA_FIELD, errorReporter = this)
