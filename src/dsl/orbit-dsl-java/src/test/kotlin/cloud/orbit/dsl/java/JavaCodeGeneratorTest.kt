@@ -696,6 +696,13 @@ class JavaCodeGeneratorTest {
                 )
             )
         )
+
+        val expectedSource = "public interface actor1 extends cloud.orbit.core.actor.ActorWithInt64Key { }"
+
+        assertOneElement(generateSource_minimalPipeline(cu)).run {
+            Assertions.assertEquals(this@JavaCodeGeneratorTest.packageName, this.packageName)
+            assertSourceMatch(expectedSource, this.toString())
+        }
     }
 
     @Test
