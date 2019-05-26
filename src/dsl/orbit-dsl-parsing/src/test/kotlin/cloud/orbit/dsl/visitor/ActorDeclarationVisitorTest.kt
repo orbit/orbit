@@ -9,14 +9,43 @@ package cloud.orbit.dsl.visitor
 import cloud.orbit.dsl.OrbitDslParser
 import cloud.orbit.dsl.ast.ActorDeclaration
 import cloud.orbit.dsl.ast.ActorMethod
+import cloud.orbit.dsl.ast.AstNode
 import cloud.orbit.dsl.ast.MethodParameter
 import cloud.orbit.dsl.ast.TypeReference
 import cloud.orbit.dsl.type.PrimitiveType
+import io.mockk.every
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
+import io.mockk.slot
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 
+@ExtendWith(MockKExtension::class)
 class ActorDeclarationVisitorTest {
-    private val visitor = ActorDeclarationVisitor(TypeReferenceVisitor(TestAstNodeContextProvider), TestAstNodeContextProvider)
+    @MockK
+    lateinit var typeReferenceVisitor: TypeReferenceVisitor
+
+    @MockK
+    lateinit var astNodeContextProvider: AstNodeContextProvider
+
+    private lateinit var visitor: ActorDeclarationVisitor
+
+    @BeforeEach
+    fun beforeEach() {
+        slot<OrbitDslParser.TypeReferenceContext>().let { slot ->
+            every {
+                typeReferenceVisitor.visitTypeReference(capture(slot))
+            } answers {
+                TypeReference(slot.captured.name.text)
+            }
+        }
+
+        every { astNodeContextProvider.fromToken(any()) } returns AstNode.Context.NONE
+
+        visitor = ActorDeclarationVisitor(typeReferenceVisitor, astNodeContextProvider)
+    }
 
     @Test
     fun buildsKeylessActorDeclaration() {

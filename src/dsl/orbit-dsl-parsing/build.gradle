@@ -13,9 +13,12 @@ compileKotlin.dependsOn generateGrammarSource
 
 dependencies {
     antlr("org.antlr:antlr4:$antlrVersion")
+
     compile("org.antlr:antlr4-runtime:$antlrVersion")
     compile(project(":src:dsl:orbit-dsl-ast"))
     compile(project(":src:dsl:orbit-dsl-common"))
+
+    testImplementation("io.mockk:mockk:$mocckVersion")
 }
 
 generateGrammarSource {

@@ -6,27 +6,36 @@
 
 package cloud.orbit.dsl
 
+import cloud.orbit.dsl.ast.ErrorReporter
 import cloud.orbit.dsl.ast.TypeReference
 import cloud.orbit.dsl.type.PrimitiveType
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.BeforeEach
+import io.mockk.called
+import io.mockk.confirmVerified
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
+import io.mockk.verify
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 
+@ExtendWith(MockKExtension::class)
 class ActorKeyTypeCheckTest {
-    private lateinit var check: ActorKeyTypeCheck
-    private lateinit var errorReporter: TestErrorReporter
+    private val check = ActorKeyTypeCheck()
 
-    @BeforeEach
-    fun beforeEach() {
-        check = ActorKeyTypeCheck()
-        errorReporter = TestErrorReporter()
-    }
+    @MockK(relaxUnitFun = true)
+    lateinit var errorReporter: ErrorReporter
 
     @Test
     fun noErrorWhenNotInActorKeyContext() {
-        TypeCheck.Context.values().filter { it != TypeCheck.Context.ACTOR_KEY }.forEach {
-            check.check(TypeReference("any"), it, errorReporter)
-        }
+        TypeCheck.Context.values()
+            .filter {
+                it != TypeCheck.Context.ACTOR_KEY
+            }
+            .forEach {
+                check.check(TypeReference("any"), it, errorReporter)
+            }
+
+        verify { errorReporter wasNot called }
+        confirmVerified(errorReporter)
     }
 
     @Test
@@ -42,16 +51,21 @@ class ActorKeyTypeCheckTest {
         }.forEach {
             check.check(it, TypeCheck.Context.ACTOR_KEY, errorReporter)
         }
+
+        verify { errorReporter wasNot called }
+        confirmVerified(errorReporter)
     }
 
     @Test
     fun errorWhenTypeIsNotSupportedAsActorKeyType() {
         check.check(TypeReference("foo"), TypeCheck.Context.ACTOR_KEY, errorReporter)
-        Assertions.assertEquals(
-            listOf(
+
+        verify {
+            errorReporter.reportError(
+                TypeReference("foo"),
                 "actor key type must be string, int32, int64, or guid; found 'foo'"
-            ),
-            errorReporter.errors
-        )
+            )
+        }
+        confirmVerified(errorReporter)
     }
 }

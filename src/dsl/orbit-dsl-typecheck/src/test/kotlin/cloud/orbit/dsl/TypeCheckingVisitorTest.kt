@@ -13,17 +13,31 @@ import cloud.orbit.dsl.ast.DataDeclaration
 import cloud.orbit.dsl.ast.DataField
 import cloud.orbit.dsl.ast.MethodParameter
 import cloud.orbit.dsl.ast.TypeReference
-import cloud.orbit.dsl.ast.ErrorReporter
-import org.junit.jupiter.api.Assertions.assertTrue
+import io.mockk.confirmVerified
+import io.mockk.excludeRecords
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
+import io.mockk.verify
+import io.mockk.verifyAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 
+@ExtendWith(MockKExtension::class)
 class TypeCheckingVisitorTest {
+    @MockK(relaxUnitFun = true)
+    lateinit var typeCheck: TypeCheck
+
+    lateinit var typeCheckingVisitor: TypeCheckingVisitor
+
+    @BeforeEach
+    fun beforeEach() {
+        typeCheckingVisitor = TypeCheckingVisitor(listOf(typeCheck))
+    }
+
     @Test
     fun checksActorKeyType() {
-        val collectingTypeCheck = CollectingTypeCheck()
-        val visitor = TypeCheckingVisitor(listOf(collectingTypeCheck))
-
-        visitor.visitCompilationUnit(
+        typeCheckingVisitor.visitCompilationUnit(
             CompilationUnit(
                 "cloud.orbit.test",
                 actors = listOf(
@@ -35,19 +49,13 @@ class TypeCheckingVisitorTest {
             )
         )
 
-        assertTrue(
-            collectingTypeCheck.typesChecked.contains(
-                TypeCheckInvocation(TypeReference("t"), TypeCheck.Context.ACTOR_KEY)
-            )
-        )
+        verify { typeCheck.check(TypeReference("t"), TypeCheck.Context.ACTOR_KEY, typeCheckingVisitor) }
+        confirmVerified(typeCheck)
     }
 
     @Test
     fun checksDataFieldType() {
-        val collectingTypeCheck = CollectingTypeCheck()
-        val visitor = TypeCheckingVisitor(listOf(collectingTypeCheck))
-
-        visitor.visitCompilationUnit(
+        typeCheckingVisitor.visitCompilationUnit(
             CompilationUnit(
                 "cloud.orbit.test",
                 data = listOf(
@@ -61,19 +69,15 @@ class TypeCheckingVisitorTest {
             )
         )
 
-        assertTrue(
-            collectingTypeCheck.typesChecked.contains(
-                TypeCheckInvocation(TypeReference("t"), TypeCheck.Context.DATA_FIELD)
-            )
-        )
+        verify { typeCheck.check(TypeReference("t"), TypeCheck.Context.DATA_FIELD, typeCheckingVisitor) }
+        confirmVerified(typeCheck)
     }
 
     @Test
     fun checksMethodReturnType() {
-        val collectingTypeCheck = CollectingTypeCheck()
-        val visitor = TypeCheckingVisitor(listOf(collectingTypeCheck))
+        excludeRecords { typeCheck.check(any(), not(TypeCheck.Context.METHOD_RETURN), any()) }
 
-        visitor.visitCompilationUnit(
+        typeCheckingVisitor.visitCompilationUnit(
             CompilationUnit(
                 "cloud.orbit.test",
                 actors = listOf(
@@ -90,19 +94,15 @@ class TypeCheckingVisitorTest {
             )
         )
 
-        assertTrue(
-            collectingTypeCheck.typesChecked.contains(
-                TypeCheckInvocation(TypeReference("t"), TypeCheck.Context.METHOD_RETURN)
-            )
-        )
+        verify { typeCheck.check(TypeReference("t"), TypeCheck.Context.METHOD_RETURN, typeCheckingVisitor) }
+        confirmVerified(typeCheck)
     }
 
     @Test
     fun checksMethodParameterType() {
-        val collectingTypeCheck = CollectingTypeCheck()
-        val visitor = TypeCheckingVisitor(listOf(collectingTypeCheck))
+        excludeRecords { typeCheck.check(any(), not(TypeCheck.Context.METHOD_PARAMETER), any()) }
 
-        visitor.visitCompilationUnit(
+        typeCheckingVisitor.visitCompilationUnit(
             CompilationUnit(
                 "cloud.orbit.test",
                 actors = listOf(
@@ -125,19 +125,15 @@ class TypeCheckingVisitorTest {
             )
         )
 
-        assertTrue(
-            collectingTypeCheck.typesChecked.contains(
-                TypeCheckInvocation(TypeReference("t"), TypeCheck.Context.METHOD_PARAMETER)
-            )
-        )
+        verify { typeCheck.check(TypeReference("t"), TypeCheck.Context.METHOD_PARAMETER, typeCheckingVisitor) }
+        confirmVerified(typeCheck)
     }
 
     @Test
     fun checksTypeParameters() {
-        val collectingTypeCheck = CollectingTypeCheck()
-        val visitor = TypeCheckingVisitor(listOf(collectingTypeCheck))
+        excludeRecords { typeCheck.check(any(), not(TypeCheck.Context.TYPE_PARAMETER), any()) }
 
-        visitor.visitCompilationUnit(
+        typeCheckingVisitor.visitCompilationUnit(
             CompilationUnit(
                 "cloud.orbit.test",
                 data = listOf(
@@ -164,60 +160,28 @@ class TypeCheckingVisitorTest {
             )
         )
 
-        assertTrue(
-            collectingTypeCheck.typesChecked.contains(
-                TypeCheckInvocation(
-                    TypeReference(
-                        "t1", of = listOf(
-                            TypeReference(
-                                "t2", of = listOf(
-                                    TypeReference("t3")
-                                )
-                            ),
-                            TypeReference("t4")
-                        )
-                    ),
-                    TypeCheck.Context.DATA_FIELD
-                )
+        verifyAll {
+            typeCheck.check(
+                TypeReference(
+                    "t2", of = listOf(
+                        TypeReference("t3")
+                    )
+                ),
+                TypeCheck.Context.TYPE_PARAMETER,
+                typeCheckingVisitor
             )
-        )
-        assertTrue(
-            collectingTypeCheck.typesChecked.contains(
-                TypeCheckInvocation(
-                    TypeReference(
-                        "t2", of = listOf(
-                            TypeReference("t3")
-                        )
-                    ),
-                    TypeCheck.Context.TYPE_PARAMETER
-                )
-            )
-        )
-        assertTrue(
-            collectingTypeCheck.typesChecked.contains(
-                TypeCheckInvocation(
-                    TypeReference("t3"),
-                    TypeCheck.Context.TYPE_PARAMETER
-                )
-            )
-        )
-        assertTrue(
-            collectingTypeCheck.typesChecked.contains(
-                TypeCheckInvocation(
-                    TypeReference("t4"),
-                    TypeCheck.Context.TYPE_PARAMETER
-                )
-            )
-        )
-    }
 
-    private data class TypeCheckInvocation(val type: TypeReference, val context: TypeCheck.Context)
+            typeCheck.check(
+                TypeReference("t3"),
+                TypeCheck.Context.TYPE_PARAMETER,
+                typeCheckingVisitor
+            )
 
-    private class CollectingTypeCheck : TypeCheck {
-        val typesChecked = mutableListOf<TypeCheckInvocation>()
-
-        override fun check(typeReference: TypeReference, context: TypeCheck.Context, errorReporter: ErrorReporter) {
-            typesChecked.add(TypeCheckInvocation(typeReference, context))
+            typeCheck.check(
+                TypeReference("t4"),
+                TypeCheck.Context.TYPE_PARAMETER,
+                typeCheckingVisitor
+            )
         }
     }
 }
