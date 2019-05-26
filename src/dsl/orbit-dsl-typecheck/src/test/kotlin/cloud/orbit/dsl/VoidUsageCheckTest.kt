@@ -6,41 +6,45 @@
 
 package cloud.orbit.dsl
 
+import cloud.orbit.dsl.ast.ErrorReporter
 import cloud.orbit.dsl.ast.TypeReference
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
+import io.mockk.called
+import io.mockk.confirmVerified
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
+import io.mockk.verify
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 
+@ExtendWith(MockKExtension::class)
 class VoidUsageCheckTest {
-    private lateinit var check: VoidUsageCheck
-    private lateinit var errorReporter: TestErrorReporter
+    private val check = VoidUsageCheck()
 
-    @BeforeEach
-    fun beforeEach() {
-        check = VoidUsageCheck()
-        errorReporter = TestErrorReporter()
-    }
+    @MockK(relaxUnitFun = true)
+    private lateinit var errorReporter: ErrorReporter
 
     @Test
     fun doesNotReportErrorOnNonVoidTypeReference() {
         check.check(TypeReference("any"), TypeCheck.Context.DATA_FIELD, errorReporter)
 
-        assertTrue(errorReporter.errors.isEmpty())
+        verify { errorReporter wasNot called }
+        confirmVerified(errorReporter)
     }
 
     @Test
-    fun doesNotReportErrorOnActorKeyTypeReturn() {
+    fun doesNotReportErrorOnActorKeyType() {
         check.check(TypeReference("void"), TypeCheck.Context.ACTOR_KEY, errorReporter)
 
-        assertTrue(errorReporter.errors.isEmpty())
+        verify { errorReporter wasNot called }
+        confirmVerified(errorReporter)
     }
 
     @Test
     fun doesNotReportErrorOnMethodReturn() {
         check.check(TypeReference("void"), TypeCheck.Context.METHOD_RETURN, errorReporter)
 
-        assertTrue(errorReporter.errors.isEmpty())
+        verify { errorReporter wasNot called }
+        confirmVerified(errorReporter)
     }
 
     @Test
@@ -53,7 +57,12 @@ class VoidUsageCheckTest {
             check.check(TypeReference("void"), it, errorReporter)
         }
 
-        assertEquals(typeCheckContexts.size, errorReporter.errors.size)
-        assertTrue(errorReporter.errors.all { it == "'void' can only be used as method return type" })
+        verify(exactly = typeCheckContexts.size) {
+            errorReporter.reportError(
+                TypeReference("void"),
+                "'void' can only be used as method return type"
+            )
+        }
+        confirmVerified(errorReporter)
     }
 }
