@@ -7,7 +7,7 @@
 package cloud.orbit.dsl
 
 import cloud.orbit.dsl.ast.AstNode
-import cloud.orbit.dsl.ast.error.ErrorListener
+import cloud.orbit.dsl.ast.ErrorListener
 import cloud.orbit.dsl.error.OrbitDslError
 
 class TypeErrorListener : ErrorListener {

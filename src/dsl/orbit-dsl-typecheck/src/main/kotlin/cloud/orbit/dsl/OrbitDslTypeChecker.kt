@@ -23,8 +23,7 @@ object OrbitDslTypeChecker {
 
     fun checkTypes(compilationUnits: List<CompilationUnit>) {
         val errorListener = TypeErrorListener()
-        val typeCheckingVisitor = TypeCheckingVisitor(checks)
-        typeCheckingVisitor.addErrorListener(errorListener)
+        val typeCheckingVisitor = TypeCheckingVisitor(checks, errorListener)
 
         compilationUnits.forEach {
             typeCheckingVisitor.visitCompilationUnit(it)

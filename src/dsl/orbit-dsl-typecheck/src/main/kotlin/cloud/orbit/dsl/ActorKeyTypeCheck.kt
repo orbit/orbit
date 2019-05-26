@@ -7,7 +7,7 @@
 package cloud.orbit.dsl
 
 import cloud.orbit.dsl.ast.TypeReference
-import cloud.orbit.dsl.ast.error.ErrorReporter
+import cloud.orbit.dsl.ast.ErrorReporter
 import cloud.orbit.dsl.type.PrimitiveType
 
 class ActorKeyTypeCheck : TypeCheck {

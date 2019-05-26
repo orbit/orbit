@@ -7,7 +7,7 @@
 package cloud.orbit.dsl
 
 import cloud.orbit.dsl.ast.AstNode
-import cloud.orbit.dsl.ast.error.ErrorReporter
+import cloud.orbit.dsl.ast.ErrorReporter
 
 class TestErrorReporter : ErrorReporter {
     val errors = mutableListOf<String>()
