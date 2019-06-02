@@ -12,7 +12,7 @@ import cloud.orbit.dsl.ast.ParseContext
 import cloud.orbit.dsl.error.OrbitDslCompilationException
 import cloud.orbit.dsl.visitor.ActorDeclarationVisitor
 import cloud.orbit.dsl.visitor.AstNodeContextProvider
-import cloud.orbit.dsl.visitor.CompilationUnitBuilderVisitor
+import cloud.orbit.dsl.visitor.CompilationUnitVisitor
 import cloud.orbit.dsl.visitor.DataDeclarationVisitor
 import cloud.orbit.dsl.visitor.EnumDeclarationVisitor
 import cloud.orbit.dsl.visitor.SyntaxVisitor
@@ -69,7 +69,7 @@ class OrbitDslFileParser {
         val dataDeclarationVisitor = DataDeclarationVisitor(typeReferenceVisitor, contextProvider)
         val actorDeclarationVisitor = ActorDeclarationVisitor(typeReferenceVisitor, contextProvider)
 
-        return CompilationUnitBuilderVisitor(
+        return CompilationUnitVisitor(
             input.packageName,
             enumDeclarationVisitor,
             dataDeclarationVisitor,
