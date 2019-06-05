@@ -6,6 +6,11 @@
 
 package cloud.orbit.dsl.java
 
+import cloud.orbit.core.actor.ActorWithGuidKey
+import cloud.orbit.core.actor.ActorWithInt32Key
+import cloud.orbit.core.actor.ActorWithInt64Key
+import cloud.orbit.core.actor.ActorWithNoKey
+import cloud.orbit.core.actor.ActorWithStringKey
 import cloud.orbit.dsl.ast.ActorDeclaration
 import cloud.orbit.dsl.ast.AstVisitor
 import cloud.orbit.dsl.ast.CompilationUnit
@@ -119,13 +124,13 @@ internal class JavaCodeGenerator(private val knownTypes: Map<TypeReference, Type
 
     private fun orbitActorKeyInterface(keyType: TypeReference): TypeName =
         when (keyType.name) {
-            PrimitiveType.GUID -> "ActorWithGuidKey"
-            PrimitiveType.INT32 -> "ActorWithInt32Key"
-            PrimitiveType.INT64 -> "ActorWithInt64Key"
-            PrimitiveType.STRING -> "ActorWithStringKey"
-            PrimitiveType.VOID -> "ActorWithNoKey"
-            else -> throw IllegalStateException("Illegal actor key type ${keyType.name}")
+            PrimitiveType.GUID -> ActorWithGuidKey::class.java
+            PrimitiveType.INT32 -> ActorWithInt32Key::class.java
+            PrimitiveType.INT64 -> ActorWithInt64Key::class.java
+            PrimitiveType.STRING -> ActorWithStringKey::class.java
+            PrimitiveType.VOID -> ActorWithNoKey::class.java
+            else -> throw IllegalStateException("Illegal actor key type '${keyType.name}'")
         }.let {
-            ClassName.get("cloud.orbit.core.actor", it)
+            ClassName.get(it)
         }
 }
