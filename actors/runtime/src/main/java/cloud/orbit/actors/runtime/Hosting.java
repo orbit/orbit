@@ -39,6 +39,7 @@ import cloud.orbit.actors.annotation.OnlyIfActivated;
 import cloud.orbit.actors.annotation.PreferLocalPlacement;
 import cloud.orbit.actors.annotation.StatelessWorker;
 import cloud.orbit.actors.cluster.ClusterPeer;
+import cloud.orbit.actors.cluster.DistributedMap;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.exceptions.ObserverNotFound;
 import cloud.orbit.actors.extensions.NodeSelectorExtension;
@@ -61,7 +62,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -82,7 +82,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private final Cache<RemoteReference<?>, NodeAddress> localAddressCache;
 
     // don't use RemoteReferences, better to restrict keys to a small set of classes.
-    private volatile ConcurrentMap<RemoteKey, NodeAddress> distributedDirectory;
+    private volatile DistributedMap<RemoteKey, NodeAddress> distributedDirectory;
 
     private long timeToWaitForServersMillis = 30000;
 
@@ -320,16 +320,20 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         }
         // try to locate the actor in the distributed directory
         // this can be expensive, less that activating the actor, though
-        return Task.fromValue(getDistributedDirectory().get(createRemoteKey(actorReference)));
+        return getDistributedDirectory().get(createRemoteKey(actorReference)).whenCompleteAsync((r, e) ->
+        {
+            // place holder, just to ensure the completion happens in another thread
+        }, stage.getExecutionPool());
     }
 
-    public void actorDeactivated(RemoteReference remoteReference)
+    Task<Void> actorDeactivated(RemoteReference remoteReference)
     {
         // removing the reference from the cluster directory and local caches
-        getDistributedDirectory().remove(createRemoteKey(remoteReference), clusterPeer.localAddress());
+        await(getDistributedDirectory().remove(createRemoteKey(remoteReference), clusterPeer.localAddress())
+                .whenCompleteAsync((r, e) -> { }, stage.getExecutionPool()));
         localAddressCache.invalidate(remoteReference);
 
-        if(stage.getBroadcastActorDeactivations())
+        if (stage.getBroadcastActorDeactivations())
         {
             for (final NodeInfo info : activeNodes.values())
             {
@@ -339,6 +343,8 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
                 }
             }
         }
+
+        return Task.done();
     }
 
     private Task<NodeAddress> locateAndActivateActor(final RemoteReference<?> actorReference)
@@ -371,10 +377,10 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         }
 
         // Get the distributed cache if needed
-        final ConcurrentMap<RemoteKey, NodeAddress> distributedDirectory = getDistributedDirectory();
+        final DistributedMap<RemoteKey, NodeAddress> distributedDirectory = getDistributedDirectory();
 
         // Get the existing activation from the distributed cache (if any)
-        NodeAddress nodeAddress = distributedDirectory.get(remoteKey);
+        NodeAddress nodeAddress = await(distributedDirectory.get(remoteKey));
         if (nodeAddress != null)
         {
             // Target node still valid?
@@ -382,12 +388,15 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             {
                 // Cache locally
                 localAddressCache.put(actorReference, nodeAddress);
-                return Task.fromValue(nodeAddress);
+                return Task.fromValue(nodeAddress).whenCompleteAsync((r, e) ->
+                {
+                    // place holder, just to ensure the completion happens in another thread
+                }, stage.getExecutionPool());
             }
             else
             {
                 // Target node is now dead, remove this activation from distributed cache
-                distributedDirectory.remove(remoteKey, nodeAddress);
+                await(distributedDirectory.remove(remoteKey, nodeAddress));
             }
         }
         nodeAddress = null;
@@ -399,11 +408,11 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         }
 
         // Do we have a target node yet? If not, select randomly
-        Task<NodeAddress> nodeAddressTask = nodeAddress != null ? Task.fromValue(nodeAddress) : selectNode(interfaceClass.getName());
+        final Task<NodeAddress> nodeAddressTask = nodeAddress != null ? Task.fromValue(nodeAddress) : selectNode(interfaceClass.getName());
 
-        return nodeAddressTask.thenApply((selectedNodeAddress) -> {
+        return nodeAddressTask.thenCompose((selectedNodeAddress) -> {
             // Push our selection to the distributed cache (if possible)
-            NodeAddress otherNodeAddress = distributedDirectory.putIfAbsent(remoteKey, selectedNodeAddress);
+            NodeAddress otherNodeAddress = await(distributedDirectory.putIfAbsent(remoteKey, selectedNodeAddress));
 
             // Someone else beat us to placement, use that node
             if (otherNodeAddress != null)
@@ -413,11 +422,14 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
 
             localAddressCache.put(actorReference, selectedNodeAddress);
 
-            return selectedNodeAddress;
+            return Task.fromValue(selectedNodeAddress).whenCompleteAsync((r, e) ->
+            {
+                // place holder, just to ensure the completion happens in another thread
+            }, stage.getExecutionPool());
         });
     }
 
-    private ConcurrentMap<RemoteKey, NodeAddress> getDistributedDirectory()
+    private DistributedMap<RemoteKey, NodeAddress> getDistributedDirectory()
     {
         if (distributedDirectory == null)
         {

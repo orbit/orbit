@@ -147,7 +147,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
     private Task deactivateEntry(final ActorBaseEntry<?> actorEntry) {
         return concurrentExecutionQueue.execute(() ->
                 actorEntry.deactivate().failAfter(deactivationTimeoutMillis, TimeUnit.MILLISECONDS)
-                        .whenComplete((r, e) ->
+                        .whenComplete((r, e) -> // intentionally not using handle and thenCompose to avoid deadlocks
                         {
                             // ensures removal
                             if (e != null)
@@ -171,21 +171,23 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
                                 actorEntry.setDeactivated(true);
                             }
 
-                            try
+                            localObjects.remove(actorEntry.reference, actorEntry);
+                            if (actorEntry.reference == actorEntry.getRemoteReference())
                             {
-                                localObjects.remove(actorEntry.reference, actorEntry);
-                                if (actorEntry.reference == actorEntry.getRemoteReference())
+                                // removing non stateless actor from the distributed directory
+                                hosting.actorDeactivated(actorEntry.getRemoteReference()).whenComplete((x, throwable) ->
                                 {
-                                    // removing non stateless actor from the distributed directory
-                                    hosting.actorDeactivated(actorEntry.getRemoteReference());
-                                }
+                                    if (throwable != null) {
+                                        logger.error("Failed deactivating {}", actorEntry.getRemoteReference(), throwable);
+                                    }
+                                    pendingDeactivations.remove(actorEntry);
+                                });
                             }
-                            finally
+                            else
                             {
                                 pendingDeactivations.remove(actorEntry);
                             }
-                        })
-        );
+                        }));
     }
 
     private boolean shouldRemove(final ActorBaseEntry<?> actorEntry, final Set<ActorBaseEntry<?>> toRemove)
@@ -198,7 +200,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
         }
 
         // Check for ttl override
-        if(interfaceClass.isAnnotationPresent(TimeToLive.class))
+        if (interfaceClass.isAnnotationPresent(TimeToLive.class))
         {
             final TimeToLive customTtl = interfaceClass.getAnnotation(TimeToLive.class);
             final long customTtlMilliseconds = customTtl.timeUnit().toMillis(customTtl.value());
@@ -208,7 +210,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
             }
         }
         else
-            {
+        {
             // Check against default
             if(clock.millis() - actorEntry.getLastAccess() > defaultActorTTL)
             {
@@ -218,7 +220,7 @@ public class DefaultLocalObjectsCleaner implements LocalObjectsCleaner
 
 
         // Check if extension wanted to remove it
-        if(toRemove.contains(actorEntry)) {
+        if (toRemove.contains(actorEntry)) {
             return true;
         }
 

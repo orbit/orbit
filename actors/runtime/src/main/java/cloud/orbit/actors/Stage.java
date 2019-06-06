@@ -716,9 +716,9 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         }
         state = NodeCapabilities.NodeState.RUNNING;
 
-        if(timer == null)
+        if (timer == null)
         {
-            timer = new Timer("OrbitTimer");
+            timer = new Timer("OrbitTimer", true);
         }
 
         if (loggerExtension == null)

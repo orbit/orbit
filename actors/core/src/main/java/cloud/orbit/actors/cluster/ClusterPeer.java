@@ -74,7 +74,7 @@ public interface ClusterPeer
      * @param <V>  the cache value
      * @return a cache
      */
-    <K, V> ConcurrentMap<K, V> getCache(String name);
+    <K, V> DistributedMap<K, V> getCache(String name);
 
     /**
      * Joins a cluster

@@ -29,6 +29,7 @@
 package cloud.orbit.actors.test;
 
 import cloud.orbit.actors.cluster.ClusterPeer;
+import cloud.orbit.actors.cluster.DistributedMap;
 import cloud.orbit.actors.cluster.MessageListener;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.cluster.ViewListener;
@@ -36,7 +37,6 @@ import cloud.orbit.concurrent.Task;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -117,7 +117,7 @@ public class FakeClusterPeer implements ClusterPeer
     }
 
     @Override
-    public <K, V> ConcurrentMap<K, V> getCache(final String name)
+    public <K, V> DistributedMap<K, V> getCache(final String name)
     {
         return group.getCache(name);
     }
