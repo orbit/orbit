@@ -24,16 +24,16 @@ import com.squareup.javapoet.ParameterSpec
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
 import com.squareup.javapoet.TypeSpec
+import java.util.concurrent.CompletableFuture
 import javax.lang.model.element.Modifier
 
 internal class JavaCodeGenerator(private val knownTypes: Map<TypeReference, TypeName>) : AstVisitor() {
-    private val completableFutureClass =
-        ClassName.get("java.util.concurrent", "CompletableFuture")
+    private val completableFutureClassName = ClassName.get(CompletableFuture::class.java)
 
     private var packageName = ""
-    private var generatedTypes = mutableListOf<CompiledType>()
+    private var generatedTypes = mutableListOf<JavaCompiledType>()
 
-    fun visitCompilationUnits(compilationUnits: List<CompilationUnit>): List<CompiledType> {
+    fun visitCompilationUnits(compilationUnits: List<CompilationUnit>): List<JavaCompiledType> {
         compilationUnits.forEach { visitCompilationUnit(it) }
         return generatedTypes
     }
@@ -49,7 +49,7 @@ internal class JavaCodeGenerator(private val knownTypes: Map<TypeReference, Type
 
         enum.members.forEach { enumSpec.addEnumConstant(it.name) }
 
-        generatedTypes.add(CompiledType(packageName, enumSpec.build()))
+        generatedTypes.add(JavaCompiledType(packageName, enumSpec.build()))
     }
 
     override fun visitDataDeclaration(data: DataDeclaration) {
@@ -84,7 +84,7 @@ internal class JavaCodeGenerator(private val knownTypes: Map<TypeReference, Type
 
         classSpec.addMethod(ctor.build())
 
-        generatedTypes.add(CompiledType(packageName, classSpec.build()))
+        generatedTypes.add(JavaCompiledType(packageName, classSpec.build()))
     }
 
     override fun visitActorDeclaration(actor: ActorDeclaration) {
@@ -95,7 +95,7 @@ internal class JavaCodeGenerator(private val knownTypes: Map<TypeReference, Type
             .addMethods(actor.methods.map {
                 MethodSpec.methodBuilder(it.name)
                     .addModifiers(Modifier.ABSTRACT, Modifier.PUBLIC)
-                    .returns(ParameterizedTypeName.get(completableFutureClass, typeName(it.returnType).box()))
+                    .returns(ParameterizedTypeName.get(completableFutureClassName, typeName(it.returnType).box()))
                     .addParameters(it.params
                         .asSequence()
                         .map { p -> ParameterSpec.builder(typeName(p.type), p.name).build() }
@@ -104,7 +104,7 @@ internal class JavaCodeGenerator(private val knownTypes: Map<TypeReference, Type
             })
             .build()
 
-        generatedTypes.add(CompiledType(packageName, classSpec))
+        generatedTypes.add(JavaCompiledType(packageName, classSpec))
     }
 
     private fun fieldToVariableName(fieldName: String) = fieldName.decapitalize()

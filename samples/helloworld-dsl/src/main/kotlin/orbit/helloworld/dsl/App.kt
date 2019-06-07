@@ -10,24 +10,25 @@ import cloud.orbit.common.logging.getLogger
 import cloud.orbit.core.actor.AbstractActor
 import cloud.orbit.core.actor.createProxy
 import cloud.orbit.runtime.stage.Stage
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
-import orbit.helloworld.dsl.data.Greeting
-import orbit.helloworld.dsl.data.Language
-import java.util.concurrent.CompletableFuture
+import orbit.helloworld.dsl.data.kotlin.Greeting
+import orbit.helloworld.dsl.data.kotlin.Language
+import orbit.helloworld.dsl.kotlin.Greeter
 
 class GreeterActor : Greeter, AbstractActor() {
-    override fun greet(name: String): CompletableFuture<Map<Language, Greeting>> {
-        return CompletableFuture.completedFuture(
+    override fun greet(name: String): Deferred<Map<Language, Greeting>> =
+        CompletableDeferred(
             mapOf(
                 Language.ENGLISH to Greeting(Language.ENGLISH, "Hello $name!"),
                 Language.GERMAN to Greeting(Language.GERMAN, "Hallo, $name!")
             )
         )
-    }
 }
 
-fun main(args: Array<String>) {
+fun main() {
     val logger = getLogger("app")
     val stage = Stage()
 

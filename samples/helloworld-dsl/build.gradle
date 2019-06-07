@@ -26,11 +26,23 @@ buildscript {
         }
 
         maven {
+            url "$projectDir/../../src/dsl/orbit-dsl-kotlin/build/repo"
+        }
+
+        maven {
             url "$projectDir/../../src/dsl/orbit-dsl-parsing/build/repo"
         }
 
         maven {
             url "$projectDir/../../src/dsl/orbit-dsl-typecheck/build/repo"
+        }
+
+        maven {
+            url "$projectDir/../../src/framework/orbit-commons/build/repo"
+        }
+
+        maven {
+            url "$projectDir/../../src/framework/orbit-core/build/repo"
         }
 
         maven {

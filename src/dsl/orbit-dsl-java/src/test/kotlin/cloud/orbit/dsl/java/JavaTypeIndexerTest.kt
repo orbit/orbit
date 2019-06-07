@@ -16,7 +16,7 @@ import com.squareup.javapoet.TypeName
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
-class TypeIndexerTest {
+class JavaTypeIndexerTest {
     @Test
     fun indexDefaultTypes() {
         val expectedPredefinedTypes = mapOf(
@@ -32,13 +32,13 @@ class TypeIndexerTest {
             TypeReference("void") to ClassName.get(java.lang.Void::class.java)
         )
 
-        val types = TypeIndexer().visitCompilationUnits(emptyList())
+        val types = JavaTypeIndexer().visitCompilationUnits(emptyList())
         Assertions.assertEquals(expectedPredefinedTypes, types)
     }
 
     @Test
     fun indexEnum() {
-        val types = TypeIndexer().visitCompilationUnits(
+        val types = JavaTypeIndexer().visitCompilationUnits(
             listOf(
                 CompilationUnit("foo", enums = listOf(EnumDeclaration("bar")))
             )
@@ -52,7 +52,7 @@ class TypeIndexerTest {
 
     @Test
     fun indexData() {
-        val types = TypeIndexer().visitCompilationUnits(
+        val types = JavaTypeIndexer().visitCompilationUnits(
             listOf(
                 CompilationUnit("foo", data = listOf(DataDeclaration("bar")))
             )
@@ -66,7 +66,7 @@ class TypeIndexerTest {
 
     @Test
     fun indexActor() {
-        val types = TypeIndexer().visitCompilationUnits(
+        val types = JavaTypeIndexer().visitCompilationUnits(
             listOf(
                 CompilationUnit("foo", actors = listOf(ActorDeclaration("bar")))
             )
