@@ -4,12 +4,12 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.dsl.java
+package cloud.orbit.dsl.kotlin
 
 import cloud.orbit.dsl.ast.CompilationUnit
 
-class OrbitDslJavaCompiler {
+class OrbitDslKotlinCompiler {
     fun compile(compilationUnits: List<CompilationUnit>) =
-        JavaCodeGenerator(knownTypes = JavaTypeIndexer().visitCompilationUnits(compilationUnits))
+        KotlinCodeGenerator(knownTypes = KotlinTypeIndexer().visitCompilationUnits(compilationUnits))
             .visitCompilationUnits(compilationUnits)
 }

@@ -4,23 +4,21 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.dsl.java
+package cloud.orbit.dsl.kotlin
 
-import com.squareup.javapoet.JavaFile
-import com.squareup.javapoet.TypeSpec
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.TypeSpec
 import java.io.File
 
-data class CompiledType(
+data class KotlinCompiledType(
     val packageName: String,
     private val spec: TypeSpec
 ) {
     fun writeToDirectory(directory: File) {
-        JavaFile.builder(packageName, spec)
-            .build()
+        FileSpec
+            .get(packageName, spec)
             .writeTo(directory)
     }
 
-    override fun toString(): String {
-        return spec.toString()
-    }
+    override fun toString() = spec.toString()
 }

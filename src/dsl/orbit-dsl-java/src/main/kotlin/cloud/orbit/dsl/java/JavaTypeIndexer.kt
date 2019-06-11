@@ -14,7 +14,7 @@ import cloud.orbit.dsl.type.PrimitiveType
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.TypeName
 
-internal class TypeIndexer : AstVisitor() {
+internal class JavaTypeIndexer : AstVisitor() {
     private val types = mutableMapOf(
         TypeReference(PrimitiveType.BOOLEAN) to TypeName.BOOLEAN,
         TypeReference(PrimitiveType.DOUBLE) to TypeName.DOUBLE,

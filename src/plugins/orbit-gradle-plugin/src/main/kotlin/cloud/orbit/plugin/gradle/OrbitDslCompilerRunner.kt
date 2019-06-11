@@ -11,6 +11,7 @@ import cloud.orbit.dsl.OrbitDslParseInput
 import cloud.orbit.dsl.OrbitDslTypeChecker
 import cloud.orbit.dsl.error.OrbitDslCompilationException
 import cloud.orbit.dsl.java.OrbitDslJavaCompiler
+import cloud.orbit.dsl.kotlin.OrbitDslKotlinCompiler
 import java.io.File
 
 class OrbitDslCompilerRunner {
@@ -34,6 +35,14 @@ class OrbitDslCompilerRunner {
 
             OrbitDslJavaCompiler()
                 .compile(compilationUnits)
+                .forEach {
+                    it.writeToDirectory(spec.outputDirectory)
+                }
+
+            OrbitDslKotlinCompiler()
+                .compile(compilationUnits.map {
+                    it.copy(packageName = it.packageName + ".kotlin")
+                })
                 .forEach {
                     it.writeToDirectory(spec.outputDirectory)
                 }
