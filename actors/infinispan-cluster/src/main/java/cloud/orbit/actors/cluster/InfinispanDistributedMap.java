@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2019 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -28,11 +28,44 @@
 
 package cloud.orbit.actors.cluster;
 
+import org.infinispan.Cache;
+
+import cloud.orbit.concurrent.Task;
+
 /**
  * @author Johno Crawford (johno@sulake.com)
  */
-interface ExtendedClusterPeer extends ClusterPeer
+final class InfinispanDistributedMap<K, V> implements DistributedMap<K, V>
 {
-    <K, V> DistributedMap<K, V> getCache(String cacheName);
-    <K, V> DistributedMap<K, V> getReplicatedCache(String cacheName);
+
+    private final Cache<K, V> cache;
+
+    InfinispanDistributedMap(final Cache<K, V> cache)
+    {
+        this.cache = cache;
+    }
+
+    @Override
+    public Task<V> putIfAbsent(final K key, final V value)
+    {
+        return Task.from(cache.putIfAbsentAsync(key, value));
+    }
+
+    @Override
+    public Task<V> put(final K key, final V value)
+    {
+        return Task.from(cache.putAsync(key, value));
+    }
+
+    @Override
+    public Task<V> get(final K key)
+    {
+        return Task.from(cache.getAsync(key));
+    }
+
+    @Override
+    public Task<Boolean> remove(final K key, final V value)
+    {
+        return Task.from(cache.removeAsync(key, value));
+    }
 }

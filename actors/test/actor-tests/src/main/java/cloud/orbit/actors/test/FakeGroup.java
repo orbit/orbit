@@ -28,6 +28,7 @@
 
 package cloud.orbit.actors.test;
 
+import cloud.orbit.actors.cluster.DistributedMap;
 import cloud.orbit.actors.cluster.NodeAddress;
 import cloud.orbit.actors.cluster.NodeAddressImpl;
 import cloud.orbit.concurrent.ExecutorUtils;
@@ -152,9 +153,36 @@ public class FakeGroup
     }
 
     @SuppressWarnings("unchecked")
-    public <K, V> ConcurrentMap<K, V> getCache(final String name)
+    public <K, V> DistributedMap<K, V> getCache(final String name)
     {
-        return maps.get(name);
+        return new DistributedMap()
+        {
+            final ConcurrentMap map = maps.get(name);
+
+            @Override
+            public Task putIfAbsent(final Object key, final Object value)
+            {
+                return Task.fromValue(map.putIfAbsent(key, value));
+            }
+
+            @Override
+            public Task put(final Object key, final Object value)
+            {
+                return Task.fromValue(map.put(key, value));
+            }
+
+            @Override
+            public Task get(final Object key)
+            {
+                return Task.fromValue(map.get(key));
+            }
+
+            @Override
+            public Task<Boolean> remove(final Object key, final Object value)
+            {
+                return Task.fromValue(map.remove(key, value));
+            }
+        };
     }
 
     public Map<String, ConcurrentMap> getCaches()

@@ -344,15 +344,15 @@ public class JGroupsClusterPeer implements ExtendedClusterPeer
     }
 
     @Override
-    public <K, V> ConcurrentMap<K, V> getCache(final String name)
+    public <K, V> DistributedMap<K, V> getCache(final String name)
     {
-        return cacheManager.getCache(name);
+        return new InfinispanDistributedMap<>(cacheManager.getCache(name));
     }
 
     @Override
-    public <K, V> ConcurrentMap<K, V> getReplicatedCache(final String name)
+    public <K, V> DistributedMap<K, V> getReplicatedCache(final String name)
     {
-        return cacheManager.getCache(name, REPLICATED_CONFIGURATION_NAME);
+        return new InfinispanDistributedMap<>(cacheManager.getCache(name, REPLICATED_CONFIGURATION_NAME));
     }
 
     private void doReceive(final Message msg)

@@ -1,5 +1,5 @@
 /*
- Copyright (C) 2017 Electronic Arts Inc.  All rights reserved.
+ Copyright (C) 2019 Electronic Arts Inc.  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -28,11 +28,15 @@
 
 package cloud.orbit.actors.cluster;
 
+import cloud.orbit.concurrent.Task;
+
 /**
  * @author Johno Crawford (johno@sulake.com)
  */
-interface ExtendedClusterPeer extends ClusterPeer
+public interface DistributedMap<K, V>
 {
-    <K, V> DistributedMap<K, V> getCache(String cacheName);
-    <K, V> DistributedMap<K, V> getReplicatedCache(String cacheName);
+    Task<V> putIfAbsent(K key, V value);
+    Task<V> put(K key, V value);
+    Task<V> get(K key);
+    Task<Boolean> remove(K key, V value);
 }
