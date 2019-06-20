@@ -285,6 +285,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         private Integer concurrentDeactivations;
         private Boolean enableShutdownHook = null;
         private Boolean enableMessageLoopback;
+        private Boolean flushPlacementGroupCache;
 
         private Timer timer;
 
@@ -470,6 +471,11 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             return this;
         }
 
+        public Builder flushPlacementGroupCache(final boolean flushPlacementGroupCache) {
+            this.flushPlacementGroupCache = flushPlacementGroupCache;
+            return this;
+        }
+
         public Stage build()
         {
             final Stage stage = new Stage();
@@ -501,6 +507,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             if(broadcastActorDeactivations != null) stage.setBroadcastActorDeactivations(broadcastActorDeactivations);
             if(enableShutdownHook != null) stage.setEnableShutdownHook(enableShutdownHook);
             if(enableMessageLoopback != null) stage.setEnableMessageLoopback(enableMessageLoopback);
+            if (flushPlacementGroupCache != null) stage.setFlushPlacementGroupCache(flushPlacementGroupCache);
             return stage;
         }
 
