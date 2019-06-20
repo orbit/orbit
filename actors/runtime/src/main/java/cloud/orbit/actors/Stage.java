@@ -857,6 +857,8 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         hosting.setNodeSelector(nodeSelector);
         hosting.setTargetPlacementGroups(Collections.singleton(placementGroup));
 
+        hosting.setFlushPlacementGroupCache(this.getFlushPlacementGroupCache());
+
         // caches responses
         pipeline.addLast(DefaultHandlers.CACHING, cacheManager);
 
@@ -1139,10 +1141,8 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             startReminderController();
         }
         await(clusterPeer.pulse());
-        // We are tripping this flag on each tick
-        // We may after initial load testing decide that we need to throttle this
-        // by making this flag change every N number of ticks rather than each tick
-        hosting.setFlushPlacementGroupCache(this.getFlushPlacementGroupCache());
+
+        hosting.pulse();
 
         return cleanup();
     }

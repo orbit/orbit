@@ -479,13 +479,6 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             final List<NodeInfo> currentServerNodes = serverNodes;
             final Set<String> currentTargetPlacementGroups = targetPlacementGroups;
 
-            if (getFlushPlacementGroupCache()) {
-                currentServerNodes.forEach((node) ->{
-                    node.placementGroupPending.set(true);
-                });
-                setFlushPlacementGroupCache(false);
-            }
-
             // filter out nodes which cannot host actors (nodes which are not running and nodes which cannot host this actor)
             // and nodes that are not in any target placement group
             final List<NodeInfo> potentialNodes = currentServerNodes.stream()
@@ -798,6 +791,14 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             }
         }
         return ctx.write(msg);
+    }
+
+    public void pulse() {
+        if (getFlushPlacementGroupCache()) {
+            serverNodes.forEach((node) ->{
+                node.placementGroupPending.set(true);
+            });
+        }
     }
 
     protected Task<?> writeInvocation(final HandlerContext ctx, Invocation invocation)
