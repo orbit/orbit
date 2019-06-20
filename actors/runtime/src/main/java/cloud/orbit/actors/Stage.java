@@ -208,6 +208,9 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
     @Config("orbit.actors.broadcastActorDeactivations")
     private boolean broadcastActorDeactivations = true;
 
+    @Config("orbit.actors.flushPlacementGroupCache")
+    private boolean flushPlacementGroupCache = false;
+
     private boolean enableMessageLoopback = true;
 
     private volatile NodeCapabilities.NodeState state;
@@ -704,6 +707,14 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         this.enableMessageLoopback = enableMessageLoopback;
     }
 
+    public void setFlushPlacementGroupCache(final boolean flushPlacementGroupCache) {
+        this.flushPlacementGroupCache = flushPlacementGroupCache;
+    }
+
+    public boolean getFlushPlacementGroupCache() {
+        return this.flushPlacementGroupCache;
+    }
+
     @Override
     public Task<?> start()
     {
@@ -1128,6 +1139,11 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             startReminderController();
         }
         await(clusterPeer.pulse());
+        // We are tripping this flag on each tick
+        // We may after initial load testing decide that we need to throttle this
+        // by making this flag change every N number of ticks rather than each tick
+        hosting.setFlushPlacementGroupCache(this.getFlushPlacementGroupCache());
+
         return cleanup();
     }
 

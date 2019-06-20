@@ -73,6 +73,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     private Logger logger = LoggerFactory.getLogger(Hosting.class);
     private NodeTypeEnum nodeType;
     private ClusterPeer clusterPeer;
+    private boolean flushPlacementGroupCache = false;
 
     private volatile Map<NodeAddress, NodeInfo> activeNodes = new HashMap<>(0);
     private volatile List<NodeInfo> serverNodes = new ArrayList<>(0);
@@ -237,6 +238,17 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
     {
         clusterPeer.registerViewListener(v -> onClusterViewChanged(v));
         return Task.done();
+    }
+
+    public boolean getFlushPlacementGroupCache()
+    {
+        return flushPlacementGroupCache;
+    }
+
+    public Hosting setFlushPlacementGroupCache(final boolean flushPlacementCache)
+    {
+        this.flushPlacementGroupCache = flushPlacementCache;
+        return this;
     }
 
     private void onClusterViewChanged(final Collection<NodeAddress> nodes)
@@ -466,6 +478,13 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             // read volatile fields into local fields
             final List<NodeInfo> currentServerNodes = serverNodes;
             final Set<String> currentTargetPlacementGroups = targetPlacementGroups;
+
+            if (getFlushPlacementGroupCache()) {
+                currentServerNodes.forEach((node) ->{
+                    node.placementGroupPending.set(true);
+                });
+                setFlushPlacementGroupCache(false);
+            }
 
             // filter out nodes which cannot host actors (nodes which are not running and nodes which cannot host this actor)
             // and nodes that are not in any target placement group
