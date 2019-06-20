@@ -131,7 +131,7 @@ public class ClassPathSearch
         unprocessed.addAll(classes.keySet());
     }
 
-    public ClassInfo getClassInfo(String className)
+    private ClassInfo getClassInfo(String className)
     {
         // TODO: add default handling for posterior versions of the class file format
 

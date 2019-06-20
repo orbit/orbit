@@ -86,6 +86,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                     <shadedPattern>cloud.orbit.core.shaded.io.github.classgraph.</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>nonapi.io.github.classgraph.</pattern>
+                                    <shadedPattern>cloud.orbit.core.shaded.nonapi.io.github.classgraph.</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>org.objectweb.</pattern>
                                     <shadedPattern>cloud.orbit.core.shaded.org.objectweb.</shadedPattern>
                                 </relocation>
