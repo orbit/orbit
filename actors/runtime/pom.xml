@@ -87,6 +87,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                                     <pattern>io.github.classgraph.</pattern>
                                     <shadedPattern>cloud.orbit.runtime.shaded.io.github.classgraph.</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>nonapi.io.github.classgraph.</pattern>
+                                    <shadedPattern>cloud.orbit.runtime.shaded.nonapi.io.github.classgraph.</shadedPattern>
+                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>
