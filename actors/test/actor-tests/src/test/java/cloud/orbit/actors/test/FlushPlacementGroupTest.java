@@ -36,7 +36,7 @@ import cloud.orbit.actors.test.actors.SomeActor;
 
 public class FlushPlacementGroupTest extends ActorBaseTest
 {
-    @Test
+    @Test(expected = Exception.class)
     public void testFlushPlacementCache() throws Exception {
         final Stage client = createStage(builder ->{
             builder.mode(Stage.StageMode.CLIENT);

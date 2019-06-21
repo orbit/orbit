@@ -797,6 +797,7 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         if (getFlushPlacementGroupCache()) {
             serverNodes.forEach((node) ->{
                 node.placementGroupPending.set(true);
+                node.placementGroup = null;
             });
         }
     }
