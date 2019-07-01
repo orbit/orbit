@@ -6,12 +6,12 @@
 
 package cloud.orbit.plugin.gradle
 
-import cloud.orbit.dsl.OrbitDslFileParser
-import cloud.orbit.dsl.OrbitDslParseInput
-import cloud.orbit.dsl.OrbitDslTypeChecker
 import cloud.orbit.dsl.error.OrbitDslCompilationException
 import cloud.orbit.dsl.java.OrbitDslJavaCompiler
 import cloud.orbit.dsl.kotlin.OrbitDslKotlinCompiler
+import cloud.orbit.dsl.parsing.OrbitDslFileParser
+import cloud.orbit.dsl.parsing.OrbitDslParseInput
+import cloud.orbit.dsl.type.check.OrbitDslTypeChecker
 import java.io.File
 
 class OrbitDslCompilerRunner {

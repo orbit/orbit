@@ -10,10 +10,9 @@ plugins {
 }
 
 dependencies {
+    compile(project(":src:dsl:orbit-dsl-core"))
     compile(project(":src:dsl:orbit-dsl-java"))
     compile(project(":src:dsl:orbit-dsl-kotlin"))
-    compile(project(":src:dsl:orbit-dsl-parsing"))
-    compile(project(":src:dsl:orbit-dsl-typecheck"))
 }
 
 gradlePlugin {

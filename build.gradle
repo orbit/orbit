@@ -22,12 +22,9 @@ configureProject(":src:framework:orbit-core", [withKotlin, withTests, publish])
 configureProject(":src:framework:orbit-runtime", [withKotlin, withJava, withTests, publish])
 
 // DSL
-configureProject(":src:dsl:orbit-dsl-ast", [withKotlin, withTests, publish])
-configureProject(":src:dsl:orbit-dsl-common", [withKotlin, withTests, publish])
+configureProject(":src:dsl:orbit-dsl-core", [withKotlin, withJava, withTests, publish])
 configureProject(":src:dsl:orbit-dsl-java", [withKotlin, withTests, publish])
 configureProject(":src:dsl:orbit-dsl-kotlin", [withKotlin, withTests, publish])
-configureProject(":src:dsl:orbit-dsl-parsing", [withKotlin, withJava, withTests, publish])
-configureProject(":src:dsl:orbit-dsl-typecheck", [withKotlin, withTests, publish])
 
 // Plugins
 configureProject(":src:plugins:orbit-gradle-plugin", [withKotlin, withTests, localPublish])

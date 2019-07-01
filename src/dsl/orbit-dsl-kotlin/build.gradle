@@ -7,8 +7,7 @@
 ext.kotlinpoetVersion = "1.3.0"
 
 dependencies {
-    compile(project(":src:dsl:orbit-dsl-ast"))
-    compile(project(":src:dsl:orbit-dsl-common"))
+    compile(project(":src:dsl:orbit-dsl-core"))
     compile(project(":src:framework:orbit-core"))
 
     compile("com.squareup:kotlinpoet:$kotlinpoetVersion")

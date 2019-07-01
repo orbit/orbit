@@ -7,8 +7,7 @@
 ext.javapoetVersion = "1.11.1"
 
 dependencies {
-    compile(project(":src:dsl:orbit-dsl-ast"))
-    compile(project(":src:dsl:orbit-dsl-common"))
+    compile(project(":src:dsl:orbit-dsl-core"))
     compile(project(":src:framework:orbit-core"))
 
     compile("com.squareup:javapoet:$javapoetVersion")

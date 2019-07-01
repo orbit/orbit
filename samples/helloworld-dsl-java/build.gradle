@@ -12,11 +12,7 @@ buildscript {
 
     repositories {
         maven {
-            url "$projectDir/../../src/dsl/orbit-dsl-ast/build/repo"
-        }
-
-        maven {
-            url "$projectDir/../../src/dsl/orbit-dsl-common/build/repo"
+            url "$projectDir/../../src/dsl/orbit-dsl-core/build/repo"
         }
 
         maven {
@@ -24,11 +20,15 @@ buildscript {
         }
 
         maven {
-            url "$projectDir/../../src/dsl/orbit-dsl-parsing/build/repo"
+            url "$projectDir/../../src/dsl/orbit-dsl-kotlin/build/repo"
         }
 
         maven {
-            url "$projectDir/../../src/dsl/orbit-dsl-typecheck/build/repo"
+            url "$projectDir/../../src/framework/orbit-commons/build/repo"
+        }
+
+        maven {
+            url "$projectDir/../../src/framework/orbit-core/build/repo"
         }
 
         maven {

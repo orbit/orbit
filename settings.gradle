@@ -13,12 +13,9 @@ include(
 )
 
 include(
-        ":src:dsl:orbit-dsl-ast",
-        ":src:dsl:orbit-dsl-common",
+        ":src:dsl:orbit-dsl-core",
         ":src:dsl:orbit-dsl-java",
-        ":src:dsl:orbit-dsl-kotlin",
-        ":src:dsl:orbit-dsl-parsing",
-        ":src:dsl:orbit-dsl-typecheck"
+        ":src:dsl:orbit-dsl-kotlin"
 )
 
 include(
