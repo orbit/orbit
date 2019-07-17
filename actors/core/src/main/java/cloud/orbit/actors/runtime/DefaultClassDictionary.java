@@ -97,10 +97,9 @@ public class DefaultClassDictionary
             }
 
             long start = System.currentTimeMillis();
-            try (ScanResult scanResult = new ClassGraph().scan())
+            try (ScanResult scanResult = new ClassGraph().whitelistPaths(META_INF_SERVICES_ORBIT_CLASSES).scan())
             {
                 scanResult.getResourcesWithExtension(EXTENSION)
-                        .filter(r -> r.getPath().startsWith(META_INF_SERVICES_ORBIT_CLASSES))
                         .forEachInputStream((Resource resource, InputStream stream) -> {
                             loadClassInfo(resource.getPath(), stream);
                         });
