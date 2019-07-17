@@ -208,6 +208,9 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
     @Config("orbit.actors.broadcastActorDeactivations")
     private boolean broadcastActorDeactivations = true;
 
+    @Config("orbit.actors.flushPlacementGroupCache")
+    private boolean flushPlacementGroupCache = false;
+
     private boolean enableMessageLoopback = true;
 
     private volatile NodeCapabilities.NodeState state;
@@ -282,6 +285,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         private Integer concurrentDeactivations;
         private Boolean enableShutdownHook = null;
         private Boolean enableMessageLoopback;
+        private Boolean flushPlacementGroupCache;
 
         private Timer timer;
 
@@ -467,6 +471,11 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             return this;
         }
 
+        public Builder flushPlacementGroupCache(final boolean flushPlacementGroupCache) {
+            this.flushPlacementGroupCache = flushPlacementGroupCache;
+            return this;
+        }
+
         public Stage build()
         {
             final Stage stage = new Stage();
@@ -498,6 +507,7 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             if(broadcastActorDeactivations != null) stage.setBroadcastActorDeactivations(broadcastActorDeactivations);
             if(enableShutdownHook != null) stage.setEnableShutdownHook(enableShutdownHook);
             if(enableMessageLoopback != null) stage.setEnableMessageLoopback(enableMessageLoopback);
+            if (flushPlacementGroupCache != null) stage.setFlushPlacementGroupCache(flushPlacementGroupCache);
             return stage;
         }
 
@@ -704,6 +714,14 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
         this.enableMessageLoopback = enableMessageLoopback;
     }
 
+    public void setFlushPlacementGroupCache(final boolean flushPlacementGroupCache) {
+        this.flushPlacementGroupCache = flushPlacementGroupCache;
+    }
+
+    public boolean getFlushPlacementGroupCache() {
+        return this.flushPlacementGroupCache;
+    }
+
     @Override
     public Task<?> start()
     {
@@ -845,6 +863,8 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
                 .orElse(new RandomSelectorExtension());
         hosting.setNodeSelector(nodeSelector);
         hosting.setTargetPlacementGroups(Collections.singleton(placementGroup));
+
+        hosting.setFlushPlacementGroupCache(this.getFlushPlacementGroupCache());
 
         // caches responses
         pipeline.addLast(DefaultHandlers.CACHING, cacheManager);
@@ -1128,6 +1148,9 @@ public class Stage implements Startable, ActorRuntime, RuntimeActions
             startReminderController();
         }
         await(clusterPeer.pulse());
+
+        hosting.pulse();
+
         return cleanup();
     }
 
