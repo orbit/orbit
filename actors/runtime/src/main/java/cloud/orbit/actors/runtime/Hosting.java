@@ -392,7 +392,8 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
         final DistributedMap<RemoteKey, NodeAddress> distributedDirectory = getDistributedDirectory();
 
         // Get the existing activation from the distributed cache (if any)
-        NodeAddress nodeAddress = await(distributedDirectory.get(remoteKey));
+        NodeAddress nodeAddress = await(distributedDirectory.get(remoteKey)
+                .whenCompleteAsync((r, e) -> {}, stage.getExecutionPool()));
         if (nodeAddress != null)
         {
             // Target node still valid?
@@ -408,7 +409,8 @@ public class Hosting implements NodeCapabilities, Startable, PipelineExtension
             else
             {
                 // Target node is now dead, remove this activation from distributed cache
-                await(distributedDirectory.remove(remoteKey, nodeAddress));
+                await(distributedDirectory.remove(remoteKey, nodeAddress)
+                        .whenCompleteAsync((r, e) -> { }, stage.getExecutionPool()));
             }
         }
         nodeAddress = null;
