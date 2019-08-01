@@ -1,0 +1,7 @@
+language: java
+dist: xenial
+sudo: false
+jdk:
+  - openjdk8
+  - openjdk11
+  - openjdk12
