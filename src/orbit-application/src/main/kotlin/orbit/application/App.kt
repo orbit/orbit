@@ -4,6 +4,8 @@
  See license in LICENSE.
  */
 
-rootProject.name = "orbit"
+package orbit.application
 
-include(":src:orbit-application")
+fun main() {
+
+}

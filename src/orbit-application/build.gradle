@@ -4,6 +4,6 @@
  See license in LICENSE.
  */
 
-rootProject.name = "orbit"
+apply plugin: "application"
 
-include(":src:orbit-application")
+mainClassName = "orbit.application.AppKt"
