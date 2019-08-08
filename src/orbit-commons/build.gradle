@@ -4,11 +4,6 @@
  See license in LICENSE.
  */
 
-package orbit.application
-
-import orbit.server.OrbitServer
-
-fun main() {
-    val server = OrbitServer()
-    server.start()
+dependencies {
+    api("org.slf4j:slf4j-api:$slf4jVersion")
 }

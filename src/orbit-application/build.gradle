@@ -7,3 +7,10 @@
 apply plugin: "application"
 
 mainClassName = "orbit.application.AppKt"
+
+dependencies {
+    implementation(project(":src:orbit-server"))
+
+    // TODO: Probably want a better logger
+    implementation("org.slf4j:slf4j-simple:$slf4jVersion")
+}

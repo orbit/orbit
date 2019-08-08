@@ -4,11 +4,13 @@
  See license in LICENSE.
  */
 
-package orbit.application
+package orbit.server
 
-import orbit.server.OrbitServer
+import orbit.common.logging.logger
 
-fun main() {
-    val server = OrbitServer()
-    server.start()
+class OrbitServer {
+    val logger by logger()
+    fun start() {
+        logger.info("Starting Orbit...")
+    }
 }

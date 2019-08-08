@@ -6,4 +6,7 @@
 
 rootProject.name = "orbit"
 
+include(":src:orbit-commons")
+include(":src:orbit-server")
 include(":src:orbit-application")
+include(":src:orbit-proto")

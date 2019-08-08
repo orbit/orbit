@@ -4,11 +4,7 @@
  See license in LICENSE.
  */
 
-package orbit.application
-
-import orbit.server.OrbitServer
-
-fun main() {
-    val server = OrbitServer()
-    server.start()
+dependencies {
+    implementation(project(":src:orbit-commons"))
+    implementation(project(":src:orbit-proto"))
 }
