@@ -4,12 +4,8 @@
  See license in LICENSE.
  */
 
-package orbit.application
+package orbit.server
 
-import orbit.server.OrbitConfig
-import orbit.server.OrbitServer
-
-fun main() {
-    val server = OrbitServer(OrbitConfig())
-    server.start()
-}
+data class OrbitConfig(
+    val port: Int = 50056
+)

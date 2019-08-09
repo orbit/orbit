@@ -5,10 +5,6 @@
  */
 
 buildscript {
-    ext {
-        protobufVersion = "3.9.1"
-        protobufPluginVersion = "0.8.10"
-    }
     repositories {
         mavenCentral()
     }
@@ -21,10 +17,29 @@ apply plugin: "com.google.protobuf"
 
 dependencies {
     api("com.google.protobuf:protobuf-java:$protobufVersion")
+    api("io.grpc:grpc-protobuf:$grpcVersion")
+    api("io.grpc:grpc-stub:$grpcVersion")
 }
 
 protobuf {
     protoc {
         artifact = "com.google.protobuf:protoc:$protobufVersion"
+    }
+
+    plugins {
+        grpc { artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion" }
+    }
+
+    generateProtoTasks {
+        all()*.plugins { grpc {} }
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs("build/generated/source/proto/main/grpc")
+            srcDirs("build/generated/source/proto/main/java")
+        }
     }
 }
