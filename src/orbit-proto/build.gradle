@@ -19,6 +19,7 @@ dependencies {
     api("com.google.protobuf:protobuf-java:$protobufVersion")
     api("io.grpc:grpc-protobuf:$grpcVersion")
     api("io.grpc:grpc-stub:$grpcVersion")
+    compileOnly("javax.annotation:javax.annotation-api:1.2")
 }
 
 protobuf {
