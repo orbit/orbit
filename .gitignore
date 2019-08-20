@@ -22,6 +22,11 @@ build/
 .factorypath/
 .apt_generated/
 
+# VSCode
+.project
+.classpath
+bin/
+
 # Netbeans
 nbproject/private/
 nbbuild/
