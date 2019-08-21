@@ -106,11 +106,31 @@ class InMemoryNodeDirectoryTest {
         assertThat(nodes.map { n -> n.id }.toList()).contains(node.id)
     }
 
-    // can find node connected to client
-    // can find node from other node
-    // does not return current node
-    // finds clients connected to node
-    // does not return unknown node connected to client
+    @Test
+    fun `can register connections`() {
+        val directory = InMemoryNodeDirectory()
+        val node = TestNode()
+        val connectedNode = TestNode()
+        directory.connectNode(node)
+        directory.connectNode(connectedNode)
+        directory.reportConnections(node.id, listOf(connectedNode.id))
+
+        val nodes = directory.lookupConnectedNodes(node.id, TestAddress())
+        assertThat(nodes.map { n -> n.id }.toList()).contains(connectedNode.id)
+    }
+
+    @Test
+    fun `can disconnect a node connection`() {
+        val directory = InMemoryNodeDirectory()
+        val node = TestNode()
+        val connectedNode = TestNode()
+        directory.connectNode(connectedNode)
+        directory.connectNode(node, connectedNode.id)
+        directory.reportConnections(node.id, listOf())
+
+        val nodes = directory.lookupConnectedNodes(node.id, TestAddress())
+        assertThat(nodes.map { n -> n.id }.toList()).doesNotContain(connectedNode.id)
+    }
 
     class TestAddress() : Address(AddressId("test")) {
         override fun capability(): Capability {
@@ -128,5 +148,4 @@ class InMemoryNodeDirectoryTest {
         }
 
     }
-
 }

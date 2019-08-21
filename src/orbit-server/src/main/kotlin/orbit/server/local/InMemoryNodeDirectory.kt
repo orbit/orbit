@@ -12,7 +12,7 @@ import orbit.server.routing.*
 
 class InMemoryNodeDirectory : NodeDirectory {
     private val nodes = hashMapOf<NodeId, MeshNode>(Mesh.Instance.id to Mesh.Instance)
-    private val connections = ArrayList<Connection>()
+    private var connections: List<Connection> = listOf()
 
     override fun getNode(nodeId: NodeId): MeshNode? {
         return this.nodes[nodeId]
@@ -28,9 +28,14 @@ class InMemoryNodeDirectory : NodeDirectory {
         }
     }
 
+    override fun reportConnections(nodeId: NodeId, connections: List<NodeId>) {
+        this.connections = this.connections.filter { c -> (c.parent != nodeId && c.node != nodeId) }
+            .plus(connections.map { c -> Connection(nodeId, c) })
+    }
+
     fun connectNode(node: MeshNode, parent: NodeId? = null) {
         nodes[node.id] = node
-        connections.add(Connection(node.id, parent ?: Mesh.Instance.id))
+        connections = connections.plus(Connection(node.id, parent ?: Mesh.Instance.id))
     }
 
     data class Connection(val node: NodeId, val parent: NodeId)
