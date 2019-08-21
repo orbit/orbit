@@ -9,10 +9,12 @@ package orbit.server.net
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import orbit.common.logging.logger
+import orbit.server.ConnectionImpl
 import orbit.server.OrbitConfig
+import orbit.server.OrbitServer
 import orbit.server.demo.GreeterImpl
 
-class GrpcEndpoint(private val config: OrbitConfig) {
+class GrpcEndpoint(private val config: OrbitConfig, private val orbitServer: OrbitServer) {
     private lateinit var server: Server
 
     private val logger by logger()
@@ -22,6 +24,7 @@ class GrpcEndpoint(private val config: OrbitConfig) {
 
         server = ServerBuilder.forPort(config.grpcPort)
             .addService(GreeterImpl())
+            .addService(ConnectionImpl(orbitServer))
             .build()
             .start()
 

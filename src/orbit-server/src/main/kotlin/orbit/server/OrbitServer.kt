@@ -28,10 +28,11 @@ import kotlin.coroutines.CoroutineContext
 class OrbitServer(private val config: OrbitConfig) {
     private val logger by logger()
 
-    val nodeDirectory = InMemoryNodeDirectory()
-    val addressableDirectory = InMemoryAddressableDirectory()
-    val loadBalancer = LocalFirstPlacementStrategy(nodeDirectory, config.nodeId)
-    val router = Router(config.nodeId, addressableDirectory, nodeDirectory, loadBalancer)
+    private val nodeDirectory = InMemoryNodeDirectory()
+    private val addressableDirectory = InMemoryAddressableDirectory()
+    private val loadBalancer = LocalFirstPlacementStrategy(nodeDirectory, config.nodeId)
+    private val router = Router(config.nodeId, addressableDirectory, nodeDirectory, loadBalancer)
+    private val grpcEndpoint: GrpcEndpoint = GrpcEndpoint(config, this)
 
     private val runtimePools = RuntimePools(
         cpuPool = config.cpuPool,
@@ -45,7 +46,6 @@ class OrbitServer(private val config: OrbitConfig) {
 
     private val kodein = Kodein {
         bind<OrbitConfig>() with singleton { config }
-        bind<GrpcEndpoint>() with singleton { GrpcEndpoint(instance()) }
         bind<RuntimePools>() with singleton { runtimePools }
         bind<RuntimeScopes>() with singleton { runtimeScopes }
         bind<Clock>() with singleton { Clock() }
@@ -72,27 +72,25 @@ class OrbitServer(private val config: OrbitConfig) {
     }
 
     private suspend fun onStart() {
-        val endpoint: GrpcEndpoint by kodein.instance()
-
-        endpoint.start()
+        this.grpcEndpoint.start()
     }
 
     private suspend fun onStop() {
-        val endpoint: GrpcEndpoint by kodein.instance()
-
-        endpoint.stop()
+        this.grpcEndpoint.stop()
     }
 
-    private fun handleMessage(message: BaseMessage, projectedRoute: Route? = null) {
-        var route = router.routeMessage(message, projectedRoute)
-        if (route == null) {
-            println("No route found")
-            return
-        }
-
-        val nextNode = route.path.last()
-        val node = nodeDirectory.getNode(nextNode)
-        node?.sendMessage(message, route)
+    fun handleMessage(message: BaseMessage, projectedRoute: Route? = null) {
+        println("handling a message")
+        // TODO (brett) - re-integrate routing
+//        var route = router.routeMessage(message, projectedRoute)
+//        if (route == null) {
+//            println("No route found")
+//            return
+//        }
+//
+//        val nextNode = route.path.last()
+//        val node = nodeDirectory.getNode(nextNode)
+//        node?.sendMessage(message, route)
     }
 
     @Suppress("UNUSED_PARAMETER")

@@ -8,7 +8,9 @@ package orbit.server
 
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.common.concurrent.Pools
+import orbit.server.local.InMemoryNodeDirectory
 import orbit.server.net.NodeId
+import orbit.server.routing.NodeDirectory
 
 data class OrbitConfig(
     /**
@@ -29,5 +31,10 @@ data class OrbitConfig(
     /**
      * The pool where IO intensive tasks will run.
      */
-    val ioPool: CoroutineDispatcher = Pools.createCachedPool("orbit-io")
-    )
+    val ioPool: CoroutineDispatcher = Pools.createCachedPool("orbit-io"),
+
+    /**
+     * Node directory
+     */
+    val nodeDirectory: NodeDirectory = InMemoryNodeDirectory()
+)

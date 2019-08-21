@@ -11,11 +11,11 @@ import orbit.server.OrbitConfig
 import orbit.server.OrbitServer
 
 fun main() {
-    val server = OrbitServer(OrbitConfig())
+    val server1 = OrbitServer(OrbitConfig(grpcPort = 50056))
+    val server2 = OrbitServer(OrbitConfig(grpcPort = 50057))
 
     runBlocking {
-        server.start().join()
-
-        server.stop().join()
+        server1.start().join()
+        server2.start().join()
     }
 }

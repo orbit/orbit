@@ -1,0 +1,17 @@
+syntax = "proto3";
+option java_package = "orbit.shared.proto";
+
+package orbit.shared;
+
+service Connection {
+    rpc SendMessage (MessageRequest) returns (MessageReply) {}
+}
+
+message MessageRequest {
+    string destination = 1;
+    string content = 2;
+}
+
+message MessageReply {
+    string message = 1;
+}
