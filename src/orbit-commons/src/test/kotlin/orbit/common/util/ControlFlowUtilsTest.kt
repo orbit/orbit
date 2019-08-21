@@ -7,12 +7,10 @@
 package orbit.common.util
 
 import kotlinx.coroutines.runBlocking
-import orbit.common.util.Clock
-import orbit.common.util.attempt
-import orbit.common.util.stopwatch
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Test
 
+@Suppress("IMPLICIT_NOTHING_AS_TYPE_PARAMETER")
 class ControlFlowUtilsTest {
 
     @Test

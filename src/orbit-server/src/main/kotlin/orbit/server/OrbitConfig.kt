@@ -6,6 +6,22 @@
 
 package orbit.server
 
+import kotlinx.coroutines.CoroutineDispatcher
+import orbit.common.concurrent.Pools
+
 data class OrbitConfig(
-    val port: Int = 50056
-)
+    /**
+     * The gRPC endpoint port.
+     */
+    val grpcPort: Int = 50056,
+
+    /**
+     * The pool where CPU intensive tasks will run.
+     */
+    val cpuPool: CoroutineDispatcher = Pools.createFixedPool("orbit-cpu"),
+
+    /**
+     * The pool where IO intensive tasks will run.
+     */
+    val ioPool: CoroutineDispatcher = Pools.createCachedPool("orbit-io")
+    )

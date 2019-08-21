@@ -16,9 +16,9 @@ buildscript {
 apply plugin: "com.google.protobuf"
 
 dependencies {
-    api("com.google.protobuf:protobuf-java:$protobufVersion")
-    api("io.grpc:grpc-protobuf:$grpcVersion")
-    api("io.grpc:grpc-stub:$grpcVersion")
+    compile("com.google.protobuf:protobuf-java:$protobufVersion")
+    compile("io.grpc:grpc-protobuf:$grpcVersion")
+    compile("io.grpc:grpc-stub:$grpcVersion")
     compileOnly("javax.annotation:javax.annotation-api:1.2")
 }
 

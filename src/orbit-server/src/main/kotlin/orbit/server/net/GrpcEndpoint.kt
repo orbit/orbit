@@ -18,16 +18,17 @@ class GrpcEndpoint(private val config: OrbitConfig) {
     private val logger by logger()
 
     fun start() {
-        logger.info("Starting gRPC Endpoint on port ${config.port}...")
+        logger.info("Starting gRPC Endpoint on port ${config.grpcPort}...")
 
-        server = ServerBuilder.forPort(config.port)
+        server = ServerBuilder.forPort(config.grpcPort)
             .addService(GreeterImpl())
             .build()
             .start()
 
-        logger.info("gRPC Endpoint started on port ${config.port}.")
+        logger.info("gRPC Endpoint started on port ${config.grpcPort}.")
+    }
 
-        // TODO: We need to handle threading correctly and not block here
-        server.awaitTermination()
+    fun stop() {
+        server.shutdown().awaitTermination()
     }
 }
