@@ -23,7 +23,8 @@ class RouterTest {
 
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node1")))
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node2")));
-        nodeDirectory.connectNode(LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
+        nodeDirectory.connectNode(
+            LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
             NodeId("node2")
         )
 
@@ -31,7 +32,8 @@ class RouterTest {
 
         val route = router.routeMessage(message)
 
-        assertThat(route?.path).containsExactly(Mesh.Instance.id,
+        assertThat(route?.path).containsExactly(
+            Mesh.Instance.id,
             NodeId("node2"),
             NodeId("client")
         )
@@ -53,13 +55,15 @@ class RouterTest {
         )
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node1")))
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node2")));
-        nodeDirectory.connectNode(LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
+        nodeDirectory.connectNode(
+            LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
             NodeId("node2")
         )
 
         val route = router.routeMessage(message)
 
-        assertThat(route?.path).containsExactly(Mesh.Instance.id,
+        assertThat(route?.path).containsExactly(
+            Mesh.Instance.id,
             NodeId("node2"),
             NodeId("client")
         )
@@ -80,20 +84,23 @@ class RouterTest {
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node1")))
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node2")));
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node3")));
-        nodeDirectory.connectNode(LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
+        nodeDirectory.connectNode(
+            LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
             NodeId("node3")
         )
 
         addressDirectory.setLocation(accountAddress, NodeId("client"))
 
-        val projectedRoute = Route(listOf(
-            NodeId("node1"),
-            NodeId("mesh"),
-            NodeId("node2"),
-            NodeId("mesh"),
-            NodeId("node3"),
-            NodeId("client")
-        ))
+        val projectedRoute = Route(
+            listOf(
+                NodeId("node1"),
+                NodeId("mesh"),
+                NodeId("node2"),
+                NodeId("mesh"),
+                NodeId("node3"),
+                NodeId("client")
+            )
+        )
         val route = router.routeMessage(message, projectedRoute)
 
         assertThat(route?.path).containsExactlyElementsOf(projectedRoute.pop().route.path)
@@ -114,38 +121,44 @@ class RouterTest {
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node1")))
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node2")));
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node3")));
-        nodeDirectory.connectNode(LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
+        nodeDirectory.connectNode(
+            LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
             NodeId("node3")
         )
 
         addressDirectory.setLocation(accountAddress, NodeId("client"))
 
-        val route = router.routeMessage(message, Route(listOf(
-            NodeId("node1"),
-            NodeId("client")
-        )))
+        val route = router.routeMessage(
+            message, Route(
+                listOf(
+                    NodeId("node1"),
+                    NodeId("client")
+                )
+            )
+        )
 
-        assertThat(route?.path).containsExactly(Mesh.Instance.id,
+        assertThat(route?.path).containsExactly(
+            Mesh.Instance.id,
             NodeId("node3"),
             NodeId("client")
         )
 
     }
 
-    class TestAddress : BaseAddress() {
+    class TestAddress : Address(AddressId("test")) {
         override fun capability(): Capability {
             return Capability("test")
         }
     }
 
     class TestAddressablePlacementStrategy(val selectedNode: NodeId = NodeId("")) : AddressablePlacementStrategy {
-        override fun chooseNode(address: BaseAddress): NodeId {
+        override fun chooseNode(address: Address): NodeId {
             return selectedNode
         }
     }
 
     class TestRemoteNode(override val id: NodeId) : MeshNode {
-        override fun <T : BaseAddress> canHandle(address: T): Boolean {
+        override fun <T : Address> canHandle(address: T): Boolean {
             return true
         }
 

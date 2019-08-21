@@ -6,11 +6,9 @@
 
 package orbit.server
 
-abstract class BaseAddress {
+inline class AddressId(val value: String)
+
+open class Address(val id: AddressId) {
     open fun capability(): Capability = Capability.None
-}
-
-open class Address<TId>(open val id: Id<TId>) : BaseAddress() {
-
 }
 

@@ -10,6 +10,6 @@ import orbit.server.*
 import orbit.server.net.NodeId
 
 interface NodeDirectory {
-    fun lookupConnectedNodes(nodeId: NodeId, address: BaseAddress): Sequence<MeshNode>
+    fun lookupConnectedNodes(nodeId: NodeId, address: Address): Sequence<MeshNode>
     fun getNode(nodeId: NodeId): MeshNode?
 }

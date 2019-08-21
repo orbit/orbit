@@ -11,7 +11,7 @@ import orbit.server.net.NodeId
 import orbit.server.routing.*
 
 class ManualAddressablePlacementStrategy(var nextNode: NodeId = NodeId("")) : AddressablePlacementStrategy {
-    override fun chooseNode(address: BaseAddress): NodeId {
+    override fun chooseNode(address: Address): NodeId {
         return nextNode
     }
 }

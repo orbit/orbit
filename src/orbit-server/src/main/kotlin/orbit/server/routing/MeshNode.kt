@@ -14,5 +14,5 @@ interface MeshNode  {
     val capabilities: List<Capability>
     fun sendMessage(message: BaseMessage, route: Route)
 
-    fun <T: BaseAddress> canHandle(address: T) : Boolean
+    fun <T: Address> canHandle(address: T) : Boolean
 }

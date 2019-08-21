@@ -11,13 +11,13 @@ import orbit.server.net.NodeId
 import orbit.server.routing.AddressableDirectory
 
 class InMemoryAddressableDirectory : AddressableDirectory {
-    private val directory = HashMap<BaseAddress, NodeId>()
+    private val directory = HashMap<Address, NodeId>()
 
-    override fun lookup(address: BaseAddress): NodeId? {
+    override fun lookup(address: Address): NodeId? {
         return directory[address]
     }
 
-    override fun setLocation(address: BaseAddress, node: NodeId) {
+    override fun setLocation(address: Address, node: NodeId) {
         directory[address] = node
     }
 }

@@ -6,11 +6,11 @@
 
 package orbit.server
 
-abstract class BaseMessage(val content: String, open val destination: BaseAddress) {
+abstract class BaseMessage(val content: String, open val destination: Address) {
 
 }
 
-class Message<TAddress : BaseAddress>(content: String, override val destination: TAddress) :
+class Message<TAddress : Address>(content: String, override val destination: TAddress) :
     BaseMessage(content, destination) {
 
 }

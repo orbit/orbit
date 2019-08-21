@@ -10,7 +10,7 @@ import orbit.server.*
 import orbit.server.net.NodeId
 import orbit.server.routing.*
 
-class LocalClientNode<TAddress : BaseAddress>(
+class LocalClientNode<TAddress : Address>(
     override val id: NodeId = NodeId.generate(),
     override val capabilities: List<Capability> = listOf(),
     private val onClientMessage: (BaseMessage) -> Unit = {}
@@ -23,7 +23,7 @@ class LocalClientNode<TAddress : BaseAddress>(
         onClientMessage(message);
     }
 
-    override fun <T : BaseAddress> canHandle(address: T): Boolean {
+    override fun <T : Address> canHandle(address: T): Boolean {
         return this.capabilities.contains(address.capability())
     }
 }

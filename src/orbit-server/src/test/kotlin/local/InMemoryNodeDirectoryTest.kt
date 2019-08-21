@@ -112,14 +112,14 @@ class InMemoryNodeDirectoryTest {
     // finds clients connected to node
     // does not return unknown node connected to client
 
-    class TestAddress : BaseAddress() {
+    class TestAddress() : Address(AddressId("test")) {
         override fun capability(): Capability {
             return Capability("test")
         }
     }
 
     class TestNode(override val id: NodeId = NodeId.generate(), override val capabilities: List<Capability> = listOf(Capability.Routing)) : MeshNode {
-        override fun <T : BaseAddress> canHandle(address: T): Boolean {
+        override fun <T : Address> canHandle(address: T): Boolean {
             return true
         }
 

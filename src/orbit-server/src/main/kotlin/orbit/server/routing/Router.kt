@@ -6,7 +6,7 @@
 
 package orbit.server.routing
 
-import orbit.server.BaseAddress
+import orbit.server.Address
 import orbit.server.BaseMessage
 import orbit.server.net.NodeId
 import orbit.common.collections.GraphTraverser
@@ -29,7 +29,7 @@ class Router(
         return if (foundRoute.path.first() == this.nodeId) foundRoute.pop().route else foundRoute
     }
 
-    private fun findRoute(destination: NodeId, address: BaseAddress): Route? {
+    private fun findRoute(destination: NodeId, address: Address): Route? {
 
         val nodeRoutes = HashMap<NodeId, Route>()
         val traversal = GraphTraverser<NodeId> { node ->
@@ -48,7 +48,7 @@ class Router(
         return nodes.find { r -> r.path.first().equals(this.nodeId) }
     }
 
-    fun verifyRoute(route: Route, address: BaseAddress): Boolean {
+    fun verifyRoute(route: Route, address: Address): Boolean {
         var previousNode = this.nodeId
         for (node in route.path.drop(1)) {
             if (!nodeDirectory.lookupConnectedNodes(node, address).any { n -> n.id == previousNode }) {

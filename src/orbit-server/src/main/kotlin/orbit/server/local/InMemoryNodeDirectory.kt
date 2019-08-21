@@ -18,7 +18,7 @@ class InMemoryNodeDirectory : NodeDirectory {
         return this.nodes[nodeId]
     }
 
-    override fun lookupConnectedNodes(nodeId: NodeId, address: BaseAddress): Sequence<MeshNode> {
+    override fun lookupConnectedNodes(nodeId: NodeId, address: Address): Sequence<MeshNode> {
         val searchNode = nodes[nodeId] ?: return emptySequence()
         return sequence {
             if (searchNode.canHandle(address)) {

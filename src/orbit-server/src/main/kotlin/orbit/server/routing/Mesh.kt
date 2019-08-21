@@ -6,13 +6,13 @@
 
 package orbit.server.routing
 
-import orbit.server.BaseAddress
+import orbit.server.Address
 import orbit.server.BaseMessage
 import orbit.server.Capability
 import orbit.server.net.NodeId
 
 class Mesh(override val id: NodeId, override val capabilities: List<Capability>) : MeshNode {
-    override fun <T : BaseAddress> canHandle(address: T): Boolean {
+    override fun <T : Address> canHandle(address: T): Boolean {
         return true
     }
 
@@ -22,6 +22,6 @@ class Mesh(override val id: NodeId, override val capabilities: List<Capability>)
 
     companion object _Mesh {
         @JvmStatic
-        val Instance : Mesh = Mesh(NodeId("mesh"), capabilities = listOf(Capability.Mesh))
+        val Instance: Mesh = Mesh(NodeId("mesh"), capabilities = listOf(Capability.Mesh))
     }
 }

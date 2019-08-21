@@ -16,7 +16,7 @@ class LocalRemoteNode(
     val nodeDirectory: InMemoryNodeDirectory,
     val forwardMessage: (BaseMessage) -> Unit
 ) : MeshNode {
-    override fun <T : BaseAddress> canHandle(address: T): Boolean {
+    override fun <T : Address> canHandle(address: T): Boolean {
         return true
     }
 

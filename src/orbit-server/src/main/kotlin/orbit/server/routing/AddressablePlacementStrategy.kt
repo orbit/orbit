@@ -10,5 +10,5 @@ import orbit.server.*
 import orbit.server.net.NodeId
 
 interface AddressablePlacementStrategy {
-    fun chooseNode(address: BaseAddress): NodeId
+    fun chooseNode(address: Address): NodeId
 }
