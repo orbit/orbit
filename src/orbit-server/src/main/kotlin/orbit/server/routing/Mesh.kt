@@ -9,7 +9,7 @@ package orbit.server.routing
 import orbit.server.BaseAddress
 import orbit.server.BaseMessage
 import orbit.server.Capability
-import orbit.server.NodeId
+import orbit.server.net.NodeId
 
 class Mesh(override val id: NodeId, override val capabilities: List<Capability>) : MeshNode {
     override fun <T : BaseAddress> canHandle(address: T): Boolean {

@@ -16,6 +16,7 @@ import orbit.server.local.InMemoryAddressableDirectory
 import orbit.server.local.InMemoryNodeDirectory
 import orbit.server.local.LocalFirstPlacementStrategy
 import orbit.server.net.GrpcEndpoint
+import orbit.server.net.NodeId
 import orbit.server.routing.Route
 import orbit.server.routing.Router
 import org.kodein.di.Kodein
@@ -27,11 +28,10 @@ import kotlin.coroutines.CoroutineContext
 class OrbitServer(private val config: OrbitConfig) {
     private val logger by logger()
 
-    val nodeId = NodeId.generate()
     val nodeDirectory = InMemoryNodeDirectory()
     val addressableDirectory = InMemoryAddressableDirectory()
-    val loadBalancer = LocalFirstPlacementStrategy(nodeDirectory, nodeId)
-    val router = Router(nodeId, addressableDirectory, nodeDirectory, loadBalancer)
+    val loadBalancer = LocalFirstPlacementStrategy(nodeDirectory, config.nodeId)
+    val router = Router(config.nodeId, addressableDirectory, nodeDirectory, loadBalancer)
 
     private val runtimePools = RuntimePools(
         cpuPool = config.cpuPool,

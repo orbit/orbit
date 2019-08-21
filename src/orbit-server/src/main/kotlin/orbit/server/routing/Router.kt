@@ -8,7 +8,7 @@ package orbit.server.routing
 
 import orbit.server.BaseAddress
 import orbit.server.BaseMessage
-import orbit.server.NodeId
+import orbit.server.net.NodeId
 import orbit.common.collections.GraphTraverser
 
 

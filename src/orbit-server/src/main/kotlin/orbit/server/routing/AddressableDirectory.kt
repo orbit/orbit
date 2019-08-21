@@ -7,8 +7,9 @@
 package orbit.server.routing
 
 import orbit.server.*
+import orbit.server.net.NodeId
 
-interface AddressableDirectory {
+ interface AddressableDirectory {
     fun lookup(address: BaseAddress) : NodeId?
     fun setLocation(address: BaseAddress, node: NodeId)
 }

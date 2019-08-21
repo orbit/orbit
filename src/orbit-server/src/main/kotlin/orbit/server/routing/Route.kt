@@ -6,7 +6,7 @@
 
 package orbit.server.routing
 
-import orbit.server.NodeId
+import orbit.server.net.NodeId
 
 data class Route(val path: List<NodeId> = emptyList()) {
     fun push(nodeId: NodeId): Route {

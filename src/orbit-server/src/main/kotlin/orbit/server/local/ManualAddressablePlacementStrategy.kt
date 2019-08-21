@@ -7,6 +7,7 @@
 package orbit.server.local
 
 import orbit.server.*
+import orbit.server.net.NodeId
 import orbit.server.routing.*
 
 class ManualAddressablePlacementStrategy(var nextNode: NodeId = NodeId("")) : AddressablePlacementStrategy {

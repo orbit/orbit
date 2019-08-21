@@ -2,6 +2,7 @@ package orbit.server.routing
 
 import orbit.server.*
 import orbit.server.local.*
+import orbit.server.net.NodeId
 import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -22,13 +23,18 @@ class RouterTest {
 
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node1")))
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node2")));
-        nodeDirectory.connectNode(LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))), NodeId("node2"))
+        nodeDirectory.connectNode(LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
+            NodeId("node2")
+        )
 
         addressDirectory.setLocation(accountAddress, NodeId("client"))
 
         val route = router.routeMessage(message)
 
-        assertThat(route?.path).containsExactly(Mesh.Instance.id, NodeId("node2"), NodeId("client"))
+        assertThat(route?.path).containsExactly(Mesh.Instance.id,
+            NodeId("node2"),
+            NodeId("client")
+        )
     }
 
     @Test
@@ -47,11 +53,16 @@ class RouterTest {
         )
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node1")))
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node2")));
-        nodeDirectory.connectNode(LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))), NodeId("node2"))
+        nodeDirectory.connectNode(LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
+            NodeId("node2")
+        )
 
         val route = router.routeMessage(message)
 
-        assertThat(route?.path).containsExactly(Mesh.Instance.id, NodeId("node2"), NodeId("client"))
+        assertThat(route?.path).containsExactly(Mesh.Instance.id,
+            NodeId("node2"),
+            NodeId("client")
+        )
     }
 
     @Test
@@ -69,11 +80,20 @@ class RouterTest {
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node1")))
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node2")));
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node3")));
-        nodeDirectory.connectNode(LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))), NodeId("node3"))
+        nodeDirectory.connectNode(LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
+            NodeId("node3")
+        )
 
         addressDirectory.setLocation(accountAddress, NodeId("client"))
 
-        val projectedRoute = Route(listOf(NodeId("node1"), NodeId("mesh"), NodeId("node2"), NodeId("mesh"), NodeId("node3"), NodeId("client")))
+        val projectedRoute = Route(listOf(
+            NodeId("node1"),
+            NodeId("mesh"),
+            NodeId("node2"),
+            NodeId("mesh"),
+            NodeId("node3"),
+            NodeId("client")
+        ))
         val route = router.routeMessage(message, projectedRoute)
 
         assertThat(route?.path).containsExactlyElementsOf(projectedRoute.pop().route.path)
@@ -94,13 +114,21 @@ class RouterTest {
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node1")))
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node2")));
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node3")));
-        nodeDirectory.connectNode(LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))), NodeId("node3"))
+        nodeDirectory.connectNode(LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
+            NodeId("node3")
+        )
 
         addressDirectory.setLocation(accountAddress, NodeId("client"))
 
-        val route = router.routeMessage(message, Route(listOf(NodeId("node1"), NodeId("client"))))
+        val route = router.routeMessage(message, Route(listOf(
+            NodeId("node1"),
+            NodeId("client")
+        )))
 
-        assertThat(route?.path).containsExactly(Mesh.Instance.id, NodeId("node3"), NodeId("client"))
+        assertThat(route?.path).containsExactly(Mesh.Instance.id,
+            NodeId("node3"),
+            NodeId("client")
+        )
 
     }
 

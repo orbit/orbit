@@ -7,6 +7,7 @@
 package orbit.server.routing
 
 import orbit.server.*
+import orbit.server.net.NodeId
 
 interface MeshNode  {
     val id: NodeId

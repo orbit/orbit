@@ -7,6 +7,7 @@
 package orbit.server.local
 
 import orbit.server.*
+import orbit.server.net.NodeId
 import orbit.server.routing.AddressablePlacementStrategy
 import orbit.server.routing.NodeDirectory
 

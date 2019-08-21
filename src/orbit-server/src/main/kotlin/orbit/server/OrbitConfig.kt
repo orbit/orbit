@@ -8,8 +8,14 @@ package orbit.server
 
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.common.concurrent.Pools
+import orbit.server.net.NodeId
 
 data class OrbitConfig(
+    /**
+     * The node's identity.
+     */
+    val nodeId: NodeId = NodeId.generate(),
+
     /**
      * The gRPC endpoint port.
      */
