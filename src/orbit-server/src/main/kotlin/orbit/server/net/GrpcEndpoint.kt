@@ -9,7 +9,6 @@ package orbit.server.net
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import orbit.common.logging.logger
-import orbit.server.ConnectionImpl
 import orbit.server.OrbitConfig
 import orbit.server.OrbitServer
 import orbit.server.demo.GreeterImpl
@@ -24,7 +23,7 @@ class GrpcEndpoint(private val config: OrbitConfig, private val orbitServer: Orb
 
         server = ServerBuilder.forPort(config.grpcPort)
             .addService(GreeterImpl())
-            .addService(ConnectionImpl(orbitServer))
+            .addService(GrpcRemoteNode(NodeId("remote 1"), listOf(), orbitServer))
             .build()
             .start()
 
