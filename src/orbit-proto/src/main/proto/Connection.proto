@@ -4,14 +4,14 @@ option java_package = "orbit.shared.proto";
 package orbit.shared;
 
 service Connection {
-    rpc SendMessage (MessageRequest) returns (MessageReply) {}
+    rpc OpenMessageStream (stream MessageStreamRequest) returns (stream MessageStreamResponse) { }
 }
 
-message MessageRequest {
-    string destination = 1;
-    string content = 2;
+message MessageStreamRequest {
+    string address = 1;
+    string message = 2;
 }
 
-message MessageReply {
+message MessageStreamResponse {
     string message = 1;
 }

@@ -140,7 +140,7 @@ class OrbitServer(private val config: OrbitConfig) {
     }
 
     fun handleMessage(message: BaseMessage, projectedRoute: Route? = null) {
-        println("handling a message")
+        println("handling a message ${message.content}")
         // TODO (brett) - re-integrate routing
 //        var route = router.routeMessage(message, projectedRoute)
 //        if (route == null) {
