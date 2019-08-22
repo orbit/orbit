@@ -24,6 +24,11 @@ data class OrbitConfig(
     val grpcPort: Int = 50056,
 
     /**
+     * The Orbit tick rate in milliseconds.
+     */
+    val tickRate: Long = 1000,
+
+    /**
      * The pool where CPU intensive tasks will run.
      */
     val cpuPool: CoroutineDispatcher = Pools.createFixedPool("orbit-cpu"),
@@ -32,6 +37,16 @@ data class OrbitConfig(
      * The pool where IO intensive tasks will run.
      */
     val ioPool: CoroutineDispatcher = Pools.createCachedPool("orbit-io"),
+
+    /**
+     * The number of workers that can process a message concurrently.
+     */
+    val pipelineRailCount: Int = 128,
+
+    /**
+     * The number of messages (either inbound or outbound) that may be queued before new messages are rejected.
+     */
+    val pipelineBufferCount: Int = 10_000,
 
     /**
      * Node directory

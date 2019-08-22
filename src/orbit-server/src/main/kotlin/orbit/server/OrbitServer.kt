@@ -6,8 +6,15 @@
 
 package orbit.server
 
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import orbit.common.logging.logger
+import orbit.common.logging.trace
+import orbit.common.logging.warn
 import orbit.common.util.Clock
 import orbit.common.util.stopwatch
 import orbit.server.concurrent.RuntimePools
@@ -17,6 +24,8 @@ import orbit.server.local.InMemoryNodeDirectory
 import orbit.server.local.LocalFirstPlacementStrategy
 import orbit.server.net.GrpcEndpoint
 import orbit.server.net.NodeId
+import orbit.server.pipeline.Pipeline
+import orbit.server.pipeline.PipelineContext
 import orbit.server.routing.Route
 import orbit.server.routing.Router
 import org.kodein.di.Kodein
@@ -34,6 +43,8 @@ class OrbitServer(private val config: OrbitConfig) {
     private val router = Router(config.nodeId, addressableDirectory, nodeDirectory, loadBalancer)
     private val grpcEndpoint: GrpcEndpoint = GrpcEndpoint(config, this)
 
+    private var tickJob: Job? = null
+
     private val runtimePools = RuntimePools(
         cpuPool = config.cpuPool,
         ioPool = config.ioPool
@@ -45,10 +56,13 @@ class OrbitServer(private val config: OrbitConfig) {
     )
 
     private val kodein = Kodein {
-        bind<OrbitConfig>() with singleton { config }
-        bind<RuntimePools>() with singleton { runtimePools }
-        bind<RuntimeScopes>() with singleton { runtimeScopes }
-        bind<Clock>() with singleton { Clock() }
+        bind() from singleton { config }
+        bind() from singleton { runtimePools }
+        bind() from singleton { runtimeScopes }
+        bind() from singleton { Clock() }
+        bind() from singleton { Pipeline(instance(), instance()) }
+
+        bind<Iterable<PipelineContext>>() with singleton { listOf<PipelineContext>() }
     }
 
     fun start() = runtimeScopes.ioScope.launch {
@@ -57,8 +71,8 @@ class OrbitServer(private val config: OrbitConfig) {
         val (elapsed, _) = stopwatch(clock) {
             onStart()
         }
-        logger.info("Orbit started successfully in {}ms.", elapsed)
 
+        logger.info("Orbit started successfully in {}ms.", elapsed)
     }
 
     fun stop() = runtimeScopes.ioScope.launch {
@@ -72,11 +86,57 @@ class OrbitServer(private val config: OrbitConfig) {
     }
 
     private suspend fun onStart() {
-        this.grpcEndpoint.start()
+        val pipeline: Pipeline by kodein.instance()
+        pipeline.start()
+
+        grpcEndpoint.start()
+
+        tickJob = launchTick()
+    }
+
+    private suspend fun onTick() {
+
     }
 
     private suspend fun onStop() {
-        this.grpcEndpoint.stop()
+        grpcEndpoint.stop()
+
+        // Stop the tick
+        tickJob?.cancelAndJoin()
+
+        val pipeline: Pipeline by kodein.instance()
+        pipeline.stop()
+    }
+
+    private fun launchTick() = runtimeScopes.cpuScope.launch {
+        val clock : Clock by kodein.instance()
+        val targetTickRate = config.tickRate
+        while (isActive) {
+            val (elapsed, _) = stopwatch(clock) {
+                logger.trace { "Begin Orbit tick..." }
+
+                try {
+                    onTick()
+                } catch (c: CancellationException) {
+                    throw c
+                } catch (t: Throwable) {
+                    onUnhandledException(coroutineContext, t)
+                }
+            }
+
+            val nextTickDelay = (targetTickRate - elapsed).coerceAtLeast(0)
+
+            if (elapsed > targetTickRate) {
+                logger.warn {
+                    "Slow Orbit Tick. The application is unable to maintain its tick rate. " +
+                            "Last tick took ${elapsed}ms and the reference tick rate is ${targetTickRate}ms. " +
+                            "The next tick will take place immediately."
+                }
+            }
+
+            logger.trace { "Orbit tick completed in ${elapsed}ms. Next tick in ${nextTickDelay}ms." }
+            delay(nextTickDelay)
+        }
     }
 
     fun handleMessage(message: BaseMessage, projectedRoute: Route? = null) {
