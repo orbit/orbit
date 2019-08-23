@@ -23,10 +23,13 @@ import orbit.server.net.MessageContainer
 import orbit.server.net.MessageDirection
 import orbit.server.pipeline.steps.BlankPipelineStep
 import orbit.server.pipeline.steps.PipelineStep
+import org.kodein.di.DKodein
+import org.kodein.di.erased.instance
 
 internal class Pipeline(
     private val runtimeScopes: RuntimeScopes,
-    private val config: OrbitConfig
+    private val config: OrbitConfig,
+    kodein: DKodein
 ) {
     private val logger by logger()
 
@@ -34,7 +37,7 @@ internal class Pipeline(
     private lateinit var pipelinesWorkers: List<Job>
 
     private val pipelineSteps: Array<PipelineStep> = arrayOf(
-        BlankPipelineStep()
+        kodein.instance<BlankPipelineStep>()
     )
 
 

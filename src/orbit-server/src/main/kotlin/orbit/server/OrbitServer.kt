@@ -23,12 +23,13 @@ import orbit.server.local.InMemoryAddressableDirectory
 import orbit.server.local.InMemoryNodeDirectory
 import orbit.server.local.LocalFirstPlacementStrategy
 import orbit.server.net.GrpcEndpoint
-import orbit.server.net.NodeId
+import orbit.server.net.netModule
 import orbit.server.pipeline.Pipeline
-import orbit.server.pipeline.PipelineContext
+import orbit.server.pipeline.pipelineModule
 import orbit.server.routing.Route
 import orbit.server.routing.Router
 import org.kodein.di.Kodein
+import org.kodein.di.direct
 import org.kodein.di.erased.bind
 import org.kodein.di.erased.instance
 import org.kodein.di.erased.singleton
@@ -41,7 +42,6 @@ class OrbitServer(private val config: OrbitConfig) {
     private val addressableDirectory = InMemoryAddressableDirectory()
     private val loadBalancer = LocalFirstPlacementStrategy(nodeDirectory, config.nodeId)
     private val router = Router(config.nodeId, addressableDirectory, nodeDirectory, loadBalancer)
-    private val grpcEndpoint: GrpcEndpoint = GrpcEndpoint(config, this)
 
     private var tickJob: Job? = null
 
@@ -55,18 +55,24 @@ class OrbitServer(private val config: OrbitConfig) {
         exceptionHandler = this::onUnhandledException
     )
 
-    private val kodein = Kodein {
+    private val basicModule = Kodein.Module(name = "Basic") {
+        bind() from singleton { kodein }
+        bind() from singleton { kodein.direct }
+        bind() from singleton { this@OrbitServer }
         bind() from singleton { config }
         bind() from singleton { runtimePools }
         bind() from singleton { runtimeScopes }
         bind() from singleton { Clock() }
-        bind() from singleton { Pipeline(instance(), instance()) }
+    }
 
-        bind<Iterable<PipelineContext>>() with singleton { listOf<PipelineContext>() }
+    private val kodein = Kodein {
+        import(basicModule)
+        import(pipelineModule)
+        import(netModule)
     }
 
     fun start() = runtimeScopes.ioScope.launch {
-        val clock : Clock by kodein.instance()
+        val clock: Clock by kodein.instance()
         logger.info("Starting Orbit...")
         val (elapsed, _) = stopwatch(clock) {
             onStart()
@@ -76,7 +82,7 @@ class OrbitServer(private val config: OrbitConfig) {
     }
 
     fun stop() = runtimeScopes.ioScope.launch {
-        val clock : Clock by kodein.instance()
+        val clock: Clock by kodein.instance()
         logger.info("Stopping Orbit...")
         val (elapsed, _) = stopwatch(clock) {
             onStop()
@@ -89,6 +95,7 @@ class OrbitServer(private val config: OrbitConfig) {
         val pipeline: Pipeline by kodein.instance()
         pipeline.start()
 
+        val grpcEndpoint: GrpcEndpoint by kodein.instance()
         grpcEndpoint.start()
 
         tickJob = launchTick()
@@ -99,6 +106,7 @@ class OrbitServer(private val config: OrbitConfig) {
     }
 
     private suspend fun onStop() {
+        val grpcEndpoint: GrpcEndpoint by kodein.instance()
         grpcEndpoint.stop()
 
         // Stop the tick
@@ -109,7 +117,7 @@ class OrbitServer(private val config: OrbitConfig) {
     }
 
     private fun launchTick() = runtimeScopes.cpuScope.launch {
-        val clock : Clock by kodein.instance()
+        val clock: Clock by kodein.instance()
         val targetTickRate = config.tickRate
         while (isActive) {
             val (elapsed, _) = stopwatch(clock) {
