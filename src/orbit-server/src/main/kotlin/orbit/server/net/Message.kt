@@ -25,14 +25,14 @@ internal data class Message(
     val content: MessageContent,
     val messageId: Long? = null,
     val source: NodeId? = null,
-    val target: NetTarget? = null
+    val target: MessageTarget? = null
 
 )
 
-internal sealed class NetTarget {
-    data class Unicast(val targetNode: NodeId) : NetTarget()
-    data class Multicast(val nodes: Iterable<NodeId>) : NetTarget()
-    object Broadcast : NetTarget()
+internal sealed class MessageTarget {
+    data class Unicast(val targetNode: NodeId) : MessageTarget()
+    data class Multicast(val nodes: Iterable<NodeId>) : MessageTarget()
+    object Broadcast : MessageTarget()
 }
 
 internal sealed class MessageContent {
