@@ -39,7 +39,7 @@ internal sealed class MessageContent {
     data class TempStringMessage(val data: String) : MessageContent()
     data class Request(val data: String, val destination: Address) : MessageContent(){
         override fun toString(): String {
-            return return data
+            return data
         }
     }
 }
