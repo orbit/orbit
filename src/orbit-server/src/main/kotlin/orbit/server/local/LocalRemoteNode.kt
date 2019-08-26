@@ -23,7 +23,7 @@ internal class LocalRemoteNode(
 
     override val capabilities = listOf(Capability.Routing)
 
-    override fun sendMessage(message: Message, route: Route) {
+    override fun sendMessage(message: Message, route: Route?) {
         println("Send Message through node \"${this.id}\"")
 
         forwardMessage(message)

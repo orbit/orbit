@@ -13,16 +13,12 @@ import orbit.shared.proto.ConnectionOuterClass
 
 internal class GrpcClient(
     override val id: NodeId = NodeId.generate(),
+    private val responseObserver: StreamObserver<ConnectionOuterClass.MessageStreamResponse>,
     override val capabilities: List<Capability> = listOf(),
     private val onClientMessage: (Message) -> Unit = {}
 ) : MeshNode, StreamObserver<ConnectionOuterClass.Message> {
-    private lateinit var responseObserver: StreamObserver<ConnectionOuterClass.MessageStreamResponse>
 
-    fun connect(responseObserver: StreamObserver<ConnectionOuterClass.MessageStreamResponse>) {
-        this.responseObserver = responseObserver
-    }
-
-    override fun sendMessage(message: Message, route: Route) {
+    override fun sendMessage(message: Message, route: Route?) {
         println("> ${this.id}: \"${message.content}\"")
         responseObserver.onNext(ConnectionOuterClass.MessageStreamResponse.newBuilder().setMessage(message.content.toString()).build())
     }
@@ -38,11 +34,14 @@ internal class GrpcClient(
     }
 
     override fun onNext(value: ConnectionOuterClass.Message) {
-        val msg = Message(MessageContent.Request(value.content, Address(AddressId(value.address))), target = MessageTarget.Unicast(NodeId("target")))
+        val msg = Message(
+            MessageContent.Request(value.content, Address(AddressId(value.address))),
+            target = MessageTarget.Unicast(NodeId("target"))
+        )
         onClientMessage(msg)
     }
 
     override fun <T : Address> canHandle(address: T): Boolean {
-        return this.capabilities.contains(address.capability())
+        return true //this.capabilities.contains(address.capability())
     }
 }

@@ -16,7 +16,7 @@ internal class Mesh(override val id: NodeId, override val capabilities: List<Cap
         return true
     }
 
-    override fun sendMessage(message: Message, route: Route) {
+    override fun sendMessage(message: Message, route: Route?) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

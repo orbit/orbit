@@ -16,7 +16,7 @@ internal class LocalClientNode<TAddress : Address>(
     override val capabilities: List<Capability> = listOf(),
     private val onClientMessage: (Message) -> Unit = {}
 ) : MeshNode {
-    override fun sendMessage(message: Message, route: Route) {
+    override fun sendMessage(message: Message, route: Route?) {
         println("> ${this.id}: \"${message.content}\"")
     }
 

@@ -144,7 +144,7 @@ internal class InMemoryNodeDirectoryTest {
             return true
         }
 
-        override fun sendMessage(message: Message, route: Route) {
+        override fun sendMessage(message: Message, route: Route?) {
 
         }
 

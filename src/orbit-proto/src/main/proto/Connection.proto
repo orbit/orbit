@@ -15,33 +15,3 @@ message Message {
 message MessageStreamResponse {
     string message = 1;
 }
-
-//    rpc Messages (stream MessageStreamRequest) returns (stream MessageStreamResponse);
-//    rpc Capabilities (CapabilitiesRequest) returns (CapabilitiesResponse);
-//    rpc Connect (ConnectionRequest) returns (ConnectionResponse);
-//message ConnectionRequest {
-//    string nodeId = 1;
-//}
-//
-//message ConnectionResponse {
-//    string nodeId = 1;
-//}
-
-//message CapabilitiesRequest {
-//    string nodeId = 1;
-//    repeated string capability = 2;
-//}
-//message CapabilitiesResponse {
-//    string nodeId = 1;
-//}
-//message MessageStreamRequest {
-////    oneof payload {
-////        Message message = 1;
-////        NodeInfo nodeInfo = 2;
-////    }
-////}
-////
-////message NodeInfo {
-////    string nodeId = 1;
-////    repeated string capability = 2;
-////}

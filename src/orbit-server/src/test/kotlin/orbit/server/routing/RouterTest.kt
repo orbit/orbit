@@ -152,7 +152,7 @@ internal class RouterTest {
             return true
         }
 
-        override fun sendMessage(message: Message, route: Route) {
+        override fun sendMessage(message: Message, route: Route?) {
             println("Sending message on Node ${id}: ${message.content}")
         }
 

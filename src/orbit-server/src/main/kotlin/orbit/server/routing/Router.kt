@@ -8,6 +8,7 @@ package orbit.server.routing
 
 import orbit.common.collections.GraphTraverser
 import orbit.server.Address
+import orbit.server.Capability
 import orbit.server.net.Message
 import orbit.server.net.MessageContent
 import orbit.server.net.NodeId
@@ -17,9 +18,20 @@ internal class Router(
     val addressableDirectory: AddressableDirectory,
     val nodeDirectory: NodeDirectory,
     val addressablePlacement: AddressablePlacementStrategy
-) {
-    internal fun routeMessage(message: Message, projectedRoute: Route? = null) {
-        val route = this.getRoute(message, projectedRoute)
+) : MeshNode {
+    override val id = nodeId
+
+    init {
+        nodeDirectory.connectNode(this)
+    }
+
+    override val capabilities: List<Capability>
+        get() = listOf()
+
+    override fun <T : Address> canHandle(address: T) = true
+
+    override fun sendMessage(message: Message, route: Route?) {
+        val route = this.getRoute(message, route)
 
         if (route == null) {
             println("No route found")
@@ -35,8 +47,7 @@ internal class Router(
         println("~| ${message.content}")
         val destination = (message.content as MessageContent.Request).destination!!
 
-        var lastNode =
-            addressableDirectory.lookup(destination) ?: addressablePlacement.chooseNode(destination)
+        var lastNode = addressableDirectory.lookup(destination) ?: addressablePlacement.chooseNode(destination)
 
         val routeVerified = (projectedRoute != null) && this.verifyRoute(projectedRoute, destination)
         println("Finding route between $nodeId -> $lastNode ${if (routeVerified) "(existing)" else ""}")
@@ -60,7 +71,7 @@ internal class Router(
                 return@mapNotNull route
             }
             return@mapNotNull null
-        }
+        }.toList()
 
         return nodes.find { r -> r.path.first().equals(this.nodeId) }
     }

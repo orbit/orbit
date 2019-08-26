@@ -33,7 +33,7 @@ internal class InMemoryNodeDirectory : NodeDirectory {
             .plus(connections.map { c -> Connection(nodeId, c) })
     }
 
-    fun connectNode(node: MeshNode, parent: NodeId? = null) {
+    override fun connectNode(node: MeshNode, parent: NodeId?) {
         nodes[node.id] = node
         connections = connections.plus(Connection(node.id, parent ?: Mesh.Instance.id))
     }
