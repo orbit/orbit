@@ -1,12 +1,13 @@
 package orbit.server.local
 
 import orbit.server.*
+import orbit.server.net.Message
 import orbit.server.net.NodeId
 import orbit.server.routing.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-class InMemoryNodeDirectoryTest {
+internal class InMemoryNodeDirectoryTest {
 
     @Test
     fun `can find node connected to client`() {
@@ -143,7 +144,7 @@ class InMemoryNodeDirectoryTest {
             return true
         }
 
-        override fun sendMessage(message: BaseMessage, route: Route) {
+        override fun sendMessage(message: Message, route: Route) {
 
         }
 

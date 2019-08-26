@@ -10,7 +10,7 @@ import orbit.server.*
 import orbit.server.net.NodeId
 import orbit.server.routing.*
 
-class InMemoryNodeDirectory : NodeDirectory {
+internal class InMemoryNodeDirectory : NodeDirectory {
     private val nodes = hashMapOf<NodeId, MeshNode>(Mesh.Instance.id to Mesh.Instance)
     private var connections: List<Connection> = listOf()
 

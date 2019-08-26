@@ -46,10 +46,5 @@ data class OrbitConfig(
     /**
      * The number of messages (either inbound or outbound) that may be queued before new messages are rejected.
      */
-    val pipelineBufferCount: Int = 10_000,
-
-    /**
-     * Node directory
-     */
-    val nodeDirectory: NodeDirectory = InMemoryNodeDirectory()
+    val pipelineBufferCount: Int = 10_000
 )

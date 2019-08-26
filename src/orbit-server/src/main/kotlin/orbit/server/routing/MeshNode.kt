@@ -7,12 +7,13 @@
 package orbit.server.routing
 
 import orbit.server.*
+import orbit.server.net.Message
 import orbit.server.net.NodeId
 
-interface MeshNode  {
+internal interface MeshNode  {
     val id: NodeId
     val capabilities: List<Capability>
-    fun sendMessage(message: BaseMessage, route: Route)
+    fun sendMessage(message: Message, route: Route)
 
     fun <T: Address> canHandle(address: T) : Boolean
 }

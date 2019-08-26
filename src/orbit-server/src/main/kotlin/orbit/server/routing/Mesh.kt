@@ -7,16 +7,16 @@
 package orbit.server.routing
 
 import orbit.server.Address
-import orbit.server.BaseMessage
 import orbit.server.Capability
+import orbit.server.net.Message
 import orbit.server.net.NodeId
 
-class Mesh(override val id: NodeId, override val capabilities: List<Capability>) : MeshNode {
+internal class Mesh(override val id: NodeId, override val capabilities: List<Capability>) : MeshNode {
     override fun <T : Address> canHandle(address: T): Boolean {
         return true
     }
 
-    override fun sendMessage(message: BaseMessage, route: Route) {
+    override fun sendMessage(message: Message, route: Route) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

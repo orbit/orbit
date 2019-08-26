@@ -2,11 +2,13 @@ package orbit.server.routing
 
 import orbit.server.*
 import orbit.server.local.*
+import orbit.server.net.Message
+import orbit.server.net.MessageContent
 import orbit.server.net.NodeId
 import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class RouterTest {
+internal class RouterTest {
 
     @Test
     fun `can route message to client node`() {
@@ -15,10 +17,7 @@ class RouterTest {
         val addressDirectory = InMemoryAddressableDirectory()
 
         val accountAddress = TestAddress()
-        val message = Message(
-            "This is a test message",
-            accountAddress
-        )
+        val message = Message(MessageContent.Request("This is a test message", accountAddress))
         val router = Router(NodeId("node1"), addressDirectory, nodeDirectory, TestAddressablePlacementStrategy())
 
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node1")))
@@ -30,7 +29,7 @@ class RouterTest {
 
         addressDirectory.setLocation(accountAddress, NodeId("client"))
 
-        val route = router.routeMessage(message)
+        val route = router.getRoute(message)
 
         assertThat(route?.path).containsExactly(
             Mesh.Instance.id,
@@ -45,10 +44,7 @@ class RouterTest {
         val addressDirectory = InMemoryAddressableDirectory()
 
         val accountAddress = TestAddress()
-        val message = Message(
-            "This is a test message",
-            accountAddress
-        )
+        val message = Message(MessageContent.Request("This is a test message", accountAddress))
         val router = Router(
             NodeId("node1"), addressDirectory, nodeDirectory,
             TestAddressablePlacementStrategy(NodeId("client"))
@@ -60,7 +56,7 @@ class RouterTest {
             NodeId("node2")
         )
 
-        val route = router.routeMessage(message)
+        val route = router.getRoute(message)
 
         assertThat(route?.path).containsExactly(
             Mesh.Instance.id,
@@ -75,10 +71,7 @@ class RouterTest {
         val addressDirectory = InMemoryAddressableDirectory()
 
         val accountAddress = TestAddress()
-        val message = Message(
-            "This is a test message",
-            accountAddress
-        )
+        val message = Message(MessageContent.Request("This is a test message", accountAddress))
         val router = Router(NodeId("node1"), addressDirectory, nodeDirectory, TestAddressablePlacementStrategy())
 
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node1")))
@@ -101,7 +94,7 @@ class RouterTest {
                 NodeId("client")
             )
         )
-        val route = router.routeMessage(message, projectedRoute)
+        val route = router.getRoute(message, projectedRoute)
 
         assertThat(route?.path).containsExactlyElementsOf(projectedRoute.pop().route.path)
     }
@@ -112,10 +105,7 @@ class RouterTest {
         val addressDirectory = InMemoryAddressableDirectory()
 
         val accountAddress = TestAddress()
-        val message = Message(
-            "This is a test message",
-            accountAddress
-        )
+        val message = Message(MessageContent.Request("This is a test message", accountAddress))
         val router = Router(NodeId("node1"), addressDirectory, nodeDirectory, TestAddressablePlacementStrategy())
 
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node1")))
@@ -128,7 +118,7 @@ class RouterTest {
 
         addressDirectory.setLocation(accountAddress, NodeId("client"))
 
-        val route = router.routeMessage(
+        val route = router.getRoute(
             message, Route(
                 listOf(
                     NodeId("node1"),
@@ -162,7 +152,7 @@ class RouterTest {
             return true
         }
 
-        override fun sendMessage(message: BaseMessage, route: Route) {
+        override fun sendMessage(message: Message, route: Route) {
             println("Sending message on Node ${id}: ${message.content}")
         }
 

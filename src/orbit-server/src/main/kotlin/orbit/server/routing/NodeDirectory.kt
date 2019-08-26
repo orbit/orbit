@@ -9,7 +9,7 @@ package orbit.server.routing
 import orbit.server.*
 import orbit.server.net.NodeId
 
-interface NodeDirectory {
+internal interface NodeDirectory {
     fun lookupConnectedNodes(nodeId: NodeId, address: Address): Sequence<MeshNode>
     fun getNode(nodeId: NodeId): MeshNode?
     fun reportConnections(nodeId: NodeId, connections: List<NodeId>)

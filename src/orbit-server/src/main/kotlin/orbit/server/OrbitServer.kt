@@ -23,6 +23,7 @@ import orbit.server.local.InMemoryAddressableDirectory
 import orbit.server.local.InMemoryNodeDirectory
 import orbit.server.local.LocalFirstPlacementStrategy
 import orbit.server.net.GrpcEndpoint
+import orbit.server.net.Message
 import orbit.server.net.netModule
 import orbit.server.pipeline.Pipeline
 import orbit.server.pipeline.pipelineModule
@@ -65,8 +66,13 @@ class OrbitServer(private val config: OrbitConfig) {
         bind() from singleton { Clock() }
     }
 
+    private val routingModule = Kodein.Module(name = "Routing") {
+        bind() from singleton { router }
+    }
+
     private val kodein = Kodein {
         import(basicModule)
+        import(routingModule)
         import(pipelineModule)
         import(netModule)
     }
@@ -147,7 +153,7 @@ class OrbitServer(private val config: OrbitConfig) {
         }
     }
 
-    fun handleMessage(message: BaseMessage, projectedRoute: Route? = null) {
+    internal fun handleMessage(message: Message, projectedRoute: Route? = null) {
         println("handling a message ${message.content}")
         // TODO (brett) - re-integrate routing
 //        var route = router.routeMessage(message, projectedRoute)

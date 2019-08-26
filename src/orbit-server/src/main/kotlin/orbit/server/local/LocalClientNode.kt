@@ -7,19 +7,20 @@
 package orbit.server.local
 
 import orbit.server.*
+import orbit.server.net.Message
 import orbit.server.net.NodeId
 import orbit.server.routing.*
 
-class LocalClientNode<TAddress : Address>(
+internal class LocalClientNode<TAddress : Address>(
     override val id: NodeId = NodeId.generate(),
     override val capabilities: List<Capability> = listOf(),
-    private val onClientMessage: (BaseMessage) -> Unit = {}
+    private val onClientMessage: (Message) -> Unit = {}
 ) : MeshNode {
-    override fun sendMessage(message: BaseMessage, route: Route) {
+    override fun sendMessage(message: Message, route: Route) {
         println("> ${this.id}: \"${message.content}\"")
     }
 
-    fun onMessage(message: BaseMessage) {
+    fun onMessage(message: Message) {
         onClientMessage(message);
     }
 
