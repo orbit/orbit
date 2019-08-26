@@ -11,6 +11,12 @@ import orbit.server.net.NodeId
 import orbit.server.routing.*
 
 internal class InMemoryNodeDirectory : NodeDirectory {
+
+    companion object Singleton {
+        @JvmStatic
+        val Instance = InMemoryNodeDirectory()
+    }
+
     private val nodes = hashMapOf<NodeId, MeshNode>(Mesh.Instance.id to Mesh.Instance)
     private var connections: List<Connection> = listOf()
 

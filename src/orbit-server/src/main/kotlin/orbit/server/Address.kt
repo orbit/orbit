@@ -8,7 +8,5 @@ package orbit.server
 
 inline class AddressId(val value: String)
 
-open class Address(val id: AddressId) {
-    open fun capability(): Capability = Capability.None
-}
+data class Address(val id: AddressId, val capability: Capability = Capability.None)
 

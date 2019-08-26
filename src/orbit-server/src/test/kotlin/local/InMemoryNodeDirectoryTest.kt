@@ -1,5 +1,6 @@
 package orbit.server.local
 
+import LocalClientNode
 import orbit.server.*
 import orbit.server.net.Message
 import orbit.server.net.NodeId
@@ -15,10 +16,10 @@ internal class InMemoryNodeDirectoryTest {
         val node = TestNode(NodeId("node1"))
         directory.connectNode(node)
 
-        val connectedNode = LocalClientNode<TestAddress>(NodeId("node2"), capabilities = listOf(Capability("test")))
+        val connectedNode = LocalClientNode<Address>(NodeId("node2"), capabilities = listOf(Capability("test")))
         directory.connectNode(connectedNode, node.id)
 
-        val nodes = directory.lookupConnectedNodes(connectedNode.id, TestAddress())
+        val nodes = directory.lookupConnectedNodes(connectedNode.id, Address())
 
         assertThat(node).isEqualTo(nodes.elementAt(0))
     }
@@ -32,7 +33,7 @@ internal class InMemoryNodeDirectoryTest {
         val connectedNode = TestNode(NodeId("node2"), capabilities = listOf(Capability("test")))
         directory.connectNode(connectedNode)
 
-        val nodes = directory.lookupConnectedNodes(connectedNode.id, TestAddress())
+        val nodes = directory.lookupConnectedNodes(connectedNode.id, Address())
 
         assertThat(Mesh.Instance).isEqualTo(nodes.elementAt(0))
     }
@@ -44,7 +45,7 @@ internal class InMemoryNodeDirectoryTest {
         directory.connectNode(node)
         directory.connectNode(TestNode(NodeId("node2")))
 
-        val nodes = directory.lookupConnectedNodes(node.id, TestAddress())
+        val nodes = directory.lookupConnectedNodes(node.id, Address())
         assertThat(nodes.toList()).doesNotContain(node)
     }
 
@@ -53,10 +54,10 @@ internal class InMemoryNodeDirectoryTest {
         val directory = InMemoryNodeDirectory()
         val node = TestNode(NodeId("node1"))
         directory.connectNode(node)
-        val client = LocalClientNode<TestAddress>(NodeId("client1"), capabilities = listOf(Capability("test")))
+        val client = LocalClientNode<Address>(NodeId("client1"), capabilities = listOf(Capability("test")))
         directory.connectNode(client, node.id)
 
-        val nodes = directory.lookupConnectedNodes(node.id, TestAddress())
+        val nodes = directory.lookupConnectedNodes(node.id, Address())
         assertThat(nodes.toList()).contains(client)
     }
 
@@ -65,10 +66,10 @@ internal class InMemoryNodeDirectoryTest {
         val directory = InMemoryNodeDirectory()
         val node = TestNode(NodeId("node1"))
         directory.connectNode(node)
-        val client = LocalClientNode<TestAddress>(NodeId("client1"), capabilities = listOf(Capability("test")))
+        val client = LocalClientNode<Address>(NodeId("client1"), capabilities = listOf(Capability("test")))
         directory.connectNode(client, node.id)
 
-        val nodes = directory.lookupConnectedNodes(client.id, TestAddress())
+        val nodes = directory.lookupConnectedNodes(client.id, Address())
         assertThat(nodes.toList()).contains(node)
     }
 
@@ -80,20 +81,20 @@ internal class InMemoryNodeDirectoryTest {
 
         directory.connectNode(node)
         directory.connectNode(node2)
-        val client = LocalClientNode<TestAddress>(NodeId("client1"))
+        val client = LocalClientNode<Address>(NodeId("client1"))
         directory.connectNode(client, node.id)
 
-        val nodes = directory.lookupConnectedNodes(node2.id, TestAddress())
+        val nodes = directory.lookupConnectedNodes(node2.id, Address())
         assertThat(nodes.toList()).doesNotContain(client)
     }
 
     @Test
     fun `does not return unknown node connected to client`() {
         val directory = InMemoryNodeDirectory()
-        val client = LocalClientNode<TestAddress>(NodeId("client1"))
+        val client = LocalClientNode<Address>(NodeId("client1"))
         directory.connectNode(client, NodeId("node2"))
 
-        val nodes = directory.lookupConnectedNodes(client.id, TestAddress())
+        val nodes = directory.lookupConnectedNodes(client.id, Address())
         assertThat(nodes.map { n -> n.id }.toList()).doesNotContain(NodeId("node2"))
     }
 
@@ -103,7 +104,7 @@ internal class InMemoryNodeDirectoryTest {
         val node = TestNode()
         directory.connectNode(node)
 
-        val nodes = directory.lookupConnectedNodes(Mesh.Instance.id, TestAddress())
+        val nodes = directory.lookupConnectedNodes(Mesh.Instance.id, Address())
         assertThat(nodes.map { n -> n.id }.toList()).contains(node.id)
     }
 
@@ -116,7 +117,7 @@ internal class InMemoryNodeDirectoryTest {
         directory.connectNode(connectedNode)
         directory.reportConnections(node.id, listOf(connectedNode.id))
 
-        val nodes = directory.lookupConnectedNodes(node.id, TestAddress())
+        val nodes = directory.lookupConnectedNodes(node.id, Address())
         assertThat(nodes.map { n -> n.id }.toList()).contains(connectedNode.id)
     }
 
@@ -129,17 +130,18 @@ internal class InMemoryNodeDirectoryTest {
         directory.connectNode(node, connectedNode.id)
         directory.reportConnections(node.id, listOf())
 
-        val nodes = directory.lookupConnectedNodes(node.id, TestAddress())
+        val nodes = directory.lookupConnectedNodes(node.id, Address())
         assertThat(nodes.map { n -> n.id }.toList()).doesNotContain(connectedNode.id)
     }
 
-    class TestAddress() : Address(AddressId("test")) {
-        override fun capability(): Capability {
-            return Capability("test")
-        }
+    fun Address(): Address {
+        return Address(AddressId("test"), Capability("test"))
     }
 
-    class TestNode(override val id: NodeId = NodeId.generate(), override val capabilities: List<Capability> = listOf(Capability.Routing)) : MeshNode {
+    class TestNode(
+        override val id: NodeId = NodeId.generate(),
+        override val capabilities: List<Capability> = listOf(Capability.Routing)
+    ) : MeshNode {
         override fun <T : Address> canHandle(address: T): Boolean {
             return true
         }

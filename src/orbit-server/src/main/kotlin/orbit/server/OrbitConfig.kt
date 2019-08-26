@@ -16,7 +16,7 @@ data class OrbitConfig(
     /**
      * The node's identity.
      */
-    val nodeId: NodeId = NodeId.generate(),
+    val nodeId: NodeId = NodeId.generate("router"),
 
     /**
      * The gRPC endpoint port.

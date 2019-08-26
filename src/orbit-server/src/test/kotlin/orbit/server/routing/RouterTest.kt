@@ -1,5 +1,6 @@
 package orbit.server.routing
 
+import LocalClientNode
 import orbit.server.*
 import orbit.server.local.*
 import orbit.server.net.Message
@@ -16,14 +17,14 @@ internal class RouterTest {
         val nodeDirectory = InMemoryNodeDirectory()
         val addressDirectory = InMemoryAddressableDirectory()
 
-        val accountAddress = TestAddress()
+        val accountAddress = Address()
         val message = Message(MessageContent.Request("This is a test message", accountAddress))
         val router = Router(NodeId("node1"), addressDirectory, nodeDirectory, TestAddressablePlacementStrategy())
 
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node1")))
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node2")));
         nodeDirectory.connectNode(
-            LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
+            LocalClientNode<Address>(NodeId("client"), listOf(Capability("test"))),
             NodeId("node2")
         )
 
@@ -43,7 +44,7 @@ internal class RouterTest {
         val nodeDirectory = InMemoryNodeDirectory()
         val addressDirectory = InMemoryAddressableDirectory()
 
-        val accountAddress = TestAddress()
+        val accountAddress = Address()
         val message = Message(MessageContent.Request("This is a test message", accountAddress))
         val router = Router(
             NodeId("node1"), addressDirectory, nodeDirectory,
@@ -52,7 +53,7 @@ internal class RouterTest {
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node1")))
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node2")));
         nodeDirectory.connectNode(
-            LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
+            LocalClientNode<Address>(NodeId("client"), listOf(Capability("test"))),
             NodeId("node2")
         )
 
@@ -70,7 +71,7 @@ internal class RouterTest {
         val nodeDirectory = InMemoryNodeDirectory()
         val addressDirectory = InMemoryAddressableDirectory()
 
-        val accountAddress = TestAddress()
+        val accountAddress = Address()
         val message = Message(MessageContent.Request("This is a test message", accountAddress))
         val router = Router(NodeId("node1"), addressDirectory, nodeDirectory, TestAddressablePlacementStrategy())
 
@@ -78,7 +79,7 @@ internal class RouterTest {
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node2")));
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node3")));
         nodeDirectory.connectNode(
-            LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
+            LocalClientNode<Address>(NodeId("client"), listOf(Capability("test"))),
             NodeId("node3")
         )
 
@@ -104,7 +105,7 @@ internal class RouterTest {
         val nodeDirectory = InMemoryNodeDirectory()
         val addressDirectory = InMemoryAddressableDirectory()
 
-        val accountAddress = TestAddress()
+        val accountAddress = Address()
         val message = Message(MessageContent.Request("This is a test message", accountAddress))
         val router = Router(NodeId("node1"), addressDirectory, nodeDirectory, TestAddressablePlacementStrategy())
 
@@ -112,7 +113,7 @@ internal class RouterTest {
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node2")));
         nodeDirectory.connectNode(TestRemoteNode(NodeId("node3")));
         nodeDirectory.connectNode(
-            LocalClientNode<TestAddress>(NodeId("client"), listOf(Capability("test"))),
+            LocalClientNode<Address>(NodeId("client"), listOf(Capability("test"))),
             NodeId("node3")
         )
 
@@ -135,10 +136,8 @@ internal class RouterTest {
 
     }
 
-    class TestAddress : Address(AddressId("test")) {
-        override fun capability(): Capability {
-            return Capability("test")
-        }
+    fun Address(): Address {
+        return Address(AddressId("test"), Capability("test"))
     }
 
     class TestAddressablePlacementStrategy(val selectedNode: NodeId = NodeId("")) : AddressablePlacementStrategy {

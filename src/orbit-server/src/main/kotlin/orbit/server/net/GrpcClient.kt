@@ -12,7 +12,7 @@ import orbit.server.routing.*
 import orbit.shared.proto.ConnectionOuterClass
 
 internal class GrpcClient(
-    override val id: NodeId = NodeId.generate(),
+    override val id: NodeId = NodeId.generate("client"),
     private val responseObserver: StreamObserver<ConnectionOuterClass.MessageStreamResponse>,
     override val capabilities: List<Capability> = listOf(),
     private val onClientMessage: (Message) -> Unit = {}

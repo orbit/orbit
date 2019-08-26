@@ -40,9 +40,9 @@ import kotlin.coroutines.CoroutineContext
 class OrbitServer(private val config: OrbitConfig) {
     private val logger by logger()
 
-    private val nodeDirectory = InMemoryNodeDirectory()
-    private val addressableDirectory = InMemoryAddressableDirectory()
-    private val loadBalancer = LocalFirstPlacementStrategy(nodeDirectory, config.nodeId)
+    private val nodeDirectory = InMemoryNodeDirectory.Instance
+    private val addressableDirectory = InMemoryAddressableDirectory.Instance
+    private val loadBalancer = LocalFirstPlacementStrategy(nodeDirectory, addressableDirectory, config.nodeId)
     private val router = Router(config.nodeId, addressableDirectory, nodeDirectory, loadBalancer)
 
     private var tickJob: Job? = null

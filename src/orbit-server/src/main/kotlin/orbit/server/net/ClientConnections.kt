@@ -20,7 +20,7 @@ internal class ClientConnections(val router: Router, val nodeDirectory: NodeDire
     override fun messages(responseObserver: StreamObserver<ConnectionOuterClass.MessageStreamResponse>): StreamObserver<ConnectionOuterClass.Message> {
         val nodeId = NodeId(ConnectionInterceptor.NODE_ID.get())
 
-        val connection = clients[nodeId] ?: GrpcClient(NodeId.generate(), responseObserver, listOf()) { msg ->
+        val connection = clients[nodeId] ?: GrpcClient(responseObserver = responseObserver) { msg ->
             router.sendMessage(msg)
         }
         clients[connection.id] = connection
