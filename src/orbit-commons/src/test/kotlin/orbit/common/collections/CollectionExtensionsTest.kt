@@ -4,12 +4,12 @@
  See license in LICENSE.
  */
 
-package orbit.common.util
+package orbit.common.collections
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-class CollectionUtilsTest {
+class CollectionExtensionsTest {
     @Test
     fun `check randomOrNull returns value`() {
         val myList = listOf("one", "two")

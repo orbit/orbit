@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package orbit.common.util
+package orbit.common.collections
 
 /**
  * Gets a random element or null if no elements are available.
