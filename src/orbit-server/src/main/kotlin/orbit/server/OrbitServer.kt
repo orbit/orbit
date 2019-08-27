@@ -10,6 +10,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import orbit.common.logging.logger
@@ -37,6 +38,8 @@ import org.kodein.di.erased.singleton
 import kotlin.coroutines.CoroutineContext
 
 class OrbitServer(private val config: OrbitServerConfig) {
+    constructor() : this(OrbitServerConfig())
+
     private val logger by logger()
 
     private val nodeDirectory = InMemoryNodeDirectory.Instance
