@@ -12,7 +12,7 @@ import orbit.server.local.InMemoryNodeDirectory
 import orbit.server.net.NodeId
 import orbit.server.routing.NodeDirectory
 
-data class OrbitConfig(
+data class OrbitServerConfig(
     /**
      * The node's identity.
      */

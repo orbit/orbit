@@ -27,7 +27,6 @@ import orbit.server.net.Message
 import orbit.server.net.netModule
 import orbit.server.pipeline.Pipeline
 import orbit.server.pipeline.pipelineModule
-import orbit.server.routing.NodeDirectory
 import orbit.server.routing.Route
 import orbit.server.routing.Router
 import org.kodein.di.Kodein
@@ -37,7 +36,7 @@ import org.kodein.di.erased.instance
 import org.kodein.di.erased.singleton
 import kotlin.coroutines.CoroutineContext
 
-class OrbitServer(private val config: OrbitConfig) {
+class OrbitServer(private val config: OrbitServerConfig) {
     private val logger by logger()
 
     private val nodeDirectory = InMemoryNodeDirectory.Instance

@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 import orbit.common.exception.CapacityExceededException
 import orbit.common.logging.logger
 import orbit.common.logging.trace
-import orbit.server.OrbitConfig
+import orbit.server.OrbitServerConfig
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.net.Message
 import orbit.server.net.MessageContainer
@@ -28,7 +28,7 @@ import org.kodein.di.erased.instance
 
 internal class Pipeline(
     private val runtimeScopes: RuntimeScopes,
-    private val config: OrbitConfig,
+    private val config: OrbitServerConfig,
     kodein: DKodein
 ) {
     private val logger by logger()

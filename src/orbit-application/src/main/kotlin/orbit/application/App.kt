@@ -7,12 +7,12 @@
 package orbit.application
 
 import kotlinx.coroutines.runBlocking
-import orbit.server.OrbitConfig
+import orbit.server.OrbitServerConfig
 import orbit.server.OrbitServer
 
 fun main() {
-    val server1 = OrbitServer(OrbitConfig(grpcPort = 50056))
-    val server2 = OrbitServer(OrbitConfig(grpcPort = 50057))
+    val server1 = OrbitServer(OrbitServerConfig(grpcPort = 50056))
+    val server2 = OrbitServer(OrbitServerConfig(grpcPort = 50057))
 
     runBlocking {
         server1.start().join()

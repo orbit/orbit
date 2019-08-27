@@ -9,12 +9,12 @@ package orbit.server.net
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import orbit.common.logging.logger
-import orbit.server.OrbitConfig
+import orbit.server.OrbitServerConfig
 import orbit.server.demo.GreeterImpl
 import orbit.server.routing.NodeDirectory
 import orbit.server.routing.Router
 
-internal class GrpcEndpoint(private val config: OrbitConfig, private val router: Router, private val nodeDirectory: NodeDirectory) {
+internal class GrpcEndpoint(private val config: OrbitServerConfig, private val router: Router, private val nodeDirectory: NodeDirectory) {
     private lateinit var server: Server
 
     private val logger by logger()
