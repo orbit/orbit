@@ -6,31 +6,59 @@
 
 package orbit.server.routing
 
-import orbit.server.Address
-import orbit.server.BaseMessage
-import orbit.server.net.NodeId
 import orbit.common.collections.GraphTraverser
+import orbit.server.Address
+import orbit.server.Capability
+import orbit.server.net.Message
+import orbit.server.net.MessageContent
+import orbit.server.net.NodeId
 
-
-class Router(
+internal class Router(
     val nodeId: NodeId,
     val addressableDirectory: AddressableDirectory,
     val nodeDirectory: NodeDirectory,
     val addressablePlacement: AddressablePlacementStrategy
-) {
-    fun routeMessage(message: BaseMessage, projectedRoute: Route? = null): Route? {
-        var lastNode = addressableDirectory.lookup(message.destination) ?: addressablePlacement.chooseNode(message.destination)
+) : MeshNode {
+    override val id = nodeId
 
-        val routeVerified = (projectedRoute != null) && this.verifyRoute(projectedRoute, message.destination)
+    init {
+        nodeDirectory.connectNode(this)
+    }
+
+    override val capabilities: List<Capability>
+        get() = listOf()
+
+    override fun <T : Address> canHandle(address: T) = true
+
+    override fun sendMessage(message: Message, route: Route?) {
+        val route = this.getRoute(message, route)
+
+        if (route == null) {
+            println("No route found")
+            return
+        }
+
+        val nextNode = route.path.last()
+        val node = nodeDirectory.getNode(nextNode)
+        node?.sendMessage(message, route)
+    }
+
+    fun getRoute(message: Message, projectedRoute: Route? = null): Route? {
+        println("~| ${message.content}")
+        val destination = (message.content as MessageContent.Request).destination!!
+
+        var lastNode = addressableDirectory.lookup(destination) ?: addressablePlacement.chooseNode(destination)
+
+        val routeVerified = (projectedRoute != null) && this.verifyRoute(projectedRoute, destination)
         println("Finding route between $nodeId -> $lastNode ${if (routeVerified) "(existing)" else ""}")
 
-        val foundRoute = (if (routeVerified) projectedRoute else findRoute(lastNode, message.destination)) ?: return null;
+        val foundRoute =
+            (if (routeVerified) projectedRoute else searchRoute(lastNode, destination)) ?: return null;
 
         return if (foundRoute.path.first() == this.nodeId) foundRoute.pop().route else foundRoute
     }
 
-    private fun findRoute(destination: NodeId, address: Address): Route? {
-
+    private fun searchRoute(destination: NodeId, address: Address): Route? {
         val nodeRoutes = HashMap<NodeId, Route>()
         val traversal = GraphTraverser<NodeId> { node ->
             nodeDirectory.lookupConnectedNodes(node, address).map { node -> node.id }
@@ -43,7 +71,7 @@ class Router(
                 return@mapNotNull route
             }
             return@mapNotNull null
-        }
+        }.toList()
 
         return nodes.find { r -> r.path.first().equals(this.nodeId) }
     }

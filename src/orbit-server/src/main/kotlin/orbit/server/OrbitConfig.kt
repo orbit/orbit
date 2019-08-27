@@ -16,7 +16,7 @@ data class OrbitConfig(
     /**
      * The node's identity.
      */
-    val nodeId: NodeId = NodeId.generate(),
+    val nodeId: NodeId = NodeId.generate("router"),
 
     /**
      * The gRPC endpoint port.
@@ -46,10 +46,5 @@ data class OrbitConfig(
     /**
      * The number of messages (either inbound or outbound) that may be queued before new messages are rejected.
      */
-    val pipelineBufferCount: Int = 10_000,
-
-    /**
-     * Node directory
-     */
-    val nodeDirectory: NodeDirectory = InMemoryNodeDirectory()
+    val pipelineBufferCount: Int = 10_000
 )

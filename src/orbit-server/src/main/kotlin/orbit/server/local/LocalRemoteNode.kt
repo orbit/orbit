@@ -7,14 +7,15 @@
 package orbit.server.local
 
 import orbit.server.*
+import orbit.server.net.Message
 import orbit.server.net.NodeId
 import orbit.server.routing.MeshNode
 import orbit.server.routing.Route
 
-class LocalRemoteNode(
+internal class LocalRemoteNode(
     override val id: NodeId = NodeId.generate(),
     val nodeDirectory: InMemoryNodeDirectory,
-    val forwardMessage: (BaseMessage) -> Unit
+    val forwardMessage: (Message) -> Unit
 ) : MeshNode {
     override fun <T : Address> canHandle(address: T): Boolean {
         return true
@@ -22,7 +23,7 @@ class LocalRemoteNode(
 
     override val capabilities = listOf(Capability.Routing)
 
-    override fun sendMessage(message: BaseMessage, route: Route) {
+    override fun sendMessage(message: Message, route: Route?) {
         println("Send Message through node \"${this.id}\"")
 
         forwardMessage(message)

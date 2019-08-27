@@ -10,7 +10,13 @@ import orbit.server.*
 import orbit.server.net.NodeId
 import orbit.server.routing.*
 
-class InMemoryNodeDirectory : NodeDirectory {
+internal class InMemoryNodeDirectory : NodeDirectory {
+
+    companion object Singleton {
+        @JvmStatic
+        val Instance = InMemoryNodeDirectory()
+    }
+
     private val nodes = hashMapOf<NodeId, MeshNode>(Mesh.Instance.id to Mesh.Instance)
     private var connections: List<Connection> = listOf()
 
@@ -33,7 +39,7 @@ class InMemoryNodeDirectory : NodeDirectory {
             .plus(connections.map { c -> Connection(nodeId, c) })
     }
 
-    fun connectNode(node: MeshNode, parent: NodeId? = null) {
+    override fun connectNode(node: MeshNode, parent: NodeId?) {
         nodes[node.id] = node
         connections = connections.plus(Connection(node.id, parent ?: Mesh.Instance.id))
     }

@@ -7,6 +7,7 @@
 package orbit.server.net
 
 import kotlinx.coroutines.CompletableDeferred
+import orbit.server.Address
 
 internal typealias Completion = CompletableDeferred<Any?>
 
@@ -26,7 +27,6 @@ internal data class Message(
     val messageId: Long? = null,
     val source: NodeId? = null,
     val target: MessageTarget? = null
-
 )
 
 internal sealed class MessageTarget {
@@ -37,4 +37,9 @@ internal sealed class MessageTarget {
 
 internal sealed class MessageContent {
     data class TempStringMessage(val data: String) : MessageContent()
+    data class Request(val data: String, val destination: Address) : MessageContent(){
+        override fun toString(): String {
+            return data
+        }
+    }
 }
