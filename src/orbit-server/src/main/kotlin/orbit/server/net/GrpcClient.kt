@@ -7,20 +7,31 @@
 package orbit.server.net
 
 import io.grpc.stub.StreamObserver
-import orbit.server.*
-import orbit.server.routing.*
-import orbit.shared.proto.ConnectionOuterClass
+import orbit.server.Address
+import orbit.server.AddressId
+import orbit.server.Capability
+import orbit.server.routing.MeshNode
+import orbit.server.routing.Route
+import orbit.shared.proto.Messages
 
 internal class GrpcClient(
     override val id: NodeId = NodeId.generate("client"),
-    private val responseObserver: StreamObserver<ConnectionOuterClass.MessageStreamResponse>,
+    private val responseObserver: StreamObserver<Messages.Message>,
     override val capabilities: List<Capability> = listOf(),
     private val onClientMessage: (Message) -> Unit = {}
-) : MeshNode, StreamObserver<ConnectionOuterClass.Message> {
+) : MeshNode, StreamObserver<Messages.Message> {
 
     override fun sendMessage(message: Message, route: Route?) {
         println("> ${this.id}: \"${message.content}\"")
-        responseObserver.onNext(ConnectionOuterClass.MessageStreamResponse.newBuilder().setMessage(message.content.toString()).build())
+        Messages.Message.newBuilder().setContent(
+            Messages.MessageContent.newBuilder().setResponseString(
+                Messages.ResponseString.newBuilder().setValue(message.content.toString())
+            )
+        )
+            .build()
+            .also {
+                responseObserver.onNext(it)
+            }
     }
 
     override fun onError(t: Throwable?) {
@@ -33,12 +44,17 @@ internal class GrpcClient(
         responseObserver.onCompleted()
     }
 
-    override fun onNext(value: ConnectionOuterClass.Message) {
-        val msg = Message(
-            MessageContent.Request(value.content, Address(AddressId(value.address))),
-            target = MessageTarget.Unicast(NodeId("target"))
-        )
-        onClientMessage(msg)
+    override fun onNext(value: Messages.Message) {
+        when {
+            value.content.hasRequestString() -> {
+                val msg = Message(
+                    MessageContent.Request(value.content.requestString.value, Address(AddressId(value.address))),
+                    target = MessageTarget.Unicast(NodeId("target"))
+                )
+                onClientMessage(msg)
+            }
+        }
+
     }
 
     override fun <T : Address> canHandle(address: T): Boolean {

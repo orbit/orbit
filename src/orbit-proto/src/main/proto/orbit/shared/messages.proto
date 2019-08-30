@@ -1,0 +1,24 @@
+syntax = "proto3";
+option java_package = "orbit.shared.proto";
+
+package orbit.shared;
+
+message Message {
+    string address = 1;
+    MessageContent content = 2;
+}
+
+message MessageContent {
+    oneof content {
+        RequestString request_string = 2;
+        ResponseString response_string = 3;
+    }
+}
+
+message RequestString {
+    string value = 1;
+}
+
+message ResponseString {
+    string value = 1;
+}
