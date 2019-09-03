@@ -23,10 +23,8 @@ internal class GrpcClient(
 
     override fun sendMessage(message: Message, route: Route?) {
         println("> ${this.id}: \"${message.content}\"")
-        Messages.Message.newBuilder().setContent(
-            Messages.MessageContent.newBuilder().setResponseString(
-                Messages.ResponseString.newBuilder().setValue(message.content.toString())
-            )
+        Messages.Message.newBuilder().setInvocationResponse(
+            Messages.InvocationResponse .newBuilder().setValue(message.content.toString())
         )
             .build()
             .also {
@@ -46,9 +44,9 @@ internal class GrpcClient(
 
     override fun onNext(value: Messages.Message) {
         when {
-            value.content.hasRequestString() -> {
+            value.hasInvocationRequest() -> {
                 val msg = Message(
-                    MessageContent.Request(value.content.requestString.value, Address(AddressId(value.address))),
+                    MessageContent.Request(value.invocationRequest.value, Address(AddressId(value.invocationRequest.reference.id))),
                     target = MessageTarget.Unicast(NodeId("target"))
                 )
                 onClientMessage(msg)

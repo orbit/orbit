@@ -3,22 +3,21 @@ option java_package = "orbit.shared.proto";
 
 package orbit.shared;
 
-message Message {
-    string address = 1;
-    MessageContent content = 2;
-}
+import "orbit/shared/addressable.proto";
 
-message MessageContent {
+
+message Message {
     oneof content {
-        RequestString request_string = 2;
-        ResponseString response_string = 3;
+        InvocationRequest invocation_request = 1;
+        InvocationResponse invocation_response = 2;
     }
 }
 
-message RequestString {
-    string value = 1;
+message InvocationRequest {
+    AddressableReference reference = 1;
+    string value = 2;
 }
 
-message ResponseString {
+message InvocationResponse {
     string value = 1;
 }

@@ -1,0 +1,8 @@
+syntax = "proto3";
+option java_package = "orbit.shared.proto";
+
+package orbit.shared;
+
+message AddressableReference {
+    string id = 1;
+}
