@@ -30,6 +30,6 @@ internal class LocalRemoteNode(
     }
 
     fun connect(client: MeshNode){
-        nodeDirectory.connectNode(client, this.id)
+        nodeDirectory.connectNode(client.id, this.id)
     }
 }

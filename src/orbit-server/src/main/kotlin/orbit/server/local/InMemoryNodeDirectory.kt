@@ -24,13 +24,10 @@ internal class InMemoryNodeDirectory : NodeDirectory {
         return this.nodes[nodeId]
     }
 
-    override fun lookupConnectedNodes(nodeId: NodeId, address: Address): Sequence<MeshNode> {
-        val searchNode = nodes[nodeId] ?: return emptySequence()
+    override fun lookupConnectedNodes(nodeId: NodeId): Sequence<MeshNode> {
         return sequence {
-            if (searchNode.canHandle(address)) {
-                yieldAll(connections.filter { c -> c.parent.equals(nodeId) }.mapNotNull { c -> nodes[c.node] })
-                yieldAll(connections.filter { c -> c.node.equals(nodeId) }.mapNotNull { c -> nodes[c.parent] })
-            }
+            yieldAll(connections.filter { c -> c.parent.equals(nodeId) }.mapNotNull { c -> nodes[c.node] })
+            yieldAll(connections.filter { c -> c.node.equals(nodeId) }.mapNotNull { c -> nodes[c.parent] })
         }
     }
 
@@ -39,9 +36,9 @@ internal class InMemoryNodeDirectory : NodeDirectory {
             .plus(connections.map { c -> Connection(nodeId, c) })
     }
 
-    override fun connectNode(node: MeshNode, parent: NodeId?) {
-        nodes[node.id] = node
-        connections = connections.plus(Connection(node.id, parent ?: Mesh.Instance.id))
+    override fun connectNode(node: NodeId, parent: NodeId?) {
+//        nodes[node.id] = node
+//        connections = connections.plus(Connection(node.id, parent ?: Mesh.Instance.id))
     }
 
     data class Connection(val node: NodeId, val parent: NodeId)

@@ -9,7 +9,7 @@ import orbit.server.net.Message
 import orbit.server.net.NodeId
 import orbit.server.routing.*
 
-internal class LocalClientNode<TAddress : Address>(
+internal class LocalClientNode(
     override val id: NodeId = NodeId.generate("client"),
     override val capabilities: List<Capability> = listOf(),
     private val onClientMessage: (Message) -> Unit = {}

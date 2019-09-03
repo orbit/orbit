@@ -45,7 +45,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private val nodeDirectory = InMemoryNodeDirectory.Instance
     private val addressableDirectory = InMemoryAddressableDirectory.Instance
     private val loadBalancer = LocalFirstPlacementStrategy(nodeDirectory, addressableDirectory, config.nodeId)
-    private val router = Router(config.nodeId, addressableDirectory, nodeDirectory, loadBalancer)
+    private val router = Router(config.nodeId, nodeDirectory)
 
     private var tickJob: Job? = null
 
