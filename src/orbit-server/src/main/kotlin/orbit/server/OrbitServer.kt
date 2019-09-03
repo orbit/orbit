@@ -28,6 +28,10 @@ import orbit.server.net.Message
 import orbit.server.net.netModule
 import orbit.server.pipeline.Pipeline
 import orbit.server.pipeline.pipelineModule
+import orbit.server.pipeline.steps.AddressablePipelineStep
+import orbit.server.pipeline.steps.RoutingPipelineStep
+import orbit.server.routing.AddressableDirectory
+import orbit.server.routing.AddressablePlacementStrategy
 import orbit.server.routing.Route
 import orbit.server.routing.Router
 import org.kodein.di.Kodein
@@ -42,7 +46,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
     private val logger by logger()
 
-    private val nodeDirectory = InMemoryNodeDirectory.Instance
+    private val nodeDirectory = InMemoryNodeDirectory()
     private val addressableDirectory = InMemoryAddressableDirectory.Instance
     private val loadBalancer = LocalFirstPlacementStrategy(nodeDirectory, addressableDirectory, config.nodeId)
     private val router = Router(config.nodeId, nodeDirectory)
@@ -72,6 +76,10 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private val routingModule = Kodein.Module(name = "Routing") {
         bind() from singleton { router }
         bind() from singleton { nodeDirectory }
+        bind() from singleton { addressableDirectory }
+        bind() from singleton { loadBalancer }
+        bind() from singleton { AddressablePipelineStep(instance(), instance()) }
+        bind() from singleton { RoutingPipelineStep(instance()) }
     }
 
     private val kodein = Kodein {

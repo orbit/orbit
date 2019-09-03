@@ -11,7 +11,6 @@ import orbit.server.routing.*
 
 internal class LocalClientNode(
     override val id: NodeId = NodeId.generate("client"),
-    override val capabilities: List<Capability> = listOf(),
     private val onClientMessage: (Message) -> Unit = {}
 ) : MeshNode {
     override fun sendMessage(message: Message, route: Route?) {
@@ -20,9 +19,5 @@ internal class LocalClientNode(
 
     fun onMessage(message: Message) {
         onClientMessage(message);
-    }
-
-    override fun <T : Address> canHandle(address: T): Boolean {
-        return this.capabilities.contains(address.capability)
     }
 }

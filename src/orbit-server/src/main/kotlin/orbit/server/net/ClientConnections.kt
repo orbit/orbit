@@ -7,12 +7,13 @@
 package orbit.server.net
 
 import io.grpc.stub.StreamObserver
+import orbit.server.pipeline.Pipeline
 import orbit.server.routing.NodeDirectory
 import orbit.server.routing.Router
 import orbit.shared.proto.ConnectionGrpc
 import orbit.shared.proto.Messages
 
-internal class ClientConnections(val router: Router, val nodeDirectory: NodeDirectory) :
+internal class ClientConnections(val pipeline: Pipeline, val nodeId: NodeId, val nodeDirectory: NodeDirectory) :
     ConnectionGrpc.ConnectionImplBase() {
 
     private val clients = HashMap<NodeId, GrpcClient>()
@@ -20,13 +21,12 @@ internal class ClientConnections(val router: Router, val nodeDirectory: NodeDire
     override fun messages(responseObserver: StreamObserver<Messages.Message>): StreamObserver<Messages.Message> {
         val nodeId = NodeId(ConnectionInterceptor.NODE_ID.get())
 
-        val connection = clients[nodeId] ?: GrpcClient(responseObserver = responseObserver)
-//        { msg ->
-//            router.sendMessage(msg)
-//        }
+        val connection = clients[nodeId] ?: GrpcClient(responseObserver = responseObserver) {
+            pipeline.pushInbound(it)
+        }
         clients[connection.id] = connection
 
-        nodeDirectory.connectNode(connection.id, router.nodeId)
+        nodeDirectory.connectNode(connection, nodeId)
         return connection
     }
 }

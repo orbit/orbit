@@ -6,22 +6,17 @@
 
 package orbit.server.routing
 
-import orbit.server.Address
-import orbit.server.Capability
 import orbit.server.net.Message
 import orbit.server.net.NodeId
 
-internal class Mesh(override val id: NodeId, override val capabilities: List<Capability>) : MeshNode {
-    override fun <T : Address> canHandle(address: T): Boolean {
-        return true
+internal class Mesh(private val nodeDirectory: NodeDirectory) : MeshNode {
+    companion object Id {
+        val NodeId = NodeId("mesh")
     }
 
+    override val id = NodeId
     override fun sendMessage(message: Message, route: Route?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    companion object _Mesh {
-        @JvmStatic
-        val Instance: Mesh = Mesh(NodeId("mesh"), capabilities = listOf(Capability.Mesh))
+        val (nextRoute, nextNode) = route!!.pop()
+//        val nodeInfo = nodeDirectory.getNode(nextNode)?.sendMessage(message, nextRoute)
     }
 }

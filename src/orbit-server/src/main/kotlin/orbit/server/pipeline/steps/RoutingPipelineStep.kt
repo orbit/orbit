@@ -13,6 +13,7 @@ import orbit.server.routing.Router
 
 internal class RoutingPipelineStep(private val router: Router) : PipelineStep {
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
+        println("Routing inbound")
         when {
             msg.target is MessageTarget.Unicast ->
                 router.getRoute(msg.target.targetNode).let { route ->

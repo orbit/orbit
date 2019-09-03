@@ -147,14 +147,9 @@ internal class RouterTest {
     }
 
     class TestRemoteNode(override val id: NodeId) : MeshNode {
-        override fun <T : Address> canHandle(address: T): Boolean {
-            return true
-        }
 
         override fun sendMessage(message: Message, route: Route?) {
             println("Sending message on Node ${id}: ${message.content}")
         }
-
-        override val capabilities = listOf(Capability.Routing)
     }
 }

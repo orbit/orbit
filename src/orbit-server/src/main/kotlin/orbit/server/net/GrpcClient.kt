@@ -17,7 +17,6 @@ import orbit.shared.proto.Messages
 internal class GrpcClient(
     override val id: NodeId = NodeId.generate("client"),
     private val responseObserver: StreamObserver<Messages.Message>,
-    override val capabilities: List<Capability> = listOf(),
     private val onClientMessage: (Message) -> Unit = {}
 ) : MeshNode, StreamObserver<Messages.Message> {
 
@@ -49,13 +48,10 @@ internal class GrpcClient(
                     MessageContent.Request(value.invocationRequest.value, Address(AddressId(value.invocationRequest.reference.id))),
                     target = MessageTarget.Unicast(NodeId("target"))
                 )
+
                 onClientMessage(msg)
             }
         }
 
-    }
-
-    override fun <T : Address> canHandle(address: T): Boolean {
-        return true //this.capabilities.contains(address.capability())
     }
 }

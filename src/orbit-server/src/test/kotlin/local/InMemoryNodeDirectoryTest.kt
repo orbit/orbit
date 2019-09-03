@@ -139,12 +139,8 @@ internal class InMemoryNodeDirectoryTest {
     }
 
     class TestNode(
-        override val id: NodeId = NodeId.generate(),
-        override val capabilities: List<Capability> = listOf(Capability.Routing)
+        override val id: NodeId = NodeId.generate()
     ) : MeshNode {
-        override fun <T : Address> canHandle(address: T): Boolean {
-            return true
-        }
 
         override fun sendMessage(message: Message, route: Route?) {
 

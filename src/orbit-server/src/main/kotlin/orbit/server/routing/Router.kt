@@ -20,7 +20,7 @@ internal class Router(
     val id = nodeId
 
     init {
-        nodeDirectory.connectNode(id)
+//        nodeDirectory.connectNode(id)
     }
 
 //    override fun sendMessage(message: Message, route: Route?) {

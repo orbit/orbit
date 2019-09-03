@@ -17,12 +17,6 @@ internal class LocalRemoteNode(
     val nodeDirectory: InMemoryNodeDirectory,
     val forwardMessage: (Message) -> Unit
 ) : MeshNode {
-    override fun <T : Address> canHandle(address: T): Boolean {
-        return true
-    }
-
-    override val capabilities = listOf(Capability.Routing)
-
     override fun sendMessage(message: Message, route: Route?) {
         println("Send Message through node \"${this.id}\"")
 
@@ -30,6 +24,6 @@ internal class LocalRemoteNode(
     }
 
     fun connect(client: MeshNode){
-        nodeDirectory.connectNode(client.id, this.id)
+        nodeDirectory.connectNode(client, this.id)
     }
 }
