@@ -83,7 +83,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
         import(netModule)
     }
 
-    fun start() = runtimeScopes.ioScope.launch {
+    fun start() = runtimeScopes.cpuScope.launch {
         val clock: Clock by kodein.instance()
         logger.info("Starting Orbit...")
         val (elapsed, _) = stopwatch(clock) {
@@ -95,7 +95,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
         logger.info("Orbit started successfully in {}ms.", elapsed)
     }
 
-    fun stop() = runtimeScopes.ioScope.launch {
+    fun stop() = runtimeScopes.cpuScope.launch {
         val clock: Clock by kodein.instance()
         logger.info("Stopping Orbit...")
         val (elapsed, _) = stopwatch(clock) {

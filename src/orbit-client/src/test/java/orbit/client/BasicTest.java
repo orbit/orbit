@@ -22,12 +22,12 @@ class BasicTest {
         final OrbitClient client = new OrbitClient(config);
         client.start();
 
-        client.getConnectionHandler().sendMessage(Messages.Message.newBuilder().setInvocationRequest(
-                Messages.InvocationRequest.newBuilder().setValue("HELLO")
-        ).build());
+//        client.getConnectionHandler().sendMessage(Messages.Message.newBuilder().setInvocationRequest(
+//                Messages.InvocationRequest.newBuilder().setValue("HELLO")
+//        ).build());
 
-        //client.stop();
+        client.stop();
 
-       //FutureKt.asCompletableFuture(server.stop()).join();
+       FutureKt.asCompletableFuture(server.stop()).join();
     }
 }
