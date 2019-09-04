@@ -8,7 +8,7 @@ package orbit.client;
 
 import kotlinx.coroutines.future.FutureKt;
 import orbit.server.OrbitServer;
-import org.assertj.core.api.Assertions;
+import orbit.shared.proto.Messages;
 import org.junit.jupiter.api.Test;
 
 class BasicTest {
@@ -22,11 +22,12 @@ class BasicTest {
         final OrbitClient client = new OrbitClient(config);
         client.start();
 
-        final String greeting = client.tempGreeter("Joe");
-        Assertions.assertThat(greeting).isEqualTo("Hello Joe");
+//        client.getConnectionHandler().sendMessage(Messages.Message.newBuilder().setInvocationRequest(
+//                Messages.InvocationRequest.newBuilder().setValue("HELLO")
+//        ).build());
 
         client.stop();
 
-        FutureKt.asCompletableFuture(server.stop()).join();
+       FutureKt.asCompletableFuture(server.stop()).join();
     }
 }

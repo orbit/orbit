@@ -10,7 +10,6 @@ import io.grpc.Server
 import io.grpc.ServerBuilder
 import orbit.common.logging.logger
 import orbit.server.OrbitServerConfig
-import orbit.server.demo.GreeterImpl
 
 internal class GrpcEndpoint(private val config: OrbitServerConfig, private val clientConnections: ClientConnections) {
     private lateinit var server: Server
@@ -21,7 +20,6 @@ internal class GrpcEndpoint(private val config: OrbitServerConfig, private val c
         logger.info("Starting gRPC Endpoint on port ${config.grpcPort}...")
 
         server = ServerBuilder.forPort(config.grpcPort)
-            .addService(GreeterImpl())
             .addService(clientConnections)
             .intercept(NodeIdServerInterceptor())
             .build()

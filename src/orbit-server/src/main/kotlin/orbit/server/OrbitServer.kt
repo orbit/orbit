@@ -12,6 +12,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import orbit.common.concurrent.ShutdownLatch
 import orbit.common.logging.logger
 import orbit.common.logging.trace
 import orbit.common.logging.warn
@@ -62,6 +63,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private val nodeConnections = NodeCollection(meshConnections, clientConnections = clientConnections)
 
     private var tickJob: Job? = null
+    private var shutdownLatch: ShutdownLatch? = null
 
     private val runtimePools = RuntimePools(
         cpuPool = config.cpuPool,
@@ -101,22 +103,27 @@ class OrbitServer(private val config: OrbitServerConfig) {
         import(netModule)
     }
 
-    fun start() = runtimeScopes.ioScope.launch {
+    fun start() = runtimeScopes.cpuScope.launch {
         val clock: Clock by kodein.instance()
         logger.info("Starting Orbit...")
         val (elapsed, _) = stopwatch(clock) {
             onStart()
         }
 
+        if(config.acquireShutdownLatch) shutdownLatch = ShutdownLatch().also { it.acquire() }
+
         logger.info("Orbit started successfully in {}ms.", elapsed)
     }
 
-    fun stop() = runtimeScopes.ioScope.launch {
+    fun stop() = runtimeScopes.cpuScope.launch {
         val clock: Clock by kodein.instance()
         logger.info("Stopping Orbit...")
         val (elapsed, _) = stopwatch(clock) {
             onStop()
         }
+
+        shutdownLatch?.release()
+
         logger.info("Orbit stopped successfully in {}ms.", elapsed)
 
     }

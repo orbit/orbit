@@ -8,13 +8,13 @@ package orbit.client;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.StatusRuntimeException;
-import orbit.shared.proto.GreeterGrpc;
-import orbit.shared.proto.GreeterOuterClass;
+import orbit.client.connection.ConnectionManager;
+import orbit.shared.proto.ConnectionGrpc;
 
 public final class OrbitClient {
     private final OrbitClientConfig config;
     private ManagedChannel channel = null;
+    private ConnectionManager connectionHandler = null;
 
     public OrbitClient(final OrbitClientConfig config) {
         this.config = config;
@@ -25,18 +25,18 @@ public final class OrbitClient {
                 .forAddress(config.getGrpcHost(), config.getGrpcPort())
                 .usePlaintext()
                 .build();
+
+        connectionHandler = new ConnectionManager(ConnectionGrpc.newStub(channel));
+        getConnectionHandler().connect();
     }
 
     public void stop() {
-        if(channel != null) channel.shutdown();
+        channel.shutdown();
+        getConnectionHandler().disconnect();
+        connectionHandler = null;
     }
 
-    public String tempGreeter(final String name) {
-        GreeterGrpc.GreeterBlockingStub greeter = GreeterGrpc.newBlockingStub(channel);
-        GreeterOuterClass.HelloRequest request = GreeterOuterClass.HelloRequest.newBuilder().setName(name).build();
-        GreeterOuterClass.HelloReply response;
-        response = greeter.sayHello(request);
-        return response.getMessage();
+    public ConnectionManager getConnectionHandler() {
+        return connectionHandler;
     }
-
 }
