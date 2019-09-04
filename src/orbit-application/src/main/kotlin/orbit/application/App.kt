@@ -18,7 +18,4 @@ fun main() {
         server1.start().join()
         server2.start().join()
     }
-
-    // TODO: Proper shutdown handling
-    Thread.currentThread().join();
 }

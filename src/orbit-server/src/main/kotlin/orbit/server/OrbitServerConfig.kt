@@ -46,5 +46,10 @@ data class OrbitServerConfig(
     /**
      * The number of messages (either inbound or outbound) that may be queued before new messages are rejected.
      */
-    val pipelineBufferCount: Int = 10_000
+    val pipelineBufferCount: Int = 10_000,
+
+    /**
+     * Prevents the JVM shutting down when the main thread exits.
+     */
+    val acquireShutdownLatch: Boolean = true
 )

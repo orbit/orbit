@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import orbit.common.concurrent.ShutdownLatch
 import orbit.common.logging.logger
 import orbit.common.logging.trace
 import orbit.common.logging.warn
@@ -48,6 +49,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private val router = Router(config.nodeId, addressableDirectory, nodeDirectory, loadBalancer)
 
     private var tickJob: Job? = null
+    private var shutdownLatch: ShutdownLatch? = null
 
     private val runtimePools = RuntimePools(
         cpuPool = config.cpuPool,
@@ -88,6 +90,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
             onStart()
         }
 
+        if(config.acquireShutdownLatch) shutdownLatch = ShutdownLatch().also { it.acquire() }
+
         logger.info("Orbit started successfully in {}ms.", elapsed)
     }
 
@@ -97,6 +101,9 @@ class OrbitServer(private val config: OrbitServerConfig) {
         val (elapsed, _) = stopwatch(clock) {
             onStop()
         }
+
+        shutdownLatch?.release()
+
         logger.info("Orbit stopped successfully in {}ms.", elapsed)
 
     }
