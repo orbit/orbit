@@ -10,8 +10,11 @@ import orbit.server.*
 import orbit.server.net.NodeId
 
 internal interface NodeDirectory {
-    fun connectNode(node: MeshNode, parent: NodeId? = null)
-    fun lookupConnectedNodes(nodeId: NodeId, address: Address): Sequence<MeshNode>
-    fun getNode(nodeId: NodeId): MeshNode?
-    fun reportConnections(nodeId: NodeId, connections: List<NodeId>)
+    fun connectNode(nodeInfo: NodeInfo)
+    fun lookupConnectedNodes(nodeId: NodeId, address: Address? = null): Sequence<NodeInfo>
+//    fun reportConnections(nodeId: NodeId, connections: List<NodeInfo>)
+
+    fun lookupMeshNodes(): List<NodeInfo>
+
+    data class NodeInfo(val id: NodeId, val parent: NodeId? = Mesh.NodeId, val host: String? = null, val port: Int? = null)
 }

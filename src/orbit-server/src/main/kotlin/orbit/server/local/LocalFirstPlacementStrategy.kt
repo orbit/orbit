@@ -14,7 +14,7 @@ import orbit.server.routing.NodeDirectory
 
 internal class LocalFirstPlacementStrategy(val nodeDirectory: NodeDirectory, val addressableDirectory: AddressableDirectory, val currentNode: NodeId) : AddressablePlacementStrategy {
     override fun chooseNode(address: Address): NodeId {
-        val nodeId = nodeDirectory.lookupConnectedNodes(currentNode, address).elementAt(0).id
+        val nodeId = nodeDirectory.lookupConnectedNodes(currentNode).elementAt(0).id
         addressableDirectory.setLocation(address, nodeId)
         return nodeId
     }

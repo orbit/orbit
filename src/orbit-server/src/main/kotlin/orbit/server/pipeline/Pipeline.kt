@@ -21,25 +21,22 @@ import orbit.server.concurrent.RuntimeScopes
 import orbit.server.net.Message
 import orbit.server.net.MessageContainer
 import orbit.server.net.MessageDirection
+import orbit.server.pipeline.steps.AddressablePipelineStep
 import orbit.server.pipeline.steps.BlankPipelineStep
 import orbit.server.pipeline.steps.PipelineStep
+import orbit.server.pipeline.steps.RoutingPipelineStep
 import org.kodein.di.DKodein
 import org.kodein.di.erased.instance
 
 internal class Pipeline(
     private val runtimeScopes: RuntimeScopes,
     private val config: OrbitServerConfig,
-    kodein: DKodein
+    private val pipelineSteps: Array<PipelineStep>
 ) {
     private val logger by logger()
 
     private lateinit var pipelineChannel: Channel<MessageContainer>
     private lateinit var pipelinesWorkers: List<Job>
-
-    private val pipelineSteps: Array<PipelineStep> = arrayOf(
-        kodein.instance<BlankPipelineStep>()
-    )
-
 
     fun start() {
         pipelineChannel = Channel(config.pipelineBufferCount)

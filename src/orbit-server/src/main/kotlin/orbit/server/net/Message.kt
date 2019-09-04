@@ -8,6 +8,7 @@ package orbit.server.net
 
 import kotlinx.coroutines.CompletableDeferred
 import orbit.server.Address
+import orbit.server.routing.Route
 
 internal typealias Completion = CompletableDeferred<Any?>
 
@@ -31,13 +32,14 @@ internal data class Message(
 
 internal sealed class MessageTarget {
     data class Unicast(val targetNode: NodeId) : MessageTarget()
+    data class Routed(val route: Route) : MessageTarget()
     data class Multicast(val nodes: Iterable<NodeId>) : MessageTarget()
     object Broadcast : MessageTarget()
 }
 
 internal sealed class MessageContent {
     data class TempStringMessage(val data: String) : MessageContent()
-    data class Request(val data: String, val destination: Address) : MessageContent(){
+    data class Request(val data: String, val destination: Address) : MessageContent() {
         override fun toString(): String {
             return data
         }

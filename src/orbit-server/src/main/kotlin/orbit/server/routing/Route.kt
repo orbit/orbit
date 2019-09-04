@@ -17,6 +17,12 @@ data class Route(val path: List<NodeId> = emptyList()) {
         return PopResult(Route(this.path.drop(1)), this.path.last())
     }
 
+    val nextNode: NodeId
+        get() = this.path.last()
+
+    val destinationNode: NodeId
+        get() = this.path.first()
+
     data class PopResult(val route: Route, val nodeId: NodeId) {
     }
 }
