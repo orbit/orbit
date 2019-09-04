@@ -47,21 +47,6 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
     private val logger by logger()
 
-    private val nodeDirectory = InMemoryNodeDirectory()
-    private val addressableDirectory = InMemoryAddressableDirectory.Instance
-    private val loadBalancer = LocalFirstPlacementStrategy(nodeDirectory, addressableDirectory, config.nodeId)
-    private val router = Router(config.nodeId, nodeDirectory)
-    private val meshConnections = MeshConnections(nodeDirectory)
-    private val clientConnections = ClientConnections(config.nodeId, nodeDirectory) { responseObserver ->
-//        val pipeline by kodein.instance<Pipeline>()
-        GrpcClient(responseObserver = responseObserver) {
-            println("Client message ${it}")
-//            pipeline.pushInbound(it)
-        }
-    }
-
-    private val nodeConnections = NodeCollection(meshConnections, clientConnections = clientConnections)
-
     private var tickJob: Job? = null
     private var shutdownLatch: ShutdownLatch? = null
 
@@ -86,13 +71,25 @@ class OrbitServer(private val config: OrbitServerConfig) {
     }
 
     private val routingModule = Kodein.Module(name = "Routing") {
-        bind() from singleton { router }
-        bind() from singleton { nodeDirectory }
-        bind() from singleton { addressableDirectory }
-        bind() from singleton { loadBalancer }
-        bind() from singleton { clientConnections }
+        bind("local") from singleton { config.nodeId }
+        bind() from singleton { Router(instance("local"), instance()) }
+        bind() from singleton { InMemoryNodeDirectory() }
+        bind() from singleton { InMemoryAddressableDirectory() }
+        bind() from singleton { LocalFirstPlacementStrategy(instance(), instance(), instance("local")) }
+        bind() from singleton { MeshConnections(instance()) }
+        bind() from singleton {
+            ClientConnections(instance("local"), instance()) { responseObserver ->
+                GrpcClient(responseObserver = responseObserver) {
+                    println("Client message ${it}")
+                    val pipeline: Pipeline by kodein.instance()
+                    pipeline.pushInbound(it)
+                }
+            }
+        }
+
+        bind() from singleton { NodeCollection(instance(), instance()) }
         bind() from singleton { AddressablePipelineStep(instance(), instance()) }
-        bind() from singleton { RoutingPipelineStep(instance(), nodeConnections) }
+        bind() from singleton { RoutingPipelineStep(instance(), instance()) }
         bind() from singleton { arrayOf(instance<RoutingPipelineStep>(), instance<AddressablePipelineStep>()) }
     }
 
@@ -110,7 +107,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
             onStart()
         }
 
-        if(config.acquireShutdownLatch) shutdownLatch = ShutdownLatch().also { it.acquire() }
+        if (config.acquireShutdownLatch) shutdownLatch = ShutdownLatch().also { it.acquire() }
 
         logger.info("Orbit started successfully in {}ms.", elapsed)
     }
@@ -136,8 +133,10 @@ class OrbitServer(private val config: OrbitServerConfig) {
         grpcEndpoint.start()
 
         tickJob = launchTick()
+        val nodeDirectory: NodeDirectory by kodein.instance()
         nodeDirectory.connectNode(NodeDirectory.NodeInfo(config.nodeId, host = "0.0.0.0", port = config.grpcPort))
 
+        val meshConnections: MeshConnections by kodein.instance()
         meshConnections.start()
     }
 

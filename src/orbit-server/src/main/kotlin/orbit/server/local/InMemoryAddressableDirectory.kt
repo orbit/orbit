@@ -13,10 +13,9 @@ import orbit.server.routing.AddressableDirectory
 class InMemoryAddressableDirectory : AddressableDirectory {
     companion object Singleton {
         @JvmStatic
-        val Instance = InMemoryAddressableDirectory()
+        private val directory = HashMap<Address, NodeId>()
     }
 
-    private val directory = HashMap<Address, NodeId>()
 
     override fun lookup(address: Address): NodeId? {
         return directory[address]
