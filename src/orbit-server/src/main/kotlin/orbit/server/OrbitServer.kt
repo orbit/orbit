@@ -10,7 +10,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import orbit.common.logging.logger
@@ -23,16 +22,17 @@ import orbit.server.concurrent.RuntimeScopes
 import orbit.server.local.InMemoryAddressableDirectory
 import orbit.server.local.InMemoryNodeDirectory
 import orbit.server.local.LocalFirstPlacementStrategy
+import orbit.server.net.ClientConnections
+import orbit.server.net.GrpcClient
 import orbit.server.net.GrpcEndpoint
-import orbit.server.net.Message
+import orbit.server.net.MeshConnections
+import orbit.server.net.NodeCollection
 import orbit.server.net.netModule
 import orbit.server.pipeline.Pipeline
 import orbit.server.pipeline.pipelineModule
 import orbit.server.pipeline.steps.AddressablePipelineStep
 import orbit.server.pipeline.steps.RoutingPipelineStep
-import orbit.server.routing.AddressableDirectory
-import orbit.server.routing.AddressablePlacementStrategy
-import orbit.server.routing.Route
+import orbit.server.routing.NodeDirectory
 import orbit.server.routing.Router
 import org.kodein.di.Kodein
 import org.kodein.di.direct
@@ -50,6 +50,16 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private val addressableDirectory = InMemoryAddressableDirectory.Instance
     private val loadBalancer = LocalFirstPlacementStrategy(nodeDirectory, addressableDirectory, config.nodeId)
     private val router = Router(config.nodeId, nodeDirectory)
+    private val meshConnections = MeshConnections(nodeDirectory)
+    private val clientConnections = ClientConnections(config.nodeId, nodeDirectory) { responseObserver ->
+//        val pipeline by kodein.instance<Pipeline>()
+        GrpcClient(responseObserver = responseObserver) {
+            println("Client message ${it}")
+//            pipeline.pushInbound(it)
+        }
+    }
+
+    private val nodeConnections = NodeCollection(meshConnections, clientConnections = clientConnections)
 
     private var tickJob: Job? = null
 
@@ -78,8 +88,10 @@ class OrbitServer(private val config: OrbitServerConfig) {
         bind() from singleton { nodeDirectory }
         bind() from singleton { addressableDirectory }
         bind() from singleton { loadBalancer }
+        bind() from singleton { clientConnections }
         bind() from singleton { AddressablePipelineStep(instance(), instance()) }
-        bind() from singleton { RoutingPipelineStep(instance()) }
+        bind() from singleton { RoutingPipelineStep(instance(), nodeConnections) }
+        bind() from singleton { arrayOf(instance<RoutingPipelineStep>(), instance<AddressablePipelineStep>()) }
     }
 
     private val kodein = Kodein {
@@ -117,6 +129,9 @@ class OrbitServer(private val config: OrbitServerConfig) {
         grpcEndpoint.start()
 
         tickJob = launchTick()
+        nodeDirectory.connectNode(NodeDirectory.NodeInfo(config.nodeId, host = "0.0.0.0", port = config.grpcPort))
+
+        meshConnections.start()
     }
 
     private suspend fun onTick() {
@@ -163,20 +178,6 @@ class OrbitServer(private val config: OrbitServerConfig) {
             logger.trace { "Orbit tick completed in ${elapsed}ms. Next tick in ${nextTickDelay}ms." }
             delay(nextTickDelay)
         }
-    }
-
-    internal fun handleMessage(message: Message, projectedRoute: Route? = null) {
-        println("handling a message ${message.content}")
-        // TODO (brett) - re-integrate routing
-//        var route = router.routeMessage(message, projectedRoute)
-//        if (route == null) {
-//            println("No route found")
-//            return
-//        }
-//
-//        val nextNode = route.path.last()
-//        val node = nodeDirectory.getNode(nextNode)
-//        node?.sendMessage(message, route)
     }
 
     @Suppress("UNUSED_PARAMETER")

@@ -12,5 +12,5 @@ import org.kodein.di.erased.instance
 import org.kodein.di.erased.singleton
 
 val netModule = Kodein.Module(name = "Net") {
-    bind() from singleton { GrpcEndpoint(instance(), instance(), instance()) }
+    bind() from singleton { GrpcEndpoint(instance(), instance()) }
 }

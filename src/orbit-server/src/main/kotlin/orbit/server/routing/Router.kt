@@ -7,34 +7,12 @@
 package orbit.server.routing
 
 import orbit.common.collections.GraphTraverser
-import orbit.server.Address
-import orbit.server.Capability
-import orbit.server.net.Message
-import orbit.server.net.MessageContent
 import orbit.server.net.NodeId
 
 internal class Router(
     val nodeId: NodeId,
     val nodeDirectory: NodeDirectory
 ) {
-    val id = nodeId
-
-    init {
-//        nodeDirectory.connectNode(id)
-    }
-
-//    override fun sendMessage(message: Message, route: Route?) {
-//        val route = this.getRoute(message, route)
-//
-//        if (route == null) {
-//            println("No route found")
-//            return
-//        }
-//
-//        val nextNode = route.path.last()
-//        val node = nodeDirectory.getNode(nextNode)
-//        node?.sendMessage(message, route)
-//    }
 
     fun getRoute(targetNode: NodeId, projectedRoute: Route? = null): Route? {
         val routeVerified = (projectedRoute != null) && this.verifyRoute(projectedRoute)

@@ -12,7 +12,7 @@ import io.grpc.Metadata
 import io.grpc.ServerCall
 import io.grpc.ServerCallHandler
 
-class ConnectionInterceptor : io.grpc.ServerInterceptor {
+class NodeIdServerInterceptor : io.grpc.ServerInterceptor {
 
     companion object Keys {
         @JvmStatic

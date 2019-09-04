@@ -30,13 +30,10 @@ internal class InMemoryNodeDirectory : NodeDirectory {
         ).filterNotNull().asSequence()
     }
 
-    override fun lookupMeshNodes(): Sequence<NodeInfo> {
-        return lookupConnectedNodes(mesh.id)
-    }
-
-
-    override fun getNode(nodeId: NodeId): NodeInfo? {
-        return nodes[nodeId]
+    override fun lookupMeshNodes(): List<NodeInfo> {
+        return nodes.values.filter { c -> c.parent == mesh.id }.plus(
+            nodes[nodes[mesh.id]?.parent]
+        ).filterNotNull()
     }
 
 //    override fun reportConnections(nodeId: NodeId, connections: List<NodeId>) {
@@ -44,8 +41,7 @@ internal class InMemoryNodeDirectory : NodeDirectory {
 //            .plus(connections.map { c -> NodeInfo(nodeId, c) })
 //    }
 
-    override fun connectNode(node: MeshNode, parent: NodeId?) {
-//        nodes[node.id] = node
-        nodes[node.id] = NodeInfo(node.id, parent ?: mesh.id)
+    override fun connectNode(nodeInfo: NodeInfo) {
+        nodes[nodeInfo.id] = nodeInfo
     }
 }
