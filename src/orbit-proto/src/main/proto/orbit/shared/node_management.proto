@@ -1,0 +1,30 @@
+syntax = "proto3";
+option java_package = "orbit.shared.proto";
+
+import "google/protobuf/timestamp.proto";
+
+package orbit.shared;
+
+service NodeManagement {
+    rpc JoinCluster(JoinClusterRequest) returns (NodeLease);
+    rpc RenewLease(RenewLeaseRequest) returns (RenewLeaseResponse);
+}
+
+message JoinClusterRequest {}
+
+message RenewLeaseRequest {
+    string node_identity = 1;
+    string challenge_token = 2;
+}
+
+message RenewLeaseResponse {
+    bool lease_renewed = 1;
+    NodeLease lease_info = 2;
+}
+
+message NodeLease {
+    string node_identity = 1;
+    string challenge_token = 2;
+    google.protobuf.Timestamp renew_at = 3;
+    google.protobuf.Timestamp expires_at = 4;
+}
