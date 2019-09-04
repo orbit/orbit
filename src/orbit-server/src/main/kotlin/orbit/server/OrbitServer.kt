@@ -77,19 +77,9 @@ class OrbitServer(private val config: OrbitServerConfig) {
         bind() from singleton { InMemoryAddressableDirectory() }
         bind() from singleton { LocalFirstPlacementStrategy(instance(), instance(), instance("local")) }
         bind() from singleton { MeshConnections(instance()) }
-        bind() from singleton {
-            ClientConnections(instance("local"), instance()) { responseObserver ->
-                GrpcClient(responseObserver = responseObserver) {
-                    println("Client message ${it}")
-                    val pipeline: Pipeline by kodein.instance()
-                    pipeline.pushInbound(it)
-                }
-            }
-        }
+        bind() from singleton { ClientConnections(instance("local"), instance(), kodein) }
 
         bind() from singleton { NodeCollection(instance(), instance()) }
-        bind() from singleton { AddressablePipelineStep(instance(), instance()) }
-        bind() from singleton { RoutingPipelineStep(instance(), instance()) }
         bind() from singleton { arrayOf(instance<RoutingPipelineStep>(), instance<AddressablePipelineStep>()) }
     }
 
