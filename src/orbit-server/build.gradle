@@ -8,8 +8,6 @@ dependencies {
     implementation(project(":src:orbit-commons"))
     implementation(project(":src:orbit-proto"))
 
-    implementation("org.kodein.di:kodein-di-erased-jvm:6.3.3")
-
     implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
 
 }

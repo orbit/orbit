@@ -6,10 +6,12 @@
 
 package orbit.server.local
 
-import com.google.common.collect.*
-import orbit.server.*
+import com.google.common.collect.BiMap
+import com.google.common.collect.HashBiMap
+import orbit.server.Address
 import orbit.server.net.NodeId
-import orbit.server.routing.*
+import orbit.server.routing.Mesh
+import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeDirectory.NodeInfo
 
 internal class InMemoryNodeDirectory : NodeDirectory {

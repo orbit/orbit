@@ -6,22 +6,19 @@
 
 package orbit.server.net
 
+import cloud.orbit.runtime.di.ComponentProvider
 import io.grpc.stub.StreamObserver
 import orbit.server.Address
 import orbit.server.AddressId
-import orbit.server.Capability
 import orbit.server.pipeline.Pipeline
 import orbit.server.routing.MeshNode
 import orbit.server.routing.Route
 import orbit.shared.proto.Messages
-import org.kodein.di.Kodein
-import org.kodein.di.direct
-import org.kodein.di.erased.instance
 
 internal class GrpcClient(
     override val id: NodeId = NodeId.generate("client"),
     private val responseObserver: StreamObserver<Messages.Message>,
-    private val kodein: Kodein
+    private val container: ComponentProvider
 ) : MeshNode, StreamObserver<Messages.Message> {
 
     override fun sendMessage(message: Message, route: Route?) {
@@ -57,7 +54,7 @@ internal class GrpcClient(
                 )
 
                 println("Client message ${msg}")
-                val pipeline: Pipeline = kodein.direct.instance()
+                val pipeline: Pipeline by container.inject()
                 pipeline.pushInbound(msg)
             }
         }
