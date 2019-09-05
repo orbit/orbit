@@ -33,13 +33,15 @@ internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: 
         println("Closed $id")
     }
 
-
     private val blockingStub: ConnectionGrpc.ConnectionStub
 
     init {
-        channel.notifyWhenStateChanged(channel.getState(true)) {
-            println("Changed state: ${channel.getState(false)}")
+        fun notify(channel: ManagedChannel) {
+            println("Channel state: ${id.value}: ${channel.getState(false)}")
+            channel.notifyWhenStateChanged(channel.getState(true)) { notify(channel) }
         }
+
+        notify(channel)
         blockingStub = ConnectionGrpc.newStub(ClientInterceptors.intercept(channel, NodeIdClientInterceptor(id)))
         sender = blockingStub.messages(this)
     }
@@ -54,11 +56,10 @@ internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: 
     override fun sendMessage(message: Message, route: Route?) {
 
         val builder = Messages.Message.newBuilder()
-//        val toSend = Messages.Message.newBuilder().invocationRequestBuilder.setValue(message.content.toString()).build()
-        val toSend =
-            builder.setInvocationRequest(builder.invocationRequestBuilder.setValue(message.content.toString())).build()
+        val toSend = builder.setInvocationRequest(
+            builder.invocationRequestBuilder.setValue(message.content.toString())
+        ).build()
 
         sender.onNext(toSend)
-//        println("Mesh node send message")
     }
 }
