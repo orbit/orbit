@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package cloud.orbit.runtime.di
+package orbit.common.di
 
 import java.util.concurrent.ConcurrentHashMap
 

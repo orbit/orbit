@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import orbit.common.concurrent.ShutdownLatch
+import orbit.common.di.ComponentProvider
 import orbit.common.logging.logger
 import orbit.common.logging.trace
 import orbit.common.logging.warn
@@ -56,7 +57,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
         exceptionHandler = this::onUnhandledException
     )
 
-    private val container = cloud.orbit.runtime.di.ComponentProvider()
+    private val container = ComponentProvider()
 
     init {
         container.configure {

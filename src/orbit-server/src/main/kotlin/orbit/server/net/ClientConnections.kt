@@ -6,8 +6,8 @@
 
 package orbit.server.net
 
-import cloud.orbit.runtime.di.ComponentProvider
 import io.grpc.stub.StreamObserver
+import orbit.common.di.ComponentProvider
 import orbit.server.routing.MeshNode
 import orbit.server.routing.NodeDirectory
 import orbit.shared.proto.ConnectionGrpc
