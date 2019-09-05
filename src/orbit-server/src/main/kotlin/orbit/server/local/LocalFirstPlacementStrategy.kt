@@ -6,15 +6,16 @@
 
 package orbit.server.local
 
-import orbit.server.*
+import orbit.server.Address
+import orbit.server.net.LocalNodeId
 import orbit.server.net.NodeId
 import orbit.server.routing.AddressableDirectory
 import orbit.server.routing.AddressablePlacementStrategy
 import orbit.server.routing.NodeDirectory
 
-internal class LocalFirstPlacementStrategy(val nodeDirectory: NodeDirectory, val addressableDirectory: AddressableDirectory, val currentNode: NodeId) : AddressablePlacementStrategy {
+internal class LocalFirstPlacementStrategy(val nodeDirectory: NodeDirectory, val addressableDirectory: AddressableDirectory, val localNode: LocalNodeId) : AddressablePlacementStrategy {
     override fun chooseNode(address: Address): NodeId {
-        val nodeId = nodeDirectory.lookupConnectedNodes(currentNode).elementAt(0).id
+        val nodeId = nodeDirectory.lookupConnectedNodes(localNode.nodeId).elementAt(0).id
         addressableDirectory.setLocation(address, nodeId)
         return nodeId
     }

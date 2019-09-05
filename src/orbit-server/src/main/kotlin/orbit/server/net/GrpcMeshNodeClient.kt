@@ -6,15 +6,14 @@
 
 package orbit.server.net
 
-import orbit.server.routing.MeshNode
-import orbit.server.routing.Route
+import io.grpc.ClientInterceptors
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
+import orbit.server.routing.MeshNode
+import orbit.server.routing.Route
 import orbit.shared.proto.ConnectionGrpc
 import orbit.shared.proto.Messages
-import io.grpc.ClientInterceptors
-
 
 internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: ManagedChannel) : MeshNode,
     StreamObserver<Messages.Message> {

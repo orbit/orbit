@@ -6,7 +6,7 @@
 
 package orbit.server.local
 
-import orbit.server.*
+import orbit.server.Address
 import orbit.server.net.NodeId
 import orbit.server.routing.AddressableDirectory
 

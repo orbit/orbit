@@ -7,21 +7,22 @@
 package orbit.server.routing
 
 import orbit.common.collections.GraphTraverser
+import orbit.server.net.LocalNodeId
 import orbit.server.net.NodeId
 
 internal class Router(
-    val nodeId: NodeId,
+    val localNode: LocalNodeId,
     val nodeDirectory: NodeDirectory
 ) {
 
     fun getRoute(targetNode: NodeId, projectedRoute: Route? = null): Route? {
         val routeVerified = (projectedRoute != null) && this.verifyRoute(projectedRoute)
-        println("Finding route between $nodeId -> $targetNode ${if (routeVerified) "(existing)" else ""}")
+        println("Finding route between $localNode -> $targetNode ${if (routeVerified) "(existing)" else ""}")
 
         val foundRoute =
             (if (routeVerified) projectedRoute else searchRoute(targetNode)) ?: return null;
 
-        return if (foundRoute.path.first() == this.nodeId) foundRoute.pop().route else foundRoute
+        return if (foundRoute.path.first() == this.localNode.nodeId) foundRoute.pop().route else foundRoute
     }
 
     private fun searchRoute(destination: NodeId): Route? {
@@ -39,11 +40,11 @@ internal class Router(
             return@mapNotNull null
         }.toList()
 
-        return nodes.find { r -> r.path.first().equals(this.nodeId) }
+        return nodes.find { r -> r.path.first().equals(this.localNode.nodeId) }
     }
 
     fun verifyRoute(route: Route): Boolean {
-        var previousNode = this.nodeId
+        var previousNode = this.localNode.nodeId
         for (node in route.path.drop(1)) {
 //            if (!nodeDirectory.lookupConnectedNodes(node, address).any { n -> n.id == previousNode }) {
 //                return false

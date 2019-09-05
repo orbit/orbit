@@ -21,17 +21,12 @@ import orbit.server.concurrent.RuntimeScopes
 import orbit.server.net.Message
 import orbit.server.net.MessageContainer
 import orbit.server.net.MessageDirection
-import orbit.server.pipeline.steps.AddressablePipelineStep
-import orbit.server.pipeline.steps.BlankPipelineStep
-import orbit.server.pipeline.steps.PipelineStep
-import orbit.server.pipeline.steps.RoutingPipelineStep
-import org.kodein.di.DKodein
-import org.kodein.di.erased.instance
+import orbit.server.pipeline.steps.PipelineSteps
 
 internal class Pipeline(
     private val runtimeScopes: RuntimeScopes,
     private val config: OrbitServerConfig,
-    private val pipelineSteps: Array<PipelineStep>
+    private val pipelineSteps: PipelineSteps
 ) {
     private val logger by logger()
 
@@ -46,7 +41,7 @@ internal class Pipeline(
 
         logger.info(
             "Pipeline started on ${config.pipelineRailCount} rails with a " +
-                    "${config.pipelineBufferCount} entries buffer and ${pipelineSteps.size} steps."
+                    "${config.pipelineBufferCount} entries buffer and ${pipelineSteps.steps.size} steps."
         )
     }
 
@@ -104,7 +99,7 @@ internal class Pipeline(
         val errorsAreHandled = container.direction == MessageDirection.OUTBOUND
 
         val context = PipelineContext(
-            pipelineSteps = pipelineSteps,
+            pipelineSteps = pipelineSteps.steps,
             startAtEnd = startAtEnd,
             pipeline = this,
             completion = container.completion,

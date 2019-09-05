@@ -6,16 +6,14 @@
 
 package orbit.server.net
 
+import cloud.orbit.runtime.di.ComponentProvider
 import io.grpc.stub.StreamObserver
-import orbit.server.pipeline.Pipeline
 import orbit.server.routing.MeshNode
 import orbit.server.routing.NodeDirectory
 import orbit.shared.proto.ConnectionGrpc
 import orbit.shared.proto.Messages
-import org.kodein.di.Kodein
-import org.kodein.di.erased.instance
 
-internal class ClientConnections(val nodeId: NodeId, val nodeDirectory: NodeDirectory, val kodein: Kodein) :
+internal class ClientConnections(private val localNode: LocalNodeId, private val nodeDirectory: NodeDirectory, private val container: ComponentProvider) :
     ConnectionGrpc.ConnectionImplBase() {
 
     private val clients = HashMap<NodeId, GrpcClient>()
@@ -25,12 +23,12 @@ internal class ClientConnections(val nodeId: NodeId, val nodeDirectory: NodeDire
     }
 
     override fun messages(responseObserver: StreamObserver<Messages.Message>): StreamObserver<Messages.Message> {
-        val remoteNodeId = NodeId(NodeIdServerInterceptor.NODE_ID.get())
+        val nodeId = NodeId(NodeIdServerInterceptor.NODE_ID.get())
 
-        val connection = clients[remoteNodeId] ?: GrpcClient(remoteNodeId, responseObserver, kodein)
+        val connection = clients[nodeId] ?: GrpcClient(nodeId, responseObserver, container)
         clients[connection.id] = connection
 
-        nodeDirectory.connectNode(NodeDirectory.NodeInfo(connection.id, parent = remoteNodeId))
+        nodeDirectory.connectNode(NodeDirectory.NodeInfo(connection.id, parent = localNode.nodeId))
         return connection
     }
 }

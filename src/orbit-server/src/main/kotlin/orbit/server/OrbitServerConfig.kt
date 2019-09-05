@@ -8,15 +8,13 @@ package orbit.server
 
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.common.concurrent.Pools
-import orbit.server.local.InMemoryNodeDirectory
-import orbit.server.net.NodeId
-import orbit.server.routing.NodeDirectory
+import orbit.server.net.LocalNodeId
 
 data class OrbitServerConfig(
     /**
      * The node's identity.
      */
-    val nodeId: NodeId = NodeId.generate("router"),
+    val localNode: LocalNodeId = LocalNodeId.generate("router"),
 
     /**
      * The gRPC endpoint port.
