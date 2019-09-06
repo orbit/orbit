@@ -14,6 +14,7 @@ internal interface NodeDirectory {
     fun report(nodeId: NodeId, visibleNodes: Iterable<NodeId>)
 
     fun lookupMeshNodes(): List<NodeInfo.ServerNodeInfo>
+    fun removeNode(nodeId: NodeId)
 
     sealed class NodeInfo {
         abstract val id: NodeId

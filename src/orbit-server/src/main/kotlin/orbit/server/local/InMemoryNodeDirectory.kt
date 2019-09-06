@@ -34,4 +34,8 @@ internal class InMemoryNodeDirectory : NodeDirectory {
     override fun connectNode(nodeInfo: NodeInfo) {
         nodes[nodeInfo.id] = nodeInfo
     }
+
+    override fun removeNode(nodeId: NodeId) {
+        nodes.remove(nodeId)
+    }
 }

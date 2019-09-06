@@ -25,7 +25,10 @@ internal class IncomingConnections(private val localNode: LocalNodeId, private v
     override fun messages(responseObserver: StreamObserver<Messages.Message>): StreamObserver<Messages.Message> {
         val nodeId = NodeId(NodeIdServerInterceptor.NODE_ID.get())
 
-        val connection = clients[nodeId] ?: GrpcClient(nodeId, responseObserver, container)
+        val connection = clients[nodeId] ?: GrpcClient(nodeId, responseObserver, container) {
+            nodeDirectory.removeNode(nodeId)
+            println("GRPC Client has closed: $nodeId")
+        }
         clients[connection.id] = connection
 
         nodeDirectory.connectNode(NodeDirectory.NodeInfo.ClientNodeInfo(connection.id, listOf(localNode.nodeId)))

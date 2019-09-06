@@ -15,5 +15,4 @@ internal class NodeCollection(
     fun getNode(nodeId: NodeId): MeshNode? {
         return outgoingConnections.getNode(nodeId) ?: incomingConnections.getNode(nodeId)
     }
-
 }

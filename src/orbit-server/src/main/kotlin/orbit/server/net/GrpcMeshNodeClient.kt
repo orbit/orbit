@@ -22,7 +22,7 @@ internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: 
     private val sender: StreamObserver<Messages.Message>
 
     override fun onNext(value: Messages.Message?) {
-        println("Message $id $value")
+        println("Unexpected message from mesh... $id $value")
     }
 
     override fun onError(t: Throwable?) {
