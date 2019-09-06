@@ -9,11 +9,11 @@ package orbit.server.net
 import orbit.server.routing.MeshNode
 
 internal class NodeCollection(
-    private val meshConnections: MeshConnections,
-    private val clientConnections: ClientConnections
+    private val outgoingConnections: OutgoingConnections,
+    private val incomingConnections: IncomingConnections
 ) {
     fun getNode(nodeId: NodeId): MeshNode? {
-        return meshConnections.getNode(nodeId) ?: clientConnections.getNode(nodeId)
+        return outgoingConnections.getNode(nodeId) ?: incomingConnections.getNode(nodeId)
     }
 
 }

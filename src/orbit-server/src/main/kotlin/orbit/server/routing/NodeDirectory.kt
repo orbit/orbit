@@ -11,10 +11,27 @@ import orbit.server.net.NodeId
 
 internal interface NodeDirectory {
     fun connectNode(nodeInfo: NodeInfo)
-    fun lookupConnectedNodes(nodeId: NodeId, address: Address? = null): Sequence<NodeInfo>
-//    fun reportConnections(nodeId: NodeId, connections: List<NodeInfo>)
+    fun lookupConnectedNodes(nodeId: NodeId): Sequence<NodeInfo>
+    fun report(nodeId: NodeId, connections: Iterable<NodeId>)
 
-    fun lookupMeshNodes(): List<NodeInfo>
+    fun lookupMeshNodes(): List<NodeInfo.ServerNodeInfo>
 
-    data class NodeInfo(val id: NodeId, val parent: NodeId? = Mesh.NodeId, val host: String? = null, val port: Int? = null)
-}
+    sealed class NodeInfo {
+        abstract val id: NodeId
+//        abstract val capabilities: NodeCapabilities
+        abstract var visibleNodes: Iterable<NodeId>
+
+        data class ServerNodeInfo(
+            override val id: NodeId,
+//            override val capabilities: NodeCapabilities,
+            override var visibleNodes: Iterable<NodeId> = ArrayList(),
+            val host: String,
+            val port: Int
+        ) : NodeInfo()
+
+        data class ClientNodeInfo(
+            override val id: NodeId,
+//            override val capabilities: NodeCapabilities,
+            override var visibleNodes: Iterable<NodeId>
+        ) : NodeInfo()
+    }}

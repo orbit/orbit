@@ -8,9 +8,8 @@ package orbit.server.net
 
 import orbit.server.routing.MeshNode
 import orbit.server.routing.NodeDirectory
-import kotlin.concurrent.fixedRateTimer
 
-internal class MeshConnections(val nodeDirectory: NodeDirectory) :
+internal class OutgoingConnections(val localNodeId: LocalNodeId, val nodeDirectory: NodeDirectory) :
     ConnectionHost {
 
     override fun getNode(nodeId: NodeId): MeshNode? {
@@ -23,21 +22,15 @@ internal class MeshConnections(val nodeDirectory: NodeDirectory) :
 
     private val activeNodes = hashMapOf<NodeId, MeshNode>()
 
-    fun start() {
-        fixedRateTimer(name = "mesh connections", daemon = true, initialDelay = 0L, period = 10000) {
-            connect()
-        }
-    }
-
-    fun connect() {
+    fun refreshConnections() {
         val meshNodes = nodeDirectory.lookupMeshNodes().toList()
 
-        val unconnected = meshNodes.filter { node -> !activeNodes.containsKey(node.id) }
-
-        unconnected.filter { node -> !node.host.isNullOrEmpty() && node.port != null }.forEach { node ->
-            val client = GrpcMeshNodeClient(node.id, node.host!!, node.port!!)
+        meshNodes.filter { node -> !activeNodes.containsKey(node.id) && node.id != localNodeId.nodeId }.forEach { node ->
+            val client = GrpcMeshNodeClient(node.id, node.host, node.port)
 
             activeNodes[node.id] = client
         }
+
+        nodeDirectory.report(localNodeId.nodeId, getActiveNodes().map { node -> node.id })
     }
 }

@@ -13,7 +13,7 @@ import orbit.server.routing.NodeDirectory
 import orbit.shared.proto.ConnectionGrpc
 import orbit.shared.proto.Messages
 
-internal class ClientConnections(private val localNode: LocalNodeId, private val nodeDirectory: NodeDirectory, private val container: ComponentProvider) :
+internal class IncomingConnections(private val localNode: LocalNodeId, private val nodeDirectory: NodeDirectory, private val container: ComponentProvider) :
     ConnectionGrpc.ConnectionImplBase() {
 
     private val clients = HashMap<NodeId, GrpcClient>()
@@ -28,7 +28,7 @@ internal class ClientConnections(private val localNode: LocalNodeId, private val
         val connection = clients[nodeId] ?: GrpcClient(nodeId, responseObserver, container)
         clients[connection.id] = connection
 
-        nodeDirectory.connectNode(NodeDirectory.NodeInfo(connection.id, parent = localNode.nodeId))
+        nodeDirectory.connectNode(NodeDirectory.NodeInfo.ClientNodeInfo(connection.id, listOf(localNode.nodeId)))
         return connection
     }
 }

@@ -18,10 +18,10 @@ data class Route(val path: List<NodeId> = emptyList()) {
     }
 
     val nextNode: NodeId
-        get() = this.path.last()
+        get() = this.path.first()
 
     val destinationNode: NodeId
-        get() = this.path.first()
+        get() = this.path.last()
 
     data class PopResult(val route: Route, val nodeId: NodeId) {
     }

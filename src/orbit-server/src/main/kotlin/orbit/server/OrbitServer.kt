@@ -24,9 +24,9 @@ import orbit.server.concurrent.RuntimeScopes
 import orbit.server.local.InMemoryAddressableDirectory
 import orbit.server.local.InMemoryNodeDirectory
 import orbit.server.local.LocalFirstPlacementStrategy
-import orbit.server.net.ClientConnections
+import orbit.server.net.IncomingConnections
 import orbit.server.net.GrpcEndpoint
-import orbit.server.net.MeshConnections
+import orbit.server.net.OutgoingConnections
 import orbit.server.net.NodeCollection
 import orbit.server.pipeline.Pipeline
 import orbit.server.pipeline.steps.AddressablePipelineStep
@@ -73,8 +73,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<AddressableDirectory>(InMemoryAddressableDirectory::class.java)
             definition<AddressablePlacementStrategy>(LocalFirstPlacementStrategy::class.java)
 
-            definition<MeshConnections>()
-            definition<ClientConnections>()
+            definition<OutgoingConnections>()
+            definition<IncomingConnections>()
             definition<NodeCollection>()
 
             definition<GrpcEndpoint>()
@@ -122,19 +122,17 @@ class OrbitServer(private val config: OrbitServerConfig) {
         tickJob = launchTick()
         val nodeDirectory: NodeDirectory by container.inject()
         nodeDirectory.connectNode(
-            NodeDirectory.NodeInfo(
+            NodeDirectory.NodeInfo.ServerNodeInfo(
                 config.localNode.nodeId,
                 host = "0.0.0.0",
                 port = config.grpcPort
             )
         )
-
-        val meshConnections: MeshConnections by container.inject()
-        meshConnections.start()
     }
 
     private suspend fun onTick() {
-
+        val outgoingConnections: OutgoingConnections by container.inject()
+        outgoingConnections.refreshConnections()
     }
 
     private suspend fun onStop() {

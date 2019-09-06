@@ -18,21 +18,25 @@ internal class AddressablePipelineStep(
     private val addressablePlacement: AddressablePlacementStrategy
 ) : PipelineStep {
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
-        println("Addressable inbound")
         when {
             msg.content is MessageContent.Request -> {
                 val destination = msg.content.destination
 
-                (addressableDirectory.lookup(destination) ?: addressablePlacement.chooseNode(destination)).let { nodeId ->
+                (addressableDirectory.lookup(destination)
+                    ?: addressablePlacement.chooseNode(destination)).let { nodeId ->
                     if (nodeId == null) {
                         return@let msg
                     }
-                    msg.copy(
-                        target = MessageTarget.Unicast(nodeId),
-                        content = msg.content
+                    println("Addressable inbound: $nodeId")
+                    context.nextInbound(
+                        msg.copy(
+                            target = MessageTarget.Unicast(nodeId),
+                            content = msg.content
+                        )
                     )
                 }
             }
+            else -> context.nextInbound(msg)
         }
 
     }

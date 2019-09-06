@@ -31,7 +31,7 @@ internal class Router(
             nodeDirectory.lookupConnectedNodes(node).map { node -> node.id }
         }
 
-        val nodes = traversal.traverse(destination).take(100).mapNotNull { node ->
+        val routes = traversal.traverse(destination).take(100).mapNotNull { node ->
             val route = nodeRoutes[node.parent]?.push(node.child) ?: Route(listOf(node.child))
             if (nodeRoutes[node.child] == null) {
                 nodeRoutes[node.child] = route
@@ -40,7 +40,7 @@ internal class Router(
             return@mapNotNull null
         }.toList()
 
-        return nodes.find { r -> r.path.first().equals(this.localNode.nodeId) }
+        return routes.find { r -> r.nextNode.equals(this.localNode.nodeId) }
     }
 
     fun verifyRoute(route: Route): Boolean {
