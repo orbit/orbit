@@ -12,6 +12,7 @@ import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
 import orbit.server.routing.MeshNode
 import orbit.server.routing.Route
+import orbit.shared.proto.Addressable
 import orbit.shared.proto.ConnectionGrpc
 import orbit.shared.proto.Messages
 
@@ -55,10 +56,20 @@ internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: 
     override fun sendMessage(message: Message, route: Route?) {
 
         val builder = Messages.Message.newBuilder()
-        val toSend = builder.setInvocationRequest(
-            builder.invocationRequestBuilder.setValue(message.content.toString())
-        ).build()
+        val toSend = when {
+            message.content is MessageContent.Request ->
+                builder.setInvocationRequest(
+                    builder.invocationRequestBuilder
+                        .setValue(message.content.data)
+                        .setReference(
+                            Addressable.AddressableReference.newBuilder()
+                                .setId(message.content.destination.id)
+                                .setType(message.content.destination.type).build()
+                        )
+                ).build()
+            else -> null
+        }
 
-        sender.onNext(toSend)
+        toSend != null ?: sender.onNext(toSend)
     }
 }

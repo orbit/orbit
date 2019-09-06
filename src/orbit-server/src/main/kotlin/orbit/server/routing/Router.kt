@@ -28,7 +28,7 @@ internal class Router(
     private fun searchRoute(destination: NodeId): Route? {
         val nodeRoutes = HashMap<NodeId, Route>()
         val traversal = GraphTraverser<NodeId> { node ->
-            nodeDirectory.lookupConnectedNodes(node).map { node -> node.id }
+            nodeDirectory.lookupConnectedNodes(node).map { n -> n.id }
         }
 
         val routes = traversal.traverse(destination).take(100).mapNotNull { node ->
@@ -44,13 +44,13 @@ internal class Router(
     }
 
     fun verifyRoute(route: Route): Boolean {
-        var previousNode = this.localNode.nodeId
-        for (node in route.path.drop(1)) {
+//        var previousNode = this.localNode.nodeId
+//        for (node in route.path.drop(1)) {
 //            if (!nodeDirectory.lookupConnectedNodes(node, address).any { n -> n.id == previousNode }) {
 //                return false
 //            }
-            previousNode = node
-        }
+//            previousNode = node
+//        }
         return true
     }
 }

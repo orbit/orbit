@@ -24,9 +24,6 @@ internal class AddressablePipelineStep(
 
                 (addressableDirectory.lookup(destination)
                     ?: addressablePlacement.chooseNode(destination)).let { nodeId ->
-                    if (nodeId == null) {
-                        return@let msg
-                    }
                     println("Addressable inbound: $nodeId")
                     context.nextInbound(
                         msg.copy(
