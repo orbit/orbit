@@ -6,22 +6,22 @@
 
 package orbit.server.local
 
-import orbit.server.Address
+import orbit.server.addressable.AddressableReference
 import orbit.server.net.NodeId
 import orbit.server.routing.AddressableDirectory
 
 class InMemoryAddressableDirectory : AddressableDirectory {
     companion object Singleton {
         @JvmStatic
-        private val directory = HashMap<Address, NodeId>()
+        private val directory = HashMap<AddressableReference, NodeId>()
     }
 
 
-    override fun lookup(address: Address): NodeId? {
+    override fun lookup(address: AddressableReference): NodeId? {
         return directory[address]
     }
 
-    override fun setLocation(address: Address, node: NodeId) {
+    override fun setLocation(address: AddressableReference, node: NodeId) {
         directory[address] = node
     }
 }

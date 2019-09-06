@@ -6,7 +6,6 @@
 
 package orbit.server.routing
 
-import orbit.server.Address
 import orbit.server.net.NodeId
 
 internal interface NodeDirectory {

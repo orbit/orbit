@@ -6,10 +6,10 @@
 
 package orbit.server.routing
 
-import orbit.server.Address
+import orbit.server.addressable.AddressableReference
 import orbit.server.net.NodeId
 
  interface AddressableDirectory {
-    fun lookup(address: Address) : NodeId?
-    fun setLocation(address: Address, node: NodeId)
+    fun lookup(address: AddressableReference) : NodeId?
+    fun setLocation(address: AddressableReference, node: NodeId)
 }

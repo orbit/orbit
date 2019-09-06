@@ -6,9 +6,9 @@
 
 package orbit.server.routing
 
-import orbit.server.Address
+import orbit.server.addressable.AddressableReference
 import orbit.server.net.NodeId
 
 interface AddressablePlacementStrategy {
-    fun chooseNode(address: Address): NodeId
+    fun chooseNode(address: AddressableReference): NodeId
 }

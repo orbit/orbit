@@ -2,6 +2,7 @@ package orbit.server.local
 
 import LocalClientNode
 import orbit.server.*
+import orbit.server.addressable.AddressableReference
 import orbit.server.net.Message
 import orbit.server.net.NodeId
 import orbit.server.routing.*
@@ -134,8 +135,8 @@ internal class InMemoryNodeDirectoryTest {
 //        assertThat(nodes.map { n -> n.id }.toList()).doesNotContain(connectedNode.id)
 //    }
 
-    fun Address(): Address {
-        return Address(AddressId("test"), Capability("test"))
+    fun Address(): AddressableReference {
+        return AddressableReference("user", "0")
     }
 
     class TestNode(

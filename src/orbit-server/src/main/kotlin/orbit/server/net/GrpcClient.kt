@@ -8,8 +8,7 @@ package orbit.server.net
 
 import io.grpc.stub.StreamObserver
 import orbit.common.di.ComponentProvider
-import orbit.server.Address
-import orbit.server.AddressId
+import orbit.server.addressable.AddressableReference
 import orbit.server.pipeline.Pipeline
 import orbit.server.routing.MeshNode
 import orbit.server.routing.Route
@@ -48,7 +47,9 @@ internal class GrpcClient(
                 val msg = Message(
                     MessageContent.Request(
                         value.invocationRequest.value,
-                        Address(AddressId(value.invocationRequest.reference.id))
+                        AddressableReference(
+                            type = value.invocationRequest.reference.type,
+                            id = value.invocationRequest.reference.id)
                     ),
                     target = MessageTarget.Unicast(NodeId("target"))
                 )

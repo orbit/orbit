@@ -4,5 +4,6 @@ option java_package = "orbit.shared.proto";
 package orbit.shared;
 
 message AddressableReference {
-    string id = 1;
+    string type = 1;
+    string id = 2;
 }

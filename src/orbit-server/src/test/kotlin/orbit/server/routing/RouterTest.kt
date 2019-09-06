@@ -2,6 +2,7 @@ package orbit.server.routing
 
 import LocalClientNode
 import orbit.server.*
+import orbit.server.addressable.AddressableReference
 import orbit.server.local.*
 import orbit.server.net.Message
 import orbit.server.net.MessageContent
@@ -136,12 +137,12 @@ internal class RouterTest {
 //
 //    }
 
-    fun Address(): Address {
-        return Address(AddressId("test"), Capability("test"))
+    fun Address(): AddressableReference {
+        return AddressableReference("user", "0")
     }
 
     class TestAddressablePlacementStrategy(val selectedNode: NodeId = NodeId("")) : AddressablePlacementStrategy {
-        override fun chooseNode(address: Address): NodeId {
+        override fun chooseNode(address: AddressableReference): NodeId {
             return selectedNode
         }
     }
