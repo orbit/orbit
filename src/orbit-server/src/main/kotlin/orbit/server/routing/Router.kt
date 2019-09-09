@@ -22,7 +22,7 @@ internal class Router(
         val foundRoute =
             (if (routeVerified) projectedRoute else searchRoute(targetNode)) ?: return null;
 
-        return if (foundRoute.path.first() == this.localNode.nodeId) foundRoute.pop().route else foundRoute
+        return if (foundRoute.nextNode == this.localNode.nodeId) foundRoute.pop().route else foundRoute
     }
 
     private suspend fun searchRoute(destination: NodeId): Route? {

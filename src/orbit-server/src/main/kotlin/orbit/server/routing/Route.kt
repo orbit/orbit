@@ -8,7 +8,7 @@ package orbit.server.routing
 
 import orbit.server.net.NodeId
 
-data class Route(val path: List<NodeId> = emptyList()) {
+data class Route(private val path: List<NodeId> = emptyList()) {
     fun push(nodeId: NodeId): Route {
         return Route(listOf(nodeId).plus(this.path))
     }

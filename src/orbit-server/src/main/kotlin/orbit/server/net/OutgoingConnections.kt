@@ -9,15 +9,10 @@ package orbit.server.net
 import orbit.server.routing.MeshNode
 import orbit.server.routing.NodeDirectory
 
-internal class OutgoingConnections(val localNodeId: LocalNodeId, val nodeDirectory: NodeDirectory) :
-    ConnectionHost {
+internal class OutgoingConnections(val localNodeId: LocalNodeId, val nodeDirectory: NodeDirectory) {
 
-    override fun getNode(nodeId: NodeId): MeshNode? {
+    fun getNode(nodeId: NodeId): MeshNode? {
         return activeNodes[nodeId]
-    }
-
-    override fun getActiveNodes(): List<MeshNode> {
-        return activeNodes.values.toList()
     }
 
     private val activeNodes = hashMapOf<NodeId, MeshNode>()
@@ -25,12 +20,13 @@ internal class OutgoingConnections(val localNodeId: LocalNodeId, val nodeDirecto
     fun refreshConnections() {
         val meshNodes = nodeDirectory.lookupMeshNodes().toList()
 
-        meshNodes.filter { node -> !activeNodes.containsKey(node.id) && node.id != localNodeId.nodeId }.forEach { node ->
-            val client = GrpcMeshNodeClient(node.id, node.host, node.port)
+        meshNodes.filter { node -> !activeNodes.containsKey(node.id) && node.id != localNodeId.nodeId }
+            .forEach { node ->
+                val client = GrpcMeshNodeClient(node.id, node.host, node.port)
 
-            activeNodes[node.id] = client
-        }
+                activeNodes[node.id] = client
+            }
 
-        nodeDirectory.report(localNodeId.nodeId, getActiveNodes().map { node -> node.id })
+        nodeDirectory.report(localNodeId.nodeId, activeNodes.keys)
     }
 }
