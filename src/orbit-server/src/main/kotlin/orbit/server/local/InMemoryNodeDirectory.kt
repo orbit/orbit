@@ -8,7 +8,7 @@ package orbit.server.local
 
 import orbit.server.net.NodeId
 import orbit.server.routing.NodeDirectory
-import orbit.server.routing.NodeDirectory.NodeInfo
+import orbit.server.routing.NodeInfo
 
 internal class InMemoryNodeDirectory : NodeDirectory {
 

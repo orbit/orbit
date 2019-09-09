@@ -16,30 +16,4 @@ internal interface NodeDirectory {
     fun lookupConnectedNodes(nodeId: NodeId): Sequence<NodeInfo>
     fun lookupMeshNodes(): List<NodeInfo.ServerNodeInfo>
 
-    sealed class NodeInfo {
-        abstract val id: NodeId
-//        abstract val capabilities: NodeCapabilities
-        abstract val visibleNodes: Iterable<NodeId>
-
-        data class LocalServerNodeInfo(
-            override val id: NodeId,
-//            override val capabilities: NodeCapabilities,
-            override val visibleNodes: Iterable<NodeId> = ArrayList(),
-            val host: String,
-            val port: Int
-        ) : NodeInfo()
-
-        data class ServerNodeInfo(
-            override val id: NodeId,
-//            override val capabilities: NodeCapabilities,
-            override val visibleNodes: Iterable<NodeId> = ArrayList(),
-            val host: String,
-            val port: Int
-        ) : NodeInfo()
-
-        data class ClientNodeInfo(
-            override val id: NodeId,
-//            override val capabilities: NodeCapabilities,
-            override val visibleNodes: Iterable<NodeId>
-        ) : NodeInfo()
-    }}
+}

@@ -12,6 +12,7 @@ import orbit.common.di.ComponentProvider
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.routing.MeshNode
 import orbit.server.routing.NodeDirectory
+import orbit.server.routing.NodeInfo
 import orbit.shared.proto.ConnectionGrpc
 import orbit.shared.proto.Messages
 
@@ -39,7 +40,7 @@ internal class IncomingConnections(
         clients[connection.id] = connection
 
         runtimeScopes.ioScope.launch {
-            nodeDirectory.join(NodeDirectory.NodeInfo.ClientNodeInfo(connection.id, listOf(localNode.nodeId)))
+            nodeDirectory.join(NodeInfo.ClientNodeInfo(connection.id, listOf(localNode.nodeId)))
         }
         return connection
     }

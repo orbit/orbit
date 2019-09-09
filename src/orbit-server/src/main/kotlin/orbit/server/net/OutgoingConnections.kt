@@ -8,8 +8,9 @@ package orbit.server.net
 
 import orbit.server.routing.MeshNode
 import orbit.server.routing.NodeDirectory
+import orbit.server.routing.NodeInfo
 
-internal class OutgoingConnections(val localNode: NodeDirectory.NodeInfo.LocalServerNodeInfo, val nodeDirectory: NodeDirectory) {
+internal class OutgoingConnections(val localNode: NodeInfo.LocalServerNodeInfo, val nodeDirectory: NodeDirectory) {
 
     fun getNode(nodeId: NodeId): MeshNode? {
         return activeNodes[nodeId]
@@ -27,6 +28,6 @@ internal class OutgoingConnections(val localNode: NodeDirectory.NodeInfo.LocalSe
                 activeNodes[node.id] = client
             }
 
-        nodeDirectory.report(NodeDirectory.NodeInfo.ServerNodeInfo(localNode.id, activeNodes.keys, localNode.host, localNode.port) )
+        nodeDirectory.report(NodeInfo.ServerNodeInfo(localNode.id, activeNodes.keys, localNode.host, localNode.port) )
     }
 }

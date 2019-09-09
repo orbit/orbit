@@ -37,6 +37,7 @@ import orbit.server.pipeline.steps.RoutingPipelineStep
 import orbit.server.routing.AddressableDirectory
 import orbit.server.routing.AddressablePlacementStrategy
 import orbit.server.routing.NodeDirectory
+import orbit.server.routing.NodeInfo
 import orbit.server.routing.Router
 import kotlin.coroutines.CoroutineContext
 
@@ -63,7 +64,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     init {
         container.configure {
             instance(config.localNode)
-            instance(NodeDirectory.NodeInfo.LocalServerNodeInfo(NodeId(config.localNode.nodeId.value), host = "0.0.0.0", port = config.grpcPort))
+            instance(NodeInfo.LocalServerNodeInfo(NodeId(config.localNode.nodeId.value), host = "0.0.0.0", port = config.grpcPort))
             instance(this@OrbitServer)
             instance(config)
             instance(runtimePools)
@@ -124,7 +125,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
         tickJob = launchTick()
         val nodeDirectory: NodeDirectory by container.inject()
         nodeDirectory.join(
-            NodeDirectory.NodeInfo.ServerNodeInfo(
+            NodeInfo.ServerNodeInfo(
                 config.localNode.nodeId,
                 host = "0.0.0.0",
                 port = config.grpcPort
