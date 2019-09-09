@@ -9,22 +9,30 @@ package orbit.server.routing
 import orbit.server.net.NodeId
 
 internal interface NodeDirectory {
-    suspend fun connectNode(nodeInfo: NodeInfo)
-    fun lookupConnectedNodes(nodeId: NodeId): Sequence<NodeInfo>
-    fun report(nodeId: NodeId, visibleNodes: Iterable<NodeId>)
-
-    fun lookupMeshNodes(): List<NodeInfo.ServerNodeInfo>
+    suspend fun join(nodeInfo: NodeInfo)
+    suspend fun report(nodeInfo: NodeInfo)
     fun removeNode(nodeId: NodeId)
+
+    fun lookupConnectedNodes(nodeId: NodeId): Sequence<NodeInfo>
+    fun lookupMeshNodes(): List<NodeInfo.ServerNodeInfo>
 
     sealed class NodeInfo {
         abstract val id: NodeId
 //        abstract val capabilities: NodeCapabilities
-        abstract var visibleNodes: Iterable<NodeId>
+        abstract val visibleNodes: Iterable<NodeId>
+
+        data class LocalServerNodeInfo(
+            override val id: NodeId,
+//            override val capabilities: NodeCapabilities,
+            override val visibleNodes: Iterable<NodeId> = ArrayList(),
+            val host: String,
+            val port: Int
+        ) : NodeInfo()
 
         data class ServerNodeInfo(
             override val id: NodeId,
 //            override val capabilities: NodeCapabilities,
-            override var visibleNodes: Iterable<NodeId> = ArrayList(),
+            override val visibleNodes: Iterable<NodeId> = ArrayList(),
             val host: String,
             val port: Int
         ) : NodeInfo()
@@ -32,6 +40,6 @@ internal interface NodeDirectory {
         data class ClientNodeInfo(
             override val id: NodeId,
 //            override val capabilities: NodeCapabilities,
-            override var visibleNodes: Iterable<NodeId>
+            override val visibleNodes: Iterable<NodeId>
         ) : NodeInfo()
     }}

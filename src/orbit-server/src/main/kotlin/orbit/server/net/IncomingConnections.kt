@@ -39,7 +39,7 @@ internal class IncomingConnections(
         clients[connection.id] = connection
 
         runtimeScopes.ioScope.launch {
-            nodeDirectory.connectNode(NodeDirectory.NodeInfo.ClientNodeInfo(connection.id, listOf(localNode.nodeId)))
+            nodeDirectory.join(NodeDirectory.NodeInfo.ClientNodeInfo(connection.id, listOf(localNode.nodeId)))
         }
         return connection
     }

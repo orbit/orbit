@@ -28,6 +28,7 @@ import orbit.server.net.IncomingConnections
 import orbit.server.net.GrpcEndpoint
 import orbit.server.net.OutgoingConnections
 import orbit.server.net.NodeCollection
+import orbit.server.net.NodeId
 import orbit.server.pipeline.Pipeline
 import orbit.server.pipeline.steps.AddressablePipelineStep
 import orbit.server.pipeline.steps.BlankPipelineStep
@@ -62,6 +63,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     init {
         container.configure {
             instance(config.localNode)
+            instance(NodeDirectory.NodeInfo.LocalServerNodeInfo(NodeId(config.localNode.nodeId.value), host = "0.0.0.0", port = config.grpcPort))
             instance(this@OrbitServer)
             instance(config)
             instance(runtimePools)
@@ -121,7 +123,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
         tickJob = launchTick()
         val nodeDirectory: NodeDirectory by container.inject()
-        nodeDirectory.connectNode(
+        nodeDirectory.join(
             NodeDirectory.NodeInfo.ServerNodeInfo(
                 config.localNode.nodeId,
                 host = "0.0.0.0",

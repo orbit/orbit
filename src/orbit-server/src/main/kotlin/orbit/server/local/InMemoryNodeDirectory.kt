@@ -27,11 +27,11 @@ internal class InMemoryNodeDirectory : NodeDirectory {
         return nodes.values.filterIsInstance<NodeInfo.ServerNodeInfo>()
     }
 
-    override fun report(nodeId: NodeId, visibleNodes: Iterable<NodeId>) {
-        nodes[nodeId]?.visibleNodes = visibleNodes
+    override suspend fun report(node: NodeInfo) {
+        nodes[node.id] = node
     }
 
-    suspend override fun connectNode(nodeInfo: NodeInfo) {
+    suspend override fun join(nodeInfo: NodeInfo) {
         nodes[nodeInfo.id] = nodeInfo
     }
 

@@ -9,7 +9,7 @@ package orbit.server.net
 import orbit.server.routing.MeshNode
 import orbit.server.routing.NodeDirectory
 
-internal class OutgoingConnections(val localNodeId: LocalNodeId, val nodeDirectory: NodeDirectory) {
+internal class OutgoingConnections(val localNode: NodeDirectory.NodeInfo.LocalServerNodeInfo, val nodeDirectory: NodeDirectory) {
 
     fun getNode(nodeId: NodeId): MeshNode? {
         return activeNodes[nodeId]
@@ -17,16 +17,16 @@ internal class OutgoingConnections(val localNodeId: LocalNodeId, val nodeDirecto
 
     private val activeNodes = hashMapOf<NodeId, MeshNode>()
 
-    fun refreshConnections() {
+    suspend fun refreshConnections() {
         val meshNodes = nodeDirectory.lookupMeshNodes().toList()
 
-        meshNodes.filter { node -> !activeNodes.containsKey(node.id) && node.id != localNodeId.nodeId }
+        meshNodes.filter { node -> !activeNodes.containsKey(node.id) && node.id != localNode.id }
             .forEach { node ->
                 val client = GrpcMeshNodeClient(node.id, node.host, node.port)
 
                 activeNodes[node.id] = client
             }
 
-        nodeDirectory.report(localNodeId.nodeId, activeNodes.keys)
+        nodeDirectory.report(NodeDirectory.NodeInfo.ServerNodeInfo(localNode.id, activeNodes.keys, localNode.host, localNode.port) )
     }
 }
