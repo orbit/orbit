@@ -9,7 +9,7 @@ package orbit.server.routing
 import orbit.server.net.NodeId
 
 internal interface NodeDirectory {
-    fun connectNode(nodeInfo: NodeInfo)
+    suspend fun connectNode(nodeInfo: NodeInfo)
     fun lookupConnectedNodes(nodeId: NodeId): Sequence<NodeInfo>
     fun report(nodeId: NodeId, visibleNodes: Iterable<NodeId>)
 

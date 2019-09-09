@@ -142,14 +142,14 @@ internal class RouterTest {
     }
 
     class TestAddressablePlacementStrategy(val selectedNode: NodeId = NodeId("")) : AddressablePlacementStrategy {
-        override fun chooseNode(address: AddressableReference): NodeId {
+        suspend override fun chooseNode(address: AddressableReference): NodeId {
             return selectedNode
         }
     }
 
     class TestRemoteNode(override val id: NodeId) : MeshNode {
 
-        override fun sendMessage(message: Message, route: Route?) {
+        suspend override fun sendMessage(message: Message, route: Route?) {
             println("Sending message on Node ${id}: ${message.content}")
         }
     }

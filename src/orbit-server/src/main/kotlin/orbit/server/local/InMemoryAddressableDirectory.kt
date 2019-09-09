@@ -17,11 +17,11 @@ class InMemoryAddressableDirectory : AddressableDirectory {
     }
 
 
-    override fun lookup(address: AddressableReference): NodeId? {
+    suspend override fun lookup(address: AddressableReference): NodeId? {
         return directory[address]
     }
 
-    override fun setLocation(address: AddressableReference, node: NodeId) {
+    suspend override fun setLocation(address: AddressableReference, node: NodeId) {
         directory[address] = node
     }
 }

@@ -13,7 +13,7 @@ internal class LocalClientNode(
     override val id: NodeId = NodeId.generate("client"),
     private val onClientMessage: (Message) -> Unit = {}
 ) : MeshNode {
-    override fun sendMessage(message: Message, route: Route?) {
+    suspend override fun sendMessage(message: Message, route: Route?) {
         println("> ${this.id}: \"${message.content}\"")
     }
 

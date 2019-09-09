@@ -31,7 +31,7 @@ internal class InMemoryNodeDirectory : NodeDirectory {
         nodes[nodeId]?.visibleNodes = visibleNodes
     }
 
-    override fun connectNode(nodeInfo: NodeInfo) {
+    suspend override fun connectNode(nodeInfo: NodeInfo) {
         nodes[nodeInfo.id] = nodeInfo
     }
 

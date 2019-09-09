@@ -21,7 +21,7 @@ internal class GrpcClient(
     private val onClose: () -> Unit = {}
 ) : MeshNode, StreamObserver<Messages.Message> {
 
-    override fun sendMessage(message: Message, route: Route?) {
+    suspend override fun sendMessage(message: Message, route: Route?) {
         println("> ${this.id}: \"${message.content}\"")
         Messages.Message.newBuilder().setInvocationResponse(
             Messages.InvocationResponse.newBuilder().setValue(message.content.toString())

@@ -10,5 +10,5 @@ import orbit.server.addressable.AddressableReference
 import orbit.server.net.NodeId
 
 interface AddressablePlacementStrategy {
-    fun chooseNode(address: AddressableReference): NodeId
+    suspend fun chooseNode(address: AddressableReference): NodeId
 }

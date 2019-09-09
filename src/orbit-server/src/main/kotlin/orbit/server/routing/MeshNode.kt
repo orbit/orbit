@@ -11,5 +11,5 @@ import orbit.server.net.NodeId
 
 internal interface MeshNode  {
     val id: NodeId
-    fun sendMessage(message: Message, route: Route? = null)
+    suspend fun sendMessage(message: Message, route: Route? = null)
 }

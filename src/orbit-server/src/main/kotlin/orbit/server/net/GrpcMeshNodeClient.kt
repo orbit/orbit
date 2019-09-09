@@ -53,7 +53,7 @@ internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: 
             .build()
     )
 
-    override fun sendMessage(message: Message, route: Route?) {
+    suspend override fun sendMessage(message: Message, route: Route?) {
 
         val builder = Messages.Message.newBuilder()
         val toSend = when {

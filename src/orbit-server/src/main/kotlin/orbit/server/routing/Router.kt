@@ -11,11 +11,11 @@ import orbit.server.net.LocalNodeId
 import orbit.server.net.NodeId
 
 internal class Router(
-    val localNode: LocalNodeId,
-    val nodeDirectory: NodeDirectory
+    private val localNode: LocalNodeId,
+    private val nodeDirectory: NodeDirectory
 ) {
 
-    fun getRoute(targetNode: NodeId, projectedRoute: Route? = null): Route? {
+    suspend fun getRoute(targetNode: NodeId, projectedRoute: Route? = null): Route? {
         val routeVerified = (projectedRoute != null) && this.verifyRoute(projectedRoute)
         println("Finding route between $localNode -> $targetNode ${if (routeVerified) "(existing)" else ""}")
 
@@ -25,7 +25,7 @@ internal class Router(
         return if (foundRoute.path.first() == this.localNode.nodeId) foundRoute.pop().route else foundRoute
     }
 
-    private fun searchRoute(destination: NodeId): Route? {
+    private suspend fun searchRoute(destination: NodeId): Route? {
         val nodeRoutes = HashMap<NodeId, Route>()
         val traversal = GraphTraverser<NodeId> { node ->
             nodeDirectory.lookupConnectedNodes(node).map { n -> n.id }

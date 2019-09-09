@@ -143,7 +143,7 @@ internal class InMemoryNodeDirectoryTest {
         override val id: NodeId = NodeId.generate()
     ) : MeshNode {
 
-        override fun sendMessage(message: Message, route: Route?) {
+        suspend override fun sendMessage(message: Message, route: Route?) {
 
         }
 

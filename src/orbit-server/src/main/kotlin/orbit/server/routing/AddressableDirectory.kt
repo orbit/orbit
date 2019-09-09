@@ -10,6 +10,6 @@ import orbit.server.addressable.AddressableReference
 import orbit.server.net.NodeId
 
  interface AddressableDirectory {
-    fun lookup(address: AddressableReference) : NodeId?
-    fun setLocation(address: AddressableReference, node: NodeId)
+    suspend fun lookup(address: AddressableReference) : NodeId?
+    suspend fun setLocation(address: AddressableReference, node: NodeId)
 }

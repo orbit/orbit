@@ -15,7 +15,7 @@ import orbit.server.routing.Router
 internal class RoutingPipelineStep(private val router: Router, private val nodeCollection: NodeCollection) :
     PipelineStep {
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
-        println("Routing inbound")
+        println("Routing inbound ${msg.target}")
         when {
             msg.target is MessageTarget.Unicast ->
                 router.getRoute(msg.target.targetNode).let { route ->
@@ -32,7 +32,7 @@ internal class RoutingPipelineStep(private val router: Router, private val nodeC
     }
 
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
-        println("Routing outbound")
+        println("Routing outbound ${msg.target}")
         when {
             msg.target is MessageTarget.Unicast -> {
                 nodeCollection.getNode(msg.target.targetNode)?.sendMessage(msg)
