@@ -8,7 +8,8 @@ package orbit.client;
 
 public class OrbitClientConfig {
     private String grpcHost = "localhost";
-    private Integer grpcPort = 50056;
+    private int grpcPort = 50056;
+    private int tickRate = 1000;
 
     public String getGrpcHost() {
         return grpcHost;
@@ -18,11 +19,19 @@ public class OrbitClientConfig {
         this.grpcHost = grpcHost;
     }
 
-    public Integer getGrpcPort() {
+    public int getGrpcPort() {
         return grpcPort;
     }
 
-    public void setGrpcPort(Integer grpcPort) {
+    public void setGrpcPort(int grpcPort) {
         this.grpcPort = grpcPort;
+    }
+
+    public int getTickRate() {
+        return tickRate;
+    }
+
+    public void setTickRate(int tickRate) {
+        this.tickRate = tickRate;
     }
 }
