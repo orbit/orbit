@@ -6,9 +6,11 @@
 
 package orbit.client;
 
+import io.grpc.ClientInterceptors;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import orbit.client.connection.ConnectionManager;
+import orbit.client.connection.NodeIdInterceptor;
 import orbit.client.leasing.LeaseManager;
 import orbit.client.util.Concurrent;
 import orbit.shared.proto.ConnectionGrpc;
@@ -46,13 +48,18 @@ public final class OrbitClient {
                     );
                     startTimer();
                 }, Concurrent.orbitExecutor
-        ).thenCompose((unused) -> {
+        ).thenComposeAsync((unused) -> {
                     return getLeaseManager().start();
-                }
-        ).thenRun(() -> {
-            connectionHandler = new ConnectionManager(ConnectionGrpc.newStub(channel));
+                }, Concurrent.orbitExecutor
+        ).thenRunAsync(() -> {
+            connectionHandler = new ConnectionManager(
+                    ConnectionGrpc.newStub(
+                            ClientInterceptors.intercept(channel, new NodeIdInterceptor(leaseManager)
+                            )
+                    )
+            );
             connectionHandler.connect();
-        });
+        }, Concurrent.orbitExecutor);
     }
 
     public CompletableFuture stop() {

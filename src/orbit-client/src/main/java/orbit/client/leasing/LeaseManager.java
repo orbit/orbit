@@ -21,7 +21,7 @@ public class LeaseManager {
 
     private final NodeManagementGrpc.NodeManagementFutureStub nodeManagement;
 
-    private NodeLease localLease = null;
+    private NodeLease localLease = new NodeLease();
 
     public LeaseManager(NodeManagementGrpc.NodeManagementFutureStub nodeManagement) {
         this.nodeManagement = nodeManagement;
@@ -33,7 +33,6 @@ public class LeaseManager {
                         NodeManagementOuterClass.JoinClusterRequest.newBuilder().build()
                 )
         ).thenAcceptAsync((nodeLease) -> {
-            localLease = new NodeLease();
             localLease.setNodeId(nodeLease.getNodeIdentity());
             localLease.setChallenge(nodeLease.getChallengeToken());
             localLease.setExpiresAt(Instant.ofEpochSecond(nodeLease.getExpiresAt().getSeconds()));
@@ -43,13 +42,13 @@ public class LeaseManager {
     }
 
     public CompletableFuture onTick() {
-        if (localLease != null) {
-            if (localLease.getRenewAt().isAfter(Instant.now())) {
+        if (getLocalLease() != null) {
+            if (getLocalLease().getRenewAt().isAfter(Instant.now())) {
                 return ListenableFutureAdapter.toCompletable(
                         nodeManagement.renewLease(
                                 NodeManagementOuterClass.RenewLeaseRequest.newBuilder()
-                                        .setNodeIdentity(localLease.getNodeId())
-                                        .setChallengeToken(localLease.getChallenge())
+                                        .setNodeIdentity(getLocalLease().getNodeId())
+                                        .setChallengeToken(getLocalLease().getChallenge())
                                         .build()
                         )
                 ).thenAcceptAsync((leaseRenewal) -> {
@@ -57,7 +56,7 @@ public class LeaseManager {
                         localLease.setChallenge(leaseRenewal.getLeaseInfo().getChallengeToken());
                         localLease.setExpiresAt(Instant.ofEpochSecond(leaseRenewal.getLeaseInfo().getExpiresAt().getSeconds()));
                         localLease.setRenewAt(Instant.ofEpochSecond((leaseRenewal.getLeaseInfo().getRenewAt().getSeconds())));
-                        logger.debug("Lease renewed. Renew at: " + localLease.getRenewAt().toString() + ". Expires at: " + localLease.getExpiresAt().toString());
+                        logger.debug("Lease renewed. Renew at: " + getLocalLease().getRenewAt().toString() + ". Expires at: " + getLocalLease().getExpiresAt().toString());
                     } else {
                         logger.error("Lease renewal failed.");
                     }
@@ -66,5 +65,9 @@ public class LeaseManager {
         }
 
         return CompletableFuture.completedFuture(null);
+    }
+
+    public NodeLease getLocalLease() {
+        return localLease;
     }
 }

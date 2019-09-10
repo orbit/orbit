@@ -7,7 +7,6 @@
 package orbit.client.leasing;
 
 import java.time.Instant;
-import java.util.Date;
 
 public class NodeLease {
     private String nodeId;
