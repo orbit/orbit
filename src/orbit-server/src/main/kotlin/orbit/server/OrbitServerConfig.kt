@@ -9,6 +9,7 @@ package orbit.server
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.common.concurrent.Pools
 import orbit.server.net.LocalNodeId
+import java.time.Duration
 
 data class OrbitServerConfig(
     /**
@@ -49,5 +50,15 @@ data class OrbitServerConfig(
     /**
      * Prevents the JVM shutting down when the main thread exits.
      */
-    val acquireShutdownLatch: Boolean = true
+    val acquireShutdownLatch: Boolean = true,
+
+    /**
+     * The duration of a client lease
+     */
+    val leaseExpiration: Duration = Duration.ofSeconds(60),
+
+    /**
+     * The duration before a client lease renewal
+     */
+    val leaseRenewal: Duration = Duration.ofSeconds(30)
 )

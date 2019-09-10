@@ -29,6 +29,7 @@ import orbit.server.net.GrpcEndpoint
 import orbit.server.net.OutgoingConnections
 import orbit.server.net.NodeCollection
 import orbit.server.net.NodeId
+import orbit.server.net.NodeManagement
 import orbit.server.pipeline.Pipeline
 import orbit.server.pipeline.steps.AddressablePipelineStep
 import orbit.server.pipeline.steps.BlankPipelineStep
@@ -64,6 +65,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     init {
         container.configure {
             instance(config.localNode)
+            instance(NodeManagement.LeaseExpiration(config.leaseExpiration, config.leaseRenewal))
             instance(NodeInfo.LocalServerNodeInfo(NodeId(config.localNode.nodeId.value), host = "0.0.0.0", port = config.grpcPort))
             instance(this@OrbitServer)
             instance(config)
@@ -79,6 +81,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<OutgoingConnections>()
             definition<IncomingConnections>()
             definition<NodeCollection>()
+            definition<NodeManagement>()
 
             definition<GrpcEndpoint>()
 

@@ -11,7 +11,7 @@ import io.grpc.ServerBuilder
 import orbit.common.logging.logger
 import orbit.server.OrbitServerConfig
 
-internal class GrpcEndpoint(private val config: OrbitServerConfig, private val incomingConnections: IncomingConnections) {
+internal class GrpcEndpoint(private val config: OrbitServerConfig, private val incomingConnections: IncomingConnections, private val nodeManagement: NodeManagement) {
     private lateinit var server: Server
 
     private val logger by logger()
@@ -21,6 +21,7 @@ internal class GrpcEndpoint(private val config: OrbitServerConfig, private val i
 
         server = ServerBuilder.forPort(config.grpcPort)
             .addService(incomingConnections)
+            .addService(nodeManagement)
             .intercept(NodeIdServerInterceptor())
             .build()
             .start()

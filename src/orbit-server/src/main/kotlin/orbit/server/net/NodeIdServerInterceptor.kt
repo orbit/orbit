@@ -27,7 +27,10 @@ class NodeIdServerInterceptor : io.grpc.ServerInterceptor {
 
         val nodeId = headers.get(Metadata.Key.of("nodeId", Metadata.ASCII_STRING_MARSHALLER))
 
-        val context = Context.current().withValue(NODE_ID, nodeId)
-        return Contexts.interceptCall(context, call, headers, next)
+        if (nodeId != null) {
+            val context = Context.current().withValue(NODE_ID, nodeId)
+            return Contexts.interceptCall(context, call, headers, next)
+        }
+        return next.startCall(call, headers)
     }
 }
