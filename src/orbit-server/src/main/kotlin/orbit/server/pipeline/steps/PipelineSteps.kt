@@ -7,8 +7,13 @@
 package orbit.server.pipeline.steps
 
 internal class PipelineSteps(
+    leasePipelineStep: LeasePipelineStep,
     routingPipelineStep: RoutingPipelineStep,
     addressablePipelineStep: AddressablePipelineStep
 ) {
-    val steps: Array<PipelineStep> = arrayOf(routingPipelineStep, addressablePipelineStep)
+    val steps: Array<PipelineStep> = arrayOf(
+        routingPipelineStep,
+        addressablePipelineStep,
+        leasePipelineStep
+    )
 }

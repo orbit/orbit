@@ -29,10 +29,11 @@ import orbit.server.net.GrpcEndpoint
 import orbit.server.net.OutgoingConnections
 import orbit.server.net.NodeCollection
 import orbit.server.net.NodeId
-import orbit.server.net.NodeManagement
+import orbit.server.net.NodeLeases
 import orbit.server.pipeline.Pipeline
 import orbit.server.pipeline.steps.AddressablePipelineStep
 import orbit.server.pipeline.steps.BlankPipelineStep
+import orbit.server.pipeline.steps.LeasePipelineStep
 import orbit.server.pipeline.steps.PipelineSteps
 import orbit.server.pipeline.steps.RoutingPipelineStep
 import orbit.server.routing.AddressableDirectory
@@ -65,7 +66,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     init {
         container.configure {
             instance(config.localNode)
-            instance(NodeManagement.LeaseExpiration(config.leaseExpiration, config.leaseRenewal))
+            instance(NodeLeases.LeaseExpiration(config.leaseExpiration, config.leaseRenewal))
             instance(NodeInfo.LocalServerNodeInfo(NodeId(config.localNode.nodeId.value), host = "0.0.0.0", port = config.grpcPort))
             instance(this@OrbitServer)
             instance(config)
@@ -81,12 +82,13 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<OutgoingConnections>()
             definition<IncomingConnections>()
             definition<NodeCollection>()
-            definition<NodeManagement>()
+            definition<NodeLeases>()
 
             definition<GrpcEndpoint>()
 
             definition<Pipeline>()
             definition<BlankPipelineStep>()
+            definition<LeasePipelineStep>()
             definition<AddressablePipelineStep>()
             definition<RoutingPipelineStep>()
             definition<PipelineSteps>()
@@ -140,8 +142,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
         val outgoingConnections: OutgoingConnections by container.inject()
         outgoingConnections.refreshConnections()
 
-        val nodeManagement: NodeManagement by container.inject()
-        nodeManagement.cullLeases()
+        val nodeLeases: NodeLeases by container.inject()
+        nodeLeases.cullLeases()
     }
 
     private suspend fun onStop() {

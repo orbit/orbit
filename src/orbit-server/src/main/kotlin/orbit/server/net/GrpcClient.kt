@@ -54,6 +54,7 @@ internal class GrpcClient(
                             type = value.invocationRequest.reference.type,
                             id = value.invocationRequest.reference.id)
                     ),
+                    source = id,
                     target = MessageTarget.Unicast(NodeId("target"))
                 )
 

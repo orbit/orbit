@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 typealias ChallengeToken = String
 
-internal class NodeManagement(private val expiration: LeaseExpiration) : NodeManagementGrpc.NodeManagementImplBase() {
+internal class NodeLeases(private val expiration: LeaseExpiration) : NodeManagementGrpc.NodeManagementImplBase() {
 
     private val leases = ConcurrentHashMap<NodeId, NodeLease>()
 
@@ -43,10 +43,7 @@ internal class NodeManagement(private val expiration: LeaseExpiration) : NodeMan
         request: NodeManagementOuterClass.RenewLeaseRequest,
         responseObserver: StreamObserver<NodeManagementOuterClass.RenewLeaseResponse>
     ) {
-        val nodeId = NodeId(request.nodeIdentity)
-        if (!leases.containsKey(nodeId) ||
-            leases[nodeId]!!.challengeToken != request.challengeToken
-            || leases[nodeId]!!.expiresAt < ZonedDateTime.now(ZoneOffset.UTC)
+        if (!checkLease(NodeId(request.nodeIdentity), request.challengeToken)
         ) {
             responseObserver.onError(StatusException(Status.UNAUTHENTICATED))
             return
@@ -68,6 +65,13 @@ internal class NodeManagement(private val expiration: LeaseExpiration) : NodeMan
                 .build()
         )
         responseObserver.onCompleted()
+    }
+
+    fun checkLease(nodeId: NodeId, challengeToken: ChallengeToken? = null): Boolean {
+        val lease = leases[nodeId]
+        return lease != null &&
+                lease.expiresAt > ZonedDateTime.now(ZoneOffset.UTC) &&
+                (challengeToken == null || lease.challengeToken == challengeToken)
     }
 
     fun cullLeases() {

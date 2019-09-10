@@ -6,6 +6,8 @@
 
 package orbit.server.net
 
+import io.grpc.Status
+import io.grpc.StatusException
 import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.launch
 import orbit.common.di.ComponentProvider
@@ -19,6 +21,7 @@ import orbit.shared.proto.Messages
 internal class IncomingConnections(
     private val localNode: LocalNodeId,
     private val nodeDirectory: NodeDirectory,
+    private val leases: NodeLeases,
     private val container: ComponentProvider
 ) :
     ConnectionGrpc.ConnectionImplBase() {
@@ -29,8 +32,13 @@ internal class IncomingConnections(
         return clients[nodeId]
     }
 
-    override fun messages(responseObserver: StreamObserver<Messages.Message>): StreamObserver<Messages.Message> {
+    override fun messages(responseObserver: StreamObserver<Messages.Message>): StreamObserver<Messages.Message>? {
         val nodeId = NodeId(NodeIdServerInterceptor.NODE_ID.get())
+
+        if (!nodeId.value.startsWith("router") && !leases.checkLease(nodeId)) {
+            responseObserver.onError(StatusException(Status.UNAUTHENTICATED))
+            return null
+        }
         val runtimeScopes by container.inject<RuntimeScopes>()
 
         val connection = clients[nodeId] ?: GrpcClient(nodeId, responseObserver, container) {
@@ -43,6 +51,7 @@ internal class IncomingConnections(
             nodeDirectory.join(NodeInfo.ClientNodeInfo(connection.id, listOf(localNode.nodeId)))
         }
         return connection
+
     }
 }
 

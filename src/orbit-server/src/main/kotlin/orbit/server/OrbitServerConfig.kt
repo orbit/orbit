@@ -15,7 +15,7 @@ data class OrbitServerConfig(
     /**
      * The node's identity.
      */
-    val localNode: LocalNodeId = LocalNodeId.generate("router"),
+    val localNode: LocalNodeId = LocalNodeId.generate("router:"),
 
     /**
      * The gRPC endpoint port.
