@@ -15,7 +15,7 @@ import orbit.server.routing.Route
 import orbit.shared.proto.Messages
 
 internal class GrpcClient(
-    override val id: NodeId = NodeId.generate("client"),
+    override val id: NodeId = NodeId.generate("client:"),
     private val responseObserver: StreamObserver<Messages.Message>,
     private val container: ComponentProvider,
     private val onClose: () -> Unit = {}

@@ -139,6 +139,9 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private suspend fun onTick() {
         val outgoingConnections: OutgoingConnections by container.inject()
         outgoingConnections.refreshConnections()
+
+        val nodeManagement: NodeManagement by container.inject()
+        nodeManagement.cullLeases()
     }
 
     private suspend fun onStop() {

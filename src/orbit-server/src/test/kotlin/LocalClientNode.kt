@@ -10,7 +10,7 @@ import orbit.server.net.NodeId
 import orbit.server.routing.*
 
 internal class LocalClientNode(
-    override val id: NodeId = NodeId.generate("client"),
+    override val id: NodeId = NodeId.generate("client:"),
     private val onClientMessage: (Message) -> Unit = {}
 ) : MeshNode {
     suspend override fun sendMessage(message: Message, route: Route?) {
