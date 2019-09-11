@@ -36,7 +36,7 @@ buildscript {
 
         protobufVersion = "3.9.1"
         protobufPluginVersion = "0.8.10"
-        grpcVersion = "1.22.1"
+        grpcVersion = "1.23.0"
     }
 
     repositories {
