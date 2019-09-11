@@ -69,7 +69,8 @@ internal class NodeLeases(private val expiration: LeaseExpiration) : NodeManagem
 
     fun checkLease(nodeId: NodeId, challengeToken: ChallengeToken? = null): Boolean {
         val lease = leases[nodeId]
-        return lease != null &&
+        return nodeId.value.startsWith("router") ||
+                lease != null &&
                 lease.expiresAt > ZonedDateTime.now(ZoneOffset.UTC) &&
                 (challengeToken == null || lease.challengeToken == challengeToken)
     }

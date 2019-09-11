@@ -23,8 +23,7 @@ internal class IncomingConnections(
     private val nodeDirectory: NodeDirectory,
     private val leases: NodeLeases,
     private val container: ComponentProvider
-) :
-    ConnectionGrpc.ConnectionImplBase() {
+) : ConnectionGrpc.ConnectionImplBase() {
 
     private val clients = HashMap<NodeId, GrpcClient>()
 
@@ -35,14 +34,17 @@ internal class IncomingConnections(
     override fun messages(responseObserver: StreamObserver<Messages.Message>): StreamObserver<Messages.Message>? {
         val nodeId = NodeId(NodeIdServerInterceptor.NODE_ID.get())
 
-        if (!nodeId.value.startsWith("router") && !leases.checkLease(nodeId)) {
+        if (!leases.checkLease(nodeId)) {
             responseObserver.onError(StatusException(Status.UNAUTHENTICATED))
             return null
         }
         val runtimeScopes by container.inject<RuntimeScopes>()
 
-        val connection = clients[nodeId] ?: GrpcClient(nodeId, responseObserver, container) {
+        clients[nodeId]?.onError(StatusException(Status.ALREADY_EXISTS))
+
+        val connection = GrpcClient(nodeId, responseObserver, container) {
             nodeDirectory.removeNode(nodeId)
+            clients.remove(nodeId)
             println("GRPC Client has closed: $nodeId")
         }
         clients[connection.id] = connection
@@ -50,8 +52,7 @@ internal class IncomingConnections(
         runtimeScopes.ioScope.launch {
             nodeDirectory.join(NodeInfo.ClientNodeInfo(connection.id, listOf(localNode.nodeId)))
         }
-        return connection
 
+        return connection
     }
 }
-
