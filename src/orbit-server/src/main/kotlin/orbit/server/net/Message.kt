@@ -38,10 +38,11 @@ internal sealed class MessageTarget {
 }
 
 internal sealed class MessageContent {
-    data class TempStringMessage(val data: String) : MessageContent()
     data class Request(val data: String, val destination: AddressableReference) : MessageContent() {
         override fun toString(): String {
             return data
         }
     }
+    data class Response(val data: String)
+    data class ResponseErrorMessage(val error: Throwable) : MessageContent()
 }

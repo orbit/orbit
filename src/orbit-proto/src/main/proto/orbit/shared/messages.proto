@@ -10,6 +10,7 @@ message Message {
     oneof content {
         InvocationRequest invocation_request = 1;
         InvocationResponse invocation_response = 2;
+        InvocationErrorResponse invocation_error = 3;
     }
 }
 
@@ -21,3 +22,17 @@ message InvocationRequest {
 message InvocationResponse {
     string value = 1;
 }
+
+message InvocationErrorResponse {
+    Status status = 1;
+    string message = 2;
+
+    enum Status {
+        UNKNOWN = 0;
+        UNAUTHENTICATED = 1;
+        UNAUTHORIZED = 2;
+        UNSENT = 3;
+        // ...
+    }
+}
+

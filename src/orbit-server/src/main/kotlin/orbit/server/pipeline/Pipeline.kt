@@ -21,7 +21,6 @@ import orbit.server.concurrent.RuntimeScopes
 import orbit.server.net.Message
 import orbit.server.net.MessageContainer
 import orbit.server.net.MessageDirection
-import orbit.server.pipeline.steps.PipelineSteps
 
 internal class Pipeline(
     private val runtimeScopes: RuntimeScopes,

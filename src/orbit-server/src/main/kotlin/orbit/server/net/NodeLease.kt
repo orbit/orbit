@@ -13,8 +13,8 @@ import java.time.ZonedDateTime
 class NodeLease(
     val nodeId: NodeId,
     val challengeToken: ChallengeToken,
-    val renewAt: ZonedDateTime,
-    val expiresAt: ZonedDateTime
+    val expiresAt: ZonedDateTime,
+    val renewAt: ZonedDateTime
 ) {
     fun toProto(): NodeManagementOuterClass.NodeLease {
         return NodeManagementOuterClass.NodeLease.newBuilder()

@@ -19,7 +19,7 @@ internal class InMemoryNodeDirectory : NodeDirectory {
 
     override fun lookupConnectedNodes(nodeId: NodeId): Sequence<NodeInfo> {
         return nodes.values.filter { node -> node.visibleNodes.contains(nodeId) }.plus(
-            nodes[nodeId]!!.visibleNodes.map { node -> nodes[node]}
+            nodes[nodeId]?.visibleNodes?.map { node -> nodes[node] } ?: listOf()
         ).filterNotNull().asSequence()
     }
 

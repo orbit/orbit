@@ -34,7 +34,8 @@ import orbit.server.pipeline.Pipeline
 import orbit.server.pipeline.steps.AddressablePipelineStep
 import orbit.server.pipeline.steps.BlankPipelineStep
 import orbit.server.pipeline.steps.LeasePipelineStep
-import orbit.server.pipeline.steps.PipelineSteps
+import orbit.server.pipeline.PipelineSteps
+import orbit.server.pipeline.steps.ErrorPipelineStep
 import orbit.server.pipeline.steps.RoutingPipelineStep
 import orbit.server.routing.AddressableDirectory
 import orbit.server.routing.AddressablePlacementStrategy
@@ -67,7 +68,13 @@ class OrbitServer(private val config: OrbitServerConfig) {
         container.configure {
             instance(config.localNode)
             instance(NodeLeases.LeaseExpiration(config.leaseExpiration, config.leaseRenewal))
-            instance(NodeInfo.LocalServerNodeInfo(NodeId(config.localNode.nodeId.value), host = "0.0.0.0", port = config.grpcPort))
+            instance(
+                NodeInfo.LocalServerNodeInfo(
+                    NodeId(config.localNode.nodeId.value),
+                    host = "0.0.0.0",
+                    port = config.grpcPort
+                )
+            )
             instance(this@OrbitServer)
             instance(config)
             instance(runtimePools)
@@ -88,6 +95,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
             definition<Pipeline>()
             definition<BlankPipelineStep>()
+            definition<ErrorPipelineStep>()
             definition<LeasePipelineStep>()
             definition<AddressablePipelineStep>()
             definition<RoutingPipelineStep>()
@@ -142,8 +150,10 @@ class OrbitServer(private val config: OrbitServerConfig) {
         val outgoingConnections: OutgoingConnections by container.inject()
         outgoingConnections.refreshConnections()
 
+        val addressableDirectory: AddressableDirectory by container.inject()
+
         val nodeLeases: NodeLeases by container.inject()
-        nodeLeases.cullLeases()
+        nodeLeases.cullLeases { lease -> addressableDirectory.removeNode(lease.nodeId) }
     }
 
     private suspend fun onStop() {

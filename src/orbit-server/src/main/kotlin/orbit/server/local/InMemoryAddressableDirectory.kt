@@ -13,9 +13,8 @@ import orbit.server.routing.AddressableDirectory
 class InMemoryAddressableDirectory : AddressableDirectory {
     companion object Singleton {
         @JvmStatic
-        private val directory = HashMap<AddressableReference, NodeId>()
+        private var directory: MutableMap<AddressableReference, NodeId> = HashMap()
     }
-
 
     suspend override fun lookup(address: AddressableReference): NodeId? {
         return directory[address]
@@ -23,5 +22,15 @@ class InMemoryAddressableDirectory : AddressableDirectory {
 
     suspend override fun setLocation(address: AddressableReference, node: NodeId) {
         directory[address] = node
+    }
+
+    override fun removeNode(node: NodeId) {
+        val directoryCount = directory.count()
+        directory = directory.filter { (address, nodeId) -> nodeId != node }.toMutableMap()
+
+        if (directory.count() < directoryCount) {
+            // TODO (brett) - Remove this diagnostic message
+            println("Reducing addressable dictinary from $directoryCount to ${directory.count()}")
+        }
     }
 }

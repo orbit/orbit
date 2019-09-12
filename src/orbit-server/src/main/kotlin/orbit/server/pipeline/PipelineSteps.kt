@@ -4,9 +4,12 @@
  See license in LICENSE.
  */
 
-package orbit.server.pipeline.steps
+package orbit.server.pipeline
+
+import orbit.server.pipeline.steps.*
 
 internal class PipelineSteps(
+    errorPipelineStep: ErrorPipelineStep,
     leasePipelineStep: LeasePipelineStep,
     routingPipelineStep: RoutingPipelineStep,
     addressablePipelineStep: AddressablePipelineStep
@@ -14,6 +17,7 @@ internal class PipelineSteps(
     val steps: Array<PipelineStep> = arrayOf(
         routingPipelineStep,
         addressablePipelineStep,
-        leasePipelineStep
+        leasePipelineStep,
+        errorPipelineStep
     )
 }

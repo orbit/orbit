@@ -20,17 +20,17 @@ typealias ChallengeToken = String
 
 internal class NodeLeases(private val expiration: LeaseExpiration) : NodeManagementGrpc.NodeManagementImplBase() {
 
-    private val leases = ConcurrentHashMap<NodeId, NodeLease>()
+    private var leases = ConcurrentHashMap<NodeId, NodeLease>()
 
     override fun joinCluster(
         request: NodeManagementOuterClass.JoinClusterRequest,
         responseObserver: StreamObserver<NodeManagementOuterClass.NodeLease>
     ) {
         val lease = NodeLease(
-            NodeId.generate(),
-            "challenge",
-            ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.duration),
-            ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.renew)
+            nodeId = NodeId.generate(),
+            challengeToken = "challenge",
+            expiresAt = ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.duration),
+            renewAt = ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.renew)
         )
 
         leases[lease.nodeId] = lease
@@ -50,10 +50,10 @@ internal class NodeLeases(private val expiration: LeaseExpiration) : NodeManagem
         }
 
         val lease = NodeLease(
-            NodeId(request.nodeIdentity),
-            request.challengeToken,
-            ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.duration),
-            ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.renew)
+            nodeId = NodeId(request.nodeIdentity),
+            challengeToken = request.challengeToken,
+            expiresAt = ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.duration),
+            renewAt = ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.renew)
         )
 
         leases[lease.nodeId] = lease
@@ -75,10 +75,13 @@ internal class NodeLeases(private val expiration: LeaseExpiration) : NodeManagem
                 (challengeToken == null || lease.challengeToken == challengeToken)
     }
 
-    fun cullLeases() {
+    fun cullLeases(onExpire: (NodeLease) -> Unit) {
         val now = ZonedDateTime.now(ZoneOffset.UTC)
         val leaseCount = leases.count()
-        leases.forEach { (id, lease) -> if (lease.expiresAt < now) leases.remove(id) }
+
+        val (expiredLeases, validLeases) = leases.asIterable().partition { (id, lease) -> lease.expiresAt < now }
+
+        expiredLeases.forEach { (id) -> this.leases.remove(id) }
         if (leases.count() != leaseCount) {
             // TODO (brett) - remove this diagnostic message
             println("Leases culled from $leaseCount to ${leases.count()}")

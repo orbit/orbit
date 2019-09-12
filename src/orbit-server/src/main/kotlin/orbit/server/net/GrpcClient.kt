@@ -23,13 +23,19 @@ internal class GrpcClient(
 
     suspend override fun sendMessage(message: Message, route: Route?) {
         println("> ${this.id}: \"${message.content}\"")
-        Messages.Message.newBuilder().setInvocationResponse(
-            Messages.InvocationResponse.newBuilder().setValue(message.content.toString())
+
+        responseObserver.onNext(
+            (when (message.content) {
+                is MessageContent.ResponseErrorMessage ->
+                    Messages.Message.newBuilder().setInvocationError(
+                        Messages.InvocationErrorResponse.newBuilder().setMessage(message.content.toString())
+                    )
+
+                else -> Messages.Message.newBuilder().setInvocationResponse(
+                    Messages.InvocationResponse.newBuilder().setValue(message.content.toString())
+                )
+            }).build()
         )
-            .build()
-            .also {
-                responseObserver.onNext(it)
-            }
     }
 
     override fun onError(t: Throwable?) {
@@ -52,7 +58,8 @@ internal class GrpcClient(
                         value.invocationRequest.value,
                         AddressableReference(
                             type = value.invocationRequest.reference.type,
-                            id = value.invocationRequest.reference.id)
+                            id = value.invocationRequest.reference.id
+                        )
                     ),
                     source = id,
                     target = MessageTarget.Unicast(NodeId("target"))
