@@ -35,6 +35,14 @@ internal class IncomingConnections(
         val nodeId = NodeId(NodeIdServerInterceptor.NODE_ID.get())
 
         if (!leases.checkLease(nodeId)) {
+            responseObserver.onNext(
+                Messages.Message.newBuilder().setInvocationError(
+                    Messages.InvocationErrorResponse.newBuilder()
+                        .setMessage(StatusException(Status.UNAUTHENTICATED).toString())
+                        .setStatusValue(Messages.InvocationErrorResponse.Status.UNAUTHENTICATED_VALUE)
+                ).build()
+            )
+
             responseObserver.onError(StatusException(Status.UNAUTHENTICATED))
             return null
         }
