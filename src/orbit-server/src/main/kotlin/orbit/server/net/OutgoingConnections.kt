@@ -28,6 +28,7 @@ internal class OutgoingConnections(val localNode: NodeInfo.LocalServerNodeInfo, 
                 activeNodes[node.id] = client
             }
 
-        nodeDirectory.report(NodeInfo.ServerNodeInfo(localNode.id, activeNodes.keys, localNode.host, localNode.port) )
+
+        nodeDirectory.report(localNode.copy(visibleNodes = activeNodes.keys))
     }
 }

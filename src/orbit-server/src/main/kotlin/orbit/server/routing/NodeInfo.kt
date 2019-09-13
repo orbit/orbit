@@ -6,24 +6,25 @@
 
 package orbit.server.routing
 
+import orbit.server.addressable.AddressableType
 import orbit.server.net.NodeId
 
 sealed class NodeInfo {
     abstract val id: NodeId
-//        abstract val capabilities: NodeCapabilities
+    abstract val capabilities: NodeCapabilities
     abstract val visibleNodes: Iterable<NodeId>
 
     data class LocalServerNodeInfo(
         override val id: NodeId = NodeId.generate("mesh:"),
-//            override val capabilities: NodeCapabilities,
-        override val visibleNodes: Iterable<NodeId> = ArrayList(),
+        override val capabilities: NodeCapabilities,
+        override val visibleNodes: Iterable<NodeId> = listOf(),
         val host: String,
         val port: Int
     ) : NodeInfo()
 
     data class ServerNodeInfo(
         override val id: NodeId,
-//            override val capabilities: NodeCapabilities,
+        override val capabilities: NodeCapabilities,
         override val visibleNodes: Iterable<NodeId> = ArrayList(),
         val host: String,
         val port: Int
@@ -31,7 +32,14 @@ sealed class NodeInfo {
 
     data class ClientNodeInfo(
         override val id: NodeId,
-//            override val capabilities: NodeCapabilities,
+        override val capabilities: NodeCapabilities,
         override val visibleNodes: Iterable<NodeId>
     ) : NodeInfo()
+}
+
+data class NodeCapabilities(
+    val addressableTypes: Iterable<AddressableType>
+) {
+    constructor(vararg addressableTypes: AddressableType) : this(addressableTypes.asIterable())
+    constructor() : this(listOf())
 }

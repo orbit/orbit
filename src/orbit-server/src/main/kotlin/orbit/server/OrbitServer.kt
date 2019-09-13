@@ -39,6 +39,7 @@ import orbit.server.pipeline.steps.ErrorPipelineStep
 import orbit.server.pipeline.steps.RoutingPipelineStep
 import orbit.server.routing.AddressableDirectory
 import orbit.server.routing.AddressablePlacementStrategy
+import orbit.server.routing.NodeCapabilities
 import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeInfo
 import orbit.server.routing.Router
@@ -70,7 +71,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
             instance(
                 NodeInfo.LocalServerNodeInfo(
                     host = "0.0.0.0",
-                    port = config.grpcPort
+                    port = config.grpcPort,
+                    capabilities = NodeCapabilities()
                 )
             )
             instance(this@OrbitServer)
