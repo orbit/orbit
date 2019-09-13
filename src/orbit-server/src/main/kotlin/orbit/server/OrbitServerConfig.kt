@@ -8,15 +8,9 @@ package orbit.server
 
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.common.concurrent.Pools
-import orbit.server.net.LocalNodeId
 import java.time.Duration
 
 data class OrbitServerConfig(
-    /**
-     * The node's identity.
-     */
-    val localNode: LocalNodeId = LocalNodeId.generate("router:"),
-
     /**
      * The gRPC endpoint port.
      */

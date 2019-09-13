@@ -66,11 +66,9 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
     init {
         container.configure {
-            instance(config.localNode)
             instance(NodeLeases.LeaseExpiration(config.leaseExpiration, config.leaseRenewal))
             instance(
                 NodeInfo.LocalServerNodeInfo(
-                    NodeId(config.localNode.nodeId.value),
                     host = "0.0.0.0",
                     port = config.grpcPort
                 )
@@ -137,13 +135,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
         tickJob = launchTick()
         val nodeDirectory: NodeDirectory by container.inject()
-        nodeDirectory.join(
-            NodeInfo.ServerNodeInfo(
-                config.localNode.nodeId,
-                host = "0.0.0.0",
-                port = config.grpcPort
-            )
-        )
+        val localNode: NodeInfo.LocalServerNodeInfo by container.inject()
+        nodeDirectory.join(localNode)
     }
 
     private suspend fun onTick() {

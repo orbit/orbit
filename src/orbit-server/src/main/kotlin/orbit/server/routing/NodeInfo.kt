@@ -14,7 +14,7 @@ sealed class NodeInfo {
     abstract val visibleNodes: Iterable<NodeId>
 
     data class LocalServerNodeInfo(
-        override val id: NodeId,
+        override val id: NodeId = NodeId.generate("mesh:"),
 //            override val capabilities: NodeCapabilities,
         override val visibleNodes: Iterable<NodeId> = ArrayList(),
         val host: String,

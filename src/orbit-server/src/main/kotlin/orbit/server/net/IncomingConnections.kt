@@ -19,7 +19,7 @@ import orbit.shared.proto.ConnectionGrpc
 import orbit.shared.proto.Messages
 
 internal class IncomingConnections(
-    private val localNode: LocalNodeId,
+    private val localNode: NodeInfo.LocalServerNodeInfo,
     private val nodeDirectory: NodeDirectory,
     private val leases: NodeLeases,
     private val container: ComponentProvider
@@ -58,7 +58,7 @@ internal class IncomingConnections(
         clients[connection.id] = connection
 
         runtimeScopes.ioScope.launch {
-            nodeDirectory.join(NodeInfo.ClientNodeInfo(connection.id, listOf(localNode.nodeId)))
+            nodeDirectory.join(NodeInfo.ClientNodeInfo(connection.id, listOf(localNode.id)))
         }
 
         return connection
