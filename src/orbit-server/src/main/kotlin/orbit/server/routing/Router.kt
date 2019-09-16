@@ -10,7 +10,7 @@ import orbit.common.collections.GraphTraverser
 import orbit.server.net.NodeId
 
 internal class Router(
-    private val localNode: NodeInfo.LocalServerNodeInfo,
+    private val localNode: LocalNodeInfo,
     private val nodeDirectory: NodeDirectory
 ) {
 
@@ -21,7 +21,7 @@ internal class Router(
         val foundRoute =
             (if (routeVerified) projectedRoute else searchRoute(targetNode)) ?: return null;
 
-        return if (foundRoute.nextNode == this.localNode.id) foundRoute.pop().route else foundRoute
+        return if (foundRoute.nextNode == this.localNode.nodeInfo.id) foundRoute.pop().route else foundRoute
     }
 
     private suspend fun searchRoute(destination: NodeId): Route? {
@@ -39,7 +39,7 @@ internal class Router(
             return@mapNotNull null
         }.toList()
 
-        return routes.find { r -> r.nextNode.equals(this.localNode.id) }
+        return routes.find { r -> r.nextNode.equals(this.localNode.nodeInfo.id) }
     }
 
     fun verifyRoute(route: Route): Boolean {

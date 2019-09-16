@@ -10,12 +10,13 @@ import orbit.server.addressable.AddressableReference
 import orbit.server.net.NodeId
 import orbit.server.routing.AddressableDirectory
 import orbit.server.routing.AddressablePlacementStrategy
+import orbit.server.routing.LocalNodeInfo
 import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeInfo
 
-internal class LocalFirstPlacementStrategy(val nodeDirectory: NodeDirectory, val addressableDirectory: AddressableDirectory, val localNode: NodeInfo.LocalServerNodeInfo) : AddressablePlacementStrategy {
+internal class LocalFirstPlacementStrategy(val nodeDirectory: NodeDirectory, val addressableDirectory: AddressableDirectory, val localNode: LocalNodeInfo) : AddressablePlacementStrategy {
     override suspend fun chooseNode(address: AddressableReference): NodeId {
-        val nodeId = nodeDirectory.lookupConnectedNodes(localNode.id).filterIsInstance<NodeInfo.ClientNodeInfo>().elementAt(0).id
+        val nodeId = nodeDirectory.lookupConnectedNodes(localNode.nodeInfo.id).filterIsInstance<NodeInfo.ClientNodeInfo>().first().id
         addressableDirectory.setLocation(address, nodeId)
         return nodeId
     }

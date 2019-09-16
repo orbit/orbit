@@ -9,17 +9,13 @@ package orbit.server.net
 import io.grpc.Status
 import io.grpc.StatusException
 import io.grpc.stub.StreamObserver
-import kotlinx.coroutines.launch
 import orbit.common.di.ComponentProvider
-import orbit.server.concurrent.RuntimeScopes
 import orbit.server.routing.MeshNode
 import orbit.server.routing.NodeDirectory
-import orbit.server.routing.NodeInfo
 import orbit.shared.proto.ConnectionGrpc
 import orbit.shared.proto.Messages
 
 internal class IncomingConnections(
-    private val localNode: NodeInfo.LocalServerNodeInfo,
     private val nodeDirectory: NodeDirectory,
     private val leases: NodeLeases,
     private val container: ComponentProvider
@@ -46,7 +42,6 @@ internal class IncomingConnections(
             responseObserver.onError(StatusException(Status.UNAUTHENTICATED))
             return null
         }
-        val runtimeScopes by container.inject<RuntimeScopes>()
 
         clients[nodeId]?.onError(StatusException(Status.ALREADY_EXISTS))
 

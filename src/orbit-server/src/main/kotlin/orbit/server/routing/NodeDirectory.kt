@@ -9,11 +9,11 @@ package orbit.server.routing
 import orbit.server.net.NodeId
 
 internal interface NodeDirectory {
-    suspend fun join(nodeInfo: NodeInfo)
+    suspend fun <TNodeInfo : NodeInfo> join(nodeInfo: TNodeInfo): TNodeInfo
     suspend fun report(nodeInfo: NodeInfo)
     fun removeNode(nodeId: NodeId)
+    fun getNode(nodeId: NodeId): NodeInfo?
 
     fun lookupConnectedNodes(nodeId: NodeId): Sequence<NodeInfo>
     fun lookupMeshNodes(): List<NodeInfo.ServerNodeInfo>
-
 }

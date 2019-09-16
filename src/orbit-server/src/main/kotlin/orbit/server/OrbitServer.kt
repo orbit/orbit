@@ -40,6 +40,7 @@ import orbit.server.pipeline.steps.RoutingPipelineStep
 import orbit.server.routing.AddressableDirectory
 import orbit.server.routing.AddressablePlacementStrategy
 import orbit.server.routing.NodeCapabilities
+import orbit.server.routing.LocalNodeInfo
 import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeInfo
 import orbit.server.routing.Router
@@ -69,10 +70,13 @@ class OrbitServer(private val config: OrbitServerConfig) {
         container.configure {
             instance(NodeLeases.LeaseExpiration(config.leaseExpiration, config.leaseRenewal))
             instance(
-                NodeInfo.LocalServerNodeInfo(
-                    host = "0.0.0.0",
-                    port = config.grpcPort,
-                    capabilities = NodeCapabilities()
+                LocalNodeInfo(
+                    NodeInfo.ServerNodeInfo(
+                        NodeId.Empty,
+                        host = "0.0.0.0",
+                        port = config.grpcPort,
+                        capabilities = NodeCapabilities()
+                    )
                 )
             )
             instance(this@OrbitServer)
@@ -135,10 +139,11 @@ class OrbitServer(private val config: OrbitServerConfig) {
         val grpcEndpoint: GrpcEndpoint by container.inject()
         grpcEndpoint.start()
 
-        tickJob = launchTick()
         val nodeDirectory: NodeDirectory by container.inject()
-        val localNode: NodeInfo.LocalServerNodeInfo by container.inject()
-        nodeDirectory.join(localNode)
+        val localNode: LocalNodeInfo by container.inject()
+        localNode.updateNodeInfo(nodeDirectory.join(localNode.nodeInfo))
+
+        tickJob = launchTick()
     }
 
     private suspend fun onTick() {
@@ -147,8 +152,9 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
         val addressableDirectory: AddressableDirectory by container.inject()
 
-        val nodeLeases: NodeLeases by container.inject()
-        nodeLeases.cullLeases { lease -> addressableDirectory.removeNode(lease.nodeId) }
+        // TODO (brett) - Bring back culling expired leases
+//        val nodeLeases: NodeLeases by container.inject()
+//        nodeLeases.cullLeases { lease -> addressableDirectory.removeNode(lease.nodeId) }
     }
 
     private suspend fun onStop() {

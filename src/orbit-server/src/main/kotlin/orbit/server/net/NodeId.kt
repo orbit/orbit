@@ -10,6 +10,8 @@ import orbit.common.util.RNGUtils
 
 inline class NodeId(val value: String) {
     companion object {
+        val Empty = NodeId("")
+
         fun generate(prefix: String? = ""): NodeId {
             return NodeId("$prefix${RNGUtils.secureRandomString()}")
         }

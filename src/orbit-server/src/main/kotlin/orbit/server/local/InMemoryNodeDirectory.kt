@@ -6,18 +6,29 @@
 
 package orbit.server.local
 
+import orbit.common.util.RNGUtils
 import orbit.server.net.NodeId
+import orbit.server.net.NodeLease
+import orbit.server.net.NodeLeases
 import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeInfo
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 
-internal class InMemoryNodeDirectory : NodeDirectory {
-
+internal class InMemoryNodeDirectory(private val expiration: NodeLeases.LeaseExpiration) : NodeDirectory {
     companion object Singleton {
         @JvmStatic
-        private var nodes: HashMap<NodeId, NodeInfo> = hashMapOf()
+        var nodes: HashMap<NodeId, NodeInfo> = hashMapOf()
+    }
+
+    override fun getNode(nodeId: NodeId): NodeInfo? {
+        return nodes[nodeId]
     }
 
     override fun lookupConnectedNodes(nodeId: NodeId): Sequence<NodeInfo> {
+        // TODO (brett) - This should work, but client connections aren't ending up in the visible nodes of their mesh node
+//        return nodes[nodeId]?.visibleNodes?.map { node -> nodes[node] }?.filterNotNull()?.asSequence() ?: emptySequence()
+
         return nodes.values.filter { node -> node.visibleNodes.contains(nodeId) }.plus(
             nodes[nodeId]?.visibleNodes?.map { node -> nodes[node] } ?: listOf()
         ).filterNotNull().asSequence()
@@ -28,11 +39,36 @@ internal class InMemoryNodeDirectory : NodeDirectory {
     }
 
     override suspend fun report(node: NodeInfo) {
+        if (node.id == NodeId.Empty) {
+            println("node id empty")
+            return
+        }
         nodes[node.id] = node
     }
 
-    suspend override fun join(nodeInfo: NodeInfo) {
-        nodes[nodeInfo.id] = nodeInfo
+    override suspend fun <TNodeInfo : NodeInfo> join(nodeInfo: TNodeInfo): TNodeInfo {
+        // TODO (brett) - Remove prefix as a diagnostic
+        val nodeId = when (nodeInfo) {
+            is NodeInfo.ServerNodeInfo -> NodeId.generate("mesh:")
+            else -> NodeId.generate()
+        }
+
+        val lease = NodeLease(
+            nodeId,
+            expiresAt = ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.duration),
+            renewAt = ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.renew),
+            challengeToken = RNGUtils.secureRandomString()
+        )
+
+        val newNode = when (nodeInfo) {
+            is NodeInfo.ServerNodeInfo -> nodeInfo.copy(nodeId, lease = lease)
+            is NodeInfo.ClientNodeInfo -> nodeInfo.copy(nodeId, lease = lease)
+            else -> nodeInfo
+        }
+
+        nodes[nodeId] = newNode
+
+        return newNode as TNodeInfo
     }
 
     override fun removeNode(nodeId: NodeId) {
