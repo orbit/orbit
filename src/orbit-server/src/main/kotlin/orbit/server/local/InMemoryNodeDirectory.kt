@@ -22,7 +22,7 @@ internal class InMemoryNodeDirectory(private val expiration: NodeLeases.LeaseExp
         var nodes: HashMap<NodeId, NodeInfo> = hashMapOf()
     }
 
-    override fun getNode(nodeId: NodeId): NodeInfo? {
+    override suspend fun getNode(nodeId: NodeId): NodeInfo? {
         return nodes[nodeId]
     }
 
@@ -32,7 +32,7 @@ internal class InMemoryNodeDirectory(private val expiration: NodeLeases.LeaseExp
             ?: emptySequence()
     }
 
-    override fun lookupMeshNodes(): List<NodeInfo.ServerNodeInfo> {
+    override suspend fun lookupMeshNodes(): List<NodeInfo.ServerNodeInfo> {
         return nodes.values.filterIsInstance<NodeInfo.ServerNodeInfo>()
     }
 
@@ -41,8 +41,6 @@ internal class InMemoryNodeDirectory(private val expiration: NodeLeases.LeaseExp
             println("node id empty")
             return
         }
-
-        println("reporting node ${node.id}: ${node.visibleNodes}")
 
         nodes[node.id] = node
     }
@@ -77,11 +75,11 @@ internal class InMemoryNodeDirectory(private val expiration: NodeLeases.LeaseExp
         return newNode as TNodeInfo
     }
 
-    override fun removeNode(nodeId: NodeId) {
+    override suspend fun removeNode(nodeId: NodeId) {
         nodes.remove(nodeId)
     }
 
-    override fun cullLeases(onExpire: (NodeInfo) -> Unit) {
+    override suspend fun cullLeases() {
         val now = ZonedDateTime.now(ZoneOffset.UTC)
         val leaseCount = nodes.count()
 

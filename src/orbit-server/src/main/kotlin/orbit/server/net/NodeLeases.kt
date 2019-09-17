@@ -8,13 +8,12 @@ package orbit.server.net
 
 import io.grpc.Status
 import io.grpc.StatusException
-import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.launch
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.routing.LocalNodeInfo
 import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeInfo
-import orbit.shared.proto.NodeManagementGrpc
+import orbit.shared.proto.NodeManagementImplBase
 import orbit.shared.proto.NodeManagementOuterClass
 import java.time.Duration
 import java.time.ZoneOffset
@@ -27,31 +26,21 @@ internal class NodeLeases(
     private val nodeDirectory: NodeDirectory,
     private val localNodeInfo: LocalNodeInfo,
     private val runtimeScopes: RuntimeScopes
-) : NodeManagementGrpc.NodeManagementImplBase() {
+) : NodeManagementImplBase() {
 
-    override fun joinCluster(
-        request: NodeManagementOuterClass.JoinClusterRequest,
-        responseObserver: StreamObserver<NodeManagementOuterClass.NodeLease>
-    ) {
-        runtimeScopes.ioScope.launch {
-            val nodeInfo = nodeDirectory.join(NodeInfo.ClientNodeInfo(visibleNodes = listOf(localNodeInfo.nodeInfo.id)))
-            responseObserver.onNext(nodeInfo.lease.toProto())
-            responseObserver.onCompleted()
-        }
+    override suspend fun joinCluster(request: NodeManagementOuterClass.JoinClusterRequest): NodeManagementOuterClass.NodeLease {
+        val nodeInfo = nodeDirectory.join(NodeInfo.ClientNodeInfo(visibleNodes = listOf(localNodeInfo.nodeInfo.id)))
+        return nodeInfo.lease.toProto()
     }
 
-    override fun renewLease(
-        request: NodeManagementOuterClass.RenewLeaseRequest,
-        responseObserver: StreamObserver<NodeManagementOuterClass.RenewLeaseResponse>
-    ) {
+    override suspend fun renewLease(request: NodeManagementOuterClass.RenewLeaseRequest): NodeManagementOuterClass.RenewLeaseResponse {
         val nodeId = NodeId(request.nodeIdentity)
 
         val nodeInfo = nodeDirectory.getNode(nodeId)
 
         if (nodeInfo == null || !checkLease(nodeInfo, request.challengeToken)
         ) {
-            responseObserver.onError(StatusException(Status.UNAUTHENTICATED))
-            return
+            throw StatusException(Status.UNAUTHENTICATED)
         }
 
         val lease = NodeLease(
@@ -76,16 +65,13 @@ internal class NodeLeases(
             )
         }
 
-        responseObserver.onNext(
-            NodeManagementOuterClass.RenewLeaseResponse.newBuilder()
-                .setLeaseRenewed(true)
-                .setLeaseInfo(lease.toProto())
-                .build()
-        )
-        responseObserver.onCompleted()
+        return NodeManagementOuterClass.RenewLeaseResponse.newBuilder()
+            .setLeaseRenewed(true)
+            .setLeaseInfo(lease.toProto())
+            .build()
     }
 
-    fun checkLease(nodeId: NodeId): Boolean {
+    suspend fun checkLease(nodeId: NodeId): Boolean {
         val lease = nodeDirectory.getNode(nodeId)
         return lease != null && checkLease(lease)
     }

@@ -146,10 +146,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
         val connections: Connections by container.inject()
         connections.refreshConnections()
 
-        val addressableDirectory: AddressableDirectory by container.inject()
-
         val nodeLeases: NodeDirectory by container.inject()
-        nodeLeases.cullLeases { nodeInfo -> addressableDirectory.removeNode(nodeInfo.id) }
+        nodeLeases.cullLeases()
     }
 
     private suspend fun onStop() {

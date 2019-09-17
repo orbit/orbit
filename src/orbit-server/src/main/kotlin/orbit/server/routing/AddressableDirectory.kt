@@ -12,5 +12,5 @@ import orbit.server.net.NodeId
 interface AddressableDirectory {
     suspend fun lookup(address: AddressableReference): NodeId?
     suspend fun setLocation(address: AddressableReference, node: NodeId)
-    fun removeNode(node: NodeId)
+    suspend fun removeNode(node: NodeId)
 }

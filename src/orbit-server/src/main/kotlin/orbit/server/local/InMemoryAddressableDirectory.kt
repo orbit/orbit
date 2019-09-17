@@ -16,15 +16,15 @@ class InMemoryAddressableDirectory : AddressableDirectory {
         private var directory: MutableMap<AddressableReference, NodeId> = HashMap()
     }
 
-    suspend override fun lookup(address: AddressableReference): NodeId? {
+    override suspend fun lookup(address: AddressableReference): NodeId? {
         return directory[address]
     }
 
-    suspend override fun setLocation(address: AddressableReference, node: NodeId) {
+    override suspend fun setLocation(address: AddressableReference, node: NodeId) {
         directory[address] = node
     }
 
-    override fun removeNode(node: NodeId) {
+    override suspend fun removeNode(node: NodeId) {
         val directoryCount = directory.count()
         directory = directory.filter { (address, nodeId) -> nodeId != node }.toMutableMap()
 
