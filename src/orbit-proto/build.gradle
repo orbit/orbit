@@ -20,27 +20,31 @@ dependencies {
     compile("io.grpc:grpc-protobuf:$grpcVersion")
     compile("io.grpc:grpc-stub:$grpcVersion")
     compileOnly("javax.annotation:javax.annotation-api:1.2")
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion"
 }
 
 protobuf {
     protoc {
         artifact = "com.google.protobuf:protoc:$protobufVersion"
     }
-
     plugins {
         grpc { artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion" }
+        grpckotlin { artifact = "io.rouz:grpc-kotlin-gen:$grpcKotlinVersion:jdk8@jar" }
     }
-
     generateProtoTasks {
-        all()*.plugins { grpc {} }
+        all()*.plugins {
+            grpc {}
+            grpckotlin {}
+        }
     }
 }
 
 sourceSets {
     main {
         java {
-            srcDirs("build/generated/source/proto/main/grpc")
             srcDirs("build/generated/source/proto/main/java")
+            srcDirs("build/generated/source/proto/main/grpckotlin")
         }
     }
 }

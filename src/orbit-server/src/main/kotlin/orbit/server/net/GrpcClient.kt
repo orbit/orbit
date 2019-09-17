@@ -6,7 +6,7 @@
 
 package orbit.server.net
 
-import io.grpc.stub.StreamObserver
+import kotlinx.coroutines.channels.ReceiveChannel
 import orbit.common.di.ComponentProvider
 import orbit.server.addressable.AddressableReference
 import orbit.server.pipeline.Pipeline
@@ -16,15 +16,21 @@ import orbit.shared.proto.Messages
 
 internal class GrpcClient(
     override val id: NodeId = NodeId.generate("client:"),
-    private val responseObserver: StreamObserver<Messages.Message>,
-    private val container: ComponentProvider,
-    private val onClose: () -> Unit = {}
-) : MeshNode, StreamObserver<Messages.Message> {
+    private val messages: ReceiveChannel<Messages.Message>,
+    private val send: suspend (Messages.Message) -> Unit,
+    private val container: ComponentProvider
+) : MeshNode {
+
+    suspend fun ready() {
+        for (message in messages) {
+            this.onNext(message)
+        }
+    }
 
     suspend override fun sendMessage(message: Message, route: Route?) {
         println("> ${this.id}: \"${message.content}\"")
 
-        responseObserver.onNext(
+        send(
             (when (message.content) {
                 is MessageContent.ResponseErrorMessage ->
                     Messages.Message.newBuilder().setInvocationError(
@@ -38,19 +44,7 @@ internal class GrpcClient(
         )
     }
 
-    override fun onError(t: Throwable?) {
-        println("stream error")
-        responseObserver.onError(t)
-        onClose()
-    }
-
-    override fun onCompleted() {
-        println("stream complete")
-        responseObserver.onCompleted()
-        onClose()
-    }
-
-    override fun onNext(value: Messages.Message) {
+    private fun onNext(value: Messages.Message) {
         when {
             value.hasInvocationRequest() -> {
                 val msg = Message(

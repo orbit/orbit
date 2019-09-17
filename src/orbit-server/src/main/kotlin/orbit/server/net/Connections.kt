@@ -8,14 +8,13 @@ package orbit.server.net
 
 import io.grpc.Status
 import io.grpc.StatusException
-import io.grpc.stub.StreamObserver
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
 import orbit.common.di.ComponentProvider
-import orbit.server.concurrent.RuntimeScopes
 import orbit.server.routing.LocalNodeInfo
 import orbit.server.routing.MeshNode
 import orbit.server.routing.NodeDirectory
-import orbit.shared.proto.ConnectionGrpc
+import orbit.shared.proto.ConnectionImplBase
 import orbit.shared.proto.Messages
 
 internal class Connections(
@@ -23,7 +22,7 @@ internal class Connections(
     private val nodeDirectory: NodeDirectory,
     private val leases: NodeLeases,
     private val container: ComponentProvider
-) : ConnectionGrpc.ConnectionImplBase() {
+) : ConnectionImplBase() {
 
     private val clients = HashMap<NodeId, GrpcClient>()
     private val meshNodes = HashMap<NodeId, GrpcMeshNodeClient>()
@@ -32,11 +31,12 @@ internal class Connections(
         return clients[nodeId] ?: meshNodes[nodeId]
     }
 
-    override fun messages(responseObserver: StreamObserver<Messages.Message>): StreamObserver<Messages.Message>? {
+    override fun messages(requests: ReceiveChannel<Messages.Message>) = produce<Messages.Message> {
         val nodeId = NodeId(NodeIdServerInterceptor.NODE_ID.get())
 
         if (!leases.checkLease(nodeId)) {
-            responseObserver.onNext(
+
+            send(
                 Messages.Message.newBuilder().setInvocationError(
                     Messages.InvocationErrorResponse.newBuilder()
                         .setMessage(StatusException(Status.UNAUTHENTICATED).toString())
@@ -44,27 +44,17 @@ internal class Connections(
                 ).build()
             )
 
-            responseObserver.onError(StatusException(Status.UNAUTHENTICATED))
-            return null
+            throw StatusException(Status.UNAUTHENTICATED)
         }
 
-        clients[nodeId]?.onError(StatusException(Status.ALREADY_EXISTS))
-
-        val connection = GrpcClient(nodeId, responseObserver, container) {
-            clients.remove(nodeId)
-            println("GRPC Client has closed: $nodeId")
-        }
+        val connection = GrpcClient(nodeId, requests, { message -> send(message) }, container)
         clients[connection.id] = connection
 
-        val runtimeScopes: RuntimeScopes by container.inject()
+        nodeDirectory.report(localNode.nodeInfo.copy(visibleNodes = localNode.nodeInfo.visibleNodes.plus(connection.id)))
+        connection.ready()
 
-        // TODO (brett) - Routing is expecting this node to be in the node collection for this mesh node, but it's currently ending up there through onTick refresh.
-        //  This will be a race condition
-        runtimeScopes.ioScope.launch {
-            nodeDirectory.report(localNode.nodeInfo.copy(visibleNodes = localNode.nodeInfo.visibleNodes.plus(connection.id)))
-        }
-
-        return connection
+        clients.remove(nodeId)
+        println("GRPC Client has closed: $nodeId")
     }
 
     suspend fun refreshConnections() {
