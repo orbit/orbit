@@ -148,9 +148,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
         val addressableDirectory: AddressableDirectory by container.inject()
 
-        // TODO (brett) - Bring back culling expired leases
-//        val nodeLeases: NodeLeases by container.inject()
-//        nodeLeases.cullLeases { lease -> addressableDirectory.removeNode(lease.nodeId) }
+        val nodeLeases: NodeDirectory by container.inject()
+        nodeLeases.cullLeases { nodeInfo -> addressableDirectory.removeNode(nodeInfo.id) }
     }
 
     private suspend fun onStop() {

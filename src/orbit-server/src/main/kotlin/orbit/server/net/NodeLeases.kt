@@ -96,18 +96,6 @@ internal class NodeLeases(
                 (challengeToken == null || nodeInfo.lease.challengeToken == challengeToken)
     }
 
-//    fun cullLeases(onExpire: (NodeLease) -> Unit) {
-//        val now = ZonedDateTime.now(ZoneOffset.UTC)
-//        val leaseCount = leases.count()
-//
-//        val (expiredLeases, validLeases) = leases.asIterable().partition { (id, lease) -> lease.expiresAt < now }
-//
-//        expiredLeases.forEach { (id) -> this.leases.remove(id) }
-//        if (leases.count() != leaseCount) {
-//            // TODO (brett) - remove this diagnostic message
-//            println("Leases culled from $leaseCount to ${leases.count()}")
-//        }
-//    }
 
     data class LeaseExpiration(val duration: Duration, val renew: Duration)
 }

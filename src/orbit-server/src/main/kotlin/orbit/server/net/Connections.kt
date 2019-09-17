@@ -9,7 +9,9 @@ package orbit.server.net
 import io.grpc.Status
 import io.grpc.StatusException
 import io.grpc.stub.StreamObserver
+import kotlinx.coroutines.launch
 import orbit.common.di.ComponentProvider
+import orbit.server.concurrent.RuntimeScopes
 import orbit.server.routing.LocalNodeInfo
 import orbit.server.routing.MeshNode
 import orbit.server.routing.NodeDirectory
@@ -49,11 +51,18 @@ internal class Connections(
         clients[nodeId]?.onError(StatusException(Status.ALREADY_EXISTS))
 
         val connection = GrpcClient(nodeId, responseObserver, container) {
-            nodeDirectory.removeNode(nodeId)
             clients.remove(nodeId)
             println("GRPC Client has closed: $nodeId")
         }
         clients[connection.id] = connection
+
+        val runtimeScopes: RuntimeScopes by container.inject()
+
+        // TODO (brett) - Routing is expecting this node to be in the node collection for this mesh node, but it's currently ending up there through onTick refresh.
+        //  This will be a race condition
+        runtimeScopes.ioScope.launch {
+            nodeDirectory.report(localNode.nodeInfo.copy(visibleNodes = localNode.nodeInfo.visibleNodes.plus(connection.id)))
+        }
 
         return connection
     }

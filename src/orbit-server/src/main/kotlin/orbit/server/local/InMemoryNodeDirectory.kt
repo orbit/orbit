@@ -12,6 +12,7 @@ import orbit.server.net.NodeLease
 import orbit.server.net.NodeLeases
 import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeInfo
+import java.time.Duration
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
@@ -26,7 +27,9 @@ internal class InMemoryNodeDirectory(private val expiration: NodeLeases.LeaseExp
     }
 
     override fun lookupConnectedNodes(nodeId: NodeId): Sequence<NodeInfo> {
-        return nodes[nodeId]?.visibleNodes?.map { node -> nodes[node] }?.filterNotNull()?.asSequence() ?: emptySequence()
+        println("lookup nodes: $nodeId -> ${nodes[nodeId]!!.visibleNodes.map { node -> node.value }}")
+        return nodes[nodeId]?.visibleNodes?.map { node -> nodes[node] }?.filterNotNull()?.asSequence()
+            ?: emptySequence()
     }
 
     override fun lookupMeshNodes(): List<NodeInfo.ServerNodeInfo> {
@@ -38,6 +41,9 @@ internal class InMemoryNodeDirectory(private val expiration: NodeLeases.LeaseExp
             println("node id empty")
             return
         }
+
+        println("reporting node ${node.id}: ${node.visibleNodes}")
+
         nodes[node.id] = node
     }
 
@@ -50,7 +56,12 @@ internal class InMemoryNodeDirectory(private val expiration: NodeLeases.LeaseExp
 
         val lease = NodeLease(
             nodeId,
-            expiresAt = ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.duration),
+            expiresAt = ZonedDateTime.now(ZoneOffset.UTC).plus(
+                when (nodeInfo) {
+                    is NodeInfo.ServerNodeInfo -> Duration.ofSeconds(100000)
+                    else -> expiration.duration
+                }
+            ),
             renewAt = ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.renew),
             challengeToken = RNGUtils.secureRandomString()
         )
@@ -68,5 +79,18 @@ internal class InMemoryNodeDirectory(private val expiration: NodeLeases.LeaseExp
 
     override fun removeNode(nodeId: NodeId) {
         nodes.remove(nodeId)
+    }
+
+    override fun cullLeases(onExpire: (NodeInfo) -> Unit) {
+        val now = ZonedDateTime.now(ZoneOffset.UTC)
+        val leaseCount = nodes.count()
+
+        val (expiredLeases, validLeases) = nodes.asIterable().partition { (id, node) -> node.lease.expiresAt < now }
+
+        expiredLeases.forEach { (id) -> nodes.remove(id) }
+        if (nodes.count() != leaseCount) {
+            // TODO (brett) - remove this diagnostic message
+            println("Leases culled from $leaseCount to ${nodes.count()}")
+        }
     }
 }

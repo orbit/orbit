@@ -16,4 +16,5 @@ internal interface NodeDirectory {
 
     fun lookupConnectedNodes(nodeId: NodeId): Sequence<NodeInfo>
     fun lookupMeshNodes(): List<NodeInfo.ServerNodeInfo>
+    fun cullLeases(onExpire: (NodeInfo) -> Unit)
 }
