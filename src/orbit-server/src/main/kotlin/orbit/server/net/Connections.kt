@@ -10,21 +10,24 @@ import io.grpc.Status
 import io.grpc.StatusException
 import io.grpc.stub.StreamObserver
 import orbit.common.di.ComponentProvider
+import orbit.server.routing.LocalNodeInfo
 import orbit.server.routing.MeshNode
 import orbit.server.routing.NodeDirectory
 import orbit.shared.proto.ConnectionGrpc
 import orbit.shared.proto.Messages
 
-internal class IncomingConnections(
+internal class Connections(
+    private val localNode: LocalNodeInfo,
     private val nodeDirectory: NodeDirectory,
     private val leases: NodeLeases,
     private val container: ComponentProvider
 ) : ConnectionGrpc.ConnectionImplBase() {
 
     private val clients = HashMap<NodeId, GrpcClient>()
+    private val meshNodes = HashMap<NodeId, GrpcMeshNodeClient>()
 
     fun getNode(nodeId: NodeId): MeshNode? {
-        return clients[nodeId]
+        return clients[nodeId] ?: meshNodes[nodeId]
     }
 
     override fun messages(responseObserver: StreamObserver<Messages.Message>): StreamObserver<Messages.Message>? {
@@ -53,5 +56,19 @@ internal class IncomingConnections(
         clients[connection.id] = connection
 
         return connection
+    }
+
+    suspend fun refreshConnections() {
+        val meshNodes = nodeDirectory.lookupMeshNodes().toList()
+
+        meshNodes.filter { node -> !this.meshNodes.containsKey(node.id) && node.id != localNode.nodeInfo.id }
+            .forEach { node ->
+                val client = GrpcMeshNodeClient(node.id, node.host, node.port)
+
+                this.meshNodes[node.id] = client
+            }
+
+
+        nodeDirectory.report(localNode.nodeInfo.copy(visibleNodes = this.meshNodes.keys.plus(clients.keys)))
     }
 }

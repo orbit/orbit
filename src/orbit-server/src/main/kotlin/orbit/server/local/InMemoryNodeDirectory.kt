@@ -26,12 +26,7 @@ internal class InMemoryNodeDirectory(private val expiration: NodeLeases.LeaseExp
     }
 
     override fun lookupConnectedNodes(nodeId: NodeId): Sequence<NodeInfo> {
-        // TODO (brett) - This should work, but client connections aren't ending up in the visible nodes of their mesh node
-//        return nodes[nodeId]?.visibleNodes?.map { node -> nodes[node] }?.filterNotNull()?.asSequence() ?: emptySequence()
-
-        return nodes.values.filter { node -> node.visibleNodes.contains(nodeId) }.plus(
-            nodes[nodeId]?.visibleNodes?.map { node -> nodes[node] } ?: listOf()
-        ).filterNotNull().asSequence()
+        return nodes[nodeId]?.visibleNodes?.map { node -> nodes[node] }?.filterNotNull()?.asSequence() ?: emptySequence()
     }
 
     override fun lookupMeshNodes(): List<NodeInfo.ServerNodeInfo> {
