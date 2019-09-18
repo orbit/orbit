@@ -26,9 +26,8 @@ internal class InMemoryNodeDirectory(private val expiration: LeaseExpiration) : 
         return nodes[nodeId]
     }
 
-    override fun lookupConnectedNodes(nodeId: NodeId): Sequence<NodeInfo> {
-        return nodes[nodeId]?.visibleNodes?.map { node -> nodes[node] }?.filterNotNull()?.asSequence()
-            ?: emptySequence()
+    override suspend fun lookupConnectedNodes(nodeId: NodeId): List<NodeInfo> {
+        return nodes[nodeId]?.visibleNodes?.map { node -> nodes[node] }?.filterNotNull() ?: emptyList()
     }
 
     override suspend fun lookupMeshNodes(): List<NodeInfo.ServerNodeInfo> {

@@ -14,7 +14,7 @@ internal interface NodeDirectory {
     suspend fun removeNode(nodeId: NodeId)
     suspend fun getNode(nodeId: NodeId): NodeInfo?
 
-    fun lookupConnectedNodes(nodeId: NodeId): Sequence<NodeInfo>
+    suspend fun lookupConnectedNodes(nodeId: NodeId): List<NodeInfo>
     suspend fun lookupMeshNodes(): List<NodeInfo.ServerNodeInfo>
     suspend fun cullLeases()
 }

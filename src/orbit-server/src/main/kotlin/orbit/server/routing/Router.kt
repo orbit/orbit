@@ -6,40 +6,43 @@
 
 package orbit.server.routing
 
+import kotlinx.coroutines.channels.first
+import kotlinx.coroutines.channels.mapNotNull
+import kotlinx.coroutines.channels.take
 import orbit.common.collections.GraphTraverser
+import orbit.server.concurrent.RuntimeScopes
 import orbit.server.net.NodeId
 
 internal class Router(
     private val localNode: LocalNodeInfo,
-    private val nodeDirectory: NodeDirectory
+    private val nodeDirectory: NodeDirectory,
+    private val runtimeScopes: RuntimeScopes
 ) {
 
     suspend fun getRoute(targetNode: NodeId, projectedRoute: Route? = null): Route? {
         val routeVerified = (projectedRoute != null) && this.verifyRoute(projectedRoute)
         println("Finding route between $localNode -> $targetNode ${if (routeVerified) "(existing)" else ""}")
 
-        val foundRoute =
-            (if (routeVerified) projectedRoute else searchRoute(targetNode)) ?: return null;
+        val foundRoute = (if (routeVerified) projectedRoute else searchRoute(targetNode)) ?: return null;
 
         return if (foundRoute.nextNode == this.localNode.nodeInfo.id) foundRoute.pop().route else foundRoute
     }
 
     private suspend fun searchRoute(destination: NodeId): Route? {
         val nodeRoutes = HashMap<NodeId, Route>()
-        val traversal = GraphTraverser<NodeId> { node ->
+
+        val traversal = GraphTraverser<NodeId>(runtimeScopes.ioScope.coroutineContext) { node ->
             nodeDirectory.lookupConnectedNodes(node).map { n -> n.id }
         }
 
-        val routes = traversal.traverse(destination).take(100).mapNotNull { node ->
+        return traversal.traverse(destination).take(100).mapNotNull { node ->
             val route = nodeRoutes[node.parent]?.push(node.child) ?: Route(listOf(node.child))
             if (nodeRoutes[node.child] == null) {
                 nodeRoutes[node.child] = route
                 return@mapNotNull route
             }
             return@mapNotNull null
-        }.toList()
-
-        return routes.find { r -> r.nextNode.equals(this.localNode.nodeInfo.id) }
+        }.first { r -> r.nextNode == localNode.nodeInfo.id }
     }
 
     fun verifyRoute(route: Route): Boolean {
