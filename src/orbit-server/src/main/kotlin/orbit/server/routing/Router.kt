@@ -6,9 +6,9 @@
 
 package orbit.server.routing
 
-import kotlinx.coroutines.channels.first
-import kotlinx.coroutines.channels.mapNotNull
-import kotlinx.coroutines.channels.take
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.take
 import orbit.common.collections.GraphTraverser
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.net.NodeId
@@ -31,7 +31,7 @@ internal class Router(
     private suspend fun searchRoute(destination: NodeId): Route? {
         val nodeRoutes = HashMap<NodeId, Route>()
 
-        val traversal = GraphTraverser<NodeId>(runtimeScopes.ioScope.coroutineContext) { node ->
+        val traversal = GraphTraverser<NodeId> { node ->
             nodeDirectory.lookupConnectedNodes(node).map { n -> n.id }
         }
 

@@ -6,17 +6,15 @@
 
 package orbit.common.collections
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.produce
-import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
-class GraphTraverser<T>(override val coroutineContext: CoroutineContext, val getChildren: suspend (T) -> List<T>) :
-    CoroutineScope {
-    fun traverse(initial: T) = produce {
+class GraphTraverser<T>(val getChildren: suspend (T) -> List<T>)  {
+    fun traverse(initial: T): Flow<ParentChild<T>> = flow {
         var row = listOf(ParentChild(null, initial))
 
         do {
-            row.forEach { send(it) }
+            row.forEach { emit(it) }
             row = row.flatMap { node ->
                 getChildren(node.child).map { child ->
                     ParentChild(
