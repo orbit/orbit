@@ -18,17 +18,16 @@ import orbit.shared.proto.Messages
 import orbit.shared.proto.messages
 
 internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: ManagedChannel) : MeshNode {
-    private val sender: ManyToManyCall<Messages.Message, Messages.Message>
+    private val sender =
+        ConnectionGrpc.newStub(ClientInterceptors.intercept(channel, NodeIdClientInterceptor(id))).messages()
 
     init {
-
         fun notify(channel: ManagedChannel) {
             println("Channel state: ${id.value}: ${channel.getState(false)}")
             channel.notifyWhenStateChanged(channel.getState(true)) { notify(channel) }
         }
 
         notify(channel)
-        sender = ConnectionGrpc.newStub(ClientInterceptors.intercept(channel, NodeIdClientInterceptor(id))).messages()
     }
 
     constructor(id: NodeId, host: String, port: Int) : this(
@@ -39,7 +38,6 @@ internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: 
     )
 
     override suspend fun sendMessage(message: Message, route: Route?) {
-
         val builder = Messages.Message.newBuilder()
         val toSend = when {
             message.content is MessageContent.Request ->

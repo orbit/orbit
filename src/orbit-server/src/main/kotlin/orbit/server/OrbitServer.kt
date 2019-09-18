@@ -26,19 +26,20 @@ import orbit.server.local.InMemoryNodeDirectory
 import orbit.server.local.LocalFirstPlacementStrategy
 import orbit.server.net.Connections
 import orbit.server.net.GrpcEndpoint
+import orbit.server.net.LeaseExpiration
 import orbit.server.net.NodeId
 import orbit.server.net.NodeLeases
 import orbit.server.pipeline.Pipeline
+import orbit.server.pipeline.PipelineSteps
 import orbit.server.pipeline.steps.AddressablePipelineStep
 import orbit.server.pipeline.steps.BlankPipelineStep
-import orbit.server.pipeline.steps.LeasePipelineStep
-import orbit.server.pipeline.PipelineSteps
 import orbit.server.pipeline.steps.ErrorPipelineStep
+import orbit.server.pipeline.steps.LeasePipelineStep
 import orbit.server.pipeline.steps.RoutingPipelineStep
 import orbit.server.routing.AddressableDirectory
 import orbit.server.routing.AddressablePlacementStrategy
-import orbit.server.routing.NodeCapabilities
 import orbit.server.routing.LocalNodeInfo
+import orbit.server.routing.NodeCapabilities
 import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeInfo
 import orbit.server.routing.Router
@@ -66,7 +67,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
     init {
         container.configure {
-            instance(NodeLeases.LeaseExpiration(config.leaseExpiration, config.leaseRenewal))
+            instance(LeaseExpiration(config.leaseExpiration, config.leaseRenewal))
             instance(
                 LocalNodeInfo(
                     NodeInfo.ServerNodeInfo(

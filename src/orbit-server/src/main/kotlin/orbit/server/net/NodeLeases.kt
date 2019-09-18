@@ -8,14 +8,11 @@ package orbit.server.net
 
 import io.grpc.Status
 import io.grpc.StatusException
-import kotlinx.coroutines.launch
-import orbit.server.concurrent.RuntimeScopes
 import orbit.server.routing.LocalNodeInfo
 import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeInfo
 import orbit.shared.proto.NodeManagementImplBase
 import orbit.shared.proto.NodeManagementOuterClass
-import java.time.Duration
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
@@ -24,8 +21,7 @@ typealias ChallengeToken = String
 internal class NodeLeases(
     private val expiration: LeaseExpiration,
     private val nodeDirectory: NodeDirectory,
-    private val localNodeInfo: LocalNodeInfo,
-    private val runtimeScopes: RuntimeScopes
+    private val localNodeInfo: LocalNodeInfo
 ) : NodeManagementImplBase() {
 
     override suspend fun joinCluster(request: NodeManagementOuterClass.JoinClusterRequest): NodeManagementOuterClass.NodeLease {
@@ -38,8 +34,7 @@ internal class NodeLeases(
 
         val nodeInfo = nodeDirectory.getNode(nodeId)
 
-        if (nodeInfo == null || !checkLease(nodeInfo, request.challengeToken)
-        ) {
+        if (nodeInfo == null || !checkLease(nodeInfo, request.challengeToken)) {
             throw StatusException(Status.UNAUTHENTICATED)
         }
 
@@ -50,20 +45,18 @@ internal class NodeLeases(
             renewAt = ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.renew)
         )
 
-        runtimeScopes.ioScope.launch {
-            nodeDirectory.report(
-                when (nodeInfo) {
-                    is NodeInfo.ServerNodeInfo -> nodeInfo.copy(
-                        lease = lease,
-                        visibleNodes = listOf(localNodeInfo.nodeInfo.id)
-                    )
-                    is NodeInfo.ClientNodeInfo -> nodeInfo.copy(
-                        lease = lease,
-                        visibleNodes = listOf(localNodeInfo.nodeInfo.id)
-                    )
-                }
-            )
-        }
+        nodeDirectory.report(
+            when (nodeInfo) {
+                is NodeInfo.ServerNodeInfo -> nodeInfo.copy(
+                    lease = lease,
+                    visibleNodes = listOf(localNodeInfo.nodeInfo.id)
+                )
+                is NodeInfo.ClientNodeInfo -> nodeInfo.copy(
+                    lease = lease,
+                    visibleNodes = listOf(localNodeInfo.nodeInfo.id)
+                )
+            }
+        )
 
         return NodeManagementOuterClass.RenewLeaseResponse.newBuilder()
             .setLeaseRenewed(true)
@@ -81,7 +74,4 @@ internal class NodeLeases(
                 nodeInfo.lease.expiresAt > ZonedDateTime.now(ZoneOffset.UTC) &&
                 (challengeToken == null || nodeInfo.lease.challengeToken == challengeToken)
     }
-
-
-    data class LeaseExpiration(val duration: Duration, val renew: Duration)
 }

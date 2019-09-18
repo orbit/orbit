@@ -7,16 +7,16 @@
 package orbit.server.local
 
 import orbit.common.util.RNGUtils
+import orbit.server.net.LeaseExpiration
 import orbit.server.net.NodeId
 import orbit.server.net.NodeLease
-import orbit.server.net.NodeLeases
 import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeInfo
 import java.time.Duration
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
-internal class InMemoryNodeDirectory(private val expiration: NodeLeases.LeaseExpiration) : NodeDirectory {
+internal class InMemoryNodeDirectory(private val expiration: LeaseExpiration) : NodeDirectory {
     companion object Singleton {
         @JvmStatic
         var nodes: HashMap<NodeId, NodeInfo> = hashMapOf()

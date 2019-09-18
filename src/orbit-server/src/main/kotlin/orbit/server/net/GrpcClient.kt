@@ -27,7 +27,7 @@ internal class GrpcClient(
         }
     }
 
-    suspend override fun sendMessage(message: Message, route: Route?) {
+    override suspend fun sendMessage(message: Message, route: Route?) {
         println("> ${this.id}: \"${message.content}\"")
 
         send(

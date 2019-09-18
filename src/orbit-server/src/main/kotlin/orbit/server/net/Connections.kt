@@ -62,9 +62,7 @@ internal class Connections(
 
         meshNodes.filter { node -> !this.meshNodes.containsKey(node.id) && node.id != localNode.nodeInfo.id }
             .forEach { node ->
-                val client = GrpcMeshNodeClient(node.id, node.host, node.port)
-
-                this.meshNodes[node.id] = client
+                this.meshNodes[node.id] = GrpcMeshNodeClient(node.id, node.host, node.port)
             }
 
 
