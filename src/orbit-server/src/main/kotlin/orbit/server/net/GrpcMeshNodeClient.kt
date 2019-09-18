@@ -9,41 +9,26 @@ package orbit.server.net
 import io.grpc.ClientInterceptors
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
-import io.grpc.stub.StreamObserver
+import io.rouz.grpc.ManyToManyCall
 import orbit.server.routing.MeshNode
 import orbit.server.routing.Route
 import orbit.shared.proto.Addressable
 import orbit.shared.proto.ConnectionGrpc
 import orbit.shared.proto.Messages
+import orbit.shared.proto.messages
 
-internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: ManagedChannel) : MeshNode,
-    StreamObserver<Messages.Message> {
-
-    private val sender: StreamObserver<Messages.Message>
-
-    override fun onNext(value: Messages.Message?) {
-        println("Response message from mesh... $id $value")
-    }
-
-    override fun onError(t: Throwable?) {
-        println("Error $id $t")
-    }
-
-    override fun onCompleted() {
-        println("Closed $id")
-    }
-
-    private val blockingStub: ConnectionGrpc.ConnectionStub
+internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: ManagedChannel) : MeshNode {
+    private val sender: ManyToManyCall<Messages.Message, Messages.Message>
 
     init {
+
         fun notify(channel: ManagedChannel) {
             println("Channel state: ${id.value}: ${channel.getState(false)}")
             channel.notifyWhenStateChanged(channel.getState(true)) { notify(channel) }
         }
 
         notify(channel)
-        blockingStub = ConnectionGrpc.newStub(ClientInterceptors.intercept(channel, NodeIdClientInterceptor(id)))
-        sender = blockingStub.messages(this)
+        sender = ConnectionGrpc.newStub(ClientInterceptors.intercept(channel, NodeIdClientInterceptor(id))).messages()
     }
 
     constructor(id: NodeId, host: String, port: Int) : this(
@@ -53,7 +38,7 @@ internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: 
             .build()
     )
 
-    suspend override fun sendMessage(message: Message, route: Route?) {
+    override suspend fun sendMessage(message: Message, route: Route?) {
 
         val builder = Messages.Message.newBuilder()
         val toSend = when {
@@ -70,6 +55,8 @@ internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: 
             else -> null
         }
 
-        toSend != null ?: sender.onNext(toSend)
+        if (toSend != null) {
+            sender.send(toSend)
+        }
     }
 }

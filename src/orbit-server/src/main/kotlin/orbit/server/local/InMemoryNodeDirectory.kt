@@ -27,7 +27,6 @@ internal class InMemoryNodeDirectory(private val expiration: NodeLeases.LeaseExp
     }
 
     override fun lookupConnectedNodes(nodeId: NodeId): Sequence<NodeInfo> {
-        println("lookup nodes: $nodeId -> ${nodes[nodeId]!!.visibleNodes.map { node -> node.value }}")
         return nodes[nodeId]?.visibleNodes?.map { node -> nodes[node] }?.filterNotNull()?.asSequence()
             ?: emptySequence()
     }
