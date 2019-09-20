@@ -15,3 +15,14 @@ dependencies {
     implementation("org.slf4j:slf4j-simple:$slf4jVersion")
 
 }
+
+task allJar(type: Jar) {
+    archiveBaseName.set("${project.name}-all")
+
+    manifest {
+        attributes 'Main-Class': mainClassName
+    }
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+
+    with jar
+}
