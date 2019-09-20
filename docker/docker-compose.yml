@@ -1,0 +1,24 @@
+version: "3.7"
+services:
+  orbit_server_1:
+    build:
+      context: ../
+      dockerfile: docker/server/Dockerfile
+    ports:
+      - "50056:50056"
+    environment:
+      - PORT=50056
+    entrypoint: sh ./opt/orbit/entrypoint.sh
+    volumes:
+      - ../src/orbit-application/build/libs:/opt/orbit/libs
+  orbit_server_2:
+    build:
+      context: ../
+      dockerfile: docker/server/Dockerfile
+    ports:
+      - "50057:50057"
+    environment:
+      - PORT=50057
+    entrypoint: sh -c ./opt/orbit/entrypoint.sh
+    volumes:
+      - ../src/orbit-application/build/libs:/opt/orbit/libs
