@@ -8,12 +8,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '1.8', '11.x' ]
+        java: [ '1.8', '11.x', '13.x' ]
     name: Build On JDK ${{ matrix.java }}
 
     steps:
     - uses: actions/checkout@v1
-    - name: Set up JDK ${{ matrix.java }}
+    - name: Setup JDK
       uses: actions/setup-java@v1
       with:
         java-version: ${{ matrix.java }}
