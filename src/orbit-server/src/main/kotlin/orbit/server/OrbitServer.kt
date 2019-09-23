@@ -164,7 +164,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
     private fun launchTick() = runtimeScopes.cpuScope.launch {
         val clock: Clock by container.inject()
-        val targetTickRate = config.tickRate
+        val targetTickRate = config.tickRate.toMillis()
         while (isActive) {
             val (elapsed, _) = stopwatch(clock) {
                 logger.trace { "Begin Orbit tick..." }

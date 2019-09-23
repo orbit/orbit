@@ -5,11 +5,8 @@
  */
 
 dependencies {
+    implementation(project(":src:orbit-commons"))
     implementation(project(":src:orbit-proto"))
+
     implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
-    implementation("org.slf4j:slf4j-api:$slf4jVersion")
-
-
-    testImplementation(project(":src:orbit-server"))
-    testImplementation("org.slf4j:slf4j-simple:$slf4jVersion")
 }

@@ -8,7 +8,7 @@ package orbit.server.concurrent
 
 import kotlinx.coroutines.CoroutineDispatcher
 
-internal data class RuntimePools(
+data class RuntimePools(
     val cpuPool: CoroutineDispatcher,
     val ioPool: CoroutineDispatcher
 )

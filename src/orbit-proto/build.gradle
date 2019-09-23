@@ -20,8 +20,7 @@ dependencies {
     compile("io.grpc:grpc-protobuf:$grpcVersion")
     compile("io.grpc:grpc-stub:$grpcVersion")
     compileOnly("javax.annotation:javax.annotation-api:1.2")
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion"
+    compile("org.jetbrains.kotlinx:kotlinx-coroutines-guava:$kotlinCoroutinesVersion")
 }
 
 protobuf {

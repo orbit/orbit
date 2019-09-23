@@ -17,9 +17,9 @@ data class OrbitServerConfig(
     val grpcPort: Int = 50056,
 
     /**
-     * The Orbit tick rate in milliseconds.
+     * The Orbit tick rate.
      */
-    val tickRate: Long = 1000,
+    val tickRate: Duration = Duration.ofSeconds(1),
 
     /**
      * The pool where CPU intensive tasks will run.

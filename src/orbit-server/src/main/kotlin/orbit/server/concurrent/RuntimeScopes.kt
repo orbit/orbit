@@ -6,25 +6,11 @@
 
 package orbit.server.concurrent
 
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
+import orbit.common.concurrent.SupervisorScope
 import kotlin.coroutines.CoroutineContext
 
-private class SupervisorScope(
-    private val pool: CoroutineDispatcher,
-    private val exceptionHandler: (CoroutineContext, Throwable) -> Unit
-) : CoroutineScope {
-
-    private val job = SupervisorJob()
-    override val coroutineContext: CoroutineContext
-        get() = job +
-                pool +
-                CoroutineExceptionHandler(exceptionHandler)
-}
-
-internal class RuntimeScopes(
+class RuntimeScopes(
     runtimePools: RuntimePools,
     exceptionHandler: (CoroutineContext, Throwable) -> Unit
 ) {

@@ -20,7 +20,7 @@ def localPublish = []
 configureProject(":src:orbit-commons", [withKotlin, withTests, publish])
 configureProject(":src:orbit-server", [withKotlin, withTests, publish])
 configureProject(":src:orbit-proto", [withKotlin, withJava, publish])
-configureProject(":src:orbit-client", [withJava, withTests, publish])
+configureProject(":src:orbit-client", [withKotlin, withTests, publish])
 
 // App
 configureProject(":src:orbit-application", [withKotlin])
