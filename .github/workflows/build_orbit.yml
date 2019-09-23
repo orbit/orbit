@@ -4,18 +4,17 @@ on: [push, pull_request]
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    name: Build on JDK ${{ matrix.jdk }}
     strategy:
       matrix:
-        java: [ '1.8', '11', '12' ]
-    name: Build On JDK ${{ matrix.java }}
+        jdk: [ '1.8', '11', '12' ]
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v1
     - name: Setup JDK
       uses: actions/setup-java@v1
       with:
-        java-version: ${{ matrix.java }}
+        java-version: ${{ matrix.jdk }}
     - name: Build with Gradle
       run: ./gradlew build
