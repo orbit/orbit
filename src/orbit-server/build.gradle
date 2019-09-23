@@ -10,4 +10,5 @@ dependencies {
 
     implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
 
+    compile "io.etcd:jetcd-core:$jetcdVersion"
 }

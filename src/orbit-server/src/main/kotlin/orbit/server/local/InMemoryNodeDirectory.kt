@@ -74,10 +74,6 @@ internal class InMemoryNodeDirectory(private val expiration: LeaseExpiration) : 
         return newNode as TNodeInfo
     }
 
-    override suspend fun removeNode(nodeId: NodeId) {
-        nodes.remove(nodeId)
-    }
-
     override suspend fun cullLeases() {
         val now = Instant.now()
         val leaseCount = nodes.count()

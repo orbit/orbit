@@ -9,11 +9,10 @@ package orbit.server.net
 import io.grpc.ClientInterceptors
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
+import orbit.server.proto.toProto
 import orbit.server.routing.MeshNode
 import orbit.server.routing.Route
-import orbit.shared.proto.Addressable
 import orbit.shared.proto.ConnectionGrpc
-import orbit.shared.proto.Messages
 import orbit.shared.proto.messages
 
 internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: ManagedChannel) : MeshNode {
@@ -37,23 +36,6 @@ internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: 
     )
 
     override suspend fun sendMessage(message: Message, route: Route?) {
-        val builder = Messages.Message.newBuilder()
-        val toSend = when {
-            message.content is MessageContent.Request ->
-                builder.setInvocationRequest(
-                    builder.invocationRequestBuilder
-                        .setValue(message.content.data)
-                        .setReference(
-                            Addressable.AddressableReference.newBuilder()
-                                .setId(message.content.destination.id)
-                                .setType(message.content.destination.type).build()
-                        )
-                ).build()
-            else -> null
-        }
-
-        if (toSend != null) {
-            sender.send(toSend)
-        }
+        sender.send(message.toProto())
     }
 }

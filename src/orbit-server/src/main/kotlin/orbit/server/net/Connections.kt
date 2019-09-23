@@ -59,13 +59,19 @@ internal class Connections(
 
     suspend fun refreshConnections() {
         val meshNodes = nodeDirectory.lookupMeshNodes().toList()
-
+        var newConnections = false
         meshNodes.filter { node -> !this.meshNodes.containsKey(node.id) && node.id != localNode.nodeInfo.id }
             .forEach { node ->
+                newConnections = true
                 this.meshNodes[node.id] = GrpcMeshNodeClient(node.id, node.host, node.port)
             }
 
+//        if (localNode.nodeInfo.lease.renewAt > Instant.now()) {
+//            localNode.updateNodeInfo(nodeDirectory.renewLease())
+//        }
 
-        nodeDirectory.report(localNode.nodeInfo.copy(visibleNodes = this.meshNodes.keys.plus(clients.keys)))
+        if (newConnections) {
+            nodeDirectory.report(localNode.nodeInfo.copy(visibleNodes = this.meshNodes.keys.plus(clients.keys)))
+        }
     }
 }

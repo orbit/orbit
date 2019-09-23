@@ -8,6 +8,7 @@ package orbit.server.net
 
 import io.grpc.Status
 import io.grpc.StatusException
+import orbit.server.proto.toProto
 import orbit.server.routing.LocalNodeInfo
 import orbit.server.routing.NodeCapabilities
 import orbit.server.routing.NodeDirectory

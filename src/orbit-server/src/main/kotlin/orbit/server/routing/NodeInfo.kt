@@ -11,6 +11,8 @@ import orbit.server.net.NodeId
 import orbit.server.net.NodeLease
 
 sealed class NodeInfo {
+    companion object {}
+
     abstract val id: NodeId
     abstract val capabilities: NodeCapabilities
     abstract val visibleNodes: Iterable<NodeId>

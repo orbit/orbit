@@ -11,7 +11,6 @@ import orbit.server.net.NodeId
 internal interface NodeDirectory {
     suspend fun <TNodeInfo : NodeInfo> join(nodeInfo: TNodeInfo): TNodeInfo
     suspend fun report(nodeInfo: NodeInfo)
-    suspend fun removeNode(nodeId: NodeId)
     suspend fun getNode(nodeId: NodeId): NodeInfo?
 
     suspend fun lookupConnectedNodes(nodeId: NodeId): List<NodeInfo>

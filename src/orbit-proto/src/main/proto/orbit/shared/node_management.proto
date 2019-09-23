@@ -32,6 +32,29 @@ message NodeLease {
     google.protobuf.Timestamp expires_at = 4;
 }
 
+message NodeInfo {
+    oneof content {
+        ServerNodeInfo server = 1;
+        ClientNodeInfo client = 2;
+    }
+}
+
+message ServerNodeInfo {
+    string id = 1;
+    NodeCapabilities capabilities = 2;
+    NodeLease lease = 3;
+    repeated string visibleNodes = 4;
+    int32 port = 5;
+    string host = 6;
+}
+
+message ClientNodeInfo {
+    string id = 1;
+    NodeCapabilities capabilities = 2;
+    NodeLease lease = 3;
+    repeated string visibleNodes = 4;
+}
+
 message NodeCapabilities {
     repeated string addressableTypes = 1;
 }

@@ -21,6 +21,7 @@ import orbit.common.util.Clock
 import orbit.common.util.stopwatch
 import orbit.server.concurrent.RuntimePools
 import orbit.server.concurrent.RuntimeScopes
+import orbit.server.etcd.EtcdNodeDirectory
 import orbit.server.local.InMemoryAddressableDirectory
 import orbit.server.local.InMemoryNodeDirectory
 import orbit.server.local.LocalFirstPlacementStrategy
@@ -85,7 +86,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<Clock>()
 
             definition<Router>()
-            definition<NodeDirectory>(InMemoryNodeDirectory::class.java)
+            definition<NodeDirectory>(EtcdNodeDirectory::class.java)
+//            definition<NodeDirectory>(InMemoryNodeDirectory::class.java)
             definition<AddressableDirectory>(InMemoryAddressableDirectory::class.java)
             definition<AddressablePlacementStrategy>(LocalFirstPlacementStrategy::class.java)
 
