@@ -11,11 +11,13 @@ service NodeManagement {
 }
 
 message JoinClusterRequest {
+    NodeCapabilities capabilities = 1;
 }
 
 message RenewLeaseRequest {
     string node_identity = 1;
     string challenge_token = 2;
+    NodeCapabilities capabilities = 3;
 }
 
 message RenewLeaseResponse {
@@ -28,4 +30,8 @@ message NodeLease {
     string challenge_token = 2;
     google.protobuf.Timestamp renew_at = 3;
     google.protobuf.Timestamp expires_at = 4;
+}
+
+message NodeCapabilities {
+    repeated string addressableTypes = 1;
 }

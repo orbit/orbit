@@ -9,6 +9,7 @@ package orbit.server.net
 import io.grpc.Status
 import io.grpc.StatusException
 import orbit.server.routing.LocalNodeInfo
+import orbit.server.routing.NodeCapabilities
 import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeInfo
 import orbit.shared.proto.NodeManagementImplBase
@@ -24,7 +25,12 @@ internal class NodeLeases(
 ) : NodeManagementImplBase() {
 
     override suspend fun joinCluster(request: NodeManagementOuterClass.JoinClusterRequest): NodeManagementOuterClass.NodeLease {
-        val nodeInfo = nodeDirectory.join(NodeInfo.ClientNodeInfo(visibleNodes = listOf(localNodeInfo.nodeInfo.id)))
+        val nodeInfo = nodeDirectory.join(NodeInfo.ClientNodeInfo(
+            visibleNodes = listOf(localNodeInfo.nodeInfo.id),
+            capabilities = NodeCapabilities(
+                addressableTypes = request.capabilities.addressableTypesList
+            )
+        ))
         return nodeInfo.lease.toProto()
     }
 
@@ -48,11 +54,17 @@ internal class NodeLeases(
             when (nodeInfo) {
                 is NodeInfo.ServerNodeInfo -> nodeInfo.copy(
                     lease = lease,
-                    visibleNodes = listOf(localNodeInfo.nodeInfo.id)
+                    visibleNodes = listOf(localNodeInfo.nodeInfo.id),
+                    capabilities = NodeCapabilities(
+                        addressableTypes = request.capabilities.addressableTypesList
+                    )
                 )
                 is NodeInfo.ClientNodeInfo -> nodeInfo.copy(
                     lease = lease,
-                    visibleNodes = listOf(localNodeInfo.nodeInfo.id)
+                    visibleNodes = listOf(localNodeInfo.nodeInfo.id),
+                    capabilities = NodeCapabilities(
+                        addressableTypes = request.capabilities.addressableTypesList
+                    )
                 )
             }
         )

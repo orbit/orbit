@@ -21,7 +21,13 @@ class LeaseManager(grpcClient: GrpcClient) {
     suspend fun joinCluster() {
         logger.info("Joining Orbit cluster...")
         nodeManagementStub.joinCluster(
-            NodeManagementOuterClass.JoinClusterRequest.newBuilder().build()
+            NodeManagementOuterClass.JoinClusterRequest.newBuilder()
+                .setCapabilities(
+                    NodeManagementOuterClass.NodeCapabilities.newBuilder()
+                        .addAllAddressableTypes(
+                            listOf("test")
+                        ).build()
+                ).build()
         ).await().asNodeLease().also {
             localLease = it
             logger.info("Joined cluster as node: ${it.nodeId}")
