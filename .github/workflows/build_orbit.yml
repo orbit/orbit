@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '1.8', '11.x', '13.x' ]
+        java: [ '1.8', '11', '12' ]
     name: Build On JDK ${{ matrix.java }}
 
     steps:
