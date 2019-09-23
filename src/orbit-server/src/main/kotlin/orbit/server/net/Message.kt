@@ -43,6 +43,7 @@ internal sealed class MessageContent {
             return data
         }
     }
+
     data class Response(val data: String)
     data class ResponseErrorMessage(val error: Throwable) : MessageContent()
 }

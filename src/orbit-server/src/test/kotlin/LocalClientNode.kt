@@ -4,10 +4,10 @@
  See license in LICENSE.
  */
 
-import orbit.server.*
 import orbit.server.net.Message
 import orbit.server.net.NodeId
-import orbit.server.routing.*
+import orbit.server.routing.MeshNode
+import orbit.server.routing.Route
 
 internal class LocalClientNode(
     override val id: NodeId = NodeId.generate("client:"),

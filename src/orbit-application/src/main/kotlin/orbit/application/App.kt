@@ -7,8 +7,8 @@
 package orbit.application
 
 import kotlinx.coroutines.runBlocking
-import orbit.server.OrbitServerConfig
 import orbit.server.OrbitServer
+import orbit.server.OrbitServerConfig
 
 fun main() {
     val server = OrbitServer(OrbitServerConfig())

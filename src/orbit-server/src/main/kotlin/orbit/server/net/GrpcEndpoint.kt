@@ -11,7 +11,11 @@ import io.grpc.ServerBuilder
 import orbit.common.logging.logger
 import orbit.server.OrbitServerConfig
 
-internal class GrpcEndpoint(private val config: OrbitServerConfig, private val connections: Connections, private val nodeLeases: NodeLeases) {
+internal class GrpcEndpoint(
+    private val config: OrbitServerConfig,
+    private val connections: Connections,
+    private val nodeLeases: NodeLeases
+) {
     private lateinit var server: Server
 
     private val logger by logger()

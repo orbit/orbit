@@ -13,8 +13,7 @@ import orbit.server.net.NodeLease
 import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeInfo
 import java.time.Duration
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
+import java.time.Instant
 
 internal class InMemoryNodeDirectory(private val expiration: LeaseExpiration) : NodeDirectory {
     companion object Singleton {
@@ -50,15 +49,17 @@ internal class InMemoryNodeDirectory(private val expiration: LeaseExpiration) : 
             else -> NodeId.generate()
         }
 
+
         val lease = NodeLease(
             nodeId,
-            expiresAt = ZonedDateTime.now(ZoneOffset.UTC).plus(
+            expiresAt = Instant.now().plus(
                 when (nodeInfo) {
                     is NodeInfo.ServerNodeInfo -> Duration.ofSeconds(100000)
                     else -> expiration.duration
                 }
             ),
-            renewAt = ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.renew),
+
+            renewAt = Instant.now().plus(expiration.renew),
             challengeToken = RNGUtils.secureRandomString()
         )
 
@@ -78,7 +79,7 @@ internal class InMemoryNodeDirectory(private val expiration: LeaseExpiration) : 
     }
 
     override suspend fun cullLeases() {
-        val now = ZonedDateTime.now(ZoneOffset.UTC)
+        val now = Instant.now()
         val leaseCount = nodes.count()
 
         val (expiredLeases, validLeases) = nodes.asIterable().partition { (id, node) -> node.lease.expiresAt < now }

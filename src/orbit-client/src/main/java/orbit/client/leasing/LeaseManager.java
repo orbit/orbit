@@ -52,7 +52,7 @@ public class LeaseManager {
                                         .build()
                         )
                 ).thenAcceptAsync((leaseRenewal) -> {
-                    if(leaseRenewal.getLeaseRenewed()) {
+                    if (leaseRenewal.getLeaseRenewed()) {
                         localLease.setChallenge(leaseRenewal.getLeaseInfo().getChallengeToken());
                         localLease.setExpiresAt(Instant.ofEpochSecond(leaseRenewal.getLeaseInfo().getExpiresAt().getSeconds()));
                         localLease.setRenewAt(Instant.ofEpochSecond((leaseRenewal.getLeaseInfo().getRenewAt().getSeconds())));

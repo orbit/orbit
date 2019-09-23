@@ -6,11 +6,12 @@ import "google/protobuf/timestamp.proto";
 package orbit.shared;
 
 service NodeManagement {
-    rpc JoinCluster(JoinClusterRequest) returns (NodeLease);
-    rpc RenewLease(RenewLeaseRequest) returns (RenewLeaseResponse);
+    rpc JoinCluster (JoinClusterRequest) returns (NodeLease);
+    rpc RenewLease (RenewLeaseRequest) returns (RenewLeaseResponse);
 }
 
-message JoinClusterRequest {}
+message JoinClusterRequest {
+}
 
 message RenewLeaseRequest {
     string node_identity = 1;

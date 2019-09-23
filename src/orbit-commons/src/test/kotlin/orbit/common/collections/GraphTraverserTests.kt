@@ -6,11 +6,7 @@
 
 package orbit.common.collections
 
-import kotlinx.coroutines.channels.take
 import org.junit.jupiter.api.Test
-import org.assertj.core.api.Assertions.*
-import kotlin.coroutines.CoroutineContext
-import kotlin.math.max
 
 class GraphTraverserTests {
 

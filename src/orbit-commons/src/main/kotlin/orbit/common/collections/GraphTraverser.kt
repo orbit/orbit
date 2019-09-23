@@ -9,7 +9,7 @@ package orbit.common.collections
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-class GraphTraverser<T>(val getChildren: suspend (T) -> List<T>)  {
+class GraphTraverser<T>(val getChildren: suspend (T) -> List<T>) {
     fun traverse(initial: T): Flow<ParentChild<T>> = flow {
         var row = listOf(ParentChild(null, initial))
 

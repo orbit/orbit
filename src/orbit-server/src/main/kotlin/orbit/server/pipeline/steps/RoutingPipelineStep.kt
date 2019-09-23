@@ -22,10 +22,12 @@ internal class RoutingPipelineStep(private val router: Router, private val conne
                     if (route == null) {
                         return@let msg
                     }
-                    context.newOutbound(msg.copy(
-                        target = MessageTarget.Routed(route),
-                        content = msg.content
-                    ))
+                    context.newOutbound(
+                        msg.copy(
+                            target = MessageTarget.Routed(route),
+                            content = msg.content
+                        )
+                    )
                 }
             else -> context.nextInbound(msg)
         }

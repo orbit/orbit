@@ -26,7 +26,6 @@ configureProject(":src:orbit-client", [withJava, withTests, publish])
 configureProject(":src:orbit-application", [withKotlin])
 
 
-
 buildscript {
     ext {
         kotlinVersion = "1.3.50"

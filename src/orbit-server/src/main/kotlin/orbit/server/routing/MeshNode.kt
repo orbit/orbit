@@ -9,7 +9,7 @@ package orbit.server.routing
 import orbit.server.net.Message
 import orbit.server.net.NodeId
 
-internal interface MeshNode  {
+internal interface MeshNode {
     val id: NodeId
     suspend fun sendMessage(message: Message, route: Route? = null)
 }

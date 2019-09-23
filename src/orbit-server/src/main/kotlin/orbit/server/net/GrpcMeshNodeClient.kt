@@ -9,7 +9,6 @@ package orbit.server.net
 import io.grpc.ClientInterceptors
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
-import io.rouz.grpc.ManyToManyCall
 import orbit.server.routing.MeshNode
 import orbit.server.routing.Route
 import orbit.shared.proto.Addressable

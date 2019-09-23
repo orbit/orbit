@@ -1,14 +1,8 @@
 package orbit.server.routing
 
-import LocalClientNode
-import orbit.server.*
 import orbit.server.addressable.AddressableReference
-import orbit.server.local.*
 import orbit.server.net.Message
-import orbit.server.net.MessageContent
 import orbit.server.net.NodeId
-import org.assertj.core.api.Assertions.*
-import org.junit.jupiter.api.Test
 
 internal class RouterTest {
 

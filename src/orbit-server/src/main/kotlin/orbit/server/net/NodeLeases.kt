@@ -13,8 +13,7 @@ import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeInfo
 import orbit.shared.proto.NodeManagementImplBase
 import orbit.shared.proto.NodeManagementOuterClass
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
+import java.time.Instant
 
 typealias ChallengeToken = String
 
@@ -41,8 +40,8 @@ internal class NodeLeases(
         val lease = NodeLease(
             nodeId,
             challengeToken = request.challengeToken,
-            expiresAt = ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.duration),
-            renewAt = ZonedDateTime.now(ZoneOffset.UTC).plus(expiration.renew)
+            expiresAt = Instant.now().plus(expiration.duration),
+            renewAt = Instant.now().plus(expiration.renew)
         )
 
         nodeDirectory.report(
@@ -71,7 +70,7 @@ internal class NodeLeases(
 
     private fun checkLease(nodeInfo: NodeInfo, challengeToken: ChallengeToken? = null): Boolean {
         return nodeInfo.id.value.startsWith("mesh:") ||
-                nodeInfo.lease.expiresAt > ZonedDateTime.now(ZoneOffset.UTC) &&
+                nodeInfo.lease.expiresAt > Instant.now() &&
                 (challengeToken == null || nodeInfo.lease.challengeToken == challengeToken)
     }
 }

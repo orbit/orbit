@@ -8,24 +8,21 @@ package orbit.server.net
 
 import com.google.protobuf.Timestamp
 import orbit.shared.proto.NodeManagementOuterClass
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.ZoneId
-import java.time.ZonedDateTime
+import java.time.Instant
 
 class NodeLease(
     val nodeId: NodeId,
     val challengeToken: ChallengeToken,
-    val expiresAt: ZonedDateTime,
-    val renewAt: ZonedDateTime
+    val expiresAt: Instant,
+    val renewAt: Instant
 ) {
     companion object Statics {
         @JvmStatic
         val Empty = NodeLease(
             NodeId.Empty,
             "",
-            ZonedDateTime.now(),
-            ZonedDateTime.of(LocalDate.EPOCH, LocalTime.MIDNIGHT, ZoneId.systemDefault())
+            Instant.MIN,
+            Instant.MIN
         )
     }
 
@@ -33,8 +30,8 @@ class NodeLease(
         return NodeManagementOuterClass.NodeLease.newBuilder()
             .setNodeIdentity(nodeId.value)
             .setChallengeToken(challengeToken)
-            .setRenewAt(Timestamp.newBuilder().setSeconds(renewAt.toEpochSecond()))
-            .setExpiresAt(Timestamp.newBuilder().setSeconds(expiresAt.toEpochSecond()))
+            .setRenewAt(Timestamp.newBuilder().setSeconds(renewAt.epochSecond))
+            .setExpiresAt(Timestamp.newBuilder().setSeconds(expiresAt.epochSecond))
             .build()
     }
 }
