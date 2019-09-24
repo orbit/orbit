@@ -47,16 +47,10 @@ class NodeLeaser(private val nodeStatus: NodeStatus, grpcClient: GrpcClient) {
                         )
                         .build()
                 ).await()
-                if (renewalResult.leaseRenewed) {
-                    nodeStatus.currentLease.set(renewalResult.leaseInfo.toNodeLease())
-                    logger.debug("Lease renewed.")
-                } else {
-                    "Node renewal failed".also {
-                        logger.error(it)
-                        throw IllegalStateException(it)
-                    }
 
-                }
+                check(renewalResult.leaseRenewed) { "Node renewal failed" }
+                nodeStatus.currentLease.set(renewalResult.leaseInfo.toNodeLease())
+                logger.debug("Lease renewed.")
             }
         }
     }

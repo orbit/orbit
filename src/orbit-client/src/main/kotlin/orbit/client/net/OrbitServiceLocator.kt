@@ -13,9 +13,10 @@ private const val ORBIT_SCHEME = "orbit"
 data class OrbitServiceLocator(val host: String, val port: Int, val namespace: String)
 
 fun URI.toServiceLocator(): OrbitServiceLocator {
-    require(this.scheme.toLowerCase() == ORBIT_SCHEME.toLowerCase()) { "Scheme must be $ORBIT_SCHEME." }
-    requireNotNull(this.path)
-    return OrbitServiceLocator(this.host, this.port, this.path)
+    require(scheme.toLowerCase() == ORBIT_SCHEME.toLowerCase()) { "Scheme must be $ORBIT_SCHEME." }
+    require(!path.isNullOrEmpty() && path != "/") { "A namespace must be specified." }
+    require(port != -1) { "A port must be explicitly specified."}
+    return OrbitServiceLocator(this.host, this.port, path.trimStart('/'))
 }
 
 fun OrbitServiceLocator.toURI() = URI("$ORBIT_SCHEME://$host:$port/$namespace")
