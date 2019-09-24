@@ -10,7 +10,5 @@ dependencies {
 
     implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
 
-    implementation("io.etcd:jetcd-core:$jetcdVersion") {
-        exclude(group: "io.grpc")
-    }
+    implementation("io.etcd:jetcd-all:$jetcdVersion")
 }

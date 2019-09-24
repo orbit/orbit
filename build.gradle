@@ -71,7 +71,7 @@ ext {
 
     junitJupiterVersion = "5.5.1"
     slf4jVersion = "1.7.26"
-    jetcdVersion = "0.3.0"
+    jetcdVersion = "0.3.1-SNAPSHOT"
 }
 
 allprojects {
@@ -83,6 +83,7 @@ allprojects {
         mavenCentral()
         jcenter()
         maven { url(dokkaRepo) }
+        maven { url("https://oss.sonatype.org/content/repositories/snapshots/") }
     }
 }
 
