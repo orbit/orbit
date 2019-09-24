@@ -38,7 +38,6 @@ internal class NodeLeaser(private val nodeStatus: NodeStatus, grpcClient: GrpcCl
                 logger.debug("Renewing lease...")
                 val renewalResult = nodeManagementStub.renewLease(
                     NodeManagementOuterClass.RenewLeaseRequest.newBuilder()
-                        .setNodeIdentity(existingLease.nodeId)
                         .setChallengeToken(existingLease.challenge)
                         .setCapabilities(
                             NodeManagementOuterClass.NodeCapabilities.newBuilder()

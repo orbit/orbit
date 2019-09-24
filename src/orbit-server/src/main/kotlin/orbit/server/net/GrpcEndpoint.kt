@@ -34,6 +34,6 @@ internal class GrpcEndpoint(
     }
 
     fun stop() {
-        server.shutdown().awaitTermination()
+        server.shutdownNow().awaitTermination()
     }
 }

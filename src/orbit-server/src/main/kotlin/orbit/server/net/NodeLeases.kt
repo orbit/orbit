@@ -38,7 +38,7 @@ internal class NodeLeases(
     }
 
     override suspend fun renewLease(request: NodeManagementOuterClass.RenewLeaseRequest): NodeManagementOuterClass.RenewLeaseResponse {
-        val nodeId = NodeId(request.nodeIdentity)
+        val nodeId = NodeId(NodeIdServerInterceptor.NODE_ID.get())
 
         val nodeInfo = nodeDirectory.getNode(nodeId)
 

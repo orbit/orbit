@@ -15,9 +15,8 @@ message JoinClusterRequest {
 }
 
 message RenewLeaseRequest {
-    string node_identity = 1;
-    string challenge_token = 2;
-    NodeCapabilities capabilities = 3;
+    string challenge_token = 1;
+    NodeCapabilities capabilities = 2;
 }
 
 message RenewLeaseResponse {
