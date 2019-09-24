@@ -6,7 +6,6 @@
 
 package orbit.server.proto
 
-import com.google.protobuf.Timestamp
 import orbit.server.net.Message
 import orbit.server.net.MessageContent
 import orbit.server.net.NodeId
@@ -15,14 +14,15 @@ import orbit.server.routing.NodeInfo
 import orbit.shared.proto.Addressable
 import orbit.shared.proto.Messages
 import orbit.shared.proto.NodeManagementOuterClass
+import orbit.shared.proto.util.toProto
 import java.time.Instant
 
 fun NodeLease.toProto(): NodeManagementOuterClass.NodeLease {
     return NodeManagementOuterClass.NodeLease.newBuilder()
         .setNodeIdentity(this.nodeId.value)
         .setChallengeToken(this.challengeToken)
-        .setRenewAt(Timestamp.newBuilder().setSeconds(this.renewAt.epochSecond))
-        .setExpiresAt(Timestamp.newBuilder().setSeconds(this.expiresAt.epochSecond))
+        .setRenewAt(this.renewAt.toProto())
+        .setExpiresAt(this.expiresAt.toProto())
         .build()
 }
 
