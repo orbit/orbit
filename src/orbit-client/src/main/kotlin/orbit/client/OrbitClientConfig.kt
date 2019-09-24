@@ -13,9 +13,9 @@ import java.time.Duration
 
 data class OrbitClientConfig(
     /**
-     * The gRPC endpoint of the Orbit server.
+     * The service URI for the Orbit cluster to connect to.
      */
-    val endpoint: URI = URI("grpc://localhost:50056"),
+    val serviceURI: URI = URI("orbit://localhost:50056/default"),
 
     /**
      * The tick rate of the Orbit client.

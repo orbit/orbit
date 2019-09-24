@@ -6,11 +6,12 @@
 
 package orbit.client.net
 
+import orbit.client.OrbitClientConfig
 import orbit.client.leasing.NodeLease
 import java.util.concurrent.atomic.AtomicReference
 
-class NodeStatus {
+class NodeStatus(config: OrbitClientConfig) {
+    val serviceLocator = config.serviceURI.toServiceLocator()
     val currentLease = AtomicReference<NodeLease>()
-
     val capabilities = emptyList<String>()
 }

@@ -13,7 +13,8 @@ fun Instant.toProto() =
     this.toEpochMilli().let { millis ->
         Timestamp.newBuilder()
             .setSeconds(millis / 1000)
-            .setNanos((millis % 1000 * 1000000).toInt()).build()
+            .setNanos((millis % 1000 * 1000000).toInt())
+            .build()
     }
 
 fun Timestamp.toInstant() = Instant.ofEpochSecond(seconds, nanos.toLong())

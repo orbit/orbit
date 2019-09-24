@@ -8,14 +8,10 @@ package orbit.client.net
 
 import io.grpc.Channel
 import io.grpc.ManagedChannelBuilder
-import orbit.client.OrbitClientConfig
 
-class GrpcClient(config: OrbitClientConfig) {
-    private val endpoint = config.endpoint
-
+class GrpcClient(nodeStatus: NodeStatus) {
     val channel: Channel = ManagedChannelBuilder
-        .forAddress(endpoint.host, endpoint.port)
+        .forAddress(nodeStatus.serviceLocator.host, nodeStatus.serviceLocator.port)
         .usePlaintext()
         .build()
-
 }

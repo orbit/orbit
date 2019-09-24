@@ -54,7 +54,7 @@ class OrbitClient(private val config: OrbitClientConfig) {
 
     fun start() = scope.launch {
         val clock: Clock by container.inject()
-        logger.info("Starting Orbit client...")
+        logger.info("Starting Orbit client for ${config.serviceURI}...")
         val (elapsed, _) = stopwatch(clock) {
             onStart()
             launchTick()
@@ -106,7 +106,7 @@ class OrbitClient(private val config: OrbitClientConfig) {
 
             if (elapsed > targetTickRate) {
                 logger.warn {
-                    "Slow Orbit client Tick. The application is unable to maintain its tick rate. " +
+                    "Slow Orbit client tick. The application is unable to maintain its tick rate. " +
                             "Last tick took ${elapsed}ms and the reference tick rate is ${targetTickRate}ms. " +
                             "The next tick will take place immediately."
                 }
