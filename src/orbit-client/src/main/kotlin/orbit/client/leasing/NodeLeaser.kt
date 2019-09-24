@@ -19,7 +19,7 @@ class NodeLeaser(private val nodeStatus: NodeStatus, grpcClient: GrpcClient) {
     private val nodeManagementStub = NodeManagementGrpc.newFutureStub(grpcClient.channel)
 
     suspend fun joinCluster() {
-        logger.info("Joining Orbit cluster...")
+        logger.info("Joining cluster at '${nodeStatus.serviceLocator}'...")
         nodeManagementStub.joinCluster(
             NodeManagementOuterClass.JoinClusterRequest.newBuilder()
                 .setCapabilities(
@@ -28,7 +28,7 @@ class NodeLeaser(private val nodeStatus: NodeStatus, grpcClient: GrpcClient) {
                 ).build()
         ).await().toNodeLease().also {
             nodeStatus.currentLease.set(it)
-            logger.info("Joined cluster as node: ${it.nodeId}")
+            logger.info("Joined cluster as node '${it.nodeId}'.")
         }
     }
 

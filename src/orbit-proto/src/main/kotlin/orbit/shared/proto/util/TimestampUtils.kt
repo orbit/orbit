@@ -9,7 +9,7 @@ package orbit.shared.proto.util
 import com.google.protobuf.Timestamp
 import java.time.Instant
 
-fun Instant.toProto() =
+fun Instant.toProto(): Timestamp =
     this.toEpochMilli().let { millis ->
         Timestamp.newBuilder()
             .setSeconds(millis / 1000)
@@ -17,4 +17,4 @@ fun Instant.toProto() =
             .build()
     }
 
-fun Timestamp.toInstant() = Instant.ofEpochSecond(seconds, nanos.toLong())
+fun Timestamp.toInstant(): Instant = Instant.ofEpochSecond(seconds, nanos.toLong())

@@ -54,7 +54,7 @@ class OrbitClient(private val config: OrbitClientConfig) {
 
     fun start() = scope.launch {
         val clock: Clock by container.inject()
-        logger.info("Starting Orbit client for ${config.serviceURI}...")
+        logger.info("Starting Orbit client...")
         val (elapsed, _) = stopwatch(clock) {
             onStart()
             launchTick()

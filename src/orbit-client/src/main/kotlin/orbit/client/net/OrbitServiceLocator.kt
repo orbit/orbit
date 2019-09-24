@@ -10,7 +10,9 @@ import java.net.URI
 
 private const val ORBIT_SCHEME = "orbit"
 
-data class OrbitServiceLocator(val host: String, val port: Int, val namespace: String)
+data class OrbitServiceLocator(val host: String, val port: Int, val namespace: String) {
+    override fun toString() = "$ORBIT_SCHEME://$host:$port/$namespace"
+}
 
 fun URI.toServiceLocator(): OrbitServiceLocator {
     require(scheme.toLowerCase() == ORBIT_SCHEME.toLowerCase()) { "Scheme must be $ORBIT_SCHEME." }
@@ -19,4 +21,4 @@ fun URI.toServiceLocator(): OrbitServiceLocator {
     return OrbitServiceLocator(this.host, this.port, path.trimStart('/'))
 }
 
-fun OrbitServiceLocator.toURI() = URI("$ORBIT_SCHEME://$host:$port/$namespace")
+fun OrbitServiceLocator.toURI() = URI(this.toString())
