@@ -27,9 +27,11 @@ import java.time.Duration
 import java.time.Instant
 
 class EtcdNodeDirectory(private val expiration: LeaseExpiration) : NodeDirectory {
-    object EtcdNodeDirectoryConfig: NodeDirectory.NodeDirectoryConfig {
+    data class EtcdCreds(val username: String, val password: String)
+
+    class EtcdNodeDirectoryConfig(private val etcdCreds: EtcdCreds): NodeDirectory.NodeDirectoryConfig {
         override val directoryType: Class<out NodeDirectory> = EtcdNodeDirectory::class.java
-        override val specificConfig: Any? = null
+        override val specificConfig: Any? = etcdCreds
     }
 
     private val client = Client.builder().endpoints("http://localhost:2379").build().kvClient

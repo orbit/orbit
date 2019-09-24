@@ -12,7 +12,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import orbit.client.leasing.NodeLeaser
+import orbit.client.net.AuthInterceptor
 import orbit.client.net.GrpcClient
+import orbit.client.net.ConnectionHandler
 import orbit.client.net.NodeStatus
 import orbit.common.concurrent.SupervisorScope
 import orbit.common.di.ComponentProvider
@@ -35,6 +37,8 @@ class OrbitClient(private val config: OrbitClientConfig) {
     )
 
     private val nodeLeaser by container.inject<NodeLeaser>()
+    private val connectionHandler by container.inject<ConnectionHandler>()
+
 
     private var tickJob: Job? = null
 
@@ -48,6 +52,9 @@ class OrbitClient(private val config: OrbitClientConfig) {
             definition<NodeStatus>()
             definition<GrpcClient>()
             definition<NodeLeaser>()
+            definition<AuthInterceptor>()
+
+            definition<ConnectionHandler>()
 
         }
     }
@@ -76,6 +83,7 @@ class OrbitClient(private val config: OrbitClientConfig) {
 
     private suspend fun onStart() {
         nodeLeaser.joinCluster()
+        connectionHandler.connect()
     }
 
     private suspend fun tick() {
@@ -83,7 +91,7 @@ class OrbitClient(private val config: OrbitClientConfig) {
     }
 
     private suspend fun onStop() {
-
+        connectionHandler.disconnect()
     }
 
     private fun launchTick() = scope.launch {
