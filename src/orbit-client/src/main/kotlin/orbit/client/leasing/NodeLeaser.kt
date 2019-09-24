@@ -26,7 +26,7 @@ class NodeLeaser(private val nodeStatus: NodeStatus, grpcClient: GrpcClient) {
                     NodeManagementOuterClass.NodeCapabilities.newBuilder()
                         .addAllAddressableTypes(nodeStatus.capabilities).build()
                 ).build()
-        ).await().asNodeLease().also {
+        ).await().toNodeLease().also {
             nodeStatus.currentLease.set(it)
             logger.info("Joined cluster as node: ${it.nodeId}")
         }
@@ -48,7 +48,7 @@ class NodeLeaser(private val nodeStatus: NodeStatus, grpcClient: GrpcClient) {
                         .build()
                 ).await()
                 if (renewalResult.leaseRenewed) {
-                    nodeStatus.currentLease.set(renewalResult.leaseInfo.asNodeLease())
+                    nodeStatus.currentLease.set(renewalResult.leaseInfo.toNodeLease())
                     logger.debug("Lease renewed.")
                 } else {
                     "Node renewal failed".also {

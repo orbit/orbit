@@ -6,8 +6,8 @@
 
 package orbit.server.net
 
-import com.google.protobuf.Timestamp
 import orbit.shared.proto.NodeManagementOuterClass
+import orbit.shared.proto.util.toProto
 import java.time.Instant
 
 class NodeLease(
@@ -30,8 +30,8 @@ class NodeLease(
         return NodeManagementOuterClass.NodeLease.newBuilder()
             .setNodeIdentity(nodeId.value)
             .setChallengeToken(challengeToken)
-            .setRenewAt(Timestamp.newBuilder().setSeconds(renewAt.epochSecond))
-            .setExpiresAt(Timestamp.newBuilder().setSeconds(expiresAt.epochSecond))
+            .setRenewAt(renewAt.toProto())
+            .setExpiresAt(expiresAt.toProto())
             .build()
     }
 }
