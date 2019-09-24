@@ -14,7 +14,7 @@ import orbit.shared.proto.NodeManagementGrpc
 import orbit.shared.proto.NodeManagementOuterClass
 import java.time.Instant
 
-class NodeLeaser(private val nodeStatus: NodeStatus, grpcClient: GrpcClient) {
+internal class NodeLeaser(private val nodeStatus: NodeStatus, grpcClient: GrpcClient) {
     private val logger by logger()
     private val nodeManagementStub = NodeManagementGrpc.newFutureStub(grpcClient.channel)
 

@@ -10,14 +10,14 @@ import orbit.shared.proto.NodeManagementOuterClass
 import orbit.shared.proto.util.toInstant
 import java.time.Instant
 
-data class NodeLease(
+internal data class NodeLease(
     val nodeId: String,
     val challenge: String,
     val expiresAt: Instant,
     val renewAt: Instant
 )
 
-fun NodeManagementOuterClass.NodeLease.toNodeLease() = NodeLease(
+internal fun NodeManagementOuterClass.NodeLease.toNodeLease() = NodeLease(
     nodeId = this.nodeIdentity,
     challenge = this.challengeToken,
     expiresAt = this.expiresAt.toInstant(),

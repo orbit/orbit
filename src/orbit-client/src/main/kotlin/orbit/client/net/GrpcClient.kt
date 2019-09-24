@@ -9,7 +9,7 @@ package orbit.client.net
 import io.grpc.Channel
 import io.grpc.ManagedChannelBuilder
 
-class GrpcClient(nodeStatus: NodeStatus) {
+internal class GrpcClient(nodeStatus: NodeStatus) {
     val channel: Channel = ManagedChannelBuilder
         .forAddress(nodeStatus.serviceLocator.host, nodeStatus.serviceLocator.port)
         .usePlaintext()
