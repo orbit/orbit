@@ -15,8 +15,6 @@ class BasicTest {
         runBlocking {
             val client = OrbitClient()
             client.start().join()
-
-            Thread.currentThread().join()
         }
     }
 }
