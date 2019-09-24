@@ -6,15 +6,11 @@
 
 package orbit.client
 
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 
-class BasicTest {
+class BasicTest : BaseIntegrationTest() {
     @Test
     fun basicStart() {
-        runBlocking {
-            val client = OrbitClient()
-            client.start().join()
-        }
+
     }
 }

@@ -9,4 +9,6 @@ dependencies {
     implementation(project(":src:orbit-proto"))
 
     implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
+
+    testImplementation(project(":src:orbit-server"))
 }
