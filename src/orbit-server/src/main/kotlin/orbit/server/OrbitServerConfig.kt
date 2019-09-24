@@ -16,7 +16,7 @@ data class OrbitServerConfig(
     /**
      * The gRPC endpoint port.
      */
-    val grpcPort: Int = 50056,
+    val grpcPort: Int = System.getenv("ORBIT_PORT")?.toInt(10) ?: 50056,
 
     /**
      * The Orbit tick rate.
