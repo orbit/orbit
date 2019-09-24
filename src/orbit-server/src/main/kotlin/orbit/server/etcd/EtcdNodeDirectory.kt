@@ -13,6 +13,7 @@ import io.etcd.jetcd.options.DeleteOption
 import io.etcd.jetcd.options.GetOption
 import kotlinx.coroutines.future.await
 import orbit.common.util.RNGUtils
+import orbit.server.local.InMemoryNodeDirectory
 import orbit.server.net.LeaseExpiration
 import orbit.server.net.NodeId
 import orbit.server.net.NodeLease
@@ -26,6 +27,11 @@ import java.time.Duration
 import java.time.Instant
 
 class EtcdNodeDirectory(private val expiration: LeaseExpiration) : NodeDirectory {
+    object EtcdNodeDirectoryConfig: NodeDirectory.NodeDirectoryConfig {
+        override val directoryType: Class<out NodeDirectory> = EtcdNodeDirectory::class.java
+        override val specificConfig: Any? = null
+    }
+
     private val client = Client.builder().endpoints("http://localhost:2379").build().kvClient
 
     fun getKey(nodeId: NodeId): ByteSequence {

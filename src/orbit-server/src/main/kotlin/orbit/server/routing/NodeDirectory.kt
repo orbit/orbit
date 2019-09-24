@@ -8,7 +8,12 @@ package orbit.server.routing
 
 import orbit.server.net.NodeId
 
-internal interface NodeDirectory {
+interface NodeDirectory {
+    interface NodeDirectoryConfig {
+        val directoryType: Class<out NodeDirectory>
+        val specificConfig: Any?
+    }
+
     suspend fun <TNodeInfo : NodeInfo> join(nodeInfo: TNodeInfo): TNodeInfo
     suspend fun report(nodeInfo: NodeInfo)
     suspend fun getNode(nodeId: NodeId): NodeInfo?

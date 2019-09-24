@@ -86,8 +86,12 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<Clock>()
 
             definition<Router>()
-            definition<NodeDirectory>(EtcdNodeDirectory::class.java)
-//            definition<NodeDirectory>(InMemoryNodeDirectory::class.java)
+
+            definition(config.nodeDirectoryConfig.directoryType)
+            config.nodeDirectoryConfig.specificConfig?.let {
+                instance(it)
+            }
+
             definition<AddressableDirectory>(InMemoryAddressableDirectory::class.java)
             definition<AddressablePlacementStrategy>(LocalFirstPlacementStrategy::class.java)
 

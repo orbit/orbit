@@ -8,6 +8,8 @@ package orbit.server
 
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.common.concurrent.Pools
+import orbit.server.local.InMemoryNodeDirectory
+import orbit.server.routing.NodeDirectory
 import java.time.Duration
 
 data class OrbitServerConfig(
@@ -54,5 +56,10 @@ data class OrbitServerConfig(
     /**
      * The duration before a client lease renewal
      */
-    val leaseRenewal: Duration = Duration.ofSeconds(30)
+    val leaseRenewal: Duration = Duration.ofSeconds(30),
+
+    /**
+     * Node directory configuration
+     */
+    val nodeDirectoryConfig: NodeDirectory.NodeDirectoryConfig = InMemoryNodeDirectory.InMemoryNodeDirectoryConfig
 )
