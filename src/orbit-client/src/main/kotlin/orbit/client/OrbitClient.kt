@@ -11,8 +11,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import orbit.client.leasing.LeaseManager
+import orbit.client.leasing.NodeLeaser
 import orbit.client.net.GrpcClient
+import orbit.client.net.NodeStatus
 import orbit.common.concurrent.SupervisorScope
 import orbit.common.di.ComponentProvider
 import orbit.common.logging.logger
@@ -33,7 +34,7 @@ class OrbitClient(private val config: OrbitClientConfig) {
         exceptionHandler = this::onUnhandledException
     )
 
-    val leaseManager by container.inject<LeaseManager>()
+    private val nodeLeaser by container.inject<NodeLeaser>()
 
     private var tickJob: Job? = null
 
@@ -44,8 +45,9 @@ class OrbitClient(private val config: OrbitClientConfig) {
 
             definition<Clock>()
 
+            definition<NodeStatus>()
             definition<GrpcClient>()
-            definition<LeaseManager>()
+            definition<NodeLeaser>()
 
         }
     }
@@ -55,6 +57,7 @@ class OrbitClient(private val config: OrbitClientConfig) {
         logger.info("Starting Orbit client...")
         val (elapsed, _) = stopwatch(clock) {
             onStart()
+            launchTick()
         }
 
         logger.info("Orbit client started successfully in {}ms.", elapsed)
@@ -72,17 +75,16 @@ class OrbitClient(private val config: OrbitClientConfig) {
     }
 
     private suspend fun onStart() {
-        leaseManager.joinCluster()
+        nodeLeaser.joinCluster()
     }
 
     private suspend fun tick() {
-        leaseManager.tick()
+        nodeLeaser.tick()
     }
 
     private suspend fun onStop() {
 
     }
-
 
     private fun launchTick() = scope.launch {
         val clock: Clock by container.inject()

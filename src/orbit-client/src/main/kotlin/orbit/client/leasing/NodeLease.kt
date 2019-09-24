@@ -16,7 +16,7 @@ data class NodeLease(
     val renewAt: Instant
 )
 
-fun  NodeManagementOuterClass.NodeLease.asNodeLease() = NodeLease(
+fun NodeManagementOuterClass.NodeLease.asNodeLease() = NodeLease(
     nodeId = this.nodeIdentity,
     challenge = this.challengeToken,
     expiresAt = Instant.ofEpochSecond(this.expiresAt.seconds),

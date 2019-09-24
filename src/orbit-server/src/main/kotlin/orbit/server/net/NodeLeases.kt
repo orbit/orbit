@@ -25,12 +25,14 @@ internal class NodeLeases(
 ) : NodeManagementImplBase() {
 
     override suspend fun joinCluster(request: NodeManagementOuterClass.JoinClusterRequest): NodeManagementOuterClass.NodeLease {
-        val nodeInfo = nodeDirectory.join(NodeInfo.ClientNodeInfo(
-            visibleNodes = listOf(localNodeInfo.nodeInfo.id),
-            capabilities = NodeCapabilities(
-                addressableTypes = request.capabilities.addressableTypesList
+        val nodeInfo = nodeDirectory.join(
+            NodeInfo.ClientNodeInfo(
+                visibleNodes = listOf(localNodeInfo.nodeInfo.id),
+                capabilities = NodeCapabilities(
+                    addressableTypes = request.capabilities.addressableTypesList
+                )
             )
-        ))
+        )
         return nodeInfo.lease.toProto()
     }
 
