@@ -21,7 +21,7 @@ internal class GrpcEndpoint(
     private val logger by logger()
 
     fun start() {
-        logger.info("Starting gRPC Endpoint on port ${config.grpcPort}...")
+        logger.info("Starting gRPC Endpoint on ${config.grpcHost}:${config.grpcPort}...")
 
         server = ServerBuilder.forPort(config.grpcPort)
             .addService(connections)
@@ -30,7 +30,7 @@ internal class GrpcEndpoint(
             .build()
             .start()
 
-        logger.info("gRPC Endpoint started on port ${config.grpcPort}.")
+        logger.info("gRPC Endpoint started on ${config.grpcHost}:${config.grpcPort}.")
     }
 
     fun stop() {

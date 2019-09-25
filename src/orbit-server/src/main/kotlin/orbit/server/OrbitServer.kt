@@ -71,7 +71,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
                 LocalNodeInfo(
                     NodeInfo.ServerNodeInfo(
                         NodeId.Empty,
-                        host = "0.0.0.0",
+                        host = config.grpcHost,
                         port = config.grpcPort,
                         capabilities = NodeCapabilities()
                     )

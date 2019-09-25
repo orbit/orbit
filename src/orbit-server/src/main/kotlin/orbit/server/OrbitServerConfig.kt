@@ -21,6 +21,11 @@ data class OrbitServerConfig(
     val grpcPort: Int = System.getenv("ORBIT_PORT")?.toInt(10) ?: 50056,
 
     /**
+     * The gRPC endpoint host.
+     */
+    val grpcHost: String = System.getenv("ORBIT_HOST") ?: "0.0.0.0",
+
+    /**
      * The Orbit tick rate.
      */
     val tickRate: Duration = Duration.ofSeconds(1),
