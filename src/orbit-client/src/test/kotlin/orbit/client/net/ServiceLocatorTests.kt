@@ -9,7 +9,6 @@ package orbit.client.net
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import java.lang.IllegalArgumentException
 import java.net.URI
 
 class ServiceLocatorTests {

@@ -7,7 +7,6 @@
 package orbit.client.leasing
 
 import orbit.shared.proto.NodeManagementOuterClass
-import orbit.shared.proto.util.toInstant
 import java.time.Instant
 
 internal data class NodeLease(

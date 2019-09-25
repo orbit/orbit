@@ -17,7 +17,7 @@ internal data class OrbitServiceLocator(val host: String, val port: Int, val nam
 internal fun URI.toServiceLocator(): OrbitServiceLocator {
     require(scheme.toLowerCase() == ORBIT_SCHEME.toLowerCase()) { "Scheme must be $ORBIT_SCHEME." }
     require(!path.isNullOrEmpty() && path != "/") { "A namespace must be specified." }
-    require(port != -1) { "A port must be explicitly specified."}
+    require(port != -1) { "A port must be explicitly specified." }
     return OrbitServiceLocator(this.host, this.port, path.trimStart('/'))
 }
 

@@ -9,7 +9,6 @@ package orbit.server.net
 import io.grpc.Status
 import io.grpc.StatusException
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.produce
 import orbit.common.di.ComponentProvider
 import orbit.server.routing.LocalNodeInfo
 import orbit.server.routing.MeshNode

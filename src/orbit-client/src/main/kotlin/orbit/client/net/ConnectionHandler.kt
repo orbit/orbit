@@ -17,7 +17,7 @@ internal class ConnectionHandler(grpcClient: GrpcClient) {
     private lateinit var connectionChannel: ManyToManyCall<Messages.Message, Messages.Message>
 
     fun connect() {
-        connectionChannel= messagesStub.messages()
+        connectionChannel = messagesStub.messages()
     }
 
     fun disconnect() {

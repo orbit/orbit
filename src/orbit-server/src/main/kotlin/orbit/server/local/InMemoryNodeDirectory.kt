@@ -16,7 +16,7 @@ import java.time.Duration
 import java.time.Instant
 
 internal class InMemoryNodeDirectory(private val expiration: LeaseExpiration) : NodeDirectory {
-    object InMemoryNodeDirectoryConfig: NodeDirectory.NodeDirectoryConfig {
+    object InMemoryNodeDirectoryConfig : NodeDirectory.NodeDirectoryConfig {
         override val directoryType: Class<out NodeDirectory> = InMemoryNodeDirectory::class.java
         override val specificConfig: Any? = null
     }

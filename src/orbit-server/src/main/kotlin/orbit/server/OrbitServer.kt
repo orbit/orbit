@@ -21,9 +21,7 @@ import orbit.common.util.Clock
 import orbit.common.util.stopwatch
 import orbit.server.concurrent.RuntimePools
 import orbit.server.concurrent.RuntimeScopes
-import orbit.server.etcd.EtcdNodeDirectory
 import orbit.server.local.InMemoryAddressableDirectory
-import orbit.server.local.InMemoryNodeDirectory
 import orbit.server.local.LocalFirstPlacementStrategy
 import orbit.server.net.Connections
 import orbit.server.net.GrpcEndpoint

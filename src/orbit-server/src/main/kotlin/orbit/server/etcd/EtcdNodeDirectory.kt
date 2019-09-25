@@ -13,7 +13,6 @@ import io.etcd.jetcd.options.DeleteOption
 import io.etcd.jetcd.options.GetOption
 import kotlinx.coroutines.future.await
 import orbit.common.util.RNGUtils
-import orbit.server.local.InMemoryNodeDirectory
 import orbit.server.net.LeaseExpiration
 import orbit.server.net.NodeId
 import orbit.server.net.NodeLease
@@ -29,7 +28,7 @@ import java.time.Instant
 class EtcdNodeDirectory(private val expiration: LeaseExpiration) : NodeDirectory {
     data class EtcdCreds(val username: String, val password: String)
 
-    class EtcdNodeDirectoryConfig(private val etcdCreds: EtcdCreds): NodeDirectory.NodeDirectoryConfig {
+    class EtcdNodeDirectoryConfig(private val etcdCreds: EtcdCreds) : NodeDirectory.NodeDirectoryConfig {
         override val directoryType: Class<out NodeDirectory> = EtcdNodeDirectory::class.java
         override val specificConfig: Any? = etcdCreds
     }

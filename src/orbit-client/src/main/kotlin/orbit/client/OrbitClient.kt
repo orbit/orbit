@@ -13,8 +13,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import orbit.client.leasing.NodeLeaser
 import orbit.client.net.AuthInterceptor
-import orbit.client.net.GrpcClient
 import orbit.client.net.ConnectionHandler
+import orbit.client.net.GrpcClient
 import orbit.client.net.NodeStatus
 import orbit.common.concurrent.SupervisorScope
 import orbit.common.di.ComponentProvider
