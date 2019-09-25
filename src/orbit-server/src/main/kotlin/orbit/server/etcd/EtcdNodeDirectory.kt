@@ -13,7 +13,7 @@ import io.etcd.jetcd.options.DeleteOption
 import io.etcd.jetcd.options.GetOption
 import kotlinx.coroutines.future.await
 import orbit.common.util.RNGUtils
-import orbit.server.OrbitServerConfig
+import orbit.server.config.InjectedWithConfig
 import orbit.server.net.LeaseExpiration
 import orbit.server.net.NodeId
 import orbit.server.net.NodeLease
@@ -28,7 +28,7 @@ import java.time.Instant
 
 class EtcdNodeDirectory(private val config: EtcdNodeDirectoryConfig) : NodeDirectory {
     data class EtcdNodeDirectoryConfig(val url: String, val expiration: LeaseExpiration) :
-        OrbitServerConfig.InjectedWithConfig<NodeDirectory> {
+        InjectedWithConfig<NodeDirectory> {
         override val instanceType: Class<out NodeDirectory> = EtcdNodeDirectory::class.java
     }
 

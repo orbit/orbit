@@ -8,6 +8,7 @@ package orbit.server
 
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.common.concurrent.Pools
+import orbit.server.config.InjectedWithConfig
 import orbit.server.etcd.EtcdNodeDirectory
 import orbit.server.net.LeaseExpiration
 import orbit.server.routing.NodeDirectory
@@ -64,8 +65,4 @@ data class OrbitServerConfig(
         url = System.getenv("ETCD_SERVER") ?: "http://localhost:2379",
         expiration = leaseExpiration
     )
-) {
-    interface InjectedWithConfig<T> {
-        val instanceType: Class<out T>
-    }
-}
+)
