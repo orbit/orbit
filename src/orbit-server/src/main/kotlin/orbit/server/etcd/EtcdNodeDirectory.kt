@@ -25,10 +25,8 @@ import java.nio.charset.Charset
 import java.time.Duration
 import java.time.Instant
 
-class EtcdNodeDirectory(private val config: Config) : NodeDirectory {
-    data class Config(val url: String, val expiration: LeaseExpiration)
-
-    class EtcdNodeDirectoryConfig(override val specificConfig: Config) : NodeDirectory.NodeDirectoryConfig {
+class EtcdNodeDirectory(private val config: EtcdNodeDirectoryConfig) : NodeDirectory {
+    data class EtcdNodeDirectoryConfig(val url: String, val expiration: LeaseExpiration) : NodeDirectory.NodeDirectoryConfig {
         override val directoryType: Class<out NodeDirectory> = EtcdNodeDirectory::class.java
     }
 

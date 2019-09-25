@@ -11,7 +11,6 @@ import orbit.server.net.NodeId
 interface NodeDirectory {
     interface NodeDirectoryConfig {
         val directoryType: Class<out NodeDirectory>
-        val specificConfig: Any?
     }
 
     suspend fun <TNodeInfo : NodeInfo> join(nodeInfo: TNodeInfo): TNodeInfo

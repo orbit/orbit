@@ -86,7 +86,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<Router>()
 
             definition(config.nodeDirectoryConfig.directoryType)
-            config.nodeDirectoryConfig.specificConfig?.let {
+            config.nodeDirectoryConfig.let {
                 instance(it.javaClass, it)
             }
 

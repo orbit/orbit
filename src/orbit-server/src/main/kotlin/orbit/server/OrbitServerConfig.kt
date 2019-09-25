@@ -9,7 +9,6 @@ package orbit.server
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.common.concurrent.Pools
 import orbit.server.etcd.EtcdNodeDirectory
-import orbit.server.local.InMemoryNodeDirectory
 import orbit.server.net.LeaseExpiration
 import orbit.server.routing.NodeDirectory
 import java.time.Duration
@@ -62,9 +61,7 @@ data class OrbitServerConfig(
      * Node directory configuration
      */
     val nodeDirectoryConfig: NodeDirectory.NodeDirectoryConfig = EtcdNodeDirectory.EtcdNodeDirectoryConfig(
-        specificConfig = EtcdNodeDirectory.Config(
-            url = System.getenv("ETCD_SERVER") ?: "http://localhost:2379",
-            expiration = leaseExpiration
-        )
+        url = System.getenv("ETCD_SERVER") ?: "http://localhost:2379",
+        expiration = leaseExpiration
     )
 )
