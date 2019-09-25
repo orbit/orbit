@@ -8,7 +8,9 @@ package orbit.server
 
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.common.concurrent.Pools
+import orbit.server.etcd.EtcdNodeDirectory
 import orbit.server.local.InMemoryNodeDirectory
+import orbit.server.net.LeaseExpiration
 import orbit.server.routing.NodeDirectory
 import java.time.Duration
 
@@ -49,17 +51,20 @@ data class OrbitServerConfig(
     val acquireShutdownLatch: Boolean = true,
 
     /**
-     * The duration of a client lease
+     * Expiration times for client leases
      */
-    val leaseExpiration: Duration = Duration.ofSeconds(60),
-
-    /**
-     * The duration before a client lease renewal
-     */
-    val leaseRenewal: Duration = Duration.ofSeconds(30),
+    val leaseExpiration: LeaseExpiration = LeaseExpiration(
+        duration = Duration.ofSeconds(60),
+        renew = Duration.ofSeconds(30)
+    ),
 
     /**
      * Node directory configuration
      */
-    val nodeDirectoryConfig: NodeDirectory.NodeDirectoryConfig = InMemoryNodeDirectory.InMemoryNodeDirectoryConfig
+    val nodeDirectoryConfig: NodeDirectory.NodeDirectoryConfig = EtcdNodeDirectory.EtcdNodeDirectoryConfig(
+        specificConfig = EtcdNodeDirectory.Config(
+            url = System.getenv("ETCD_SERVER") ?: "http://localhost:2379",
+            expiration = leaseExpiration
+        )
+    )
 )

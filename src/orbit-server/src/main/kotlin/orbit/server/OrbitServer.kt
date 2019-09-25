@@ -66,7 +66,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
     init {
         container.configure {
-            instance(LeaseExpiration(config.leaseExpiration, config.leaseRenewal))
+            instance(config.leaseExpiration)
             instance(
                 LocalNodeInfo(
                     NodeInfo.ServerNodeInfo(

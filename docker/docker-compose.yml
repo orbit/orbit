@@ -8,6 +8,7 @@ services:
       - "50056:50056"
     environment:
       ORBIT_PORT: 50056
+      ETCD_SERVER: http://node_directory:2379
     entrypoint: sh ./opt/orbit/entrypoint.sh
     volumes:
       - ../src/orbit-application/build/libs:/opt/orbit/libs
@@ -19,6 +20,7 @@ services:
       - "50057:50057"
     environment:
       ORBIT_PORT: 50057
+      ETCD_SERVER: http://node_directory:2379
     entrypoint: sh -c ./opt/orbit/entrypoint.sh
     volumes:
       - ../src/orbit-application/build/libs:/opt/orbit/libs
@@ -30,5 +32,8 @@ services:
     ports:
       - "2379:2379"
       - "2380:2380"
+    expose:
+      - 2379
+      - 2380
 
 #      ETCD_ROOT_PASSWORD: pass

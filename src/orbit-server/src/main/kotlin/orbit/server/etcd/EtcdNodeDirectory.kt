@@ -25,15 +25,18 @@ import java.nio.charset.Charset
 import java.time.Duration
 import java.time.Instant
 
-class EtcdNodeDirectory(private val expiration: LeaseExpiration) : NodeDirectory {
-    data class EtcdCreds(val username: String, val password: String)
+class EtcdNodeDirectory(private val config: Config) : NodeDirectory {
+    data class Config(val url: String, val expiration: LeaseExpiration)
 
-    class EtcdNodeDirectoryConfig(private val etcdCreds: EtcdCreds) : NodeDirectory.NodeDirectoryConfig {
+    class EtcdNodeDirectoryConfig(override val specificConfig: Config) : NodeDirectory.NodeDirectoryConfig {
         override val directoryType: Class<out NodeDirectory> = EtcdNodeDirectory::class.java
-        override val specificConfig: Any? = etcdCreds
     }
 
-    private val client = Client.builder().endpoints("http://localhost:2379").build().kvClient
+    init {
+        println("Starting etcd node directory at ${config.url}")
+    }
+
+    private val client = Client.builder().endpoints(config.url).build().kvClient
 
     fun getKey(nodeId: NodeId): ByteSequence {
         return ByteSequence.from(nodeId.value.toByteArray())
@@ -50,13 +53,13 @@ class EtcdNodeDirectory(private val expiration: LeaseExpiration) : NodeDirectory
             expiresAt = Instant.now().plus(
                 when (nodeInfo) {
                     is NodeInfo.ServerNodeInfo -> Duration.ofSeconds(600)
-                    else -> expiration.duration
+                    else -> config.expiration.duration
                 }
             ),
             renewAt = Instant.now().plus(
                 when (nodeInfo) {
                     is NodeInfo.ServerNodeInfo -> Duration.ofSeconds(300)
-                    else -> expiration.renew
+                    else -> config.expiration.renew
                 }
             ),
             challengeToken = RNGUtils.secureRandomString()
