@@ -12,7 +12,7 @@ interface InjectedWithConfig<T> {
     val instanceType: Class<out T>
 }
 
-fun <T : Any> ComponentProviderRoot.injectedWithConfig(config: InjectedWithConfig<T>) {
-    componentProvider.registerDefinition(config.instanceType)
+inline fun <reified T : Any> ComponentProviderRoot.injectedWithConfig(config: InjectedWithConfig<T>) {
+    componentProvider.registerDefinition(T::class.java, config.instanceType)
     componentProvider.registerInstance(config.javaClass, config)
 }
