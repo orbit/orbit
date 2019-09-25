@@ -9,10 +9,6 @@ package orbit.server.routing
 import orbit.server.net.NodeId
 
 interface NodeDirectory {
-    interface NodeDirectoryConfig {
-        val directoryType: Class<out NodeDirectory>
-    }
-
     suspend fun <TNodeInfo : NodeInfo> join(nodeInfo: TNodeInfo): TNodeInfo
     suspend fun report(nodeInfo: NodeInfo)
     suspend fun getNode(nodeId: NodeId): NodeInfo?

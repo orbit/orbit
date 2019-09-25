@@ -60,8 +60,12 @@ data class OrbitServerConfig(
     /**
      * Node directory configuration
      */
-    val nodeDirectoryConfig: NodeDirectory.NodeDirectoryConfig = EtcdNodeDirectory.EtcdNodeDirectoryConfig(
+    val nodeDirectoryConfig: InjectedWithConfig<NodeDirectory> = EtcdNodeDirectory.EtcdNodeDirectoryConfig(
         url = System.getenv("ETCD_SERVER") ?: "http://localhost:2379",
         expiration = leaseExpiration
     )
-)
+) {
+    interface InjectedWithConfig<T> {
+        val instanceType: Class<out T>
+    }
+}

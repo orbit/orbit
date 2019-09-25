@@ -25,7 +25,6 @@ import orbit.server.local.InMemoryAddressableDirectory
 import orbit.server.local.LocalFirstPlacementStrategy
 import orbit.server.net.Connections
 import orbit.server.net.GrpcEndpoint
-import orbit.server.net.LeaseExpiration
 import orbit.server.net.NodeId
 import orbit.server.net.NodeLeases
 import orbit.server.pipeline.Pipeline
@@ -85,7 +84,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
             definition<Router>()
 
-            definition(config.nodeDirectoryConfig.directoryType)
+            definition(config.nodeDirectoryConfig.instanceType)
             config.nodeDirectoryConfig.let {
                 instance(it.javaClass, it)
             }
