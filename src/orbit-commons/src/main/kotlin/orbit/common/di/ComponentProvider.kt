@@ -109,7 +109,10 @@ class ComponentProviderRoot constructor(@PublishedApi internal val componentProv
         componentProvider.registerDefinition(T::class.java)
 
     inline fun <reified T : Any> instance(obj: T) =
-        componentProvider.registerInstance(T::class.java, obj)
+        instance(T::class.java, obj)
+
+    fun <T : Any> instance(type: Class<T>, obj: T) =
+        componentProvider.registerInstance(type, obj)
 
     inline fun <reified T : Any> instance(body: () -> T) = instance(body())
 

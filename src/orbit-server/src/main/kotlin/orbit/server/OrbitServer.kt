@@ -87,7 +87,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
             definition(config.nodeDirectoryConfig.directoryType)
             config.nodeDirectoryConfig.specificConfig?.let {
-                instance(it)
+                instance(it.javaClass, it)
             }
 
             definition<AddressableDirectory>(InMemoryAddressableDirectory::class.java)
