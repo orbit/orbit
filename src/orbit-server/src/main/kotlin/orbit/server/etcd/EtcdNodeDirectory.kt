@@ -76,20 +76,25 @@ class EtcdNodeDirectory(private val config: EtcdNodeDirectoryConfig) : NodeDirec
     }
 
     override suspend fun report(nodeInfo: NodeInfo) {
+        println("Reporting node ${nodeInfo.id}. VisibleNodes: ${nodeInfo.visibleNodes}")
         client.put(getKey(nodeInfo.id), ByteSequence.from(nodeInfo.toProto().toByteArray())).await()
     }
 
     override suspend fun getNode(nodeId: NodeId): NodeInfo? {
         val response = client.get(getKey(nodeId)).await()
-        val value = response.kvs
+        val value = response.kvs.first().value
+        println("get node ${nodeId}")
 
-        println("get node ${value}")
-
-        return NodeInfo.ClientNodeInfo()
+        return NodeInfo.fromProto(NodeManagementOuterClass.NodeInfo.parseFrom(value.bytes))
     }
 
     override suspend fun lookupConnectedNodes(nodeId: NodeId): List<NodeInfo> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val node1 = getNode(nodeId)
+        val visibleNodes = node1?.visibleNodes ?: return listOf()
+
+        val allNodes = getAllNodes()
+
+        return allNodes.filter { node -> visibleNodes.contains(node.id) }
     }
 
     override suspend fun lookupMeshNodes(): List<NodeInfo.ServerNodeInfo> {

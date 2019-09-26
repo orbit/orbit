@@ -22,7 +22,7 @@ sealed class NodeInfo {
     data class ServerNodeInfo(
         override val id: NodeId = NodeId.Empty,
         override val capabilities: NodeCapabilities = NodeCapabilities(),
-        override val visibleNodes: Iterable<NodeId> = ArrayList(),
+        override val visibleNodes: Set<NodeId> = HashSet(),
         override val lease: NodeLease = NodeLease.Empty,
         val host: String,
         val port: Int
@@ -32,7 +32,7 @@ sealed class NodeInfo {
         override val id: NodeId = NodeId.Empty,
         override val capabilities: NodeCapabilities = NodeCapabilities(),
         override val lease: NodeLease = NodeLease.Empty,
-        override val visibleNodes: Iterable<NodeId> = ArrayList()
+        override val visibleNodes: Set<NodeId> = HashSet()
     ) : NodeInfo()
 }
 

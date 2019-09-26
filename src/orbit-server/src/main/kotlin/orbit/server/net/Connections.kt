@@ -14,8 +14,10 @@ import orbit.common.di.ComponentProvider
 import orbit.server.routing.LocalNodeInfo
 import orbit.server.routing.MeshNode
 import orbit.server.routing.NodeDirectory
+import orbit.server.routing.NodeInfo
 import orbit.shared.proto.ConnectionImplBase
 import orbit.shared.proto.Messages
+import java.time.Instant
 
 internal class Connections(
     private val localNode: LocalNodeInfo,
@@ -51,6 +53,10 @@ internal class Connections(
         clients[connection.id] = connection
 
         nodeDirectory.report(localNode.nodeInfo.copy(visibleNodes = localNode.nodeInfo.visibleNodes.plus(connection.id)))
+
+        val clientNode = nodeDirectory.getNode(nodeId) as NodeInfo.ClientNodeInfo
+        nodeDirectory.report(clientNode.copy(visibleNodes = clientNode.visibleNodes.plus(localNode.nodeInfo.id)))
+
         connection.ready()
 
         clients.remove(nodeId)
@@ -61,16 +67,18 @@ internal class Connections(
         val meshNodes = nodeDirectory.lookupMeshNodes().toList()
         var newConnections = false
         meshNodes.filter { node -> !this.meshNodes.containsKey(node.id) && node.id != localNode.nodeInfo.id }
+            .filter { node -> node.host != localNode.nodeInfo.host }
             .forEach { node ->
                 newConnections = true
                 this.meshNodes[node.id] = GrpcMeshNodeClient(node.id, node.host, node.port)
             }
 
-//        if (localNode.nodeInfo.lease.renewAt > Instant.now()) {
-//            localNode.updateNodeInfo(nodeDirectory.renewLease())
-//        }
+        if (localNode.nodeInfo.lease.renewAt < Instant.now()) {
+            localNode.updateNodeInfo(leases.renewLease(localNode.nodeInfo))
+        }
 
         if (newConnections) {
+            println("Updating local node ${localNode.nodeInfo.id} in directory ${this.meshNodes.keys.plus(clients.keys)}")
             nodeDirectory.report(localNode.nodeInfo.copy(visibleNodes = this.meshNodes.keys.plus(clients.keys)))
         }
     }

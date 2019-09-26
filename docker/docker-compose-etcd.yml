@@ -1,0 +1,13 @@
+version: "3.7"
+services:
+  node-directory:
+    image: bitnami/etcd
+    environment:
+      ALLOW_NONE_AUTHENTICATION: "yes"
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd-server:2379
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    expose:
+      - 2379
+      - 2380

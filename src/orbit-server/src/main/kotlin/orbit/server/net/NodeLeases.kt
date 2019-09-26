@@ -15,6 +15,7 @@ import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeInfo
 import orbit.shared.proto.NodeManagementImplBase
 import orbit.shared.proto.NodeManagementOuterClass
+import java.lang.IllegalArgumentException
 import java.time.Instant
 
 typealias ChallengeToken = String
@@ -28,54 +29,53 @@ internal class NodeLeases(
     override suspend fun joinCluster(request: NodeManagementOuterClass.JoinClusterRequest): NodeManagementOuterClass.NodeLease {
         val nodeInfo = nodeDirectory.join(
             NodeInfo.ClientNodeInfo(
-                visibleNodes = listOf(localNodeInfo.nodeInfo.id),
                 capabilities = NodeCapabilities(
                     addressableTypes = request.capabilities.addressableTypesList
                 )
             )
         )
+        nodeDirectory.report(nodeInfo)
+
         return nodeInfo.lease.toProto()
     }
 
     override suspend fun renewLease(request: NodeManagementOuterClass.RenewLeaseRequest): NodeManagementOuterClass.RenewLeaseResponse {
         val nodeId = NodeId(NodeIdServerInterceptor.NODE_ID.get())
-
         val nodeInfo = nodeDirectory.getNode(nodeId)
 
         if (nodeInfo == null || !checkLease(nodeInfo, request.challengeToken)) {
             throw StatusException(Status.UNAUTHENTICATED)
         }
 
-        val lease = NodeLease(
-            nodeId,
-            challengeToken = request.challengeToken,
+        val renewedNode = renewLease(nodeInfo)
+        nodeDirectory.report(renewedNode)
+
+        return NodeManagementOuterClass.RenewLeaseResponse.newBuilder()
+            .setLeaseRenewed(true)
+            .setLeaseInfo(renewedNode.lease.toProto())
+            .build()
+    }
+
+    suspend fun <TNodeInfo: NodeInfo> renewLease(nodeInfo: TNodeInfo): TNodeInfo {
+
+        val lease = nodeInfo.lease.copy(
             expiresAt = Instant.now().plus(expiration.duration),
             renewAt = Instant.now().plus(expiration.renew)
         )
 
-        nodeDirectory.report(
-            when (nodeInfo) {
-                is NodeInfo.ServerNodeInfo -> nodeInfo.copy(
-                    lease = lease,
-                    visibleNodes = listOf(localNodeInfo.nodeInfo.id),
-                    capabilities = NodeCapabilities(
-                        addressableTypes = request.capabilities.addressableTypesList
-                    )
-                )
-                is NodeInfo.ClientNodeInfo -> nodeInfo.copy(
-                    lease = lease,
-                    visibleNodes = listOf(localNodeInfo.nodeInfo.id),
-                    capabilities = NodeCapabilities(
-                        addressableTypes = request.capabilities.addressableTypesList
-                    )
-                )
-            }
-        )
+        val renewedNode = when (nodeInfo) {
+            is NodeInfo.ServerNodeInfo -> nodeInfo.copy(
+                lease = lease
+            )
+            is NodeInfo.ClientNodeInfo -> nodeInfo.copy(
+                lease = lease
+            )
+            else -> throw IllegalArgumentException()
+        }
 
-        return NodeManagementOuterClass.RenewLeaseResponse.newBuilder()
-            .setLeaseRenewed(true)
-            .setLeaseInfo(lease.toProto())
-            .build()
+        nodeDirectory.report(renewedNode)
+
+        return renewedNode as TNodeInfo
     }
 
     suspend fun checkLease(nodeId: NodeId): Boolean {

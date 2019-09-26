@@ -8,7 +8,7 @@ package orbit.server.net
 
 import java.time.Instant
 
-class NodeLease(
+data class NodeLease(
     val nodeId: NodeId,
     val challengeToken: ChallengeToken,
     val expiresAt: Instant,

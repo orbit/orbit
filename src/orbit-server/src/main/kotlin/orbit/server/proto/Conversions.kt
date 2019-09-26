@@ -10,6 +10,7 @@ import orbit.server.net.Message
 import orbit.server.net.MessageContent
 import orbit.server.net.NodeId
 import orbit.server.net.NodeLease
+import orbit.server.routing.NodeCapabilities
 import orbit.server.routing.NodeInfo
 import orbit.shared.proto.Addressable
 import orbit.shared.proto.Messages
@@ -82,13 +83,16 @@ fun NodeInfo.Companion.fromProto(nodeInfo: NodeManagementOuterClass.NodeInfo): N
     if (nodeInfo.hasClient()) {
         return NodeInfo.ClientNodeInfo(
             id = NodeId(nodeInfo.client.id),
-            lease = NodeLease.fromProto(nodeInfo.client.lease)
+            lease = NodeLease.fromProto(nodeInfo.client.lease),
+            visibleNodes = nodeInfo.client.visibleNodesList.map { n -> NodeId(n) }.toSet(),
+            capabilities = NodeCapabilities(nodeInfo.client.capabilities.addressableTypesList)
         )
     }
     if (nodeInfo.hasServer()) {
         return NodeInfo.ServerNodeInfo(
             id = NodeId(nodeInfo.server.id),
             lease = NodeLease.fromProto(nodeInfo.server.lease),
+            visibleNodes = nodeInfo.server.visibleNodesList.map { n -> NodeId(n) }.toSet(),
             host = nodeInfo.server.host,
             port = nodeInfo.server.port
         )
