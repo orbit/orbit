@@ -12,6 +12,6 @@ import orbit.server.net.NodeId
 
 interface AddressableDirectory {
     suspend fun getLease(address: AddressableReference): AddressableLease?
-    suspend fun setLocation(address: AddressableReference, node: NodeId)
+    suspend fun setLocation(address: AddressableReference, nodeId: NodeId)
     suspend fun updateLease(address: AddressableReference) : AddressableLease
 }

@@ -38,14 +38,21 @@ class EtcdAddressableDirectory(private val config: EtcdAddressableDirectoryConfi
 
     override suspend fun getLease(address: AddressableReference): AddressableLease? {
         val response = client.get(getKey(address)).await()
-        val value = response.kvs.first().value
-        println("get node ${address} = $value")
+        val value = response.kvs.firstOrNull()?.value
+        println("get node $address = $value")
 
-        return AddressableLease.fromProto(Addressable.AddressableLease.parseFrom(value.bytes))
+        return if (value != null) AddressableLease.fromProto(Addressable.AddressableLease.parseFrom(value.bytes)) else null
     }
 
-    override suspend fun setLocation(address: AddressableReference, node: NodeId) {
-        client.put(getKey(address), ByteSequence.from(node.value.toByteArray())).await()
+    override suspend fun setLocation(address: AddressableReference, nodeId: NodeId) {
+        val lease = AddressableLease(
+            address = address,
+            nodeId = nodeId,
+            expiresAt = Instant.now().plus(config.expiration.duration),
+            renewAt = Instant.now().plus(config.expiration.renew)
+        )
+
+        client.put(getKey(address), ByteSequence.from(lease.toProto().toByteArray())).await()
     }
 
     override suspend fun updateLease(address: AddressableReference): AddressableLease {

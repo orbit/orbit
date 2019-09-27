@@ -11,3 +11,14 @@ services:
     expose:
       - 2379
       - 2380
+  addressable-directory:
+    image: bitnami/etcd
+    environment:
+      ALLOW_NONE_AUTHENTICATION: "yes"
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd-server:2379
+    expose:
+      - 2379
+      - 2380
+    ports:
+      - "2381:2379"
+      - "2382:2380"

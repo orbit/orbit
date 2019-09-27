@@ -23,10 +23,10 @@ class InMemoryAddressableDirectory(val expiration: LeaseExpiration) : Addressabl
         return directory[address]
     }
 
-    override suspend fun setLocation(address: AddressableReference, node: NodeId) {
+    override suspend fun setLocation(address: AddressableReference, nodeId: NodeId) {
         directory[address] = AddressableLease(
             address = address,
-            nodeId = node,
+            nodeId = nodeId,
             expiresAt = Instant.now().plus(expiration.duration),
             renewAt = Instant.now().plus(expiration.renew)
         )

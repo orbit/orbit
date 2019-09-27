@@ -86,8 +86,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<Router>()
 
             injectedWithConfig(config.nodeDirectoryConfig)
+            injectedWithConfig(config.addressableDirectoryConfig)
 
-            definition<AddressableDirectory>(InMemoryAddressableDirectory::class.java)
             definition<AddressablePlacementStrategy>(LocalFirstPlacementStrategy::class.java)
 
             definition<Connections>()
