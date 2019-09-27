@@ -15,15 +15,15 @@ sealed class NodeInfo {
 
     abstract val id: NodeId
     abstract val capabilities: NodeCapabilities
-    abstract val visibleNodes: Iterable<NodeId>
+    abstract val visibleNodes: Set<NodeId>
 
     abstract val lease: NodeLease
 
     fun clone(
-        id: NodeId = NodeId.Empty,
-        capabilities: NodeCapabilities = NodeCapabilities(),
-        visibleNodes: Set<NodeId> = HashSet(),
-        lease: NodeLease = NodeLease.Empty
+        id: NodeId = this.id,
+        capabilities: NodeCapabilities = this.capabilities,
+        visibleNodes: Set<NodeId> = this.visibleNodes,
+        lease: NodeLease = this.lease
     ): NodeInfo {
         return when (this) {
             is ServerNodeInfo -> this.copy(id, capabilities, visibleNodes, lease)
