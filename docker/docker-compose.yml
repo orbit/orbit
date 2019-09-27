@@ -6,6 +6,7 @@ services:
       dockerfile: docker/server/Dockerfile
     ports:
       - "50056:50056"
+      - "5006:5005"
     environment:
       ORBIT_HOST: "orbit-server-1"
       ORBIT_PORT: 50056
@@ -19,6 +20,7 @@ services:
       dockerfile: docker/server/Dockerfile
     ports:
       - "50057:50057"
+      - "5007:5005"
     environment:
       ORBIT_HOST: "orbit-server-2"
       ORBIT_PORT: 50057
