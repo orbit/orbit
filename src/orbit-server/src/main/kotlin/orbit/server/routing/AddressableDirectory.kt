@@ -7,10 +7,11 @@ See license in LICENSE.
 package orbit.server.routing
 
 import orbit.server.addressable.AddressableReference
+import orbit.server.net.AddressableLease
 import orbit.server.net.NodeId
 
 interface AddressableDirectory {
-    suspend fun lookup(address: AddressableReference): NodeId?
+    suspend fun getLease(address: AddressableReference): AddressableLease?
     suspend fun setLocation(address: AddressableReference, node: NodeId)
-    suspend fun removeNode(node: NodeId)
+    suspend fun updateLease(address: AddressableReference) : AddressableLease
 }

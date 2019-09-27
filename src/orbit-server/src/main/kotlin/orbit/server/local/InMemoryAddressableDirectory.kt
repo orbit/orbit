@@ -7,30 +7,40 @@
 package orbit.server.local
 
 import orbit.server.addressable.AddressableReference
+import orbit.server.net.AddressableLease
+import orbit.server.net.LeaseExpiration
 import orbit.server.net.NodeId
 import orbit.server.routing.AddressableDirectory
+import java.time.Instant
 
-class InMemoryAddressableDirectory : AddressableDirectory {
+class InMemoryAddressableDirectory(val expiration: LeaseExpiration) : AddressableDirectory {
     companion object Singleton {
         @JvmStatic
-        private var directory: MutableMap<AddressableReference, NodeId> = HashMap()
+        private var directory: MutableMap<AddressableReference, AddressableLease> = HashMap()
     }
 
-    override suspend fun lookup(address: AddressableReference): NodeId? {
+    override suspend fun getLease(address: AddressableReference): AddressableLease? {
         return directory[address]
     }
 
     override suspend fun setLocation(address: AddressableReference, node: NodeId) {
-        directory[address] = node
+        directory[address] = AddressableLease(
+            address = address,
+            nodeId = node,
+            expiresAt = Instant.now().plus(expiration.duration),
+            renewAt = Instant.now().plus(expiration.renew)
+        )
     }
 
-    override suspend fun removeNode(node: NodeId) {
-        val directoryCount = directory.count()
-        directory = directory.filter { (address, nodeId) -> nodeId != node }.toMutableMap()
-
-        if (directory.count() < directoryCount) {
-            // TODO (brett) - Remove this diagnostic message
-            println("Reducing addressable dictinary from $directoryCount to ${directory.count()}")
+    override suspend fun updateLease(address: AddressableReference): AddressableLease {
+        var lease = directory[address]
+        if (lease != null) {
+            lease = lease.copy(
+                expiresAt = Instant.now().plus(expiration.duration),
+                renewAt = Instant.now().plus(expiration.renew)
+            )
+            directory[address] = lease
         }
+        return lease?: AddressableLease.Empty
     }
 }

@@ -22,7 +22,7 @@ internal class AddressablePipelineStep(
             msg.content is MessageContent.Request -> {
                 val destination = msg.content.destination
 
-                (addressableDirectory.lookup(destination)
+                (addressableDirectory.getLease(destination)?.nodeId
                     ?: addressablePlacement.chooseNode(destination)).let { nodeId ->
                     println("Addressable inbound: $nodeId")
                     context.nextInbound(

@@ -6,6 +6,8 @@
 
 package orbit.server.proto
 
+import orbit.server.addressable.AddressableReference
+import orbit.server.net.AddressableLease
 import orbit.server.net.Message
 import orbit.server.net.MessageContent
 import orbit.server.net.NodeId
@@ -31,6 +33,25 @@ fun NodeLease.Companion.fromProto(lease: NodeManagementOuterClass.NodeLease): No
     return NodeLease(
         nodeId = NodeId(lease.nodeIdentity),
         challengeToken = lease.challengeToken,
+        expiresAt = Instant.ofEpochSecond(lease.expiresAt.seconds),
+        renewAt = Instant.ofEpochSecond(lease.renewAt.seconds)
+    )
+}
+
+fun AddressableLease.toProto(): Addressable.AddressableLease {
+    val builder = Addressable.AddressableLease.newBuilder()
+    return builder
+        .setAddress(builder.addressBuilder.setId(this.address.id).setType(this.address.type))
+        .setNodeId(this.nodeId.value)
+        .setRenewAt(this.renewAt.toProto())
+        .setExpiresAt(this.expiresAt.toProto())
+        .build()
+}
+
+fun AddressableLease.Companion.fromProto(lease: Addressable.AddressableLease): AddressableLease {
+    return AddressableLease(
+        address = AddressableReference(type = lease.address.type, id = lease.address.id),
+        nodeId = NodeId(lease.nodeId),
         expiresAt = Instant.ofEpochSecond(lease.expiresAt.seconds),
         renewAt = Instant.ofEpochSecond(lease.renewAt.seconds)
     )
