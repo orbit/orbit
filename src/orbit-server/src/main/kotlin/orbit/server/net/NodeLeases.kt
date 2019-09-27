@@ -9,21 +9,18 @@ package orbit.server.net
 import io.grpc.Status
 import io.grpc.StatusException
 import orbit.server.proto.toProto
-import orbit.server.routing.LocalNodeInfo
 import orbit.server.routing.NodeCapabilities
 import orbit.server.routing.NodeDirectory
 import orbit.server.routing.NodeInfo
 import orbit.shared.proto.NodeManagementImplBase
 import orbit.shared.proto.NodeManagementOuterClass
-import java.lang.IllegalArgumentException
 import java.time.Instant
 
 typealias ChallengeToken = String
 
 internal class NodeLeases(
-    private val expiration: LeaseExpiration,
-    private val nodeDirectory: NodeDirectory,
-    private val localNodeInfo: LocalNodeInfo
+    private val clientExpiration: LeaseExpiration,
+    private val nodeDirectory: NodeDirectory
 ) : NodeManagementImplBase() {
 
     override suspend fun joinCluster(request: NodeManagementOuterClass.JoinClusterRequest): NodeManagementOuterClass.NodeLease {
@@ -59,19 +56,11 @@ internal class NodeLeases(
     suspend fun <TNodeInfo: NodeInfo> renewLease(nodeInfo: TNodeInfo): TNodeInfo {
 
         val lease = nodeInfo.lease.copy(
-            expiresAt = Instant.now().plus(expiration.duration),
-            renewAt = Instant.now().plus(expiration.renew)
+            expiresAt = Instant.now().plus(clientExpiration.duration),
+            renewAt = Instant.now().plus(clientExpiration.renew)
         )
 
-        val renewedNode = when (nodeInfo) {
-            is NodeInfo.ServerNodeInfo -> nodeInfo.copy(
-                lease = lease
-            )
-            is NodeInfo.ClientNodeInfo -> nodeInfo.copy(
-                lease = lease
-            )
-            else -> throw IllegalArgumentException()
-        }
+        val renewedNode = nodeInfo.clone(lease = lease)
 
         nodeDirectory.report(renewedNode)
 

@@ -8,6 +8,7 @@ package orbit.server.etcd
 
 import io.etcd.jetcd.ByteSequence
 import io.etcd.jetcd.Client
+import io.etcd.jetcd.Lease
 import io.etcd.jetcd.op.Op
 import io.etcd.jetcd.options.DeleteOption
 import io.etcd.jetcd.options.GetOption
@@ -27,7 +28,11 @@ import java.time.Duration
 import java.time.Instant
 
 class EtcdNodeDirectory(private val config: EtcdNodeDirectoryConfig) : NodeDirectory {
-    data class EtcdNodeDirectoryConfig(val url: String, val expiration: LeaseExpiration) :
+    data class EtcdNodeDirectoryConfig(
+        val url: String,
+        val clientExpiration: LeaseExpiration,
+        val serverExpiration: LeaseExpiration
+    ) :
         InjectedWithConfig<NodeDirectory> {
         override val instanceType: Class<out NodeDirectory> = EtcdNodeDirectory::class.java
     }
@@ -52,31 +57,27 @@ class EtcdNodeDirectory(private val config: EtcdNodeDirectoryConfig) : NodeDirec
             nodeId,
             expiresAt = Instant.now().plus(
                 when (nodeInfo) {
-                    is NodeInfo.ServerNodeInfo -> Duration.ofSeconds(600)
-                    else -> config.expiration.duration
+                    is NodeInfo.ServerNodeInfo -> config.serverExpiration.duration
+                    else -> config.clientExpiration.duration
                 }
             ),
             renewAt = Instant.now().plus(
                 when (nodeInfo) {
-                    is NodeInfo.ServerNodeInfo -> Duration.ofSeconds(300)
-                    else -> config.expiration.renew
+                    is NodeInfo.ServerNodeInfo -> config.serverExpiration.duration
+                    else -> config.clientExpiration.renew
                 }
             ),
             challengeToken = RNGUtils.secureRandomString()
         )
 
-        val newNode = when (nodeInfo) {
-            is NodeInfo.ServerNodeInfo -> nodeInfo.copy(nodeId, lease = lease)
-            is NodeInfo.ClientNodeInfo -> nodeInfo.copy(nodeId, lease = lease)
-            else -> nodeInfo
-        }
+        val newNode = nodeInfo.clone(nodeId, lease = lease)
 
         client.put(getKey(nodeId), ByteSequence.from(newNode.toProto().toByteArray())).await()
         return newNode as TNodeInfo
     }
 
     override suspend fun report(nodeInfo: NodeInfo) {
-        println("Reporting node ${nodeInfo.id}. VisibleNodes: ${nodeInfo.visibleNodes}")
+        println("Reporting node ${nodeInfo.id}. Expires ${nodeInfo.lease.expiresAt} VisibleNodes: ${nodeInfo.visibleNodes}")
         client.put(getKey(nodeInfo.id), ByteSequence.from(nodeInfo.toProto().toByteArray())).await()
     }
 

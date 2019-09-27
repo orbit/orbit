@@ -68,11 +68,7 @@ internal class InMemoryNodeDirectory(private val expiration: LeaseExpiration) : 
             challengeToken = RNGUtils.secureRandomString()
         )
 
-        val newNode = when (nodeInfo) {
-            is NodeInfo.ServerNodeInfo -> nodeInfo.copy(nodeId, lease = lease)
-            is NodeInfo.ClientNodeInfo -> nodeInfo.copy(nodeId, lease = lease)
-            else -> nodeInfo
-        }
+        val newNode = nodeInfo.clone(nodeId, lease = lease)
 
         nodes[nodeId] = newNode
 

@@ -64,10 +64,19 @@ data class OrbitServerConfig(
     ),
 
     /**
+     * Expiration time for server node leases
+     */
+    val serverLeaseExpiration: LeaseExpiration = LeaseExpiration(
+        duration = Duration.ofSeconds(600),
+        renew = Duration.ofSeconds(300)
+    ),
+
+    /**
      * Node directory configuration
      */
     val nodeDirectoryConfig: InjectedWithConfig<NodeDirectory> = EtcdNodeDirectory.EtcdNodeDirectoryConfig(
         url = System.getenv("ETCD_SERVER") ?: "http://localhost:2379",
-        expiration = leaseExpiration
+        clientExpiration = leaseExpiration,
+        serverExpiration = serverLeaseExpiration
     )
 )

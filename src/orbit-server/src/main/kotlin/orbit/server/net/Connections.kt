@@ -54,8 +54,10 @@ internal class Connections(
 
         nodeDirectory.report(localNode.nodeInfo.copy(visibleNodes = localNode.nodeInfo.visibleNodes.plus(connection.id)))
 
-        val clientNode = nodeDirectory.getNode(nodeId) as NodeInfo.ClientNodeInfo
-        nodeDirectory.report(clientNode.copy(visibleNodes = clientNode.visibleNodes.plus(localNode.nodeInfo.id)))
+        val clientNode = nodeDirectory.getNode(nodeId)
+        if (clientNode != null) {
+            nodeDirectory.report(clientNode.clone(visibleNodes = clientNode.visibleNodes.plus(localNode.nodeInfo.id).toSet()))
+        }
 
         connection.ready()
 

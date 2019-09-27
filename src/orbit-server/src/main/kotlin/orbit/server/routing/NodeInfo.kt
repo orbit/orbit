@@ -19,6 +19,18 @@ sealed class NodeInfo {
 
     abstract val lease: NodeLease
 
+    fun clone(
+        id: NodeId = NodeId.Empty,
+        capabilities: NodeCapabilities = NodeCapabilities(),
+        visibleNodes: Set<NodeId> = HashSet(),
+        lease: NodeLease = NodeLease.Empty
+    ): NodeInfo {
+        return when (this) {
+            is ServerNodeInfo -> this.copy(id, capabilities, visibleNodes, lease)
+            is ClientNodeInfo -> this.copy(id, capabilities, visibleNodes, lease)
+        }
+    }
+
     data class ServerNodeInfo(
         override val id: NodeId = NodeId.Empty,
         override val capabilities: NodeCapabilities = NodeCapabilities(),
@@ -31,8 +43,8 @@ sealed class NodeInfo {
     data class ClientNodeInfo(
         override val id: NodeId = NodeId.Empty,
         override val capabilities: NodeCapabilities = NodeCapabilities(),
-        override val lease: NodeLease = NodeLease.Empty,
-        override val visibleNodes: Set<NodeId> = HashSet()
+        override val visibleNodes: Set<NodeId> = HashSet(),
+        override val lease: NodeLease = NodeLease.Empty
     ) : NodeInfo()
 }
 

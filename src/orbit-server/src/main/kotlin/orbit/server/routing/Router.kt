@@ -10,13 +10,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.take
 import orbit.common.collections.GraphTraverser
-import orbit.server.concurrent.RuntimeScopes
 import orbit.server.net.NodeId
 
 internal class Router(
     private val localNode: LocalNodeInfo,
-    private val nodeDirectory: NodeDirectory,
-    private val runtimeScopes: RuntimeScopes
+    private val nodeDirectory: NodeDirectory
 ) {
 
     suspend fun getRoute(targetNode: NodeId, projectedRoute: Route? = null): Route? {
