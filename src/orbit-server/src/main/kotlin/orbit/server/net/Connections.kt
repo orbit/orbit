@@ -81,7 +81,8 @@ internal class Connections(
 
         if (newConnections) {
             println("Updating local node ${localNode.nodeInfo.id} in directory ${this.meshNodes.keys.plus(clients.keys)}")
-            nodeDirectory.report(localNode.nodeInfo.copy(visibleNodes = this.meshNodes.keys.plus(clients.keys)))
+            localNode.updateNodeInfo(localNode.nodeInfo.copy(visibleNodes = this.meshNodes.keys.plus(clients.keys)))
+            nodeDirectory.report(localNode.nodeInfo)
         }
     }
 }
