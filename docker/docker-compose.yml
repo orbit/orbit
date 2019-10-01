@@ -46,3 +46,13 @@ services:
     expose:
       - 2379
       - 2380
+  test-webpage:
+    build:
+      context: ../
+      dockerfile: docker/test-webpage/Dockerfile
+    volumes:
+      - ../src/orbit-test-webpage:/opt/orbit/web
+      - /opt/orbit/web/node_modules
+    ports:
+      - 80:3000
+    entrypoint: npm start
