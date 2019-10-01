@@ -1,5 +1,3 @@
-.incoming-messages {
-    padding-top: 20px;
-    border: 1px grey solid;
-    width: 300px;
+.messageEntry {
+    padding: 15px;
 }

@@ -53,6 +53,7 @@ services:
     volumes:
       - ../src/orbit-test-webpage:/opt/orbit/web
       - /opt/orbit/web/node_modules
+      - ../src/orbit-proto/src/main/proto/orbit/shared:/opt/orbit/web/public/orbit/shared
     ports:
       - 80:3000
     entrypoint: npm start
