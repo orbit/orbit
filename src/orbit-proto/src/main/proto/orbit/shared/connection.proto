@@ -6,5 +6,5 @@ import "orbit/shared/messages.proto";
 package orbit.shared;
 
 service Connection {
-    rpc Messages (stream Message) returns (stream Message);
+    rpc OpenStream (stream MessageProto) returns (stream MessageProto);
 }

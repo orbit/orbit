@@ -4,14 +4,8 @@
  See license in LICENSE.
  */
 
-package orbit.application
+package orbit.common.test
 
 import kotlinx.coroutines.runBlocking
-import orbit.server.OrbitServer
 
-fun main() {
-    runBlocking {
-        val server = OrbitServer()
-        server.start().join()
-    }
-}
+actual fun <T> runTest(block: suspend () -> T) = runBlocking { block() }

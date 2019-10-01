@@ -6,54 +6,30 @@ import "google/protobuf/timestamp.proto";
 package orbit.shared;
 
 service NodeManagement {
-    rpc JoinCluster (JoinClusterRequest) returns (NodeLease);
-    rpc RenewLease (RenewLeaseRequest) returns (RenewLeaseResponse);
+    rpc JoinCluster (JoinClusterRequestProto) returns (RequestLeaseResponseProto);
+    rpc RenewLease (RenewLeaseRequestProto) returns (RequestLeaseResponseProto);
 }
 
-message JoinClusterRequest {
-    NodeCapabilities capabilities = 1;
-}
-
-message RenewLeaseRequest {
-    string challenge_token = 1;
-    NodeCapabilities capabilities = 2;
-}
-
-message RenewLeaseResponse {
-    bool lease_renewed = 1;
-    NodeLease lease_info = 2;
-}
-
-message NodeLease {
-    string node_identity = 1;
-    string challenge_token = 2;
-    google.protobuf.Timestamp renew_at = 3;
-    google.protobuf.Timestamp expires_at = 4;
-}
-
-message NodeInfo {
-    oneof content {
-        ServerNodeInfo server = 1;
-        ClientNodeInfo client = 2;
-    }
-}
-
-message ServerNodeInfo {
-    string id = 1;
-    NodeCapabilities capabilities = 2;
-    NodeLease lease = 3;
-    repeated string visibleNodes = 4;
-    int32 port = 5;
-    string host = 6;
-}
-
-message ClientNodeInfo {
-    string id = 1;
-    NodeCapabilities capabilities = 2;
-    NodeLease lease = 3;
-    repeated string visibleNodes = 4;
-}
-
-message NodeCapabilities {
+message JoinClusterRequestProto {
     repeated string addressableTypes = 1;
+}
+
+message RenewLeaseRequestProto {
+    string challenge_token = 1;
+    repeated string addressableTypes = 2;
+}
+
+message RequestLeaseResponseProto {
+    Status status = 1;
+    string node_identity = 2;
+    string challenge_token = 3;
+    google.protobuf.Timestamp renew_at = 4;
+    google.protobuf.Timestamp expires_at = 5;
+
+    enum Status {
+        OK = 0;
+        INVALID_LEASE = 1;
+        INVALID_TOKEN = 2;
+        UNKNOWN_ERROR = 3;
+    }
 }
