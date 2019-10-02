@@ -4,8 +4,9 @@ services:
     build:
       context: ../
       dockerfile: docker/server/Dockerfile
+    expose:
+      - 50056
     ports:
-      - "50056:50056"
       - "5006:5005"
     environment:
       ORBIT_HOST: "orbit-server-1"
@@ -19,8 +20,9 @@ services:
     build:
       context: ../
       dockerfile: docker/server/Dockerfile
+    expose:
+      - 50057
     ports:
-      - "50057:50057"
       - "5007:5005"
     environment:
       ORBIT_HOST: "orbit-server-2"
@@ -57,3 +59,21 @@ services:
     ports:
       - 80:3000
     entrypoint: npm start
+  grpcwebproxy:
+    build:
+      context: ../
+      dockerfile: docker/grpcwebproxy/Dockerfile
+    environment:
+      BACKEND_HOST: orbit-server-1
+      BACKEND_PORT: 50056
+    ports:
+      - 50056:8080
+  grpcwebproxy:
+    build:
+      context: ../
+      dockerfile: docker/grpcwebproxy/Dockerfile
+    environment:
+      BACKEND_HOST: orbit-server-2
+      BACKEND_PORT: 50057
+    ports:
+      - 50057:8080
