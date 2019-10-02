@@ -12,9 +12,13 @@ import orbit.shared.mesh.NodeId
 data class Message(
     val content: MessageContent,
     val messageId: Long? = null,
-    val source: NodeId? = null
-    //val target: MessageTarget? = null
+    val source: NodeId? = null,
+    val target: MessageTarget? = null
 )
+
+sealed class MessageTarget {
+    data class Unicast(val targetNode: NodeId) : MessageTarget()
+}
 
 sealed class MessageContent {
     data class InvocationRequest(val data: String, val destination: AddressableReference) : MessageContent()

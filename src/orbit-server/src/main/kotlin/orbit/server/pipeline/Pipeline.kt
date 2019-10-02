@@ -17,6 +17,7 @@ import orbit.server.OrbitServerConfig
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.net.Completion
 import orbit.server.net.MessageContainer
+import orbit.server.net.MessageDirection
 import orbit.shared.exception.CapacityExceededException
 import orbit.shared.net.Message
 
@@ -49,17 +50,26 @@ class Pipeline(
         }
     }
 
-    fun writeMessage(message: Message): Completion {
-        check(this::pipelineChannel.isInitialized) { "The Orbit pipeline is not initialized." }
+    fun pushOutbound(msg: Message) =
+        writeMessage(msg, MessageDirection.OUTBOUND)
+
+    fun pushInbound(msg: Message) =
+        writeMessage(msg, MessageDirection.INBOUND)
+
+    private fun writeMessage(msg: Message, direction: MessageDirection): Completion {
+        check(this::pipelineChannel.isInitialized) {
+            "The Orbit pipeline is not in a state to receive messages. Did you start the Orbit stage?"
+        }
 
         val completion = CompletableDeferred<Unit>()
 
         val container = MessageContainer(
-            message = message,
-            completion = completion
+            direction = direction,
+            completion = completion,
+            message = msg
         )
 
-        logger.trace { "Writing message to pipeline channel: $message" }
+        logger.trace { "Writing message to pipeline channel: $container" }
 
         // Offer the content to the channel
         try {
@@ -75,7 +85,7 @@ class Pipeline(
             error("The pipeline channel is closed")
         }
 
-        return completion
+        return container.completion
     }
 
     private fun launchRail(receiveChannel: ReceiveChannel<MessageContainer>) = runtimeScopes.cpuScope.launch {
@@ -85,19 +95,39 @@ class Pipeline(
         }
     }
 
-    private suspend fun onMessage(messageContainer: MessageContainer) {
+    private suspend fun onMessage(container: MessageContainer) {
+        // Inbound starts at bottom, outbound at top.
+        val startAtEnd = container.direction == MessageDirection.INBOUND
+
+        // Outbound messages have a listener (the caller) so errors are considered handled by default.
+        // Inbound messages have no listener until later in the pipeline so are considered unhandled by default.
+        //val errorsAreHandled = container.direction == MessageDirection.OUTBOUND
+        // TODO: How does this work for mesh? Disabled for now
+        val errorsAreHandled = true
+
         val context = PipelineContext(
             pipelineSteps = pipelineSteps.steps,
+            startAtEnd = startAtEnd,
             pipeline = this,
-            completion = messageContainer.completion
+            completion = container.completion,
+            suppressErrors = errorsAreHandled
         )
 
         try {
-            context.next(messageContainer.message)
+            when (container.direction) {
+                MessageDirection.OUTBOUND -> context.nextOutbound(container.message)
+                MessageDirection.INBOUND -> context.nextInbound(container.message)
+            }
         } catch (c: CancellationException) {
             throw c
         } catch (t: Throwable) {
-            messageContainer.completion.completeExceptionally(t)
+            // We check to see if errors are suppressed (and therefore handled) and raise the event.
+            // If not we consider it an unhandled error and throw it to the Orbit root error handling.
+            if (context.suppressErrors) {
+                container.completion.completeExceptionally(t)
+            } else {
+                throw t
+            }
         }
     }
 }

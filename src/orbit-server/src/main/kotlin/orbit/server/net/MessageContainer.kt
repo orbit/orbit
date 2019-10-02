@@ -12,6 +12,12 @@ import orbit.shared.net.Message
 typealias Completion = CompletableDeferred<Unit>
 
 class MessageContainer(
+    val direction: MessageDirection,
     val completion: Completion,
     val message: Message
 )
+
+enum class MessageDirection {
+    INBOUND,
+    OUTBOUND;
+}

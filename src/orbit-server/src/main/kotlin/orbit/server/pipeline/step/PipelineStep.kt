@@ -10,5 +10,6 @@ import orbit.server.pipeline.PipelineContext
 import orbit.shared.net.Message
 
 interface PipelineStep {
-    suspend fun next(context: PipelineContext, msg: Message): Unit = context.next(msg)
+    suspend fun onOutbound(context: PipelineContext, msg: Message): Unit = context.nextOutbound(msg)
+    suspend fun onInbound(context: PipelineContext, msg: Message): Unit = context.nextInbound(msg)
 }

@@ -9,6 +9,7 @@ package orbit.server.net
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
+import orbit.common.di.jvm.ComponentContainer
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
@@ -26,9 +27,14 @@ class ConnectionManager(
     private val runtimeScopes: RuntimeScopes,
     private val clusterManager: ClusterManager,
     private val localNodeInfo: LocalNodeInfo,
-    private val pipeline: Pipeline
+    container: ComponentContainer
 ) {
     private val connectedClients = ConcurrentHashMap<NodeId, ClientConnection>()
+
+    // The pipeline needs to be lazy to avoid a stack overflow
+    private val pipeline by container.inject<Pipeline>()
+
+    fun getClient(nodeId: NodeId) = connectedClients[nodeId]
 
     fun onNewClient(
         nodeId: NodeId,

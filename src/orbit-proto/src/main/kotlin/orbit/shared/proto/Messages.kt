@@ -6,18 +6,22 @@
 
 package orbit.shared.proto
 
+import orbit.shared.mesh.NodeId
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 
 fun Messages.MessageProto.toMessage(): Message =
     Message(
         messageId = messageId,
+        source = NodeId(source),
         content = content.toMessageContent()
     )
 
 fun Message.toMessageProto(): Messages.MessageProto =
     Messages.MessageProto.newBuilder().let {
         if (messageId != null) it.setMessageId(messageId!!) else it
+    }.let {
+        if (source != null) it.setSource(source!!.value) else it
     }.setContent(content.toMessageContentProto()).build()
 
 fun Messages.MessageContentProto.toMessageContent(): MessageContent =

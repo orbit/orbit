@@ -9,6 +9,7 @@ package orbit.server.net
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import orbit.server.pipeline.Pipeline
+import orbit.shared.exception.CapacityExceededException
 import orbit.shared.exception.toErrorContent
 import orbit.shared.mesh.NodeId
 import orbit.shared.net.Message
@@ -24,14 +25,16 @@ class ClientConnection(
 ) {
     suspend fun consumeMessages() {
         for (protoMessage in incomingChannel) {
+
             val message = protoMessage.toMessage().copy(
+                // We don't trust the client to specify its own ID
                 source = nodeId
             )
-            val completion = pipeline.writeMessage(message)
+            val completion = pipeline.pushInbound(message)
 
             completion.invokeOnCompletion {
                 if (it != null) {
-                    sendError(cause = it, messageId = message.messageId)
+                    offerError(cause = it, messageId = message.messageId)
                 }
             }
         }
@@ -41,17 +44,24 @@ class ClientConnection(
         outgoingChannel.send(message.toMessageProto())
     }
 
-    fun close(cause: Throwable? = null, messageId: Long? = 0) {
-        sendError(cause, messageId)
-        outgoingChannel.close()
+    fun offerMessage(messsage: Message) {
+        val queued = outgoingChannel.offer(messsage.toMessageProto())
+        if (!queued) throw CapacityExceededException("Could not offer message.")
     }
 
-    private fun sendError(cause: Throwable? = null, messageId: Long? = 0) {
-        outgoingChannel.offer(
+    private fun offerError(cause: Throwable? = null, messageId: Long? = 0) {
+        offerMessage(
             Message(
                 messageId = messageId,
                 content = cause.toErrorContent()
-            ).toMessageProto()
+            )
         )
     }
+
+    fun close(cause: Throwable? = null, messageId: Long? = 0) {
+        offerError(cause, messageId)
+        outgoingChannel.close()
+    }
+
+
 }

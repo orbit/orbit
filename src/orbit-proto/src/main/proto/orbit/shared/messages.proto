@@ -8,8 +8,9 @@ import "orbit/shared/addressable.proto";
 
 message MessageProto {
     int64 messageId = 1;
+    string source = 2;
 
-    MessageContentProto content = 2;
+    MessageContentProto content = 3;
 }
 
 message MessageContentProto {
