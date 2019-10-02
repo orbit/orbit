@@ -82,7 +82,7 @@ class ConnectionManager(
         // Update this server with client
         localNodeInfo.updateInfo {
             it.copy(
-                visibleNodes = it.visibleNodes + localNodeInfo.info.id
+                visibleNodes = it.visibleNodes + nodeInfo.id
             )
         }
     }
@@ -98,7 +98,7 @@ class ConnectionManager(
         // Update this server
         localNodeInfo.updateInfo {
             it.copy(
-                visibleNodes = it.visibleNodes - localNodeInfo.info.id
+                visibleNodes = it.visibleNodes - nodeInfo.id
             )
         }
     }

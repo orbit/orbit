@@ -30,11 +30,9 @@ class ClientConnection(
             val completion = pipeline.writeMessage(message)
 
             completion.invokeOnCompletion {
-                if (it != null) outgoingChannel.offer(
-                    message.copy(
-                        content = it.toErrorContent()
-                    ).toMessageProto()
-                )
+                if (it != null) {
+                    sendError(cause = it, messageId = message.messageId)
+                }
             }
         }
     }
@@ -43,7 +41,17 @@ class ClientConnection(
         outgoingChannel.send(message.toMessageProto())
     }
 
-    fun close(cause: Throwable? = null) {
-        outgoingChannel.close(cause)
+    fun close(cause: Throwable? = null, messageId: Long? = 0) {
+        sendError(cause, messageId)
+        outgoingChannel.close()
+    }
+
+    private fun sendError(cause: Throwable? = null, messageId: Long? = 0) {
+        outgoingChannel.offer(
+            Message(
+                messageId = messageId,
+                content = cause.toErrorContent()
+            ).toMessageProto()
+        )
     }
 }

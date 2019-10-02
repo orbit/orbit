@@ -28,7 +28,7 @@ class InvalidChallengeException(nodeId: NodeId, challengeToken: ChallengeToken) 
 class CapacityExceededException(message: String) : Throwable(message)
 
 
-fun Throwable.toErrorContent(): MessageContent.Error = when (this) {
+fun Throwable?.toErrorContent(): MessageContent.Error = when (this) {
     is InvalidNodeId -> MessageContent.Error(
         status = MessageContent.Error.Status.INVALID_LEASE,
         message = message
@@ -46,6 +46,6 @@ fun Throwable.toErrorContent(): MessageContent.Error = when (this) {
 
     else -> MessageContent.Error(
         status = MessageContent.Error.Status.UNKNOWN,
-        message = message
+        message = this?.message ?: "Unknown error"
     )
 }
