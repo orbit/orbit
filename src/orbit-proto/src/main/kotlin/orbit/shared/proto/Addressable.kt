@@ -10,7 +10,7 @@ import orbit.shared.addressable.AddressableReference
 
 fun AddressableReference.toAddressableReferenceProto() =
     Addressable.AddressableReferenceProto.newBuilder()
-        .setType(id)
+        .setId(id)
         .setType(type)
         .build()
 
