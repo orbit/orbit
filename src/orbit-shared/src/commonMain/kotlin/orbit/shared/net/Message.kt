@@ -8,6 +8,7 @@ package orbit.shared.net
 
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.mesh.NodeId
+import orbit.shared.router.Route
 
 data class Message(
     val content: MessageContent,
@@ -18,6 +19,7 @@ data class Message(
 
 sealed class MessageTarget {
     data class Unicast(val targetNode: NodeId) : MessageTarget()
+    data class RoutedUnicast(val route: Route) : MessageTarget()
 }
 
 sealed class MessageContent {

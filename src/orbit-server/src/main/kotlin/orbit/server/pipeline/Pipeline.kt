@@ -7,7 +7,6 @@
 package orbit.server.pipeline
 
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -15,11 +14,12 @@ import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import orbit.server.OrbitServerConfig
 import orbit.server.concurrent.RuntimeScopes
-import orbit.server.net.Completion
 import orbit.server.net.MessageContainer
 import orbit.server.net.MessageDirection
 import orbit.shared.exception.CapacityExceededException
+import orbit.shared.exception.toErrorContent
 import orbit.shared.net.Message
+import orbit.shared.net.MessageTarget
 
 class Pipeline(
     private val config: OrbitServerConfig,
@@ -56,16 +56,13 @@ class Pipeline(
     fun pushInbound(msg: Message) =
         writeMessage(msg, MessageDirection.INBOUND)
 
-    private fun writeMessage(msg: Message, direction: MessageDirection): Completion {
+    private fun writeMessage(msg: Message, direction: MessageDirection) {
         check(this::pipelineChannel.isInitialized) {
             "The Orbit pipeline is not in a state to receive messages. Did you start the Orbit stage?"
         }
 
-        val completion = CompletableDeferred<Unit>()
-
         val container = MessageContainer(
             direction = direction,
-            completion = completion,
             message = msg
         )
 
@@ -77,15 +74,11 @@ class Pipeline(
                 // If the channel rejected there must be no capacity, we complete the deferred result exceptionally.
                 val errMsg = "The Orbit pipeline channel is full. >${config.pipelineBufferCount} buffered messages."
                 logger.error(errMsg)
-                completion.completeExceptionally(
-                    CapacityExceededException(errMsg)
-                )
+                throw CapacityExceededException(errMsg)
             }
         } catch (t: Throwable) {
             error("The pipeline channel is closed")
         }
-
-        return container.completion
     }
 
     private fun launchRail(receiveChannel: ReceiveChannel<MessageContainer>) = runtimeScopes.cpuScope.launch {
@@ -95,22 +88,14 @@ class Pipeline(
         }
     }
 
-    private suspend fun onMessage(container: MessageContainer) {
+    private suspend fun onMessage(container: MessageContainer, respondOnError: Boolean = true) {
         // Inbound starts at bottom, outbound at top.
         val startAtEnd = container.direction == MessageDirection.INBOUND
-
-        // Outbound messages have a listener (the caller) so errors are considered handled by default.
-        // Inbound messages have no listener until later in the pipeline so are considered unhandled by default.
-        //val errorsAreHandled = container.direction == MessageDirection.OUTBOUND
-        // TODO: How does this work for mesh? Disabled for now
-        val errorsAreHandled = true
 
         val context = PipelineContext(
             pipelineSteps = pipelineSteps.steps,
             startAtEnd = startAtEnd,
-            pipeline = this,
-            completion = container.completion,
-            suppressErrors = errorsAreHandled
+            pipeline = this
         )
 
         try {
@@ -121,10 +106,16 @@ class Pipeline(
         } catch (c: CancellationException) {
             throw c
         } catch (t: Throwable) {
-            // We check to see if errors are suppressed (and therefore handled) and raise the event.
-            // If not we consider it an unhandled error and throw it to the Orbit root error handling.
-            if (context.suppressErrors) {
-                container.completion.completeExceptionally(t)
+            if (respondOnError && container.message.source != null) {
+                val errMsg = MessageContainer(
+                    direction = MessageDirection.OUTBOUND,
+                    message = Message(
+                        messageId = container.message.messageId,
+                        target = MessageTarget.Unicast(container.message.source!!),
+                        content = t.toErrorContent()
+                    )
+                )
+                onMessage(errMsg, false)
             } else {
                 throw t
             }

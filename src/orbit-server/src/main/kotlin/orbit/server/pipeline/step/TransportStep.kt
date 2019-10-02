@@ -15,18 +15,22 @@ class TransportStep(
     private val connectionManager: ConnectionManager
 ) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
-        when (val target = msg.target) {
+        val targetNode = when (val target = msg.target) {
             is MessageTarget.Unicast -> {
-                checkNotNull(
-                    connectionManager.getClient(target.targetNode)?.sendMessage(msg)
-                ) {
-                    "Can't find target node ${msg.target}"
-                }
+                target.targetNode
             }
 
-            else -> {
-                error("Target could not be resolved ${msg.target}")
-            }
+            is MessageTarget.RoutedUnicast -> target.route.nextNode
+
+            else -> null
         }
+
+        checkNotNull(targetNode) { "Could not determine a target ${msg.target}" }
+
+        val client = connectionManager.getClient(targetNode)
+
+        checkNotNull(client) { "Could not find target ${msg.target} in connections" }
+
+        client.sendMessage(msg)
     }
 }

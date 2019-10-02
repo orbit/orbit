@@ -13,6 +13,7 @@ import orbit.shared.exception.CapacityExceededException
 import orbit.shared.exception.toErrorContent
 import orbit.shared.mesh.NodeId
 import orbit.shared.net.Message
+import orbit.shared.net.MessageTarget
 import orbit.shared.proto.Messages
 import orbit.shared.proto.toMessage
 import orbit.shared.proto.toMessageProto
@@ -30,12 +31,18 @@ class ClientConnection(
                 // We don't trust the client to specify its own ID
                 source = nodeId
             )
-            val completion = pipeline.pushInbound(message)
 
-            completion.invokeOnCompletion {
-                if (it != null) {
-                    offerError(cause = it, messageId = message.messageId)
-                }
+            try {
+                pipeline.pushInbound(message)
+
+            } catch (t: Throwable) {
+                pipeline.pushOutbound(
+                    Message(
+                        target = message.source?.let(MessageTarget::Unicast),
+                        messageId = message.messageId,
+                        content = t.toErrorContent()
+                    )
+                )
             }
         }
     }
@@ -49,17 +56,13 @@ class ClientConnection(
         if (!queued) throw CapacityExceededException("Could not offer message.")
     }
 
-    private fun offerError(cause: Throwable? = null, messageId: Long? = 0) {
+    fun close(cause: Throwable? = null, messageId: Long? = null) {
         offerMessage(
             Message(
                 messageId = messageId,
                 content = cause.toErrorContent()
             )
         )
-    }
-
-    fun close(cause: Throwable? = null, messageId: Long? = 0) {
-        offerError(cause, messageId)
         outgoingChannel.close()
     }
 

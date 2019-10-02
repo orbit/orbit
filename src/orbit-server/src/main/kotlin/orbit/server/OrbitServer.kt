@@ -28,8 +28,10 @@ import orbit.server.pipeline.PipelineSteps
 import orbit.server.pipeline.step.BlankStep
 import orbit.server.pipeline.step.EchoStep
 import orbit.server.pipeline.step.IdentityStep
+import orbit.server.pipeline.step.RoutingStep
 import orbit.server.pipeline.step.TransportStep
 import orbit.server.pipeline.step.VerifyStep
+import orbit.server.router.Router
 import orbit.server.service.ConnectionService
 import orbit.server.service.GrpcEndpoint
 import orbit.server.service.NodeManagementService
@@ -86,6 +88,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<PipelineSteps>()
             definition<BlankStep>()
             definition<IdentityStep>()
+            definition<RoutingStep>()
             definition<EchoStep>()
             definition<VerifyStep>()
             definition<TransportStep>()
@@ -94,6 +97,10 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<LocalNodeInfo>()
             definition<ClusterManager>()
             externallyConfigured(config.nodeDirectory)
+
+            // Router
+            definition<Router>()
+
         }
     }
 
