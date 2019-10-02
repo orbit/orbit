@@ -56,7 +56,7 @@ class ConnectionManager(
                 outgoingChannel.send(Message(
                     content = t.toErrorContent()
                 ).toMessageProto())
-                //outgoingChannel.close(t)
+                outgoingChannel.close()
             } finally {
                 // Remove from node directory if it was set
                 nodeInfo?.also {

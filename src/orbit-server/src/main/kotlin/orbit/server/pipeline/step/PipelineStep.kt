@@ -4,14 +4,11 @@
  See license in LICENSE.
  */
 
-package orbit.server.net
+package orbit.server.pipeline.step
 
-import kotlinx.coroutines.CompletableDeferred
+import orbit.server.pipeline.PipelineContext
 import orbit.shared.net.Message
 
-typealias Completion = CompletableDeferred<Unit>
-
-class MessageContainer(
-    val completion: Completion,
-    val message: Message
-)
+interface PipelineStep {
+    suspend fun next(context: PipelineContext, msg: Message): Unit = context.next(msg)
+}

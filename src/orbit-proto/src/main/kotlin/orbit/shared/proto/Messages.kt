@@ -10,8 +10,6 @@ import kotlinx.coroutines.CompletableDeferred
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 
-typealias Completion = CompletableDeferred<Any?>
-
 fun Messages.MessageProto.toMessage(): Message =
     Message(
         messageId = messageId,

@@ -24,6 +24,8 @@ import orbit.server.mesh.NodeDirectory
 import orbit.server.mesh.ClusterManager
 import orbit.server.net.ConnectionManager
 import orbit.server.pipeline.Pipeline
+import orbit.server.pipeline.PipelineSteps
+import orbit.server.pipeline.step.BlankPipelineStep
 import orbit.server.service.ConnectionService
 import orbit.server.service.GrpcEndpoint
 import orbit.server.service.NodeManagementService
@@ -77,6 +79,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
             // Pipeline
             definition<Pipeline>()
+            definition<PipelineSteps>()
+            definition<BlankPipelineStep>()
 
             // Mesh
             definition<LocalNodeInfo>()

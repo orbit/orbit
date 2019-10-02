@@ -9,6 +9,7 @@ package orbit.server.net
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import orbit.server.pipeline.Pipeline
+import orbit.shared.exception.toErrorContent
 import orbit.shared.mesh.NodeId
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
@@ -28,7 +29,13 @@ class ClientConnection(
             val message = protoMessage.toMessage().copy(
                 source = nodeId
             )
-            pipeline.writeMessage(message)
+            val completion = pipeline.writeMessage(message)
+
+            completion.invokeOnCompletion {
+                if(it != null) outgoingChannel.offer(message.copy(
+                    content = it.toErrorContent()
+                ).toMessageProto())
+            }
         }
     }
 
@@ -36,7 +43,7 @@ class ClientConnection(
         outgoingChannel.send(message.toMessageProto())
     }
 
-    suspend fun close(cause: Throwable? = null) {
+    fun close(cause: Throwable? = null) {
         outgoingChannel.close(cause)
     }
 }

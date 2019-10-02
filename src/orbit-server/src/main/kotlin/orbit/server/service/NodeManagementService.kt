@@ -6,6 +6,7 @@
 
 package orbit.server.service
 
+import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.LocalNodeInfo
 import orbit.server.mesh.ClusterManager
 import orbit.shared.mesh.NodeCapabilities
@@ -15,8 +16,9 @@ import orbit.shared.proto.toLeaseRequestResponseProto
 
 class NodeManagementService(
     private val clusterManager: ClusterManager,
-    private val localNodeInfo: LocalNodeInfo
-) : NodeManagementImplBase() {
+    private val localNodeInfo: LocalNodeInfo,
+    runtimeScopes: RuntimeScopes
+) : NodeManagementImplBase(runtimeScopes.ioScope.coroutineContext) {
     override suspend fun joinCluster(request: NodeManagementOuterClass.JoinClusterRequestProto): NodeManagementOuterClass.RequestLeaseResponseProto =
         try {
             val namespace = ServerAuthInterceptor.NAMESPACE.get()
