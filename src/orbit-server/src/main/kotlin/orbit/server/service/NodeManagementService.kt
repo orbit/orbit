@@ -7,8 +7,8 @@
 package orbit.server.service
 
 import orbit.server.concurrent.RuntimeScopes
-import orbit.server.mesh.LocalNodeInfo
 import orbit.server.mesh.ClusterManager
+import orbit.server.mesh.LocalNodeInfo
 import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.proto.NodeManagementImplBase
 import orbit.shared.proto.NodeManagementOuterClass

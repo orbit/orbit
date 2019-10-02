@@ -6,7 +6,6 @@
 
 package orbit.shared.proto
 
-import kotlinx.coroutines.CompletableDeferred
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 
@@ -18,8 +17,8 @@ fun Messages.MessageProto.toMessage(): Message =
 
 fun Message.toMessageProto(): Messages.MessageProto =
     Messages.MessageProto.newBuilder().let {
-    if(messageId != null) it.setMessageId(messageId!!) else it
-}.setContent(content.toMessageContentProto()).build()
+        if (messageId != null) it.setMessageId(messageId!!) else it
+    }.setContent(content.toMessageContentProto()).build()
 
 fun Messages.MessageContentProto.toMessageContent(): MessageContent =
     when {

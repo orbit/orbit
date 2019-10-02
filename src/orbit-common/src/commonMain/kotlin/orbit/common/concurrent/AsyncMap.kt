@@ -21,7 +21,7 @@ interface AsyncMap<K, V> {
     tailrec suspend fun manipulate(key: K, block: (V?) -> V?): V? {
         val initialValue = this.get(key)
         val newValue = block(initialValue)
-        return if(this.compareAndSet(key, initialValue, newValue)) {
+        return if (this.compareAndSet(key, initialValue, newValue)) {
             newValue
         } else {
             manipulate(key, block)

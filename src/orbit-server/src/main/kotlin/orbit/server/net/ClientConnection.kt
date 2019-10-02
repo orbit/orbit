@@ -12,10 +12,8 @@ import orbit.server.pipeline.Pipeline
 import orbit.shared.exception.toErrorContent
 import orbit.shared.mesh.NodeId
 import orbit.shared.net.Message
-import orbit.shared.net.MessageContent
 import orbit.shared.proto.Messages
 import orbit.shared.proto.toMessage
-import orbit.shared.proto.toMessageContent
 import orbit.shared.proto.toMessageProto
 
 class ClientConnection(
@@ -32,9 +30,11 @@ class ClientConnection(
             val completion = pipeline.writeMessage(message)
 
             completion.invokeOnCompletion {
-                if(it != null) outgoingChannel.offer(message.copy(
-                    content = it.toErrorContent()
-                ).toMessageProto())
+                if (it != null) outgoingChannel.offer(
+                    message.copy(
+                        content = it.toErrorContent()
+                    ).toMessageProto()
+                )
             }
         }
     }

@@ -6,8 +6,8 @@
 
 package orbit.server.pipeline
 
-import orbit.server.pipeline.step.PipelineStep
 import orbit.server.pipeline.step.BlankPipelineStep
+import orbit.server.pipeline.step.PipelineStep
 
 class PipelineSteps(
     blankPipelineStep: BlankPipelineStep

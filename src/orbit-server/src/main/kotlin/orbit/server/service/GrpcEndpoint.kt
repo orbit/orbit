@@ -17,7 +17,7 @@ class GrpcEndpoint(
     private val connectionService: ConnectionService,
     config: OrbitServerConfig
 ) {
-    private val logger = KotlinLogging.logger {  }
+    private val logger = KotlinLogging.logger { }
     private lateinit var server: Server
 
     private val serverPort = config.serverPort

@@ -18,7 +18,6 @@ import orbit.shared.mesh.NodeLease
 import orbit.shared.time.Timestamp
 import orbit.shared.time.now
 import orbit.shared.time.toTimestamp
-import java.lang.NullPointerException
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
@@ -83,14 +82,14 @@ class ClusterManager(
         nodeDirectory.manipulate(nodeId, body)
 
     suspend fun getNode(nodeId: NodeId, forceRefresh: Boolean = false): NodeInfo? =
-        if(forceRefresh) {
+        if (forceRefresh) {
             nodeDirectory.get(nodeId)
         } else {
             try {
                 clusterNodes.getOrPut(nodeId) {
                     nodeDirectory.get(nodeId)
                 }
-            }catch(t: NullPointerException) {
+            } catch (t: NullPointerException) {
                 null
             }
         }

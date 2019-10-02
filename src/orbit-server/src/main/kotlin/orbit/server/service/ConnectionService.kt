@@ -8,7 +8,6 @@ package orbit.server.service
 
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import orbit.server.concurrent.RuntimePools
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.net.ConnectionManager
 import orbit.shared.proto.ConnectionImplBase

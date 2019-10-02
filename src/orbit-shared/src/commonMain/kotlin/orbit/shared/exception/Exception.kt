@@ -13,13 +13,14 @@ import orbit.shared.net.MessageContent
 /**
  * An exception of this type is thrown when a node id is invalid.
  */
-class InvalidNodeId(nodeId: NodeId): Throwable("$nodeId is not valid. Did the lease expire?")
+class InvalidNodeId(nodeId: NodeId) : Throwable("$nodeId is not valid. Did the lease expire?")
 
 /**
  * An exception of this type is thrown when a lease renewal failed due to an invalid challenge token.
  */
 @Suppress("UNUSED_PARAMETER")
-class InvalidChallengeException(nodeId: NodeId, challengeToken: ChallengeToken): Throwable("Invalid challenge for $nodeId")
+class InvalidChallengeException(nodeId: NodeId, challengeToken: ChallengeToken) :
+    Throwable("Invalid challenge for $nodeId")
 
 /**
  * An exception of this type is thrown when an internal capacity in Orbit is exceeded.
@@ -27,7 +28,7 @@ class InvalidChallengeException(nodeId: NodeId, challengeToken: ChallengeToken):
 class CapacityExceededException(message: String) : Throwable(message)
 
 
-fun Throwable.toErrorContent(): MessageContent.Error = when(this) {
+fun Throwable.toErrorContent(): MessageContent.Error = when (this) {
     is InvalidNodeId -> MessageContent.Error(
         status = MessageContent.Error.Status.INVALID_LEASE,
         message = message

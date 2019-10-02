@@ -18,7 +18,6 @@ import orbit.shared.exception.toErrorContent
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.net.Message
-import orbit.shared.net.MessageContent
 import orbit.shared.proto.Messages
 import orbit.shared.proto.toMessageProto
 import java.util.concurrent.ConcurrentHashMap
@@ -41,7 +40,7 @@ class ConnectionManager(
             try {
                 // Verify the node is valid
                 nodeInfo = clusterManager.getNode(nodeId)
-                if(nodeInfo == null) throw InvalidNodeId(nodeId)
+                if (nodeInfo == null) throw InvalidNodeId(nodeId)
 
                 // Create the connection
                 val clientConnection = ClientConnection(nodeId, incomingChannel, outgoingChannel, pipeline)
@@ -53,9 +52,11 @@ class ConnectionManager(
                 // Consume messages, suspends here until connection drops
                 clientConnection.consumeMessages()
             } catch (t: Throwable) {
-                outgoingChannel.send(Message(
-                    content = t.toErrorContent()
-                ).toMessageProto())
+                outgoingChannel.send(
+                    Message(
+                        content = t.toErrorContent()
+                    ).toMessageProto()
+                )
                 outgoingChannel.close()
             } finally {
                 // Remove from node directory if it was set
@@ -72,7 +73,7 @@ class ConnectionManager(
     private suspend fun addNodesToDirectory(nodeInfo: NodeInfo) {
         // Update the client's entry with this server
         clusterManager.updateNode(nodeInfo.id) {
-            checkNotNull(it) { "The node '${nodeInfo.id}' could not be found in directory. "}
+            checkNotNull(it) { "The node '${nodeInfo.id}' could not be found in directory. " }
             it.copy(
                 visibleNodes = it.visibleNodes + localNodeInfo.info.id
             )
