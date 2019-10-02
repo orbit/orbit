@@ -8,21 +8,27 @@ package orbit.server.net
 
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
+import orbit.server.pipeline.Pipeline
 import orbit.shared.mesh.NodeId
 import orbit.shared.net.Message
+import orbit.shared.net.MessageContent
 import orbit.shared.proto.Messages
 import orbit.shared.proto.toMessage
+import orbit.shared.proto.toMessageContent
 import orbit.shared.proto.toMessageProto
 
 class ClientConnection(
-    val nodeId: NodeId,
+    private val nodeId: NodeId,
     private val incomingChannel: ReceiveChannel<Messages.MessageProto>,
-    private val outgoingChannel: SendChannel<Messages.MessageProto>
+    private val outgoingChannel: SendChannel<Messages.MessageProto>,
+    private val pipeline: Pipeline
 ) {
     suspend fun consumeMessages() {
         for (protoMessage in incomingChannel) {
-            val message = protoMessage.toMessage()
-            println(message.toString())
+            val message = protoMessage.toMessage().copy(
+                source = nodeId
+            )
+            pipeline.writeMessage(message)
         }
     }
 

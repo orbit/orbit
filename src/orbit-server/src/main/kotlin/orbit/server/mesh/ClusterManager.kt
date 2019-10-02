@@ -8,9 +8,9 @@ package orbit.server.mesh
 
 import orbit.common.util.RNGUtils
 import orbit.server.OrbitServerConfig
+import orbit.shared.exception.InvalidChallengeException
+import orbit.shared.exception.InvalidNodeId
 import orbit.shared.mesh.ChallengeToken
-import orbit.shared.mesh.InvalidChallengeException
-import orbit.shared.mesh.LeaseExpiredException
 import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
@@ -63,7 +63,7 @@ class ClusterManager(
     suspend fun renewLease(nodeId: NodeId, challengeToken: ChallengeToken, capabilities: NodeCapabilities): NodeInfo =
         updateNode(nodeId) { initialValue ->
             if (initialValue == null || Timestamp.now() > initialValue.lease.expiresAt) {
-                throw LeaseExpiredException(nodeId)
+                throw InvalidNodeId(nodeId)
             }
 
             if (initialValue.lease.challengeToken != challengeToken) {

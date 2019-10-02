@@ -6,39 +6,53 @@
 
 package orbit.shared.proto
 
-import orbit.common.exception.OrbitException
+import kotlinx.coroutines.CompletableDeferred
 import orbit.shared.net.Message
+import orbit.shared.net.MessageContent
+
+typealias Completion = CompletableDeferred<Any?>
 
 fun Messages.MessageProto.toMessage(): Message =
+    Message(
+        messageId = messageId,
+        content = content.toMessageContent()
+    )
+
+fun Message.toMessageProto(): Messages.MessageProto =
+    Messages.MessageProto.newBuilder().let {
+    if(messageId != null) it.setMessageId(messageId!!) else it
+}.setContent(content.toMessageContentProto()).build()
+
+fun Messages.MessageContentProto.toMessageContent(): MessageContent =
     when {
         hasInvocationRequest() -> {
-            Message.InvocationRequest(
+            MessageContent.InvocationRequest(
                 data = invocationRequest.value,
                 destination = invocationRequest.reference.toAddressableReference()
             )
         }
 
         hasInvocationResponse() -> {
-            Message.InvocationResponse(
+            MessageContent.InvocationResponse(
                 data = invocationResponse.value
             )
         }
 
-        hasInvocationError() -> {
-            Message.InvocationError(
-                message = invocationError.message,
-                status = invocationError.status.toStatus()
+        hasError() -> {
+            MessageContent.Error(
+                message = error.message,
+                status = error.status.toStatus()
             )
         }
 
-        else -> throw OrbitException("Unknown message type")
+        else -> throw Throwable("Unknown message type")
     }
 
-fun Message.toMessageProto(): Messages.MessageProto =
-    Messages.MessageProto.newBuilder()
+fun MessageContent.toMessageContentProto(): Messages.MessageContentProto =
+    Messages.MessageContentProto.newBuilder()
         .let { builder ->
             when (this) {
-                is Message.InvocationRequest -> {
+                is MessageContent.InvocationRequest -> {
                     builder.setInvocationRequest(
                         Messages.InvocationRequestProto.newBuilder()
                             .setReference(destination.toAddressableReferenceProto())
@@ -47,7 +61,7 @@ fun Message.toMessageProto(): Messages.MessageProto =
                     )
                 }
 
-                is Message.InvocationResponse -> {
+                is MessageContent.InvocationResponse -> {
                     builder.setInvocationResponse(
                         Messages.InvocationResponseProto.newBuilder()
                             .setValue(data)
@@ -55,9 +69,9 @@ fun Message.toMessageProto(): Messages.MessageProto =
                     )
                 }
 
-                is Message.InvocationError -> {
-                    builder.setInvocationError(
-                        Messages.InvocationErrorProto.newBuilder()
+                is MessageContent.Error -> {
+                    builder.setError(
+                        Messages.ErrorProto.newBuilder()
                             .setMessage(message)
                             .setStatus(status.toStatusProto())
                             .build()
@@ -66,20 +80,20 @@ fun Message.toMessageProto(): Messages.MessageProto =
             }
         }.build()
 
-fun Messages.InvocationErrorProto.StatusProto.toStatus(): Message.InvocationError.Status =
+fun Messages.ErrorProto.StatusProto.toStatus(): MessageContent.Error.Status =
     when (number) {
-        Messages.InvocationErrorProto.StatusProto.UNAUTHENTICATED_VALUE -> Message.InvocationError.Status.UNAUTHENTICATED
-        Messages.InvocationErrorProto.StatusProto.UNAUTHORIZED_VALUE -> Message.InvocationError.Status.UNAUTHORIZED
-        Messages.InvocationErrorProto.StatusProto.UNSENT_VALUE -> Message.InvocationError.Status.UNSENT
-        Messages.InvocationErrorProto.StatusProto.UNKNOWN_VALUE -> Message.InvocationError.Status.UNKNOWN
-        else -> Message.InvocationError.Status.UNKNOWN
+        Messages.ErrorProto.StatusProto.UNKNOWN_VALUE -> MessageContent.Error.Status.UNKNOWN
+        Messages.ErrorProto.StatusProto.INVALID_LEASE_VALUE -> MessageContent.Error.Status.INVALID_LEASE
+        Messages.ErrorProto.StatusProto.SERVER_OVERLOADED_VALUE -> MessageContent.Error.Status.SERVER_OVERLOADED
+        Messages.ErrorProto.StatusProto.SECURITY_VIOLATION_VALUE -> MessageContent.Error.Status.SECURITY_VIOLATION
+        else -> MessageContent.Error.Status.UNKNOWN
     }
 
-fun Message.InvocationError.Status.toStatusProto(): Messages.InvocationErrorProto.StatusProto =
+fun MessageContent.Error.Status.toStatusProto(): Messages.ErrorProto.StatusProto =
     when (this) {
-        Message.InvocationError.Status.UNAUTHENTICATED -> Messages.InvocationErrorProto.StatusProto.UNAUTHENTICATED
-        Message.InvocationError.Status.UNAUTHORIZED -> Messages.InvocationErrorProto.StatusProto.UNAUTHORIZED
-        Message.InvocationError.Status.UNSENT -> Messages.InvocationErrorProto.StatusProto.UNSENT
-        Message.InvocationError.Status.UNKNOWN -> Messages.InvocationErrorProto.StatusProto.UNKNOWN
-        else -> Messages.InvocationErrorProto.StatusProto.UNKNOWN
+        MessageContent.Error.Status.UNKNOWN -> Messages.ErrorProto.StatusProto.UNKNOWN
+        MessageContent.Error.Status.INVALID_LEASE -> Messages.ErrorProto.StatusProto.INVALID_LEASE
+        MessageContent.Error.Status.SERVER_OVERLOADED -> Messages.ErrorProto.StatusProto.SERVER_OVERLOADED
+        MessageContent.Error.Status.SECURITY_VIOLATION -> Messages.ErrorProto.StatusProto.SECURITY_VIOLATION
+        else -> Messages.ErrorProto.StatusProto.UNKNOWN
     }

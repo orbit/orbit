@@ -7,10 +7,16 @@ import "orbit/shared/addressable.proto";
 
 
 message MessageProto {
+    int64 messageId = 1;
+
+    MessageContentProto content = 2;
+}
+
+message MessageContentProto {
     oneof content {
         InvocationRequestProto invocation_request = 1;
         InvocationResponseProto invocation_response = 2;
-        InvocationErrorProto invocation_error = 3;
+        ErrorProto error = 3;
     }
 }
 
@@ -23,16 +29,15 @@ message InvocationResponseProto {
     string value = 1;
 }
 
-message InvocationErrorProto {
+message ErrorProto {
     StatusProto status = 1;
     string message = 2;
 
     enum StatusProto {
         UNKNOWN = 0;
-        UNAUTHENTICATED = 1;
-        UNAUTHORIZED = 2;
-        UNSENT = 3;
-        // ...
+        INVALID_LEASE = 1;
+        SERVER_OVERLOADED = 2;
+        SECURITY_VIOLATION = 3;
     }
 }
 

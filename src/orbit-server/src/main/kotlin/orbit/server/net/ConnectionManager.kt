@@ -12,15 +12,22 @@ import kotlinx.coroutines.launch
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
+import orbit.server.pipeline.Pipeline
+import orbit.shared.exception.InvalidNodeId
+import orbit.shared.exception.toErrorContent
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
+import orbit.shared.net.Message
+import orbit.shared.net.MessageContent
 import orbit.shared.proto.Messages
+import orbit.shared.proto.toMessageProto
 import java.util.concurrent.ConcurrentHashMap
 
 class ConnectionManager(
     private val runtimeScopes: RuntimeScopes,
     private val clusterManager: ClusterManager,
-    private val localNodeInfo: LocalNodeInfo
+    private val localNodeInfo: LocalNodeInfo,
+    private val pipeline: Pipeline
 ) {
     private val connectedClients = ConcurrentHashMap<NodeId, ClientConnection>()
 
@@ -34,10 +41,10 @@ class ConnectionManager(
             try {
                 // Verify the node is valid
                 nodeInfo = clusterManager.getNode(nodeId)
-                checkNotNull(nodeInfo)
+                if(nodeInfo == null) throw InvalidNodeId(nodeId)
 
                 // Create the connection
-                val clientConnection = ClientConnection(nodeId, incomingChannel, outgoingChannel)
+                val clientConnection = ClientConnection(nodeId, incomingChannel, outgoingChannel, pipeline)
                 connectedClients[nodeId] = clientConnection
 
                 // Update the visible nodes
@@ -46,7 +53,10 @@ class ConnectionManager(
                 // Consume messages, suspends here until connection drops
                 clientConnection.consumeMessages()
             } catch (t: Throwable) {
-                outgoingChannel.close(t)
+                outgoingChannel.send(Message(
+                    content = t.toErrorContent()
+                ).toMessageProto())
+                //outgoingChannel.close(t)
             } finally {
                 // Remove from node directory if it was set
                 nodeInfo?.also {

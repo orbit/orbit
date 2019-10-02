@@ -23,6 +23,7 @@ import orbit.server.mesh.LocalNodeInfo
 import orbit.server.mesh.NodeDirectory
 import orbit.server.mesh.ClusterManager
 import orbit.server.net.ConnectionManager
+import orbit.server.pipeline.Pipeline
 import orbit.server.service.ConnectionService
 import orbit.server.service.GrpcEndpoint
 import orbit.server.service.NodeManagementService
@@ -55,7 +56,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private val localNodeInfo by container.inject<LocalNodeInfo>()
     private val nodeManager by container.inject<ClusterManager>()
     private val nodeDirectory by container.inject<NodeDirectory>()
-
+    private val pipeline by container.inject<Pipeline>()
 
     init {
         container.configure {
@@ -74,6 +75,9 @@ class OrbitServer(private val config: OrbitServerConfig) {
             // Net
             definition<ConnectionManager>()
 
+            // Pipeline
+            definition<Pipeline>()
+
             // Mesh
             definition<LocalNodeInfo>()
             definition<ClusterManager>()
@@ -84,6 +88,9 @@ class OrbitServer(private val config: OrbitServerConfig) {
     fun start() = runtimeScopes.cpuScope.launch {
         logger.info("Starting Orbit...")
         val (elapsed, _) = stopwatch(clock) {
+            // Start the pipeline
+            pipeline.start()
+
             // Setup  the local node information
             localNodeInfo.start()
 
@@ -117,6 +124,9 @@ class OrbitServer(private val config: OrbitServerConfig) {
             tickJob.get()?.cancelAndJoin().also {
                 tickJob.set(null)
             }
+
+            // Stop pipeline
+            pipeline.stop()
 
             // Release the latch
             shutdownLatch.get()?.release().also {

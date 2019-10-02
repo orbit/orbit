@@ -7,16 +7,24 @@
 package orbit.shared.net
 
 import orbit.shared.addressable.AddressableReference
+import orbit.shared.mesh.NodeId
 
-sealed class Message {
-    data class InvocationRequest(val data: String, val destination: AddressableReference) : Message()
-    data class InvocationResponse(val data: String) : Message()
-    data class InvocationError(val status: Status, val message: String) : Message() {
+data class Message(
+    val content: MessageContent,
+    val messageId: Long? = null,
+    val source: NodeId? = null
+    //val target: MessageTarget? = null
+)
+
+sealed class MessageContent {
+    data class InvocationRequest(val data: String, val destination: AddressableReference) : MessageContent()
+    data class InvocationResponse(val data: String) : MessageContent()
+    data class Error(val status: Status, val message: String?) : MessageContent() {
         enum class Status {
             UNKNOWN,
-            UNAUTHENTICATED,
-            UNAUTHORIZED,
-            UNSENT
+            INVALID_LEASE,
+            SERVER_OVERLOADED,
+            SECURITY_VIOLATION
         }
     }
 }

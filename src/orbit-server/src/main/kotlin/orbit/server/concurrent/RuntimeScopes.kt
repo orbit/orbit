@@ -11,7 +11,7 @@ import orbit.common.concurrent.SupervisorScope
 import kotlin.coroutines.CoroutineContext
 
 class RuntimeScopes(
-    val runtimePools: RuntimePools,
+    runtimePools: RuntimePools,
     exceptionHandler: (CoroutineContext, Throwable) -> Unit
 ) {
     val cpuScope: CoroutineScope = SupervisorScope(runtimePools.cpuPool, exceptionHandler)
