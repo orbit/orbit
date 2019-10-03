@@ -23,7 +23,7 @@ plugins {
 
 dependencies {
     implementation(project(":src:orbit-shared"))
-    implementation(project(":src:orbit-common"))
+    implementation(project(":src:orbit-util"))
 
 
     implementation(kotlin("stdlib-jdk8"))

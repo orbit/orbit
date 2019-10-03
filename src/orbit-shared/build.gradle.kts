@@ -15,7 +15,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":src:orbit-common"))
+                implementation(project(":src:orbit-util"))
 
                 implementation(kotlin("stdlib-common"))
             }
@@ -29,7 +29,7 @@ kotlin {
 
         jvm().compilations["main"].defaultSourceSet {
             dependencies {
-                implementation(project(":src:orbit-common"))
+                implementation(project(":src:orbit-util"))
 
                 implementation(kotlin("stdlib-jdk8"))
             }

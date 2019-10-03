@@ -6,13 +6,13 @@
 
 package orbit.server.mesh.local
 
-import orbit.common.concurrent.jvm.HashMapBackedAsyncMap
-import orbit.common.di.jvm.ExternallyConfigured
+import orbit.util.concurrent.jvm.HashMapBackedAsyncMap
+import orbit.util.di.jvm.ExternallyConfigured
 import orbit.server.mesh.NodeDirectory
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
-import orbit.shared.time.Timestamp
-import orbit.shared.time.now
+import orbit.util.time.Timestamp
+import orbit.util.time.now
 
 class LocalNodeDirectory : HashMapBackedAsyncMap<NodeId, NodeInfo>(), NodeDirectory {
     object LocalNodeDirectoryConfig : ExternallyConfigured<NodeDirectory> {

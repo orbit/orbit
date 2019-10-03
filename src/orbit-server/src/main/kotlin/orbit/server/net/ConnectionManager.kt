@@ -9,7 +9,7 @@ package orbit.server.net
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
-import orbit.common.di.jvm.ComponentContainer
+import orbit.util.di.jvm.ComponentContainer
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo

@@ -6,8 +6,8 @@
 
 package orbit.shared.proto
 
-import orbit.shared.time.Timestamp
-import orbit.shared.time.now
+import orbit.util.time.Timestamp
+import orbit.util.time.now
 import org.junit.Test
 import kotlin.test.assertEquals
 

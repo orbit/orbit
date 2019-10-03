@@ -6,7 +6,7 @@
 
 package orbit.shared.proto
 
-import orbit.shared.time.Timestamp
+import orbit.util.time.Timestamp
 
 typealias TimestampProto = com.google.protobuf.Timestamp
 

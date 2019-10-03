@@ -8,8 +8,8 @@ package orbit.server.mesh
 
 import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.mesh.NodeInfo
-import orbit.shared.time.Timestamp
-import orbit.shared.time.now
+import orbit.util.time.Timestamp
+import orbit.util.time.now
 import java.util.concurrent.atomic.AtomicReference
 
 const val MANAGEMENT_NAMESPACE = "management"

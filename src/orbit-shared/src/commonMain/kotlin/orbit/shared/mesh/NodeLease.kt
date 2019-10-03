@@ -6,7 +6,7 @@
 
 package orbit.shared.mesh
 
-import orbit.shared.time.Timestamp
+import orbit.util.time.Timestamp
 
 typealias ChallengeToken = String
 

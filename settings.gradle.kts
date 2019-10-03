@@ -6,7 +6,7 @@
 
 rootProject.name = "orbit"
 
-include(":src:orbit-common")
+include(":src:orbit-util")
 include(":src:orbit-proto")
 include(":src:orbit-shared")
 include(":src:orbit-client-sdk")

@@ -6,7 +6,7 @@
 
 package orbit.server.mesh
 
-import orbit.common.concurrent.AsyncMap
+import orbit.util.concurrent.AsyncMap
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
 

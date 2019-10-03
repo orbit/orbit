@@ -6,7 +6,7 @@
 
 package orbit.shared.mesh
 
-import orbit.common.util.RNGUtils
+import orbit.util.misc.RNGUtils
 
 data class NodeId(val value: String) {
     companion object {
