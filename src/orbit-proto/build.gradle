@@ -4,6 +4,10 @@
  See license in LICENSE.
  */
 
+import org.apache.tools.ant.filters.ConcatFilter
+
+def tempDir = "build/tmp/js"
+
 buildscript {
     repositories {
         mavenCentral()
@@ -30,13 +34,43 @@ protobuf {
     plugins {
         grpc { artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion" }
         grpckotlin { artifact = "io.rouz:grpc-kotlin-gen:$grpcKotlinVersion:jdk8@jar" }
+        "grpc-web" {
+            path = "$rootProject.projectDir/tools/bin/protoc-gen-grpc-web"
+        }
     }
     generateProtoTasks {
         all()*.plugins {
             grpc {}
             grpckotlin {}
+            "grpc-web" {
+                option 'import_style=commonjs'
+                option 'mode=grpcwebtext'
+                outputSubDir = 'js'
+            }
+        }
+
+        all().each { task ->
+            task.builtins {
+                js {
+                    option "import_style=commonjs"
+                    option "binary"
+                }
+            }
         }
     }
+}
+
+task generateGrpcWeb(type: Exec) {
+    commandLine "protoc"
+    args "--grpc-web_out=import_style=commonjs,mode=grpcwebtext:."
+}
+
+task disableLint(type: Copy) {
+    from file(buildDir.getAbsolutePath() + "/generated/source/proto/main/js")
+    into file(buildDir.getAbsolutePath() + "/generated/source/proto/main/js-nolint")
+    include '**/*.js'
+    includeEmptyDirs false
+    filter(ConcatFilter, prepend: file('./header.txt'))
 }
 
 sourceSets {

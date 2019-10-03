@@ -11,3 +11,8 @@ ReactDOM.render(<App />, document.getElementById('root'));
 // unregister() to register() below. Note this comes with some pitfalls.
 // Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.unregister();
+
+require ('./proto/orbit/shared/addressable_pb')
+require ('./proto/orbit/shared/messages_pb')
+require ('./proto/orbit/shared/connection_pb')
+require ('./proto/orbit/shared/node_management_pb')
