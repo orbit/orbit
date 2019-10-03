@@ -21,7 +21,9 @@ class ConnectionService(
     override fun openStream(requests: ReceiveChannel<Messages.MessageProto>): ReceiveChannel<Messages.MessageProto> {
         val outboundChannel = Channel<Messages.MessageProto>()
         val nodeId = ServerAuthInterceptor.NODE_ID.get()
-        connectionManager.onNewClient(nodeId, requests, outboundChannel)
+        val namespace = ServerAuthInterceptor.NAMESPACE.get()
+
+        connectionManager.onNewClient(namespace, nodeId, requests, outboundChannel)
         return outboundChannel
     }
 }

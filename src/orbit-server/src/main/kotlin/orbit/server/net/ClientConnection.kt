@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.SendChannel
 import orbit.server.pipeline.Pipeline
 import orbit.shared.exception.CapacityExceededException
 import orbit.shared.exception.toErrorContent
+import orbit.shared.mesh.Namespace
 import orbit.shared.mesh.NodeId
 import orbit.shared.net.Message
 import orbit.shared.net.MessageTarget
@@ -19,6 +20,7 @@ import orbit.shared.proto.toMessage
 import orbit.shared.proto.toMessageProto
 
 class ClientConnection(
+    private val namespace: Namespace,
     private val nodeId: NodeId,
     private val incomingChannel: ReceiveChannel<Messages.MessageProto>,
     private val outgoingChannel: SendChannel<Messages.MessageProto>,
@@ -27,17 +29,19 @@ class ClientConnection(
     suspend fun consumeMessages() {
         for (protoMessage in incomingChannel) {
 
-            val message = protoMessage.toMessage().copy(
-                // We don't trust the client to specify its own ID
-                source = nodeId
+            val message = protoMessage.toMessage()
+            val meta = MessageMetadata(
+                connectedNamespace = namespace,
+                connectedNode = nodeId,
+                messageDirection = MessageDirection.INBOUND
             )
 
             try {
-                pipeline.pushInbound(message)
+                pipeline.pushMessage(message, meta)
 
             } catch (t: Throwable) {
-                pipeline.pushOutbound(
-                    Message(
+                pipeline.pushMessage(
+                    msg = Message(
                         target = message.source?.let(MessageTarget::Unicast),
                         messageId = message.messageId,
                         content = t.toErrorContent()

@@ -38,6 +38,6 @@ class RoutingStep(
             target = MessageTarget.RoutedUnicast(route)
         )
 
-        context.nextOutbound(newMsg)
+        context.next(newMsg)
     }
 }

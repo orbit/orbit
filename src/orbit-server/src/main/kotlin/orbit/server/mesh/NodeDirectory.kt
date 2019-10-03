@@ -6,9 +6,9 @@
 
 package orbit.server.mesh
 
-import orbit.util.concurrent.AsyncMap
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
+import orbit.util.concurrent.AsyncMap
 
 interface NodeDirectory : AsyncMap<NodeId, NodeInfo> {
     suspend fun tick() {}

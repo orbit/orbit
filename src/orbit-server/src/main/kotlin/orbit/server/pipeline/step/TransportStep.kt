@@ -29,7 +29,7 @@ class TransportStep(
 
         val client = connectionManager.getClient(targetNode)
 
-        checkNotNull(client) { "Could not find target ${msg.target} in connections" }
+        checkNotNull(client) { "Could not find target $targetNode in connections" }
 
         client.sendMessage(msg)
     }

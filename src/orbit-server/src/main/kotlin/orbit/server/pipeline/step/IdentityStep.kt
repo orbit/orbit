@@ -21,7 +21,7 @@ class IdentityStep(
             messageId = msg.messageId ?: messageCounter.incrementAndGet(),
             source = msg.source ?: localNodeInfo.info.id
         ).also {
-            context.nextOutbound(it)
+            context.next(it)
         }
     }
 }

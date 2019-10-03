@@ -14,8 +14,10 @@ import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import orbit.server.OrbitServerConfig
 import orbit.server.concurrent.RuntimeScopes
+import orbit.server.mesh.LocalNodeInfo
 import orbit.server.net.MessageContainer
 import orbit.server.net.MessageDirection
+import orbit.server.net.MessageMetadata
 import orbit.shared.exception.CapacityExceededException
 import orbit.shared.exception.toErrorContent
 import orbit.shared.net.Message
@@ -24,7 +26,8 @@ import orbit.shared.net.MessageTarget
 class Pipeline(
     private val config: OrbitServerConfig,
     private val runtimeScopes: RuntimeScopes,
-    private val pipelineSteps: PipelineSteps
+    private val pipelineSteps: PipelineSteps,
+    private val localNodeInfo: LocalNodeInfo
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -50,20 +53,14 @@ class Pipeline(
         }
     }
 
-    fun pushOutbound(msg: Message) =
-        writeMessage(msg, MessageDirection.OUTBOUND)
-
-    fun pushInbound(msg: Message) =
-        writeMessage(msg, MessageDirection.INBOUND)
-
-    private fun writeMessage(msg: Message, direction: MessageDirection) {
+    fun pushMessage(msg: Message, meta: MessageMetadata? = null) {
         check(this::pipelineChannel.isInitialized) {
             "The Orbit pipeline is not in a state to receive messages. Did you start the Orbit stage?"
         }
 
         val container = MessageContainer(
-            direction = direction,
-            message = msg
+            message = msg,
+            metadata = meta ?: defaultMeta
         )
 
         logger.trace { "Writing message to pipeline channel: $container" }
@@ -81,6 +78,13 @@ class Pipeline(
         }
     }
 
+    private val defaultMeta
+        get() = MessageMetadata(
+            messageDirection = MessageDirection.OUTBOUND,
+            connectedNamespace = localNodeInfo.info.namespace,
+            connectedNode = localNodeInfo.info.id
+        )
+
     private fun launchRail(receiveChannel: ReceiveChannel<MessageContainer>) = runtimeScopes.cpuScope.launch {
         for (msg in receiveChannel) {
             logger.trace { "Pipeline rail received message: $msg" }
@@ -88,37 +92,35 @@ class Pipeline(
         }
     }
 
-    private suspend fun onMessage(container: MessageContainer, respondOnError: Boolean = true) {
-        // Inbound starts at bottom, outbound at top.
-        val startAtEnd = container.direction == MessageDirection.INBOUND
-
+    private suspend fun onMessage(container: MessageContainer) {
         val context = PipelineContext(
             pipelineSteps = pipelineSteps.steps,
-            startAtEnd = startAtEnd,
-            pipeline = this
+            pipeline = this,
+            metadata = container.metadata
         )
 
         try {
-            when (container.direction) {
-                MessageDirection.OUTBOUND -> context.nextOutbound(container.message)
-                MessageDirection.INBOUND -> context.nextInbound(container.message)
+            context.next(container.message)
+        } catch (t: PipelineException) {
+            if (container.metadata.respondOnError) {
+                val src = t.lastMsgState.source ?: container.metadata.connectedNode
+
+                val newMessage = Message(
+                    messageId = container.message.messageId,
+                    target = MessageTarget.Unicast(src),
+                    content = t.reason.toErrorContent()
+                )
+
+                val newMeta = defaultMeta.copy(respondOnError = false)
+
+                pushMessage(newMessage, newMeta)
+            } else {
+                throw t.reason
             }
         } catch (c: CancellationException) {
+
             throw c
-        } catch (t: Throwable) {
-            if (respondOnError && container.message.source != null) {
-                val errMsg = MessageContainer(
-                    direction = MessageDirection.OUTBOUND,
-                    message = Message(
-                        messageId = container.message.messageId,
-                        target = MessageTarget.Unicast(container.message.source!!),
-                        content = t.toErrorContent()
-                    )
-                )
-                onMessage(errMsg, false)
-            } else {
-                throw t
-            }
+
         }
     }
 }

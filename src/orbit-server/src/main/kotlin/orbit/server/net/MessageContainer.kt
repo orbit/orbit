@@ -6,11 +6,20 @@
 
 package orbit.server.net
 
+import orbit.shared.mesh.Namespace
+import orbit.shared.mesh.NodeId
 import orbit.shared.net.Message
 
+data class MessageMetadata(
+    val connectedNamespace: Namespace,
+    val connectedNode: NodeId,
+    val messageDirection: MessageDirection,
+    val respondOnError: Boolean = true
+)
+
 class MessageContainer(
-    val direction: MessageDirection,
-    val message: Message
+    val message: Message,
+    val metadata: MessageMetadata
 )
 
 enum class MessageDirection {

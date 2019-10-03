@@ -13,7 +13,7 @@ import orbit.shared.net.MessageContent
 fun Messages.MessageProto.toMessage(): Message =
     Message(
         messageId = messageId,
-        source = NodeId(source),
+        source = if (source.isNullOrEmpty()) null else NodeId(source),
         content = content.toMessageContent()
     )
 

@@ -16,8 +16,7 @@ class EchoStep : PipelineStep {
             msg.copy(
                 target = MessageTarget.Unicast(source)
             ).also {
-                context.newOutbound(it)
-                return
+                context.pushNew(it)
             }
         }
     }

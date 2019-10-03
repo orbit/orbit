@@ -6,7 +6,6 @@
 
 package orbit.server.mesh
 
-import orbit.util.misc.RNGUtils
 import orbit.server.OrbitServerConfig
 import orbit.shared.exception.InvalidChallengeException
 import orbit.shared.exception.InvalidNodeId
@@ -15,6 +14,7 @@ import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.mesh.NodeLease
+import orbit.util.misc.RNGUtils
 import orbit.util.time.Timestamp
 import orbit.util.time.now
 import orbit.util.time.toTimestamp

@@ -9,18 +9,19 @@ package orbit.server.net
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
-import orbit.util.di.jvm.ComponentContainer
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
 import orbit.server.pipeline.Pipeline
 import orbit.shared.exception.InvalidNodeId
 import orbit.shared.exception.toErrorContent
+import orbit.shared.mesh.Namespace
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.net.Message
 import orbit.shared.proto.Messages
 import orbit.shared.proto.toMessageProto
+import orbit.util.di.jvm.ComponentContainer
 import java.util.concurrent.ConcurrentHashMap
 
 class ConnectionManager(
@@ -37,6 +38,7 @@ class ConnectionManager(
     fun getClient(nodeId: NodeId) = connectedClients[nodeId]
 
     fun onNewClient(
+        namespace: Namespace,
         nodeId: NodeId,
         incomingChannel: ReceiveChannel<Messages.MessageProto>,
         outgoingChannel: SendChannel<Messages.MessageProto>
@@ -49,7 +51,7 @@ class ConnectionManager(
                 if (nodeInfo == null) throw InvalidNodeId(nodeId)
 
                 // Create the connection
-                val clientConnection = ClientConnection(nodeId, incomingChannel, outgoingChannel, pipeline)
+                val clientConnection = ClientConnection(namespace, nodeId, incomingChannel, outgoingChannel, pipeline)
                 connectedClients[nodeId] = clientConnection
 
                 // Update the visible nodes
