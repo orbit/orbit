@@ -9,10 +9,12 @@ package orbit.server.net
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
+import orbit.server.auth.AuthSystem
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
 import orbit.server.pipeline.Pipeline
+import orbit.shared.exception.AuthFailed
 import orbit.shared.exception.InvalidNodeId
 import orbit.shared.exception.toErrorContent
 import orbit.shared.mesh.Namespace
@@ -28,6 +30,7 @@ class ConnectionManager(
     private val runtimeScopes: RuntimeScopes,
     private val clusterManager: ClusterManager,
     private val localNodeInfo: LocalNodeInfo,
+    private val authSystem: AuthSystem,
     container: ComponentContainer
 ) {
     private val connectedClients = ConcurrentHashMap<NodeId, ClientConnection>()
@@ -50,8 +53,11 @@ class ConnectionManager(
                 nodeInfo = clusterManager.getNode(nodeId)
                 if (nodeInfo == null) throw InvalidNodeId(nodeId)
 
+                val authInfo = authSystem.attemptAuth(namespace, nodeId)
+                authInfo ?: throw AuthFailed("Auth failled for $namespace $nodeId")
+
                 // Create the connection
-                val clientConnection = ClientConnection(namespace, nodeId, incomingChannel, outgoingChannel, pipeline)
+                val clientConnection = ClientConnection(authInfo, incomingChannel, outgoingChannel, pipeline)
                 connectedClients[nodeId] = clientConnection
 
                 // Update the visible nodes

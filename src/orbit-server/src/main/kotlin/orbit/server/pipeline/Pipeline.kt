@@ -13,6 +13,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import orbit.server.OrbitServerConfig
+import orbit.server.auth.AuthInfo
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.LocalNodeInfo
 import orbit.server.net.MessageContainer
@@ -60,7 +61,7 @@ class Pipeline(
 
         val container = MessageContainer(
             message = msg,
-            metadata = meta ?: defaultMeta
+            metadata = meta ?: localMeta
         )
 
         logger.trace { "Writing message to pipeline channel: $container" }
@@ -78,11 +79,11 @@ class Pipeline(
         }
     }
 
-    private val defaultMeta
+    private val localMeta
         get() = MessageMetadata(
             messageDirection = MessageDirection.OUTBOUND,
-            connectedNamespace = localNodeInfo.info.namespace,
-            connectedNode = localNodeInfo.info.id
+            authInfo = AuthInfo(true, localNodeInfo.info.namespace, localNodeInfo.info.id),
+            respondOnError = true
         )
 
     private fun launchRail(receiveChannel: ReceiveChannel<MessageContainer>) = runtimeScopes.cpuScope.launch {
@@ -103,7 +104,7 @@ class Pipeline(
             context.next(container.message)
         } catch (t: PipelineException) {
             if (container.metadata.respondOnError) {
-                val src = t.lastMsgState.source ?: container.metadata.connectedNode
+                val src = t.lastMsgState.source ?: container.metadata.authInfo.nodeId
 
                 val newMessage = Message(
                     messageId = container.message.messageId,
@@ -111,7 +112,7 @@ class Pipeline(
                     content = t.reason.toErrorContent()
                 )
 
-                val newMeta = defaultMeta.copy(respondOnError = false)
+                val newMeta = localMeta.copy(respondOnError = false)
 
                 pushMessage(newMessage, newMeta)
             } else {

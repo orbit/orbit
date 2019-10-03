@@ -8,11 +8,10 @@ package orbit.server.net
 
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
+import orbit.server.auth.AuthInfo
 import orbit.server.pipeline.Pipeline
 import orbit.shared.exception.CapacityExceededException
 import orbit.shared.exception.toErrorContent
-import orbit.shared.mesh.Namespace
-import orbit.shared.mesh.NodeId
 import orbit.shared.net.Message
 import orbit.shared.net.MessageTarget
 import orbit.shared.proto.Messages
@@ -20,8 +19,7 @@ import orbit.shared.proto.toMessage
 import orbit.shared.proto.toMessageProto
 
 class ClientConnection(
-    private val namespace: Namespace,
-    private val nodeId: NodeId,
+    private val authInfo: AuthInfo,
     private val incomingChannel: ReceiveChannel<Messages.MessageProto>,
     private val outgoingChannel: SendChannel<Messages.MessageProto>,
     private val pipeline: Pipeline
@@ -31,8 +29,7 @@ class ClientConnection(
 
             val message = protoMessage.toMessage()
             val meta = MessageMetadata(
-                connectedNamespace = namespace,
-                connectedNode = nodeId,
+                authInfo = authInfo,
                 messageDirection = MessageDirection.INBOUND
             )
 
@@ -45,6 +42,11 @@ class ClientConnection(
                         target = message.source?.let(MessageTarget::Unicast),
                         messageId = message.messageId,
                         content = t.toErrorContent()
+                    ),
+                    meta = MessageMetadata(
+                        authInfo = authInfo,
+                        messageDirection = MessageDirection.OUTBOUND,
+                        respondOnError = false
                     )
                 )
             }

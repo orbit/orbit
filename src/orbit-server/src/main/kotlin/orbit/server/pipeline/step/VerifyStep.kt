@@ -7,7 +7,6 @@
 package orbit.server.pipeline.step
 
 import orbit.server.mesh.ClusterManager
-import orbit.server.mesh.MANAGEMENT_NAMESPACE
 import orbit.server.pipeline.PipelineContext
 import orbit.shared.exception.InvalidNodeId
 import orbit.shared.net.Message
@@ -16,24 +15,14 @@ class VerifyStep(
     private val clusterManager: ClusterManager
 ) : PipelineStep {
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
-        val newSource = msg.source.let { src ->
-            // If there is no source we set it
-            // We also can't trust clients so we check the namespace
-            if (src == null || context.metadata.connectedNamespace != MANAGEMENT_NAMESPACE) {
-                context.metadata.connectedNode
-            } else {
-                src
-            }
+        val source = msg.source
+
+        checkNotNull(source) { "Source should not be null at this point" }
+
+        if (clusterManager.getNode(source) == null) {
+            throw InvalidNodeId(source)
         }
 
-        if (clusterManager.getNode(newSource) == null) {
-            throw InvalidNodeId(newSource)
-        }
-
-        val newMsg = msg.copy(
-            source = newSource
-        )
-
-        context.next(newMsg)
+        context.next(msg)
     }
 }

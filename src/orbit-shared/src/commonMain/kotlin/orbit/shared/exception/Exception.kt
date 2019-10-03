@@ -27,8 +27,18 @@ class InvalidChallengeException(nodeId: NodeId, challengeToken: ChallengeToken) 
  */
 class CapacityExceededException(message: String) : Throwable(message)
 
+/**
+ * An exception of this type is thrown when authentication fails.
+ */
+class AuthFailed(message: String) : Throwable(message)
+
 
 fun Throwable?.toErrorContent(): MessageContent.Error = when (this) {
+    is AuthFailed -> MessageContent.Error(
+        status = MessageContent.Error.Status.AUTH_FAILED,
+        message = message
+    )
+
     is InvalidNodeId -> MessageContent.Error(
         status = MessageContent.Error.Status.INVALID_LEASE,
         message = message

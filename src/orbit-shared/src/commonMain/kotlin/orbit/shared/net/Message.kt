@@ -28,6 +28,7 @@ sealed class MessageContent {
     data class Error(val status: Status, val message: String?) : MessageContent() {
         enum class Status {
             UNKNOWN,
+            AUTH_FAILED,
             INVALID_LEASE,
             SERVER_OVERLOADED,
             SECURITY_VIOLATION

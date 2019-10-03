@@ -36,9 +36,10 @@ message ErrorProto {
 
     enum StatusProto {
         UNKNOWN = 0;
-        INVALID_LEASE = 1;
-        SERVER_OVERLOADED = 2;
-        SECURITY_VIOLATION = 3;
+        AUTH_FAILED = 1;
+        INVALID_LEASE = 2;
+        SERVER_OVERLOADED = 3;
+        SECURITY_VIOLATION = 4;
     }
 }
 

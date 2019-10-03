@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import orbit.server.auth.AuthSystem
 import orbit.server.concurrent.RuntimePools
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.ClusterManager
@@ -21,6 +22,7 @@ import orbit.server.mesh.NodeDirectory
 import orbit.server.net.ConnectionManager
 import orbit.server.pipeline.Pipeline
 import orbit.server.pipeline.PipelineSteps
+import orbit.server.pipeline.step.AuthStep
 import orbit.server.pipeline.step.BlankStep
 import orbit.server.pipeline.step.EchoStep
 import orbit.server.pipeline.step.IdentityStep
@@ -91,12 +93,16 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<RoutingStep>()
             definition<EchoStep>()
             definition<VerifyStep>()
+            definition<AuthStep>()
             definition<TransportStep>()
 
             // Mesh
             definition<LocalNodeInfo>()
             definition<ClusterManager>()
             externallyConfigured(config.nodeDirectory)
+
+            // Auth
+            definition<AuthSystem>()
 
             // Router
             definition<Router>()

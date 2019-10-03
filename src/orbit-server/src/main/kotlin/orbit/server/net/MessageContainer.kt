@@ -6,13 +6,11 @@
 
 package orbit.server.net
 
-import orbit.shared.mesh.Namespace
-import orbit.shared.mesh.NodeId
+import orbit.server.auth.AuthInfo
 import orbit.shared.net.Message
 
 data class MessageMetadata(
-    val connectedNamespace: Namespace,
-    val connectedNode: NodeId,
+    val authInfo: AuthInfo,
     val messageDirection: MessageDirection,
     val respondOnError: Boolean = true
 )

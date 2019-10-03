@@ -11,11 +11,12 @@ import io.grpc.Contexts
 import io.grpc.Metadata
 import io.grpc.ServerCall
 import io.grpc.ServerCallHandler
+import io.grpc.ServerInterceptor
 import orbit.shared.mesh.Namespace
 import orbit.shared.mesh.NodeId
 import orbit.shared.proto.Headers
 
-class ServerAuthInterceptor : io.grpc.ServerInterceptor {
+class ServerAuthInterceptor : ServerInterceptor {
     companion object Keys {
         @JvmStatic
         val NODE_ID = Context.key<NodeId>(Headers.NODE_ID_NAME)
