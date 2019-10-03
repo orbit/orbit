@@ -20,7 +20,15 @@ class RoutingStep(
             is MessageTarget.Unicast -> {
                 router.findRoute(target.targetNode)
             }
-            is MessageTarget.RoutedUnicast -> router.findRoute(target.route.destinationNode, target.route)
+            is MessageTarget.RoutedUnicast -> {
+                target.route.pop().let {
+                    router.findRoute(
+                        it.nodeId,
+                        it.route
+                    )
+                }
+
+            }
             else -> null
         }
 

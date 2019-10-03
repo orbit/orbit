@@ -11,7 +11,7 @@ import orbit.shared.router.Route
 
 class Router {
     @Suppress("UNUSED_PARAMETER")
-    fun findRoute(nodeId: NodeId, possibleRoute: Route? = null): Route {
-        return Route(listOf(nodeId))
+    fun findRoute(targetNode: NodeId, possibleRoute: Route? = null): Route {
+        return Route(listOf(targetNode))
     }
 }
