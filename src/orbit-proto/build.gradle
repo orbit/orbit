@@ -6,8 +6,6 @@
 
 import org.apache.tools.ant.filters.ConcatFilter
 
-def tempDir = "build/tmp/js"
-
 buildscript {
     repositories {
         mavenCentral()
@@ -18,6 +16,14 @@ buildscript {
 }
 
 apply plugin: "com.google.protobuf"
+
+task disableLint(type: Copy) {
+    from file(buildDir.getAbsolutePath() + "/generated/source/proto/main/js")
+    into file(buildDir.getAbsolutePath() + "/generated/source/proto/main/js-nolint")
+    include '**/*.js'
+    includeEmptyDirs false
+    filter(ConcatFilter, prepend: file('./eslintDisableHeader.txt'))
+}
 
 dependencies {
     compile("com.google.protobuf:protobuf-java:$protobufVersion")
@@ -60,13 +66,7 @@ protobuf {
     }
 }
 
-task disableLint(type: Copy) {
-    from file(buildDir.getAbsolutePath() + "/generated/source/proto/main/js")
-    into file(buildDir.getAbsolutePath() + "/generated/source/proto/main/js-nolint")
-    include '**/*.js'
-    includeEmptyDirs false
-    filter(ConcatFilter, prepend: file('./header.txt'))
-}
+compileJava.finalizedBy disableLint
 
 sourceSets {
     main {
