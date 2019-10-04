@@ -6,11 +6,6 @@
 
 package orbit.server
 
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import orbit.server.auth.AuthSystem
@@ -37,6 +32,7 @@ import orbit.server.service.ServerAuthInterceptor
 import orbit.util.concurrent.jvm.ShutdownLatch
 import orbit.util.di.jvm.ComponentContainer
 import orbit.util.time.Clock
+import orbit.util.time.ConstantTicker
 import orbit.util.time.stopwatch
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
@@ -46,7 +42,6 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
     private val logger = KotlinLogging.logger {}
 
-    private var tickJob = AtomicReference<Job>()
     private var shutdownLatch = AtomicReference<ShutdownLatch>()
 
     private val runtimePools = RuntimePools(
@@ -60,13 +55,23 @@ class OrbitServer(private val config: OrbitServerConfig) {
     )
 
     private val container = ComponentContainer()
+    private val clock = Clock()
 
-    private val clock: Clock by container.inject()
     private val grpcEndpoint by container.inject<GrpcEndpoint>()
     private val localNodeInfo by container.inject<LocalNodeInfo>()
     private val nodeManager by container.inject<ClusterManager>()
     private val nodeDirectory by container.inject<NodeDirectory>()
     private val pipeline by container.inject<Pipeline>()
+
+    private val ticker = ConstantTicker(
+        scope = runtimeScopes.cpuScope,
+        targetTickRate = config.tickRate.toMillis(),
+        clock = clock,
+        logger = logger,
+        exceptionHandler = this::onUnhandledException,
+        autoStart = false,
+        onTick = this::tick
+    )
 
     init {
         container.configure {
@@ -74,7 +79,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
             instance(config)
             instance(runtimePools)
             instance(runtimeScopes)
-            definition<Clock>()
+            instance(clock)
 
             // Service
             definition<GrpcEndpoint>()
@@ -111,7 +116,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     }
 
     fun start() = runtimeScopes.cpuScope.launch {
-        logger.info("Starting Orbit...")
+        logger.info("Starting Orbit server...")
         val (elapsed, _) = stopwatch(clock) {
             // Start the pipeline
             pipeline.start()
@@ -119,8 +124,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
             // Setup  the local node information
             localNodeInfo.start()
 
-            // Start the tick
-            tickJob.set(launchTick())
+            // Start tick
+            ticker.start()
 
             // Start gRPC endpoint
             // We shouldn't do this until we're ready to serve traffic
@@ -135,20 +140,18 @@ class OrbitServer(private val config: OrbitServerConfig) {
             }
         }
 
-        logger.info("Orbit started successfully in {}ms.", elapsed)
+        logger.info("Orbit server started successfully in {}ms.", elapsed)
     }
 
     fun stop() = runtimeScopes.cpuScope.launch {
-        logger.info("Stopping Orbit...")
+        logger.info("Stopping Orbit server...")
         val (elapsed, _) = stopwatch(clock) {
             // Stop gRPC
             val grpcEndpoint by container.inject<GrpcEndpoint>()
-            grpcEndpoint.start()
+            grpcEndpoint.stop()
 
             // Stop the tick
-            tickJob.get()?.cancelAndJoin().also {
-                tickJob.set(null)
-            }
+            ticker.stop()
 
             // Stop pipeline
             pipeline.stop()
@@ -159,10 +162,10 @@ class OrbitServer(private val config: OrbitServerConfig) {
             }
         }
 
-        logger.info("Orbit stopped successfully in {}ms.", elapsed)
+        logger.info("Orbit server stopped successfully in {}ms.", elapsed)
     }
 
-    suspend fun tick() {
+    private suspend fun tick() {
         // Update the local node info
         localNodeInfo.tick()
 
@@ -171,36 +174,6 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
         // Tick the node directory
         nodeDirectory.tick()
-    }
-
-    private fun launchTick() = runtimeScopes.cpuScope.launch {
-        val targetTickRate = config.tickRate.toMillis()
-        while (isActive) {
-            val (elapsed, _) = stopwatch(clock) {
-                logger.trace { "Begin Orbit tick..." }
-
-                try {
-                    tick()
-                } catch (c: CancellationException) {
-                    throw c
-                } catch (t: Throwable) {
-                    onUnhandledException(coroutineContext, t)
-                }
-            }
-
-            val nextTickDelay = (targetTickRate - elapsed).coerceAtLeast(0)
-
-            if (elapsed > targetTickRate) {
-                logger.warn {
-                    "Slow Orbit Tick. The application is unable to maintain its tick rate. " +
-                            "Last tick took ${elapsed}ms and the reference tick rate is ${targetTickRate}ms. " +
-                            "The next tick will take place immediately."
-                }
-            }
-
-            logger.trace { "Orbit tick completed in ${elapsed}ms. Next tick in ${nextTickDelay}ms." }
-            delay(nextTickDelay)
-        }
     }
 
     @Suppress("UNUSED_PARAMETER")

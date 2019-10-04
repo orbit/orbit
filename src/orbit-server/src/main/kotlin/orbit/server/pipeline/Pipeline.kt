@@ -36,7 +36,7 @@ class Pipeline(
         buffer = config.pipelineBufferCount,
         railCount = config.pipelineRailCount,
         logger = logger,
-        body = this::onMessage
+        onMessage = this::onMessage
     )
 
     fun start() {

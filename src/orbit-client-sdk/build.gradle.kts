@@ -20,6 +20,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinCoroutinesVersion")
 
+    testImplementation(project(":src:orbit-server"))
+
+
     testRuntimeOnly("org.slf4j:slf4j-simple:$slf4jVersion")
     testImplementation(kotlin("test-junit"))
 }

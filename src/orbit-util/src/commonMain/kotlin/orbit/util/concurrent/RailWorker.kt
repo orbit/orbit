@@ -18,7 +18,7 @@ class RailWorker<T>(
     private val railCount: Int = 128,
     private val logger: KLogger? = null,
     autoStart: Boolean = false,
-    private val body: suspend (T) -> Unit
+    private val onMessage: suspend (T) -> Unit
 ) {
     private var channel: Channel<T>? = null
     private var workers: List<Job>? = null
@@ -38,7 +38,7 @@ class RailWorker<T>(
             workers = List(railCount) {
                 scope.launch {
                     for (msg in chan) {
-                        body(msg)
+                        onMessage(msg)
                     }
                 }
             }
