@@ -60,11 +60,6 @@ protobuf {
     }
 }
 
-task generateGrpcWeb(type: Exec) {
-    commandLine "protoc"
-    args "--grpc-web_out=import_style=commonjs,mode=grpcwebtext:."
-}
-
 task disableLint(type: Copy) {
     from file(buildDir.getAbsolutePath() + "/generated/source/proto/main/js")
     into file(buildDir.getAbsolutePath() + "/generated/source/proto/main/js-nolint")
