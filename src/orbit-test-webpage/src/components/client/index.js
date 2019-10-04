@@ -12,8 +12,17 @@ export default class Client extends Component {
   address;
   message;
 
+  // connect() {
+  //   this.sender = new Messages(this.host, this.port)
+  // }
+
   connect() {
-    this.sender = new Messages(this.host, this.port)
+    this.sender.connect()
+  }
+
+  constructor() {
+    super()
+    this.sender = new Messages()
   }
 
   sendMessage() {

@@ -7,4 +7,9 @@ package orbit.shared;
 
 service Connection {
     rpc Messages (stream Message) returns (stream Message);
+
+    // TODO (brett) - Remove these test methods for verifying different streaming permutations
+    rpc TestMsgTwo (Message) returns (Message);
+    rpc TestMsgThreeIn (stream Message) returns (Message);
+    rpc TestMsgFourOut (Message) returns (stream Message);
 }

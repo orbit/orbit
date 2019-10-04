@@ -59,7 +59,7 @@ services:
     ports:
       - 80:3000
     entrypoint: npm start
-  grpcwebproxy:
+  grpcwebproxy-1:
     build:
       context: ../
       dockerfile: docker/grpcwebproxy/Dockerfile
@@ -68,7 +68,7 @@ services:
       BACKEND_PORT: 50056
     ports:
       - 50056:8080
-  grpcwebproxy:
+  grpcwebproxy-2:
     build:
       context: ../
       dockerfile: docker/grpcwebproxy/Dockerfile

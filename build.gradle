@@ -34,10 +34,10 @@ buildscript {
         dokkaVersion = "0.9.17"
         dokkaRepo = "https://dl.bintray.com/kotlin/dokka"
 
-        protobufVersion = "3.9.1"
+        protobufVersion = "3.10.0"
         protobufPluginVersion = "0.8.10"
-        grpcVersion = "1.23.0"
-        grpcKotlinVersion = '0.1.1'
+        grpcVersion = "1.24.0"
+        grpcKotlinVersion = "0.1.1"
     }
 
     repositories {
