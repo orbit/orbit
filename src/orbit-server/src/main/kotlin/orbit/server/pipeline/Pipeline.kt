@@ -7,8 +7,6 @@
 package orbit.server.pipeline
 
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
@@ -23,6 +21,7 @@ import orbit.shared.exception.CapacityExceededException
 import orbit.shared.exception.toErrorContent
 import orbit.shared.net.Message
 import orbit.shared.net.MessageTarget
+import orbit.util.concurrent.RailWorker
 
 class Pipeline(
     private val config: OrbitServerConfig,
@@ -32,30 +31,24 @@ class Pipeline(
 ) {
     private val logger = KotlinLogging.logger {}
 
-    private lateinit var pipelineChannel: Channel<MessageContainer>
-    private lateinit var pipelinesWorkers: List<Job>
+    private val pipelineRails = RailWorker(
+        scope = runtimeScopes.cpuScope,
+        buffer = config.pipelineBufferCount,
+        railCount = config.pipelineRailCount,
+        logger = logger,
+        body = this::onMessage
+    )
 
     fun start() {
-        pipelineChannel = Channel(config.pipelineBufferCount)
-        pipelinesWorkers = List(config.pipelineRailCount) {
-            launchRail(pipelineChannel)
-        }
-
-        logger.info(
-            "Pipeline started on ${config.pipelineRailCount} rails with a " +
-                    "${config.pipelineBufferCount} entries buffer."
-        )
+        pipelineRails.startWorkers()
     }
 
     fun stop() {
-        pipelineChannel.close()
-        pipelinesWorkers.forEach {
-            it.cancel()
-        }
+        pipelineRails.stopWorkers()
     }
 
     fun pushMessage(msg: Message, meta: MessageMetadata? = null) {
-        check(this::pipelineChannel.isInitialized) {
+        check(pipelineRails.isInitialized) {
             "The Orbit pipeline is not in a state to receive messages. Did you start the Orbit stage?"
         }
 
@@ -68,7 +61,7 @@ class Pipeline(
 
         // Offer the content to the channel
         try {
-            if (!pipelineChannel.offer(container)) {
+            if (!pipelineRails.offer(container)) {
                 // If the channel rejected there must be no capacity, we complete the deferred result exceptionally.
                 val errMsg = "The Orbit pipeline channel is full. >${config.pipelineBufferCount} buffered messages."
                 logger.error(errMsg)
