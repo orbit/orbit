@@ -17,14 +17,6 @@ buildscript {
 
 apply plugin: "com.google.protobuf"
 
-task disableLint(type: Copy) {
-    from file(buildDir.getAbsolutePath() + "/generated/source/proto/main/js")
-    into file(buildDir.getAbsolutePath() + "/generated/source/proto/main/js-nolint")
-    include '**/*.js'
-    includeEmptyDirs false
-    filter(ConcatFilter, prepend: file('./eslintDisableHeader.txt'))
-}
-
 dependencies {
     compile("com.google.protobuf:protobuf-java:$protobufVersion")
     compile("io.grpc:grpc-protobuf:$grpcVersion")
@@ -64,6 +56,14 @@ protobuf {
             }
         }
     }
+}
+
+task disableLint(type: Copy) {
+    from file(buildDir.getAbsolutePath() + "/generated/source/proto/main/js")
+    into file(buildDir.getAbsolutePath() + "/generated/source/proto/main/js-nolint")
+    include '**/*.js'
+    includeEmptyDirs false
+    filter(ConcatFilter, prepend: file('./eslintDisableHeader.txt'))
 }
 
 compileJava.finalizedBy disableLint
