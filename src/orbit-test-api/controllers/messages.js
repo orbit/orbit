@@ -58,7 +58,7 @@ class MessagesController {
 
     }
 
-    async connect() {
+    async joinCluster() {
         const response = await this.nodeManagementService.JoinCluster({
             capabilities: {
                 addressableTypes: ["apiTest"]
@@ -75,51 +75,35 @@ class MessagesController {
 
     async getMetadata() {
         return new Promise(async (resolve, reject) => {
-            if (!this.metadata) {
-                this.metadata = await this.connect()
+            if (!this.lease) {
+                this.lease = await this.joinCluster()
             }
             var meta = new grpc.Metadata();
-            meta.add('nodeId', this.metadata.nodeId);
+            meta.add('nodeId', this.lease.nodeId);
             resolve(meta)
-
-            
-            // if (!this.metadata) {
-            //     this.metadata =  await this.connect()
-            //     var meta = new grpc.Metadata();
-            //     meta.add('nodeId', this.metadata.nodeId);
-            //     resolve(meta)
-            // }
-            // else {
-            //     var meta = new grpc.Metadata();
-            //     meta.add('nodeId', this.metadata.nodeId);
-            //     resolve(meta)
-            // }
-            // if (this.metadata) {
-            //     var meta = new grpc.Metadata();
-            //     meta.add('nodeId', this.metadata.nodeId);
-            //     resolve(meta)
-            // }
-            // else {
-            //     this.connect().then(result => {
-            //         this.metadata = result
-            //         var meta = new grpc.Metadata();
-            //         meta.add('nodeId', this.metadata.nodeId);
-            //         resolve(meta)
-            //         })
-            // }
         })
     }
 
+    async getConnection() {
+        if (!this.messagesConnection) {
+            const metadata = await this.getMetadata()
+            this.messagesConnection = this.connectionService.Messages(metadata)
+            // call.on('data', msg => {
+            //     console.log('got a message', msg)
+            // })
+
+            // call.on('end', () => {
+            //     console.log('end')
+            // })
+
+        }
+        return this.messagesConnection
+    }
+
     async send(address, message) {
-        const metadata = await this.getMetadata()
-        console.log(metadata)
-        const call = this.connectionService.Messages()
+        const connection = await this.getConnection()
 
-        // call.on('data', function (msg) {
-        //     console.log('got a message', msg)
-        // })
-
-        call.write({
+        connection.write({
             InvocationRequest: {
                 reference: {
                     type: "webtest",
@@ -129,8 +113,7 @@ class MessagesController {
             }
         })
 
-        // console.log('call', call)
-        return `Sent a message to ${address} on node ${metadata.nodeId}: ${message}`
+        return `Sent a message to ${address} on node ${this.lease.nodeId}: ${message}`
     }
 }
 
