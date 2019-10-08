@@ -2,6 +2,7 @@ const grpc = require('grpc')
 const protoLoader = require('@grpc/proto-loader')
 const Path = require('path')
 const { promisify } = require('util')
+const moment = require('moment')
 
 class MessagesController {
 
@@ -23,6 +24,7 @@ class MessagesController {
 
         this.nodeManagementService = new this.nodeManagement.NodeManagement(url, grpc.credentials.createInsecure())
         this.nodeManagementService.JoinCluster = promisify(this.nodeManagementService.JoinCluster)
+        this.nodeManagementService.RenewLease = promisify(this.nodeManagementService.RenewLease)
 
         const connectionDefinition = protoLoader.loadSync(
             Path.join(sharedPath, 'connection.proto'),
@@ -38,6 +40,33 @@ class MessagesController {
         this.connectionService = new this.connection.Connection(url, grpc.credentials.createInsecure())
     }
 
+    setLeaseFromResponse(lease) {
+        return this.lease = {
+            nodeId: lease.node_identity,
+            challengeToken: lease.challenge_token,
+            renewsAt: moment.unix(lease.renew_at.seconds),
+            expiresAt: moment.unix(lease.expires_at.seconds)
+        }
+    }
+
+    renewLeaseTimer(renewAt) {
+        const timeout = renewAt.diff()
+        console.log(`Next renewal: ${renewAt} in ${timeout} ms`)
+        setTimeout(async () => {
+            console.log(`renewing lease ${JSON.stringify(this.lease, null, 2)}`)
+            const response = await this.nodeManagementService.RenewLease({
+                challenge_token: this.lease.challengeToken,
+                capabilities: {
+                    addressableTypes: ["apiTest"]
+                }
+            }, await this.getMetadata())
+
+            const lease = this.setLeaseFromResponse(response.lease_info)
+
+            this.renewLeaseTimer(lease.renewsAt)
+        }, timeout)
+    }
+
     async joinCluster() {
         const response = await this.nodeManagementService.JoinCluster({
             capabilities: {
@@ -45,18 +74,17 @@ class MessagesController {
             }
         })
 
-        return {
-            nodeId: response.node_identity,
-            challengeToken: response.challengeToken,
-            renewsAt: response.renew_at,
-            expiresAt: response.expires_at
-        }
+        const lease = this.setLeaseFromResponse(response)
+
+        this.renewLeaseTimer(lease.renewsAt)
+
+        return lease
     }
 
     async getMetadata() {
         return new Promise(async (resolve, reject) => {
             if (!this.lease) {
-                this.lease = await this.joinCluster()
+                await this.joinCluster()
             }
             var meta = new grpc.Metadata();
             meta.add('nodeId', this.lease.nodeId);
@@ -69,7 +97,7 @@ class MessagesController {
             const metadata = await this.getMetadata()
             this.messagesConnection = this.connectionService.Messages(metadata)
             this.messagesConnection.on('data', msg => {
-                console.log('got a message', msg)
+                this.onReceive(msg)
             })
 
             this.messagesConnection.on('end', () => {
@@ -79,11 +107,16 @@ class MessagesController {
         return this.messagesConnection
     }
 
+    async onReceive(message) {
+
+        console.log('got a message', message)
+    }
+
     async send(address, message) {
         const connection = await this.getConnection()
 
-        connection.write({
-            InvocationRequest: {
+        await connection.write({
+            invocation_request: {
                 reference: {
                     type: "webtest",
                     id: address
