@@ -108,8 +108,10 @@ class MessagesController {
     }
 
     async onReceive(message) {
-
         console.log('got a message', message)
+        const address = `${message.invocation_request.reference.type}/${message.invocation_request.reference.id}`
+        this.messages[address] = this.messages[address] || []
+        this.messages[address].push({timeStamp: moment(), message: message.invocation_request.value})
     }
 
     async send(address, message) {
@@ -126,6 +128,10 @@ class MessagesController {
         })
 
         return `Sent a message to ${address} on node ${this.lease.nodeId}: ${message}`
+    }
+
+    async getMessages() {
+        return this.messages
     }
 }
 
