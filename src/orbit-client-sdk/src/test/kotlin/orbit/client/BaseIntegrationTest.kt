@@ -41,8 +41,8 @@ open class BaseIntegrationTest {
         @JvmStatic
         fun deinit() {
             runBlocking {
-                client.stop().join()
-                server.stop().join()
+                //client.stop().join()
+                //server.stop().join()
             }
         }
     }

@@ -13,11 +13,9 @@ import orbit.shared.mesh.NodeInfo
 fun NodeInfo.toLeaseRequestResponseProto(): NodeManagementOuterClass.RequestLeaseResponseProto =
     NodeManagementOuterClass.RequestLeaseResponseProto.newBuilder()
         .setStatus(NodeManagementOuterClass.RequestLeaseResponseProto.Status.OK)
-        .setNodeIdentity(id.value)
-        .setChallengeToken(lease.challengeToken)
-        .setExpiresAt(lease.expiresAt.toTimestampProto())
-        .setRenewAt(lease.renewAt.toTimestampProto())
+        .setInfo(toNodeInfoProto())
         .build()
+
 
 fun Throwable.toLeaseRequestResponseProto(): NodeManagementOuterClass.RequestLeaseResponseProto =
     NodeManagementOuterClass.RequestLeaseResponseProto.newBuilder()

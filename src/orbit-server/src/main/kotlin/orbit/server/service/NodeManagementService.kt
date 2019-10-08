@@ -9,9 +9,9 @@ package orbit.server.service
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
-import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.proto.NodeManagementImplBase
 import orbit.shared.proto.NodeManagementOuterClass
+import orbit.shared.proto.toCapabilities
 import orbit.shared.proto.toLeaseRequestResponseProto
 
 class NodeManagementService(
@@ -22,12 +22,10 @@ class NodeManagementService(
     override suspend fun joinCluster(request: NodeManagementOuterClass.JoinClusterRequestProto): NodeManagementOuterClass.RequestLeaseResponseProto =
         try {
             val namespace = ServerAuthInterceptor.NAMESPACE.get()
-            val addressableTypes = request.addressableTypesList.toList()
+            val capabilities = request.capabilities.toCapabilities()
             val info = clusterManager.joinCluster(
                 namespace = namespace,
-                capabilities = NodeCapabilities(
-                    addressableTypes = addressableTypes
-                )
+                capabilities = capabilities
             )
             info.toLeaseRequestResponseProto()
         } catch (t: Throwable) {
@@ -38,14 +36,12 @@ class NodeManagementService(
     override suspend fun renewLease(request: NodeManagementOuterClass.RenewLeaseRequestProto): NodeManagementOuterClass.RequestLeaseResponseProto =
         try {
             val nodeId = ServerAuthInterceptor.NODE_ID.get()
-            val addressableTypes = request.addressableTypesList.toList()
+            val capabilities = request.capabilities.toCapabilities()
             val challengeToken = request.challengeToken
             val info = clusterManager.renewLease(
                 nodeId = nodeId,
                 challengeToken = challengeToken,
-                capabilities = NodeCapabilities(
-                    addressableTypes = addressableTypes
-                )
+                capabilities = capabilities
             )
             info.toLeaseRequestResponseProto()
         } catch (t: Throwable) {

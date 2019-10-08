@@ -1,0 +1,24 @@
+syntax = "proto3";
+option java_package = "orbit.shared.proto";
+
+import "google/protobuf/timestamp.proto";
+
+package orbit.shared;
+
+message NodeInfoProto {
+    string id = 1;
+    string namespace = 2;
+    CapabilitiesProto capabilities = 3;
+    repeated string visibleNodes = 4;
+    NodeLeaseProto lease = 5;
+};
+
+message CapabilitiesProto {
+    repeated string addressableTypes = 1;
+}
+
+message NodeLeaseProto {
+    string challenge_token = 3;
+    google.protobuf.Timestamp renew_at = 4;
+    google.protobuf.Timestamp expires_at = 5;
+}

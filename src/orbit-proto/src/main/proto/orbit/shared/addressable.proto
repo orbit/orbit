@@ -1,8 +1,6 @@
 syntax = "proto3";
 option java_package = "orbit.shared.proto";
 
-import "google/protobuf/timestamp.proto";
-
 package orbit.shared;
 
 message AddressableReferenceProto {

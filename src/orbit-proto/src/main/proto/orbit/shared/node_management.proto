@@ -2,6 +2,8 @@ syntax = "proto3";
 option java_package = "orbit.shared.proto";
 
 import "google/protobuf/timestamp.proto";
+import "orbit/shared/mesh.proto";
+
 
 package orbit.shared;
 
@@ -11,20 +13,17 @@ service NodeManagement {
 }
 
 message JoinClusterRequestProto {
-    repeated string addressableTypes = 1;
+    CapabilitiesProto capabilities = 1;
 }
 
 message RenewLeaseRequestProto {
     string challenge_token = 1;
-    repeated string addressableTypes = 2;
+    CapabilitiesProto capabilities = 2;
 }
 
 message RequestLeaseResponseProto {
     Status status = 1;
-    string node_identity = 2;
-    string challenge_token = 3;
-    google.protobuf.Timestamp renew_at = 4;
-    google.protobuf.Timestamp expires_at = 5;
+    NodeInfoProto info = 2;
 
     enum Status {
         OK = 0;

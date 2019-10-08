@@ -8,6 +8,10 @@ package orbit.client
 
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import orbit.client.leasing.NodeLeaser
+import orbit.client.net.ClientAuthInterceptor
+import orbit.client.net.GrpcClient
+import orbit.client.net.NodeStatus
 import orbit.util.concurrent.SupervisorScope
 import orbit.util.di.jvm.ComponentContainer
 import orbit.util.time.Clock
@@ -43,12 +47,23 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
             instance(config)
             instance(scope)
 
+            definition<GrpcClient>()
+            definition<NodeStatus>()
+            definition<ClientAuthInterceptor>()
+
+            definition<NodeLeaser>()
+
         }
     }
+
+    private val nodeLeaser by container.inject<NodeLeaser>()
 
     fun start() = scope.launch {
         logger.info("Starting Orbit client...")
         val (elapsed, _) = stopwatch(clock) {
+            // Get first lease
+            nodeLeaser.joinCluster()
+
             // Start tick
             ticker.start()
         }
@@ -57,7 +72,7 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
     }
 
     private suspend fun tick() {
-
+        nodeLeaser.tick()
     }
 
     fun stop() = scope.launch {
