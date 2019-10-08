@@ -59,18 +59,27 @@ fun AddressableLease.Companion.fromProto(lease: Addressable.AddressableLease): A
 
 internal fun Message.toProto(): Messages.Message {
     val builder = Messages.Message.newBuilder()
-    return when {
-        this.content is MessageContent.Request ->
+    return when (this.content) {
+        is MessageContent.ResponseErrorMessage ->
+            builder.setInvocationError(
+                Messages.InvocationErrorResponse.newBuilder().setMessage(this.content.toString())
+            ).build()
+
+        is MessageContent.Response ->
+            builder.setInvocationResponse(
+                Messages.InvocationResponse.newBuilder().setValue(this.content.toString())
+            ).build()
+
+        is MessageContent.Request ->
             builder.setInvocationRequest(
-                builder.invocationRequestBuilder
+                Messages.InvocationRequest.newBuilder()
                     .setValue(this.content.data)
                     .setReference(
                         Addressable.AddressableReference.newBuilder()
                             .setId(this.content.destination.id)
-                            .setType(this.content.destination.type).build()
-                    )
+                            .setType(this.content.destination.type)
+                    ).build()
             ).build()
-        else -> throw IllegalArgumentException("Message content is invalid type")
     }
 }
 

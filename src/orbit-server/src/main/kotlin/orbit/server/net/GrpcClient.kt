@@ -10,6 +10,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import orbit.common.di.ComponentProvider
 import orbit.server.addressable.AddressableReference
 import orbit.server.pipeline.Pipeline
+import orbit.server.proto.toProto
 import orbit.server.routing.MeshNode
 import orbit.server.routing.Route
 import orbit.shared.proto.Messages
@@ -30,18 +31,7 @@ internal class GrpcClient(
     override suspend fun sendMessage(message: Message, route: Route?) {
         println("> ${this.id}: \"${message.content}\"")
 
-        send(
-            (when (message.content) {
-                is MessageContent.ResponseErrorMessage ->
-                    Messages.Message.newBuilder().setInvocationError(
-                        Messages.InvocationErrorResponse.newBuilder().setMessage(message.content.toString())
-                    )
-
-                else -> Messages.Message.newBuilder().setInvocationResponse(
-                    Messages.InvocationResponse.newBuilder().setValue(message.content.toString())
-                )
-            }).build()
-        )
+        send(message.toProto())
     }
 
     private fun onNext(value: Messages.Message) {
