@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package orbit.client.leasing
+package orbit.client.mesh
 
 import kotlinx.coroutines.guava.await
 import mu.KotlinLogging

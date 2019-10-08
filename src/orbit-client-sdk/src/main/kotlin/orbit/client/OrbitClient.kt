@@ -8,8 +8,9 @@ package orbit.client
 
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import orbit.client.leasing.NodeLeaser
+import orbit.client.mesh.NodeLeaser
 import orbit.client.net.ClientAuthInterceptor
+import orbit.client.net.ConnectionHandler
 import orbit.client.net.GrpcClient
 import orbit.client.net.NodeStatus
 import orbit.util.concurrent.SupervisorScope
@@ -50,6 +51,7 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
             definition<GrpcClient>()
             definition<NodeStatus>()
             definition<ClientAuthInterceptor>()
+            definition<ConnectionHandler>()
 
             definition<NodeLeaser>()
 
@@ -57,12 +59,17 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
     }
 
     private val nodeLeaser by container.inject<NodeLeaser>()
+    private val connectionHandler by container.inject<ConnectionHandler>()
+
 
     fun start() = scope.launch {
         logger.info("Starting Orbit client...")
         val (elapsed, _) = stopwatch(clock) {
             // Get first lease
             nodeLeaser.joinCluster()
+
+            // Open message channel
+            connectionHandler.connect()
 
             // Start tick
             ticker.start()
@@ -72,12 +79,16 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
     }
 
     private suspend fun tick() {
+        // See if lease needs renewing
         nodeLeaser.tick()
     }
 
     fun stop() = scope.launch {
         logger.info("Stopping Orbit...")
         val (elapsed, _) = stopwatch(clock) {
+            // Stop messaging
+            connectionHandler.disconnect()
+
             // Stop the tick
             ticker.stop()
         }

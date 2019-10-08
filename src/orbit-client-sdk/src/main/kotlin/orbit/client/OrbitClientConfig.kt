@@ -25,5 +25,16 @@ data class OrbitClientConfig(
     /**
      * The pool where Orbit client tasks will run.
      */
-    val pool: CoroutineDispatcher = Pools.createFixedPool("orbit-client")
+    val pool: CoroutineDispatcher = Pools.createFixedPool("orbit-client"),
+
+    /**
+     * The number of workers that can process a message concurrently.
+     */
+    val railCount: Int = 128,
+
+    /**
+     * The number of messages (inbound) that may be queued before new messages are rejected.
+     */
+    val bufferCount: Int = 10_000
+
 )
