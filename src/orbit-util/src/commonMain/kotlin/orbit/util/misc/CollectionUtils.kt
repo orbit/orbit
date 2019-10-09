@@ -4,9 +4,9 @@
  See license in LICENSE.
  */
 
-package orbit.shared.proto
+package orbit.util.misc
 
-object Headers {
-    const val NODE_KEY_NAME = "nodeKey"
-    const val NAMESPACE_NAME = "namespace"
-}
+fun <E> Collection<E>.randomOrNull(): E? =
+    runCatching {
+        this.random()
+    }.getOrNull()

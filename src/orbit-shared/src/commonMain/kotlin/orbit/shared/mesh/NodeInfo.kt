@@ -6,11 +6,8 @@
 
 package orbit.shared.mesh
 
-typealias Namespace = String
-
 data class NodeInfo(
     val id: NodeId,
-    val namespace: Namespace,
     val capabilities: NodeCapabilities,
     val visibleNodes: Set<NodeId> = emptySet(),
     val lease: NodeLease

@@ -8,10 +8,13 @@ package orbit.shared.mesh
 
 import orbit.util.misc.RNGUtils
 
-data class NodeId(val value: String) {
+typealias Namespace = String
+typealias NodeKey = String
+
+data class NodeId(val key: NodeKey, val namespace: Namespace) {
     companion object {
-        fun generate(prefix: String? = ""): NodeId {
-            return NodeId("$prefix${RNGUtils.randomString()}")
+        fun generate(namespace: Namespace): NodeId {
+            return NodeId(RNGUtils.randomString(), namespace)
         }
     }
 }

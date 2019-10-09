@@ -17,7 +17,6 @@ import orbit.server.pipeline.Pipeline
 import orbit.shared.exception.AuthFailed
 import orbit.shared.exception.InvalidNodeId
 import orbit.shared.exception.toErrorContent
-import orbit.shared.mesh.Namespace
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.net.Message
@@ -41,7 +40,6 @@ class ConnectionManager(
     fun getClient(nodeId: NodeId) = connectedClients[nodeId]
 
     fun onNewClient(
-        namespace: Namespace,
         nodeId: NodeId,
         incomingChannel: ReceiveChannel<Messages.MessageProto>,
         outgoingChannel: SendChannel<Messages.MessageProto>
@@ -53,8 +51,8 @@ class ConnectionManager(
                 nodeInfo = clusterManager.getNode(nodeId)
                 if (nodeInfo == null) throw InvalidNodeId(nodeId)
 
-                val authInfo = authSystem.attemptAuth(namespace, nodeId)
-                authInfo ?: throw AuthFailed("Auth failled for $namespace $nodeId")
+                val authInfo = authSystem.attemptAuth(nodeId)
+                authInfo ?: throw AuthFailed("Auth failled for $nodeId")
 
                 // Create the connection
                 val clientConnection = ClientConnection(authInfo, incomingChannel, outgoingChannel, pipeline)

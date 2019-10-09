@@ -5,12 +5,16 @@ import "google/protobuf/timestamp.proto";
 
 package orbit.shared;
 
-message NodeInfoProto {
-    string id = 1;
+message NodeIdProto {
+    string key = 1;
     string namespace = 2;
-    CapabilitiesProto capabilities = 3;
-    repeated string visibleNodes = 4;
-    NodeLeaseProto lease = 5;
+}
+
+message NodeInfoProto {
+    NodeIdProto id = 1;
+    CapabilitiesProto capabilities = 2;
+    repeated NodeIdProto visibleNodes = 3;
+    NodeLeaseProto lease = 4;
 };
 
 message CapabilitiesProto {

@@ -40,4 +40,10 @@ class RoutingStep(
 
         context.next(newMsg)
     }
+
+    override suspend fun onInbound(context: PipelineContext, msg: Message) {
+        // If a message gets here it should be resolved and ready to send out again
+        checkNotNull(msg.target) { "Node target was not resolved" }
+        context.pushNew(msg)
+    }
 }

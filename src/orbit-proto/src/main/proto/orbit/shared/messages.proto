@@ -4,11 +4,11 @@ option java_package = "orbit.shared.proto";
 package orbit.shared;
 
 import "orbit/shared/addressable.proto";
-
+import "orbit/shared/mesh.proto";
 
 message MessageProto {
     int64 messageId = 1;
-    string source = 2;
+    NodeIdProto source = 2;
 
     MessageContentProto content = 3;
 }

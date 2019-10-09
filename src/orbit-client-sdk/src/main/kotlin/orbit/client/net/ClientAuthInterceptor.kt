@@ -25,12 +25,15 @@ class ClientAuthInterceptor(private val localNode: LocalNode) : ClientIntercepto
             ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(next.newCall(method, callOptions)) {
             override fun start(responseListener: Listener<RespT>?, headers: Metadata) {
 
-                headers.put(NAMESPACE, localNode.status.serviceLocator.namespace)
+                val nodeId = localNode.status.nodeInfo?.id
 
-                localNode.status.nodeInfo?.id?.let {
-                    headers.put(NODE_ID, it.value)
+                if (nodeId == null) {
+                    headers.put(NAMESPACE, localNode.status.serviceLocator.namespace)
+
+                } else {
+                    headers.put(NAMESPACE, nodeId.namespace)
+                    headers.put(NODE_KEY, nodeId.key)
                 }
-
                 super.start(responseListener, headers)
             }
         }
@@ -38,6 +41,6 @@ class ClientAuthInterceptor(private val localNode: LocalNode) : ClientIntercepto
 
     companion object {
         private val NAMESPACE = Metadata.Key.of(Headers.NAMESPACE_NAME, Metadata.ASCII_STRING_MARSHALLER)
-        private val NODE_ID = Metadata.Key.of(Headers.NODE_ID_NAME, Metadata.ASCII_STRING_MARSHALLER)
+        private val NODE_KEY = Metadata.Key.of(Headers.NODE_KEY_NAME, Metadata.ASCII_STRING_MARSHALLER)
     }
 }

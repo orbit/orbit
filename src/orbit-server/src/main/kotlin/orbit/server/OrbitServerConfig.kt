@@ -7,8 +7,10 @@
 package orbit.server
 
 import kotlinx.coroutines.CoroutineDispatcher
+import orbit.server.mesh.AddressableDirectory
 import orbit.server.mesh.LeaseExpiration
 import orbit.server.mesh.NodeDirectory
+import orbit.server.mesh.local.LocalAddressableDirectory
 import orbit.server.mesh.local.LocalNodeDirectory
 import orbit.shared.net.PortBinding
 import orbit.util.concurrent.jvm.Pools
@@ -62,6 +64,11 @@ data class OrbitServerConfig(
     /**
      * The node directory to use.
      */
-    val nodeDirectory: ExternallyConfigured<NodeDirectory> = LocalNodeDirectory.LocalNodeDirectoryConfig
+    val nodeDirectory: ExternallyConfigured<NodeDirectory> = LocalNodeDirectory.LocalNodeDirectoryConfig,
+
+    /**
+     * The addressable directory to use
+     */
+    val addressableDirectory: ExternallyConfigured<AddressableDirectory> = LocalAddressableDirectory.LocalAddressableDirectoryConfig
 
 )

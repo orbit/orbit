@@ -7,25 +7,25 @@
 package orbit.server.pipeline
 
 import orbit.server.pipeline.step.AuthStep
-import orbit.server.pipeline.step.EchoStep
 import orbit.server.pipeline.step.IdentityStep
 import orbit.server.pipeline.step.PipelineStep
+import orbit.server.pipeline.step.PlacementStep
 import orbit.server.pipeline.step.RoutingStep
 import orbit.server.pipeline.step.TransportStep
 import orbit.server.pipeline.step.VerifyStep
 
 class PipelineSteps(
     identityStep: IdentityStep,
-    routingStep: RoutingStep,
-    echoStep: EchoStep,
+    placementStep: PlacementStep,
     verifyStep: VerifyStep,
+    routingStep: RoutingStep,
     authStep: AuthStep,
     transportStep: TransportStep
 ) {
     val steps: Array<PipelineStep> = arrayOf(
         identityStep,
         routingStep,
-        echoStep,
+        placementStep,
         verifyStep,
         authStep,
         transportStep

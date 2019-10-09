@@ -11,6 +11,7 @@ import mu.KotlinLogging
 import orbit.server.auth.AuthSystem
 import orbit.server.concurrent.RuntimePools
 import orbit.server.concurrent.RuntimeScopes
+import orbit.server.mesh.AddressableManager
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
 import orbit.server.mesh.NodeDirectory
@@ -21,6 +22,7 @@ import orbit.server.pipeline.step.AuthStep
 import orbit.server.pipeline.step.BlankStep
 import orbit.server.pipeline.step.EchoStep
 import orbit.server.pipeline.step.IdentityStep
+import orbit.server.pipeline.step.PlacementStep
 import orbit.server.pipeline.step.RoutingStep
 import orbit.server.pipeline.step.TransportStep
 import orbit.server.pipeline.step.VerifyStep
@@ -94,6 +96,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<Pipeline>()
             definition<PipelineSteps>()
             definition<BlankStep>()
+            definition<PlacementStep>()
             definition<IdentityStep>()
             definition<RoutingStep>()
             definition<EchoStep>()
@@ -104,14 +107,15 @@ class OrbitServer(private val config: OrbitServerConfig) {
             // Mesh
             definition<LocalNodeInfo>()
             definition<ClusterManager>()
+            definition<AddressableManager>()
             externallyConfigured(config.nodeDirectory)
+            externallyConfigured(config.addressableDirectory)
 
             // Auth
             definition<AuthSystem>()
 
             // Router
             definition<Router>()
-
         }
     }
 

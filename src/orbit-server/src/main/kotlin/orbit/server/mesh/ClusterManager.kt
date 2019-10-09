@@ -29,6 +29,8 @@ class ClusterManager(
 
     private val clusterNodes = ConcurrentHashMap<NodeId, NodeInfo>()
 
+    val allNodes get() = clusterNodes.values.toList()
+
     suspend fun tick() {
         clusterNodes.clear()
         nodeDirectory.values().forEach {
@@ -38,7 +40,7 @@ class ClusterManager(
 
     suspend fun joinCluster(namespace: String, capabilities: NodeCapabilities): NodeInfo {
         do {
-            val newNodeId = NodeId.generate()
+            val newNodeId = NodeId.generate(namespace)
 
             val lease = NodeLease(
                 challengeToken = RNGUtils.randomString(64),
@@ -47,7 +49,6 @@ class ClusterManager(
             )
 
             val info = NodeInfo(
-                namespace = namespace,
                 id = newNodeId,
                 capabilities = capabilities,
                 lease = lease

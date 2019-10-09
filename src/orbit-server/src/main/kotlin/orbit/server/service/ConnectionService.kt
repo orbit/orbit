@@ -20,10 +20,9 @@ class ConnectionService(
 ) : ConnectionImplBase(runtimeScopes.ioScope.coroutineContext) {
     override fun openStream(requests: ReceiveChannel<Messages.MessageProto>): ReceiveChannel<Messages.MessageProto> {
         val outboundChannel = Channel<Messages.MessageProto>()
-        val nodeId = ServerAuthInterceptor.NODE_ID.get()
-        val namespace = ServerAuthInterceptor.NAMESPACE.get()
+        val nodeId = ServerAuthInterceptor.getNodeId()
 
-        connectionManager.onNewClient(namespace, nodeId, requests, outboundChannel)
+        connectionManager.onNewClient(nodeId, requests, outboundChannel)
         return outboundChannel
     }
 }

@@ -35,7 +35,7 @@ class NodeManagementService(
 
     override suspend fun renewLease(request: NodeManagementOuterClass.RenewLeaseRequestProto): NodeManagementOuterClass.RequestLeaseResponseProto =
         try {
-            val nodeId = ServerAuthInterceptor.NODE_ID.get()
+            val nodeId = ServerAuthInterceptor.getNodeId()
             val capabilities = request.capabilities.toCapabilities()
             val challengeToken = request.challengeToken
             val info = clusterManager.renewLease(
