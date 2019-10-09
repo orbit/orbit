@@ -32,30 +32,11 @@ class CapacityExceededException(message: String) : Throwable(message)
  */
 class AuthFailed(message: String) : Throwable(message)
 
+/**
+ * An exception of this type is thrown when authentication fails.
+ */
+class PlacementFailedException(message: String) : Throwable(message)
 
-fun Throwable?.toErrorContent(): MessageContent.Error = when (this) {
-    is AuthFailed -> MessageContent.Error(
-        status = MessageContent.Error.Status.AUTH_FAILED,
-        message = message
-    )
-
-    is InvalidNodeId -> MessageContent.Error(
-        status = MessageContent.Error.Status.INVALID_LEASE,
-        message = message
-    )
-
-    is CapacityExceededException -> MessageContent.Error(
-        status = MessageContent.Error.Status.SERVER_OVERLOADED,
-        message = message
-    )
-
-    is InvalidChallengeException -> MessageContent.Error(
-        status = MessageContent.Error.Status.SECURITY_VIOLATION,
-        message = message
-    )
-
-    else -> MessageContent.Error(
-        status = MessageContent.Error.Status.UNKNOWN,
-        message = this?.message ?: "Unknown error"
-    )
-}
+fun Throwable?.toErrorContent(): MessageContent.Error = MessageContent.Error(
+    description = this?.toString()
+)

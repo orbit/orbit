@@ -25,7 +25,7 @@ class ClusterManager(
     config: OrbitServerConfig,
     private val nodeDirectory: NodeDirectory
 ) {
-    private val leaseExpiration = config.nodeLeaseExpiration
+    private val leaseExpiration = config.nodeLeaseDuration
 
     private val clusterNodes = ConcurrentHashMap<NodeId, NodeInfo>()
 

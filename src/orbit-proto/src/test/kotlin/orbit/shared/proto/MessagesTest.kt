@@ -13,17 +13,6 @@ import kotlin.test.assertEquals
 
 class MessagesTest {
     @Test
-    fun `test error message content conversion`() {
-        val initialRef = MessageContent.Error(
-            MessageContent.Error.Status.UNKNOWN,
-            "test"
-        )
-        val convertedRef = initialRef.toMessageContentProto()
-        val endRef = convertedRef.toMessageContent()
-        assertEquals(initialRef, endRef)
-    }
-
-    @Test
     fun `test invocation request message content conversion`() {
         val initialRef = MessageContent.InvocationRequest(
             "test",
@@ -40,15 +29,5 @@ class MessagesTest {
         val convertedRef = initialRef.toMessageContentProto()
         val endRef = convertedRef.toMessageContent()
         assertEquals(initialRef, endRef)
-    }
-
-    @Test
-    fun `test error status conversion`() {
-        MessageContent.Error.Status.values().forEach {
-            val initialRef = it
-            val convertedRef = initialRef.toStatusProto()
-            val endRef = convertedRef.toStatus()
-            assertEquals(initialRef, endRef)
-        }
     }
 }

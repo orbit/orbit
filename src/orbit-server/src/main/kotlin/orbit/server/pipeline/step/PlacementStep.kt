@@ -18,7 +18,7 @@ class PlacementStep(
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
         when (val content = msg.content) {
             is MessageContent.InvocationRequest -> {
-                addressableManager.placeOrLocate(msg.source!!.namespace, content.destination).also { location ->
+                addressableManager.locateOrPlace(msg.source!!.namespace, content.destination).also { location ->
                     msg.copy(
                         target = MessageTarget.Unicast(location)
                     ).also { newMsg ->

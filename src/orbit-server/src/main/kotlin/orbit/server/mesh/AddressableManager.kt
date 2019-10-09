@@ -6,17 +6,32 @@
 
 package orbit.server.mesh
 
+import orbit.server.OrbitServerConfig
+import orbit.shared.exception.PlacementFailedException
 import orbit.shared.mesh.Namespace
 import orbit.shared.mesh.NodeId
 import orbit.shared.remoting.AddressableReference
 import orbit.util.misc.attempt
+import orbit.util.time.toTimestamp
+import java.time.Instant
 
 class AddressableManager(
     private val addressableDirectory: AddressableDirectory,
-    private val clusterManager: ClusterManager
+    private val clusterManager: ClusterManager,
+    config: OrbitServerConfig
 ) {
-    suspend fun placeOrLocate(namespace: Namespace, addressableReference: AddressableReference): NodeId {
-        return place(namespace, addressableReference)
+    private val leaseExpiration = config.addressableLeaseDuration
+
+    suspend fun locateOrPlace(namespace: Namespace, addressableReference: AddressableReference): NodeId {
+        return addressableDirectory.getOrPut(addressableReference) {
+            AddressableLease(
+                nodeId = place(namespace, addressableReference),
+                reference = addressableReference,
+                expiresAt = Instant.now().plus(leaseExpiration.expiresIn).toTimestamp(),
+                renewAt = Instant.now().plus(leaseExpiration.renewIn).toTimestamp()
+            )
+
+        }.nodeId
     }
 
     private suspend fun place(namespace: Namespace, addressableReference: AddressableReference): NodeId {
@@ -31,6 +46,8 @@ class AddressableManager(
 
                 potentialNodes.random().id
             }
-        }.fold({ it }, { throw Exception("Could not find node capable of hosting $addressableReference") })
+        }.fold(
+            { it },
+            { throw PlacementFailedException("Could not find node capable of hosting $addressableReference") })
     }
 }

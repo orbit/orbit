@@ -31,15 +31,6 @@ message InvocationResponseProto {
 }
 
 message ErrorProto {
-    StatusProto status = 1;
-    string message = 2;
-
-    enum StatusProto {
-        UNKNOWN = 0;
-        AUTH_FAILED = 1;
-        INVALID_LEASE = 2;
-        SERVER_OVERLOADED = 3;
-        SECURITY_VIOLATION = 4;
-    }
+    string description = 1;
 }
 

@@ -9,7 +9,7 @@ package orbit.server.mesh
 import orbit.shared.mesh.NodeId
 import orbit.shared.remoting.AddressableReference
 import orbit.util.concurrent.AsyncMap
-import java.sql.Timestamp
+import orbit.util.time.Timestamp
 
 interface AddressableDirectory : AsyncMap<AddressableReference, AddressableLease>
 

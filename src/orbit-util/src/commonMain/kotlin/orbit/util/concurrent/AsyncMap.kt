@@ -18,6 +18,20 @@ interface AsyncMap<K, V> {
     suspend fun values() = entries().map { (_, v) -> v }
     suspend fun keys() = entries().map { (k, _) -> k }
 
+    suspend fun getOrPut(key: K, block: suspend () -> V): V {
+        val initial = get(key)
+        if (initial != null) return initial
+
+        val computed = block()
+
+        return if (compareAndSet(key, null, computed)) {
+            computed
+        } else {
+            getValue(key)
+
+        }
+    }
+
     tailrec suspend fun manipulate(key: K, block: (V?) -> V?): V? {
         val initialValue = this.get(key)
         val newValue = block(initialValue)

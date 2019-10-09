@@ -6,8 +6,6 @@
 
 package orbit.shared.proto
 
-import orbit.shared.exception.InvalidChallengeException
-import orbit.shared.exception.InvalidNodeId
 import orbit.shared.mesh.NodeInfo
 
 fun NodeInfo.toLeaseRequestResponseProto(): NodeManagementOuterClass.RequestLeaseResponseProto =
@@ -19,10 +17,6 @@ fun NodeInfo.toLeaseRequestResponseProto(): NodeManagementOuterClass.RequestLeas
 
 fun Throwable.toLeaseRequestResponseProto(): NodeManagementOuterClass.RequestLeaseResponseProto =
     NodeManagementOuterClass.RequestLeaseResponseProto.newBuilder()
-        .setStatus(
-            when (this) {
-                is InvalidNodeId -> NodeManagementOuterClass.RequestLeaseResponseProto.Status.INVALID_LEASE
-                is InvalidChallengeException -> NodeManagementOuterClass.RequestLeaseResponseProto.Status.INVALID_TOKEN
-                else -> NodeManagementOuterClass.RequestLeaseResponseProto.Status.UNKNOWN_ERROR
-            }
-        ).build()
+        .setStatus(NodeManagementOuterClass.RequestLeaseResponseProto.Status.ERROR)
+        .setErrorDescription(toString())
+        .build()

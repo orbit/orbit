@@ -11,6 +11,6 @@ import org.junit.Test
 class BasicTest : BaseIntegrationTest() {
     @Test
     fun basicStart() {
-        Thread.currentThread().join()
+        //Thread.currentThread().join()
     }
 }

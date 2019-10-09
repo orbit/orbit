@@ -8,4 +8,4 @@ package orbit.server.mesh
 
 import java.time.Duration
 
-data class LeaseExpiration(val expiresIn: Duration, val renewIn: Duration)
+data class LeaseDuration(val expiresIn: Duration, val renewIn: Duration)

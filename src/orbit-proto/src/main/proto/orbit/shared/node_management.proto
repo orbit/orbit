@@ -24,11 +24,10 @@ message RenewLeaseRequestProto {
 message RequestLeaseResponseProto {
     Status status = 1;
     NodeInfoProto info = 2;
+    string error_description = 3;
 
     enum Status {
         OK = 0;
-        INVALID_LEASE = 1;
-        INVALID_TOKEN = 2;
-        UNKNOWN_ERROR = 3;
+        ERROR = 1;
     }
 }

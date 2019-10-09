@@ -8,7 +8,7 @@ package orbit.server
 
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.server.mesh.AddressableDirectory
-import orbit.server.mesh.LeaseExpiration
+import orbit.server.mesh.LeaseDuration
 import orbit.server.mesh.NodeDirectory
 import orbit.server.mesh.local.LocalAddressableDirectory
 import orbit.server.mesh.local.LocalNodeDirectory
@@ -41,9 +41,17 @@ data class OrbitServerConfig(
     /**
      * Expiration times for node leases
      */
-    val nodeLeaseExpiration: LeaseExpiration = LeaseExpiration(
+    val nodeLeaseDuration: LeaseDuration = LeaseDuration(
         expiresIn = Duration.ofSeconds(30),
         renewIn = Duration.ofSeconds(5)
+    ),
+
+    /**
+     * Expiration times for node leases
+     */
+    val addressableLeaseDuration: LeaseDuration = LeaseDuration(
+        expiresIn = Duration.ofMinutes(10),
+        renewIn = Duration.ofMinutes(5)
     ),
 
     /**

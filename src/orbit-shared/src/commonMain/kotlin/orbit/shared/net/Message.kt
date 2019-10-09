@@ -25,13 +25,5 @@ sealed class MessageTarget {
 sealed class MessageContent {
     data class InvocationRequest(val data: String, val destination: AddressableReference) : MessageContent()
     data class InvocationResponse(val data: String) : MessageContent()
-    data class Error(val status: Status, val message: String?) : MessageContent() {
-        enum class Status {
-            UNKNOWN,
-            AUTH_FAILED,
-            INVALID_LEASE,
-            SERVER_OVERLOADED,
-            SECURITY_VIOLATION
-        }
-    }
+    data class Error(val description: String?) : MessageContent()
 }

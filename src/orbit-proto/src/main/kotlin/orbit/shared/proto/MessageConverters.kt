@@ -40,8 +40,7 @@ fun Messages.MessageContentProto.toMessageContent(): MessageContent =
 
         hasError() -> {
             MessageContent.Error(
-                message = error.message,
-                status = error.status.toStatus()
+                description = error.description
             )
         }
 
@@ -72,30 +71,9 @@ fun MessageContent.toMessageContentProto(): Messages.MessageContentProto =
                 is MessageContent.Error -> {
                     builder.setError(
                         Messages.ErrorProto.newBuilder()
-                            .setMessage(message)
-                            .setStatus(status.toStatusProto())
+                            .setDescription(description)
                             .build()
                     )
                 }
             }
         }.build()
-
-fun Messages.ErrorProto.StatusProto.toStatus(): MessageContent.Error.Status =
-    when (number) {
-        Messages.ErrorProto.StatusProto.UNKNOWN_VALUE -> MessageContent.Error.Status.UNKNOWN
-        Messages.ErrorProto.StatusProto.AUTH_FAILED_VALUE -> MessageContent.Error.Status.AUTH_FAILED
-        Messages.ErrorProto.StatusProto.INVALID_LEASE_VALUE -> MessageContent.Error.Status.INVALID_LEASE
-        Messages.ErrorProto.StatusProto.SERVER_OVERLOADED_VALUE -> MessageContent.Error.Status.SERVER_OVERLOADED
-        Messages.ErrorProto.StatusProto.SECURITY_VIOLATION_VALUE -> MessageContent.Error.Status.SECURITY_VIOLATION
-        else -> MessageContent.Error.Status.UNKNOWN
-    }
-
-fun MessageContent.Error.Status.toStatusProto(): Messages.ErrorProto.StatusProto =
-    when (this) {
-        MessageContent.Error.Status.UNKNOWN -> Messages.ErrorProto.StatusProto.UNKNOWN
-        MessageContent.Error.Status.AUTH_FAILED -> Messages.ErrorProto.StatusProto.AUTH_FAILED
-        MessageContent.Error.Status.INVALID_LEASE -> Messages.ErrorProto.StatusProto.INVALID_LEASE
-        MessageContent.Error.Status.SERVER_OVERLOADED -> Messages.ErrorProto.StatusProto.SERVER_OVERLOADED
-        MessageContent.Error.Status.SECURITY_VIOLATION -> Messages.ErrorProto.StatusProto.SECURITY_VIOLATION
-        else -> Messages.ErrorProto.StatusProto.UNKNOWN
-    }
