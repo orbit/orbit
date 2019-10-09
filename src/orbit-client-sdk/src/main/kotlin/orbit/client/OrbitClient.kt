@@ -8,11 +8,12 @@ package orbit.client
 
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import orbit.client.addressable.CapabilitiesScanner
 import orbit.client.mesh.NodeLeaser
 import orbit.client.net.ClientAuthInterceptor
 import orbit.client.net.ConnectionHandler
 import orbit.client.net.GrpcClient
-import orbit.client.net.NodeStatus
+import orbit.client.net.LocalNode
 import orbit.util.concurrent.SupervisorScope
 import orbit.util.di.jvm.ComponentContainer
 import orbit.util.time.Clock
@@ -47,24 +48,34 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
             instance(this@OrbitClient)
             instance(config)
             instance(scope)
+            instance(clock)
+            instance(LocalNode(config))
 
             definition<GrpcClient>()
-            definition<NodeStatus>()
             definition<ClientAuthInterceptor>()
             definition<ConnectionHandler>()
 
             definition<NodeLeaser>()
 
+            definition<CapabilitiesScanner>()
         }
     }
 
     private val nodeLeaser by container.inject<NodeLeaser>()
     private val connectionHandler by container.inject<ConnectionHandler>()
+    private val capabilitiesScanner by container.inject<CapabilitiesScanner>()
+    private val localNode by container.inject<LocalNode>()
 
 
     fun start() = scope.launch {
         logger.info("Starting Orbit client...")
         val (elapsed, _) = stopwatch(clock) {
+            // Scan for capabilities
+            capabilitiesScanner.scan()
+            localNode.manipulate {
+                it.copy(capabilities = capabilitiesScanner.generateCapabilities())
+            }
+
             // Get first lease
             nodeLeaser.joinCluster()
 

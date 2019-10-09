@@ -9,7 +9,7 @@ package orbit.client.mesh
 import kotlinx.coroutines.guava.await
 import mu.KotlinLogging
 import orbit.client.net.GrpcClient
-import orbit.client.net.NodeStatus
+import orbit.client.net.LocalNode
 import orbit.shared.proto.NodeManagementGrpc
 import orbit.shared.proto.NodeManagementOuterClass
 import orbit.shared.proto.toCapabilitiesProto
@@ -17,21 +17,23 @@ import orbit.shared.proto.toNodeInfo
 import orbit.util.time.Timestamp
 import orbit.util.time.now
 
-class NodeLeaser(private val nodeStatus: NodeStatus, grpcClient: GrpcClient) {
+class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClient) {
     private val logger = KotlinLogging.logger { }
 
     private val nodeManagementStub = NodeManagementGrpc.newFutureStub(grpcClient.channel)
 
     suspend fun joinCluster() {
-        logger.info("Joining cluster at '${nodeStatus.serviceLocator}'...")
+        logger.info("Joining cluster at '${localNode.status.serviceLocator}'...")
 
         nodeManagementStub.joinCluster(
             NodeManagementOuterClass.JoinClusterRequestProto.newBuilder()
-                .setCapabilities(nodeStatus.capabilities.toCapabilitiesProto())
+                .setCapabilities(localNode.status.capabilities?.toCapabilitiesProto())
                 .build()
         ).await().also { responseProto ->
             responseProto.info.toNodeInfo().also { nodeInfo ->
-                nodeStatus.latestInfo.set(nodeInfo)
+                localNode.manipulate {
+                    it.copy(nodeInfo = nodeInfo)
+                }
                 logger.info("Joined cluster as node '${nodeInfo.id}'.")
             }
 
@@ -39,19 +41,21 @@ class NodeLeaser(private val nodeStatus: NodeStatus, grpcClient: GrpcClient) {
     }
 
     suspend fun renewLease(force: Boolean) {
-        nodeStatus.latestInfo.get()?.let { existingInfo ->
+        localNode.status.nodeInfo?.let { existingInfo ->
             val existingLease = existingInfo.lease
             if (force || existingLease.renewAt <= Timestamp.now()) {
                 logger.debug("Renewing lease...")
                 val renewalResult = nodeManagementStub.renewLease(
                     NodeManagementOuterClass.RenewLeaseRequestProto.newBuilder()
                         .setChallengeToken(existingLease.challengeToken)
-                        .setCapabilities(nodeStatus.capabilities.toCapabilitiesProto())
+                        .setCapabilities(localNode.status.capabilities?.toCapabilitiesProto())
                         .build()
                 ).await()
 
                 check(renewalResult.status == NodeManagementOuterClass.RequestLeaseResponseProto.Status.OK) { "Node renewal failed" }
-                nodeStatus.latestInfo.set(renewalResult.info.toNodeInfo())
+                localNode.manipulate {
+                    it.copy(nodeInfo = renewalResult.info.toNodeInfo())
+                }
                 logger.debug("Lease renewed.")
             }
         }

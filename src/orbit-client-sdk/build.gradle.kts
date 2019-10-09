@@ -21,6 +21,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinCoroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:$kotlinCoroutinesVersion")
 
+    implementation("io.github.classgraph:classgraph:4.8.47")
 
     testImplementation(project(":src:orbit-server"))
 

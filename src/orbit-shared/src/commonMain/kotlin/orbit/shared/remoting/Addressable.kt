@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package orbit.shared.addressable
+package orbit.shared.remoting
 
 typealias AddressableType = String
 typealias AddressableId = String

@@ -15,7 +15,7 @@ import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import orbit.shared.proto.Headers
 
-class ClientAuthInterceptor(private val nodeStatus: NodeStatus) : ClientInterceptor {
+class ClientAuthInterceptor(private val localNode: LocalNode) : ClientInterceptor {
     override fun <ReqT : Any?, RespT : Any?> interceptCall(
         method: MethodDescriptor<ReqT, RespT>,
         callOptions: CallOptions,
@@ -25,9 +25,9 @@ class ClientAuthInterceptor(private val nodeStatus: NodeStatus) : ClientIntercep
             ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(next.newCall(method, callOptions)) {
             override fun start(responseListener: Listener<RespT>?, headers: Metadata) {
 
-                headers.put(NAMESPACE, nodeStatus.serviceLocator.namespace)
+                headers.put(NAMESPACE, localNode.status.serviceLocator.namespace)
 
-                nodeStatus.latestInfo.get()?.id?.let {
+                localNode.status.nodeInfo?.id?.let {
                     headers.put(NODE_ID, it.value)
                 }
 

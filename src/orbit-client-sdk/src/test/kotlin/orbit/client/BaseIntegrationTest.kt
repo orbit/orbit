@@ -28,8 +28,20 @@ open class BaseIntegrationTest {
         @BeforeClass
         @JvmStatic
         fun init() {
-            server = OrbitServer(OrbitServerConfig(serverPort = PortBinding(targetUri.host, targetUri.port)))
-            client = OrbitClient(OrbitClientConfig(serviceLocator = OrbitServiceLocator(targetUri)))
+            server = OrbitServer(
+                OrbitServerConfig(
+                    serverPort = PortBinding(
+                        targetUri.host, targetUri.port
+                    )
+                )
+            )
+
+            client = OrbitClient(
+                OrbitClientConfig(
+                    serviceLocator = OrbitServiceLocator(targetUri),
+                    packages = listOf("orbit.client.actor")
+                )
+            )
 
             runBlocking {
                 server.start().join()

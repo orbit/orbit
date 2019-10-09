@@ -9,9 +9,9 @@ package orbit.client.net
 import io.grpc.Channel
 import io.grpc.ManagedChannelBuilder
 
-class GrpcClient(nodeStatus: NodeStatus, authInterceptor: ClientAuthInterceptor) {
+class GrpcClient(localNode: LocalNode, authInterceptor: ClientAuthInterceptor) {
     val channel: Channel = ManagedChannelBuilder
-        .forAddress(nodeStatus.serviceLocator.host, nodeStatus.serviceLocator.port)
+        .forAddress(localNode.status.serviceLocator.host, localNode.status.serviceLocator.port)
         .usePlaintext()
         .intercept(authInterceptor)
         .build()

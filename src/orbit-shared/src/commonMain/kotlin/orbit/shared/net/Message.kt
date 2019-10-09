@@ -6,8 +6,8 @@
 
 package orbit.shared.net
 
-import orbit.shared.addressable.AddressableReference
 import orbit.shared.mesh.NodeId
+import orbit.shared.remoting.AddressableReference
 import orbit.shared.router.Route
 
 data class Message(

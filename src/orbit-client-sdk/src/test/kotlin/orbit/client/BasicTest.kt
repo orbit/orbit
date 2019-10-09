@@ -11,6 +11,5 @@ import org.junit.Test
 class BasicTest : BaseIntegrationTest() {
     @Test
     fun basicStart() {
-
     }
 }

@@ -6,7 +6,7 @@
 
 package orbit.shared.mesh
 
-import orbit.shared.addressable.AddressableType
+import orbit.shared.remoting.AddressableType
 
 data class NodeCapabilities(
     val addressableTypes: Iterable<AddressableType> = emptyList()

@@ -6,3 +6,8 @@
 
 package orbit.client.actor
 
+import orbit.shared.remoting.jvm.Addressable
+
+interface GreeterActor : Addressable
+
+class GreeterActorImpl : GreeterActor

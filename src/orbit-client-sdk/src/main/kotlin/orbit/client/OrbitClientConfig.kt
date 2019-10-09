@@ -35,6 +35,13 @@ data class OrbitClientConfig(
     /**
      * The number of messages (inbound) that may be queued before new messages are rejected.
      */
-    val bufferCount: Int = 10_000
+    val bufferCount: Int = 10_000,
+
+    /**
+     * Packages to scan for addressables.
+     *
+     * If blank all packages will be scanned.
+     */
+    val packages: List<String> = listOf()
 
 )
