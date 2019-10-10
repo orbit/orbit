@@ -6,7 +6,7 @@
 
 package orbit.shared.proto
 
-import orbit.shared.remoting.AddressableReference
+import orbit.shared.mesh.AddressableReference
 
 fun AddressableReference.toAddressableReferenceProto() =
     Addressable.AddressableReferenceProto.newBuilder()

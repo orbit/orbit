@@ -8,9 +8,10 @@ package orbit.server.mesh
 
 import orbit.server.OrbitServerConfig
 import orbit.shared.exception.PlacementFailedException
+import orbit.shared.mesh.AddressableLease
+import orbit.shared.mesh.AddressableReference
 import orbit.shared.mesh.Namespace
 import orbit.shared.mesh.NodeId
-import orbit.shared.remoting.AddressableReference
 import orbit.util.misc.attempt
 import orbit.util.time.toTimestamp
 import java.time.Instant

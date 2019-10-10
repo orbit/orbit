@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package orbit.shared.remoting
+package orbit.shared.mesh
 
 typealias AddressableType = String
 typealias AddressableId = String

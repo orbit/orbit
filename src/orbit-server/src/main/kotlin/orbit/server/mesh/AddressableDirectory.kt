@@ -6,16 +6,8 @@
 
 package orbit.server.mesh
 
-import orbit.shared.mesh.NodeId
-import orbit.shared.remoting.AddressableReference
+import orbit.shared.mesh.AddressableLease
+import orbit.shared.mesh.AddressableReference
 import orbit.util.concurrent.AsyncMap
-import orbit.util.time.Timestamp
 
 interface AddressableDirectory : AsyncMap<AddressableReference, AddressableLease>
-
-data class AddressableLease(
-    val nodeId: NodeId,
-    val reference: AddressableReference,
-    val expiresAt: Timestamp,
-    val renewAt: Timestamp
-)

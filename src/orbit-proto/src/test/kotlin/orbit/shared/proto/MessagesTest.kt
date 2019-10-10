@@ -6,8 +6,8 @@
 
 package orbit.shared.proto
 
+import orbit.shared.mesh.AddressableReference
 import orbit.shared.net.MessageContent
-import orbit.shared.remoting.AddressableReference
 import org.junit.Test
 import kotlin.test.assertEquals
 

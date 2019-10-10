@@ -6,6 +6,11 @@
 
 package orbit.shared.mesh
 
-data class NodeCapabilities(
-    val addressableTypes: Iterable<AddressableType> = emptyList()
+import orbit.util.time.Timestamp
+
+data class AddressableLease(
+    val nodeId: NodeId,
+    val reference: AddressableReference,
+    val expiresAt: Timestamp,
+    val renewAt: Timestamp
 )
