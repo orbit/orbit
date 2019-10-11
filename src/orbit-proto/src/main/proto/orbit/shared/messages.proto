@@ -1,10 +1,9 @@
 syntax = "proto3";
 option java_package = "orbit.shared.proto";
-
 package orbit.shared;
 
 import "orbit/shared/addressable.proto";
-import "orbit/shared/mesh.proto";
+import "orbit/shared/node.proto";
 
 message MessageProto {
     int64 messageId = 1;

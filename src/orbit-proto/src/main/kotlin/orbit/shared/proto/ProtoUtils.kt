@@ -4,10 +4,8 @@
  See license in LICENSE.
  */
 
-package orbit.client.actor
+package orbit.shared.proto
 
-import orbit.shared.mesh.jvm.Addressable
+import io.grpc.Context
 
-interface GreeterActor : Addressable
-
-class GreeterActorImpl : GreeterActor
+fun <T> Context.Key<T>.getOrNull() = runCatching { get() }.getOrNull()

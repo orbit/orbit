@@ -51,7 +51,7 @@ class ConnectionManager(
                 nodeInfo = clusterManager.getNode(nodeId)
                 if (nodeInfo == null) throw InvalidNodeId(nodeId)
 
-                val authInfo = authSystem.attemptAuth(nodeId)
+                val authInfo = authSystem.auth(nodeId)
                 authInfo ?: throw AuthFailed("Auth failled for $nodeId")
 
                 // Create the connection

@@ -1,27 +1,24 @@
 syntax = "proto3";
 option java_package = "orbit.shared.proto";
-
-import "google/protobuf/timestamp.proto";
-import "orbit/shared/mesh.proto";
-
-
 package orbit.shared;
 
+import "orbit/shared/node.proto";
+
 service NodeManagement {
-    rpc JoinCluster (JoinClusterRequestProto) returns (RequestLeaseResponseProto);
-    rpc RenewLease (RenewLeaseRequestProto) returns (RequestLeaseResponseProto);
+    rpc JoinCluster (JoinClusterRequestProto) returns (NodeLeaseResponseProto);
+    rpc RenewLease (RenewNodeLeaseRequestProto) returns (NodeLeaseResponseProto);
 }
 
 message JoinClusterRequestProto {
     CapabilitiesProto capabilities = 1;
 }
 
-message RenewLeaseRequestProto {
+message RenewNodeLeaseRequestProto {
     string challenge_token = 1;
     CapabilitiesProto capabilities = 2;
 }
 
-message RequestLeaseResponseProto {
+message NodeLeaseResponseProto {
     Status status = 1;
     NodeInfoProto info = 2;
     string error_description = 3;

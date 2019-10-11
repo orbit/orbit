@@ -31,7 +31,6 @@ class AddressableManager(
                 expiresAt = Instant.now().plus(leaseExpiration.expiresIn).toTimestamp(),
                 renewAt = Instant.now().plus(leaseExpiration.renewIn).toTimestamp()
             )
-
         }.nodeId
     }
 

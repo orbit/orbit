@@ -75,7 +75,7 @@ class Pipeline(
     private val localMeta
         get() = MessageMetadata(
             messageDirection = MessageDirection.OUTBOUND,
-            authInfo = AuthInfo(true, localNodeInfo.info.id),
+            authInfo = AuthInfo(isManagementNode = true, nodeId = localNodeInfo.info.id),
             respondOnError = true
         )
 

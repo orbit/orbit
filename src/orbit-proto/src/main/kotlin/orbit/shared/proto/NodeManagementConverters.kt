@@ -8,15 +8,15 @@ package orbit.shared.proto
 
 import orbit.shared.mesh.NodeInfo
 
-fun NodeInfo.toLeaseRequestResponseProto(): NodeManagementOuterClass.RequestLeaseResponseProto =
-    NodeManagementOuterClass.RequestLeaseResponseProto.newBuilder()
-        .setStatus(NodeManagementOuterClass.RequestLeaseResponseProto.Status.OK)
+fun NodeInfo.toLeaseRequestResponseProto(): NodeManagementOuterClass.NodeLeaseResponseProto =
+    NodeManagementOuterClass.NodeLeaseResponseProto.newBuilder()
+        .setStatus(NodeManagementOuterClass.NodeLeaseResponseProto.Status.OK)
         .setInfo(toNodeInfoProto())
         .build()
 
 
-fun Throwable.toLeaseRequestResponseProto(): NodeManagementOuterClass.RequestLeaseResponseProto =
-    NodeManagementOuterClass.RequestLeaseResponseProto.newBuilder()
-        .setStatus(NodeManagementOuterClass.RequestLeaseResponseProto.Status.ERROR)
+fun Throwable.toLeaseRequestResponseProto(): NodeManagementOuterClass.NodeLeaseResponseProto =
+    NodeManagementOuterClass.NodeLeaseResponseProto.newBuilder()
+        .setStatus(NodeManagementOuterClass.NodeLeaseResponseProto.Status.ERROR)
         .setErrorDescription(toString())
         .build()

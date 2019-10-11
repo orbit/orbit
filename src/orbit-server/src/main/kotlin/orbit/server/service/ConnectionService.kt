@@ -12,6 +12,7 @@ import orbit.server.concurrent.RuntimeScopes
 import orbit.server.net.ConnectionManager
 import orbit.shared.proto.ConnectionImplBase
 import orbit.shared.proto.Messages
+import orbit.shared.proto.getOrNull
 
 
 class ConnectionService(
@@ -20,7 +21,9 @@ class ConnectionService(
 ) : ConnectionImplBase(runtimeScopes.ioScope.coroutineContext) {
     override fun openStream(requests: ReceiveChannel<Messages.MessageProto>): ReceiveChannel<Messages.MessageProto> {
         val outboundChannel = Channel<Messages.MessageProto>()
-        val nodeId = ServerAuthInterceptor.getNodeId()
+        val nodeId = ServerAuthInterceptor.NODE_ID.getOrNull()
+
+        checkNotNull(nodeId) { "Node ID was not specified" }
 
         connectionManager.onNewClient(nodeId, requests, outboundChannel)
         return outboundChannel

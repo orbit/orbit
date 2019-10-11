@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package orbit.shared.remoting.jvm
+package orbit.shared.mesh.jvm
 
 /**
  * Denotes an addressable that does not have a concrete implementation.

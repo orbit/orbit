@@ -1,9 +1,8 @@
 syntax = "proto3";
 option java_package = "orbit.shared.proto";
+package orbit.shared;
 
 import "orbit/shared/messages.proto";
-
-package orbit.shared;
 
 service Connection {
     rpc OpenStream (stream MessageProto) returns (stream MessageProto);

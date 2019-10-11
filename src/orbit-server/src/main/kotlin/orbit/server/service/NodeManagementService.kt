@@ -8,18 +8,17 @@ package orbit.server.service
 
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.ClusterManager
-import orbit.server.mesh.LocalNodeInfo
 import orbit.shared.proto.NodeManagementImplBase
 import orbit.shared.proto.NodeManagementOuterClass
+import orbit.shared.proto.getOrNull
 import orbit.shared.proto.toCapabilities
 import orbit.shared.proto.toLeaseRequestResponseProto
 
 class NodeManagementService(
     private val clusterManager: ClusterManager,
-    private val localNodeInfo: LocalNodeInfo,
     runtimeScopes: RuntimeScopes
 ) : NodeManagementImplBase(runtimeScopes.ioScope.coroutineContext) {
-    override suspend fun joinCluster(request: NodeManagementOuterClass.JoinClusterRequestProto): NodeManagementOuterClass.RequestLeaseResponseProto =
+    override suspend fun joinCluster(request: NodeManagementOuterClass.JoinClusterRequestProto): NodeManagementOuterClass.NodeLeaseResponseProto =
         try {
             val namespace = ServerAuthInterceptor.NAMESPACE.get()
             val capabilities = request.capabilities.toCapabilities()
@@ -33,9 +32,10 @@ class NodeManagementService(
         }
 
 
-    override suspend fun renewLease(request: NodeManagementOuterClass.RenewLeaseRequestProto): NodeManagementOuterClass.RequestLeaseResponseProto =
+    override suspend fun renewLease(request: NodeManagementOuterClass.RenewNodeLeaseRequestProto): NodeManagementOuterClass.NodeLeaseResponseProto =
         try {
-            val nodeId = ServerAuthInterceptor.getNodeId()
+            val nodeId = ServerAuthInterceptor.NODE_ID.getOrNull()
+            checkNotNull(nodeId) { "Node ID was not specified" }
             val capabilities = request.capabilities.toCapabilities()
             val challengeToken = request.challengeToken
             val info = clusterManager.renewLease(

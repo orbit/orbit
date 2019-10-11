@@ -46,13 +46,13 @@ class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClient) {
             if (force || existingLease.renewAt <= Timestamp.now()) {
                 logger.debug("Renewing lease...")
                 val renewalResult = nodeManagementStub.renewLease(
-                    NodeManagementOuterClass.RenewLeaseRequestProto.newBuilder()
+                    NodeManagementOuterClass.RenewNodeLeaseRequestProto.newBuilder()
                         .setChallengeToken(existingLease.challengeToken)
                         .setCapabilities(localNode.status.capabilities?.toCapabilitiesProto())
                         .build()
                 ).await()
 
-                check(renewalResult.status == NodeManagementOuterClass.RequestLeaseResponseProto.Status.OK) { "Node renewal failed" }
+                check(renewalResult.status == NodeManagementOuterClass.NodeLeaseResponseProto.Status.OK) { "Node renewal failed" }
                 localNode.manipulate {
                     it.copy(nodeInfo = renewalResult.info.toNodeInfo())
                 }

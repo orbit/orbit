@@ -7,7 +7,9 @@
 package orbit.server.auth
 
 import orbit.server.mesh.MANAGEMENT_NAMESPACE
+import orbit.server.service.ServerAuthInterceptor.Keys.NODE_ID
 import orbit.shared.mesh.NodeId
+import orbit.shared.proto.getOrNull
 
 data class AuthInfo(
     val isManagementNode: Boolean,
@@ -15,11 +17,17 @@ data class AuthInfo(
 )
 
 class AuthSystem {
-    suspend fun attemptAuth(nodeId: NodeId): AuthInfo? {
+    suspend fun auth() = auth(NODE_ID.getOrNull())
+
+    suspend fun auth(nodeId: NodeId?): AuthInfo? {
+        nodeId ?: return null
+
         val isManagement = nodeId.namespace == MANAGEMENT_NAMESPACE
         return AuthInfo(
             isManagementNode = isManagement,
             nodeId = nodeId
         )
     }
+
+
 }

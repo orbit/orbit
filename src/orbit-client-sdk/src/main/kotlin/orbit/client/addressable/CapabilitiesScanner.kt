@@ -10,9 +10,9 @@ import io.github.classgraph.ClassGraph
 import mu.KotlinLogging
 import orbit.client.OrbitClientConfig
 import orbit.shared.mesh.NodeCapabilities
-import orbit.shared.remoting.jvm.Addressable
-import orbit.shared.remoting.jvm.AddressableClass
-import orbit.shared.remoting.jvm.NonConcrete
+import orbit.shared.mesh.jvm.Addressable
+import orbit.shared.mesh.jvm.AddressableClass
+import orbit.shared.mesh.jvm.NonConcrete
 import orbit.util.time.Clock
 import orbit.util.time.stopwatch
 

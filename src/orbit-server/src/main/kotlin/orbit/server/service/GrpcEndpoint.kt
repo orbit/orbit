@@ -14,6 +14,7 @@ import orbit.server.OrbitServerConfig
 class GrpcEndpoint(
     private val serverAuthInterceptor: ServerAuthInterceptor,
     private val nodeManagementService: NodeManagementService,
+    private val addressableManagementService: AddressableManagementService,
     private val connectionService: ConnectionService,
     config: OrbitServerConfig
 ) {
@@ -28,6 +29,7 @@ class GrpcEndpoint(
         server = ServerBuilder.forPort(serverPort.port)
             .intercept(serverAuthInterceptor)
             .addService(nodeManagementService)
+            .addService(addressableManagementService)
             .addService(connectionService)
             .build()
             .start()

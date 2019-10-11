@@ -19,14 +19,9 @@ import orbit.shared.proto.Headers
 
 class ServerAuthInterceptor : ServerInterceptor {
     companion object Keys {
-        @JvmStatic
-        val NODE_KEY = Context.key<NodeKey>(Headers.NODE_KEY_NAME)
-
-        @JvmStatic
-        val NAMESPACE = Context.key<Namespace>(Headers.NAMESPACE_NAME)
-
-        @JvmStatic
-        fun getNodeId() = NodeId(NODE_KEY.get(), NAMESPACE.get())
+        val NODE_KEY = Context.key<NodeKey>(Headers.NODE_KEY_NAME)!!
+        val NAMESPACE = Context.key<Namespace>(Headers.NAMESPACE_NAME)!!
+        val NODE_ID = Context.key<NodeId>("nodeId")!!
     }
 
     override fun <ReqT : Any?, RespT : Any?> interceptCall(
@@ -42,6 +37,8 @@ class ServerAuthInterceptor : ServerInterceptor {
             if (namespace != null) it.withValue(NAMESPACE, namespace) else it
         }.let {
             if (nodeKey != null) it.withValue(NODE_KEY, nodeKey) else it
+        }.let {
+            if (namespace != null && nodeKey != null) it.withValue(NODE_ID, NodeId(nodeKey, namespace)) else it
         }
 
         return Contexts.interceptCall(context, call, headers, next)

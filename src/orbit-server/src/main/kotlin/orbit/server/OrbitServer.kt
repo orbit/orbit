@@ -27,6 +27,7 @@ import orbit.server.pipeline.step.RoutingStep
 import orbit.server.pipeline.step.TransportStep
 import orbit.server.pipeline.step.VerifyStep
 import orbit.server.router.Router
+import orbit.server.service.AddressableManagementService
 import orbit.server.service.ConnectionService
 import orbit.server.service.GrpcEndpoint
 import orbit.server.service.NodeManagementService
@@ -87,6 +88,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<GrpcEndpoint>()
             definition<ServerAuthInterceptor>()
             definition<NodeManagementService>()
+            definition<AddressableManagementService>()
             definition<ConnectionService>()
 
             // Net

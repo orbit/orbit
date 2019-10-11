@@ -11,27 +11,27 @@ import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.mesh.NodeLease
 
-fun NodeId.toNodeIdProto(): Mesh.NodeIdProto =
-    Mesh.NodeIdProto.newBuilder()
+fun NodeId.toNodeIdProto(): Node.NodeIdProto =
+    Node.NodeIdProto.newBuilder()
         .setKey(key)
         .setNamespace(namespace)
         .build()
 
-fun Mesh.NodeIdProto.toNodeId(): NodeId =
+fun Node.NodeIdProto.toNodeId(): NodeId =
     NodeId(
         key = key,
         namespace = namespace
     )
 
-fun NodeInfo.toNodeInfoProto(): Mesh.NodeInfoProto =
-    Mesh.NodeInfoProto.newBuilder()
+fun NodeInfo.toNodeInfoProto(): Node.NodeInfoProto =
+    Node.NodeInfoProto.newBuilder()
         .setId(id.toNodeIdProto())
         .addAllVisibleNodes(visibleNodes.map { it.toNodeIdProto() })
         .setLease(lease.toNodeLeaseProto())
         .setCapabilities(capabilities.toCapabilitiesProto())
         .build()
 
-fun Mesh.NodeInfoProto.toNodeInfo(): NodeInfo =
+fun Node.NodeInfoProto.toNodeInfo(): NodeInfo =
     NodeInfo(
         id = NodeId(key = id.key, namespace = id.namespace),
         visibleNodes = visibleNodesList.map { it.toNodeId() }.toSet(),
@@ -39,26 +39,26 @@ fun Mesh.NodeInfoProto.toNodeInfo(): NodeInfo =
         capabilities = capabilities.toCapabilities()
     )
 
-fun NodeLease.toNodeLeaseProto(): Mesh.NodeLeaseProto =
-    Mesh.NodeLeaseProto.newBuilder()
+fun NodeLease.toNodeLeaseProto(): Node.NodeLeaseProto =
+    Node.NodeLeaseProto.newBuilder()
         .setChallengeToken(challengeToken)
         .setExpiresAt(expiresAt.toTimestampProto())
         .setRenewAt(renewAt.toTimestampProto())
         .build()
 
-fun Mesh.NodeLeaseProto.toLeaseProto(): NodeLease =
+fun Node.NodeLeaseProto.toLeaseProto(): NodeLease =
     NodeLease(
         challengeToken = challengeToken,
         expiresAt = expiresAt.toTimestamp(),
         renewAt = renewAt.toTimestamp()
     )
 
-fun NodeCapabilities.toCapabilitiesProto(): Mesh.CapabilitiesProto =
-    Mesh.CapabilitiesProto.newBuilder()
+fun NodeCapabilities.toCapabilitiesProto(): Node.CapabilitiesProto =
+    Node.CapabilitiesProto.newBuilder()
         .addAllAddressableTypes(addressableTypes)
         .build()
 
-fun Mesh.CapabilitiesProto.toCapabilities(): NodeCapabilities =
+fun Node.CapabilitiesProto.toCapabilities(): NodeCapabilities =
     NodeCapabilities(
         addressableTypes = addressableTypesList
     )
