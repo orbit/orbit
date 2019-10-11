@@ -12,7 +12,7 @@ import orbit.shared.proto.NodeManagementImplBase
 import orbit.shared.proto.NodeManagementOuterClass
 import orbit.shared.proto.getOrNull
 import orbit.shared.proto.toCapabilities
-import orbit.shared.proto.toLeaseRequestResponseProto
+import orbit.shared.proto.toNodeLeaseRequestResponseProto
 
 class NodeManagementService(
     private val clusterManager: ClusterManager,
@@ -26,9 +26,9 @@ class NodeManagementService(
                 namespace = namespace,
                 capabilities = capabilities
             )
-            info.toLeaseRequestResponseProto()
+            info.toNodeLeaseRequestResponseProto()
         } catch (t: Throwable) {
-            t.toLeaseRequestResponseProto()
+            t.toNodeLeaseRequestResponseProto()
         }
 
 
@@ -43,9 +43,9 @@ class NodeManagementService(
                 challengeToken = challengeToken,
                 capabilities = capabilities
             )
-            info.toLeaseRequestResponseProto()
+            info.toNodeLeaseRequestResponseProto()
         } catch (t: Throwable) {
-            t.toLeaseRequestResponseProto()
+            t.toNodeLeaseRequestResponseProto()
         }
 
 }
