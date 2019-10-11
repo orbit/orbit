@@ -13,6 +13,8 @@ import orbit.shared.mesh.AddressableReference
 import orbit.shared.mesh.Namespace
 import orbit.shared.mesh.NodeId
 import orbit.util.misc.attempt
+import orbit.util.time.Timestamp
+import orbit.util.time.now
 import orbit.util.time.toTimestamp
 import java.time.Instant
 
@@ -23,8 +25,8 @@ class AddressableManager(
 ) {
     private val leaseExpiration = config.addressableLeaseDuration
 
-    suspend fun locateOrPlace(namespace: Namespace, addressableReference: AddressableReference): NodeId {
-        return addressableDirectory.getOrPut(addressableReference) {
+    suspend fun locateOrPlace(namespace: Namespace, addressableReference: AddressableReference): NodeId =
+        addressableDirectory.getOrPut(addressableReference) {
             AddressableLease(
                 nodeId = place(namespace, addressableReference),
                 reference = addressableReference,
@@ -32,10 +34,22 @@ class AddressableManager(
                 renewAt = Instant.now().plus(leaseExpiration.renewIn).toTimestamp()
             )
         }.nodeId
-    }
 
-    private suspend fun place(namespace: Namespace, addressableReference: AddressableReference): NodeId {
-        return runCatching {
+    // TODO: We need to take the expiry time
+    suspend fun renewLease(addressableReference: AddressableReference, nodeId: NodeId): AddressableLease =
+        addressableDirectory.manipulate(addressableReference) { initialValue ->
+            if (initialValue == null || initialValue.nodeId == nodeId || Timestamp.now() > initialValue.expiresAt) {
+                throw PlacementFailedException("Could not renew lease for $addressableReference")
+            }
+
+            initialValue.copy(
+                expiresAt = Instant.now().plus(leaseExpiration.expiresIn).toTimestamp(),
+                renewAt = Instant.now().plus(leaseExpiration.renewIn).toTimestamp()
+            )
+        }!!
+
+    private suspend fun place(namespace: Namespace, addressableReference: AddressableReference): NodeId =
+        runCatching {
             attempt(
                 maxAttempts = 5,
                 initialDelay = 1000
@@ -49,5 +63,4 @@ class AddressableManager(
         }.fold(
             { it },
             { throw PlacementFailedException("Could not find node capable of hosting $addressableReference") })
-    }
 }

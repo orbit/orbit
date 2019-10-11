@@ -6,6 +6,7 @@
 
 package orbit.shared.proto
 
+import orbit.shared.mesh.AddressableLease
 import orbit.shared.mesh.AddressableReference
 
 fun AddressableReference.toAddressableReferenceProto() =
@@ -18,4 +19,20 @@ fun Addressable.AddressableReferenceProto.toAddressableReference() =
     AddressableReference(
         type = type,
         id = id
+    )
+
+fun AddressableLease.toAddressableLeaseProto() =
+    Addressable.AddressableLeaseProto.newBuilder()
+        .setNodeId(nodeId.toNodeIdProto())
+        .setReference(reference.toAddressableReferenceProto())
+        .setExpiresAt(expiresAt.toTimestampProto())
+        .setRenewAt(renewAt.toTimestampProto())
+        .build()
+
+fun Addressable.AddressableLeaseProto.toAddressableLease() =
+    AddressableLease(
+        nodeId = nodeId.toNodeId(),
+        reference = reference.toAddressableReference(),
+        expiresAt = expiresAt.toTimestamp(),
+        renewAt = renewAt.toTimestamp()
     )

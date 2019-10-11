@@ -3,15 +3,23 @@ option java_package = "orbit.shared.proto";
 package orbit.shared;
 
 import "orbit/shared/addressable.proto";
+import "google/protobuf/timestamp.proto";
 
 service AddressableManagement {
     rpc RenewLease (RenewAddressableLeaseRequestProto) returns (RenewAddressableLeaseResponseProto);
 }
 
 message RenewAddressableLeaseRequestProto {
-
+    AddressableReferenceProto reference = 1;
 }
 
 message RenewAddressableLeaseResponseProto {
+    Status status = 1;
+    AddressableLeaseProto lease = 2;
+    string error_description = 3;
 
+    enum Status {
+        OK = 0;
+        ERROR = 1;
+    }
 }

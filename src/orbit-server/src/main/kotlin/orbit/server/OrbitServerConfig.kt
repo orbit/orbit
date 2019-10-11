@@ -42,7 +42,7 @@ data class OrbitServerConfig(
      * Expiration times for node leases
      */
     val nodeLeaseDuration: LeaseDuration = LeaseDuration(
-        expiresIn = Duration.ofSeconds(30),
+        expiresIn = Duration.ofSeconds(500),
         renewIn = Duration.ofSeconds(5)
     ),
 

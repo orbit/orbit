@@ -21,7 +21,7 @@ message CapabilitiesProto {
 }
 
 message NodeLeaseProto {
-    string challenge_token = 3;
-    google.protobuf.Timestamp renew_at = 4;
-    google.protobuf.Timestamp expires_at = 5;
+    string challenge_token = 1;
+    google.protobuf.Timestamp renew_at = 2;
+    google.protobuf.Timestamp expires_at = 3;
 }

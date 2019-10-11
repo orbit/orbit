@@ -7,13 +7,24 @@
 package orbit.server.service
 
 import orbit.server.concurrent.RuntimeScopes
+import orbit.server.mesh.AddressableManager
+import orbit.server.service.ServerAuthInterceptor.Keys.NODE_ID
 import orbit.shared.proto.AddressableManagementImplBase
 import orbit.shared.proto.AddressableManagementOuterClass
+import orbit.shared.proto.toAddressableLeaseResponseProto
+import orbit.shared.proto.toAddressableReference
 
 class AddressableManagementService(
+    private val addressableManager: AddressableManager,
     runtimeScopes: RuntimeScopes
 ) : AddressableManagementImplBase(runtimeScopes.ioScope.coroutineContext) {
     override suspend fun renewLease(request: AddressableManagementOuterClass.RenewAddressableLeaseRequestProto): AddressableManagementOuterClass.RenewAddressableLeaseResponseProto {
-        return super.renewLease(request)
+        return try {
+            val nodeId = NODE_ID.get()
+            val reference = request.reference.toAddressableReference()
+            addressableManager.renewLease(reference, nodeId).toAddressableLeaseResponseProto()
+        } catch (t: Throwable) {
+            t.toAddressableLeaseResponseProto()
+        }
     }
 }
