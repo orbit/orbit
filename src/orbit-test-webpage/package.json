@@ -9,7 +9,7 @@
     "google-protobuf": "3.9.1",
     "grpc-web": "^1.0.6",
     "grpc": "^1.15.0",
-    "react": "^16.10.1",
+    "react": "^16.10.2",
     "react-dom": "^16.10.1",
     "react-scripts": "3.1.2"
   },

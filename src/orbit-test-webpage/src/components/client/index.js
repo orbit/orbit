@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import './style.css'
 import { Row, Col, Input, Button } from 'antd';
 import ReceivedMessages from '../receivedMessages'
+import Addressables from '../addressables'
 
 import Messages from '../../orbit/messages'
 
@@ -12,37 +13,51 @@ export default class Client extends Component {
   address;
   message;
 
-  // connect() {
-  //   this.sender = new Messages(this.host, this.port)
-  // }
-
-  connect() {
-    this.sender.connect()
-  }
-
-  constructor() {
-    super()
-    this.sender = new Messages()
-  }
+  sender = new Messages()
 
   sendMessage() {
     this.sender.sendMessage(this.address, this.message)
   }
 
+  constructor() {
+    super()
+
+    this.state = {
+      addressables: { }
+    }
+
+    this.loadAddressables()
+  }
+
+  loadAddressables() {
+    setTimeout(() => {
+      this.sender.getMessages().then(addressables => {
+        this.setState({ addressables })
+      })
+      this.loadAddressables()
+    }, 2000)
+  }
+
   render() {
     return (
       <div className="client">
-        <section className="messageEntry">
-          <Row>
-            <Col span={12}><Input placeholder="host" onChange={host => this.host = host.target.value} /></Col>
-            <Col span={8}><Input placeholder="port" onChange={port => this.port = port.target.value} /></Col>
-            <Col span={4}><Button onClick={() => this.connect()}>Connect</Button></Col>
-          </Row>
-          <Input placeholder="Addressable" />
-          <Input.TextArea placeholder="Message" ref={msg => this.message = msg} />
-          <Button onClick={() => this.sendMessage()}>Send</Button>
-        </section>
-        <ReceivedMessages messages={['first message', 'second message']} />
+        <Row>
+          <Col span={12}>
+            <section className="messageEntry">
+              <Input placeholder="Addressable" />
+              <Input.TextArea placeholder="Message" ref={msg => this.message = msg} />
+              <Button onClick={() => this.sendMessage()}>Send</Button>
+            </section>
+          </Col>
+        </Row>
+        <Row gutter={6}>
+          <Col span={12}>
+            <Addressables addressables={Object.keys(this.state.addressables)} select={address => this.setState({ currentAddressable: address })} />
+          </Col>
+          <Col span={12}>
+            <ReceivedMessages messages={this.state.currentAddressable && this.state.addressables[this.state.currentAddressable]} />
+          </Col>
+        </Row>
       </div>
     )
   }
