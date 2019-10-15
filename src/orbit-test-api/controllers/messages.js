@@ -7,6 +7,7 @@ const moment = require('moment')
 class MessagesController {
 
     messages = {}
+    addressables = {}
 
     constructor(protoPath, url) {
         const sharedPath = Path.join(protoPath, 'orbit/shared')
@@ -109,9 +110,15 @@ class MessagesController {
 
     async onReceive(message) {
         console.log('got a message', message)
-        const address = `${message.invocation_request.reference.type}/${message.invocation_request.reference.id}`
-        this.messages[address] = this.messages[address] || []
-        this.messages[address].push({timeStamp: moment(), message: message.invocation_request.value})
+        const address = {
+            type: message.invocation_request.reference.type,
+            id: message.invocation_request.reference.id
+        }
+        const addressString = `${address.type}-${address.id}`
+        this.messages[addressString] = this.messages[addressString] || []
+        this.messages[addressString].push({ timeStamp: moment(), message: message.invocation_request.value })
+
+        this.addressables[addressString] || (this.addressables[addressString] = address)
     }
 
     async send(address, message) {
@@ -130,8 +137,12 @@ class MessagesController {
         return `Sent a message to ${address} on node ${this.lease.nodeId}: ${message}`
     }
 
-    async getMessages() {
-        return this.messages
+    async getAddressables() {
+        return Object.values(this.addressables)
+    }
+
+    async getMessages(id) {
+        return (id ? this.messages[id] : this.messages) || []
     }
 }
 

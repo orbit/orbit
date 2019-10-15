@@ -13,16 +13,25 @@ const tableColumns = [
     title: 'Id',
     dataIndex: 'id',
     key: 'id'
-  }  
+  }
 ]
 
 export default function Addressables(props) {
   const { addressables, select } = props;
+
+  const rows = addressables.map(a => ({
+    ...a,
+    key: `${a.type}-${a.id}`
+  }))
+
   return (<section className="addressables">
     <h3>Addressables</h3>
-      <ol>
-        {addressables.map(a => <li onClick={() => select(a)}>{a}</li>)}
-      </ol>
+    <Table dataSource={rows} columns={tableColumns} onRow={(record) => {
+      return {
+        onClick: () => select(record.key)
+      }
+    }}
+    />
   </section>
   )
 }

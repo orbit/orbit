@@ -23,7 +23,8 @@ export default class Client extends Component {
     super()
 
     this.state = {
-      addressables: { }
+      addressables: [],
+      messages: []
     }
 
     this.loadAddressables()
@@ -31,11 +32,19 @@ export default class Client extends Component {
 
   loadAddressables() {
     setTimeout(() => {
-      this.sender.getMessages().then(addressables => {
+      this.sender.getAddressables().then(addressables => {
         this.setState({ addressables })
       })
       this.loadAddressables()
     }, 2000)
+  }
+
+  changeCurrentAddressable(address) {
+    this.setState({ currentAddressable: address })
+
+    this.sender.getMessages(address).then(messages => {
+      this.setState({ messages })
+    })
   }
 
   render() {
@@ -52,10 +61,10 @@ export default class Client extends Component {
         </Row>
         <Row gutter={6}>
           <Col span={12}>
-            <Addressables addressables={Object.keys(this.state.addressables)} select={address => this.setState({ currentAddressable: address })} />
+            <Addressables addressables={this.state.addressables} select={address => this.changeCurrentAddressable(address)} />
           </Col>
           <Col span={12}>
-            <ReceivedMessages messages={this.state.currentAddressable && this.state.addressables[this.state.currentAddressable]} />
+            <ReceivedMessages messages={this.state.messages} />
           </Col>
         </Row>
       </div>

@@ -9,11 +9,15 @@ export default class Messages {
     }
 
     async getMessages(address) {
-        return (await fetch(this.url + '/messages')).json()
+        return (await fetch(this.url + `/messages/${address}`)).json()
+    }
+
+    async getAddressables() {
+        return (await fetch(this.url + '/addressables')).json()
     }
 
     async sendMessage(address, message) {
-
+        console.log('send message', address, message)
 
     }
 }
