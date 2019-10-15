@@ -27,18 +27,26 @@ class AddressableManager(
 
     suspend fun locateOrPlace(namespace: Namespace, addressableReference: AddressableReference): NodeId =
         addressableDirectory.getOrPut(addressableReference) {
-            AddressableLease(
-                nodeId = place(namespace, addressableReference),
-                reference = addressableReference,
-                expiresAt = Instant.now().plus(leaseExpiration.expiresIn).toTimestamp(),
-                renewAt = Instant.now().plus(leaseExpiration.renewIn).toTimestamp()
-            )
-        }.nodeId
+            createNewEntry(namespace, addressableReference)
+        }.let {
+            val invalidNode = clusterManager.getNode(it.nodeId) == null
+            val expired = Timestamp.now() > it.expiresAt
+            if(invalidNode || expired) {
+                val newEntry = createNewEntry(namespace, addressableReference)
+                if(addressableDirectory.compareAndSet(it.reference, it, newEntry)) {
+                    newEntry.nodeId
+                } else {
+                    locateOrPlace(namespace, addressableReference)
+                }
+            }else {
+                it.nodeId
+            }
+        }
 
     // TODO: We need to take the expiry time
     suspend fun renewLease(addressableReference: AddressableReference, nodeId: NodeId): AddressableLease =
         addressableDirectory.manipulate(addressableReference) { initialValue ->
-            if (initialValue == null || initialValue.nodeId == nodeId || Timestamp.now() > initialValue.expiresAt) {
+            if (initialValue == null || initialValue.nodeId != nodeId || Timestamp.now() > initialValue.expiresAt) {
                 throw PlacementFailedException("Could not renew lease for $addressableReference")
             }
 
@@ -47,6 +55,14 @@ class AddressableManager(
                 renewAt = Instant.now().plus(leaseExpiration.renewIn).toTimestamp()
             )
         }!!
+
+    private suspend fun createNewEntry(namespace: Namespace, addressableReference: AddressableReference) =
+        AddressableLease(
+            nodeId = place(namespace, addressableReference),
+            reference = addressableReference,
+            expiresAt = Instant.now().plus(leaseExpiration.expiresIn).toTimestamp(),
+            renewAt = Instant.now().plus(leaseExpiration.renewIn).toTimestamp()
+        )
 
     private suspend fun place(namespace: Namespace, addressableReference: AddressableReference): NodeId =
         runCatching {
