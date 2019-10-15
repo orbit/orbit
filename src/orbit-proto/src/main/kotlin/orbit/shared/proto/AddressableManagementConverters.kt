@@ -16,6 +16,6 @@ fun AddressableLease.toAddressableLeaseResponseProto(): AddressableManagementOut
 
 fun Throwable.toAddressableLeaseResponseProto(): AddressableManagementOuterClass.RenewAddressableLeaseResponseProto =
     AddressableManagementOuterClass.RenewAddressableLeaseResponseProto.newBuilder()
-        .setStatus(AddressableManagementOuterClass.RenewAddressableLeaseResponseProto.Status.OK)
+        .setStatus(AddressableManagementOuterClass.RenewAddressableLeaseResponseProto.Status.ERROR)
         .setErrorDescription(toString())
         .build()
