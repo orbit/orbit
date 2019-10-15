@@ -6,22 +6,28 @@
 
 package orbit.server.pipeline
 
-import orbit.server.pipeline.steps.AddressablePipelineStep
-import orbit.server.pipeline.steps.ErrorPipelineStep
-import orbit.server.pipeline.steps.LeasePipelineStep
-import orbit.server.pipeline.steps.PipelineStep
-import orbit.server.pipeline.steps.RoutingPipelineStep
+import orbit.server.pipeline.step.AuthStep
+import orbit.server.pipeline.step.IdentityStep
+import orbit.server.pipeline.step.PipelineStep
+import orbit.server.pipeline.step.PlacementStep
+import orbit.server.pipeline.step.RoutingStep
+import orbit.server.pipeline.step.TransportStep
+import orbit.server.pipeline.step.VerifyStep
 
-internal class PipelineSteps(
-    errorPipelineStep: ErrorPipelineStep,
-    leasePipelineStep: LeasePipelineStep,
-    routingPipelineStep: RoutingPipelineStep,
-    addressablePipelineStep: AddressablePipelineStep
+class PipelineSteps(
+    identityStep: IdentityStep,
+    placementStep: PlacementStep,
+    verifyStep: VerifyStep,
+    routingStep: RoutingStep,
+    authStep: AuthStep,
+    transportStep: TransportStep
 ) {
     val steps: Array<PipelineStep> = arrayOf(
-        routingPipelineStep,
-        addressablePipelineStep,
-        leasePipelineStep,
-        errorPipelineStep
+        identityStep,
+        routingStep,
+        placementStep,
+        verifyStep,
+        authStep,
+        transportStep
     )
 }

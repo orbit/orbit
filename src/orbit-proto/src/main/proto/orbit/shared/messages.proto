@@ -1,38 +1,35 @@
 syntax = "proto3";
 option java_package = "orbit.shared.proto";
-
 package orbit.shared;
 
 import "orbit/shared/addressable.proto";
+import "orbit/shared/node.proto";
 
+message MessageProto {
+    int64 messageId = 1;
+    NodeIdProto source = 2;
 
-message Message {
+    MessageContentProto content = 3;
+}
+
+message MessageContentProto {
     oneof content {
-        InvocationRequest invocation_request = 1;
-        InvocationResponse invocation_response = 2;
-        InvocationErrorResponse invocation_error = 3;
+        InvocationRequestProto invocation_request = 1;
+        InvocationResponseProto invocation_response = 2;
+        ErrorProto error = 3;
     }
 }
 
-message InvocationRequest {
-    AddressableReference reference = 1;
+message InvocationRequestProto {
+    AddressableReferenceProto reference = 1;
     string value = 2;
 }
 
-message InvocationResponse {
+message InvocationResponseProto {
     string value = 1;
 }
 
-message InvocationErrorResponse {
-    Status status = 1;
-    string message = 2;
-
-    enum Status {
-        UNKNOWN = 0;
-        UNAUTHENTICATED = 1;
-        UNAUTHORIZED = 2;
-        UNSENT = 3;
-        // ...
-    }
+message ErrorProto {
+    string description = 1;
 }
 

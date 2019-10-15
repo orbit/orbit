@@ -6,51 +6,46 @@
 
 package orbit.server
 
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import orbit.common.concurrent.ShutdownLatch
-import orbit.common.di.ComponentProvider
-import orbit.common.logging.logger
-import orbit.common.logging.trace
-import orbit.common.logging.warn
-import orbit.common.util.Clock
-import orbit.common.util.stopwatch
+import mu.KotlinLogging
+import orbit.server.auth.AuthSystem
 import orbit.server.concurrent.RuntimePools
 import orbit.server.concurrent.RuntimeScopes
-import orbit.server.config.injectedWithConfig
-import orbit.server.local.InMemoryAddressableDirectory
-import orbit.server.local.LocalFirstPlacementStrategy
-import orbit.server.net.Connections
-import orbit.server.net.GrpcEndpoint
-import orbit.server.net.NodeId
-import orbit.server.net.NodeLeases
+import orbit.server.mesh.AddressableManager
+import orbit.server.mesh.ClusterManager
+import orbit.server.mesh.LocalNodeInfo
+import orbit.server.mesh.NodeDirectory
+import orbit.server.net.ConnectionManager
 import orbit.server.pipeline.Pipeline
 import orbit.server.pipeline.PipelineSteps
-import orbit.server.pipeline.steps.AddressablePipelineStep
-import orbit.server.pipeline.steps.BlankPipelineStep
-import orbit.server.pipeline.steps.ErrorPipelineStep
-import orbit.server.pipeline.steps.LeasePipelineStep
-import orbit.server.pipeline.steps.RoutingPipelineStep
-import orbit.server.routing.AddressableDirectory
-import orbit.server.routing.AddressablePlacementStrategy
-import orbit.server.routing.LocalNodeInfo
-import orbit.server.routing.NodeCapabilities
-import orbit.server.routing.NodeDirectory
-import orbit.server.routing.NodeInfo
-import orbit.server.routing.Router
+import orbit.server.pipeline.step.AuthStep
+import orbit.server.pipeline.step.BlankStep
+import orbit.server.pipeline.step.EchoStep
+import orbit.server.pipeline.step.IdentityStep
+import orbit.server.pipeline.step.PlacementStep
+import orbit.server.pipeline.step.RoutingStep
+import orbit.server.pipeline.step.TransportStep
+import orbit.server.pipeline.step.VerifyStep
+import orbit.server.router.Router
+import orbit.server.service.AddressableManagementService
+import orbit.server.service.ConnectionService
+import orbit.server.service.GrpcEndpoint
+import orbit.server.service.NodeManagementService
+import orbit.server.service.ServerAuthInterceptor
+import orbit.util.concurrent.jvm.ShutdownLatch
+import orbit.util.di.jvm.ComponentContainer
+import orbit.util.time.Clock
+import orbit.util.time.ConstantTicker
+import orbit.util.time.stopwatch
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
 
 class OrbitServer(private val config: OrbitServerConfig) {
     constructor() : this(OrbitServerConfig())
 
-    private val logger by logger()
+    private val logger = KotlinLogging.logger {}
 
-    private var tickJob: Job? = null
-    private var shutdownLatch: ShutdownLatch? = null
+    private var shutdownLatch = AtomicReference<ShutdownLatch>()
 
     private val runtimePools = RuntimePools(
         cpuPool = config.cpuPool,
@@ -62,136 +57,129 @@ class OrbitServer(private val config: OrbitServerConfig) {
         exceptionHandler = this::onUnhandledException
     )
 
-    private val container = ComponentProvider()
+    private val container = ComponentContainer()
+    private val clock = Clock()
+
+    private val grpcEndpoint by container.inject<GrpcEndpoint>()
+    private val localNodeInfo by container.inject<LocalNodeInfo>()
+    private val nodeManager by container.inject<ClusterManager>()
+    private val nodeDirectory by container.inject<NodeDirectory>()
+    private val pipeline by container.inject<Pipeline>()
+
+    private val ticker = ConstantTicker(
+        scope = runtimeScopes.cpuScope,
+        targetTickRate = config.tickRate.toMillis(),
+        clock = clock,
+        logger = logger,
+        exceptionHandler = this::onUnhandledException,
+        autoStart = false,
+        onTick = this::tick
+    )
 
     init {
         container.configure {
-            instance(config.leaseExpiration)
-            instance(
-                LocalNodeInfo(
-                    NodeInfo.ServerNodeInfo(
-                        NodeId.Empty,
-                        host = config.grpcHost,
-                        port = config.grpcPort,
-                        capabilities = NodeCapabilities()
-                    )
-                )
-            )
             instance(this@OrbitServer)
             instance(config)
             instance(runtimePools)
             instance(runtimeScopes)
-            definition<Clock>()
+            instance(clock)
 
-            definition<Router>()
-
-            injectedWithConfig(config.nodeDirectoryConfig)
-            injectedWithConfig(config.addressableDirectoryConfig)
-
-            definition<AddressablePlacementStrategy>(LocalFirstPlacementStrategy::class.java)
-
-            definition<Connections>()
-            definition<NodeLeases>()
-
+            // Service
             definition<GrpcEndpoint>()
+            definition<ServerAuthInterceptor>()
+            definition<NodeManagementService>()
+            definition<AddressableManagementService>()
+            definition<ConnectionService>()
 
+            // Net
+            definition<ConnectionManager>()
+
+            // Pipeline
             definition<Pipeline>()
-            definition<BlankPipelineStep>()
-            definition<ErrorPipelineStep>()
-            definition<LeasePipelineStep>()
-            definition<AddressablePipelineStep>()
-            definition<RoutingPipelineStep>()
             definition<PipelineSteps>()
+            definition<BlankStep>()
+            definition<PlacementStep>()
+            definition<IdentityStep>()
+            definition<RoutingStep>()
+            definition<EchoStep>()
+            definition<VerifyStep>()
+            definition<AuthStep>()
+            definition<TransportStep>()
+
+            // Mesh
+            definition<LocalNodeInfo>()
+            definition<ClusterManager>()
+            definition<AddressableManager>()
+            externallyConfigured(config.nodeDirectory)
+            externallyConfigured(config.addressableDirectory)
+
+            // Auth
+            definition<AuthSystem>()
+
+            // Router
+            definition<Router>()
         }
     }
 
     fun start() = runtimeScopes.cpuScope.launch {
-        val clock: Clock by container.inject()
-        logger.info("Starting Orbit...")
+        logger.info("Starting Orbit server...")
         val (elapsed, _) = stopwatch(clock) {
-            onStart()
+            // Start the pipeline
+            pipeline.start()
+
+            // Setup  the local node information
+            localNodeInfo.start()
+
+            // Start tick
+            ticker.start()
+
+            // Start gRPC endpoint
+            // We shouldn't do this until we're ready to serve traffic
+            grpcEndpoint.start()
+
+            // Acquire the latch
+            if (config.acquireShutdownLatch) {
+                ShutdownLatch().also {
+                    shutdownLatch.set(it)
+                    it.acquire()
+                }
+            }
         }
 
-        if (config.acquireShutdownLatch) shutdownLatch = ShutdownLatch().also { it.acquire() }
-
-        logger.info("Orbit started successfully in {}ms.", elapsed)
+        logger.info("Orbit server started successfully in {}ms.", elapsed)
     }
 
     fun stop() = runtimeScopes.cpuScope.launch {
-        val clock: Clock by container.inject()
-        logger.info("Stopping Orbit...")
+        logger.info("Stopping Orbit server...")
         val (elapsed, _) = stopwatch(clock) {
-            onStop()
+            // Stop gRPC
+            val grpcEndpoint by container.inject<GrpcEndpoint>()
+            grpcEndpoint.stop()
+
+            // Stop the tick
+            ticker.stop()
+
+            // Stop pipeline
+            pipeline.stop()
+
+            // Release the latch
+            shutdownLatch.get()?.release().also {
+                shutdownLatch.set(null)
+            }
         }
 
-        shutdownLatch?.release()
-
-        logger.info("Orbit stopped successfully in {}ms.", elapsed)
-
+        logger.info("Orbit server stopped successfully in {}ms.", elapsed)
     }
 
-    private suspend fun onStart() {
-        val pipeline: Pipeline by container.inject()
-        pipeline.start()
+    private suspend fun tick() {
+        // Update the local node info
+        localNodeInfo.tick()
 
-        val grpcEndpoint: GrpcEndpoint by container.inject()
-        grpcEndpoint.start()
+        // Node manager
+        nodeManager.tick()
 
-        val nodeDirectory: NodeDirectory by container.inject()
-        val localNode: LocalNodeInfo by container.inject()
-        localNode.updateNodeInfo(nodeDirectory.join(localNode.nodeInfo))
-
-        tickJob = launchTick()
-    }
-
-    private suspend fun onTick() {
-        val connections: Connections by container.inject()
-        connections.refreshConnections()
-
-        val nodeLeases: NodeDirectory by container.inject()
-        nodeLeases.cullLeases()
-    }
-
-    private suspend fun onStop() {
-        val grpcEndpoint: GrpcEndpoint by container.inject()
-        grpcEndpoint.stop()
-
-        // Stop the tick
-        tickJob?.cancelAndJoin()
-
-        val pipeline: Pipeline by container.inject()
-        pipeline.stop()
-    }
-
-    private fun launchTick() = runtimeScopes.cpuScope.launch {
-        val clock: Clock by container.inject()
-        val targetTickRate = config.tickRate.toMillis()
-        while (isActive) {
-            val (elapsed, _) = stopwatch(clock) {
-                logger.trace { "Begin Orbit tick..." }
-
-                try {
-                    onTick()
-                } catch (c: CancellationException) {
-                    throw c
-                } catch (t: Throwable) {
-                    onUnhandledException(coroutineContext, t)
-                }
-            }
-
-            val nextTickDelay = (targetTickRate - elapsed).coerceAtLeast(0)
-
-            if (elapsed > targetTickRate) {
-                logger.warn {
-                    "Slow Orbit Tick. The application is unable to maintain its tick rate. " +
-                            "Last tick took ${elapsed}ms and the reference tick rate is ${targetTickRate}ms. " +
-                            "The next tick will take place immediately."
-                }
-            }
-
-            logger.trace { "Orbit tick completed in ${elapsed}ms. Next tick in ${nextTickDelay}ms." }
-            delay(nextTickDelay)
-        }
+        // Tick the node directory
+        nodeDirectory.tick()
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -199,6 +187,6 @@ class OrbitServer(private val config: OrbitServerConfig) {
         onUnhandledException(throwable)
 
     private fun onUnhandledException(throwable: Throwable) {
-        logger.error("Unhandled exception in Orbit.", throwable)
+        logger.error(throwable) { "Unhandled exception in Orbit." }
     }
 }

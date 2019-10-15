@@ -8,12 +8,10 @@ package orbit.application
 
 import kotlinx.coroutines.runBlocking
 import orbit.server.OrbitServer
-import orbit.server.OrbitServerConfig
 
 fun main() {
-    val server = OrbitServer(OrbitServerConfig())
-
     runBlocking {
+        val server = OrbitServer()
         server.start().join()
     }
 }

@@ -7,30 +7,52 @@
 package orbit.server
 
 import kotlinx.coroutines.CoroutineDispatcher
-import orbit.common.concurrent.Pools
-import orbit.server.config.InjectedWithConfig
-import orbit.server.etcd.EtcdAddressableDirectory
-import orbit.server.etcd.EtcdNodeDirectory
-import orbit.server.net.LeaseExpiration
-import orbit.server.routing.AddressableDirectory
-import orbit.server.routing.NodeDirectory
+import orbit.server.mesh.AddressableDirectory
+import orbit.server.mesh.LeaseDuration
+import orbit.server.mesh.NodeDirectory
+import orbit.server.mesh.local.LocalAddressableDirectory
+import orbit.server.mesh.local.LocalNodeDirectory
+import orbit.shared.net.PortBinding
+import orbit.util.concurrent.jvm.Pools
+import orbit.util.di.jvm.ExternallyConfigured
 import java.time.Duration
 
 data class OrbitServerConfig(
-    /**
-     * The gRPC endpoint port.
-     */
-    val grpcPort: Int = System.getenv("ORBIT_PORT")?.toInt(10) ?: 50056,
-
-    /**
-     * The gRPC endpoint host.
-     */
-    val grpcHost: String = System.getenv("ORBIT_HOST") ?: "0.0.0.0",
-
+    val serverPort: PortBinding = PortBinding(
+        host = System.getenv("ORBIT_HOST") ?: "0.0.0.0",
+        port = System.getenv("ORBIT_PORT")?.toInt(10) ?: 50056
+    ),
     /**
      * The Orbit tick rate.
      */
     val tickRate: Duration = Duration.ofSeconds(1),
+
+    /**
+     * The number of workers that can process a message concurrently.
+     */
+    val pipelineRailCount: Int = 128,
+
+    /**
+     * The number of messages (either inbound or outbound) that may be queued before new messages are rejected.
+     */
+    val pipelineBufferCount: Int = 10_000,
+
+
+    /**
+     * Expiration times for node leases
+     */
+    val nodeLeaseDuration: LeaseDuration = LeaseDuration(
+        expiresIn = Duration.ofSeconds(500),
+        renewIn = Duration.ofSeconds(5)
+    ),
+
+    /**
+     * Expiration times for node leases
+     */
+    val addressableLeaseDuration: LeaseDuration = LeaseDuration(
+        expiresIn = Duration.ofMinutes(10),
+        renewIn = Duration.ofMinutes(5)
+    ),
 
     /**
      * The pool where CPU intensive tasks will run.
@@ -43,50 +65,18 @@ data class OrbitServerConfig(
     val ioPool: CoroutineDispatcher = Pools.createCachedPool("orbit-io"),
 
     /**
-     * The number of workers that can process a message concurrently.
-     */
-    val pipelineRailCount: Int = 128,
-
-    /**
-     * The number of messages (either inbound or outbound) that may be queued before new messages are rejected.
-     */
-    val pipelineBufferCount: Int = 10_000,
-
-    /**
      * Prevents the JVM shutting down when the main thread exits.
      */
     val acquireShutdownLatch: Boolean = true,
 
     /**
-     * Expiration times for client leases
+     * The node directory to use.
      */
-    val leaseExpiration: LeaseExpiration = LeaseExpiration(
-        duration = Duration.ofSeconds(60),
-        renew = Duration.ofSeconds(30)
-    ),
+    val nodeDirectory: ExternallyConfigured<NodeDirectory> = LocalNodeDirectory.LocalNodeDirectoryConfig,
 
     /**
-     * Expiration time for server node leases
+     * The addressable directory to use
      */
-    val serverLeaseExpiration: LeaseExpiration = LeaseExpiration(
-        duration = Duration.ofSeconds(600),
-        renew = Duration.ofSeconds(300)
-    ),
+    val addressableDirectory: ExternallyConfigured<AddressableDirectory> = LocalAddressableDirectory.LocalAddressableDirectoryConfig
 
-    /**
-     * Node directory configuration
-     */
-    val nodeDirectoryConfig: InjectedWithConfig<NodeDirectory> = EtcdNodeDirectory.EtcdNodeDirectoryConfig(
-        url = System.getenv("NODE_DIRECTORY") ?: "http://localhost:2379",
-        clientExpiration = leaseExpiration,
-        serverExpiration = serverLeaseExpiration
-    ),
-
-    val addressableDirectoryConfig: InjectedWithConfig<AddressableDirectory> = EtcdAddressableDirectory.EtcdAddressableDirectoryConfig(
-        url = System.getenv("ADDRESSABLE_DIRECTORY") ?: "http://localhost:2381",
-        expiration = LeaseExpiration(
-            duration = Duration.ofSeconds(60),
-            renew = Duration.ofSeconds(30)
-        )
-    )
 )

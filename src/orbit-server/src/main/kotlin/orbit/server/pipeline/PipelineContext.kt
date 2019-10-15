@@ -7,41 +7,53 @@
 package orbit.server.pipeline
 
 import kotlinx.coroutines.isActive
-import orbit.server.net.Completion
-import orbit.server.net.Message
-import orbit.server.pipeline.steps.PipelineStep
+import orbit.server.net.MessageDirection
+import orbit.server.net.MessageMetadata
+import orbit.server.pipeline.step.PipelineStep
+import orbit.shared.net.Message
 import java.util.concurrent.CancellationException
 import kotlin.coroutines.coroutineContext
 
-internal class PipelineContext(
+class PipelineContext(
     private val pipelineSteps: Array<PipelineStep>,
-    startAtEnd: Boolean,
     private val pipeline: Pipeline,
-    val completion: Completion,
-    var suppressErrors: Boolean
+    val metadata: MessageMetadata
 ) {
     private val pipelineSize = pipelineSteps.size
-    private var pointer = if (startAtEnd) pipelineSize else -1
-
-    suspend fun nextInbound(msg: Message) {
-        if (!coroutineContext.isActive) throw CancellationException()
-        if (--pointer < 0) throw IllegalStateException("Beginning of pipeline encountered.")
-        val pipelineStep = pipelineSteps[pointer]
-        pipelineStep.onInbound(this, msg)
-
+    private var pointer = when (metadata.messageDirection) {
+        MessageDirection.INBOUND -> {
+            pipelineSize
+        }
+        MessageDirection.OUTBOUND -> {
+            -1
+        }
     }
 
-    suspend fun nextOutbound(msg: Message) {
-        if (!coroutineContext.isActive) throw CancellationException()
-        if (++pointer >= pipelineSize) throw IllegalStateException("End of pipeline encountered.")
-        val pipelineStep = pipelineSteps[pointer]
-        pipelineStep.onOutbound(this, msg)
-
+    suspend fun next(msg: Message) {
+        try {
+            when (metadata.messageDirection) {
+                MessageDirection.INBOUND -> {
+                    if (!coroutineContext.isActive) throw CancellationException()
+                    check(--pointer >= 0) { "Beginning of pipeline encountered." }
+                    val pipelineStep = pipelineSteps[pointer]
+                    pipelineStep.onInbound(this, msg)
+                }
+                MessageDirection.OUTBOUND -> {
+                    if (!coroutineContext.isActive) throw CancellationException()
+                    check(++pointer < pipelineSize) { "End of pipeline encountered." }
+                    val pipelineStep = pipelineSteps[pointer]
+                    pipelineStep.onOutbound(this, msg)
+                }
+            }
+        } catch (t: PipelineException) {
+            throw t
+        } catch (t: CancellationException) {
+            throw t
+        } catch (t: Throwable) {
+            throw PipelineException(msg, t)
+        }
     }
 
-    fun newInbound(msg: Message) =
-        pipeline.pushInbound(msg)
-
-    fun newOutbound(msg: Message) =
-        pipeline.pushOutbound(msg)
+    fun pushNew(msg: Message, newMeta: MessageMetadata? = null) =
+        pipeline.pushMessage(msg, newMeta)
 }

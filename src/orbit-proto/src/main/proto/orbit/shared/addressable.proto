@@ -1,18 +1,18 @@
 syntax = "proto3";
 option java_package = "orbit.shared.proto";
-
-import "google/protobuf/timestamp.proto";
-
 package orbit.shared;
 
-message AddressableReference {
+import "orbit/shared/node.proto";
+import "google/protobuf/timestamp.proto";
+
+message AddressableReferenceProto {
     string type = 1;
     string id = 2;
 }
 
-message AddressableLease {
-    AddressableReference address = 1;
-    string nodeId = 2;
-    google.protobuf.Timestamp expires_at = 3;
-    google.protobuf.Timestamp renew_at = 4;
+message AddressableLeaseProto {
+    NodeIdProto nodeId = 1;
+    AddressableReferenceProto reference = 2;
+    google.protobuf.Timestamp renew_at = 3;
+    google.protobuf.Timestamp expires_at = 4;
 }

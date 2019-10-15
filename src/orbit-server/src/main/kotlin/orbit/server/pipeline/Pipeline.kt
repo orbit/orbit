@@ -7,127 +7,114 @@
 package orbit.server.pipeline
 
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
-import orbit.common.exception.CapacityExceededException
-import orbit.common.logging.logger
-import orbit.common.logging.trace
+import mu.KotlinLogging
 import orbit.server.OrbitServerConfig
+import orbit.server.auth.AuthInfo
 import orbit.server.concurrent.RuntimeScopes
-import orbit.server.net.Message
+import orbit.server.mesh.LocalNodeInfo
 import orbit.server.net.MessageContainer
 import orbit.server.net.MessageDirection
+import orbit.server.net.MessageMetadata
+import orbit.shared.exception.CapacityExceededException
+import orbit.shared.exception.toErrorContent
+import orbit.shared.net.Message
+import orbit.shared.net.MessageTarget
+import orbit.util.concurrent.RailWorker
 
-internal class Pipeline(
-    private val runtimeScopes: RuntimeScopes,
+class Pipeline(
     private val config: OrbitServerConfig,
-    private val pipelineSteps: PipelineSteps
+    private val runtimeScopes: RuntimeScopes,
+    private val pipelineSteps: PipelineSteps,
+    private val localNodeInfo: LocalNodeInfo
 ) {
-    private val logger by logger()
+    private val logger = KotlinLogging.logger {}
 
-    private lateinit var pipelineChannel: Channel<MessageContainer>
-    private lateinit var pipelinesWorkers: List<Job>
+    private val pipelineRails = RailWorker(
+        scope = runtimeScopes.cpuScope,
+        buffer = config.pipelineBufferCount,
+        railCount = config.pipelineRailCount,
+        logger = logger,
+        onMessage = this::onMessage
+    )
 
     fun start() {
-        pipelineChannel = Channel(config.pipelineBufferCount)
-        pipelinesWorkers = List(config.pipelineRailCount) {
-            launchRail(pipelineChannel)
-        }
-
-        logger.info(
-            "Pipeline started on ${config.pipelineRailCount} rails with a " +
-                    "${config.pipelineBufferCount} entries buffer and ${pipelineSteps.steps.size} steps."
-        )
+        pipelineRails.startWorkers()
     }
 
-    private fun launchRail(receiveChannel: ReceiveChannel<MessageContainer>) = runtimeScopes.cpuScope.launch {
-        for (container in receiveChannel) {
-            logger.trace { "Pipeline rail received message: $container" }
-            onMessage(container)
-        }
+    fun stop() {
+        pipelineRails.stopWorkers()
     }
 
-    private fun writeMessage(msg: Message, direction: MessageDirection): CompletableDeferred<Any?> {
-        @UseExperimental(ExperimentalCoroutinesApi::class)
-        if (!this::pipelineChannel.isInitialized || pipelineChannel.isClosedForSend) {
-            throw IllegalStateException(
-                "The Orbit pipeline is not in a state to receive messages. " +
-                        "Did you start the Orbit stage?"
-            )
+    fun pushMessage(msg: Message, meta: MessageMetadata? = null) {
+        check(pipelineRails.isInitialized) {
+            "The Orbit pipeline is not in a state to receive messages. Did you start the Orbit stage?"
         }
-
-        val completion = CompletableDeferred<Any?>()
 
         val container = MessageContainer(
-            direction = direction,
-            completion = completion,
-            msg = msg
+            message = msg,
+            metadata = meta ?: localMeta
         )
 
         logger.trace { "Writing message to pipeline channel: $container" }
 
         // Offer the content to the channel
-        if (!pipelineChannel.offer(container)) {
-            // If the channel rejected there must be no capacity, we complete the deferred result exceptionally.
-            val errMsg = "The Orbit pipeline channel is full. >${config.pipelineBufferCount} buffered messages."
-            logger.error(errMsg)
-            completion.completeExceptionally(
-                CapacityExceededException(errMsg)
-            )
+        try {
+            if (!pipelineRails.offer(container)) {
+                // If the channel rejected there must be no capacity, we complete the deferred result exceptionally.
+                val errMsg = "The Orbit pipeline channel is full. >${config.pipelineBufferCount} buffered messages."
+                logger.error(errMsg)
+                throw CapacityExceededException(errMsg)
+            }
+        } catch (t: Throwable) {
+            error("The pipeline channel is closed")
         }
-
-        return container.completion
     }
 
-    fun pushOutbound(msg: Message) =
-        writeMessage(msg, MessageDirection.OUTBOUND)
+    private val localMeta
+        get() = MessageMetadata(
+            messageDirection = MessageDirection.OUTBOUND,
+            authInfo = AuthInfo(isManagementNode = true, nodeId = localNodeInfo.info.id),
+            respondOnError = true
+        )
 
-    fun pushInbound(msg: Message) =
-        writeMessage(msg, MessageDirection.INBOUND)
+    private fun launchRail(receiveChannel: ReceiveChannel<MessageContainer>) = runtimeScopes.cpuScope.launch {
+        for (msg in receiveChannel) {
+            logger.trace { "Pipeline rail received message: $msg" }
+            onMessage(msg)
+        }
+    }
 
     private suspend fun onMessage(container: MessageContainer) {
-        // Inbound starts at bottom, outbound at top.
-        val startAtEnd = container.direction == MessageDirection.INBOUND
-
-        // Outbound messages have a listener (the caller) so errors are considered handled by default.
-        // Inbound messages have no listener until later in the pipeline so are considered unhandled by default.
-        val errorsAreHandled = container.direction == MessageDirection.OUTBOUND
-
         val context = PipelineContext(
             pipelineSteps = pipelineSteps.steps,
-            startAtEnd = startAtEnd,
             pipeline = this,
-            completion = container.completion,
-            suppressErrors = errorsAreHandled
+            metadata = container.metadata
         )
 
         try {
-            when (container.direction) {
-                MessageDirection.OUTBOUND -> context.nextOutbound(container.msg)
-                MessageDirection.INBOUND -> context.nextInbound(container.msg)
+            context.next(container.message)
+        } catch (t: PipelineException) {
+            if (container.metadata.respondOnError) {
+                val src = t.lastMsgState.source ?: container.metadata.authInfo.nodeId
+
+                val newMessage = Message(
+                    messageId = container.message.messageId,
+                    target = MessageTarget.Unicast(src),
+                    content = t.reason.toErrorContent()
+                )
+
+                val newMeta = localMeta.copy(respondOnError = false)
+
+                pushMessage(newMessage, newMeta)
+            } else {
+                throw t.reason
             }
         } catch (c: CancellationException) {
+
             throw c
-        } catch (t: Throwable) {
-            // We check to see if errors are suppressed (and therefore handled) and raise the event.
-            // If not we consider it an unhandled error and throw it to the Orbit root error handling.
-            if (context.suppressErrors) {
-                container.completion.completeExceptionally(t)
-            } else {
-                throw t
-            }
-        }
-    }
 
-
-    fun stop() {
-        pipelineChannel.close()
-        pipelinesWorkers.forEach {
-            it.cancel()
         }
     }
 }

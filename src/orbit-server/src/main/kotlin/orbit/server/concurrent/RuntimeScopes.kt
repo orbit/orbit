@@ -7,7 +7,7 @@
 package orbit.server.concurrent
 
 import kotlinx.coroutines.CoroutineScope
-import orbit.common.concurrent.SupervisorScope
+import orbit.util.concurrent.SupervisorScope
 import kotlin.coroutines.CoroutineContext
 
 class RuntimeScopes(
