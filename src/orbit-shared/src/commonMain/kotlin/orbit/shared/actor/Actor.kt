@@ -4,10 +4,10 @@
  See license in LICENSE.
  */
 
-package orbit.client.actor
+package orbit.shared.actor
 
-import orbit.shared.actor.Actor
+import orbit.shared.mesh.Addressable
+import orbit.shared.mesh.NonConcrete
 
-interface GreeterActor : Actor
-
-class GreeterActorImpl : GreeterActor
+@NonConcrete
+interface Actor : Addressable

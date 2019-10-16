@@ -6,6 +6,20 @@
 
 package orbit.shared.mesh
 
+/**
+ * Denotes an addressable that does not have a concrete implementation.
+ */
+@MustBeDocumented
+@Retention(AnnotationRetention.RUNTIME)
+@Target(AnnotationTarget.CLASS)
+annotation class NonConcrete
+
+/**
+ * Marker interface that determines an interface is addressable remotely.
+ */
+@NonConcrete
+interface Addressable
+
 typealias AddressableType = String
 typealias AddressableId = String
 
