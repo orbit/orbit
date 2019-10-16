@@ -6,6 +6,9 @@ const moment = require('moment')
 
 class MessagesController {
 
+    addressType = 'webtest'
+    namespace = 'test'
+
     messages = {}
     addressables = {}
 
@@ -41,12 +44,14 @@ class MessagesController {
         this.connectionService = new this.connection.Connection(url, grpc.credentials.createInsecure())
     }
 
-    setLeaseFromResponse(lease) {
-        return this.lease = {
-            nodeId: lease.node_identity,
-            challengeToken: lease.challenge_token,
-            renewsAt: moment.unix(lease.renew_at.seconds),
-            expiresAt: moment.unix(lease.expires_at.seconds)
+    setNodeInfoFromResponse(node) {
+        return this.node = {
+            nodeId: node.id,
+            nodeKey: node.id.key,
+            namespace: node.id.namespace,
+            challengeToken: node.lease.challenge_token,
+            renewsAt: moment.unix(node.lease.renew_at.seconds),
+            expiresAt: moment.unix(node.lease.expires_at.seconds)
         }
     }
 
@@ -54,28 +59,30 @@ class MessagesController {
         const timeout = renewAt.diff()
         console.log(`Next renewal: ${renewAt} in ${timeout} ms`)
         setTimeout(async () => {
-            console.log(`renewing lease ${JSON.stringify(this.lease, null, 2)}`)
             const response = await this.nodeManagementService.RenewLease({
-                challenge_token: this.lease.challengeToken,
+                challenge_token: this.node.challengeToken,
                 capabilities: {
-                    addressableTypes: ["apiTest"]
+                    addressableTypes: [this.addressType]
                 }
             }, await this.getMetadata())
 
-            const lease = this.setLeaseFromResponse(response.lease_info)
+            const lease = this.setNodeInfoFromResponse(response.info)
 
             this.renewLeaseTimer(lease.renewsAt)
         }, timeout)
     }
 
-    async joinCluster() {
+    async joinCluster(namespace) {
+        var meta = new grpc.Metadata()
+        meta.add('namespace', namespace)
+
         const response = await this.nodeManagementService.JoinCluster({
             capabilities: {
-                addressableTypes: ["apiTest"]
+                addressableTypes: [this.addressType]
             }
-        })
+        }, meta)
 
-        const lease = this.setLeaseFromResponse(response)
+        const lease = this.setNodeInfoFromResponse(response.info)
 
         this.renewLeaseTimer(lease.renewsAt)
 
@@ -84,11 +91,12 @@ class MessagesController {
 
     async getMetadata() {
         return new Promise(async (resolve, reject) => {
-            if (!this.lease) {
-                await this.joinCluster()
+            if (!this.node) {
+                await this.joinCluster(this.namespace)
             }
-            var meta = new grpc.Metadata();
-            meta.add('nodeId', this.lease.nodeId);
+            var meta = new grpc.Metadata()
+            meta.add('nodeKey', this.node.nodeKey)
+            meta.add('namespace', this.node.namespace)
             resolve(meta)
         })
     }
@@ -96,7 +104,7 @@ class MessagesController {
     async getConnection() {
         if (!this.messagesConnection) {
             const metadata = await this.getMetadata()
-            this.messagesConnection = this.connectionService.Messages(metadata)
+            this.messagesConnection = this.connectionService.openStream(metadata)
             this.messagesConnection.on('data', msg => {
                 this.onReceive(msg)
             })
@@ -111,12 +119,12 @@ class MessagesController {
     async onReceive(message) {
         console.log('got a message', message)
         const address = {
-            type: message.invocation_request.reference.type,
-            id: message.invocation_request.reference.id
+            type: message.content.invocation_request.reference.type,
+            id: message.content.invocation_request.reference.id
         }
         const addressString = `${address.type}-${address.id}`
         this.messages[addressString] = this.messages[addressString] || []
-        this.messages[addressString].push({ timeStamp: moment(), message: message.invocation_request.value })
+        this.messages[addressString].push({ timeStamp: moment(), message: message.content.invocation_request.value })
 
         this.addressables[addressString] || (this.addressables[addressString] = address)
     }
@@ -125,16 +133,18 @@ class MessagesController {
         const connection = await this.getConnection()
 
         await connection.write({
-            invocation_request: {
-                reference: {
-                    type: "webtest",
-                    id: address
-                },
-                value: message
+            content: {
+                invocation_request: {
+                    reference: {
+                        type: this.addressType,
+                        id: address
+                    },
+                    value: message
+                }
             }
         })
 
-        return `Sent a message to ${address} on node ${this.lease.nodeId}: ${message}`
+        return `Sent a message to ${address} on node ${this.node.nodeKey}: ${message}`
     }
 
     async getAddressables() {
