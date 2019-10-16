@@ -1,19 +1,22 @@
-.App-logo {
+.app-logo {
   height: 40vmin;
 }
 
-.App-header {
-  text-align: center;
+.app-header {
   background-color: #282c34;
   height: 100px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  justify-content: center;
+}
+.app-header-label {
+  padding-left: 40px;
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
 }
 
-.App-link {
-  color: #09d3ac;
+.node-select {
+  background-color: grey;
+  font-size: calc(10px + 1vmin);
 }

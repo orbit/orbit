@@ -12,39 +12,51 @@ export default class Client extends Component {
   port;
   address;
   message;
-
-  sender = new Messages()
+  sender;
 
   sendMessage() {
     this.sender.sendMessage(this.address, this.message)
   }
 
-  constructor() {
-    super()
+  constructor(props) {
+    super(props)
 
     this.state = {
       addressables: [],
       messages: []
     }
 
-    this.loadAddressables()
+    this.sender = new Messages(props.url)
+
+    this.refreshLoop()
   }
 
-  loadAddressables() {
+  refreshLoop() {
+    this.refresh()
     setTimeout(() => {
-      this.sender.getAddressables().then(addressables => {
-        this.setState({ addressables })
-      })
-      this.loadAddressables()
-    }, 2000)
+      this.refreshLoop()
+    }, 5000)
+  }
+
+  refresh() {
+    this.sender.getAddressables().then(addressables => {
+      this.setState({ addressables })
+    })
+    this.sender.getMessages(this.state.currentAddressable).then(messages => {
+      this.setState({ messages })
+    })
   }
 
   changeCurrentAddressable(address) {
     this.setState({ currentAddressable: address })
+    this.refresh()
+  }
 
-    this.sender.getMessages(address).then(messages => {
-      this.setState({ messages })
-    })
+  componentDidUpdate() {
+    if (this.sender.url !== this.props.url) {
+      this.sender.url = this.props.url
+      this.refresh()
+    }
   }
 
   render() {

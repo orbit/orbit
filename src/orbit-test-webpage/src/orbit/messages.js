@@ -1,11 +1,9 @@
-import { promisify } from 'es6-promisify'
-
 export default class Messages {
 
-    constructor(host = 'localhost', port = 8080) {
-        console.log(`connecting - http://${host}:${port}`)
+    constructor(url) {
+        console.log(`connecting - ${url}`)
 
-        this.url = `http://${host}:${port}`;
+        this.url = url;
     }
 
     async getMessages(address) {
@@ -18,6 +16,5 @@ export default class Messages {
 
     async sendMessage(address, message) {
         console.log('send message', address, message)
-
     }
 }
