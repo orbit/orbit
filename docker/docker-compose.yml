@@ -1,0 +1,74 @@
+version: "3.7"
+services:
+  orbit-server-1:
+    build:
+      context: ../
+      dockerfile: docker/server/Dockerfile
+    ports:
+      - "5006:5005"
+      - "50056:50056"
+    expose:
+      - 50056
+    environment:
+      ORBIT_HOST: "orbit-server-1"
+      ORBIT_PORT: 50056
+      NODE_DIRECTORY: http://node-directory:2379
+      ADDRESSABLE_DIRECTORY: http://addressable-directory:2379
+    entrypoint: sh ./opt/orbit/entrypoint.sh
+    volumes:
+      - ../src/orbit-application/build/libs:/opt/orbit/libs
+  orbit-server-2:
+    build:
+      context: ../
+      dockerfile: docker/server/Dockerfile
+    ports:
+      - "5007:5005"
+      - "50057:50057"
+    expose:
+      - 50057
+    environment:
+      ORBIT_HOST: "orbit-server-2"
+      ORBIT_PORT: 50057
+      NODE_DIRECTORY: http://node-directory:2379
+      ADDRESSABLE_DIRECTORY: http://addressable-directory:2379
+    entrypoint: sh -c ./opt/orbit/entrypoint.sh
+    volumes:
+      - ../src/orbit-application/build/libs:/opt/orbit/libs
+  node-directory:
+    image: bitnami/etcd
+    environment:
+      ALLOW_NONE_AUTHENTICATION: "yes"
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd-server:2379
+    expose:
+      - 2379
+      - 2380
+  addressable-directory:
+    image: bitnami/etcd
+    environment:
+      ALLOW_NONE_AUTHENTICATION: "yes"
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd-server:2379
+    expose:
+      - 2379
+      - 2380
+  test-webpage:
+    build:
+      context: ../
+      dockerfile: docker/test-webpage/Dockerfile
+    volumes:
+      - ../src/orbit-test-webpage:/opt/orbit/web
+      - /opt/orbit/web/node_modules
+    ports:
+      - 80:3000
+    entrypoint: npm start
+  test-api:
+    build:
+      context: ../
+      dockerfile: docker/test-api/Dockerfile
+    volumes:
+      - ../src/orbit-test-api:/opt/orbit/api
+      - /opt/orbit/api/node_modules
+      - ../src/orbit-proto/src/main/proto:/opt/orbit/api/proto
+    ports:
+      - 8080:3000
+      - 9229:9229
+    entrypoint: npm run dev
