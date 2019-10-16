@@ -60,7 +60,7 @@ services:
     ports:
       - 80:3000
     entrypoint: npm start
-  test-api:
+  test-api-1:
     build:
       context: ../
       dockerfile: docker/test-api/Dockerfile
@@ -71,4 +71,20 @@ services:
     ports:
       - 8080:3000
       - 9229:9229
+    environment:
+      ORBIT_URL: orbit-server-1:50056
+    entrypoint: npm run dev
+  test-api-2:
+    build:
+      context: ../
+      dockerfile: docker/test-api/Dockerfile
+    volumes:
+      - ../src/orbit-test-api:/opt/orbit/api
+      - /opt/orbit/api/node_modules
+      - ../src/orbit-proto/src/main/proto:/opt/orbit/api/proto
+    ports:
+      - 8081:3000
+      - 9230:9229
+    environment:
+      ORBIT_URL: orbit-server-2:50057
     entrypoint: npm run dev

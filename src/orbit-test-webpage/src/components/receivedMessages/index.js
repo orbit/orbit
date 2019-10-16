@@ -9,7 +9,7 @@ export default function ReceivedMessages(props) {
     <section className="incoming-messages">
       <h3>Received Messages</h3>
       <Timeline>
-        {(messages || []).map(msg => <Timeline.Item>{moment(msg.timeStamp).format('lll')} - {msg.message}</Timeline.Item>)}
+        {(messages || []).map(msg => <Timeline.Item key={msg.timeStamp}>{moment(msg.timeStamp).format('lll')} - {msg.message}</Timeline.Item>)}
       </Timeline>
     </section>
   )
