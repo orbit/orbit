@@ -7,8 +7,8 @@
 package orbit.server.mesh.local
 
 import orbit.server.mesh.AddressableDirectory
-import orbit.shared.mesh.AddressableLease
-import orbit.shared.mesh.AddressableReference
+import orbit.shared.addressable.AddressableLease
+import orbit.shared.addressable.AddressableReference
 import orbit.util.concurrent.jvm.HashMapBackedAsyncMap
 import orbit.util.di.jvm.ExternallyConfigured
 

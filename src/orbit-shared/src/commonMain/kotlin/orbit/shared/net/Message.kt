@@ -6,7 +6,7 @@
 
 package orbit.shared.net
 
-import orbit.shared.mesh.AddressableReference
+import orbit.shared.addressable.AddressableReference
 import orbit.shared.mesh.NodeId
 import orbit.shared.router.Route
 

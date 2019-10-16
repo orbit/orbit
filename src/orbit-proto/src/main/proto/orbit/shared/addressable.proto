@@ -7,7 +7,16 @@ import "google/protobuf/timestamp.proto";
 
 message AddressableReferenceProto {
     string type = 1;
-    string id = 2;
+    AddressableKeyProto key = 2;
+}
+
+message AddressableKeyProto {
+    oneof key {
+        int32 int32Key = 1;
+        int64 int64Key = 2;
+        string stringKey = 3;
+        bool noKey = 4;
+    }
 }
 
 message AddressableLeaseProto {

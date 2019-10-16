@@ -18,6 +18,7 @@ kotlin {
                 implementation(project(":src:orbit-util"))
 
                 implementation(kotlin("stdlib-common"))
+                implementation(kotlin("reflect"))
             }
         }
         val commonTest by getting {

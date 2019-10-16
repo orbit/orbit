@@ -6,20 +6,39 @@
 
 package orbit.shared.proto
 
-import orbit.shared.mesh.AddressableLease
-import orbit.shared.mesh.AddressableReference
+import orbit.shared.addressable.AddressableLease
+import orbit.shared.addressable.AddressableReference
+import orbit.shared.addressable.Key
 
 fun AddressableReference.toAddressableReferenceProto() =
     Addressable.AddressableReferenceProto.newBuilder()
-        .setId(id)
+        .setKey(key.toAddressableKeyProto())
         .setType(type)
         .build()
 
 fun Addressable.AddressableReferenceProto.toAddressableReference() =
     AddressableReference(
         type = type,
-        id = id
+        key = key.toAddressableKey()
     )
+
+fun Key.toAddressableKeyProto() = Addressable.AddressableKeyProto.newBuilder().let {
+    when (this) {
+        is Key.NoKey -> it.setNoKey(true)
+        is Key.Int32Key -> it.setInt32Key(this.key)
+        is Key.Int64Key -> it.setInt64Key(this.key)
+        is Key.StringKey -> it.setStringKey(this.key)
+    }
+}.build()
+
+fun Addressable.AddressableKeyProto.toAddressableKey(): Key =
+    when (this.keyCase.number) {
+        Addressable.AddressableKeyProto.NOKEY_FIELD_NUMBER -> Key.NoKey
+        Addressable.AddressableKeyProto.INT32KEY_FIELD_NUMBER -> Key.Int32Key(int32Key)
+        Addressable.AddressableKeyProto.INT64KEY_FIELD_NUMBER -> Key.Int64Key(int64Key)
+        Addressable.AddressableKeyProto.STRINGKEY_FIELD_NUMBER -> Key.StringKey(stringKey)
+        else -> error("Invalid key type")
+    }
 
 fun AddressableLease.toAddressableLeaseProto() =
     Addressable.AddressableLeaseProto.newBuilder()

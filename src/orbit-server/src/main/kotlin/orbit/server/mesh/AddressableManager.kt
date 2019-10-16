@@ -7,9 +7,9 @@
 package orbit.server.mesh
 
 import orbit.server.OrbitServerConfig
+import orbit.shared.addressable.AddressableLease
+import orbit.shared.addressable.AddressableReference
 import orbit.shared.exception.PlacementFailedException
-import orbit.shared.mesh.AddressableLease
-import orbit.shared.mesh.AddressableReference
 import orbit.shared.mesh.Namespace
 import orbit.shared.mesh.NodeId
 import orbit.util.misc.attempt
@@ -31,14 +31,14 @@ class AddressableManager(
         }.let {
             val invalidNode = clusterManager.getNode(it.nodeId) == null
             val expired = Timestamp.now() > it.expiresAt
-            if(invalidNode || expired) {
+            if (invalidNode || expired) {
                 val newEntry = createNewEntry(namespace, addressableReference)
-                if(addressableDirectory.compareAndSet(it.reference, it, newEntry)) {
+                if (addressableDirectory.compareAndSet(it.reference, it, newEntry)) {
                     newEntry.nodeId
                 } else {
                     locateOrPlace(namespace, addressableReference)
                 }
-            }else {
+            } else {
                 it.nodeId
             }
         }

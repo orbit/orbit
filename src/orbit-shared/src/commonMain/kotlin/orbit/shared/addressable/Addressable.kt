@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package orbit.shared.mesh
+package orbit.shared.addressable
 
 /**
  * Denotes an addressable that does not have a concrete implementation.
@@ -21,9 +21,8 @@ annotation class NonConcrete
 interface Addressable
 
 typealias AddressableType = String
-typealias AddressableId = String
 
 data class AddressableReference(
     val type: AddressableType,
-    val id: AddressableId
+    val key: Key
 )

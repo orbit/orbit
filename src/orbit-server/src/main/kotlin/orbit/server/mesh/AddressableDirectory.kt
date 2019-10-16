@@ -6,8 +6,8 @@
 
 package orbit.server.mesh
 
-import orbit.shared.mesh.AddressableLease
-import orbit.shared.mesh.AddressableReference
+import orbit.shared.addressable.AddressableLease
+import orbit.shared.addressable.AddressableReference
 import orbit.util.concurrent.AsyncMap
 
 interface AddressableDirectory : AsyncMap<AddressableReference, AddressableLease>

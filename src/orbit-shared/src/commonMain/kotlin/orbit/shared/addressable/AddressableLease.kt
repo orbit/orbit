@@ -4,8 +4,9 @@
  See license in LICENSE.
  */
 
-package orbit.shared.mesh
+package orbit.shared.addressable
 
+import orbit.shared.mesh.NodeId
 import orbit.util.time.Timestamp
 
 data class AddressableLease(

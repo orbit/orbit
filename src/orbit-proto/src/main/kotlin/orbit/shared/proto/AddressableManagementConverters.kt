@@ -6,7 +6,7 @@
 
 package orbit.shared.proto
 
-import orbit.shared.mesh.AddressableLease
+import orbit.shared.addressable.AddressableLease
 
 fun AddressableLease.toAddressableLeaseResponseProto(): AddressableManagementOuterClass.RenewAddressableLeaseResponseProto =
     AddressableManagementOuterClass.RenewAddressableLeaseResponseProto.newBuilder()

@@ -6,8 +6,8 @@
 
 package orbit.shared.actor
 
-import orbit.shared.mesh.Addressable
-import orbit.shared.mesh.NonConcrete
+import orbit.shared.addressable.Addressable
+import orbit.shared.addressable.NonConcrete
 
 @NonConcrete
 interface Actor : Addressable

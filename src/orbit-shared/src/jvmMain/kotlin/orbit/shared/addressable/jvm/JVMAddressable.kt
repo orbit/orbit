@@ -4,9 +4,9 @@
  See license in LICENSE.
  */
 
-package orbit.shared.mesh.jvm
+package orbit.shared.addressable.jvm
 
-import orbit.shared.mesh.Addressable
+import orbit.shared.addressable.Addressable
 
 /**
  * A class type which extends [Addressable].
