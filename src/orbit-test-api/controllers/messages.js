@@ -117,10 +117,10 @@ class MessagesController {
     }
 
     async onReceive(message) {
-        console.log('got a message', message)
+        console.log('got a message', JSON.stringify(message, null, 2))
         const address = {
             type: message.content.invocation_request.reference.type,
-            id: message.content.invocation_request.reference.id
+            id: message.content.invocation_request.reference.key.stringKey
         }
         const addressString = `${address.type}-${address.id}`
         this.messages[addressString] = this.messages[addressString] || []
@@ -137,7 +137,7 @@ class MessagesController {
                 invocation_request: {
                     reference: {
                         type: this.addressType,
-                        id: address
+                        key: { stringKey: address }
                     },
                     value: message
                 }

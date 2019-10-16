@@ -3,6 +3,6 @@
     border: 1px grey solid;
 }
 
-ol {
-    list-style-type: none;
+.addressables-table {
+    cursor: pointer;
 }

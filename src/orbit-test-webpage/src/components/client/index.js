@@ -39,11 +39,11 @@ export default class Client extends Component {
   }
 
   refresh() {
-    this.sender.getAddressables().then(addressables => {
-      this.setState({ addressables })
-    })
     this.sender.getMessages(this.state.currentAddressable).then(messages => {
       this.setState({ messages })
+    })
+    this.sender.getAddressables().then(addressables => {
+      this.setState({ addressables })
     })
   }
 
