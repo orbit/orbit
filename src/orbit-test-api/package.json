@@ -34,7 +34,7 @@
     "koa-logger": "^3.2.1",
     "koa-respond": "^2.1.0",
     "koa-router": "^7.4.0",
-    "koa": "^2.8.2",
+    "koa": "^2.10.0",
     "moment": "^2.24.0"
   },
   "devDependencies": {
