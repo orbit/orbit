@@ -15,7 +15,6 @@ export default class Messages {
     }
 
     async sendMessage(address, message) {
-        console.log('send message', address, message)
         return await fetch(this.url + `/messages/${address}`,
             {
                 method: 'POST',
