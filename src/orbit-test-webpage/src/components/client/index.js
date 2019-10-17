@@ -26,7 +26,7 @@ class Client extends Component {
 
     this.state = {
       addressables: [],
-      messages: []
+      messages: {}
     }
 
     this.sender = new Messages(props.url)
@@ -41,10 +41,18 @@ class Client extends Component {
     }, 5000)
   }
 
-  refresh() {
-    this.sender.getMessages(this.state.currentAddressable).then(messages => {
-      this.setState({ messages })
-    })
+  refresh(address) {
+    const current = address || this.state.currentAddressable
+    if (current) {
+      this.sender.getMessages(current).then(messages => {
+        this.setState({
+          messages: {
+            ...this.state.messages,
+            [current]: messages
+          }
+        })
+      })
+    }
     this.sender.getAddressables().then(addressables => {
       this.setState({ addressables })
     })
@@ -52,7 +60,7 @@ class Client extends Component {
 
   changeCurrentAddressable(address) {
     this.setState({ currentAddressable: address })
-    this.refresh()
+    this.refresh(address)
   }
 
   componentDidUpdate() {
@@ -101,7 +109,7 @@ class Client extends Component {
             <Addressables addressables={this.state.addressables} select={address => this.changeCurrentAddressable(address)} />
           </Col>
           <Col span={12}>
-            <ReceivedMessages messages={this.state.messages} />
+            <ReceivedMessages messages={this.state.messages[this.state.currentAddressable]} />
           </Col>
         </Row>
       </div >
