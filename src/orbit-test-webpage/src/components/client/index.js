@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
 import './style.css'
-import { Row, Col, Input, Button } from 'antd';
+import { Row, Col, Input, Button, Form } from 'antd';
 import ReceivedMessages from '../receivedMessages'
 import Addressables from '../addressables'
 
 import Messages from '../../orbit/messages'
 
-export default class Client extends Component {
+class Client extends Component {
   sender;
   host;
   port;
@@ -14,8 +14,11 @@ export default class Client extends Component {
   message;
   sender;
 
-  sendMessage() {
-    this.sender.sendMessage(this.address, this.message)
+  sendMessage(e) {
+    e.preventDefault()
+    const { form } = this.props
+
+    this.sender.sendMessage(form.getFieldValue("address"), form.getFieldValue("message"))
   }
 
   constructor(props) {
@@ -60,14 +63,36 @@ export default class Client extends Component {
   }
 
   render() {
+    const { getFieldDecorator } = this.props.form;
+
+    const formItemLayout = {
+      labelCol: {
+        xs: { span: 24 },
+        sm: { span: 8 },
+      },
+      wrapperCol: {
+        xs: { span: 24 },
+        sm: { span: 16 },
+      }
+    }
     return (
       <div className="client">
         <Row>
           <Col span={12}>
             <section className="messageEntry">
-              <Input placeholder="Addressable" />
-              <Input.TextArea placeholder="Message" ref={msg => this.message = msg} />
-              <Button onClick={() => this.sendMessage()}>Send</Button>
+              <Form {...formItemLayout} onSubmit={e => this.sendMessage(e)}>
+                <Form.Item label="Address">
+                  {getFieldDecorator('address')(
+                    <Input placeholder="Address" ref={address => this.address = address} />)}
+                </Form.Item>
+                <Form.Item label="Message">
+                  {getFieldDecorator('message')(
+                    <Input.TextArea placeholder="Message" ref={msg => this.message = msg} />)}
+                </Form.Item>
+                <Form.Item>
+                  <Button type="primary" htmlType="submit">Send</Button>
+                </Form.Item>
+              </Form>
             </section>
           </Col>
         </Row>
@@ -79,7 +104,9 @@ export default class Client extends Component {
             <ReceivedMessages messages={this.state.messages} />
           </Col>
         </Row>
-      </div>
+      </div >
     )
   }
 }
+
+export default Form.create()(Client)
