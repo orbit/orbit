@@ -11,30 +11,25 @@ import orbit.client.util.DeferredWrappers
 import orbit.shared.addressable.Addressable
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.addressable.Key
-import orbit.shared.net.Message
-import orbit.shared.net.MessageContent
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
 internal class AddressableProxy(
     private val reference: AddressableReference,
+    private val invocationSystem: InvocationSystem,
     private val messageHandler: MessageHandler
 ) : InvocationHandler {
-    override fun invoke(proxy: Any, method: Method, args: Array<out Any>?): Any {
-        val msg = Message(
-            MessageContent.InvocationRequest(
-                "Hello",
-                reference
-            )
-        )
+    override fun invoke(proxy: Any, method: Method, args: Array<Any?>?): Any {
+        val msg = invocationSystem.generateInvokeMessage(reference, args ?: arrayOf<Any?>())
         val completion = messageHandler.sendMessage(msg)
         return DeferredWrappers.wrapReturn(completion, method)
     }
 }
 
 internal class AddressableProxyFactory(
-    private val messageHandler: MessageHandler
+    private val messageHandler: MessageHandler,
+    private val invocationSystem: InvocationSystem
 ) {
     fun <T : Addressable> createProxy(interfaceClass: Class<T>, key: Key): T {
         @Suppress("UNCHECKED_CAST")
@@ -46,7 +41,8 @@ internal class AddressableProxyFactory(
                     type = interfaceClass.canonicalName,
                     key = key
                 ),
-                messageHandler = messageHandler
+                messageHandler = messageHandler,
+                invocationSystem = invocationSystem
             )
         ) as T
     }

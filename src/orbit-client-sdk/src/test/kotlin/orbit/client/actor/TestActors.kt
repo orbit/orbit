@@ -28,5 +28,14 @@ class TimeoutActorImpl : TimeoutActor {
 
 interface ActorWithNoImpl : ActorWithNoKey {
     fun greetAsync(name: String): Deferred<String>
+}
 
+interface ComplexDtoActor : ActorWithNoKey {
+    data class ComplexDto(val blah: String)
+
+    fun complexCall(dto: ComplexDto): Deferred<Unit>
+}
+
+class ComplexDtoActorImpl : ComplexDtoActor {
+    override fun complexCall(dto: ComplexDtoActor.ComplexDto) = CompletableDeferred(Unit)
 }

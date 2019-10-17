@@ -9,6 +9,7 @@ package orbit.client.net
 import kotlinx.coroutines.CompletableDeferred
 import mu.KotlinLogging
 import orbit.client.OrbitClientConfig
+import orbit.client.addressable.InvocationSystem
 import orbit.client.util.MessageException
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
@@ -20,6 +21,7 @@ import java.util.concurrent.atomic.AtomicLong
 internal class MessageHandler(
     private val connectionHandler: ConnectionHandler,
     private val clock: Clock,
+    private val invocationSystem: InvocationSystem,
     config: OrbitClientConfig
 ) {
     private data class ResponseEntry(
@@ -47,6 +49,9 @@ internal class MessageHandler(
                         }
                     }
                 }
+            }
+            is MessageContent.InvocationRequest -> {
+                invocationSystem.onInvocationRequest(message)
             }
         }
     }

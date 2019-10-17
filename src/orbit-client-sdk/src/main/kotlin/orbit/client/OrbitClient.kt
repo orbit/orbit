@@ -11,12 +11,14 @@ import mu.KotlinLogging
 import orbit.client.actor.ActorProxyFactory
 import orbit.client.addressable.AddressableProxyFactory
 import orbit.client.addressable.CapabilitiesScanner
+import orbit.client.addressable.InvocationSystem
 import orbit.client.mesh.NodeLeaser
 import orbit.client.net.ClientAuthInterceptor
 import orbit.client.net.ConnectionHandler
 import orbit.client.net.GrpcClient
 import orbit.client.net.LocalNode
 import orbit.client.net.MessageHandler
+import orbit.client.serializer.Serializer
 import orbit.util.concurrent.SupervisorScope
 import orbit.util.di.jvm.ComponentContainer
 import orbit.util.time.Clock
@@ -60,8 +62,12 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
 
             definition<NodeLeaser>()
 
+            definition<Serializer>()
+
             definition<CapabilitiesScanner>()
             definition<AddressableProxyFactory>()
+            definition<InvocationSystem>()
+
 
             definition<ActorProxyFactory>()
 

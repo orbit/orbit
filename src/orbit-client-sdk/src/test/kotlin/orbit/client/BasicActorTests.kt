@@ -8,6 +8,7 @@ package orbit.client
 
 import kotlinx.coroutines.runBlocking
 import orbit.client.actor.ActorWithNoImpl
+import orbit.client.actor.ComplexDtoActor
 import orbit.client.actor.GreeterActor
 import orbit.client.actor.TimeoutActor
 import orbit.client.actor.createProxy
@@ -16,10 +17,18 @@ import org.junit.Test
 
 class BasicActorTests : BaseIntegrationTest() {
     @Test
-    fun basicStart() {
+    fun `test basic actor request response`() {
         runBlocking {
             val actor = client.actorFactory.createProxy<GreeterActor>()
             //actor.greetAsync("Joe").await()
+        }
+    }
+
+    @Test
+    fun `test complex dto request response`() {
+        runBlocking {
+            val actor = client.actorFactory.createProxy<ComplexDtoActor>()
+            //actor.complexCall(ComplexDtoActor.ComplexDto("Hello")).await()
         }
     }
 
@@ -27,7 +36,7 @@ class BasicActorTests : BaseIntegrationTest() {
     fun `ensure invalid actor type throws`() {
         runBlocking {
             val actor = client.actorFactory.createProxy<ActorWithNoImpl>()
-            actor.greetAsync("Joe").await()
+            actor.greetAsync("Daniel Jackson").await()
         }
     }
 

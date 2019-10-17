@@ -21,7 +21,11 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinCoroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:$kotlinCoroutinesVersion")
 
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.10.0")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.10.0")
+
     implementation("io.github.classgraph:classgraph:4.8.47")
+
 
     testImplementation(project(":src:orbit-server"))
 
