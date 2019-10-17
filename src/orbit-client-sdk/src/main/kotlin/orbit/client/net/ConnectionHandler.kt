@@ -18,10 +18,17 @@ import orbit.shared.proto.toMessage
 import orbit.shared.proto.toMessageProto
 import orbit.util.concurrent.RailWorker
 import orbit.util.concurrent.SupervisorScope
+import orbit.util.di.jvm.ComponentContainer
 
-class ConnectionHandler(config: OrbitClientConfig, grpcClient: GrpcClient, private val scope: SupervisorScope) {
+internal class ConnectionHandler(
+    config: OrbitClientConfig,
+    grpcClient: GrpcClient,
+    private val scope: SupervisorScope,
+    componentContainer: ComponentContainer
+) {
     private val logger = KotlinLogging.logger { }
     private val messagesStub = ConnectionGrpc.newStub(grpcClient.channel)
+    private val messageHandler by componentContainer.inject<MessageHandler>()
 
     private val messageRails = RailWorker(
         scope = scope,
@@ -45,7 +52,7 @@ class ConnectionHandler(config: OrbitClientConfig, grpcClient: GrpcClient, priva
     }
 
     private suspend fun onMessage(message: Message) {
-        println(message)
+        messageHandler.onMessage(message)
     }
 
     fun send(msg: Message) {

@@ -8,12 +8,15 @@ package orbit.client
 
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import orbit.client.actor.ActorProxyFactory
+import orbit.client.addressable.AddressableProxyFactory
 import orbit.client.addressable.CapabilitiesScanner
 import orbit.client.mesh.NodeLeaser
 import orbit.client.net.ClientAuthInterceptor
 import orbit.client.net.ConnectionHandler
 import orbit.client.net.GrpcClient
 import orbit.client.net.LocalNode
+import orbit.client.net.MessageHandler
 import orbit.util.concurrent.SupervisorScope
 import orbit.util.di.jvm.ComponentContainer
 import orbit.util.time.Clock
@@ -42,7 +45,6 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
         onTick = this::tick
     )
 
-
     init {
         container.configure {
             instance(this@OrbitClient)
@@ -54,10 +56,15 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
             definition<GrpcClient>()
             definition<ClientAuthInterceptor>()
             definition<ConnectionHandler>()
+            definition<MessageHandler>()
 
             definition<NodeLeaser>()
 
             definition<CapabilitiesScanner>()
+            definition<AddressableProxyFactory>()
+
+            definition<ActorProxyFactory>()
+
         }
     }
 
@@ -66,6 +73,7 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
     private val capabilitiesScanner by container.inject<CapabilitiesScanner>()
     private val localNode by container.inject<LocalNode>()
 
+    val actorFactory by container.inject<ActorProxyFactory>()
 
     fun start() = scope.launch {
         logger.info("Starting Orbit client...")

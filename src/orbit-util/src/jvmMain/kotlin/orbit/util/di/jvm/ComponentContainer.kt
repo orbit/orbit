@@ -41,7 +41,7 @@ class ComponentContainer {
         @Suppress("UNCHECKED_CAST")
         return beanInstances.getOrPut(interfaceClass) {
             val beanDef = beanDefinitions[interfaceClass]
-                ?: throw IllegalStateException("No bean definition registered for '${interfaceClass.name}'.")
+                ?: error("No bean definition registered for '${interfaceClass.name}'.")
             construct(beanDef)
         } as T
     }
@@ -56,8 +56,7 @@ class ComponentContainer {
         construct(beanDefinition.concreteClass)
 
     fun <T> construct(concreteClass: Class<out T>): T {
-        if (concreteClass.constructors.size != 1)
-            throw IllegalStateException("${concreteClass.name} must have one constructor.")
+        check(concreteClass.constructors.size == 1) { "${concreteClass.name} must have one constructor." }
         val ctr = concreteClass.constructors[0]
         val args = Array<Any?>(ctr.parameterCount) { null }
         ctr.parameters.forEachIndexed { i, arg ->

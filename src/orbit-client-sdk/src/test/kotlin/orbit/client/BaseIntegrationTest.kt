@@ -17,9 +17,11 @@ import java.net.URI
 
 open class BaseIntegrationTest {
     companion object {
+        @JvmStatic
         protected lateinit var server: OrbitServer
             private set
 
+        @JvmStatic
         protected lateinit var client: OrbitClient
             private set
 

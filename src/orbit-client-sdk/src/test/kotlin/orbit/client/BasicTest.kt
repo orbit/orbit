@@ -6,11 +6,18 @@
 
 package orbit.client
 
+import kotlinx.coroutines.runBlocking
+import orbit.client.actor.GreeterActor
+import orbit.client.actor.createProxy
 import org.junit.Test
 
 class BasicTest : BaseIntegrationTest() {
     @Test
     fun basicStart() {
-        //Thread.currentThread().join()
+        val actor = client.actorFactory.createProxy<GreeterActor>()
+
+        runBlocking {
+            //actor.greetAsync("Joe").await()
+        }
     }
 }

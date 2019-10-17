@@ -17,7 +17,7 @@ import orbit.shared.proto.toNodeInfo
 import orbit.util.time.Timestamp
 import orbit.util.time.now
 
-class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClient) {
+internal class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClient) {
     private val logger = KotlinLogging.logger { }
 
     private val nodeManagementStub = NodeManagementGrpc.newFutureStub(grpcClient.channel)

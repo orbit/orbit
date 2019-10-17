@@ -15,7 +15,7 @@ import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import orbit.shared.proto.Headers
 
-class ClientAuthInterceptor(private val localNode: LocalNode) : ClientInterceptor {
+internal class ClientAuthInterceptor(private val localNode: LocalNode) : ClientInterceptor {
     override fun <ReqT : Any?, RespT : Any?> interceptCall(
         method: MethodDescriptor<ReqT, RespT>,
         callOptions: CallOptions,

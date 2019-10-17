@@ -6,8 +6,14 @@
 
 package orbit.client.actor
 
-import orbit.shared.actor.Actor
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 
-interface GreeterActor : Actor
+interface GreeterActor : ActorWithNoKey {
+    fun greetAsync(name: String): Deferred<String>
+}
 
-class GreeterActorImpl : GreeterActor
+class GreeterActorImpl : GreeterActor {
+    override fun greetAsync(name: String): Deferred<String> =
+        CompletableDeferred("Hello $name")
+}
