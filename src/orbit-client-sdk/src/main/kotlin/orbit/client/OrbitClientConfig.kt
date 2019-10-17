@@ -42,6 +42,11 @@ data class OrbitClientConfig(
      *
      * If blank all packages will be scanned.
      */
-    val packages: List<String> = listOf()
+    val packages: List<String> = listOf(),
+
+    /**
+     * The default timeout for messages.
+     */
+    val messageTimeout: Duration = Duration.ofSeconds(10)
 
 )

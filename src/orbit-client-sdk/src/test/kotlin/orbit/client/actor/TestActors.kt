@@ -17,3 +17,16 @@ class GreeterActorImpl : GreeterActor {
     override fun greetAsync(name: String): Deferred<String> =
         CompletableDeferred("Hello $name")
 }
+
+interface TimeoutActor : ActorWithNoKey {
+    fun timeout(): Deferred<Unit>
+}
+
+class TimeoutActorImpl : TimeoutActor {
+    override fun timeout() = CompletableDeferred<Unit>()
+}
+
+interface ActorWithNoImpl : ActorWithNoKey {
+    fun greetAsync(name: String): Deferred<String>
+
+}

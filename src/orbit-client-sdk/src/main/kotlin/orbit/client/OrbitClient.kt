@@ -69,6 +69,8 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
     }
 
     private val nodeLeaser by container.inject<NodeLeaser>()
+    private val messageHandler by container.inject<MessageHandler>()
+
     private val connectionHandler by container.inject<ConnectionHandler>()
     private val capabilitiesScanner by container.inject<CapabilitiesScanner>()
     private val localNode by container.inject<LocalNode>()
@@ -100,6 +102,9 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
     private suspend fun tick() {
         // See if lease needs renewing
         nodeLeaser.tick()
+
+        // Timeout messages etc
+        messageHandler.tick()
     }
 
     fun stop() = scope.launch {

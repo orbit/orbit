@@ -7,6 +7,9 @@
 package orbit.client.net
 
 import kotlinx.coroutines.CompletableDeferred
+import mu.KotlinLogging
+import orbit.client.OrbitClientConfig
+import orbit.client.util.MessageException
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 import orbit.util.time.Clock
@@ -16,7 +19,8 @@ import java.util.concurrent.atomic.AtomicLong
 
 internal class MessageHandler(
     private val connectionHandler: ConnectionHandler,
-    private val clock: Clock
+    private val clock: Clock,
+    config: OrbitClientConfig
 ) {
     private data class ResponseEntry(
         val messageId: Long,
@@ -25,11 +29,26 @@ internal class MessageHandler(
         val timeAdded: TimeMs
     )
 
+    private val logger = KotlinLogging.logger { }
     private val messageCounter = AtomicLong(0)
     private val awaitingResponse = ConcurrentHashMap<Long, ResponseEntry>()
+    private val messageTimeoutMs = config.messageTimeout.toMillis()
 
-    suspend fun onMessage(message: Message) {
-        println(message)
+    fun onMessage(message: Message) {
+        when (message.content) {
+            is MessageContent.Error, is MessageContent.InvocationResponse -> {
+                val messageId = message.messageId!!
+                getCompletion(messageId)?.also { completion ->
+                    when (val content = message.content) {
+                        is MessageContent.Error -> {
+                            completion.completeExceptionally(
+                                MessageException("Exceptional response received: ${content.description}")
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fun sendMessage(msg: Message): CompletableDeferred<Any> {
@@ -53,5 +72,30 @@ internal class MessageHandler(
         connectionHandler.send(newMsg)
 
         return entry.completion
+    }
+
+    fun tick() {
+        awaitingResponse.values.filter {
+            it.timeAdded < clock.currentTime - messageTimeoutMs
+        }.forEach {
+            val content = "Response timed out after ${clock.currentTime - it.timeAdded}ms, timeout is" +
+                    " ${messageTimeoutMs}ms. ${it.msg}"
+            logger.warn(content)
+            it.completion.completeExceptionally(
+                MessageException(content)
+            )
+            awaitingResponse.remove(it.messageId)
+        }
+    }
+
+    private fun getCompletion(messageId: Long): CompletableDeferred<Any>? {
+        val msg = awaitingResponse.remove(messageId)
+        if (msg == null) {
+            logger.warn(
+                "Response for unknown message $messageId received. Did it time out? " +
+                        "(>${messageTimeoutMs}ms)."
+            )
+        }
+        return msg?.completion
     }
 }
