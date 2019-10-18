@@ -6,6 +6,7 @@
 
 package orbit.shared.net
 
-data class PortBinding(val host: String, val port: Int) {
-    override fun toString() = "$host:$port"
-}
+data class HostInfo (
+    val host: String,
+    val port: Int
+)

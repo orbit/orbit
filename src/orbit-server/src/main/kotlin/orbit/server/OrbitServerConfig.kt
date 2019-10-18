@@ -12,13 +12,13 @@ import orbit.server.mesh.LeaseDuration
 import orbit.server.mesh.NodeDirectory
 import orbit.server.mesh.local.LocalAddressableDirectory
 import orbit.server.mesh.local.LocalNodeDirectory
-import orbit.shared.net.PortBinding
+import orbit.shared.net.HostInfo
 import orbit.util.concurrent.jvm.Pools
 import orbit.util.di.jvm.ExternallyConfigured
 import java.time.Duration
 
 data class OrbitServerConfig(
-    val serverPort: PortBinding = PortBinding(
+    val hostInfo: HostInfo = HostInfo(
         host = System.getenv("ORBIT_HOST") ?: "0.0.0.0",
         port = System.getenv("ORBIT_PORT")?.toInt(10) ?: 50056
     ),

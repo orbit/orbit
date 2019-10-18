@@ -8,6 +8,7 @@ package orbit.server.mesh
 
 import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.mesh.NodeInfo
+import orbit.shared.net.HostInfo
 import orbit.util.time.Timestamp
 import orbit.util.time.now
 import java.util.concurrent.atomic.AtomicReference
@@ -15,7 +16,8 @@ import java.util.concurrent.atomic.AtomicReference
 const val MANAGEMENT_NAMESPACE = "management"
 
 class LocalNodeInfo(
-    private val clusterManager: ClusterManager
+    private val clusterManager: ClusterManager,
+    private val hostInfo: HostInfo
 ) {
     val info: NodeInfo
         get() = infoRef.get().also {
@@ -34,8 +36,8 @@ class LocalNodeInfo(
     }
 
     suspend fun start() {
-        clusterManager.joinCluster(MANAGEMENT_NAMESPACE, NodeCapabilities()).also {
-            println("Connected local node ${it.id}")
+        clusterManager.joinCluster(MANAGEMENT_NAMESPACE, NodeCapabilities(), this.hostInfo).also {
+            println("Connected local node ${it}")
             infoRef.set(it)
         }
     }

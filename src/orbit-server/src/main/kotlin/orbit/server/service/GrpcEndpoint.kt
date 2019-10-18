@@ -21,12 +21,12 @@ class GrpcEndpoint(
     private val logger = KotlinLogging.logger { }
     private lateinit var server: Server
 
-    private val serverPort = config.serverPort
+    private val hostInfo = config.hostInfo
 
     fun start() {
-        logger.info("Starting gRPC Endpoint on $serverPort...")
+        logger.info("Starting gRPC Endpoint on $hostInfo...")
 
-        server = ServerBuilder.forPort(serverPort.port)
+        server = ServerBuilder.forPort(hostInfo.port)
             .intercept(serverAuthInterceptor)
             .addService(nodeManagementService)
             .addService(addressableManagementService)
@@ -34,7 +34,7 @@ class GrpcEndpoint(
             .build()
             .start()
 
-        logger.info("gRPC Endpoint started on $serverPort.")
+        logger.info("gRPC Endpoint started on $hostInfo.")
     }
 
     fun stop() {

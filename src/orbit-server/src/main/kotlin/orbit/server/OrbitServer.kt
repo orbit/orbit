@@ -84,6 +84,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
             instance(runtimeScopes)
             instance(clock)
 
+            instance(config.hostInfo)
+
             // Service
             definition<GrpcEndpoint>()
             definition<ServerAuthInterceptor>()
