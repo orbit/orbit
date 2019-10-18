@@ -43,7 +43,7 @@ sealed class Key {
 
         override fun equals(other: Any?): Boolean {
             if (other == null) return false
-            if (NoKey::class.isInstance(other::class)) return true
+            if (NoKey::class.isInstance(other)) return true
             return false
         }
 

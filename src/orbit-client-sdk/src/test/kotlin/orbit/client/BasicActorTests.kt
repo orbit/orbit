@@ -14,13 +14,15 @@ import orbit.client.actor.TimeoutActor
 import orbit.client.actor.createProxy
 import orbit.client.util.MessageException
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class BasicActorTests : BaseIntegrationTest() {
     @Test
     fun `test basic actor request response`() {
         runBlocking {
             val actor = client.actorFactory.createProxy<GreeterActor>()
-            //actor.greetAsync("Joe").await()
+            val result = actor.greetAsync("Joe").await()
+            assertEquals(result, "Hello Joe")
         }
     }
 
@@ -28,7 +30,7 @@ class BasicActorTests : BaseIntegrationTest() {
     fun `test complex dto request response`() {
         runBlocking {
             val actor = client.actorFactory.createProxy<ComplexDtoActor>()
-            //actor.complexCall(ComplexDtoActor.ComplexDto("Hello")).await()
+            //val result = actor.complexCall(ComplexDtoActor.ComplexDto("Hello")).await()
         }
     }
 

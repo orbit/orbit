@@ -18,13 +18,10 @@ internal class Serializer {
         .build()
 
     private val mapper = ObjectMapper()
-        .activateDefaultTyping(validator)
+        .activateDefaultTyping(validator, ObjectMapper.DefaultTyping.EVERYTHING)
         .registerKotlinModule()
 
-    fun serialize(obj: Any) =
-        mapper.writeValueAsString(obj)
-
-    fun serializeArgs(args: Array<Any?>) = serialize(args)
-
-    fun deserializeArgs(args: String): Array<Any?> = mapper.readValue(args, Array<Any?>::class.java)
+    fun <T : Any> serialize(obj: T?): String = mapper.writeValueAsString(obj)
+    fun <T : Any> deserialize(str: String, clazz: Class<out T>): T = mapper.readValue(str, clazz)
+    inline fun <reified T : Any> deserialize(str: String) = deserialize(str, T::class.java)
 }

@@ -27,7 +27,7 @@ internal class MessageHandler(
     private data class ResponseEntry(
         val messageId: Long,
         val msg: Message,
-        val completion: CompletableDeferred<Any>,
+        val completion: Completion,
         val timeAdded: TimeMs
     )
 
@@ -36,7 +36,7 @@ internal class MessageHandler(
     private val awaitingResponse = ConcurrentHashMap<Long, ResponseEntry>()
     private val messageTimeoutMs = config.messageTimeout.toMillis()
 
-    fun onMessage(message: Message) {
+    suspend fun onMessage(message: Message) {
         when (message.content) {
             is MessageContent.Error, is MessageContent.InvocationResponse -> {
                 val messageId = message.messageId!!
@@ -47,6 +47,9 @@ internal class MessageHandler(
                                 MessageException("Exceptional response received: ${content.description}")
                             )
                         }
+                        is MessageContent.InvocationResponse -> {
+                            invocationSystem.onInvocationResponse(content.data, completion)
+                        }
                     }
                 }
             }
@@ -56,7 +59,7 @@ internal class MessageHandler(
         }
     }
 
-    fun sendMessage(msg: Message): CompletableDeferred<Any> {
+    fun sendMessage(msg: Message): Completion {
         val messageId = msg.messageId ?: messageCounter.incrementAndGet()
         val newMsg = msg.copy(
             messageId = messageId
@@ -93,7 +96,7 @@ internal class MessageHandler(
         }
     }
 
-    private fun getCompletion(messageId: Long): CompletableDeferred<Any>? {
+    private fun getCompletion(messageId: Long): Completion? {
         val msg = awaitingResponse.remove(messageId)
         if (msg == null) {
             logger.warn(

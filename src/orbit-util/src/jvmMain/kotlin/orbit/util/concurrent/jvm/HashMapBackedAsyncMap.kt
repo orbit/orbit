@@ -26,8 +26,11 @@ abstract class HashMapBackedAsyncMap<K, V> : AsyncMap<K, V> {
         map.entries.map { it.toPair() }
 
     override suspend fun compareAndSet(key: K, initialValue: V?, newValue: V?): Boolean =
-        map.compute(key) { _, oldValue ->
-            if (initialValue != oldValue) return@compute null
-            newValue
-        } != null
+        runCatching {
+            map.compute(key) { _, oldValue ->
+                if (initialValue != oldValue) error("Could not map")
+                newValue
+            }
+        }.isSuccess
+
 }

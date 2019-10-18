@@ -16,8 +16,9 @@ class MessagesTest {
     @Test
     fun `test invocation request message content conversion`() {
         val initialRef = MessageContent.InvocationRequest(
-            "test",
-            AddressableReference("refTye", Key.StringKey("refId"))
+            method = "test",
+            arguments = "[]",
+            destination = AddressableReference("refTye", Key.StringKey("refId"))
         )
         val convertedRef = initialRef.toMessageContentProto()
         val endRef = convertedRef.toMessageContent()

@@ -8,8 +8,23 @@ import "orbit/shared/node.proto";
 message MessageProto {
     int64 messageId = 1;
     NodeIdProto source = 2;
+    MessageTargetProto target = 3;
+    MessageContentProto content = 4;
+}
 
-    MessageContentProto content = 3;
+message MessageTargetProto {
+    message Unicast {
+        NodeIdProto target = 1;
+    }
+
+    message RoutedUnicast {
+        repeated NodeIdProto target = 1;
+    }
+
+    oneof target {
+        Unicast unicastTarget = 1;
+        RoutedUnicast routedUnicastTarget = 2;
+    }
 }
 
 message MessageContentProto {
@@ -22,7 +37,8 @@ message MessageContentProto {
 
 message InvocationRequestProto {
     AddressableReferenceProto reference = 1;
-    string value = 2;
+    string method = 2;
+    string arguments = 3;
 }
 
 message InvocationResponseProto {

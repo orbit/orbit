@@ -6,8 +6,8 @@
 
 package orbit.client.actor
 
-import orbit.shared.addressable.Addressable
-import orbit.shared.addressable.NonConcrete
+import orbit.client.addressable.Addressable
+import orbit.client.addressable.NonConcrete
 
 /**
  * Interface marker for actors.

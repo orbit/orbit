@@ -8,7 +8,7 @@ package orbit.shared.router
 
 import orbit.shared.mesh.NodeId
 
-data class Route(private val path: List<NodeId> = emptyList()) {
+data class Route(val path: List<NodeId> = emptyList()) {
     fun push(nodeId: NodeId): Route {
         return Route(listOf(nodeId).plus(this.path))
     }

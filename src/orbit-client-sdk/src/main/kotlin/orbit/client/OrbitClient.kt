@@ -9,9 +9,13 @@ package orbit.client
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import orbit.client.actor.ActorProxyFactory
+import orbit.client.addressable.AddressableDefinitionDirectory
 import orbit.client.addressable.AddressableProxyFactory
 import orbit.client.addressable.CapabilitiesScanner
 import orbit.client.addressable.InvocationSystem
+import orbit.client.execution.ExecutionLeases
+import orbit.client.execution.ExecutionSystem
+import orbit.client.mesh.AddressableLeaser
 import orbit.client.mesh.NodeLeaser
 import orbit.client.net.ClientAuthInterceptor
 import orbit.client.net.ConnectionHandler
@@ -61,12 +65,19 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
             definition<MessageHandler>()
 
             definition<NodeLeaser>()
+            definition<AddressableLeaser>()
+
 
             definition<Serializer>()
 
             definition<CapabilitiesScanner>()
             definition<AddressableProxyFactory>()
             definition<InvocationSystem>()
+            definition<AddressableDefinitionDirectory>()
+
+
+            definition<ExecutionSystem>()
+            definition<ExecutionLeases>()
 
 
             definition<ActorProxyFactory>()
@@ -80,6 +91,7 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
     private val connectionHandler by container.inject<ConnectionHandler>()
     private val capabilitiesScanner by container.inject<CapabilitiesScanner>()
     private val localNode by container.inject<LocalNode>()
+    private val definitionDirectory by container.inject<AddressableDefinitionDirectory>()
 
     val actorFactory by container.inject<ActorProxyFactory>()
 
@@ -88,8 +100,12 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
         val (elapsed, _) = stopwatch(clock) {
             // Scan for capabilities
             capabilitiesScanner.scan()
+            definitionDirectory.setupDefinition(
+                interfaceClasses = capabilitiesScanner.addressableInterfaces,
+                impls = capabilitiesScanner.interfaceLookup
+            )
             localNode.manipulate {
-                it.copy(capabilities = capabilitiesScanner.generateCapabilities())
+                it.copy(capabilities = definitionDirectory.generateCapabilities())
             }
 
             // Get first lease

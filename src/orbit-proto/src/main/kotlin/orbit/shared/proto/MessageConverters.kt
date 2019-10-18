@@ -6,13 +6,17 @@
 
 package orbit.shared.proto
 
+import orbit.shared.mesh.NodeId
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
+import orbit.shared.net.MessageTarget
+import orbit.shared.router.Route
 
 fun Messages.MessageProto.toMessage(): Message =
     Message(
         messageId = messageId,
         source = source?.toNodeId(),
+        target = target?.toMessageTarget(),
         content = content.toMessageContent()
     )
 
@@ -21,13 +25,40 @@ fun Message.toMessageProto(): Messages.MessageProto =
         if (messageId != null) it.setMessageId(messageId!!) else it
     }.let {
         if (source != null) it.setSource(source!!.toNodeIdProto()) else it
+    }.let {
+        if (target != null) it.setTarget(target!!.toMessageTargetProto()) else it
     }.setContent(content.toMessageContentProto()).build()
+
+fun Messages.MessageTargetProto.toMessageTarget(): MessageTarget? =
+    when (this.targetCase.number) {
+        Messages.MessageTargetProto.UNICASTTARGET_FIELD_NUMBER -> {
+            MessageTarget.Unicast(unicastTarget.target.toNodeId())
+        }
+        Messages.MessageTargetProto.ROUTEDUNICASTTARGET_FIELD_NUMBER -> {
+            MessageTarget.RoutedUnicast(Route(routedUnicastTarget.targetList.map { it.toNodeId() }))
+        }
+        else -> null
+    }
+
+fun MessageTarget.toMessageTargetProto() = Messages.MessageTargetProto.newBuilder().let {
+    when (this) {
+        is MessageTarget.Unicast -> it.setUnicastTarget(
+            Messages.MessageTargetProto.Unicast.newBuilder().setTarget(targetNode.toNodeIdProto())
+        )
+        is MessageTarget.RoutedUnicast -> it.setRoutedUnicastTarget(
+            Messages.MessageTargetProto.RoutedUnicast.newBuilder()
+                .addAllTarget(route.path.map(NodeId::toNodeIdProto))
+        )
+    }
+}.build()
+
 
 fun Messages.MessageContentProto.toMessageContent(): MessageContent =
     when {
         hasInvocationRequest() -> {
             MessageContent.InvocationRequest(
-                data = invocationRequest.value,
+                method = invocationRequest.method,
+                arguments = invocationRequest.arguments,
                 destination = invocationRequest.reference.toAddressableReference()
             )
         }
@@ -55,7 +86,8 @@ fun MessageContent.toMessageContentProto(): Messages.MessageContentProto =
                     builder.setInvocationRequest(
                         Messages.InvocationRequestProto.newBuilder()
                             .setReference(destination.toAddressableReferenceProto())
-                            .setValue(data)
+                            .setMethod(method)
+                            .setArguments(arguments)
                             .build()
                     )
                 }

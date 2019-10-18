@@ -9,10 +9,6 @@ package orbit.client.addressable
 import io.github.classgraph.ClassGraph
 import mu.KotlinLogging
 import orbit.client.OrbitClientConfig
-import orbit.shared.addressable.Addressable
-import orbit.shared.addressable.NonConcrete
-import orbit.shared.addressable.jvm.AddressableClass
-import orbit.shared.mesh.NodeCapabilities
 import orbit.util.time.Clock
 import orbit.util.time.stopwatch
 
@@ -88,10 +84,6 @@ class CapabilitiesScanner(
             }
         }
     }
-
-    fun generateCapabilities() = NodeCapabilities(
-        addressableTypes = interfaceLookup.map { (key, _) -> key.name }
-    )
 
     private fun resolveMapping(
         crawl: Class<*>,

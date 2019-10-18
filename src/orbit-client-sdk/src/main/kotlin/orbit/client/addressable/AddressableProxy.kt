@@ -6,9 +6,8 @@
 
 package orbit.client.addressable
 
-import orbit.client.net.MessageHandler
 import orbit.client.util.DeferredWrappers
-import orbit.shared.addressable.Addressable
+import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.addressable.Key
 import java.lang.reflect.InvocationHandler
@@ -17,18 +16,20 @@ import java.lang.reflect.Proxy
 
 internal class AddressableProxy(
     private val reference: AddressableReference,
-    private val invocationSystem: InvocationSystem,
-    private val messageHandler: MessageHandler
+    private val invocationSystem: InvocationSystem
 ) : InvocationHandler {
     override fun invoke(proxy: Any, method: Method, args: Array<Any?>?): Any {
-        val msg = invocationSystem.generateInvokeMessage(reference, args ?: arrayOf<Any?>())
-        val completion = messageHandler.sendMessage(msg)
+        val invocation = AddressableInvocation(
+            reference = reference,
+            method = method.name,
+            args = args ?: arrayOf()
+        )
+        val completion = invocationSystem.sendInvocation(invocation)
         return DeferredWrappers.wrapReturn(completion, method)
     }
 }
 
 internal class AddressableProxyFactory(
-    private val messageHandler: MessageHandler,
     private val invocationSystem: InvocationSystem
 ) {
     fun <T : Addressable> createProxy(interfaceClass: Class<T>, key: Key): T {
@@ -41,7 +42,6 @@ internal class AddressableProxyFactory(
                     type = interfaceClass.canonicalName,
                     key = key
                 ),
-                messageHandler = messageHandler,
                 invocationSystem = invocationSystem
             )
         ) as T
