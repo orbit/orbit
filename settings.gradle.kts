@@ -12,4 +12,5 @@ include(":src:orbit-shared")
 include(":src:orbit-client-sdk")
 
 include(":src:orbit-server")
+include(":src:orbit-etcd")
 include(":src:orbit-application")

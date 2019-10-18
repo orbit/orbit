@@ -8,10 +8,16 @@ package orbit.application
 
 import kotlinx.coroutines.runBlocking
 import orbit.server.OrbitServer
+import orbit.server.OrbitServerConfig
+import orbit.server.etcd.EtcdNodeDirectory
 
 fun main() {
     runBlocking {
-        val server = OrbitServer()
+        val server = OrbitServer(
+            OrbitServerConfig(
+                nodeDirectory = EtcdNodeDirectory.EtcdNodeDirectoryConfig(System.getenv("NODE_DIRECTORY") ?: "0.0.0.0")
+            )
+        )
         server.start().join()
     }
 }

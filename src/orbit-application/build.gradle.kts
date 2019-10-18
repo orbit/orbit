@@ -16,6 +16,9 @@ plugins {
 
 dependencies {
     implementation(project(":src:orbit-server"))
+    implementation(project(":src:orbit-etcd"))
+    implementation(project(":src:orbit-shared"))
+    implementation(project(":src:orbit-util"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinCoroutinesVersion")
