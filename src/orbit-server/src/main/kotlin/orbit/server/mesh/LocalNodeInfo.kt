@@ -35,6 +35,7 @@ class LocalNodeInfo(
 
     suspend fun start() {
         clusterManager.joinCluster(MANAGEMENT_NAMESPACE, NodeCapabilities()).also {
+            println("Connected local node ${it.id}")
             infoRef.set(it)
         }
     }
