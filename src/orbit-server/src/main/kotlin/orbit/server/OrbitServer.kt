@@ -65,6 +65,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private val nodeManager by container.inject<ClusterManager>()
     private val nodeDirectory by container.inject<NodeDirectory>()
     private val pipeline by container.inject<Pipeline>()
+    private val router by container.inject<Router>()
 
     private val ticker = ConstantTicker(
         scope = runtimeScopes.cpuScope,
@@ -182,6 +183,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
         // Tick the node directory
         nodeDirectory.tick()
+
+        router.tick(runtimeScopes.cpuScope)
     }
 
     @Suppress("UNUSED_PARAMETER")

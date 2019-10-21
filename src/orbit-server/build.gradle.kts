@@ -6,7 +6,7 @@
 val kotlinCoroutinesVersion = project.rootProject.ext["kotlinCoroutinesVersion"]
 val slf4jVersion = project.rootProject.ext["slf4jVersion"]
 val grpcVersion = project.rootProject.ext["grpcVersion"]
-
+val guavaVersion = project.rootProject.ext["guavaVersion"]
 
 plugins {
     kotlin("jvm")
@@ -18,6 +18,7 @@ dependencies {
     implementation(project(":src:orbit-proto"))
 
     implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
+    implementation("com.google.guava:guava:$guavaVersion-jre")
 
     implementation(kotlin("stdlib-jdk8"))
 
