@@ -7,12 +7,14 @@
 package orbit.server.pipeline.step
 
 import orbit.server.net.ConnectionManager
+import orbit.server.net.RemoteMeshNodeManager
 import orbit.server.pipeline.PipelineContext
 import orbit.shared.net.Message
 import orbit.shared.net.MessageTarget
 
 class TransportStep(
-    private val connectionManager: ConnectionManager
+    private val connectionManager: ConnectionManager,
+    private val remoteMeshNodeManager: RemoteMeshNodeManager
 ) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
         val targetNode = when (val target = msg.target) {
@@ -27,7 +29,7 @@ class TransportStep(
 
         checkNotNull(targetNode) { "Could not determine a target ${msg.target}" }
 
-        val client = connectionManager.getClient(targetNode)
+        val client = connectionManager.getClient(targetNode) ?: remoteMeshNodeManager.getNode(targetNode)
 
         checkNotNull(client) { "Could not find target $targetNode in connections" }
 

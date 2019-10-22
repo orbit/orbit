@@ -17,13 +17,14 @@ import orbit.shared.net.MessageTarget
 import orbit.shared.proto.Messages
 import orbit.shared.proto.toMessage
 import orbit.shared.proto.toMessageProto
+import orbit.shared.router.Route
 
 class ClientConnection(
     private val authInfo: AuthInfo,
     private val incomingChannel: ReceiveChannel<Messages.MessageProto>,
     private val outgoingChannel: SendChannel<Messages.MessageProto>,
     private val pipeline: Pipeline
-) {
+) : MessageSender {
     suspend fun consumeMessages() {
         for (protoMessage in incomingChannel) {
 
@@ -53,7 +54,7 @@ class ClientConnection(
         }
     }
 
-    suspend fun sendMessage(message: Message) {
+    override suspend fun sendMessage(message: Message, route: Route?) {
         outgoingChannel.send(message.toMessageProto())
     }
 

@@ -6,36 +6,42 @@
 
 package orbit.server.net
 
-import orbit.shared.net.HostInfo
+import io.grpc.ClientInterceptors
+import io.grpc.ManagedChannel
+import io.grpc.ManagedChannelBuilder
+import orbit.server.mesh.LocalNodeInfo
+import orbit.server.service.ClientAuthInterceptor
+import orbit.shared.mesh.NodeId
+import orbit.shared.mesh.NodeInfo
+import orbit.shared.net.Message
+import orbit.shared.proto.ConnectionGrpc
+import orbit.shared.proto.openStream
+import orbit.shared.proto.toMessageProto
+import orbit.shared.router.Route
 
-class RemoteMeshNodeConnection(hostInfo: HostInfo) {
+class RemoteMeshNodeConnection(localNode: LocalNodeInfo, val id: NodeId, channel: ManagedChannel)
+    : MessageSender {
+    private val sender =
+        ConnectionGrpc.newStub(ClientInterceptors.intercept(channel, ClientAuthInterceptor(localNode))).openStream()
+
     init {
+        fun notify(channel: ManagedChannel) {
+            println("Channel state: ${id}: ${channel.getState(false)}")
+            channel.notifyWhenStateChanged(channel.getState(true)) { notify(channel) }
+        }
 
+        notify(channel)
     }
 
-}
+    constructor(localNode: LocalNodeInfo, remoteNode: NodeInfo) : this(
+        localNode,
+        remoteNode.id,
+        ManagedChannelBuilder.forAddress(remoteNode.hostInfo!!.host, remoteNode.hostInfo!!.port)
+            .usePlaintext()
+            .build()
+    )
 
-//internal class GrpcMeshNodeClient(override val id: NodeId, private val channel: ManagedChannel) : MeshNode {
-//    private val sender =
-//        ConnectionGrpc.newStub(ClientInterceptors.intercept(channel, NodeIdClientInterceptor(id))).messages()
-//
-//    init {
-//        fun notify(channel: ManagedChannel) {
-//            println("Channel state: ${id.value}: ${channel.getState(false)}")
-//            channel.notifyWhenStateChanged(channel.getState(true)) { notify(channel) }
-//        }
-//
-//        notify(channel)
-//    }
-//
-//    constructor(id: NodeId, host: String, port: Int) : this(
-//        id,
-//        ManagedChannelBuilder.forAddress(host, port)
-//            .usePlaintext()
-//            .build()
-//    )
-//
-//    override suspend fun sendMessage(message: Message, route: Route?) {
-//        sender.send(message.toProto())
-//    }
-//}
+    override suspend fun sendMessage(message: Message, route: Route?) {
+        sender.send(message.toMessageProto())
+    }
+}

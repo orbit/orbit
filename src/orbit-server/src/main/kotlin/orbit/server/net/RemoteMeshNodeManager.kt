@@ -21,6 +21,10 @@ class RemoteMeshNodeManager(
         refreshConnections()
     }
 
+    fun getNode(nodeId: NodeId): RemoteMeshNodeConnection? {
+        return connections[nodeId]
+    }
+
     suspend fun refreshConnections() {
         var newConnections = false
 
@@ -30,7 +34,7 @@ class RemoteMeshNodeManager(
             .filter { node -> node.hostInfo != null }
         meshNodes.forEach { node ->
             newConnections = true
-            this.connections[node.id] = RemoteMeshNodeConnection(node.hostInfo!!)
+            this.connections[node.id] = RemoteMeshNodeConnection(localNode, node)
         }
 
         if (newConnections) {
