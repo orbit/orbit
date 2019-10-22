@@ -7,6 +7,7 @@
 package orbit.server.mesh
 
 import orbit.server.OrbitServerConfig
+import orbit.server.net.RemoteMeshNodeConnection
 import orbit.shared.exception.InvalidChallengeException
 import orbit.shared.exception.InvalidNodeId
 import orbit.shared.mesh.ChallengeToken

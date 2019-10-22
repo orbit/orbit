@@ -16,6 +16,7 @@ import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
 import orbit.server.mesh.NodeDirectory
 import orbit.server.net.ConnectionManager
+import orbit.server.net.RemoteMeshNodeManager
 import orbit.server.pipeline.Pipeline
 import orbit.server.pipeline.PipelineSteps
 import orbit.server.pipeline.step.AuthStep
@@ -66,6 +67,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private val nodeDirectory by container.inject<NodeDirectory>()
     private val pipeline by container.inject<Pipeline>()
     private val router by container.inject<Router>()
+    private val remoteMeshNodeManager by container.inject<RemoteMeshNodeManager>()
 
     private val ticker = ConstantTicker(
         scope = runtimeScopes.cpuScope,
@@ -113,6 +115,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<LocalNodeInfo>()
             definition<ClusterManager>()
             definition<AddressableManager>()
+            definition<RemoteMeshNodeManager>()
             externallyConfigured(config.nodeDirectory)
             externallyConfigured(config.addressableDirectory)
 
@@ -183,6 +186,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
         // Tick the node directory
         nodeDirectory.tick()
+
+        remoteMeshNodeManager.tick()
 
         router.tick(runtimeScopes.cpuScope)
     }
