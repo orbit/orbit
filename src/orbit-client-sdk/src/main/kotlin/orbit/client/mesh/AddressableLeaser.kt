@@ -23,4 +23,11 @@ internal class AddressableLeaser(grpcClient: GrpcClient) {
                 .setReference(reference.toAddressableReferenceProto())
                 .build()
         ).await()?.lease?.toAddressableLease()
+
+    suspend fun abandonLease(reference: AddressableReference) =
+        addressableManagementStub.abandonLease(
+            AddressableManagementOuterClass.AbandonAddressableLeaseRequestProto.newBuilder()
+                .setReference(reference.toAddressableReferenceProto())
+                .build()
+        ).await()?.abandoned ?: false
 }

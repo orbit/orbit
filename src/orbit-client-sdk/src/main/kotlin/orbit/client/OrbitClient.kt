@@ -30,11 +30,11 @@ import orbit.util.time.ConstantTicker
 import orbit.util.time.stopwatch
 import kotlin.coroutines.CoroutineContext
 
-class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
+class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
     private val logger = KotlinLogging.logger { }
 
     private val container = ComponentContainer()
-    private val clock = Clock()
+    val clock = Clock()
 
     private val scope = SupervisorScope(
         pool = config.pool,
@@ -92,6 +92,7 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
     private val capabilitiesScanner by container.inject<CapabilitiesScanner>()
     private val localNode by container.inject<LocalNode>()
     private val definitionDirectory by container.inject<AddressableDefinitionDirectory>()
+    private val executionSystem by container.inject<ExecutionSystem>()
 
     val actorFactory by container.inject<ActorProxyFactory>()
 
@@ -127,6 +128,9 @@ class OrbitClient(private val config: OrbitClientConfig = OrbitClientConfig()) {
 
         // Timeout messages etc
         messageHandler.tick()
+
+        // Handle actor deactivations and leases
+        executionSystem.tick()
     }
 
     fun stop() = scope.launch {

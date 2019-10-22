@@ -7,6 +7,7 @@ import "google/protobuf/timestamp.proto";
 
 service AddressableManagement {
     rpc RenewLease (RenewAddressableLeaseRequestProto) returns (RenewAddressableLeaseResponseProto);
+    rpc AbandonLease (AbandonAddressableLeaseRequestProto) returns (AbandonAddressableLeaseResponseProto);
 }
 
 message RenewAddressableLeaseRequestProto {
@@ -22,4 +23,12 @@ message RenewAddressableLeaseResponseProto {
         OK = 0;
         ERROR = 1;
     }
+}
+
+message AbandonAddressableLeaseRequestProto {
+    AddressableReferenceProto reference = 1;
+}
+
+message AbandonAddressableLeaseResponseProto {
+    bool abandoned = 1;
 }

@@ -39,3 +39,14 @@ interface ComplexDtoActor : ActorWithNoKey {
 class ComplexDtoActorImpl : ComplexDtoActor {
     override fun complexCall(dto: ComplexDtoActor.ComplexDto) = CompletableDeferred(Unit)
 }
+
+interface IncrementActor : ActorWithNoKey {
+    fun increment(): Deferred<Long>
+}
+
+class IncrementActorImpl : IncrementActor {
+    var counter = 1L
+
+    override fun increment(): Deferred<Long> =
+        CompletableDeferred(++counter)
+}

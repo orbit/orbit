@@ -18,18 +18,30 @@ internal class ExecutionLeases(
 ) {
     private val currentLeases = ConcurrentHashMap<AddressableReference, AddressableLease>()
 
+    fun getLease(addressableReference: AddressableReference) = currentLeases[addressableReference]
+
     suspend fun getOrRenewLease(addressableReference: AddressableReference): AddressableLease {
         var currentLease = currentLeases[addressableReference]
 
         if (currentLease == null || currentLease.expiresAt < Timestamp.now()) {
-            currentLease = addressableLeaser.renewLease(addressableReference)
+            currentLease = renewLease(addressableReference)
         }
 
-        checkNotNull(currentLease)
-
-
-        currentLeases[addressableReference] = currentLease
-
         return currentLease
+    }
+
+    suspend fun renewLease(addressableReference: AddressableReference): AddressableLease {
+        val newLease = addressableLeaser.renewLease(addressableReference)
+        checkNotNull(newLease)
+        currentLeases[addressableReference] = newLease
+        return newLease
+    }
+
+    suspend fun abandonLease(addressableReference: AddressableReference): Boolean {
+        val currentLease = currentLeases[addressableReference]
+        if(currentLease != null) {
+            return addressableLeaser.abandonLease(addressableReference)
+        }
+        return false
     }
 }

@@ -6,6 +6,10 @@
 
 package orbit.client.execution
 
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
+import mu.KotlinLogging
+import orbit.client.OrbitClientConfig
 import orbit.client.addressable.Addressable
 import orbit.client.addressable.AddressableClass
 import orbit.client.addressable.AddressableDefinitionDirectory
@@ -14,14 +18,22 @@ import orbit.client.net.Completion
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableReference
 import orbit.util.di.jvm.ComponentContainer
+import orbit.util.time.Clock
+import orbit.util.time.Timestamp
+import orbit.util.time.now
 import java.util.concurrent.ConcurrentHashMap
 
 internal class ExecutionSystem(
     private val executionLeases: ExecutionLeases,
     private val definitionDirectory: AddressableDefinitionDirectory,
-    private val componentContainer: ComponentContainer
+    private val componentContainer: ComponentContainer,
+    private val clock: Clock,
+    config: OrbitClientConfig
 ) {
+    private val logger = KotlinLogging.logger { }
     private val activeAddressables = ConcurrentHashMap<AddressableReference, ExecutionHandle>()
+    private val deactivationTimeoutMs = config.deactivationTimeout.toMillis()
+    private val defaultTtl = config.addressableTTL.toMillis()
 
     suspend fun handleInvocation(invocation: AddressableInvocation, completion: Completion) {
         executionLeases.getOrRenewLease(invocation.reference)
@@ -38,6 +50,37 @@ internal class ExecutionSystem(
         invoke(handle, invocation, completion)
     }
 
+    suspend fun tick() {
+        activeAddressables.forEach { (_, handle) ->
+            var shouldDeactivate = handle.deactivateNextTick
+
+            val timeInactive = clock.currentTime - handle.lastActivity
+            shouldDeactivate = shouldDeactivate or (timeInactive > defaultTtl)
+
+            if(!shouldDeactivate) {
+                val lease = executionLeases.getLease(handle.reference)
+
+                if (lease != null) {
+                    if (Timestamp.now() > lease.renewAt) {
+                        try {
+                            executionLeases.renewLease(handle.reference)
+                        } catch (t: Throwable) {
+                            logger.error(t) { "Unexpected error renewing lease" }
+                            shouldDeactivate = true
+                        }
+                    }
+                } else {
+                    shouldDeactivate = true
+                    logger.error { "No lease found for ${handle.reference}" }
+                }
+            }
+
+            if (shouldDeactivate) {
+                deactivate(handle)
+            }
+        }
+    }
+
     private suspend fun activate(
         reference: AddressableReference
     ): ExecutionHandle? =
@@ -52,6 +95,21 @@ internal class ExecutionSystem(
         completion.complete(result)
     }
 
+    private suspend fun deactivate(handle: ExecutionHandle) {
+        try {
+            withTimeout(deactivationTimeoutMs) {
+                handle.deactivate().await()
+            }
+        } catch (t: TimeoutCancellationException) {
+            val msg = "A timeout occurred (>${deactivationTimeoutMs}ms) during deactivation of " +
+                    "${handle.reference}. This addressable is now considered deactivated, this may cause state " +
+                    "corruption."
+            logger.error(msg)
+        }
+        executionLeases.abandonLease(handle.reference)
+        activeAddressables.remove(handle.reference)
+    }
+
     private suspend fun getOrCreateAddressable(
         reference: AddressableReference,
         implDefinition: AddressableImplDefinition
@@ -59,8 +117,6 @@ internal class ExecutionSystem(
         activeAddressables.getOrPut(reference) {
             val newInstance = createInstance(implDefinition.implClass)
             createHandle(reference, implDefinition, newInstance)
-        }.also {
-            //registerHandle(it)
         }
 
 
@@ -80,5 +136,4 @@ internal class ExecutionSystem(
     private fun createInstance(addressableClass: AddressableClass): Addressable {
         return addressableClass.getDeclaredConstructor().newInstance()
     }
-
 }

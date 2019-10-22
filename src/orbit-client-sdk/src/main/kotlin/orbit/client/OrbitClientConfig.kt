@@ -47,6 +47,16 @@ data class OrbitClientConfig(
     /**
      * The default timeout for messages.
      */
-    val messageTimeout: Duration = Duration.ofSeconds(10)
+    val messageTimeout: Duration = Duration.ofSeconds(10),
+
+    /**
+     * The default timeout for deactivation.
+     */
+    val deactivationTimeout: Duration = Duration.ofSeconds(10),
+
+    /**
+     * The default TTL for addressables.
+     */
+    val addressableTTL: Duration = Duration.ofMinutes(10)
 
 )

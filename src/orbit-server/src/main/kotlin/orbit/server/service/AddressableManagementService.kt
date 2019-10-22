@@ -27,4 +27,18 @@ class AddressableManagementService(
             t.toAddressableLeaseResponseProto()
         }
     }
+
+    override suspend fun abandonLease(request: AddressableManagementOuterClass.AbandonAddressableLeaseRequestProto): AddressableManagementOuterClass.AbandonAddressableLeaseResponseProto {
+        val nodeId = NODE_ID.get()
+        val reference = request.reference.toAddressableReference()
+        val result = try {
+            addressableManager.abandonLease(reference, nodeId)
+        } catch (t: Throwable) {
+            false
+        }
+
+        return AddressableManagementOuterClass.AbandonAddressableLeaseResponseProto.newBuilder()
+            .setAbandoned(result)
+            .build()
+    }
 }

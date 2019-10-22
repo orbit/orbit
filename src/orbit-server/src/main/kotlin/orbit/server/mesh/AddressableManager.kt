@@ -56,6 +56,14 @@ class AddressableManager(
             )
         }!!
 
+    suspend fun abandonLease(key: AddressableReference, nodeId: NodeId): Boolean {
+        val currentLease = addressableDirectory.get(key)
+        if(currentLease != null && currentLease.nodeId == nodeId && Timestamp.now() <= currentLease.expiresAt) {
+            return addressableDirectory.compareAndSet(key, currentLease, null)
+        }
+        return false
+    }
+
     private suspend fun createNewEntry(namespace: Namespace, addressableReference: AddressableReference) =
         AddressableLease(
             nodeId = place(namespace, addressableReference),

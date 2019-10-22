@@ -26,6 +26,7 @@ import orbit.util.time.Clock
 import orbit.util.time.stopwatch
 import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 
 internal class ExecutionHandle(
     val instance: Addressable,
@@ -46,7 +47,7 @@ internal class ExecutionHandle(
     @Volatile
     var deactivateNextTick = false
 
-    private val lastActivityAtomic = AtomicLong(createdTime)
+    private val lastActivityAtomic = AtomicReference(createdTime)
     val lastActivity get() = lastActivityAtomic.get()
 
     private val channel = Channel<EventType>(addressableBufferCount)
