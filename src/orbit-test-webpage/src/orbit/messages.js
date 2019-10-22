@@ -6,16 +6,20 @@ export default class Messages {
         this.url = url;
     }
 
+    async getNodeId() {
+        return (await (await fetch(`${this.url}/node`)).json()).id
+    }
+
     async getMessages(address) {
-        return (await fetch(this.url + `/messages/${address}`)).json()
+        return (await fetch(`${this.url}/messages/${address}`)).json()
     }
 
     async getAddressables() {
-        return (await fetch(this.url + '/addressables')).json()
+        return (await fetch(`${this.url}/addressables`)).json()
     }
 
     async sendMessage(address, message) {
-        return await fetch(this.url + `/messages/${address}`,
+        return await fetch(`${this.url}/messages/${address}`,
             {
                 method: 'POST',
                 body: JSON.stringify({ message }),

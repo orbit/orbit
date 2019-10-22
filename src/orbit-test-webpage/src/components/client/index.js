@@ -56,6 +56,9 @@ class Client extends Component {
     this.sender.getAddressables().then(addressables => {
       this.setState({ addressables })
     })
+    this.sender.getNodeId().then(id => {
+      this.setState({ nodeId: id })
+    })
   }
 
   changeCurrentAddressable(address) {
@@ -103,6 +106,9 @@ class Client extends Component {
               </Form>
             </section>
           </Col>
+        </Row>
+        <Row>
+        <h4>NodeId: {this.state.nodeId}</h4>
         </Row>
         <Row gutter={6}>
           <Col span={12}>

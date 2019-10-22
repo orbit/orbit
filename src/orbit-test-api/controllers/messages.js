@@ -81,6 +81,7 @@ class MessagesController {
                 addressableTypes: [this.addressType]
             }
         }, meta)
+        console.log('join cluster response', JSON.stringify(response, null, 2))
 
         const lease = this.setNodeInfoFromResponse(response.info)
 
@@ -124,7 +125,7 @@ class MessagesController {
         }
         const addressString = `${address.type}-${address.id}`
         this.messages[addressString] = this.messages[addressString] || []
-        this.messages[addressString].push({ timeStamp: moment(), message: message.content.invocation_request.value })
+        this.messages[addressString].push({ timeStamp: moment(), message: message.content.invocation_request.arguments })
 
         this.addressables[addressString] || (this.addressables[addressString] = address)
     }
@@ -139,7 +140,8 @@ class MessagesController {
                         type: this.addressType,
                         key: { stringKey: address }
                     },
-                    value: message
+                    method: 'showMessage',
+                    arguments: message
                 }
             }
         })
@@ -153,6 +155,10 @@ class MessagesController {
 
     async getMessages(id) {
         return (id ? this.messages[id] : this.messages) || []
+    }
+
+    getNodeId() {
+        return { id: this.node && this.node.nodeKey || '' }
     }
 }
 
