@@ -39,7 +39,7 @@ internal class ExecutionLeases(
 
     suspend fun abandonLease(addressableReference: AddressableReference): Boolean {
         val currentLease = currentLeases[addressableReference]
-        if(currentLease != null) {
+        if (currentLease != null) {
             return addressableLeaser.abandonLease(addressableReference)
         }
         return false

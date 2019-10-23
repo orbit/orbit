@@ -8,7 +8,6 @@ package orbit.server.router
 
 import com.google.common.graph.GraphBuilder
 import com.google.common.graph.ImmutableGraph
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import orbit.server.mesh.LocalNodeInfo
 import orbit.server.mesh.NodeDirectory

@@ -58,7 +58,7 @@ class AddressableManager(
 
     suspend fun abandonLease(key: AddressableReference, nodeId: NodeId): Boolean {
         val currentLease = addressableDirectory.get(key)
-        if(currentLease != null && currentLease.nodeId == nodeId && Timestamp.now() <= currentLease.expiresAt) {
+        if (currentLease != null && currentLease.nodeId == nodeId && Timestamp.now() <= currentLease.expiresAt) {
             return addressableDirectory.compareAndSet(key, currentLease, null)
         }
         return false

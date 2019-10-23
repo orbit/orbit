@@ -1,22 +1,23 @@
 .app-logo {
-  height: 40vmin;
+    height: 40vmin;
 }
 
 .app-header {
-  background-color: #282c34;
-  height: 100px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+    background-color: #282c34;
+    height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
+
 .app-header-label {
-  padding-left: 40px;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+    padding-left: 40px;
+    justify-content: center;
+    font-size: calc(10px + 2vmin);
+    color: white;
 }
 
 .node-select {
-  background-color: grey;
-  font-size: calc(10px + 1vmin);
+    background-color: grey;
+    font-size: calc(10px + 1vmin);
 }

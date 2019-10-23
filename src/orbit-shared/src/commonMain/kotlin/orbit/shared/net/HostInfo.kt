@@ -6,7 +6,7 @@
 
 package orbit.shared.net
 
-data class HostInfo (
+data class HostInfo(
     val host: String,
     val port: Int
 )

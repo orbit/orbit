@@ -18,8 +18,8 @@ message NodeInfoProto {
 };
 
 message HostInfoProto {
-     string host = 1;
-     int32 port = 2;
+    string host = 1;
+    int32 port = 2;
 }
 
 message CapabilitiesProto {

@@ -17,7 +17,9 @@ fun main() {
         val server = OrbitServer(
             OrbitServerConfig(
                 nodeDirectory = EtcdNodeDirectory.EtcdNodeDirectoryConfig(System.getenv("NODE_DIRECTORY") ?: "0.0.0.0"),
-                addressableDirectory = EtcdAddressableDirectory.EtcdAddressableDirectoryConfig(System.getenv("ADDRESSABLE_DIRECTORY") ?: "0.0.0.0")
+                addressableDirectory = EtcdAddressableDirectory.EtcdAddressableDirectoryConfig(
+                    System.getenv("ADDRESSABLE_DIRECTORY") ?: "0.0.0.0"
+                )
             )
         )
         server.start().join()

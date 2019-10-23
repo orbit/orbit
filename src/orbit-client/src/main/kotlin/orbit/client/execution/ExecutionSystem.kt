@@ -57,7 +57,7 @@ internal class ExecutionSystem(
             val timeInactive = clock.currentTime - handle.lastActivity
             shouldDeactivate = shouldDeactivate or (timeInactive > defaultTtl)
 
-            if(!shouldDeactivate) {
+            if (!shouldDeactivate) {
                 val lease = executionLeases.getLease(handle.reference)
 
                 if (lease != null) {
