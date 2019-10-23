@@ -26,15 +26,15 @@ class Router(private val localNode: LocalNodeInfo, private val nodeDirectory: No
     private val graph = AtomicReference<ImmutableGraph<NodeInfo>>()
 
     @Suppress("UNUSED_PARAMETER")
-    fun findRoute(targetNode: NodeId, possibleRoute: Route? = null): Route {
+    suspend fun findRoute(targetNode: NodeId, possibleRoute: Route? = null): Route {
         val path = traverse(targetNode)
 
         println("route found ${path}")
         return Route(path.toList())
     }
 
-    fun traverse(targetNode: NodeId): Iterable<NodeId> {
-        val graph = this.graph.get()
+    suspend fun traverse(targetNode: NodeId): Iterable<NodeId> {
+        val graph = this.graph.get() ?: buildGraph()
         val root = graph.nodes().find { n -> n.id == localNode.info.id }!!
 
         val queue = LinkedList<NodeInfo>(graph.nodes())
@@ -72,12 +72,12 @@ class Router(private val localNode: LocalNodeInfo, private val nodeDirectory: No
 
     suspend fun tick(scope: CoroutineScope) {
         if (nextUpdate < Instant.now()) {
-            buildGraph(scope)
+            buildGraph()
             nextUpdate = Instant.now().plusSeconds(10)
         }
     }
 
-    suspend fun buildGraph(scope: CoroutineScope) {
+    suspend fun buildGraph(): ImmutableGraph<NodeInfo> {
         println("updating route graph")
 
         val foundNodes = HashSet<NodeId>()
@@ -100,6 +100,7 @@ class Router(private val localNode: LocalNodeInfo, private val nodeDirectory: No
         addNodes(localNode.info)
 
         this.graph.set(graph.build())
+        return this.graph.get()
     }
 }
 
