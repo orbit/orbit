@@ -7,7 +7,9 @@ ENV APP_PORT=3000
 
 EXPOSE $APP_PORT
 
-ADD ./src/orbit-test-api/package.json $TARGETDIR/
+ADD ./src/orbit-test-api/ $TARGETDIR/
+ADD ./src/orbit-proto/src/main/proto $TARGETDIR/proto
+
 WORKDIR $TARGETDIR
 
 RUN yarn

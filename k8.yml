@@ -17,6 +17,43 @@ spec:
           ports:
             - containerPort: 3000
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mesh-node
+spec:
+  selector:
+    matchLabels:
+      app: mesh-node
+  template:
+    metadata:
+      labels:
+        app: mesh-node
+    spec:
+      containers:
+        - name: mesh-node
+          image: 237025944550.dkr.ecr.us-east-1.amazonaws.com/orbit/mesh-node:latest
+          ports:
+            - containerPort: 50056
+          env:
+            - name: "ORBIT_HOST"
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: ORBIT_PORT
+              value: "50056"
+            - name: NODE_DIRECTORY
+              value: http://node-directory:2379
+            - name: "ADDRESSABLE_DIRECTORY"
+              value: http://addressable-directory:2379
+        - name: test-api
+          image: 237025944550.dkr.ecr.us-east-1.amazonaws.com/orbit/test-api:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: ORBIT_URL
+              value: localhost:50056
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -24,6 +61,17 @@ metadata:
 spec:
   selector:
     app: democlient
+  ports:
+    - name: http
+      port: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-api
+spec:
+  selector:
+    app: mesh-node
   ports:
     - name: http
       port: 3000
@@ -42,13 +90,29 @@ spec:
         - destination:
             host: democlient
 ---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: test-api
+spec:
+  hosts:
+    - orbit-test-api.apps.dev.stellar.eadp.cloud
+  gateways:
+    - apps-gateway.istio-system
+  http:
+    - route:
+        - destination:
+            host: test-api
+---
 apiVersion: rbac.istio.io/v1alpha1
 kind: ServiceRole
 metadata:
   name: democlient
 spec:
   rules:
-    - services: [democlient.orbit-mesh-trial.svc.cluster.local]
+    - services:
+      - democlient.orbit-mesh-trial.svc.cluster.local
+      - test-api.orbit-mesh-trial.svc.cluster.local
 ---
 apiVersion: rbac.istio.io/v1alpha1
 kind: ServiceRoleBinding
