@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: democlient
+spec:
+  selector:
+    matchLabels:
+      app: democlient
+  template:
+    metadata:
+      labels:
+        app: democlient
+    spec:
+      containers:
+        - name: democlient
+          image: 237025944550.dkr.ecr.us-east-1.amazonaws.com/orbit/demo-client:latest
+          ports:
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: democlient
+spec:
+  selector:
+    app: democlient
+  ports:
+    - name: http
+      port: 3000
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: democlient
+spec:
+  hosts:
+    - orbit-demo-client.apps.dev.stellar.eadp.cloud
+  gateways:
+    - apps-gateway.istio-system
+  http:
+    - route:
+        - destination:
+            host: democlient
+---
+apiVersion: rbac.istio.io/v1alpha1
+kind: ServiceRole
+metadata:
+  name: democlient
+spec:
+  rules:
+    - services: [democlient.orbit-mesh-trial.svc.cluster.local]
+---
+apiVersion: rbac.istio.io/v1alpha1
+kind: ServiceRoleBinding
+metadata:
+  name: democlient
+spec:
+  subjects:
+    - user: cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account
+  roleRef:
+    kind: ServiceRole
+    name: democlient
