@@ -28,8 +28,6 @@ class Router(private val localNode: LocalNodeInfo, private val nodeDirectory: No
     @Suppress("UNUSED_PARAMETER")
     suspend fun findRoute(targetNode: NodeId, possibleRoute: Route? = null): Route {
         val path = traverse(targetNode)
-
-        println("route found ${path}")
         return Route(path.toList())
     }
 
@@ -70,7 +68,7 @@ class Router(private val localNode: LocalNodeInfo, private val nodeDirectory: No
 
     var nextUpdate = Instant.now().plusSeconds(10)
 
-    suspend fun tick(scope: CoroutineScope) {
+    suspend fun tick() {
         if (nextUpdate < Instant.now()) {
             buildGraph()
             nextUpdate = Instant.now().plusSeconds(10)
@@ -78,13 +76,10 @@ class Router(private val localNode: LocalNodeInfo, private val nodeDirectory: No
     }
 
     suspend fun buildGraph(): ImmutableGraph<NodeInfo> {
-        println("updating route graph")
-
         val foundNodes = HashSet<NodeId>()
         val graph = GraphBuilder.undirected().allowsSelfLoops(true).immutable<NodeInfo>()
 
         fun addNodes(node: NodeInfo) {
-            println("calling addNodes ${node.id}")
             graph.addNode(node)
             foundNodes.add(node.id)
             runBlocking {

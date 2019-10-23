@@ -9,8 +9,9 @@ rootProject.name = "orbit"
 include(":src:orbit-util")
 include(":src:orbit-proto")
 include(":src:orbit-shared")
-include(":src:orbit-client-sdk")
 
 include(":src:orbit-server")
-include(":src:orbit-etcd")
+include(":src:orbit-server-etcd")
 include(":src:orbit-application")
+
+include(":src:orbit-client")

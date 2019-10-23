@@ -16,7 +16,7 @@ plugins {
 
 dependencies {
     implementation(project(":src:orbit-server"))
-    implementation(project(":src:orbit-etcd"))
+    implementation(project(":src:orbit-server-etcd"))
     implementation(project(":src:orbit-shared"))
     implementation(project(":src:orbit-util"))
 

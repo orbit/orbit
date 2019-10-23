@@ -26,7 +26,6 @@ class RemoteMeshNodeConnection(localNode: LocalNodeInfo, val id: NodeId, channel
 
     init {
         fun notify(channel: ManagedChannel) {
-            println("Channel state: ${id}: ${channel.getState(false)}")
             channel.notifyWhenStateChanged(channel.getState(true)) { notify(channel) }
         }
 

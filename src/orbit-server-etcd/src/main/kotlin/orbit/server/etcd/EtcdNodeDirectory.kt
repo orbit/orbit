@@ -27,10 +27,6 @@ class EtcdNodeDirectory(config: EtcdNodeDirectoryConfig) : NodeDirectory {
         override val instanceType: Class<out NodeDirectory> = EtcdNodeDirectory::class.java
     }
 
-    init {
-        println("Starting etcd node directory at ${config.url}")
-    }
-
     private val client = Client.builder().endpoints(config.url).build().kvClient
 
     override suspend fun set(key: NodeId, value: NodeInfo) {
@@ -94,8 +90,8 @@ class EtcdNodeDirectory(config: EtcdNodeDirectoryConfig) : NodeDirectory {
         return ByteSequence.from("node/${nodeId.namespace}/${nodeId.key}".toByteArray())
     }
 
-    fun fromKey(key: ByteSequence): NodeId {
-        val keyString = key.toString(Charset.defaultCharset())
+    fun fromKey(keyBytes: ByteSequence): NodeId {
+        val keyString = keyBytes.toString(Charset.defaultCharset())
 
         val (_, namespace, key) = keyString.split("/")
 

@@ -25,16 +25,11 @@ internal class ClientAuthInterceptor(private val localNode: LocalNodeInfo) : Cli
         return object :
             ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(next.newCall(method, callOptions)) {
             override fun start(responseListener: Listener<RespT>?, headers: Metadata) {
-
                 val nodeId = localNode.info.id
 
-                if (nodeId == null) {
-                    headers.put(NAMESPACE, localNode.info.id.namespace)
+                headers.put(NAMESPACE, nodeId.namespace)
+                headers.put(NODE_KEY, nodeId.key)
 
-                } else {
-                    headers.put(NAMESPACE, nodeId.namespace)
-                    headers.put(NODE_KEY, nodeId.key)
-                }
                 super.start(responseListener, headers)
             }
         }

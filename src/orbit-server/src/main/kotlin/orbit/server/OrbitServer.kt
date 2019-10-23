@@ -189,7 +189,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
         remoteMeshNodeManager.tick()
 
-        router.tick(runtimeScopes.cpuScope)
+        router.tick()
     }
 
     @Suppress("UNUSED_PARAMETER")

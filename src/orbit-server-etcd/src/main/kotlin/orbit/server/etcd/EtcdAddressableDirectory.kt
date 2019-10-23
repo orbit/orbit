@@ -28,18 +28,14 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig) : Address
         override val instanceType: Class<out AddressableDirectory> = EtcdAddressableDirectory::class.java
     }
 
-    init {
-        println("Starting etcd addressable directory at ${config.url}")
-    }
-
     private val client = Client.builder().endpoints(config.url).build().kvClient
 
     fun toKey(address: AddressableReference): ByteSequence {
         return ByteSequence.from("addressable/${address.type}/${address.key}".toByteArray())
     }
 
-    fun fromKey(key: ByteSequence): AddressableReference {
-        val keyString = key.toString(Charset.defaultCharset())
+    fun fromKey(keyBytes: ByteSequence): AddressableReference {
+        val keyString = keyBytes.toString(Charset.defaultCharset())
 
         val (_, type, key) = keyString.split("/")
 
@@ -47,16 +43,12 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig) : Address
     }
 
     override suspend fun set(key: AddressableReference, value: AddressableLease) {
-        println("set val ${key}: ${value}")
         client.put(toKey(key), ByteSequence.from(key.toAddressableReferenceProto().toByteArray())).await()
     }
 
     override suspend fun get(key: AddressableReference): AddressableLease? {
         val response = client.get(toKey(key)).await()
         val value = response.kvs.firstOrNull()?.value
-
-        println("get val ${key}: ${value}")
-
         return if (value != null) Addressable.AddressableLeaseProto.parseFrom(value.bytes).toAddressableLease() else null
     }
 
@@ -72,10 +64,8 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig) : Address
     ): Boolean {
         val byteKey = toKey(key)
         val oldValue = client.get(byteKey).await().kvs.firstOrNull()?.value?.bytes?.let {
-            if (it != null) Addressable.AddressableLeaseProto.parseFrom(it).toAddressableLease() else null
+            Addressable.AddressableLeaseProto.parseFrom(it).toAddressableLease()
         }
-
-        println("compare and set ${key}: (i-${initialValue}, o-${oldValue}) -> ${newValue}")
 
         if (initialValue == oldValue) {
             if (newValue != null) {
