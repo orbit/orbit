@@ -29,7 +29,7 @@ class TransportStep(
 
         checkNotNull(targetNode) { "Could not determine a target ${msg.target}" }
 
-        val client = connectionManager.getClient(targetNode) ?: remoteMeshNodeManager.getNode(targetNode)
+        val client = remoteMeshNodeManager.getNode(targetNode) ?: connectionManager.getClient(targetNode)
 
         checkNotNull(client) { "Could not find target $targetNode in connections" }
 
