@@ -86,8 +86,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
             instance(runtimePools)
             instance(runtimeScopes)
             instance(clock)
-
-            instance(config.hostInfo)
+            instance(config.serverInfo)
 
             // Service
             definition<GrpcEndpoint>()

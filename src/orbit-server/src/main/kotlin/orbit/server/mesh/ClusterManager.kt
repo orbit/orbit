@@ -14,7 +14,6 @@ import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.mesh.NodeLease
-import orbit.shared.net.HostInfo
 import orbit.util.misc.RNGUtils
 import orbit.util.time.Timestamp
 import orbit.util.time.now
@@ -39,7 +38,7 @@ class ClusterManager(
         }
     }
 
-    suspend fun joinCluster(namespace: String, capabilities: NodeCapabilities, hostInfo: HostInfo? = null): NodeInfo {
+    suspend fun joinCluster(namespace: String, capabilities: NodeCapabilities, url: String? = null): NodeInfo {
         do {
             val newNodeId = NodeId.generate(namespace)
 
@@ -53,7 +52,7 @@ class ClusterManager(
                 id = newNodeId,
                 capabilities = capabilities,
                 lease = lease,
-                hostInfo = hostInfo
+                url = url
             )
 
             if (nodeDirectory.compareAndSet(newNodeId, null, info)) {

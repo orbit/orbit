@@ -4,9 +4,8 @@
  See license in LICENSE.
  */
 
-package orbit.shared.net
+package orbit.server.mesh
 
-data class HostInfo(
-    val host: String,
-    val port: Int
-)
+import java.net.URI
+
+data class LocalServerInfo(val port: Int, val url: URI)

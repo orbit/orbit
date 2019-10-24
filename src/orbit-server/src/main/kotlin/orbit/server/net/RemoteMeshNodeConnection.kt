@@ -34,7 +34,7 @@ class RemoteMeshNodeConnection(localNode: LocalNodeInfo, val id: NodeId, channel
     constructor(localNode: LocalNodeInfo, remoteNode: NodeInfo) : this(
         localNode,
         remoteNode.id,
-        ManagedChannelBuilder.forAddress(remoteNode.hostInfo!!.host, remoteNode.hostInfo!!.port)
+        ManagedChannelBuilder.forTarget(remoteNode.url)
             .usePlaintext()
             .build()
     )

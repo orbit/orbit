@@ -9,24 +9,22 @@ package orbit.server.service
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import mu.KotlinLogging
-import orbit.server.OrbitServerConfig
+import orbit.server.mesh.LocalServerInfo
 
 class GrpcEndpoint(
     private val serverAuthInterceptor: ServerAuthInterceptor,
     private val nodeManagementService: NodeManagementService,
     private val addressableManagementService: AddressableManagementService,
     private val connectionService: ConnectionService,
-    config: OrbitServerConfig
+    private val localServerInfo: LocalServerInfo
 ) {
     private val logger = KotlinLogging.logger { }
     private lateinit var server: Server
 
-    private val hostInfo = config.hostInfo
-
     fun start() {
-        logger.info("Starting gRPC Endpoint on $hostInfo...")
+        logger.info("Starting gRPC Endpoint on $localServerInfo.port...")
 
-        server = ServerBuilder.forPort(hostInfo.port)
+        server = ServerBuilder.forPort(localServerInfo.port)
             .intercept(serverAuthInterceptor)
             .addService(nodeManagementService)
             .addService(addressableManagementService)
@@ -34,7 +32,7 @@ class GrpcEndpoint(
             .build()
             .start()
 
-        logger.info("gRPC Endpoint started on $hostInfo.")
+        logger.info("gRPC Endpoint started on $localServerInfo.port.")
     }
 
     fun stop() {

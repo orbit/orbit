@@ -6,12 +6,10 @@
 
 package orbit.shared.mesh
 
-import orbit.shared.net.HostInfo
-
 data class NodeInfo(
     val id: NodeId,
     val capabilities: NodeCapabilities,
-    val hostInfo: HostInfo? = null,
+    val url: String? = null,
     val lease: NodeLease,
     val visibleNodes: Set<NodeId> = emptySet()
 )

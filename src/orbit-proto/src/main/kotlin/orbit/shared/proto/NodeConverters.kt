@@ -10,7 +10,6 @@ import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.mesh.NodeLease
-import orbit.shared.net.HostInfo
 
 fun NodeId.toNodeIdProto(): Node.NodeIdProto =
     Node.NodeIdProto.newBuilder()
@@ -31,7 +30,7 @@ fun NodeInfo.toNodeInfoProto(): Node.NodeInfoProto =
         .setLease(lease.toNodeLeaseProto())
         .setCapabilities(capabilities.toCapabilitiesProto())
         .let {
-            if (hostInfo != null) it.setHostInfo(hostInfo!!.toHostInfoProto()) else it
+            if (url != null) it.setUrl(url) else it
         }
         .build()
 
@@ -41,17 +40,8 @@ fun Node.NodeInfoProto.toNodeInfo(): NodeInfo =
         visibleNodes = visibleNodesList.map { it.toNodeId() }.toSet(),
         lease = lease.toLeaseProto(),
         capabilities = capabilities.toCapabilities(),
-        hostInfo = hostInfo.toHostInfo()
+        url = url
     )
-
-fun Node.HostInfoProto.toHostInfo(): HostInfo =
-    HostInfo(host, port)
-
-fun HostInfo.toHostInfoProto(): Node.HostInfoProto =
-    Node.HostInfoProto.newBuilder()
-        .setHost(host)
-        .setPort(port)
-        .build()
 
 fun NodeLease.toNodeLeaseProto(): Node.NodeLeaseProto =
     Node.NodeLeaseProto.newBuilder()

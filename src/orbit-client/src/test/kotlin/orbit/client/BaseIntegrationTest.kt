@@ -10,7 +10,7 @@ import kotlinx.coroutines.runBlocking
 import orbit.client.net.OrbitServiceLocator
 import orbit.server.OrbitServer
 import orbit.server.OrbitServerConfig
-import orbit.shared.net.HostInfo
+import orbit.server.mesh.LocalServerInfo
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import java.net.URI
@@ -32,8 +32,9 @@ open class BaseIntegrationTest {
         fun init() {
             server = OrbitServer(
                 OrbitServerConfig(
-                    hostInfo = HostInfo(
-                        targetUri.host, targetUri.port
+                    LocalServerInfo(
+                        port = 5874,
+                        url = targetUri
                     )
                 )
             )

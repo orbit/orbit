@@ -9,19 +9,24 @@ package orbit.server
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.server.mesh.AddressableDirectory
 import orbit.server.mesh.LeaseDuration
+import orbit.server.mesh.LocalServerInfo
 import orbit.server.mesh.NodeDirectory
 import orbit.server.mesh.local.LocalAddressableDirectory
 import orbit.server.mesh.local.LocalNodeDirectory
-import orbit.shared.net.HostInfo
 import orbit.util.concurrent.jvm.Pools
 import orbit.util.di.jvm.ExternallyConfigured
+import java.net.URI
 import java.time.Duration
 
 data class OrbitServerConfig(
-    val hostInfo: HostInfo = HostInfo(
-        host = System.getenv("ORBIT_HOST") ?: "0.0.0.0",
-        port = System.getenv("ORBIT_PORT")?.toInt(10) ?: 50056
+    /**
+     * The port to expose for connections and the advertised url for reaching this mesh node
+     */
+    val serverInfo: LocalServerInfo = LocalServerInfo(
+        port = System.getenv("ORBIT_PORT")?.toInt(10) ?: 50056,
+        url = URI(System.getenv("ORBIT_URL") ?: "localhost:50056")
     ),
+
     /**
      * The Orbit tick rate.
      */

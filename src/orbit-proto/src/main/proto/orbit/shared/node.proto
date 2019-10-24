@@ -14,13 +14,8 @@ message NodeInfoProto {
     CapabilitiesProto capabilities = 2;
     repeated NodeIdProto visibleNodes = 3;
     NodeLeaseProto lease = 4;
-    HostInfoProto hostInfo = 5;
+    string url = 5;
 };
-
-message HostInfoProto {
-    string host = 1;
-    int32 port = 2;
-}
 
 message CapabilitiesProto {
     repeated string addressableTypes = 1;

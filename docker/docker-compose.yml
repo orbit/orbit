@@ -6,11 +6,10 @@ services:
       dockerfile: docker/server/Dockerfile
     ports:
       - "5006:5005"
-      - "50056:50056"
     expose:
       - 50056
     environment:
-      ORBIT_HOST: "orbit-server-1"
+      ORBIT_URL: "orbit-server-1:50056"
       ORBIT_PORT: 50056
       NODE_DIRECTORY: http://node-directory:2379
       ADDRESSABLE_DIRECTORY: http://addressable-directory:2379
@@ -23,12 +22,11 @@ services:
       dockerfile: docker/server/Dockerfile
     ports:
       - "5007:5005"
-      - "50057:50057"
     expose:
-      - 50057
+      - 50056
     environment:
-      ORBIT_HOST: "orbit-server-2"
-      ORBIT_PORT: 50057
+      ORBIT_URL: "orbit-server-2:50056"
+      ORBIT_PORT: 50056
       NODE_DIRECTORY: http://node-directory:2379
       ADDRESSABLE_DIRECTORY: http://addressable-directory:2379
     entrypoint: sh -c ./opt/orbit/entrypoint.sh
@@ -88,5 +86,5 @@ services:
       - 8081:3000
       - 9230:9229
     environment:
-      ORBIT_URL: orbit-server-2:50057
+      ORBIT_URL: orbit-server-2:50056
     entrypoint: npm run dev
