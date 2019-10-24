@@ -16,7 +16,6 @@ import orbit.shared.mesh.NodeInfo
 import orbit.shared.mesh.NodeLease
 import orbit.util.misc.RNGUtils
 import orbit.util.time.Timestamp
-import orbit.util.time.now
 import orbit.util.time.toTimestamp
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap

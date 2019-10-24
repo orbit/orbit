@@ -33,8 +33,8 @@ import orbit.server.service.ConnectionService
 import orbit.server.service.GrpcEndpoint
 import orbit.server.service.NodeManagementService
 import orbit.server.service.ServerAuthInterceptor
-import orbit.util.concurrent.jvm.ShutdownLatch
-import orbit.util.di.jvm.ComponentContainer
+import orbit.util.concurrent.ShutdownLatch
+import orbit.util.di.ComponentContainer
 import orbit.util.time.Clock
 import orbit.util.time.ConstantTicker
 import orbit.util.time.stopwatch

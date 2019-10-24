@@ -14,7 +14,6 @@ import orbit.shared.mesh.Namespace
 import orbit.shared.mesh.NodeId
 import orbit.util.misc.attempt
 import orbit.util.time.Timestamp
-import orbit.util.time.now
 import orbit.util.time.toTimestamp
 import java.time.Instant
 

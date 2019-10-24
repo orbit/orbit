@@ -8,7 +8,7 @@ package orbit.client
 
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.client.net.OrbitServiceLocator
-import orbit.util.concurrent.jvm.Pools
+import orbit.util.concurrent.Pools
 import java.time.Duration
 
 data class OrbitClientConfig(

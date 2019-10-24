@@ -9,8 +9,8 @@ package orbit.server.mesh.local
 import orbit.server.mesh.AddressableDirectory
 import orbit.shared.addressable.AddressableLease
 import orbit.shared.addressable.AddressableReference
-import orbit.util.concurrent.jvm.HashMapBackedAsyncMap
-import orbit.util.di.jvm.ExternallyConfigured
+import orbit.util.concurrent.HashMapBackedAsyncMap
+import orbit.util.di.ExternallyConfigured
 
 class LocalAddressableDirectory : HashMapBackedAsyncMap<AddressableReference, AddressableLease>(),
     AddressableDirectory {
