@@ -77,13 +77,13 @@ subprojects {
         val dokkaJar by tasks.creating(Jar::class) {
             group = JavaBasePlugin.DOCUMENTATION_GROUP
             description = "Assembles Kotlin docs with Dokka"
-            classifier = "javadoc"
+            archiveClassifier.set("javadoc")
             from(tasks.withType<DokkaTask>())
         }
 
         val sourcesJar by tasks.creating(Jar::class) {
             dependsOn(JavaPlugin.CLASSES_TASK_NAME)
-            classifier = "sources"
+            archiveClassifier.set("sources")
 
             val sourceSets: SourceSetContainer by project
             from(sourceSets["main"].allSource)
@@ -133,7 +133,22 @@ subprojects {
 
             repositories {
                 maven {
-                    url = uri("$buildDir/repository")
+                    val remotePublish = project.properties["remotePublish"]?.toString() == "true"
+                    var publicationUrl = "$buildDir/repository"
+
+                    if (remotePublish) {
+                        publicationUrl = project.properties["publish.url"]?.toString() ?: publicationUrl
+
+                        val publicationUsername = project.properties["publish.username"]?.toString()
+                        val publicationPassword  = project.properties["publish.password"]?.toString()
+
+                        credentials {
+                            username = publicationUsername
+                            password = publicationPassword
+                        }
+                    }
+                    url = uri(publicationUrl)
+
                 }
             }
 
