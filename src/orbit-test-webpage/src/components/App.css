@@ -8,6 +8,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    padding-right: 5px;
 }
 
 .app-header-label {
@@ -20,4 +21,5 @@
 .node-select {
     background-color: grey;
     font-size: calc(10px + 1vmin);
-}
+    width: 100%;
+}   
