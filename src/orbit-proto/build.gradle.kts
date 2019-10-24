@@ -19,16 +19,13 @@ val kotlinCoroutinesVersion = project.rootProject.ext["kotlinCoroutinesVersion"]
 plugins {
     kotlin("jvm")
     id("com.google.protobuf") version "0.8.10"
+    `maven-publish`
 }
 
 dependencies {
     implementation(project(":src:orbit-shared"))
     implementation(project(":src:orbit-util"))
 
-
-    implementation(kotlin("stdlib-jdk8"))
-
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:$kotlinCoroutinesVersion")
 
     compile("com.google.protobuf:protobuf-java:$protobufVersion")
@@ -38,8 +35,6 @@ dependencies {
     if (JavaVersion.current().isJava9Compatible) {
         compileOnly("javax.annotation:javax.annotation-api:1.3.1")
     }
-
-    testImplementation(kotlin("test-junit"))
 }
 
 protobuf {

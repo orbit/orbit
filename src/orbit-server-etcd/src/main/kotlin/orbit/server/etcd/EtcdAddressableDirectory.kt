@@ -18,7 +18,7 @@ import orbit.shared.proto.Addressable
 import orbit.shared.proto.toAddressableLease
 import orbit.shared.proto.toAddressableLeaseProto
 import orbit.shared.proto.toAddressableReferenceProto
-import orbit.util.di.jvm.ExternallyConfigured
+import orbit.util.di.ExternallyConfigured
 import java.nio.charset.Charset
 
 class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig) : AddressableDirectory {

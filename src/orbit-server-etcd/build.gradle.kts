@@ -3,13 +3,12 @@
  This file is part of the Orbit Project <https://www.orbit.cloud>.
  See license in LICENSE.
  */
-val kotlinCoroutinesVersion = project.rootProject.ext["kotlinCoroutinesVersion"]
-val slf4jVersion = project.rootProject.ext["slf4jVersion"]
 val grpcVersion = project.rootProject.ext["grpcVersion"]
 val jetcdVersion = project.rootProject.ext["jetcdVersion"]
 
 plugins {
     kotlin("jvm")
+    `maven-publish`
 }
 
 dependencies {
@@ -21,12 +20,4 @@ dependencies {
     implementation("io.etcd:jetcd-all:$jetcdVersion")
 
     implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
-
-    implementation(kotlin("stdlib-jdk8"))
-
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinCoroutinesVersion")
-
-    testRuntimeOnly("org.slf4j:slf4j-simple:$slf4jVersion")
-    testImplementation(kotlin("test-junit"))
 }

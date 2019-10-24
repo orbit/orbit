@@ -9,7 +9,7 @@ package orbit.client.net
 import orbit.client.OrbitClientConfig
 import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.mesh.NodeInfo
-import orbit.util.concurrent.jvm.atomicSet
+import orbit.util.concurrent.atomicSet
 import java.util.concurrent.atomic.AtomicReference
 
 class LocalNode(config: OrbitClientConfig) {

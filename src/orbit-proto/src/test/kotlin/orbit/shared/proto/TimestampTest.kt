@@ -7,7 +7,6 @@
 package orbit.shared.proto
 
 import orbit.util.time.Timestamp
-import orbit.util.time.now
 import org.junit.Test
 import kotlin.test.assertEquals
 

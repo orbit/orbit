@@ -18,7 +18,7 @@ import orbit.shared.proto.toMessage
 import orbit.shared.proto.toMessageProto
 import orbit.util.concurrent.RailWorker
 import orbit.util.concurrent.SupervisorScope
-import orbit.util.di.jvm.ComponentContainer
+import orbit.util.di.ComponentContainer
 
 internal class ConnectionHandler(
     config: OrbitClientConfig,

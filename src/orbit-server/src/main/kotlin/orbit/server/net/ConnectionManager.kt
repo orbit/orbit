@@ -22,7 +22,7 @@ import orbit.shared.mesh.NodeInfo
 import orbit.shared.net.Message
 import orbit.shared.proto.Messages
 import orbit.shared.proto.toMessageProto
-import orbit.util.di.jvm.ComponentContainer
+import orbit.util.di.ComponentContainer
 import java.util.concurrent.ConcurrentHashMap
 
 class ConnectionManager(

@@ -24,7 +24,7 @@ import orbit.client.net.LocalNode
 import orbit.client.net.MessageHandler
 import orbit.client.serializer.Serializer
 import orbit.util.concurrent.SupervisorScope
-import orbit.util.di.jvm.ComponentContainer
+import orbit.util.di.ComponentContainer
 import orbit.util.time.Clock
 import orbit.util.time.ConstantTicker
 import orbit.util.time.stopwatch

@@ -10,7 +10,6 @@ import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.net.HostInfo
 import orbit.util.time.Timestamp
-import orbit.util.time.now
 import java.util.concurrent.atomic.AtomicReference
 
 const val MANAGEMENT_NAMESPACE = "management"

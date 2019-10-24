@@ -10,7 +10,6 @@ import orbit.client.mesh.AddressableLeaser
 import orbit.shared.addressable.AddressableLease
 import orbit.shared.addressable.AddressableReference
 import orbit.util.time.Timestamp
-import orbit.util.time.now
 import java.util.concurrent.ConcurrentHashMap
 
 internal class ExecutionLeases(

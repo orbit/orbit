@@ -111,8 +111,8 @@ metadata:
 spec:
   rules:
     - services:
-      - democlient.orbit-mesh-trial.svc.cluster.local
-      - test-api.orbit-mesh-trial.svc.cluster.local
+        - democlient.orbit-mesh-trial.svc.cluster.local
+        - test-api.orbit-mesh-trial.svc.cluster.local
 ---
 apiVersion: rbac.istio.io/v1alpha1
 kind: ServiceRoleBinding

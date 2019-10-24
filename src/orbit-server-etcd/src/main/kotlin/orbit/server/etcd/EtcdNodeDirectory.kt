@@ -17,7 +17,7 @@ import orbit.shared.proto.Node
 import orbit.shared.proto.toNodeIdProto
 import orbit.shared.proto.toNodeInfo
 import orbit.shared.proto.toNodeInfoProto
-import orbit.util.di.jvm.ExternallyConfigured
+import orbit.util.di.ExternallyConfigured
 import java.nio.charset.Charset
 
 class EtcdNodeDirectory(config: EtcdNodeDirectoryConfig) : NodeDirectory {

@@ -17,10 +17,9 @@ import orbit.client.addressable.AddressableImplDefinition
 import orbit.client.net.Completion
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableReference
-import orbit.util.di.jvm.ComponentContainer
+import orbit.util.di.ComponentContainer
 import orbit.util.time.Clock
 import orbit.util.time.Timestamp
-import orbit.util.time.now
 import java.util.concurrent.ConcurrentHashMap
 
 internal class ExecutionSystem(

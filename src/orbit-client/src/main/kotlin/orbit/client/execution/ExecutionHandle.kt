@@ -21,7 +21,7 @@ import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.exception.CapacityExceededException
 import orbit.util.concurrent.SupervisorScope
-import orbit.util.di.jvm.ComponentContainer
+import orbit.util.di.ComponentContainer
 import orbit.util.time.Clock
 import orbit.util.time.stopwatch
 import java.lang.reflect.InvocationTargetException

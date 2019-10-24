@@ -4,44 +4,13 @@
  See license in LICENSE.
  */
 
-val kotlinCoroutinesVersion = project.rootProject.ext["kotlinCoroutinesVersion"]
-val slf4jVersion = project.rootProject.ext["slf4jVersion"]
-
 plugins {
-    kotlin("multiplatform")
+    kotlin("jvm")
+    `maven-publish`
 }
 
-kotlin {
-    sourceSets {
-        val commonMain by getting {
-            dependencies {
-                implementation(project(":src:orbit-util"))
+dependencies {
+    implementation(project(":src:orbit-util"))
 
-                implementation(kotlin("stdlib-common"))
-                implementation(kotlin("reflect"))
-            }
-        }
-        val commonTest by getting {
-            dependencies {
-                implementation(kotlin("test-common"))
-                implementation(kotlin("test-annotations-common"))
-            }
-        }
-
-        jvm().compilations["main"].defaultSourceSet {
-            dependencies {
-                implementation(project(":src:orbit-util"))
-
-                implementation(kotlin("stdlib-jdk8"))
-            }
-        }
-
-        jvm().compilations["test"].defaultSourceSet {
-            dependencies {
-                implementation(kotlin("test-junit"))
-                runtimeOnly("org.slf4j:slf4j-simple:$slf4jVersion")
-            }
-        }
-    }
+    implementation(kotlin("reflect"))
 }
-

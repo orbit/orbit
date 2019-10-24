@@ -15,7 +15,7 @@ import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 import orbit.shared.net.MessageTarget
-import orbit.util.di.jvm.ComponentContainer
+import orbit.util.di.ComponentContainer
 
 internal class InvocationSystem(
     private val serializer: Serializer,
