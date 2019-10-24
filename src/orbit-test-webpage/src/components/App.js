@@ -1,15 +1,12 @@
-import React, {useState} from 'react'
+import React, { useState } from 'react'
 import './App.css'
 import Client from './client'
 
-import {Col, Row, Select} from 'antd'
+import { Col, Row, Select } from 'antd'
 
-const {Option} = Select
+const { Option } = Select
 
-const nodes = [
-    "http://localhost:8080",
-    "http://localhost:8081"
-]
+const nodes = process.env.REACT_APP_TEST_VALUE.split(",")
 
 function App() {
 
@@ -19,18 +16,17 @@ function App() {
         <div className="app">
             <header className="app-header">
                 <Row>
-                    <Col span={20}>
+                    <Col span={16}>
                         <div className="app-header-label">Orbit Client Test</div>
                     </Col>
-                    <Col span={4}>
+                    <Col span={8}>
                         <Select className="node-select" defaultValue={0} onChange={value => setUrl(nodes[value])}>
-                            <Option value={0}>Orbit Node 1</Option>
-                            <Option value={1}>Orbit Node 2</Option>
+                            {nodes.map((node, index) => <Option value={index}>Node {index} ({node})</Option>)}
                         </Select>
                     </Col>
                 </Row>
             </header>
-            <Client url={url}/>
+            <Client url={url} />
         </div>
     );
 }
