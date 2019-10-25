@@ -21,7 +21,9 @@ jobs:
         with:
           java-version: 8
       - name: Build Artifacts
-        run: ./gradlew build fatJar
+        run: ./gradlew build fatJar -Porbit.version="${ORBIT_VERSION}"
+        env:
+          ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
       - name: Publish Artifacts to GitHub Maven Repository
         run: ./.github/scripts/gradle_publish.sh
         env:
