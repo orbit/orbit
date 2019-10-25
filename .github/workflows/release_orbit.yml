@@ -1,6 +1,9 @@
 name: Release Orbit
 
-on: [tags]
+on:
+  push:
+    tags:
+      - '*'
 
 jobs:
   build:
