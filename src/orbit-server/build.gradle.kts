@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 val grpcVersion = project.rootProject.ext["grpcVersion"]
-val guavaVersion = project.rootProject.ext["guavaVersion"]
+val guavaVersion = "28.1"
 
 plugins {
     kotlin("jvm")

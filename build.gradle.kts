@@ -8,14 +8,14 @@ import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper
 
+// Shared dependencies
 val grpcVersion by extra("1.23.0")
 val grpcKotlinVersion by extra("0.1.1")
 val protobufVersion by extra("3.9.1")
 val kotlinCoroutinesVersion by extra("1.3.1")
 val slf4jVersion by extra("1.7.26")
-val jetcdVersion by extra("0.3.1-SNAPSHOT")
-val guavaVersion by extra("28.1")
 
+// Publishing info
 val orbitGroup by extra("cloud.orbit")
 val orbitVersion by extra(project.properties["orbit.version"]!!)
 val orbitUrl by extra("https://www.orbit.cloud")
@@ -31,7 +31,7 @@ plugins {
     val kotlinVersion = "1.3.50"
 
     base
-    kotlin("multiplatform") version kotlinVersion apply false
+    kotlin("jvm") version kotlinVersion apply false
     id("org.jetbrains.dokka") version "0.10.0" apply false
 }
 
@@ -43,7 +43,6 @@ allprojects {
     repositories {
         mavenCentral()
         jcenter()
-        maven(url = "https://oss.sonatype.org/content/repositories/snapshots/")
     }
 }
 
