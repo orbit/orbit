@@ -1,0 +1,55 @@
+name: Release Orbit
+
+on: [tag]
+
+jobs:
+  build:
+    name: Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Sync Repository
+        uses: actions/checkout@v1
+      - name: Get the Tag Version
+        id: get_tag_version
+        run: echo ::set-output name=TAG_VERSION::${GITHUB_REF/refs\/tags\//}
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 8
+      - name: Build Artifacts
+        run: ./gradlew build fatJar
+      - name: Publish Artifacts to GitHub Maven Repository
+        run: ./.github/scripts/gradle_publish.sh
+        env:
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.SIGNING_PASSWORD }}
+          MAVEN_USERNAME: orbit
+          MAVEN_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          MAVEN_URL: https://maven.pkg.github.com/orbit/orbit
+          ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+      - name: Publish Images to GitHub Docker Repository
+        run: ./.github/scripts/docker_publish.sh
+        env:
+          DOCKER_USERNAME: orbit
+          DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          DOCKER_BASE_URL: docker.pkg.github.com
+          DOCKER_REPO: docker.pkg.github.com/orbit/orbit
+          ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+      - name: Publish Artifacts to Maven Central
+        run: ./.github/scripts/gradle_publish.sh
+        env:
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.SIGNING_PASSWORD }}
+          MAVEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          MAVEN_URL: ${{ secrets.MAVEN_CENTRAL_URL }}
+          ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+      - name: Publish Images to Docker Hub Repository
+        run: ./.github/scripts/docker_publish.sh
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          DOCKER_BASE_URL:
+          DOCKER_REPO: orbitframework
+          ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}

@@ -152,6 +152,13 @@ subprojects {
             }
 
             extensions.configure<SigningExtension> {
+                val inMemoryKey = project.properties["inMemoryKey"]?.toString() == "true"
+
+                if(inMemoryKey) {
+                    val signingKey = findProperty("signingKey")?.toString()
+                    val signingPassword = findProperty("signingPassword")?.toString()
+                    useInMemoryPgpKeys(signingKey, signingPassword)
+                }
                 sign(publications["default"])
             }
         }
