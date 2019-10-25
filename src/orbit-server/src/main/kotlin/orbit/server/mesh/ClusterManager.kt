@@ -93,5 +93,11 @@ class ClusterManager(
             } catch (t: NullPointerException) {
                 null
             }
+        }?.let {
+            if (it.lease.expiresAt > Timestamp.now()) {
+                it
+            } else {
+                null
+            }
         }
 }

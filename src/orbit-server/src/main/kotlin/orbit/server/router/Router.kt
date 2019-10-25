@@ -9,6 +9,7 @@ package orbit.server.router
 import com.google.common.graph.GraphBuilder
 import com.google.common.graph.ImmutableGraph
 import kotlinx.coroutines.runBlocking
+import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
 import orbit.server.mesh.NodeDirectory
 import orbit.shared.mesh.NodeId
@@ -21,7 +22,7 @@ import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
 @Suppress("UnstableApiUsage")
-class Router(private val localNode: LocalNodeInfo, private val nodeDirectory: NodeDirectory) {
+class Router(private val localNode: LocalNodeInfo, private val clusterManager: ClusterManager) {
     private val graph = AtomicReference<ImmutableGraph<NodeInfo>>()
 
     @Suppress("UNUSED_PARAMETER")
@@ -83,7 +84,7 @@ class Router(private val localNode: LocalNodeInfo, private val nodeDirectory: No
             foundNodes.add(node.id)
             runBlocking {
                 node.visibleNodes.filter { n -> !foundNodes.contains(n) }.forEach { n ->
-                    val found = nodeDirectory.get(n)
+                    val found = clusterManager.getNode(n)
                     if (found != null) {
                         graph.putEdge(node, found)
                         addNodes(found)
