@@ -42,6 +42,8 @@ spec:
                   fieldPath: status.podIP
             - name: ORBIT_PORT
               value: "50056"
+            - name: ORBIT_URL
+              value: "orbit://$(ORBIT_HOST):50056"
             - name: NODE_DIRECTORY
               value: http://node-directory:2379
             - name: "ADDRESSABLE_DIRECTORY"
