@@ -31,9 +31,10 @@ class RemoteMeshNodeManager(
         val meshNodes = clusterManager.allNodes
             .filter { node -> node.id.namespace == "management" }
             .filter { node -> !this.connections.containsKey(node.id) && node.id != localNode.info.id }
-            .filter { node -> node.url != null }
+            .filter { node -> node.url != null && node.url != localNode.info.url }
         meshNodes.forEach { node ->
             newConnections = true
+            println("Connecting to peer ${node.id.key} @${node.url}")
             this.connections[node.id] = RemoteMeshNodeConnection(localNode, node)
         }
 
