@@ -15,7 +15,7 @@ services:
       ADDRESSABLE_DIRECTORY: http://addressable-directory:2379
     entrypoint: sh ./opt/orbit/entrypoint.sh
     volumes:
-      - ../src/orbit-application/build/libs/orbit-application-fat-2-SNAPSHOT.jar:/opt/orbit/libs/orbit-application-fat.jar
+      - ../src/orbit-application/build/libs:/opt/orbit/libs
   orbit-server-2:
     build:
       context: ../
@@ -31,7 +31,7 @@ services:
       ADDRESSABLE_DIRECTORY: http://addressable-directory:2379
     entrypoint: sh -c ./opt/orbit/entrypoint.sh
     volumes:
-      - ../src/orbit-application/build/libs/orbit-application-fat-2-SNAPSHOT.jar:/opt/orbit/libs/orbit-application-fat.jar
+      - ../src/orbit-application/build/libs:/opt/orbit/libs
   node-directory:
     image: bitnami/etcd
     environment:
