@@ -58,7 +58,7 @@ services:
     ports:
       - 80:3000
     environment:
-      REACT_APP_TEST_VALUE: "http://localhost:8080,http://localhost:8081"
+      REACT_APP_API_URLS: "http://localhost:8080,http://localhost:8081"
     entrypoint: npm start
   test-api-1:
     build:

@@ -6,7 +6,7 @@ import { Col, Row, Select } from 'antd'
 
 const { Option } = Select
 
-const nodes = process.env.REACT_APP_TEST_VALUE.split(",")
+const nodes = process.env.REACT_APP_API_URLS.split(",")
 
 function App() {
 
