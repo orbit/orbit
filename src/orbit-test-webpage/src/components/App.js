@@ -1,33 +1,30 @@
-import React, { useState } from 'react'
+import React from 'react'
+import { Provider as ReduxProvider } from "react-redux";
+import configureStore from "../modules/store";
+
 import './App.css'
 import Client from './client'
 
-import { Col, Row, Select } from 'antd'
+import { Col, Row } from 'antd'
 
-const { Option } = Select
-
-const nodes = process.env.REACT_APP_API_URLS.split(",")
+const url = process.env.REACT_APP_API_URL
+const store = configureStore({});
 
 function App() {
 
-    const [url, setUrl] = useState(nodes[0])
-
     return (
-        <div className="app">
-            <header className="app-header">
-                <Row>
-                    <Col span={16}>
-                        <div className="app-header-label">Orbit Client Test</div>
-                    </Col>
-                    <Col span={8}>
-                        <Select className="node-select" defaultValue={0} onChange={value => setUrl(nodes[value])}>
-                            {nodes.map((node, index) => <Option value={index}>Node {index} ({node})</Option>)}
-                        </Select>
-                    </Col>
-                </Row>
-            </header>
-            <Client url={url} />
-        </div>
+        <ReduxProvider store={store}>
+            <div className="app">
+                <header className="app-header">
+                    <Row>
+                        <Col span={16}>
+                            <div className="app-header-label">Orbit Client Test</div>
+                        </Col>
+                    </Row>
+                </header>
+                <Client url={url} />
+            </div>
+        </ReduxProvider>
     );
 }
 

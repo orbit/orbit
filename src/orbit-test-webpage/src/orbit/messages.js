@@ -22,7 +22,7 @@ export default class Messages {
         return await fetch(`${this.url}/messages/${address}`,
             {
                 method: 'POST',
-                body: JSON.stringify({message}),
+                body: JSON.stringify({ message }),
                 headers: {
                     "Content-Type": "application/json"
                 }

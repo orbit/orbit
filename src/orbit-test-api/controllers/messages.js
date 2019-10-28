@@ -1,7 +1,7 @@
 const grpc = require('grpc')
 const protoLoader = require('@grpc/proto-loader')
 const Path = require('path')
-const {promisify} = require('util')
+const { promisify } = require('util')
 const moment = require('moment')
 
 class MessagesController {
@@ -42,6 +42,8 @@ class MessagesController {
       });
     this.connection = grpc.loadPackageDefinition(connectionDefinition).orbit.shared;
     this.connectionService = new this.connection.Connection(url, grpc.credentials.createInsecure())
+
+    this.joinCluster(this.namespace)
   }
 
   setNodeInfoFromResponse(node) {
@@ -84,27 +86,20 @@ class MessagesController {
     console.log('join cluster response', JSON.stringify(response, null, 2))
 
     const lease = this.setNodeInfoFromResponse(response.info)
-
     this.renewLeaseTimer(lease.renewsAt)
-
     return lease
   }
 
-  async getMetadata() {
-    return new Promise(async (resolve, reject) => {
-      if (!this.node) {
-        await this.joinCluster(this.namespace)
-      }
+  getMetadata() {
       var meta = new grpc.Metadata()
       meta.add('nodeKey', this.node.nodeKey)
       meta.add('namespace', this.node.namespace)
-      resolve(meta)
-    })
+      return meta
   }
 
   async getConnection() {
     if (!this.messagesConnection) {
-      const metadata = await this.getMetadata()
+      const metadata = this.getMetadata()
       this.messagesConnection = this.connectionService.openStream(metadata)
       this.messagesConnection.on('data', msg => {
         this.onReceive(msg)
@@ -125,7 +120,7 @@ class MessagesController {
     }
     const addressString = `${address.type}-${address.id}`
     this.messages[addressString] = this.messages[addressString] || []
-    this.messages[addressString].push({timeStamp: moment(), message: message.content.invocation_request.arguments})
+    this.messages[addressString].push({ timeStamp: moment(), message: message.content.invocation_request.arguments })
 
     this.addressables[addressString] || (this.addressables[addressString] = address)
   }
@@ -138,7 +133,7 @@ class MessagesController {
         invocation_request: {
           reference: {
             type: this.addressType,
-            key: {stringKey: address}
+            key: { stringKey: address }
           },
           method: 'showMessage',
           arguments: message
@@ -150,15 +145,22 @@ class MessagesController {
   }
 
   async getAddressables() {
-    return Object.values(this.addressables)
+    return {
+      nodeId: this.node && this.node.nodeKey,
+      addressables: Object.entries(this.addressables).map(([id, a]) => ({
+        ...a,
+        id,
+        messageCount: this.messages[id] && this.messages[id].length
+      }))
+    }
   }
 
   async getMessages(id) {
-    return (id ? this.messages[id] : this.messages) || []
+    return (id ? this.messages[id] : this.messages) || null
   }
 
   getNodeId() {
-    return {id: this.node && this.node.nodeKey || ''}
+    return { id: this.node && this.node.nodeKey || '' }
   }
 }
 

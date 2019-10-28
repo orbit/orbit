@@ -1,10 +1,22 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react'
 import './style.css'
-import {Button, Col, Form, Input, Row} from 'antd';
+import { Button, Col, Form, Input, Row } from 'antd'
 import ReceivedMessages from '../receivedMessages'
 import Addressables from '../addressables'
+import { connect } from "react-redux"
+import { reportMessages, reportAddressables } from '../../actions/messages'
 
 import Messages from '../../orbit/messages'
+
+const mapStateToProps = state => ({
+    addressables: Object.values(state.messages.addressables),
+    messages: state.messages.messages
+});
+
+const mapDispatchToProps = dispatch => ({
+    reportMessages: (addressableId, messages) => dispatch(reportMessages(addressableId, messages)),
+    reportAddressables: (nodeid, messages) => dispatch(reportAddressables(nodeid, messages)),
+});
 
 class Client extends Component {
     sender;
@@ -16,7 +28,7 @@ class Client extends Component {
 
     sendMessage(e) {
         e.preventDefault()
-        const {form} = this.props
+        const { form } = this.props
 
         this.sender.sendMessage(form.getFieldValue("address"), form.getFieldValue("message"))
     }
@@ -45,24 +57,16 @@ class Client extends Component {
         const current = address || this.state.currentAddressable
         if (current) {
             this.sender.getMessages(current).then(messages => {
-                this.setState({
-                    messages: {
-                        ...this.state.messages,
-                        [current]: messages
-                    }
-                })
-            })
+                this.props.reportMessages(current, messages)
+            }).catch(() => {})
         }
-        this.sender.getAddressables().then(addressables => {
-            this.setState({addressables})
-        })
-        this.sender.getNodeId().then(id => {
-            this.setState({nodeId: id})
+        this.sender.getAddressables().then(result => {
+            this.props.reportAddressables(result.nodeId, result.addressables)
         })
     }
 
     changeCurrentAddressable(address) {
-        this.setState({currentAddressable: address})
+        this.setState({ currentAddressable: address })
         this.refresh(address)
     }
 
@@ -74,16 +78,16 @@ class Client extends Component {
     }
 
     render() {
-        const {getFieldDecorator} = this.props.form;
+        const { getFieldDecorator } = this.props.form;
 
         const formItemLayout = {
             labelCol: {
-                xs: {span: 24},
-                sm: {span: 8},
+                xs: { span: 24 },
+                sm: { span: 8 },
             },
             wrapperCol: {
-                xs: {span: 24},
-                sm: {span: 16},
+                xs: { span: 24 },
+                sm: { span: 16 },
             }
         }
         return (
@@ -94,11 +98,11 @@ class Client extends Component {
                             <Form {...formItemLayout} onSubmit={e => this.sendMessage(e)}>
                                 <Form.Item label="Address">
                                     {getFieldDecorator('address')(
-                                        <Input placeholder="Address" ref={address => this.address = address}/>)}
+                                        <Input placeholder="Address" ref={address => this.address = address} />)}
                                 </Form.Item>
                                 <Form.Item label="Message">
                                     {getFieldDecorator('message')(
-                                        <Input.TextArea placeholder="Message" ref={msg => this.message = msg}/>)}
+                                        <Input.TextArea placeholder="Message" ref={msg => this.message = msg} />)}
                                 </Form.Item>
                                 <Form.Item>
                                     <Button type="primary" htmlType="submit">Send</Button>
@@ -107,16 +111,13 @@ class Client extends Component {
                         </section>
                     </Col>
                 </Row>
-                <Row>
-                    <h4>NodeId: {this.state.nodeId}</h4>
-                </Row>
                 <Row gutter={6}>
                     <Col span={12}>
-                        <Addressables addressables={this.state.addressables}
-                                      select={address => this.changeCurrentAddressable(address)}/>
+                        <Addressables addressables={this.props.addressables}
+                            select={address => this.changeCurrentAddressable(address)} />
                     </Col>
                     <Col span={12}>
-                        <ReceivedMessages messages={this.state.messages[this.state.currentAddressable]}/>
+                        <ReceivedMessages messages={this.props.messages[this.state.currentAddressable]} />
                     </Col>
                 </Row>
             </div>
@@ -124,4 +125,7 @@ class Client extends Component {
     }
 }
 
-export default Form.create()(Client)
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(Form.create()(Client))

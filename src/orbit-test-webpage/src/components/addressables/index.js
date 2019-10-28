@@ -13,7 +13,15 @@ const tableColumns = [
         title: 'Id',
         dataIndex: 'id',
         key: 'id'
-    }
+    },
+    {
+        title: 'Node',
+        dataIndex: 'nodeId'
+    },
+    {
+        title: 'Messages',
+        dataIndex: 'messageCount'
+    }    
 ]
 
 export default function Addressables(props) {
@@ -30,7 +38,7 @@ export default function Addressables(props) {
 
     const rows = addressables.map(a => ({
         ...a,
-        key: `${a.type}-${a.id}`
+        key: a.id
     }))
 
     const rowSelection = {
