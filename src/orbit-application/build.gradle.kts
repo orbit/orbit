@@ -27,7 +27,9 @@ application {
 }
 
 val fatJar = task("fatJar", type = Jar::class) {
-    archiveBaseName.set("${project.name}-fat")
+    archiveClassifier.set("fat")
+    archiveVersion.set("")
+
     manifest {
         attributes["Implementation-Version"] = project.version
         attributes["Main-Class"] = mainClass
