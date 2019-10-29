@@ -5,6 +5,7 @@
  */
 val kotlinCoroutinesVersion = project.rootProject.ext["kotlinCoroutinesVersion"]
 val slf4jVersion = project.rootProject.ext["slf4jVersion"]
+val jacksonVersion = "2.10.0"
 
 plugins {
     kotlin("jvm")
@@ -19,10 +20,10 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:$kotlinCoroutinesVersion")
 
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.10.0")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.10.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
-    implementation("io.github.classgraph:classgraph:4.8.47")
+    implementation("io.github.classgraph:classgraph:4.8.52")
 
 
     testImplementation(project(":src:orbit-server"))

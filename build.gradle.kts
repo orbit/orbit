@@ -9,10 +9,10 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper
 
 // Shared dependencies
-val grpcVersion by extra("1.23.0")
+val grpcVersion by extra("1.24.1")
 val grpcKotlinVersion by extra("0.1.1")
-val protobufVersion by extra("3.9.1")
-val kotlinCoroutinesVersion by extra("1.3.1")
+val protobufVersion by extra("3.10.0")
+val kotlinCoroutinesVersion by extra("1.3.2")
 val slf4jVersion by extra("1.7.26")
 
 // Publishing info

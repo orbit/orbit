@@ -114,6 +114,11 @@ class ClusterManager(
             }
         }
 
+    fun findRoute(sourceNode: NodeId, targetNode: NodeId): List<NodeId> {
+        val graph = nodeGraph.get() ?: buildGraph()
+        val path = DijkstraShortestPath.findPathBetween(graph, sourceNode, targetNode)
+        return path?.vertexList?.drop(1) ?: emptyList()
+    }
 
     private fun buildGraph(): Graph<NodeId, DefaultEdge> {
         val graph = DefaultDirectedGraph<NodeId, DefaultEdge>(DefaultEdge::class.java)
@@ -130,11 +135,5 @@ class ClusterManager(
 
         this.nodeGraph.set(graph)
         return graph
-    }
-
-    fun findRoute(sourceNode: NodeId, targetNode: NodeId): List<NodeId> {
-        val graph = nodeGraph.get() ?: buildGraph()
-        val path = DijkstraShortestPath.findPathBetween(graph, sourceNode, targetNode)
-        return path?.vertexList?.drop(1) ?: emptyList()
     }
 }

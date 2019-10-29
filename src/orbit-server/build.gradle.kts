@@ -4,7 +4,6 @@
  See license in LICENSE.
  */
 val grpcVersion = project.rootProject.ext["grpcVersion"]
-val guavaVersion = "28.1"
 
 plugins {
     kotlin("jvm")
@@ -17,6 +16,6 @@ dependencies {
     implementation(project(":src:orbit-proto"))
 
     implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
-    implementation("org.jgrapht:jgrapht-core:1.3.0")
+    implementation("org.jgrapht:jgrapht-core:1.3.1")
 
 }
