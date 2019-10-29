@@ -189,8 +189,6 @@ class OrbitServer(private val config: OrbitServerConfig) {
         addressableDirectory.tick()
 
         remoteMeshNodeManager.tick()
-
-        router.tick()
     }
 
     @Suppress("UNUSED_PARAMETER")

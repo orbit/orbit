@@ -17,6 +17,6 @@ dependencies {
     implementation(project(":src:orbit-proto"))
 
     implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
-    implementation("com.google.guava:guava:$guavaVersion-jre")
+    implementation("org.jgrapht:jgrapht-core:1.3.0")
 
 }

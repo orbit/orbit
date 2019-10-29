@@ -17,25 +17,31 @@ import orbit.shared.mesh.NodeLease
 import orbit.util.misc.RNGUtils
 import orbit.util.time.Timestamp
 import orbit.util.time.toTimestamp
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultDirectedGraph
+import org.jgrapht.graph.DefaultEdge
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 
 class ClusterManager(
     config: OrbitServerConfig,
     private val nodeDirectory: NodeDirectory
 ) {
     private val leaseExpiration = config.nodeLeaseDuration
-
     private val clusterNodes = ConcurrentHashMap<NodeId, NodeInfo>()
+    private val nodeGraph = AtomicReference<Graph<NodeId, DefaultEdge>>()
 
     fun getAllNodes() =
         clusterNodes.filter { it.value.lease.expiresAt.inFuture() }.values
 
+    fun getGraph(): Graph<NodeId, DefaultEdge> = nodeGraph.get()
+
     suspend fun tick() {
+        val allNodes = nodeDirectory.entries()
         clusterNodes.clear()
-        nodeDirectory.values().forEach {
-            clusterNodes[it.id] = it
-        }
+        clusterNodes.putAll(allNodes)
+        buildGraph()
     }
 
     suspend fun joinCluster(namespace: String, capabilities: NodeCapabilities, url: String? = null): NodeInfo {
@@ -56,6 +62,7 @@ class ClusterManager(
             )
 
             if (nodeDirectory.compareAndSet(newNodeId, null, info)) {
+                tick()
                 return info
             }
         } while (true)
@@ -71,17 +78,22 @@ class ClusterManager(
                 throw InvalidChallengeException(nodeId, challengeToken)
             }
 
-            initialValue.copy(
+            val newValue = initialValue.copy(
                 capabilities = capabilities,
                 lease = initialValue.lease.copy(
                     expiresAt = Instant.now().plus(leaseExpiration.expiresIn).toTimestamp(),
                     renewAt = Instant.now().plus(leaseExpiration.renewIn).toTimestamp()
                 )
             )
-        }!!
+
+            newValue
+        }!!.also {
+            tick()
+        }
 
     suspend fun updateNode(nodeId: NodeId, body: (NodeInfo?) -> NodeInfo?): NodeInfo? =
         nodeDirectory.manipulate(nodeId, body)
+            .also { tick() }
 
     suspend fun getNode(nodeId: NodeId, forceRefresh: Boolean = false): NodeInfo? =
         if (forceRefresh) {
@@ -101,4 +113,21 @@ class ClusterManager(
                 null
             }
         }
+
+
+    private fun buildGraph() {
+        val g = DefaultDirectedGraph<NodeId, DefaultEdge>(DefaultEdge::class.java)
+
+        val nodes = clusterNodes.values
+        nodes.forEach { node ->
+            g.addVertex(node.id)
+        }
+        nodes.forEach { node ->
+            node.visibleNodes.forEach { visibleNode ->
+                g.addEdge(node.id, visibleNode)
+            }
+        }
+
+        this.nodeGraph.set(g)
+    }
 }
