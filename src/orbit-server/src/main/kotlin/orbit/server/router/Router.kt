@@ -10,18 +10,16 @@ import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
 import orbit.shared.mesh.NodeId
 import orbit.shared.router.Route
-import org.jgrapht.alg.shortestpath.DijkstraShortestPath
 
 @Suppress("UnstableApiUsage")
 class Router(private val localNode: LocalNodeInfo, private val clusterManager: ClusterManager) {
     @Suppress("UNUSED_PARAMETER")
     fun findRoute(targetNode: NodeId, possibleRoute: Route? = null): Route {
-        val graph = clusterManager.getGraph()
-        val path = DijkstraShortestPath.findPathBetween(graph, localNode.info.id, targetNode)?.vertexList
+        val path = clusterManager.findRoute(localNode.info.id, targetNode)
 
-        checkNotNull(path) { "Could not find path for $targetNode" }
+        check(path.isNotEmpty()) { "Could not find path for $targetNode" }
 
-        return Route(path.drop(1))
+        return Route(path)
     }
 }
 

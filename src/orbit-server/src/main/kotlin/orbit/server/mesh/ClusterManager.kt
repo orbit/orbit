@@ -18,6 +18,7 @@ import orbit.util.misc.RNGUtils
 import orbit.util.time.Timestamp
 import orbit.util.time.toTimestamp
 import org.jgrapht.Graph
+import org.jgrapht.alg.shortestpath.DijkstraShortestPath
 import org.jgrapht.graph.DefaultDirectedGraph
 import org.jgrapht.graph.DefaultEdge
 import java.time.Instant
@@ -35,7 +36,6 @@ class ClusterManager(
     fun getAllNodes() =
         clusterNodes.filter { it.value.lease.expiresAt.inFuture() }.values
 
-    fun getGraph(): Graph<NodeId, DefaultEdge> = nodeGraph.get()
 
     suspend fun tick() {
         val allNodes = nodeDirectory.entries()
@@ -115,19 +115,26 @@ class ClusterManager(
         }
 
 
-    private fun buildGraph() {
-        val g = DefaultDirectedGraph<NodeId, DefaultEdge>(DefaultEdge::class.java)
+    private fun buildGraph(): Graph<NodeId, DefaultEdge> {
+        val graph = DefaultDirectedGraph<NodeId, DefaultEdge>(DefaultEdge::class.java)
 
         val nodes = clusterNodes.values
         nodes.forEach { node ->
-            g.addVertex(node.id)
+            graph.addVertex(node.id)
         }
         nodes.forEach { node ->
             node.visibleNodes.forEach { visibleNode ->
-                g.addEdge(node.id, visibleNode)
+                graph.addEdge(node.id, visibleNode)
             }
         }
 
-        this.nodeGraph.set(g)
+        this.nodeGraph.set(graph)
+        return graph
+    }
+
+    fun findRoute(sourceNode: NodeId, targetNode: NodeId): List<NodeId> {
+        val graph = nodeGraph.get() ?: buildGraph()
+        val path = DijkstraShortestPath.findPathBetween(graph, sourceNode, targetNode)
+        return path?.vertexList?.drop(1) ?: emptyList()
     }
 }
