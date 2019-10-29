@@ -14,7 +14,6 @@ import orbit.shared.proto.NodeManagementGrpc
 import orbit.shared.proto.NodeManagementOuterClass
 import orbit.shared.proto.toCapabilitiesProto
 import orbit.shared.proto.toNodeInfo
-import orbit.util.time.Timestamp
 
 internal class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClient) {
     private val logger = KotlinLogging.logger { }

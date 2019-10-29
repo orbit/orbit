@@ -13,9 +13,9 @@ import orbit.server.mesh.LocalServerInfo
 import orbit.server.mesh.NodeDirectory
 import orbit.server.mesh.local.LocalAddressableDirectory
 import orbit.server.mesh.local.LocalNodeDirectory
-import java.net.URI
 import orbit.util.concurrent.Pools
 import orbit.util.di.ExternallyConfigured
+import java.net.URI
 import java.time.Duration
 
 data class OrbitServerConfig(

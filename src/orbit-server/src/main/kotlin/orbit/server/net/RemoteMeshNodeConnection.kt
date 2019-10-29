@@ -19,7 +19,8 @@ import orbit.shared.proto.openStream
 import orbit.shared.proto.toMessageProto
 import orbit.shared.router.Route
 
-class RemoteMeshNodeConnection(localNode: LocalNodeInfo, val id: NodeId, private val channel: ManagedChannel) : MessageSender {
+class RemoteMeshNodeConnection(localNode: LocalNodeInfo, val id: NodeId, private val channel: ManagedChannel) :
+    MessageSender {
     private val sender =
         ConnectionGrpc.newStub(ClientInterceptors.intercept(channel, ClientAuthInterceptor(localNode))).openStream()
 

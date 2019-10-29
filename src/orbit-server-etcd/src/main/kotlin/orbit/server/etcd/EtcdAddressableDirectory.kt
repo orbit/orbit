@@ -23,14 +23,14 @@ import orbit.shared.proto.toAddressableLeaseProto
 import orbit.shared.proto.toAddressableReferenceProto
 import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock
-import orbit.util.time.Timestamp
 import orbit.util.time.stopwatch
 import java.nio.charset.Charset
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.random.Random
 
-class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private val clock: Clock) : AddressableDirectory {
+class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private val clock: Clock) :
+    AddressableDirectory {
     data class EtcdAddressableDirectoryConfig(
         val url: String
     ) : ExternallyConfigured<AddressableDirectory> {

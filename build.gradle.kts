@@ -139,7 +139,7 @@ subprojects {
                         publicationUrl = project.properties["publish.url"]?.toString() ?: publicationUrl
 
                         val publicationUsername = project.properties["publish.username"]?.toString()
-                        val publicationPassword  = project.properties["publish.password"]?.toString()
+                        val publicationPassword = project.properties["publish.password"]?.toString()
 
                         credentials {
                             username = publicationUsername
@@ -154,7 +154,7 @@ subprojects {
             extensions.configure<SigningExtension> {
                 val inMemoryKey = project.properties["inMemoryKey"]?.toString() == "true"
 
-                if(inMemoryKey) {
+                if (inMemoryKey) {
                     val signingKey = findProperty("signingKey")?.toString()
                     val signingPassword = findProperty("signingPassword")?.toString()
                     useInMemoryPgpKeys(signingKey, signingPassword)

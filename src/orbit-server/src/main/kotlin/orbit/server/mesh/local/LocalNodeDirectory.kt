@@ -11,7 +11,6 @@ import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
 import orbit.util.concurrent.HashMapBackedAsyncMap
 import orbit.util.di.ExternallyConfigured
-import orbit.util.time.Timestamp
 
 class LocalNodeDirectory : HashMapBackedAsyncMap<NodeId, NodeInfo>(), NodeDirectory {
     object LocalNodeDirectoryConfig : ExternallyConfigured<NodeDirectory> {
