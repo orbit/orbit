@@ -50,15 +50,17 @@ class Client extends Component {
         this.refresh()
         setTimeout(() => {
             this.refreshLoop()
-        }, 5000)
+        }, 1000)
     }
 
     refresh(address) {
         const current = address || this.state.currentAddressable
         if (current) {
-            this.sender.getMessages(current).then(messages => {
-                this.props.reportMessages(current, messages)
-            }).catch(() => {})
+            this.sender.getMessages(current).then(result => {
+                if (result.messages) {
+                    this.props.reportMessages(current, result.messages)
+                }
+            })
         }
         this.sender.getAddressables().then(result => {
             this.props.reportAddressables(result.nodeId, result.addressables)

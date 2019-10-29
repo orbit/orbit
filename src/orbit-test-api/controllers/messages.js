@@ -43,7 +43,7 @@ class MessagesController {
     this.connection = grpc.loadPackageDefinition(connectionDefinition).orbit.shared;
     this.connectionService = new this.connection.Connection(url, grpc.credentials.createInsecure())
 
-    this.joinCluster(this.namespace)
+    this.joinCluster(this.namespace).then(() => this.getConnection())
   }
 
   setNodeInfoFromResponse(node) {
@@ -74,7 +74,7 @@ class MessagesController {
     }, timeout)
   }
 
-  async joinCluster(namespace) {
+  async joinCluster(namespace = this.namespace) {
     var meta = new grpc.Metadata()
     meta.add('namespace', namespace)
 
@@ -91,10 +91,10 @@ class MessagesController {
   }
 
   getMetadata() {
-      var meta = new grpc.Metadata()
-      meta.add('nodeKey', this.node.nodeKey)
-      meta.add('namespace', this.node.namespace)
-      return meta
+    var meta = new grpc.Metadata()
+    meta.add('nodeKey', this.node.nodeKey)
+    meta.add('namespace', this.node.namespace)
+    return meta
   }
 
   async getConnection() {
@@ -156,7 +156,9 @@ class MessagesController {
   }
 
   async getMessages(id) {
-    return (id ? this.messages[id] : this.messages) || null
+    return {
+      messages: (id ? this.messages[id] : this.messages) || null
+    }
   }
 
   getNodeId() {
