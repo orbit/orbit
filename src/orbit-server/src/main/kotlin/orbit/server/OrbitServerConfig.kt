@@ -47,12 +47,12 @@ data class OrbitServerConfig(
      * Expiration times for node leases
      */
     val nodeLeaseDuration: LeaseDuration = LeaseDuration(
-        expiresIn = Duration.ofSeconds(30),
+        expiresIn = Duration.ofSeconds(10),
         renewIn = Duration.ofSeconds(5)
     ),
 
     /**
-     * Expiration times for node leases
+     * Expiration times for addressable leases
      */
     val addressableLeaseDuration: LeaseDuration = LeaseDuration(
         expiresIn = Duration.ofMinutes(10),
@@ -80,7 +80,7 @@ data class OrbitServerConfig(
     val nodeDirectory: ExternallyConfigured<NodeDirectory> = LocalNodeDirectory.LocalNodeDirectoryConfig,
 
     /**
-     * The addressable directory to use
+     * The a oddressable directory to use
      */
     val addressableDirectory: ExternallyConfigured<AddressableDirectory> = LocalAddressableDirectory.LocalAddressableDirectoryConfig
 

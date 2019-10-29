@@ -19,7 +19,7 @@ import orbit.shared.proto.openStream
 import orbit.shared.proto.toMessageProto
 import orbit.shared.router.Route
 
-class RemoteMeshNodeConnection(localNode: LocalNodeInfo, val id: NodeId, channel: ManagedChannel) : MessageSender {
+class RemoteMeshNodeConnection(localNode: LocalNodeInfo, val id: NodeId, private val channel: ManagedChannel) : MessageSender {
     private val sender =
         ConnectionGrpc.newStub(ClientInterceptors.intercept(channel, ClientAuthInterceptor(localNode))).openStream()
 
@@ -41,5 +41,10 @@ class RemoteMeshNodeConnection(localNode: LocalNodeInfo, val id: NodeId, channel
 
     override suspend fun sendMessage(message: Message, route: Route?) {
         sender.send(message.toMessageProto())
+    }
+
+    fun disconnect() {
+        sender.close()
+        channel.shutdownNow()
     }
 }

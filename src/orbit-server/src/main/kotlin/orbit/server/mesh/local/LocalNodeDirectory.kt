@@ -20,7 +20,7 @@ class LocalNodeDirectory : HashMapBackedAsyncMap<NodeId, NodeInfo>(), NodeDirect
 
     override suspend fun tick() {
         // Cull expired
-        values().filter { it.lease.expiresAt < Timestamp.now() }.also { toDelete ->
+        values().filter { it.lease.expiresAt.inPast() }.also { toDelete ->
             toDelete.forEach {
                 remove(it.id)
             }

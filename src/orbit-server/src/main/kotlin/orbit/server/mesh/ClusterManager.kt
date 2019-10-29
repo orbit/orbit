@@ -28,7 +28,8 @@ class ClusterManager(
 
     private val clusterNodes = ConcurrentHashMap<NodeId, NodeInfo>()
 
-    val allNodes get() = clusterNodes.values.toList()
+    fun getAllNodes() =
+        clusterNodes.filter { it.value.lease.expiresAt.inFuture() }.values
 
     suspend fun tick() {
         clusterNodes.clear()
@@ -94,7 +95,7 @@ class ClusterManager(
                 null
             }
         }?.let {
-            if (it.lease.expiresAt > Timestamp.now()) {
+            if (it.lease.expiresAt.inFuture()) {
                 it
             } else {
                 null

@@ -11,6 +11,7 @@ import mu.KotlinLogging
 import orbit.server.auth.AuthSystem
 import orbit.server.concurrent.RuntimePools
 import orbit.server.concurrent.RuntimeScopes
+import orbit.server.mesh.AddressableDirectory
 import orbit.server.mesh.AddressableManager
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
@@ -65,6 +66,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private val localNodeInfo by container.inject<LocalNodeInfo>()
     private val nodeManager by container.inject<ClusterManager>()
     private val nodeDirectory by container.inject<NodeDirectory>()
+    private val addressableDirectory by container.inject<AddressableDirectory>()
+
     private val pipeline by container.inject<Pipeline>()
     private val router by container.inject<Router>()
     private val remoteMeshNodeManager by container.inject<RemoteMeshNodeManager>()
@@ -177,14 +180,13 @@ class OrbitServer(private val config: OrbitServerConfig) {
     }
 
     private suspend fun tick() {
-        // Update the local node info
         localNodeInfo.tick()
 
-        // Node manager
         nodeManager.tick()
 
-        // Tick the node directory
         nodeDirectory.tick()
+
+        addressableDirectory.tick()
 
         remoteMeshNodeManager.tick()
 

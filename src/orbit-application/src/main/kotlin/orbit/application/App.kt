@@ -16,7 +16,10 @@ fun main() {
     runBlocking {
         val server = OrbitServer(
             OrbitServerConfig(
-                nodeDirectory = EtcdNodeDirectory.EtcdNodeDirectoryConfig(System.getenv("NODE_DIRECTORY") ?: "0.0.0.0"),
+                nodeDirectory = EtcdNodeDirectory.EtcdNodeDirectoryConfig(
+                    System.getenv("NODE_DIRECTORY") ?: "0.0.0.0"
+                ),
+
                 addressableDirectory = EtcdAddressableDirectory.EtcdAddressableDirectoryConfig(
                     System.getenv("ADDRESSABLE_DIRECTORY") ?: "0.0.0.0"
                 )

@@ -42,7 +42,7 @@ internal class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClie
     suspend fun renewLease(force: Boolean) {
         localNode.status.nodeInfo?.let { existingInfo ->
             val existingLease = existingInfo.lease
-            if (force || existingLease.renewAt <= Timestamp.now()) {
+            if (force || existingLease.renewAt.inPast()) {
                 logger.debug("Renewing lease...")
                 val renewalResult = nodeManagementStub.renewLease(
                     NodeManagementOuterClass.RenewNodeLeaseRequestProto.newBuilder()

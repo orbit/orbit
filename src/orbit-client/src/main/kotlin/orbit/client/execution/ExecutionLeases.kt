@@ -22,7 +22,7 @@ internal class ExecutionLeases(
     suspend fun getOrRenewLease(addressableReference: AddressableReference): AddressableLease {
         var currentLease = currentLeases[addressableReference]
 
-        if (currentLease == null || currentLease.expiresAt < Timestamp.now()) {
+        if (currentLease == null || currentLease.expiresAt.inPast()) {
             currentLease = renewLease(addressableReference)
         }
 

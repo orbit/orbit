@@ -77,7 +77,8 @@ class AddressableManager(
                 maxAttempts = 5,
                 initialDelay = 1000
             ) {
-                val potentialNodes = clusterManager.allNodes
+                val allNodes = clusterManager.getAllNodes()
+                val potentialNodes = allNodes
                     .filter { it.id.namespace == namespace }
                     .filter { it.capabilities.addressableTypes.contains(addressableReference.type) }
 

@@ -8,8 +8,11 @@ package orbit.server.etcd
 
 import io.etcd.jetcd.ByteSequence
 import io.etcd.jetcd.Client
+import io.etcd.jetcd.op.Op
+import io.etcd.jetcd.options.DeleteOption
 import io.etcd.jetcd.options.GetOption
 import kotlinx.coroutines.future.await
+import mu.KotlinLogging
 import orbit.server.mesh.NodeDirectory
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
@@ -18,33 +21,40 @@ import orbit.shared.proto.toNodeIdProto
 import orbit.shared.proto.toNodeInfo
 import orbit.shared.proto.toNodeInfoProto
 import orbit.util.di.ExternallyConfigured
+import orbit.util.time.Clock
+import orbit.util.time.Timestamp
+import orbit.util.time.stopwatch
 import java.nio.charset.Charset
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.random.Random
 
-class EtcdNodeDirectory(config: EtcdNodeDirectoryConfig) : NodeDirectory {
+class EtcdNodeDirectory(config: EtcdNodeDirectoryConfig, private val clock: Clock) : NodeDirectory {
     data class EtcdNodeDirectoryConfig(
         val url: String
     ) : ExternallyConfigured<NodeDirectory> {
         override val instanceType: Class<out NodeDirectory> = EtcdNodeDirectory::class.java
     }
 
+    private val keyPrefix = "node"
+    private val logger = KotlinLogging.logger { }
+
     private val client = Client.builder().endpoints(config.url).build().kvClient
+    private val lastCleanup = AtomicLong(clock.currentTime)
+    private val cleanupInterval = Duration.ofMinutes(Random.nextLong(1, 2)).toMillis()
 
     override suspend fun set(key: NodeId, value: NodeInfo) {
-//        println("set val ${key}: ${value}")
         client.put(toKey(key), ByteSequence.from(key.toNodeIdProto().toByteArray())).await()
     }
 
     override suspend fun get(key: NodeId): NodeInfo? {
         val response = client.get(toKey(key)).await()
         val value = response.kvs.first().value
-
-//        println("get val ${key}: ${value}")
-
         return Node.NodeInfoProto.parseFrom(value.bytes).toNodeInfo()
     }
 
     override suspend fun remove(key: NodeId): Boolean {
-        client.delete(toKey(key))
+        client.delete(toKey(key)).await()
         return true
     }
 
@@ -53,8 +63,6 @@ class EtcdNodeDirectory(config: EtcdNodeDirectoryConfig) : NodeDirectory {
         val oldValue = client.get(byteKey).await().kvs.firstOrNull()?.value?.bytes?.let {
             Node.NodeInfoProto.parseFrom(it).toNodeInfo()
         }
-
-//        println("compare and set ${key}: (i-${initialValue}, o-${oldValue}) -> ${newValue}")
 
         if (initialValue == oldValue) {
             if (newValue != null) {
@@ -73,6 +81,7 @@ class EtcdNodeDirectory(config: EtcdNodeDirectoryConfig) : NodeDirectory {
         val option = GetOption.newBuilder()
             .withSortField(GetOption.SortTarget.KEY)
             .withSortOrder(GetOption.SortOrder.DESCEND)
+            .withPrefix(ByteSequence.from(keyPrefix.toByteArray()))
             .withRange(key)
             .build()
 
@@ -86,30 +95,40 @@ class EtcdNodeDirectory(config: EtcdNodeDirectoryConfig) : NodeDirectory {
         }
     }
 
-    fun toKey(nodeId: NodeId): ByteSequence {
-        return ByteSequence.from("node/${nodeId.namespace}/${nodeId.key}".toByteArray())
+    override suspend fun tick() {
+        if (lastCleanup.get() + cleanupInterval < clock.currentTime) {
+            logger.info { "Starting Node Directory cleanup..." }
+            val (time, cleanupResult) = stopwatch(clock) {
+                lastCleanup.set(clock.currentTime)
+                val nodes = values()
+
+                val (expiredLeases, validLeases) = nodes.partition { node -> node.lease.expiresAt.inPast() }
+
+                if (expiredLeases.any()) {
+                    val txn = client.txn()
+                    txn.Then(*expiredLeases.map { node ->
+                        Op.delete(toKey(node.id), DeleteOption.DEFAULT)
+                    }.toTypedArray()).commit().await()
+                }
+
+                expiredLeases to validLeases
+            }
+
+            logger.info {
+                "Node Directory cleanup took ${time}ms. Removed ${cleanupResult.first.size} entries, ${cleanupResult.second.size} remain valid."
+            }
+        }
     }
 
-    fun fromKey(keyBytes: ByteSequence): NodeId {
+    private fun toKey(nodeId: NodeId): ByteSequence {
+        return ByteSequence.from("$keyPrefix/${nodeId.namespace}/${nodeId.key}".toByteArray())
+    }
+
+    private fun fromKey(keyBytes: ByteSequence): NodeId {
         val keyString = keyBytes.toString(Charset.defaultCharset())
 
         val (_, namespace, key) = keyString.split("/")
 
         return NodeId(namespace, key)
     }
-
-//    override suspend fun tick() {
-//        val now = Instant.now()
-//        val nodes = getAllNodes()
-//        val leaseCount = nodes.count()
-//
-//        val (expiredLeases, validLeases) = nodes.partition { node -> node.lease.expiresAt < now }
-//
-//        if (expiredLeases.any()) {
-//            val txn = client.txn()
-//            txn.Then(*expiredLeases.map { node -> Op.delete(getKey(node.id), DeleteOption.DEFAULT) }.toTypedArray())
-//                .commit()
-//            println("Leases culled from $leaseCount to ${leaseCount - expiredLeases.count()}")
-//        }
-//    }
 }

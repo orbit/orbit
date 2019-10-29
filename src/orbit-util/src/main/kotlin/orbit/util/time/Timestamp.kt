@@ -21,9 +21,11 @@ data class Timestamp(
             }
         }
 
+    fun inPast() = this < now()
+    fun inFuture() = !inPast()
+
     companion object {
         fun now(): Timestamp = Instant.now().toTimestamp()
-
     }
 }
 
