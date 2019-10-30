@@ -32,7 +32,8 @@ import kotlin.random.Random
 class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private val clock: Clock) :
     AddressableDirectory {
     data class EtcdAddressableDirectoryConfig(
-        val url: String
+        val url: String,
+        val cleanupFrequencyRange: Pair<Duration, Duration> = Duration.ofMinutes(1) to Duration.ofMinutes(2)
     ) : ExternallyConfigured<AddressableDirectory> {
         override val instanceType: Class<out AddressableDirectory> = EtcdAddressableDirectory::class.java
     }
@@ -43,7 +44,8 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
 
     private val client = Client.builder().endpoints(config.url).build().kvClient
     private val lastCleanup = AtomicLong(clock.currentTime)
-    private val cleanupInterval = Duration.ofMinutes(Random.nextLong(60, 120)).toMillis()
+    private val cleanupIntervalMs =
+        Random.nextLong(config.cleanupFrequencyRange.first.toMillis(), config.cleanupFrequencyRange.second.toMillis())
 
     override suspend fun set(key: AddressableReference, value: AddressableLease) {
         client.put(toKey(key), ByteSequence.from(key.toAddressableReferenceProto().toByteArray())).await()
@@ -103,7 +105,7 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
     }
 
     override suspend fun tick() {
-        if (lastCleanup.get() + cleanupInterval < clock.currentTime) {
+        if (lastCleanup.get() + cleanupIntervalMs < clock.currentTime) {
             logger.info { "Starting Addressable Directory cleanup..." }
             val (time, cleanupResult) = stopwatch(clock) {
                 lastCleanup.set(clock.currentTime)
