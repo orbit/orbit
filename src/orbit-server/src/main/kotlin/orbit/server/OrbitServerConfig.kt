@@ -24,7 +24,7 @@ data class OrbitServerConfig(
      */
     val serverInfo: LocalServerInfo = LocalServerInfo(
         port = System.getenv("ORBIT_PORT")?.toInt(10) ?: 50056,
-        url = URI(System.getenv("ORBIT_URL") ?: "localhost:50056")
+        url = System.getenv("ORBIT_URL") ?: "localhost:50056"
     ),
 
     /**

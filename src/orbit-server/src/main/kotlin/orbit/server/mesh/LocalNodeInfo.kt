@@ -34,7 +34,7 @@ class LocalNodeInfo(
     }
 
     suspend fun start() {
-        clusterManager.joinCluster(MANAGEMENT_NAMESPACE, NodeCapabilities(), this.serverInfo.url.toString()).also {
+        clusterManager.joinCluster(MANAGEMENT_NAMESPACE, NodeCapabilities(), this.serverInfo.url).also {
             infoRef.set(it)
         }
     }

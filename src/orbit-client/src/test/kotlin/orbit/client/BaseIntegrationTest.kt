@@ -13,7 +13,6 @@ import orbit.server.OrbitServerConfig
 import orbit.server.mesh.LocalServerInfo
 import org.junit.AfterClass
 import org.junit.BeforeClass
-import java.net.URI
 
 open class BaseIntegrationTest {
     companion object {
@@ -25,7 +24,7 @@ open class BaseIntegrationTest {
         protected lateinit var client: OrbitClient
             private set
 
-        private val targetUri = URI("orbit://localhost:5874/test")
+        private val targetUri = "orbit://localhost:5874/test"
 
         @BeforeClass
         @JvmStatic
