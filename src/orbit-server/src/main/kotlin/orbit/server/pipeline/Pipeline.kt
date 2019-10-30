@@ -96,6 +96,7 @@ class Pipeline(
         try {
             context.next(container.message)
         } catch (t: PipelineException) {
+            logger.debug(t) { "Pipeline Error" }
             if (container.metadata.respondOnError) {
                 val src = t.lastMsgState.source ?: container.metadata.authInfo.nodeId
 

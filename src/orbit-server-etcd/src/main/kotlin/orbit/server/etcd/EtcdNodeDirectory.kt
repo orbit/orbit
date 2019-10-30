@@ -48,8 +48,9 @@ class EtcdNodeDirectory(config: EtcdNodeDirectoryConfig, private val clock: Cloc
 
     override suspend fun get(key: NodeId): NodeInfo? {
         val response = client.get(toKey(key)).await()
-        val value = response.kvs.first().value
-        return Node.NodeInfoProto.parseFrom(value.bytes).toNodeInfo()
+        return response.kvs.firstOrNull()?.value?.let {
+            Node.NodeInfoProto.parseFrom(it.bytes).toNodeInfo()
+        }
     }
 
     override suspend fun remove(key: NodeId): Boolean {

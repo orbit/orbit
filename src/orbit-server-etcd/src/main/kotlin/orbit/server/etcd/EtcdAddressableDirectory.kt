@@ -51,8 +51,9 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
 
     override suspend fun get(key: AddressableReference): AddressableLease? {
         val response = client.get(toKey(key)).await()
-        val value = response.kvs.firstOrNull()?.value
-        return if (value != null) Addressable.AddressableLeaseProto.parseFrom(value.bytes).toAddressableLease() else null
+        return response.kvs.firstOrNull()?.value?.let {
+            Addressable.AddressableLeaseProto.parseFrom(it.bytes).toAddressableLease()
+        }
     }
 
     override suspend fun remove(key: AddressableReference): Boolean {
