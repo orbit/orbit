@@ -55,7 +55,7 @@ export default function Addressables(props) {
                    pagination={false}
                    onRow={(record) => {
                        return {
-                           onClick: () => selectRow(record.key)
+                           onClick: () => selectRow(record.address)
                        }
                    }}
             />

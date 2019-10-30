@@ -23,7 +23,7 @@ export default (state = initialState, action) => {
     }
     case Actions.REPORT_ADDRESSABLES: {
       const addressables = action.payload.addressables.reduce((next, a) => {
-        next[a.id] = {
+        next[a.address] = {
           ...a,
           nodeId: action.payload.nodeId
         }

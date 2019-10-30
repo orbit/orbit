@@ -15,14 +15,17 @@ class MessagesController {
   }
 
   async onReceive(message) {
-    console.log('got a message', message)
+    const request = message.content.invocation_request
     const address = {
-      type: message.content.invocation_request.reference.type,
-      id: message.content.invocation_request.reference.key.stringKey
+      type: request.reference.type,
+      id: request.reference.key.stringKey
     }
     const addressString = `${address.type}-${address.id}`
+
+    console.log(`received message ${addressString}: ${request.arguments}`)
+
     this.messages[addressString] = this.messages[addressString] || []
-    this.messages[addressString].push({ timeStamp: moment(), message: message.content.invocation_request.arguments })
+    this.messages[addressString].push({ timeStamp: moment(), message: request.arguments })
 
     this.addressables[addressString] || (this.addressables[addressString] = address)
   }
@@ -36,16 +39,17 @@ class MessagesController {
   async getAddressables() {
     return {
       nodeId: this.messagesService.getNodeId(),
-      addressables: Object.entries(this.addressables).map(([id, a]) => ({
+      addressables: Object.entries(this.addressables).map(([address, a]) => ({
         ...a,
-        id,
-        messageCount: this.messages[id] && this.messages[id].length
+        address,
+        messageCount: this.messages[address] && this.messages[address].length
       }))
     }
   }
 
   async getMessages(id) {
     return {
+      nodeId: this.messagesService.getNodeId(),
       messages: (id ? this.messages[id] : this.messages) || null
     }
   }
