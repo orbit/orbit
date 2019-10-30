@@ -6,6 +6,4 @@
 
 package orbit.server.mesh
 
-import java.net.URI
-
-data class LocalServerInfo(val port: Int, val url: URI)
+data class LocalServerInfo(val port: Int, val url: String)
