@@ -14,7 +14,7 @@ export default (state = initialState, action) => {
     case Actions.REPORT_MESSAGES: {
 
       return {
-        ...initialState,
+        ...state,
         messages: {
           ...state.messages,
           [action.payload.addressableId]: action.payload.messages
@@ -31,7 +31,7 @@ export default (state = initialState, action) => {
       }, {})
 
       return {
-        ...initialState,
+        ...state,
         addressables: Object.assign(state.addressables, addressables)
       }
     }

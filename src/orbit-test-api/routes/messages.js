@@ -1,9 +1,8 @@
 const Router = require('koa-router')
 const router = new Router()
 const MessagesController = require('../controllers/messages').default
-const messagesController = new MessagesController('./proto', process.env.ORBIT_URL)
-
-messagesController.joinCluster()
+const MessagesService = require('../services/messages').default
+const messagesController = new MessagesController(new MessagesService('./proto', process.env.ORBIT_URL))
 
 router.get('post', async ctx => ctx.ok(await messagesController.send(ctx.request.query.address, ctx.request.query.message)))
 router.post('messages/:id', async ctx => ctx.ok(await messagesController.send(ctx.params.id, ctx.request.body.message)))
