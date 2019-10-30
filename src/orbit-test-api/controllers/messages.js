@@ -16,6 +16,11 @@ class MessagesController {
 
   async onReceive(message) {
     const request = message.content.invocation_request
+    const error = message.content.error
+    if (error) {
+      console.log('Failure to send message', message)
+      return
+    }
     const address = {
       type: request.reference.type,
       id: request.reference.key.stringKey
