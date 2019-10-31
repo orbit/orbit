@@ -11,8 +11,8 @@ class MessagesService {
     addressType = 'webtest'
     namespace = 'test'
 
-    messages = {}
-    addressables = {}
+    subscriptions = []
+    leases = {}
 
     constructor(protoPath, url) {
         const sharedPath = Path.join(protoPath, 'orbit/shared')
@@ -26,11 +26,25 @@ class MessagesService {
                 oneofs: true,
                 includeDirs: [protoPath]
             })
-        this.nodeManagement = grpc.loadPackageDefinition(nodeManagementDefinition).orbit.shared
+        const NodeManagement = grpc.loadPackageDefinition(nodeManagementDefinition).orbit.shared.NodeManagement
 
-        this.nodeManagementService = new this.nodeManagement.NodeManagement(url, grpc.credentials.createInsecure())
+        this.nodeManagementService = new NodeManagement(url, grpc.credentials.createInsecure())
         this.nodeManagementService.JoinCluster = promisify(this.nodeManagementService.JoinCluster)
         this.nodeManagementService.RenewLease = promisify(this.nodeManagementService.RenewLease)
+
+        const addressableManagementDefinition = protoLoader.loadSync(
+            Path.join(sharedPath, 'addressable_management.proto'),
+            {
+                keepCase: true,
+                longs: String,
+                enums: String,
+                defaults: true,
+                oneofs: true,
+                includeDirs: [protoPath]
+            })
+        const AddressableManagement = grpc.loadPackageDefinition(addressableManagementDefinition).orbit.shared.AddressableManagement
+        this.addressableManagementService = new AddressableManagement(url, grpc.credentials.createInsecure())
+        this.addressableManagementService.RenewLease = promisify(this.addressableManagementService.RenewLease)
 
         const connectionDefinition = protoLoader.loadSync(
             Path.join(sharedPath, 'connection.proto'),
@@ -46,6 +60,10 @@ class MessagesService {
         this.connectionService = new this.connection.Connection(url, grpc.credentials.createInsecure())
 
         this.leaseTimer(moment())
+    }
+
+    getAddressKey(address) {
+        return `${address.type}-${address.id}`
     }
 
     setNodeInfoFromResponse(node) {
@@ -70,7 +88,7 @@ class MessagesService {
 
         setTimeout(async () => {
             if (this.node) {
-                await this.renewLease()
+                await this.renewNodeLease()
             }
             this.leaseTimer()
         }, this.node ? this.node.renewsAt.diff() : this.connectionRetry)
@@ -121,7 +139,7 @@ class MessagesService {
         return this.messagesConnection
     }
 
-    async renewLease() {
+    async renewNodeLease() {
         const response = await this.nodeManagementService.RenewLease({
             challenge_token: this.node.challengeToken,
             capabilities: {
@@ -129,6 +147,37 @@ class MessagesService {
             }
         }, await this.getMetadata())
         return this.setNodeInfoFromResponse(response.info)
+    }
+
+    async getOrRenewAddressableLease(address) {
+        const addressKey = this.getAddressKey(address)
+        var lease = this.leases[addressKey]
+        if (!lease || moment().isAfter(lease.renewAt)) {
+            lease = this.renewAddressableLease(address)
+        }
+
+        return lease
+    }
+
+    async renewAddressableLease(address) {
+        const response = await this.addressableManagementService.RenewLease({
+            reference: address
+        }, await this.getMetadata())
+
+        if (response.status != 'OK') {
+            console.log(`Failed to renew addressable ${JSON.stringify(address)}: ${response.status}`, response.error_description)
+        }
+        else {
+            const lease = {
+                nodeId: response.lease.nodeId,
+                reference: { type: response.lease.reference.type, key: response.lease.reference.key.stringKey },
+                renewAt: moment.unix(response.lease.renew_at.seconds),
+                expiresAt: moment.unix(response.lease.expires_at.seconds)
+            }
+
+            this.leases[this.getAddressKey(address)] = lease
+            return lease
+        }
     }
 
     getMetadata() {
@@ -144,8 +193,6 @@ class MessagesService {
         }
         return this.messagesConnection
     }
-
-    subscriptions = []
 
     subscribe(callback) {
         this.subscriptions.push(callback)

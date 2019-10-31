@@ -2,9 +2,6 @@ const moment = require('moment')
 
 class MessagesController {
 
-  addressType = 'webtest'
-  namespace = 'test'
-
   messages = {}
   addressables = {}
 
@@ -21,24 +18,36 @@ class MessagesController {
       console.log('Failure to send message', message)
       return
     }
+
+    const leaseActive = await this.getOrRewewAddressableLease(request.reference)
+
+    if (!leaseActive) {
+      console.log('Received message on unleased addressable', request.reference)
+      return
+    }
     const address = {
       type: request.reference.type,
       id: request.reference.key.stringKey
     }
-    const addressString = `${address.type}-${address.id}`
+    const addressKey = this.messagesService.getAddressKey(address)
 
-    console.log(`received message ${addressString}: ${request.arguments}`)
+    console.log(`received message ${addressKey}: ${request.arguments}`)
 
-    this.messages[addressString] = this.messages[addressString] || []
-    this.messages[addressString].push({ timeStamp: moment(), message: request.arguments })
+    this.messages[addressKey] = this.messages[addressKey] || []
+    this.messages[addressKey].push({ timeStamp: moment(), message: request.arguments })
 
-    this.addressables[addressString] || (this.addressables[addressString] = address)
+    this.addressables[addressKey] || (this.addressables[addressKey] = address)
   }
 
   async send(address, message) {
     await this.messagesService.send(address, message)
 
     return `Sent a message to ${address} on node ${this.messagesService.getNodeId()}: ${message}`
+  }
+
+  async getOrRewewAddressableLease(address) {
+    const lease = await this.messagesService.getOrRenewAddressableLease(address)
+    return (lease && lease.nodeId.key == this.messagesService.getNodeId())
   }
 
   async getAddressables() {
