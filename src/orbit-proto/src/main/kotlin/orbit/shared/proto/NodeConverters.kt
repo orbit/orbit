@@ -10,6 +10,7 @@ import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.mesh.NodeLease
+import orbit.shared.mesh.NodeStatus
 
 fun NodeId.toNodeIdProto(): Node.NodeIdProto =
     Node.NodeIdProto.newBuilder()
@@ -29,6 +30,7 @@ fun NodeInfo.toNodeInfoProto(): Node.NodeInfoProto =
         .addAllVisibleNodes(visibleNodes.map { it.toNodeIdProto() })
         .setLease(lease.toNodeLeaseProto())
         .setCapabilities(capabilities.toCapabilitiesProto())
+        .setStatus(nodeStatus.toNodeStatusProto())
         .let {
             if (url != null) it.setUrl(url) else it
         }
@@ -40,7 +42,8 @@ fun Node.NodeInfoProto.toNodeInfo(): NodeInfo =
         visibleNodes = visibleNodesList.map { it.toNodeId() }.toSet(),
         lease = lease.toLeaseProto(),
         capabilities = capabilities.toCapabilities(),
-        url = url
+        url = url,
+        nodeStatus = status.toNodeStatus()
     )
 
 fun NodeLease.toNodeLeaseProto(): Node.NodeLeaseProto =
@@ -66,3 +69,20 @@ fun Node.CapabilitiesProto.toCapabilities(): NodeCapabilities =
     NodeCapabilities(
         addressableTypes = addressableTypesList
     )
+
+fun Node.NodeStatusProto.toNodeStatus(): NodeStatus = when (this.number) {
+    Node.NodeStatusProto.ACTIVE_VALUE -> NodeStatus.ACTIVE
+    Node.NodeStatusProto.STOPPED_VALUE -> NodeStatus.STOPPED
+    Node.NodeStatusProto.STARTING_VALUE -> NodeStatus.STARTING
+    Node.NodeStatusProto.DRAINING_VALUE -> NodeStatus.DRAINING
+    else -> error("Unknown node status")
+}
+
+fun NodeStatus.toNodeStatusProto(): Node.NodeStatusProto = Node.NodeStatusProto.forNumber(
+    when (this) {
+        NodeStatus.ACTIVE -> Node.NodeStatusProto.ACTIVE_VALUE
+        NodeStatus.STOPPED -> Node.NodeStatusProto.STOPPED_VALUE
+        NodeStatus.STARTING -> Node.NodeStatusProto.STARTING_VALUE
+        NodeStatus.DRAINING -> Node.NodeStatusProto.DRAINING_VALUE
+    }
+)

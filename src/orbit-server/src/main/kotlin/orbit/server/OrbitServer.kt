@@ -34,6 +34,7 @@ import orbit.server.service.ConnectionService
 import orbit.server.service.GrpcEndpoint
 import orbit.server.service.NodeManagementService
 import orbit.server.service.ServerAuthInterceptor
+import orbit.shared.mesh.NodeStatus
 import orbit.util.concurrent.ShutdownLatch
 import orbit.util.di.ComponentContainer
 import orbit.util.time.Clock
@@ -145,6 +146,12 @@ class OrbitServer(private val config: OrbitServerConfig) {
             // We shouldn't do this until we're ready to serve traffic
             grpcEndpoint.start()
 
+
+            // Flip status to active
+            localNodeInfo.updateInfo {
+                it.copy(nodeStatus = NodeStatus.ACTIVE)
+            }
+
             // Acquire the latch
             if (config.acquireShutdownLatch) {
                 ShutdownLatch().also {
@@ -160,6 +167,11 @@ class OrbitServer(private val config: OrbitServerConfig) {
     fun stop() = runtimeScopes.cpuScope.launch {
         logger.info("Stopping Orbit server...")
         val (elapsed, _) = stopwatch(clock) {
+            // Flip status to draining
+            localNodeInfo.updateInfo {
+                it.copy(nodeStatus = NodeStatus.DRAINING)
+            }
+
             // Stop gRPC
             val grpcEndpoint by container.inject<GrpcEndpoint>()
             grpcEndpoint.stop()
@@ -169,6 +181,11 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
             // Stop pipeline
             pipeline.stop()
+
+            // Flip status to draining
+            localNodeInfo.updateInfo {
+                it.copy(nodeStatus = NodeStatus.STOPPED)
+            }
 
             // Release the latch
             shutdownLatch.get()?.release().also {

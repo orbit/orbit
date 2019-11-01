@@ -14,6 +14,7 @@ import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.mesh.NodeLease
+import orbit.shared.mesh.NodeStatus
 import orbit.util.misc.RNGUtils
 import orbit.util.time.Timestamp
 import orbit.util.time.toTimestamp
@@ -44,7 +45,7 @@ class ClusterManager(
         buildGraph()
     }
 
-    suspend fun joinCluster(namespace: String, capabilities: NodeCapabilities, url: String? = null): NodeInfo {
+    suspend fun joinCluster(namespace: String, capabilities: NodeCapabilities, url: String? = null, nodeStatus: NodeStatus): NodeInfo {
         do {
             val newNodeId = NodeId.generate(namespace)
 
@@ -58,7 +59,8 @@ class ClusterManager(
                 id = newNodeId,
                 capabilities = capabilities,
                 lease = lease,
-                url = url
+                url = url,
+                nodeStatus = nodeStatus
             )
 
             if (nodeDirectory.compareAndSet(newNodeId, null, info)) {

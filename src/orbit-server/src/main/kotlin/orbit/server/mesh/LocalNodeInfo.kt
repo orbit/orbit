@@ -8,6 +8,7 @@ package orbit.server.mesh
 
 import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.mesh.NodeInfo
+import orbit.shared.mesh.NodeStatus
 import orbit.util.time.Timestamp
 import java.util.concurrent.atomic.AtomicReference
 
@@ -34,7 +35,7 @@ class LocalNodeInfo(
     }
 
     suspend fun start() {
-        clusterManager.joinCluster(MANAGEMENT_NAMESPACE, NodeCapabilities(), this.serverInfo.url).also {
+        clusterManager.joinCluster(MANAGEMENT_NAMESPACE, NodeCapabilities(), this.serverInfo.url, NodeStatus.STOPPED).also {
             infoRef.set(it)
         }
     }

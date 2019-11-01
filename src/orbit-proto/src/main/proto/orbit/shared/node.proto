@@ -15,6 +15,7 @@ message NodeInfoProto {
     repeated NodeIdProto visibleNodes = 3;
     NodeLeaseProto lease = 4;
     string url = 5;
+    NodeStatusProto status = 6;
 };
 
 message CapabilitiesProto {
@@ -25,4 +26,11 @@ message NodeLeaseProto {
     string challenge_token = 1;
     google.protobuf.Timestamp renew_at = 2;
     google.protobuf.Timestamp expires_at = 3;
+}
+
+enum NodeStatusProto {
+    STOPPED = 0;
+    STARTING = 1;
+    ACTIVE = 2;
+    DRAINING = 3;
 }

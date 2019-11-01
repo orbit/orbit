@@ -8,6 +8,7 @@ package orbit.server.service
 
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.ClusterManager
+import orbit.shared.mesh.NodeStatus
 import orbit.shared.proto.NodeManagementImplBase
 import orbit.shared.proto.NodeManagementOuterClass
 import orbit.shared.proto.getOrNull
@@ -24,7 +25,8 @@ class NodeManagementService(
             val capabilities = request.capabilities.toCapabilities()
             val info = clusterManager.joinCluster(
                 namespace = namespace,
-                capabilities = capabilities
+                capabilities = capabilities,
+                nodeStatus = NodeStatus.ACTIVE
             )
             info.toNodeLeaseRequestResponseProto()
         } catch (t: Throwable) {

@@ -12,6 +12,7 @@ import orbit.shared.addressable.AddressableReference
 import orbit.shared.exception.PlacementFailedException
 import orbit.shared.mesh.Namespace
 import orbit.shared.mesh.NodeId
+import orbit.shared.mesh.NodeStatus
 import orbit.util.misc.attempt
 import orbit.util.time.Timestamp
 import orbit.util.time.toTimestamp
@@ -80,6 +81,7 @@ class AddressableManager(
                 val allNodes = clusterManager.getAllNodes()
                 val potentialNodes = allNodes
                     .filter { it.id.namespace == namespace }
+                    .filter { it.nodeStatus == NodeStatus.ACTIVE }
                     .filter { it.capabilities.addressableTypes.contains(addressableReference.type) }
 
                 potentialNodes.random().id
