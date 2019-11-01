@@ -18,6 +18,10 @@ class LocalAddressableDirectory : HashMapBackedAsyncMap<AddressableReference, Ad
         override val instanceType = LocalAddressableDirectory::class.java
     }
 
+    override suspend fun isHealthy(): Boolean {
+        return true
+    }
+    
     override suspend fun tick() {
         // Cull expired
         values().filter { it.expiresAt.inPast() }.also { toDelete ->
