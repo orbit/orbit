@@ -45,7 +45,12 @@ class ClusterManager(
         buildGraph()
     }
 
-    suspend fun joinCluster(namespace: String, capabilities: NodeCapabilities, url: String? = null, nodeStatus: NodeStatus): NodeInfo {
+    suspend fun joinCluster(
+        namespace: String,
+        capabilities: NodeCapabilities,
+        url: String? = null,
+        nodeStatus: NodeStatus
+    ): NodeInfo {
         do {
             val newNodeId = NodeId.generate(namespace)
 

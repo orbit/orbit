@@ -7,8 +7,11 @@
 package orbit.client
 
 import kotlinx.coroutines.CoroutineDispatcher
+import orbit.client.addressable.AddressableConstructor
+import orbit.client.addressable.DefaultAddressableConstructor
 import orbit.client.net.OrbitServiceLocator
 import orbit.util.concurrent.Pools
+import orbit.util.di.ExternallyConfigured
 import java.time.Duration
 
 data class OrbitClientConfig(
@@ -57,6 +60,11 @@ data class OrbitClientConfig(
     /**
      * The default TTL for addressables.
      */
-    val addressableTTL: Duration = Duration.ofMinutes(10)
+    val addressableTTL: Duration = Duration.ofMinutes(10),
+
+    /**
+     * The system to use to construct addressables.
+     */
+    val addressableConstructor: ExternallyConfigured<AddressableConstructor> = DefaultAddressableConstructor.DefaultAddressableConstructorSingleton
 
 )

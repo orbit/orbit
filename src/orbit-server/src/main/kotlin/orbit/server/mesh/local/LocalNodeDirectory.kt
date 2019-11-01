@@ -13,7 +13,7 @@ import orbit.util.concurrent.HashMapBackedAsyncMap
 import orbit.util.di.ExternallyConfigured
 
 class LocalNodeDirectory : HashMapBackedAsyncMap<NodeId, NodeInfo>(), NodeDirectory {
-    object LocalNodeDirectoryConfig : ExternallyConfigured<NodeDirectory> {
+    object LocalNodeDirectorySingleton : ExternallyConfigured<NodeDirectory> {
         override val instanceType = LocalNodeDirectory::class.java
     }
 

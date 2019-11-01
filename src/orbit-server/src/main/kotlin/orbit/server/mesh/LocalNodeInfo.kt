@@ -35,9 +35,10 @@ class LocalNodeInfo(
     }
 
     suspend fun start() {
-        clusterManager.joinCluster(MANAGEMENT_NAMESPACE, NodeCapabilities(), this.serverInfo.url, NodeStatus.STOPPED).also {
-            infoRef.set(it)
-        }
+        clusterManager.joinCluster(MANAGEMENT_NAMESPACE, NodeCapabilities(), this.serverInfo.url, NodeStatus.STARTING)
+            .also {
+                infoRef.set(it)
+            }
     }
 
     suspend fun tick() {

@@ -67,21 +67,19 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
             definition<NodeLeaser>()
             definition<AddressableLeaser>()
 
-
             definition<Serializer>()
 
             definition<CapabilitiesScanner>()
             definition<AddressableProxyFactory>()
             definition<InvocationSystem>()
             definition<AddressableDefinitionDirectory>()
+            externallyConfigured(config.addressableConstructor)
 
 
             definition<ExecutionSystem>()
             definition<ExecutionLeases>()
 
-
             definition<ActorProxyFactory>()
-
         }
     }
 

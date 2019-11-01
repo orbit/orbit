@@ -15,7 +15,6 @@ import orbit.server.mesh.local.LocalAddressableDirectory
 import orbit.server.mesh.local.LocalNodeDirectory
 import orbit.util.concurrent.Pools
 import orbit.util.di.ExternallyConfigured
-import java.net.URI
 import java.time.Duration
 
 data class OrbitServerConfig(
@@ -77,11 +76,11 @@ data class OrbitServerConfig(
     /**
      * The node directory to use.
      */
-    val nodeDirectory: ExternallyConfigured<NodeDirectory> = LocalNodeDirectory.LocalNodeDirectoryConfig,
+    val nodeDirectory: ExternallyConfigured<NodeDirectory> = LocalNodeDirectory.LocalNodeDirectorySingleton,
 
     /**
      * The a oddressable directory to use
      */
-    val addressableDirectory: ExternallyConfigured<AddressableDirectory> = LocalAddressableDirectory.LocalAddressableDirectoryConfig
+    val addressableDirectory: ExternallyConfigured<AddressableDirectory> = LocalAddressableDirectory.LocalAddressableDirectorySingleton
 
 )

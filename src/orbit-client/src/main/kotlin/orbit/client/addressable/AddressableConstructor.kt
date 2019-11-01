@@ -4,8 +4,8 @@
  See license in LICENSE.
  */
 
-package orbit.client.net
+package orbit.client.addressable
 
-import kotlinx.coroutines.CompletableDeferred
-
-internal typealias Completion = CompletableDeferred<Any?>
+interface AddressableConstructor {
+    fun constructAddressable(clazz: Class<out Addressable>): Addressable
+}

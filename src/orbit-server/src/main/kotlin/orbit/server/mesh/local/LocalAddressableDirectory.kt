@@ -14,7 +14,7 @@ import orbit.util.di.ExternallyConfigured
 
 class LocalAddressableDirectory : HashMapBackedAsyncMap<AddressableReference, AddressableLease>(),
     AddressableDirectory {
-    object LocalAddressableDirectoryConfig : ExternallyConfigured<AddressableDirectory> {
+    object LocalAddressableDirectorySingleton : ExternallyConfigured<AddressableDirectory> {
         override val instanceType = LocalAddressableDirectory::class.java
     }
 

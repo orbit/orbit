@@ -12,6 +12,7 @@ import mu.KotlinLogging
 import orbit.client.OrbitClientConfig
 import orbit.client.addressable.Addressable
 import orbit.client.addressable.AddressableClass
+import orbit.client.addressable.AddressableConstructor
 import orbit.client.addressable.AddressableDefinitionDirectory
 import orbit.client.addressable.AddressableImplDefinition
 import orbit.client.net.Completion
@@ -27,6 +28,7 @@ internal class ExecutionSystem(
     private val definitionDirectory: AddressableDefinitionDirectory,
     private val componentContainer: ComponentContainer,
     private val clock: Clock,
+    private val addressableConstructor: AddressableConstructor,
     config: OrbitClientConfig
 ) {
     private val logger = KotlinLogging.logger { }
@@ -132,7 +134,6 @@ internal class ExecutionSystem(
             implDefinition = implDefinition
         )
 
-    private fun createInstance(addressableClass: AddressableClass): Addressable {
-        return addressableClass.getDeclaredConstructor().newInstance()
-    }
+    private fun createInstance(addressableClass: AddressableClass): Addressable =
+        addressableConstructor.constructAddressable(addressableClass)
 }

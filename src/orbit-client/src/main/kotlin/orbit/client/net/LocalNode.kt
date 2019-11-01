@@ -12,17 +12,17 @@ import orbit.shared.mesh.NodeInfo
 import orbit.util.concurrent.atomicSet
 import java.util.concurrent.atomic.AtomicReference
 
-class LocalNode(config: OrbitClientConfig) {
+internal class LocalNode(config: OrbitClientConfig) {
     private val ref = AtomicReference(
-        NodeStatus(config.serviceLocator)
+        NodeData(config.serviceLocator)
     )
 
     val status get() = ref.get()!!
 
-    fun manipulate(body: (NodeStatus) -> NodeStatus) = ref.atomicSet(body)!!
+    fun manipulate(body: (NodeData) -> NodeData) = ref.atomicSet(body)!!
 }
 
-data class NodeStatus(
+internal data class NodeData(
     val serviceLocator: OrbitServiceLocator,
     val nodeInfo: NodeInfo? = null,
     val capabilities: NodeCapabilities? = null

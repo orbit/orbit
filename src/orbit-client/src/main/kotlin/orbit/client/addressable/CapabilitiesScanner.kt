@@ -12,7 +12,7 @@ import orbit.client.OrbitClientConfig
 import orbit.util.time.Clock
 import orbit.util.time.stopwatch
 
-class CapabilitiesScanner(
+internal class CapabilitiesScanner(
     private val clock: Clock,
     config: OrbitClientConfig
 ) {
