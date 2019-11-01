@@ -7,10 +7,12 @@
 package orbit.application
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.time.delay
 import orbit.server.OrbitServer
 import orbit.server.OrbitServerConfig
 import orbit.server.etcd.EtcdAddressableDirectory
 import orbit.server.etcd.EtcdNodeDirectory
+import java.time.Duration
 
 fun main() {
     runBlocking {
@@ -25,6 +27,7 @@ fun main() {
                 )
             )
         )
+        delay(Duration.ofSeconds(5))
         server.start().join()
     }
 }
