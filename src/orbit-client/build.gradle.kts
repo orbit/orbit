@@ -13,8 +13,8 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":src:orbit-util"))
-    implementation(project(":src:orbit-shared"))
+    api(project(":src:orbit-util"))
+    api(project(":src:orbit-shared"))
     implementation(project(":src:orbit-proto"))
 
 
