@@ -6,6 +6,10 @@
 
 package orbit.client.addressable
 
+import orbit.client.OrbitClient
+import orbit.shared.addressable.AddressableReference
+
+
 /**
  * Denotes an addressable that does not have a concrete implementation.
  */
@@ -40,3 +44,28 @@ annotation class OnActivate
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FUNCTION)
 annotation class OnDeactivate
+
+/**
+ * An abstract [Addressable] which allows Orbit to provide an [AddressableContext].
+ */
+abstract class AbstractAddressable {
+    /**
+     * The Orbit context. It will be available after the [Addressable] is registered with Orbit.
+     * Attempting to access this variable before registration is undefined behavior.
+     */
+    lateinit var context: AddressableContext
+}
+
+/**
+ * A context available to an [Addressable] which gives access to Orbit runtime information.
+ */
+data class AddressableContext(
+    /**
+     * A reference to this [Addressable].
+     */
+    val reference: AddressableReference,
+    /**
+     * A reference to the [OrbitClient].
+     */
+    val client: OrbitClient
+)

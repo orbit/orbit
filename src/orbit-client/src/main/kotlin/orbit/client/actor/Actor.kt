@@ -6,6 +6,7 @@
 
 package orbit.client.actor
 
+import orbit.client.addressable.AbstractAddressable
 import orbit.client.addressable.Addressable
 import orbit.client.addressable.NonConcrete
 
@@ -38,3 +39,8 @@ interface ActorWithInt32Key : Actor
  */
 @NonConcrete
 interface ActorWithInt64Key : Actor
+
+/**
+ * Base class to [Actor] implementations.
+ */
+abstract class AbstractActor : AbstractAddressable()

@@ -8,6 +8,7 @@ package orbit.client.actor
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
+import orbit.shared.addressable.Key
 
 interface GreeterActor : ActorWithNoKey {
     fun greetAsync(name: String): Deferred<String>
@@ -49,4 +50,15 @@ class IncrementActorImpl : IncrementActor {
 
     override fun increment(): Deferred<Long> =
         CompletableDeferred(++counter)
+}
+
+interface IdActor : ActorWithStringKey {
+    fun getId(): Deferred<String>
+}
+
+class IdActorImpl : AbstractActor(), IdActor {
+    override fun getId(): Deferred<String> {
+        val stringKey = context.reference.key as Key.StringKey
+        return CompletableDeferred(stringKey.key)
+    }
 }

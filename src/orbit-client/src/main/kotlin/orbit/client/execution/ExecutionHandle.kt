@@ -10,7 +10,10 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import orbit.client.OrbitClient
+import orbit.client.addressable.AbstractAddressable
 import orbit.client.addressable.Addressable
+import orbit.client.addressable.AddressableContext
 import orbit.client.addressable.AddressableImplDefinition
 import orbit.client.addressable.AddressableInterfaceDefinition
 import orbit.client.addressable.InvocationSystem
@@ -34,6 +37,7 @@ internal class ExecutionHandle(
     val implDefinition: AddressableImplDefinition,
     componentContainer: ComponentContainer
 ) {
+    private val orbitClient: OrbitClient by componentContainer.inject()
     private val clock: Clock by componentContainer.inject()
     private val supervisorScope: SupervisorScope by componentContainer.inject()
     private val invocationSystem: InvocationSystem by componentContainer.inject()
@@ -52,12 +56,12 @@ internal class ExecutionHandle(
     private val channel = Channel<EventType>(addressableBufferCount)
 
     init {
-        /* if (instance is AbstractAddressable) {
-             instance.context = AddressableContext(
-                 reference = reference,
-                 runtime = runtimeContext
-             )
-         }*/
+        if (instance is AbstractAddressable) {
+            instance.context = AddressableContext(
+                reference = reference,
+                client = orbitClient
+            )
+        }
     }
 
     fun activate(): Completion =

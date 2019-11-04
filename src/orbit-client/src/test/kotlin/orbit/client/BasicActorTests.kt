@@ -11,10 +11,12 @@ import kotlinx.coroutines.runBlocking
 import orbit.client.actor.ActorWithNoImpl
 import orbit.client.actor.ComplexDtoActor
 import orbit.client.actor.GreeterActor
+import orbit.client.actor.IdActor
 import orbit.client.actor.IncrementActor
 import orbit.client.actor.TimeoutActor
 import orbit.client.actor.createProxy
 import orbit.client.util.MessageException
+import orbit.util.misc.RNGUtils
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -75,5 +77,13 @@ class BasicActorTests : BaseIntegrationTest() {
         }
     }
 
-
+    @Test
+    fun `test actor with id and context`() {
+        runBlocking {
+            val actorKey = RNGUtils.randomString(128)
+            val actor = client.actorFactory.createProxy<IdActor>(actorKey)
+            val result = actor.getId().await()
+            assertEquals(result, actorKey)
+        }
+    }
 }
