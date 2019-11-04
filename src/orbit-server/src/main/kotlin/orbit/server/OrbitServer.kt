@@ -32,6 +32,8 @@ import orbit.server.router.Router
 import orbit.server.service.AddressableManagementService
 import orbit.server.service.ConnectionService
 import orbit.server.service.GrpcEndpoint
+import orbit.server.service.HealthCheckList
+import orbit.server.service.HealthService
 import orbit.server.service.NodeManagementService
 import orbit.server.service.ServerAuthInterceptor
 import orbit.shared.mesh.NodeStatus
@@ -70,7 +72,6 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private val addressableDirectory by container.inject<AddressableDirectory>()
 
     private val pipeline by container.inject<Pipeline>()
-    private val router by container.inject<Router>()
     private val remoteMeshNodeManager by container.inject<RemoteMeshNodeManager>()
 
     private val ticker = ConstantTicker(
@@ -98,6 +99,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<NodeManagementService>()
             definition<AddressableManagementService>()
             definition<ConnectionService>()
+            definition<HealthCheckList>()
+            definition<HealthService>()
 
             // Net
             definition<ConnectionManager>()
@@ -145,7 +148,6 @@ class OrbitServer(private val config: OrbitServerConfig) {
             // Start gRPC endpoint
             // We shouldn't do this until we're ready to serve traffic
             grpcEndpoint.start()
-
 
             // Flip status to active
             localNodeInfo.updateInfo {

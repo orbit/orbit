@@ -6,10 +6,12 @@
 
 package orbit.server.mesh
 
+import orbit.server.service.HealthCheck
 import orbit.shared.addressable.AddressableLease
 import orbit.shared.addressable.AddressableReference
 import orbit.util.concurrent.AsyncMap
 
-interface AddressableDirectory : AsyncMap<AddressableReference, AddressableLease> {
+interface AddressableDirectory : AsyncMap<AddressableReference, AddressableLease>,
+    HealthCheck {
     suspend fun tick() {}
 }

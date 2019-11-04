@@ -13,6 +13,7 @@ import orbit.server.mesh.LocalServerInfo
 
 class GrpcEndpoint(
     private val serverAuthInterceptor: ServerAuthInterceptor,
+    private val healthService: HealthService,
     private val nodeManagementService: NodeManagementService,
     private val addressableManagementService: AddressableManagementService,
     private val connectionService: ConnectionService,
@@ -26,6 +27,7 @@ class GrpcEndpoint(
 
         server = ServerBuilder.forPort(localServerInfo.port)
             .intercept(serverAuthInterceptor)
+            .addService(healthService)
             .addService(nodeManagementService)
             .addService(addressableManagementService)
             .addService(connectionService)

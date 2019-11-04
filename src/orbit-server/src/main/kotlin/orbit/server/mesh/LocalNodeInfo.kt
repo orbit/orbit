@@ -6,6 +6,7 @@
 
 package orbit.server.mesh
 
+import orbit.server.service.HealthCheck
 import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.mesh.NodeStatus
@@ -17,7 +18,11 @@ const val MANAGEMENT_NAMESPACE = "management"
 class LocalNodeInfo(
     private val clusterManager: ClusterManager,
     private val serverInfo: LocalServerInfo
-) {
+) : HealthCheck {
+    override suspend fun isHealthy(): Boolean {
+        return this.info.nodeStatus == NodeStatus.ACTIVE
+    }
+
     val info: NodeInfo
         get() = infoRef.get().also {
             checkNotNull(it) { "LocalNodeInfo not initialized. " }
