@@ -11,7 +11,7 @@ See the [documentation website](https://docs.orbit.cloud/) for full documentatio
 
 Orbit 1
 =======
-Looking for Orbit 1? Visit the [orbit-legacy](https://github.com/orbit/orbit-legacy) project.
+Looking for Orbit 1? Visit the [orbit1](https://github.com/orbit-legacy/orbit1) legacy project.
 
 Developer & License
 ======
