@@ -62,3 +62,23 @@ class IdActorImpl : AbstractActor(), IdActor {
         return CompletableDeferred(stringKey.key)
     }
 }
+
+data class ComplexNull(
+    val greeting: String
+)
+
+interface NullActor : ActorWithNoKey {
+    fun simpleNull(arg1: String, arg2: String?): Deferred<String>
+    fun complexNull(arg1: String, arg2: ComplexNull?): Deferred<String>
+
+}
+
+class NullActorImpl : NullActor {
+    override fun simpleNull(arg1: String, arg2: String?): Deferred<String> {
+        return CompletableDeferred(arg1 + arg2)
+    }
+
+    override fun complexNull(arg1: String, arg2: ComplexNull?): Deferred<String> {
+        return CompletableDeferred(arg1 + arg2?.greeting)
+    }
+}

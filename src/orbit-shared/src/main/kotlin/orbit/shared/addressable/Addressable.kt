@@ -29,7 +29,7 @@ data class AddressableInvocation(
     /**
      * The arguments being passed.
      */
-    val args: Array<out Any?>
+    val args: AddressableInvocationArguments
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -52,3 +52,6 @@ data class AddressableInvocation(
         return result
     }
 }
+
+typealias AddressableInvocationArguments = Array<out AddressableInvocationArgument>
+typealias AddressableInvocationArgument = Pair<Any?, Class<*>>

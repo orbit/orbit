@@ -8,27 +8,23 @@ package orbit.client.addressable
 
 import kotlinx.coroutines.Deferred
 import orbit.client.util.DeferredWrappers
+import orbit.shared.addressable.AddressableInvocationArguments
 import java.lang.reflect.Method
 
 internal object MethodInvoker {
-    private fun invokeRaw(instance: Any, method: Method, args: Array<out Any?>): Any {
+    private fun invokeRaw(instance: Any, method: Method, args: AddressableInvocationArguments): Any {
         method.isAccessible = true
-        return method.invoke(instance, *args)
+        return method.invoke(instance, *args.map { it.first }.toTypedArray())
     }
 
-    fun invokeDeferred(instance: Any, method: String, args: Array<out Any?>): Deferred<*> =
-        invokeRaw(
-            instance, instance::class.java.getMethod(
-                method,
-                *(args.map { if (it == null) Any::class.java else it::class.java }.toTypedArray())
-            ),
-            args
-        ).let {
-            DeferredWrappers.wrapCall(it)
-        }
-
-    fun invokeDeferred(instance: Any, method: Method, args: Array<out Any?>): Deferred<*> =
-        invokeRaw(instance, method, args).let {
+    fun invokeDeferred(instance: Any, methodName: String, args: AddressableInvocationArguments): Deferred<*> =
+        instance::class.java.getMethod(
+            methodName,
+            *(args.map { it.second }.toTypedArray())
+        ).let { method ->
+            method.isAccessible = true
+            method.invoke(instance, *(args.map { it.first }.toTypedArray()))
+        }.let {
             DeferredWrappers.wrapCall(it)
         }
 }

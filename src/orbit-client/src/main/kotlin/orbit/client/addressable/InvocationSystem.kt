@@ -12,6 +12,7 @@ import orbit.client.net.Completion
 import orbit.client.net.MessageHandler
 import orbit.client.serializer.Serializer
 import orbit.shared.addressable.AddressableInvocation
+import orbit.shared.addressable.AddressableInvocationArguments
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 import orbit.shared.net.MessageTarget
@@ -26,7 +27,7 @@ internal class InvocationSystem(
 
     suspend fun onInvocationRequest(msg: Message) {
         val content = msg.content as MessageContent.InvocationRequest
-        val arguments = serializer.deserialize<Array<Any?>>(content.arguments)
+        val arguments = serializer.deserialize<AddressableInvocationArguments>(content.arguments)
         val invocation = AddressableInvocation(
             reference = content.destination,
             method = content.method,

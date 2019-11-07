@@ -13,6 +13,7 @@ import orbit.client.actor.ComplexDtoActor
 import orbit.client.actor.GreeterActor
 import orbit.client.actor.IdActor
 import orbit.client.actor.IncrementActor
+import orbit.client.actor.NullActor
 import orbit.client.actor.TimeoutActor
 import orbit.client.actor.createProxy
 import orbit.client.util.MessageException
@@ -84,6 +85,24 @@ class BasicActorTests : BaseIntegrationTest() {
             val actor = client.actorFactory.createProxy<IdActor>(actorKey)
             val result = actor.getId().await()
             assertEquals(result, actorKey)
+        }
+    }
+
+    @Test
+    fun `test actor with simple null argument`() {
+        runBlocking {
+            val actor = client.actorFactory.createProxy<NullActor>()
+            val result = actor.simpleNull("Hi ", null).await()
+            assertEquals("Hi null", result)
+        }
+    }
+
+    @Test
+    fun `test actor with complex null argument`() {
+        runBlocking {
+            val actor = client.actorFactory.createProxy<NullActor>()
+            val result = actor.complexNull("Bob ", null).await()
+            assertEquals("Bob null", result)
         }
     }
 }

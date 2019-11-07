@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 
-
 internal class Serializer {
     private val validator: PolymorphicTypeValidator = BasicPolymorphicTypeValidator.builder()
         .allowIfBaseType(Any::class.java)

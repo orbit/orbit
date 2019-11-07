@@ -19,10 +19,13 @@ internal class AddressableProxy(
     private val invocationSystem: InvocationSystem
 ) : InvocationHandler {
     override fun invoke(proxy: Any, method: Method, args: Array<Any?>?): Any {
+        val mappedArgs = args?.mapIndexed { index, value ->
+            value to method.parameterTypes[index]
+        }
         val invocation = AddressableInvocation(
             reference = reference,
             method = method.name,
-            args = args ?: arrayOf()
+            args = mappedArgs?.toTypedArray() ?: arrayOf()
         )
         val completion = invocationSystem.sendInvocation(invocation)
         return DeferredWrappers.wrapReturn(completion, method)
