@@ -48,7 +48,7 @@ services:
     expose:
       - 2379
       - 2380
-  proxy:
+  mesh-proxy:
     image: haproxy:2.0-alpine
     depends_on:
       - orbit-server-1
