@@ -6,7 +6,6 @@ services:
       dockerfile: docker/server/Dockerfile
     ports:
       - "5006:5005"
-      - "50056:50056"
     expose:
       - 50056
     environment:
@@ -23,7 +22,6 @@ services:
       dockerfile: docker/server/Dockerfile
     ports:
       - "5007:5005"
-      - "50057:50056"
     expose:
       - 50056
     environment:
@@ -50,3 +48,13 @@ services:
     expose:
       - 2379
       - 2380
+  mesh-proxy:
+    image: haproxy:2.0-alpine
+    depends_on:
+      - orbit-server-1
+      - orbit-server-2
+    ports:
+      - "50056:50056"
+    volumes:
+      - ./proxy/config:/usr/local/etc/haproxy:rw
+    restart: always
