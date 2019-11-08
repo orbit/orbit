@@ -7,13 +7,15 @@
 package orbit.server.pipeline.step
 
 import orbit.server.mesh.AddressableManager
+import orbit.server.mesh.LocalNodeInfo
 import orbit.server.pipeline.PipelineContext
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 import orbit.shared.net.MessageTarget
 
 class PlacementStep(
-    private val addressableManager: AddressableManager
+    private val addressableManager: AddressableManager,
+    private val localNodeInfo: LocalNodeInfo
 ) : PipelineStep {
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
         when (val content = msg.content) {
@@ -26,6 +28,17 @@ class PlacementStep(
                     }
                 }
             }
+            is MessageContent.ConnectionInfoRequest ->
+                msg.source?.also { source ->
+                    msg.copy(
+                        target = MessageTarget.Unicast(source),
+                        content = MessageContent.ConnectionInfoResponse(
+                            nodeId = localNodeInfo.info.id
+                        )
+                    ).also {
+                        context.pushNew(it)
+                    }
+                }
             else -> context.next(msg)
         }
     }

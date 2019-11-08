@@ -23,9 +23,11 @@ sealed class MessageTarget {
 }
 
 sealed class MessageContent {
+    data class Error(val description: String?) : MessageContent()
+    class ConnectionInfoRequest : MessageContent()
+    data class ConnectionInfoResponse(val nodeId: NodeId) : MessageContent()
     data class InvocationRequest(val destination: AddressableReference, val method: String, val arguments: String) :
         MessageContent()
 
     data class InvocationResponse(val data: String) : MessageContent()
-    data class Error(val description: String?) : MessageContent()
 }

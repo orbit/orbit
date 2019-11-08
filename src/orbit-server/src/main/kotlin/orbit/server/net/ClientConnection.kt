@@ -58,8 +58,8 @@ class ClientConnection(
         outgoingChannel.send(message.toMessageProto())
     }
 
-    fun offerMessage(messsage: Message) {
-        val queued = outgoingChannel.offer(messsage.toMessageProto())
+    fun offerMessage(message: Message) {
+        val queued = outgoingChannel.offer(message.toMessageProto())
         if (!queued) throw CapacityExceededException("Could not offer message.")
     }
 

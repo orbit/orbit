@@ -29,10 +29,20 @@ message MessageTargetProto {
 
 message MessageContentProto {
     oneof content {
-        InvocationRequestProto invocation_request = 1;
-        InvocationResponseProto invocation_response = 2;
-        ErrorProto error = 3;
+        ErrorProto error = 1;
+        ConnectionInfoRequestProto info_request = 2;
+        ConnectionInfoResponseProto info_response = 3;
+        InvocationRequestProto invocation_request = 4;
+        InvocationResponseProto invocation_response = 5;
     }
+}
+
+message ConnectionInfoRequestProto {
+
+}
+
+message ConnectionInfoResponseProto {
+    NodeIdProto nodeId = 1;
 }
 
 message InvocationRequestProto {

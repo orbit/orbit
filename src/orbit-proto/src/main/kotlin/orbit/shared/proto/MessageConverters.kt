@@ -75,6 +75,16 @@ fun Messages.MessageContentProto.toMessageContent(): MessageContent =
             )
         }
 
+        hasInfoRequest() -> {
+            MessageContent.ConnectionInfoRequest()
+        }
+
+        hasInfoResponse() -> {
+            MessageContent.ConnectionInfoResponse(
+                nodeId = infoResponse.nodeId.toNodeId()
+            )
+        }
+
         else -> throw Throwable("Unknown message type")
     }
 
@@ -107,5 +117,19 @@ fun MessageContent.toMessageContentProto(): Messages.MessageContentProto =
                             .build()
                     )
                 }
+
+                is MessageContent.ConnectionInfoRequest -> {
+                    builder.setInfoRequest(
+                        Messages.ConnectionInfoRequestProto.newBuilder()
+                    )
+                }
+
+                is MessageContent.ConnectionInfoResponse -> {
+                    builder.setInfoResponse(
+                        Messages.ConnectionInfoResponseProto.newBuilder()
+                            .setNodeId(nodeId.toNodeIdProto())
+                    )
+                }
+
             }
         }.build()
