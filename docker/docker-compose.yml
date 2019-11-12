@@ -55,6 +55,8 @@ services:
       - orbit-server-2
     ports:
       - "50056:50056"
+    expose:
+      - 50056
     volumes:
       - ./proxy/config:/usr/local/etc/haproxy:rw
     restart: always
