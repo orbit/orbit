@@ -15,3 +15,5 @@ include(":src:orbit-server-etcd")
 include(":src:orbit-application")
 
 include(":src:orbit-client")
+
+include(":src:orbit-benchmarks")
