@@ -35,16 +35,18 @@ class BasicActorTests : BaseIntegrationTest() {
     }
 
     @Test
-    fun `test basic actor request response many`() {
-        val list = mutableListOf<Deferred<String>>()
+    fun `test basic actor request response concurrent`() {
         runBlocking {
+            val list = mutableListOf<Deferred<String>>()
+
             repeat(1000) {
                 val actor = client.actorFactory.createProxy<GreeterActor>()
-                list.add(actor.greetAsync("Joe"))
-
+                list += actor.greetAsync("Joe")
             }
-            list.awaitAll()
-            //assertEquals(result, "Hello Joe")
+
+            list.awaitAll().forEach {
+                assertEquals(it, "Hello Joe")
+            }
         }
     }
 
