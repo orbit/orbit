@@ -41,7 +41,9 @@ class RemoteMeshNodeConnection(localNode: LocalNodeInfo, val id: NodeId, private
     )
 
     override suspend fun sendMessage(message: Message, route: Route?) {
-        sender.send(message.toMessageProto())
+        synchronized(sender) {
+            sender.send(message.toMessageProto())
+        }
     }
 
     fun disconnect() {

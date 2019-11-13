@@ -6,6 +6,8 @@
 
 package orbit.client
 
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import orbit.client.actor.ActorWithNoImpl
@@ -29,6 +31,20 @@ class BasicActorTests : BaseIntegrationTest() {
             val actor = client.actorFactory.createProxy<GreeterActor>()
             val result = actor.greetAsync("Joe").await()
             assertEquals(result, "Hello Joe")
+        }
+    }
+
+    @Test
+    fun `test basic actor request response many`() {
+        val list = mutableListOf<Deferred<String>>()
+        runBlocking {
+            repeat(1000) {
+                val actor = client.actorFactory.createProxy<GreeterActor>()
+                list.add(actor.greetAsync("Joe"))
+
+            }
+            list.awaitAll()
+            //assertEquals(result, "Hello Joe")
         }
     }
 

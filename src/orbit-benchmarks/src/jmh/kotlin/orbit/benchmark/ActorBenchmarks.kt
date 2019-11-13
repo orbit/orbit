@@ -35,8 +35,8 @@ import org.openjdk.jmh.annotations.Warmup
 import java.net.URI
 import java.util.concurrent.TimeUnit
 
-private const val REQUESTS_PER_BATCH = 1
-private const val ACTOR_POOL = 1
+private const val REQUESTS_PER_BATCH = 500
+private const val ACTOR_POOL = 1000
 
 
 interface BasicBenchmarkActor : ActorWithInt32Key {

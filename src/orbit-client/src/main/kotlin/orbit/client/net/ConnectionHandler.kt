@@ -56,7 +56,9 @@ internal class ConnectionHandler(
     }
 
     fun send(msg: Message) {
-        connectionChannel.send(msg.toMessageProto())
+        synchronized(connectionChannel) {
+            connectionChannel.send(msg.toMessageProto())
+        }
     }
 
     fun disconnect() {
