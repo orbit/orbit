@@ -34,7 +34,7 @@ data class OrbitServerConfig(
     /**
      * The number of workers that can process a message concurrently.
      */
-    val pipelineRailCount: Int = 128,
+    val pipelineRailCount: Int = 32,
 
     /**
      * The number of messages (either inbound or outbound) that may be queued before new messages are rejected.

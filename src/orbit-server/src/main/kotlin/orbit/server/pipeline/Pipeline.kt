@@ -67,8 +67,11 @@ class Pipeline(
                 logger.error(errMsg)
                 throw CapacityExceededException(errMsg)
             }
+
+        } catch(e: CapacityExceededException) {
+            throw e;
         } catch (t: Throwable) {
-            error("The pipeline channel is closed")
+            throw Exception("Error offering to pipeline", t)
         }
     }
 
