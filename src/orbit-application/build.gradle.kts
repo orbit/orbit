@@ -4,6 +4,7 @@
  See license in LICENSE.
  */
 val slf4jVersion = project.rootProject.ext["slf4jVersion"]
+val jacksonVersion = project.rootProject.ext["jacksonVersion"]
 
 val mainClass = "orbit.application.AppKt"
 
@@ -20,7 +21,14 @@ dependencies {
 
     compile("org.slf4j:slf4j-simple:$slf4jVersion")
 
+    implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion")
+
+    implementation("org.apache.commons:commons-text:1.8")
 }
+
 
 application {
     mainClassName = mainClass

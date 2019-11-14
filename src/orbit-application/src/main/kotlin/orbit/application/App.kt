@@ -8,25 +8,17 @@ package orbit.application
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.time.delay
+import orbit.application.impl.SettingsLoader
 import orbit.server.OrbitServer
-import orbit.server.OrbitServerConfig
-import orbit.server.etcd.EtcdAddressableDirectory
-import orbit.server.etcd.EtcdNodeDirectory
 import java.time.Duration
+
 
 fun main() {
     runBlocking {
-        val server = OrbitServer(
-            OrbitServerConfig(
-                nodeDirectory = EtcdNodeDirectory.EtcdNodeDirectoryConfig(
-                    System.getenv("NODE_DIRECTORY") ?: "0.0.0.0"
-                ),
+        val settingsLoader = SettingsLoader()
+        val config = settingsLoader.loadConfig()
+        val server = OrbitServer(config)
 
-                addressableDirectory = EtcdAddressableDirectory.EtcdAddressableDirectoryConfig(
-                    System.getenv("ADDRESSABLE_DIRECTORY") ?: "0.0.0.0"
-                )
-            )
-        )
         delay(Duration.ofSeconds(5))
         server.start().join()
     }

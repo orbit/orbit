@@ -5,7 +5,7 @@
  */
 val kotlinCoroutinesVersion = project.rootProject.ext["kotlinCoroutinesVersion"]
 val slf4jVersion = project.rootProject.ext["slf4jVersion"]
-val jacksonVersion = "2.10.0"
+val jacksonVersion = project.rootProject.ext["jacksonVersion"]
 
 plugins {
     kotlin("jvm")

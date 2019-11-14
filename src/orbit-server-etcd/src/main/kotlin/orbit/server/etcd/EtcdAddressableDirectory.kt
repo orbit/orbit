@@ -37,7 +37,7 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
     AddressableDirectory {
 
     data class EtcdAddressableDirectoryConfig(
-        val url: String,
+        val url: String = System.getenv("ADDRESSABLE_DIRECTORY") ?: "0.0.0.0",
         val cleanupFrequencyRange: Pair<Duration, Duration> = Duration.ofMinutes(1) to Duration.ofMinutes(2)
     ) : ExternallyConfigured<AddressableDirectory> {
         override val instanceType: Class<out AddressableDirectory> = EtcdAddressableDirectory::class.java

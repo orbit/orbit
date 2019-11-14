@@ -1,0 +1,18 @@
+{
+  "serverInfo": {
+    "port": "${ORBIT_PORT:-50056}",
+    "url": "${ORBIT_URL:-localhost:50056}"
+  },
+  "nodeDirectory": [
+    "orbit.server.etcd.EtcdNodeDirectory$EtcdNodeDirectoryConfig",
+    {
+      "url": "${ETCD_NODE_DIR:-0.0.0.0}"
+    }
+  ],
+  "addressableDirectory": [
+    "orbit.server.etcd.EtcdAddressableDirectory$EtcdAddressableDirectoryConfig",
+    {
+      "url": "${ETCD_ADDRESSABLE_DIR:-0.0.0.0}"
+    }
+  ]
+}

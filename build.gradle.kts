@@ -14,6 +14,7 @@ val grpcKotlinVersion by extra("0.1.2")
 val protobufVersion by extra("3.10.0")
 val kotlinCoroutinesVersion by extra("1.3.2")
 val slf4jVersion by extra("1.7.26")
+val jacksonVersion by extra("2.10.0")
 
 // Publishing info
 val orbitGroup by extra("cloud.orbit")
