@@ -15,7 +15,6 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import mu.KotlinLogging
 import orbit.server.OrbitServerConfig
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 
 internal class SettingsLoader {
@@ -46,7 +45,8 @@ internal class SettingsLoader {
                     String(Files.readAllBytes(path)).also {
                         return mapper.readValue(it, OrbitServerConfig::class.java)
                     }
-                }finally {}
+                } finally {
+                }
             }
         }
 
@@ -58,7 +58,8 @@ internal class SettingsLoader {
                     String(Files.readAllBytes(path)).also {
                         return mapper.readValue(it, OrbitServerConfig::class.java)
                     }
-                } finally {}
+                } finally {
+                }
             }
         }
 
