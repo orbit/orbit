@@ -9,13 +9,15 @@ services:
     expose:
       - 50056
     environment:
+      ORBIT_SETTINGS: /etc/orbit/orbit.json
       ORBIT_URL: "orbit-server-1:50056"
       ORBIT_PORT: 50056
-      NODE_DIRECTORY: http://node-directory:2379
-      ADDRESSABLE_DIRECTORY: http://addressable-directory:2379
+      ETCD_ADDRESSABLE_DIR: http://node-directory:2379
+      ETCD_NODE_DIR: http://addressable-directory:2379
     entrypoint: sh ./opt/orbit/entrypoint.sh
     volumes:
       - ../src/orbit-application/build/libs:/opt/orbit/libs
+      - ./local-compose-orbit-settings.json:/etc/orbit/orbit.json
   orbit-server-2:
     build:
       context: ../
@@ -25,13 +27,15 @@ services:
     expose:
       - 50056
     environment:
+      ORBIT_SETTINGS: /etc/orbit/orbit.json
       ORBIT_URL: "orbit-server-2:50056"
       ORBIT_PORT: 50056
-      NODE_DIRECTORY: http://node-directory:2379
-      ADDRESSABLE_DIRECTORY: http://addressable-directory:2379
+      ETCD_ADDRESSABLE_DIR: http://node-directory:2379
+      ETCD_NODE_DIR: http://addressable-directory:2379
     entrypoint: sh -c ./opt/orbit/entrypoint.sh
     volumes:
       - ../src/orbit-application/build/libs:/opt/orbit/libs
+      - ./local-compose-orbit-settings.json:/etc/orbit/orbit.json
   node-directory:
     image: bitnami/etcd
     environment:
