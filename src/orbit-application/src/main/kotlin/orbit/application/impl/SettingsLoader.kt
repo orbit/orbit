@@ -16,6 +16,7 @@ import mu.KotlinLogging
 import orbit.server.OrbitServerConfig
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 
 internal class SettingsLoader {
     private val logger = KotlinLogging.logger { }
@@ -39,21 +40,25 @@ internal class SettingsLoader {
 
         val settingsFileEnv = System.getenv("ORBIT_SETTINGS")
         if (!settingsFileEnv.isNullOrBlank()) {
-            val path = Path.of(settingsFileEnv)
+            val path = Paths.get(settingsFileEnv)
             if (Files.exists(path)) {
-                Files.readString(path)?.also {
-                    return mapper.readValue(it, OrbitServerConfig::class.java)
-                }
+                try {
+                    String(Files.readAllBytes(path)).also {
+                        return mapper.readValue(it, OrbitServerConfig::class.java)
+                    }
+                }finally {}
             }
         }
 
         val settingsFileProps = System.getProperty("orbit.settings")
         if (!settingsFileProps.isNullOrBlank()) {
-            val path = Path.of(settingsFileProps)
+            val path = Paths.get(settingsFileProps)
             if (Files.exists(path)) {
-                Files.readString(path)?.also {
-                    return mapper.readValue(it, OrbitServerConfig::class.java)
-                }
+                try {
+                    String(Files.readAllBytes(path)).also {
+                        return mapper.readValue(it, OrbitServerConfig::class.java)
+                    }
+                } finally {}
             }
         }
 
