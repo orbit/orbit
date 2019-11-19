@@ -54,6 +54,7 @@ services:
       - 2380
   mesh-proxy:
     image: haproxy:2.0-alpine
+    container_name: mesh-proxy
     depends_on:
       - orbit-server-1
       - orbit-server-2
