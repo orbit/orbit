@@ -8,8 +8,10 @@ package orbit.server.service
 
 import io.grpc.Server
 import io.grpc.ServerBuilder
+import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder
 import mu.KotlinLogging
 import orbit.server.mesh.LocalServerInfo
+import java.util.concurrent.TimeUnit
 
 class GrpcEndpoint(
     private val serverAuthInterceptor: ServerAuthInterceptor,
@@ -25,7 +27,11 @@ class GrpcEndpoint(
     fun start() {
         logger.info("Starting gRPC Endpoint on $localServerInfo.port...")
 
-        server = ServerBuilder.forPort(localServerInfo.port)
+        server = NettyServerBuilder.forPort(localServerInfo.port)
+            .keepAliveTime(500, TimeUnit.MILLISECONDS)
+            .keepAliveTimeout(10, TimeUnit.SECONDS)
+            .permitKeepAliveWithoutCalls(true)
+            .permitKeepAliveTime(1000, TimeUnit.MILLISECONDS)
             .intercept(serverAuthInterceptor)
             .addService(healthService)
             .addService(nodeManagementService)
