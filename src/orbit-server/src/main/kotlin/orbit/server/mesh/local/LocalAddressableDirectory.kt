@@ -21,7 +21,7 @@ class LocalAddressableDirectory : HashMapBackedAsyncMap<AddressableReference, Ad
     override suspend fun isHealthy(): Boolean {
         return true
     }
-    
+
     override suspend fun tick() {
         // Cull expired
         values().filter { it.expiresAt.inPast() }.also { toDelete ->

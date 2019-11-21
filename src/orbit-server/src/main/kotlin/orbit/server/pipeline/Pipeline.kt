@@ -68,7 +68,7 @@ class Pipeline(
                 throw CapacityExceededException(errMsg)
             }
 
-        } catch(e: CapacityExceededException) {
+        } catch (e: CapacityExceededException) {
             throw e;
         } catch (t: Throwable) {
             throw Exception("Error offering to pipeline", t)

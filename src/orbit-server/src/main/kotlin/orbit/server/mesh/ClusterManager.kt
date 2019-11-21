@@ -136,7 +136,7 @@ class ClusterManager(
         }
         nodes.forEach { node ->
             node.visibleNodes.forEach { visibleNode ->
-                if(graph.containsVertex(visibleNode)) {
+                if (graph.containsVertex(visibleNode)) {
                     graph.addEdge(node.id, visibleNode)
                 }
             }

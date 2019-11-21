@@ -65,6 +65,15 @@ data class OrbitClientConfig(
     /**
      * The system to use to construct addressables.
      */
-    val addressableConstructor: ExternallyConfigured<AddressableConstructor> = DefaultAddressableConstructor.DefaultAddressableConstructorSingleton
+    val addressableConstructor: ExternallyConfigured<AddressableConstructor> = DefaultAddressableConstructor.DefaultAddressableConstructorSingleton,
 
+    /**
+     * The amount of times the gRPC network layer will retry.
+     */
+    val networkRetryAttempts: Int = 5,
+
+    /**
+     * The amount of time Orbit should wait for the initial join cluster to succeed before failing.
+     */
+    val joinClusterTimeout: Duration = Duration.ofSeconds(30)
 )
