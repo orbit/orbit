@@ -16,8 +16,11 @@ import orbit.client.addressable.InvocationSystem
 import orbit.client.execution.ExecutionLeases
 import orbit.client.execution.ExecutionSystem
 import orbit.client.mesh.AddressableLeaser
+import orbit.client.mesh.NodeLeaseRenewalFailed
+import orbit.client.mesh.NodeLeaseRenewalFailedHandler
 import orbit.client.mesh.NodeLeaser
 import orbit.client.net.ClientAuthInterceptor
+import orbit.client.net.ClientState
 import orbit.client.net.ConnectionHandler
 import orbit.client.net.GrpcClient
 import orbit.client.net.LocalNode
@@ -66,6 +69,7 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
 
             definition<NodeLeaser>()
             definition<AddressableLeaser>()
+            externallyConfigured(config.nodeLeaseRenewalFailedHandler)
 
             definition<Serializer>()
 
@@ -91,12 +95,18 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
     private val localNode by container.inject<LocalNode>()
     private val definitionDirectory by container.inject<AddressableDefinitionDirectory>()
     private val executionSystem by container.inject<ExecutionSystem>()
+    private val nodeLeaseRenewalFailedHandler by container.inject<NodeLeaseRenewalFailedHandler>()
 
     val actorFactory by container.inject<ActorProxyFactory>()
 
     fun start() = scope.launch {
         logger.info("Starting Orbit client...")
         val (elapsed, _) = stopwatch(clock) {
+            // Flip state
+            localNode.manipulate {
+                it.copy(clientState = ClientState.CONNECTING)
+            }
+
             // Scan for capabilities
             capabilitiesScanner.scan()
             definitionDirectory.setupDefinition(
@@ -113,6 +123,10 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
             // Open message channel
             connectionHandler.connect()
 
+            localNode.manipulate {
+                it.copy(clientState = ClientState.CONNECTED)
+            }
+
             // Start tick
             ticker.start()
         }
@@ -121,6 +135,9 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
     }
 
     private suspend fun tick() {
+        // Keep stream open
+        connectionHandler.tick()
+
         // See if lease needs renewing
         nodeLeaser.tick()
 
@@ -134,11 +151,24 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
     fun stop() = scope.launch {
         logger.info("Stopping Orbit...")
         val (elapsed, _) = stopwatch(clock) {
+            localNode.manipulate {
+                it.copy(clientState = ClientState.STOPPING)
+            }
+
+            //  TODO: Wait until placements will stop
+
+            // Stop all addressables
+            executionSystem.stop()
+
             // Stop messaging
             connectionHandler.disconnect()
 
             // Stop the tick
             ticker.stop()
+
+            localNode.manipulate {
+                it.copy(clientState = ClientState.IDLE)
+            }
         }
 
         logger.info("Orbit stopped successfully in {}ms.", elapsed)
@@ -149,7 +179,13 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
         onUnhandledException(throwable)
 
     private fun onUnhandledException(throwable: Throwable) {
-        logger.error(throwable) { "Unhandled exception in Orbit Client." }
+        when(throwable) {
+            is NodeLeaseRenewalFailed -> {
+                logger.error { "Node lease renewal failed..." }
+                nodeLeaseRenewalFailedHandler.onLeaseRenewalFailed()
+            }
+            else -> logger.error(throwable) { "Unhandled exception in Orbit Client." }
+        }
     }
 
 }

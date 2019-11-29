@@ -51,18 +51,37 @@ internal class ConnectionHandler(
         }
     }
 
-    private suspend fun onMessage(message: Message) {
-        messageHandler.onMessage(message)
+    fun tick() {
+        testConnection()
+    }
+
+    fun disconnect() {
+        if(::connectionChannel.isInitialized) {
+            connectionChannel.cancel()
+            messageRails.stopWorkers()
+        }
     }
 
     fun send(msg: Message) {
+        testConnection();
+
         synchronized(connectionChannel) {
             connectionChannel.send(msg.toMessageProto())
         }
     }
 
-    fun disconnect() {
-        connectionChannel.cancel()
-        messageRails.stopWorkers()
+
+    private suspend fun onMessage(message: Message) {
+        messageHandler.onMessage(message)
+    }
+
+    private fun testConnection() {
+        if(::connectionChannel.isInitialized) {
+            if(connectionChannel.isClosedForReceive) {
+                logger.warn { "The stream connection is closed. Reopening..." }
+                disconnect()
+                connect()
+            }
+        }
     }
 }

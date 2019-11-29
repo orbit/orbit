@@ -9,6 +9,8 @@ package orbit.client
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.client.addressable.AddressableConstructor
 import orbit.client.addressable.DefaultAddressableConstructor
+import orbit.client.mesh.NodeLeaseRenewalFailedHandler
+import orbit.client.mesh.RestartOnNodeRenewalFailure
 import orbit.client.net.OrbitServiceLocator
 import orbit.util.concurrent.Pools
 import orbit.util.di.ExternallyConfigured
@@ -75,5 +77,10 @@ data class OrbitClientConfig(
     /**
      * The amount of time Orbit should wait for the initial join cluster to succeed before failing.
      */
-    val joinClusterTimeout: Duration = Duration.ofSeconds(30)
+    val joinClusterTimeout: Duration = Duration.ofSeconds(30),
+
+    /**
+     * How to handle node lease renewal failure
+     */
+    val nodeLeaseRenewalFailedHandler: ExternallyConfigured<NodeLeaseRenewalFailedHandler> = RestartOnNodeRenewalFailure.RestartOnNodeRenewalFailureSingleton
 )

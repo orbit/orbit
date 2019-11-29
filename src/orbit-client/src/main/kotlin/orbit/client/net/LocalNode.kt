@@ -25,5 +25,6 @@ internal class LocalNode(config: OrbitClientConfig) {
 internal data class NodeData(
     val serviceLocator: OrbitServiceLocator,
     val nodeInfo: NodeInfo? = null,
-    val capabilities: NodeCapabilities? = null
+    val capabilities: NodeCapabilities? = null,
+    val clientState: ClientState = ClientState.IDLE
 )

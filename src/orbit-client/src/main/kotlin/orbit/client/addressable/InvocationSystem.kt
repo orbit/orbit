@@ -8,7 +8,9 @@ package orbit.client.addressable
 
 import kotlinx.coroutines.CompletableDeferred
 import orbit.client.execution.ExecutionSystem
+import orbit.client.net.ClientState
 import orbit.client.net.Completion
+import orbit.client.net.LocalNode
 import orbit.client.net.MessageHandler
 import orbit.client.serializer.Serializer
 import orbit.shared.addressable.AddressableInvocation
@@ -21,6 +23,7 @@ import orbit.util.di.ComponentContainer
 internal class InvocationSystem(
     private val serializer: Serializer,
     private val executionSystem: ExecutionSystem,
+    private val localNode: LocalNode,
     componentContainer: ComponentContainer
 ) {
     private val messageHandler by componentContainer.inject<MessageHandler>()
@@ -59,6 +62,8 @@ internal class InvocationSystem(
     }
 
     fun sendInvocation(invocation: AddressableInvocation): Completion {
+        check(localNode.status.clientState == ClientState.CONNECTED) { "The Orbit client is not connected"}
+
         val arguments = serializer.serialize(invocation.args)
         val msg = Message(
             MessageContent.InvocationRequest(

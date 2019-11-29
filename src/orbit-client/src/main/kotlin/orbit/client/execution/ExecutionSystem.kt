@@ -82,6 +82,12 @@ internal class ExecutionSystem(
         }
     }
 
+    suspend fun stop() {
+        activeAddressables.forEach {
+            deactivate(it.value);
+        }
+    }
+
     private suspend fun activate(
         reference: AddressableReference
     ): ExecutionHandle? =

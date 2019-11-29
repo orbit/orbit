@@ -40,7 +40,6 @@ internal class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClie
                     }
                     logger.info("Joined cluster as node '${nodeInfo.id}'.")
                 }
-
             }
     }
 
@@ -56,10 +55,14 @@ internal class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClie
                         .build()
                 ).await()
 
-                check(renewalResult.status == NodeManagementOuterClass.NodeLeaseResponseProto.Status.OK) { "Node renewal failed" }
+                if(renewalResult.status !=  NodeManagementOuterClass.NodeLeaseResponseProto.Status.OK) {
+                    throw NodeLeaseRenewalFailed("Node renewal failed")
+                }
+
                 localNode.manipulate {
                     it.copy(nodeInfo = renewalResult.info.toNodeInfo())
                 }
+
                 logger.debug("Lease renewed.")
             }
         }
