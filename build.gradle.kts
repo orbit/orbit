@@ -9,12 +9,12 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper
 
 // Shared dependencies
-val grpcVersion by extra("1.24.1")
+val grpcVersion by extra("1.25.0")
 val grpcKotlinVersion by extra("0.1.2")
-val protobufVersion by extra("3.10.0")
+val protobufVersion by extra("3.11.0")
 val kotlinCoroutinesVersion by extra("1.3.2")
-val slf4jVersion by extra("1.7.26")
-val jacksonVersion by extra("2.10.0")
+val slf4jVersion by extra("1.7.29")
+val jacksonVersion by extra("2.10.1")
 
 // Publishing info
 val orbitGroup by extra("cloud.orbit")
@@ -29,7 +29,7 @@ val licenseName by extra("The BSD 3-Clause License")
 val licenseUrl by extra("http://opensource.org/licenses/BSD-3-Clause")
 
 plugins {
-    val kotlinVersion = "1.3.60"
+    val kotlinVersion = "1.3.61"
 
     base
     kotlin("jvm") version kotlinVersion apply false
