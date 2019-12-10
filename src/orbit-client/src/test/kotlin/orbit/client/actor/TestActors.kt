@@ -114,6 +114,7 @@ class ArgumentOnDeactivateImpl : ArgumentOnDeactivate {
     override fun greetAsync(name: String): Deferred<String> =
         CompletableDeferred("Hello $name")
 
+    @Suppress("UNUSED_PARAMETER")
     @OnDeactivate
     fun onDeactivate(deactivationReason: DeactivationReason): Deferred<Unit> {
         TrackingGlobals.deactivateTestCounts.incrementAndGet()

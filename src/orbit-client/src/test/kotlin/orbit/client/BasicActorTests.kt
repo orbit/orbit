@@ -42,7 +42,7 @@ class BasicActorTests : BaseIntegrationTest() {
         runBlocking {
             val list = mutableListOf<Deferred<String>>()
 
-            repeat(1000) {
+            repeat(100) {
                 val actor = client.actorFactory.createProxy<GreeterActor>()
                 list += actor.greetAsync("Joe")
             }
@@ -103,7 +103,7 @@ class BasicActorTests : BaseIntegrationTest() {
     fun `ensure basic onDeactivate runs`() {
         runBlocking {
             val actor = client.actorFactory.createProxy<BasicOnDeactivate>()
-            val call1 = actor.greetAsync("Test").await()
+            actor.greetAsync("Test").await()
             val before = TrackingGlobals.deactivateTestCounts.get()
             client.clock.advanceTime(client.config.addressableTTL.toMillis() * 2)
             delay(client.config.tickRate.toMillis() * 2) // Wait twice the tick so the deactivation should have happened
@@ -116,7 +116,7 @@ class BasicActorTests : BaseIntegrationTest() {
     fun `ensure argument onDeactivate runs`() {
         runBlocking {
             val actor = client.actorFactory.createProxy<ArgumentOnDeactivate>()
-            val call1 = actor.greetAsync("Test").await()
+            actor.greetAsync("Test").await()
             val before = TrackingGlobals.deactivateTestCounts.get()
             client.clock.advanceTime(client.config.addressableTTL.toMillis() * 2)
             delay(client.config.tickRate.toMillis() * 2) // Wait twice the tick so the deactivation should have happened
@@ -124,7 +124,6 @@ class BasicActorTests : BaseIntegrationTest() {
             assertTrue(before < after)
         }
     }
-
 
     @Test
     fun `test actor with id and context`() {
