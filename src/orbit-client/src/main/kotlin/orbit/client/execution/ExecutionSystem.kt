@@ -15,6 +15,7 @@ import orbit.client.addressable.AddressableClass
 import orbit.client.addressable.AddressableConstructor
 import orbit.client.addressable.AddressableDefinitionDirectory
 import orbit.client.addressable.AddressableImplDefinition
+import orbit.client.addressable.DeactivationReason
 import orbit.client.net.Completion
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableReference
@@ -53,38 +54,43 @@ internal class ExecutionSystem(
 
     suspend fun tick() {
         activeAddressables.forEach { (_, handle) ->
-            var shouldDeactivate = handle.deactivateNextTick
-
             val timeInactive = clock.currentTime - handle.lastActivity
-            shouldDeactivate = shouldDeactivate or (timeInactive > defaultTtl)
 
-            if (!shouldDeactivate) {
-                val lease = executionLeases.getLease(handle.reference)
 
-                if (lease != null) {
-                    if (Timestamp.now() > lease.renewAt) {
-                        try {
-                            executionLeases.renewLease(handle.reference)
-                        } catch (t: Throwable) {
-                            logger.error(t) { "Unexpected error renewing lease" }
-                            shouldDeactivate = true
-                        }
-                    }
-                } else {
-                    shouldDeactivate = true
-                    logger.error { "No lease found for ${handle.reference}" }
-                }
+            if (handle.deactivateNextTick) {
+                deactivate(handle, DeactivationReason.EXTERNALLY_TRIGGERED)
+                return@forEach
             }
 
-            if (shouldDeactivate) {
-                deactivate(handle)
+            if (timeInactive > defaultTtl) {
+                deactivate(handle, DeactivationReason.TTL_EXPIRED)
+                return@forEach
+
+            }
+
+            val lease = executionLeases.getLease(handle.reference)
+            if (lease != null) {
+                if (Timestamp.now() > lease.renewAt) {
+                    try {
+                        executionLeases.renewLease(handle.reference)
+                    } catch (t: Throwable) {
+                        logger.error(t) { "Unexpected error renewing lease" }
+                        deactivate(handle, DeactivationReason.LEASE_RENEWAL_FAILED)
+                        return@forEach
+
+                    }
+                } else {
+                    logger.error { "No lease found for ${handle.reference}" }
+                    deactivate(handle, DeactivationReason.LEASE_RENEWAL_FAILED)
+                    return@forEach
+                }
             }
         }
     }
 
     suspend fun stop() {
         activeAddressables.forEach {
-            deactivate(it.value);
+            deactivate(it.value, DeactivationReason.NODE_SHUTTING_DOWN)
         }
     }
 
@@ -102,10 +108,10 @@ internal class ExecutionSystem(
         completion.complete(result)
     }
 
-    private suspend fun deactivate(handle: ExecutionHandle) {
+    private suspend fun deactivate(handle: ExecutionHandle, deactivationReason: DeactivationReason) {
         try {
             withTimeout(deactivationTimeoutMs) {
-                handle.deactivate().await()
+                handle.deactivate(deactivationReason).await()
             }
         } catch (t: TimeoutCancellationException) {
             val msg = "A timeout occurred (>${deactivationTimeoutMs}ms) during deactivation of " +

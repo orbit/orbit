@@ -46,6 +46,28 @@ annotation class OnActivate
 annotation class OnDeactivate
 
 /**
+ * Denotes the reason an addressable is deactivating.
+ */
+enum class DeactivationReason {
+    /**
+     * The Addressable TTL expired normally.
+     */
+    TTL_EXPIRED,
+    /**
+     * The node is shutting down.
+     */
+    NODE_SHUTTING_DOWN,
+    /**
+     * The addressable's lease renewal failed.
+     */
+    LEASE_RENEWAL_FAILED,
+    /**
+     * The deactivation was triggered by another subsystem.
+     */
+    EXTERNALLY_TRIGGERED
+}
+
+/**
  * An abstract [Addressable] which allows Orbit to provide an [AddressableContext].
  */
 abstract class AbstractAddressable {

@@ -16,6 +16,7 @@ import orbit.client.addressable.Addressable
 import orbit.client.addressable.AddressableContext
 import orbit.client.addressable.AddressableImplDefinition
 import orbit.client.addressable.AddressableInterfaceDefinition
+import orbit.client.addressable.DeactivationReason
 import orbit.client.addressable.InvocationSystem
 import orbit.client.addressable.MethodInvoker
 import orbit.client.net.Completion
@@ -69,9 +70,9 @@ internal class ExecutionHandle(
             sendEvent(EventType.ActivateEvent(it))
         }
 
-    fun deactivate(): Completion =
+    fun deactivate(deactivationReason: DeactivationReason): Completion =
         CompletableDeferred<Any?>().also {
-            sendEvent(EventType.DeactivateEvent(it))
+            sendEvent(EventType.DeactivateEvent(deactivationReason, it))
         }
 
     fun invoke(
@@ -110,11 +111,21 @@ internal class ExecutionHandle(
         }
     }
 
-    private suspend fun onDeactivate() {
+    private suspend fun onDeactivate(deactivationReason: DeactivationReason) {
         logger.debug { "Deactivating $reference..." }
         stopwatch(clock) {
             implDefinition.onDeactivateMethod?.also {
-                DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
+                if (it.method.parameterCount == 0) {
+                    DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
+                } else if (it.method.parameterCount == 1) {
+                    if (it.method.parameterTypes[0] == DeactivationReason::class.java) {
+                        DeferredWrappers.wrapCall(it.method.invoke(instance, deactivationReason)).await()
+                    } else {
+                        logger.warn { "Methods with a single argument tagged as @OnDeactivate may only accept a DeactivationReason" }
+                    }
+                } else {
+                    logger.warn { "Methods tagged with @OnDeactivate may only take 0 or 1 argument(s)" }
+                }
             }
 
             worker.cancel()
@@ -145,7 +156,7 @@ internal class ExecutionHandle(
                 when (event) {
                     is EventType.ActivateEvent -> onActivate()
                     is EventType.InvokeEvent -> onInvoke(event.invocation)
-                    is EventType.DeactivateEvent -> onDeactivate()
+                    is EventType.DeactivateEvent -> onDeactivate(event.deactivationReason)
                 }.also {
                     event.completion.complete(it)
                 }
@@ -160,6 +171,7 @@ internal class ExecutionHandle(
 
         data class ActivateEvent(override val completion: Completion) : EventType()
         data class InvokeEvent(val invocation: AddressableInvocation, override val completion: Completion) : EventType()
-        data class DeactivateEvent(override val completion: Completion) : EventType()
+        data class DeactivateEvent(val deactivationReason: DeactivationReason, override val completion: Completion) :
+            EventType()
     }
 }

@@ -11,12 +11,15 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import orbit.client.actor.ActorWithNoImpl
+import orbit.client.actor.ArgumentOnDeactivate
+import orbit.client.actor.BasicOnDeactivate
 import orbit.client.actor.ComplexDtoActor
 import orbit.client.actor.GreeterActor
 import orbit.client.actor.IdActor
 import orbit.client.actor.IncrementActor
 import orbit.client.actor.NullActor
 import orbit.client.actor.TimeoutActor
+import orbit.client.actor.TrackingGlobals
 import orbit.client.actor.createProxy
 import orbit.client.util.MessageException
 import orbit.util.misc.RNGUtils
@@ -95,6 +98,33 @@ class BasicActorTests : BaseIntegrationTest() {
             assertTrue(call2 <= call1)
         }
     }
+
+    @Test
+    fun `ensure basic onDeactivate runs`() {
+        runBlocking {
+            val actor = client.actorFactory.createProxy<BasicOnDeactivate>()
+            val call1 = actor.greetAsync("Test").await()
+            val before = TrackingGlobals.deactivateTestCounts.get()
+            client.clock.advanceTime(client.config.addressableTTL.toMillis() * 2)
+            delay(client.config.tickRate.toMillis() * 2) // Wait twice the tick so the deactivation should have happened
+            val after = TrackingGlobals.deactivateTestCounts.get()
+            assertTrue(before < after)
+        }
+    }
+
+    @Test
+    fun `ensure argument onDeactivate runs`() {
+        runBlocking {
+            val actor = client.actorFactory.createProxy<ArgumentOnDeactivate>()
+            val call1 = actor.greetAsync("Test").await()
+            val before = TrackingGlobals.deactivateTestCounts.get()
+            client.clock.advanceTime(client.config.addressableTTL.toMillis() * 2)
+            delay(client.config.tickRate.toMillis() * 2) // Wait twice the tick so the deactivation should have happened
+            val after = TrackingGlobals.deactivateTestCounts.get()
+            assertTrue(before < after)
+        }
+    }
+
 
     @Test
     fun `test actor with id and context`() {

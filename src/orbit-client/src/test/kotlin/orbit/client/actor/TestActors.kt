@@ -8,7 +8,14 @@ package orbit.client.actor
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
+import orbit.client.addressable.DeactivationReason
+import orbit.client.addressable.OnDeactivate
 import orbit.shared.addressable.Key
+import java.util.concurrent.atomic.AtomicInteger
+
+object TrackingGlobals {
+    val deactivateTestCounts = AtomicInteger();
+}
 
 interface GreeterActor : ActorWithNoKey {
     fun greetAsync(name: String): Deferred<String>
@@ -80,5 +87,36 @@ class NullActorImpl : NullActor {
 
     override fun complexNull(arg1: String, arg2: ComplexNull?): Deferred<String> {
         return CompletableDeferred(arg1 + arg2?.greeting)
+    }
+}
+
+
+interface BasicOnDeactivate : ActorWithNoKey {
+    fun greetAsync(name: String): Deferred<String>
+}
+
+class BasicOnDeactivateImpl : BasicOnDeactivate {
+    override fun greetAsync(name: String): Deferred<String> =
+        CompletableDeferred("Hello $name")
+
+    @OnDeactivate
+    fun onDeactivate(): Deferred<Unit> {
+        TrackingGlobals.deactivateTestCounts.incrementAndGet()
+        return CompletableDeferred(Unit)
+    }
+}
+
+interface ArgumentOnDeactivate : ActorWithNoKey {
+    fun greetAsync(name: String): Deferred<String>
+}
+
+class ArgumentOnDeactivateImpl : ArgumentOnDeactivate {
+    override fun greetAsync(name: String): Deferred<String> =
+        CompletableDeferred("Hello $name")
+
+    @OnDeactivate
+    fun onDeactivate(deactivationReason: DeactivationReason): Deferred<Unit> {
+        TrackingGlobals.deactivateTestCounts.incrementAndGet()
+        return CompletableDeferred(Unit)
     }
 }
