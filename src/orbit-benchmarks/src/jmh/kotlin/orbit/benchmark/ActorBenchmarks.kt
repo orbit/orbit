@@ -15,7 +15,6 @@ import orbit.client.OrbitClientConfig
 import orbit.client.actor.AbstractActor
 import orbit.client.actor.ActorWithInt32Key
 import orbit.client.actor.createProxy
-import orbit.client.net.OrbitServiceLocator
 import orbit.server.OrbitServer
 import orbit.server.OrbitServerConfig
 import orbit.server.mesh.LocalServerInfo
@@ -54,7 +53,9 @@ class BasicBenchmarkActorImpl : BasicBenchmarkActor, AbstractActor() {
 @Warmup(iterations = 5)
 @Measurement(iterations = 20)
 open class ActorBenchmarks {
-    private val targetUri = URI.create("orbit://localhost:5899/test")
+    private val port = 5899;
+    private val targetUri = "dns:///localhost:${port}/"
+    private val namespace = "benchmarks"
 
     private lateinit var server: OrbitServer
     private lateinit var client: OrbitClient
@@ -64,13 +65,14 @@ open class ActorBenchmarks {
     fun setup() {
         val serverConfig = OrbitServerConfig(
             LocalServerInfo(
-                port = targetUri.port,
-                url = targetUri.toString()
+                url = targetUri,
+                port = port
             )
         )
         val clientConfig =
             OrbitClientConfig(
-                serviceLocator = OrbitServiceLocator(targetUri),
+                grpcEndpoint = targetUri,
+                namespace = namespace,
                 packages = listOf("orbit.benchmark")
             )
 

@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 internal class LocalNode(config: OrbitClientConfig) {
     private val ref = AtomicReference(
-        NodeData(config.serviceLocator)
+        NodeData(config.grpcEndpoint, config.namespace)
     )
 
     val status get() = ref.get()!!
@@ -23,7 +23,8 @@ internal class LocalNode(config: OrbitClientConfig) {
 }
 
 internal data class NodeData(
-    val serviceLocator: OrbitServiceLocator,
+    val grpcEndpoint: String,
+    val namespace: String,
     val nodeInfo: NodeInfo? = null,
     val capabilities: NodeCapabilities? = null,
     val clientState: ClientState = ClientState.IDLE

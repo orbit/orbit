@@ -7,7 +7,6 @@
 package orbit.client
 
 import kotlinx.coroutines.runBlocking
-import orbit.client.net.OrbitServiceLocator
 import orbit.server.OrbitServer
 import orbit.server.OrbitServerConfig
 import orbit.server.mesh.LocalServerInfo
@@ -24,7 +23,8 @@ open class BaseIntegrationTest {
         protected lateinit var client: OrbitClient
             private set
 
-        private val targetUri = "orbit://localhost:5874/test"
+        private val targetUri = "dns:///localhost:5874"
+        private val namespace = "test"
 
         @BeforeClass
         @JvmStatic
@@ -40,7 +40,8 @@ open class BaseIntegrationTest {
 
             client = OrbitClient(
                 OrbitClientConfig(
-                    serviceLocator = OrbitServiceLocator(targetUri),
+                    grpcEndpoint = targetUri,
+                    namespace = namespace,
                     packages = listOf("orbit.client.actor")
                 )
             )

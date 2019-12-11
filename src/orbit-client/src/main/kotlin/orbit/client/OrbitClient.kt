@@ -179,7 +179,7 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
         onUnhandledException(throwable)
 
     private fun onUnhandledException(throwable: Throwable) {
-        when(throwable) {
+        when (throwable) {
             is NodeLeaseRenewalFailed -> {
                 logger.error { "Node lease renewal failed..." }
                 nodeLeaseRenewalFailedHandler.onLeaseRenewalFailed()

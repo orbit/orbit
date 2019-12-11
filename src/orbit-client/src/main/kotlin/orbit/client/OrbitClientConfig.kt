@@ -11,16 +11,20 @@ import orbit.client.addressable.AddressableConstructor
 import orbit.client.addressable.DefaultAddressableConstructor
 import orbit.client.mesh.NodeLeaseRenewalFailedHandler
 import orbit.client.mesh.RestartOnNodeRenewalFailure
-import orbit.client.net.OrbitServiceLocator
 import orbit.util.concurrent.Pools
 import orbit.util.di.ExternallyConfigured
 import java.time.Duration
 
 data class OrbitClientConfig(
     /**
-     * The service locator for the Orbit cluster to connect to.
+     * The gRPC endpoint where the Orbit cluster is located.
      */
-    val serviceLocator: OrbitServiceLocator = OrbitServiceLocator("orbit://localhost:50056/default"),
+    val grpcEndpoint: String = "dns:///localhost:50056/",
+
+    /**
+     * The namespace to use when connecting to the Orbit cluster.
+     */
+    val namespace: String = "default",
 
     /**
      * The tick rate of the Orbit client.

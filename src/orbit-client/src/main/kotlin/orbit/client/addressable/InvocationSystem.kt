@@ -62,7 +62,7 @@ internal class InvocationSystem(
     }
 
     fun sendInvocation(invocation: AddressableInvocation): Completion {
-        check(localNode.status.clientState == ClientState.CONNECTED) { "The Orbit client is not connected"}
+        check(localNode.status.clientState == ClientState.CONNECTED) { "The Orbit client is not connected" }
 
         val arguments = serializer.serialize(invocation.args)
         val msg = Message(

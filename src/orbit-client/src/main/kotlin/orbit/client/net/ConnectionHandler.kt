@@ -56,7 +56,7 @@ internal class ConnectionHandler(
     }
 
     fun disconnect() {
-        if(::connectionChannel.isInitialized) {
+        if (::connectionChannel.isInitialized) {
             connectionChannel.cancel()
             messageRails.stopWorkers()
         }
@@ -76,8 +76,8 @@ internal class ConnectionHandler(
     }
 
     private fun testConnection() {
-        if(::connectionChannel.isInitialized) {
-            if(connectionChannel.isClosedForReceive) {
+        if (::connectionChannel.isInitialized) {
+            if (connectionChannel.isClosedForReceive) {
                 logger.warn { "The stream connection is closed. Reopening..." }
                 disconnect()
                 connect()

@@ -25,7 +25,7 @@ internal class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClie
     private val nodeManagementStub = NodeManagementGrpc.newFutureStub(grpcClient.channel)
 
     suspend fun joinCluster() {
-        logger.info("Joining cluster at '${localNode.status.serviceLocator}'...")
+        logger.info("Joining namespace '${localNode.status.namespace}' in the '${localNode.status.grpcEndpoint}' cluster ...")
         nodeManagementStub
             .withWaitForReady()
             .withDeadline(Deadline.after(joinTimeout.toMillis(), TimeUnit.MILLISECONDS))
@@ -55,7 +55,7 @@ internal class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClie
                         .build()
                 ).await()
 
-                if(renewalResult.status !=  NodeManagementOuterClass.NodeLeaseResponseProto.Status.OK) {
+                if (renewalResult.status != NodeManagementOuterClass.NodeLeaseResponseProto.Status.OK) {
                     throw NodeLeaseRenewalFailed("Node renewal failed")
                 }
 

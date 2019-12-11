@@ -16,7 +16,8 @@ interface NodeLeaseRenewalFailedHandler {
     fun onLeaseRenewalFailed()
 }
 
-class RestartOnNodeRenewalFailure(private val orbitClient: OrbitClient, private val supervisorScope: SupervisorScope) : NodeLeaseRenewalFailedHandler {
+class RestartOnNodeRenewalFailure(private val orbitClient: OrbitClient, private val supervisorScope: SupervisorScope) :
+    NodeLeaseRenewalFailedHandler {
     val logger = KotlinLogging.logger { }
 
     object RestartOnNodeRenewalFailureSingleton : ExternallyConfigured<NodeLeaseRenewalFailedHandler> {

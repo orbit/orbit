@@ -12,7 +12,7 @@ import orbit.client.OrbitClientConfig
 
 internal class GrpcClient(localNode: LocalNode, authInterceptor: ClientAuthInterceptor, config: OrbitClientConfig) {
     val channel: Channel = ManagedChannelBuilder
-        .forAddress(localNode.status.serviceLocator.host, localNode.status.serviceLocator.port)
+        .forTarget(localNode.status.grpcEndpoint)
         .usePlaintext()
         .intercept(authInterceptor)
         .enableRetry()

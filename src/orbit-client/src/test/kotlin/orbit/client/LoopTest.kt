@@ -11,14 +11,16 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import orbit.client.actor.GreeterActor
 import orbit.client.actor.createProxy
-import orbit.client.net.OrbitServiceLocator
+
 fun main() {
-    val logger = KotlinLogging.logger {  }
+    val logger = KotlinLogging.logger { }
     val targetUri = "orbit://localhost:50056/test"
+    val namespace = "test"
 
     val client = OrbitClient(
         OrbitClientConfig(
-            serviceLocator = OrbitServiceLocator(targetUri),
+            grpcEndpoint = targetUri,
+            namespace = "test",
             packages = listOf("orbit.client.actor")
         )
     )
@@ -30,10 +32,10 @@ fun main() {
             try {
                 val result = greeter.greetAsync("Joe").await()
                 logger.info { result }
-            }catch(e: Throwable) {
+            } catch (e: Throwable) {
                 logger.error { e }
             }
             delay(10000)
-        } while(true)
+        } while (true)
     }
 }

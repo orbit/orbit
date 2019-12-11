@@ -28,7 +28,7 @@ internal class ClientAuthInterceptor(private val localNode: LocalNode) : ClientI
                 val nodeId = localNode.status.nodeInfo?.id
 
                 if (nodeId == null) {
-                    headers.put(NAMESPACE, localNode.status.serviceLocator.namespace)
+                    headers.put(NAMESPACE, localNode.status.namespace)
 
                 } else {
                     headers.put(NAMESPACE, nodeId.namespace)
