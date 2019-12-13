@@ -20,7 +20,7 @@ fun main() {
     val client = OrbitClient(
         OrbitClientConfig(
             grpcEndpoint = targetUri,
-            namespace = "test",
+            namespace = namespace,
             packages = listOf("orbit.client.actor")
         )
     )

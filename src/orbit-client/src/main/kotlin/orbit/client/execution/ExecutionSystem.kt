@@ -65,7 +65,6 @@ internal class ExecutionSystem(
             if (timeInactive > defaultTtl) {
                 deactivate(handle, DeactivationReason.TTL_EXPIRED)
                 return@forEach
-
             }
 
             val lease = executionLeases.getLease(handle.reference)
@@ -77,13 +76,12 @@ internal class ExecutionSystem(
                         logger.error(t) { "Unexpected error renewing lease" }
                         deactivate(handle, DeactivationReason.LEASE_RENEWAL_FAILED)
                         return@forEach
-
                     }
-                } else {
-                    logger.error { "No lease found for ${handle.reference}" }
-                    deactivate(handle, DeactivationReason.LEASE_RENEWAL_FAILED)
-                    return@forEach
                 }
+            } else {
+                logger.error { "No lease found for ${handle.reference}" }
+                deactivate(handle, DeactivationReason.LEASE_RENEWAL_FAILED)
+                return@forEach
             }
         }
     }
