@@ -102,7 +102,7 @@ class BasicActorTests : BaseIntegrationTest() {
     @Test
     fun `ensure method onDeactivate`() {
         runBlocking {
-            val before = TrackingGlobals.deactivateTestCounts.getAcquire()
+            val before = TrackingGlobals.deactivateTestCounts.get()
 
             val argActor = client.actorFactory.createProxy<BasicOnDeactivate>()
             argActor.greetAsync("Test").await()
@@ -113,7 +113,7 @@ class BasicActorTests : BaseIntegrationTest() {
             client.clock.advanceTime(client.config.addressableTTL.toMillis() * 2)
             delay(client.config.tickRate.toMillis() * 2) // Wait twice the tick so the deactivation should have happened
 
-            val after = TrackingGlobals.deactivateTestCounts.getAcquire()
+            val after = TrackingGlobals.deactivateTestCounts.get()
             assertTrue(before < after)
         }
     }
