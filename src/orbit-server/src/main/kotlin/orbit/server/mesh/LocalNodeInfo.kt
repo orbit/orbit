@@ -6,7 +6,9 @@
 
 package orbit.server.mesh
 
+import mu.KotlinLogging
 import orbit.server.service.HealthCheck
+import orbit.shared.exception.InvalidNodeId
 import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.mesh.NodeStatus
@@ -22,6 +24,8 @@ class LocalNodeInfo(
     override suspend fun isHealthy(): Boolean {
         return this.info.nodeStatus == NodeStatus.ACTIVE
     }
+
+    private val logger = KotlinLogging.logger {}
 
     val info: NodeInfo
         get() = infoRef.get().also {
@@ -40,16 +44,26 @@ class LocalNodeInfo(
     }
 
     suspend fun start() {
+        join()
+    }
+
+    suspend fun join() {
         clusterManager.joinCluster(MANAGEMENT_NAMESPACE, NodeCapabilities(), this.serverInfo.url, NodeStatus.STARTING)
             .also {
+                logger.info("Joined cluster as (${it.id})")
                 infoRef.set(it)
             }
     }
 
     suspend fun tick() {
         if (Timestamp.now() > info.lease.renewAt) {
-            clusterManager.renewLease(info.id, info.lease.challengeToken, info.capabilities).also {
-                infoRef.set(it)
+            try {
+                clusterManager.renewLease(info.id, info.lease.challengeToken, info.capabilities).also {
+                    infoRef.set(it)
+                }
+            } catch (e: InvalidNodeId) {
+                logger.info("Failed to renew lease, rejoining cluster.")
+                join()
             }
         }
     }
