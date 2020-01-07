@@ -9,10 +9,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - name: Run a one-line script
-      run: echo Hello, world!
+    - name: Announce
+      run: echo Releasing helm chart
     - name: Run chart-releaser
-      uses: helm/chart-releaser-action@v1.0.0-alpha.1
+      uses: helm/chart-releaser-action@v1.0.0-alpha.2
       with:
         charts_dir: /deployment/helm
       env:
