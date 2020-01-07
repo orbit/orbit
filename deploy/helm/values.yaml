@@ -3,11 +3,9 @@
 # Declare variables to be passed into your templates.
 
 image:
-  repository: bitnami/etcd
   pullPolicy: IfNotPresent
-  version: 2.0.0a18
+  version: 2.0.0a19.5
 
-imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
