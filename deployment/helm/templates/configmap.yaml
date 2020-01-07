@@ -1,0 +1,13 @@
+apiVersion: v1
+metadata:
+    name: configmap
+    namespace: {{ .Release.Namespace }}
+data:
+    config.json: |
+        {
+            "tickRate": 1,
+            "pipelineRailCount": 32,
+            "pipelineBufferCount": 10000,
+            "acquireShutdownLatch": true
+        }
+kind: ConfigMap
