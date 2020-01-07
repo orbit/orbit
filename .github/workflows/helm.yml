@@ -1,0 +1,19 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Run a one-line script
+      run: echo Hello, world!
+    - name: Run chart-releaser
+      uses: helm/chart-releaser-action@v1.0.0-alpha.1
+      with:
+        charts_dir: /deployment/helm
+      env:
+        CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
