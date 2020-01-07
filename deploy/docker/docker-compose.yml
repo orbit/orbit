@@ -2,7 +2,7 @@ version: "3.7"
 services:
   orbit-server-1:
     build:
-      context: ../
+      context: ../../
       dockerfile: docker/server/Dockerfile
     ports:
       - "5006:5005"
@@ -16,11 +16,11 @@ services:
       ETCD_NODE_DIR: http://addressable-directory:2379
     entrypoint: sh ./opt/orbit/entrypoint.sh
     volumes:
-      - ../src/orbit-application/build/libs:/opt/orbit/libs
+      - ../../src/orbit-application/build/libs:/opt/orbit/libs
       - ./local-compose-orbit-settings.json:/etc/orbit/orbit.json
   orbit-server-2:
     build:
-      context: ../
+      context: ../../
       dockerfile: docker/server/Dockerfile
     ports:
       - "5007:5005"
@@ -34,7 +34,7 @@ services:
       ETCD_NODE_DIR: http://addressable-directory:2379
     entrypoint: sh -c ./opt/orbit/entrypoint.sh
     volumes:
-      - ../src/orbit-application/build/libs:/opt/orbit/libs
+      - ../../src/orbit-application/build/libs:/opt/orbit/libs
       - ./local-compose-orbit-settings.json:/etc/orbit/orbit.json
   node-directory:
     image: bitnami/etcd
