@@ -6,7 +6,7 @@ RUN wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health
     chmod +x /bin/grpc_health_probe
 
 ADD src/orbit-application/build/libs/orbit-application-fat.jar /opt/orbit/libs/orbit-application-fat.jar
-ADD docker/server/entrypoint.sh /opt/orbit/
+ADD deploy/docker/server/entrypoint.sh /opt/orbit/
 
 RUN ["chmod", "+x", "/opt/orbit/entrypoint.sh"]
 
