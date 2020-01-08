@@ -61,6 +61,6 @@ jobs:
       - name: Release Helm Chart
         uses: helm/chart-releaser-action@v1.0.0-alpha.2
         with:
-          charts_dir: ./deploy/helm
+          access-token: "${{ secrets.GITHUB_TOKEN }}"
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
