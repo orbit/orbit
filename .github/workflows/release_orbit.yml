@@ -41,6 +41,10 @@ jobs:
           DOCKER_BASE_URL: docker.pkg.github.com
           DOCKER_REPO: docker.pkg.github.com/orbit/orbit
           ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+      - name: Publish Helm Chart to GitHub Repository
+        run: ./.github/scripts/helm_publish.sh
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       - name: Publish Artifacts to Maven Central
         run: ./.github/scripts/gradle_publish.sh
         env:
@@ -58,7 +62,3 @@ jobs:
           DOCKER_BASE_URL:
           DOCKER_REPO: orbitframework
           ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
-      - name: Publish Helm Chart to Repository
-        run: ./.github/scripts/helm_publish.sh
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
