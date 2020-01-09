@@ -58,9 +58,7 @@ jobs:
           DOCKER_BASE_URL:
           DOCKER_REPO: orbitframework
           ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
-      - name: Release Helm Chart
-        uses: helm/chart-releaser-action@v1.0.0-alpha.2
-        with:
-          access-token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Publish Helm Chart to Repository
+        run: ./.github/scripts/helm_publish.sh
         env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
