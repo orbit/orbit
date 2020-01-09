@@ -1,4 +1,4 @@
-name: Build Orbit
+name: Publish Helm Chart
 
 on: [push, pull_request]
 
