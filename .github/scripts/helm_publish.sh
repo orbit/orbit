@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 crVersion="v0.2.3"
 chartDir="./charts/orbit"
