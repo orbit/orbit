@@ -12,7 +12,8 @@ tar -xzf cr.tar.gz
 rm -f cr.tar.gz
 
 mkdir .cr-release-packages
-helm package "$chartDir" --destination .cr-release-packages --dependency-update
+helm version
+helm package "$chartDir" --destination .cr-release-packages --dependency-update --save=false
 
 ./cr upload -o "$owner" -r "$repo" -t $token
 
