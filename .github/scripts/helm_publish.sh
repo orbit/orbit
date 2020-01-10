@@ -1,7 +1,7 @@
 #!/bin/sh
 
 crVersion="v0.2.3"
-chartDir="."
+chartDir="./charts"
 owner="orbit"
 repo="orbit.githib.com/orbit"
 token=$GITHUB_TOKEN
