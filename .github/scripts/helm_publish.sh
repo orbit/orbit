@@ -4,7 +4,7 @@ crVersion="0.2.3"
 helmVersion="3.0.2"
 chartDir="./charts/orbit"
 owner="orbit"
-repo="orbit.githib.com/orbit"
+repo="orbit"
 token=$GITHUB_TOKEN
 platform="linux"
 
