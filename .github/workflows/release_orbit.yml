@@ -45,6 +45,7 @@ jobs:
         run: ./.github/scripts/helm_publish.sh
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          TAG_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
       - name: Publish Artifacts to Maven Central
         run: ./.github/scripts/gradle_publish.sh
         env:
