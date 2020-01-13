@@ -8,6 +8,10 @@ token=$GITHUB_TOKEN
 platform="linux"
 version=$TAG_VERSION
 
+curl -sSLo helm.tar.gz https://get.helm.sh/helm-v$helmVersion-$platform-amd64.tar.gz
+tar -xzf helm.tar.gz
+rm -f helm.tar.gz
+
 cat >| charts/orbit/Chart.yaml << EOF
 apiVersion: v1
 appVersion: "$version"
@@ -16,14 +20,23 @@ name: orbit
 version: $version
 EOF
 
-curl -sSLo helm.tar.gz https://get.helm.sh/helm-v$helmVersion-$platform-amd64.tar.gz
-tar -xzf helm.tar.gz
-rm -f helm.tar.gz
-
 mkdir .helm-release-packages
-./$platform-amd64/helm version
 ./$platform-amd64/helm package "$chartDir" --destination .helm-release-packages --dependency-update
 
 . ./.github/scripts/upload_chart.sh owner=$owner repo=$repo tag=v$version filename=./.helm-release-packages/orbit-$version.tgz github_api_token=$token
 
+git add ./charts/orbit/Chart.yaml
+git commit -m "Bump Helm chart version to $version"
+
+git checkout gh-pages --merge
+helm repo index . --merge index.yaml
+
+git add ./index.yaml
+git commit -m "Release $version"
+
 rm -rf ./$platform-amd64
+rm -rf .helm-release-packages
+
+git reset --hard
+git push origin gh-pages
+git checkout master
