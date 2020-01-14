@@ -28,8 +28,8 @@ mkdir .helm-release-packages
 
 . ./.github/scripts/upload_chart.sh owner=$owner repo=$repo tag=v$version filename=./.helm-release-packages/orbit-$version.tgz github_api_token=$token
 
+git fetch
 git add ./charts/orbit/Chart.yaml
-git commit -m "Bump Helm chart version to $version" --author="$author"
 
 echo Status
 git status
@@ -41,6 +41,7 @@ git status
 echo Remote
 git remote
 
+git commit -m "Bump Helm chart version to $version" --author="$author"
 git push origin master
 
 git checkout gh-pages --merge
