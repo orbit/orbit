@@ -10,4 +10,13 @@ entries:
     urls:
     - .helm-release-packages/orbit-2.0.0a19.20.tgz
     version: 2.0.0a19.20
-generated: "2020-01-13T14:54:24.462664-08:00"
+  - apiVersion: v1
+    appVersion: 2.0.0a19.30
+    created: "2020-01-14T22:29:26.846670702Z"
+    description: An Orbit Mesh Helm chart for Kubernetes
+    digest: 1a648fd558ea8ce6d4547b5194aebbcd1ceb3394a65e7311ff2ef2102bf76230
+    name: orbit
+    urls:
+    - .helm-release-packages/orbit-2.0.0a19.30.tgz
+    version: 2.0.0a19.30
+generated: "2020-01-14T22:29:26.846147893Z"
