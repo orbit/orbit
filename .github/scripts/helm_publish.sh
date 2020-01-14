@@ -7,9 +7,13 @@ repo="orbit"
 token=$GITHUB_TOKEN
 platform="linux"
 version=$TAG_VERSION
+userEmail = "orbit@ea.com"
+userName = "orbit-tools"
+author = "$userName <$userEmail>"
 
-git config --global user.email "orbit@ea.com"
-git config --global user.name "Build System"
+git config --global user.email $userEmail
+git config --global user.name $userName
+git fetch
 
 curl -sSLo helm.tar.gz https://get.helm.sh/helm-v$helmVersion-$platform-amd64.tar.gz
 tar -xzf helm.tar.gz
@@ -28,19 +32,9 @@ mkdir .helm-release-packages
 
 . ./.github/scripts/upload_chart.sh owner=$owner repo=$repo tag=v$version filename=./.helm-release-packages/orbit-$version.tgz github_api_token=$token
 
-git fetch
 git add ./charts/orbit/Chart.yaml
 
-echo Status
-git status
-
 git checkout -b master --track origin/master --merge
-
-echo Status 2
-git status
-echo Remote
-git remote
-
 git commit -m "Bump Helm chart version to $version" --author="$author"
 git push origin master
 
