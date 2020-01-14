@@ -7,6 +7,7 @@ repo="orbit"
 token=$GITHUB_TOKEN
 platform="linux"
 version=$TAG_VERSION
+author="Build System <orbit@testemail.address>"
 
 curl -sSLo helm.tar.gz https://get.helm.sh/helm-v$helmVersion-$platform-amd64.tar.gz
 tar -xzf helm.tar.gz
@@ -26,13 +27,13 @@ mkdir .helm-release-packages
 . ./.github/scripts/upload_chart.sh owner=$owner repo=$repo tag=v$version filename=./.helm-release-packages/orbit-$version.tgz github_api_token=$token
 
 git add ./charts/orbit/Chart.yaml
-git commit -m "Bump Helm chart version to $version"
+git commit -m "Bump Helm chart version to $version" --author="$author"
 
 git checkout gh-pages --merge
 helm repo index . --merge index.yaml
 
 git add ./index.yaml
-git commit -m "Release $version"
+git commit -m "Release $version" --author="$author"
 
 rm -rf ./$platform-amd64
 rm -rf .helm-release-packages
