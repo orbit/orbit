@@ -34,7 +34,7 @@ git commit -m "Bump Helm chart version to $version" --author="$author"
 echo Status
 git status
 
-git checkout master --merge
+git checkout -b master --track origin/master --merge
 
 echo Status 2
 git status
