@@ -7,7 +7,9 @@ repo="orbit"
 token=$GITHUB_TOKEN
 platform="linux"
 version=$TAG_VERSION
-author="Build System <orbit@testemail.address>"
+
+git config user.email "orbit@testemail.address"
+git config user.name "Build System"
 
 curl -sSLo helm.tar.gz https://get.helm.sh/helm-v$helmVersion-$platform-amd64.tar.gz
 tar -xzf helm.tar.gz
