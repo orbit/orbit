@@ -8,8 +8,8 @@ token=$GITHUB_TOKEN
 platform="linux"
 version=$TAG_VERSION
 
-git config user.email "orbit@testemail.address"
-git config user.name "Build System"
+git config --global user.email "orbit@testemail.address"
+git config --global user.name "Build System"
 
 curl -sSLo helm.tar.gz https://get.helm.sh/helm-v$helmVersion-$platform-amd64.tar.gz
 tar -xzf helm.tar.gz
@@ -30,6 +30,7 @@ mkdir .helm-release-packages
 
 git add ./charts/orbit/Chart.yaml
 git commit -m "Bump Helm chart version to $version" --author="$author"
+git push origin master
 
 git checkout gh-pages --merge
 helm repo index . --merge index.yaml
