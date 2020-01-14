@@ -11,8 +11,8 @@ userEmail = "orbit@ea.com"
 userName = "orbit-tools"
 author = "$userName <$userEmail>"
 
-git config --global user.email $userEmail
-git config --global user.name $userName
+git config --global user.email "$userEmail"
+git config --global user.name "$userName"
 git fetch
 
 curl -sSLo helm.tar.gz https://get.helm.sh/helm-v$helmVersion-$platform-amd64.tar.gz
@@ -27,10 +27,9 @@ name: orbit
 version: $version
 EOF
 
-mkdir .helm-release-packages
-./$platform-amd64/helm package "$chartDir" --destination .helm-release-packages --dependency-update
+./$platform-amd64/helm package "$chartDir" --destination . --dependency-update
 
-. ./.github/scripts/upload_chart.sh owner=$owner repo=$repo tag=v$version filename=./.helm-release-packages/orbit-$version.tgz github_api_token=$token
+. ./.github/scripts/upload_chart.sh owner=$owner repo=$repo tag=v$version filename=./orbit-$version.tgz github_api_token=$token
 
 git add ./charts/orbit/Chart.yaml
 
@@ -39,13 +38,12 @@ git commit -m "Bump Helm chart version to $version" --author="$author"
 git push origin master
 
 git checkout gh-pages --merge
-helm repo index . --merge index.yaml
+helm repo index . --url https://github.com/orbit/orbit/releases/download/$version --merge index.yaml
 
 git add ./index.yaml
 git commit -m "Release $version" --author="$author"
 
 rm -rf ./$platform-amd64
-rm -rf .helm-release-packages
 
 git reset --hard
 git push origin gh-pages
