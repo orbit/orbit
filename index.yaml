@@ -8,7 +8,7 @@ entries:
     digest: 7b200919ab64af83f76b1f6111c9cefe6f5dea11b90f53a2bb60709f8b50e878
     name: orbit
     urls:
-    - .helm-release-packages/orbit-2.0.0a19.20.tgz
+    - https://github.com/orbit/orbit/releases/download/v2.0.0a19.20/orbit-2.0.0a19.20.tgz
     version: 2.0.0a19.20
   - apiVersion: v1
     appVersion: 2.0.0a19.30
@@ -17,7 +17,7 @@ entries:
     digest: 1a648fd558ea8ce6d4547b5194aebbcd1ceb3394a65e7311ff2ef2102bf76230
     name: orbit
     urls:
-    - .helm-release-packages/orbit-2.0.0a19.30.tgz
+    - https://github.com/orbit/orbit/releases/download/v2.0.0a19.30/orbit-2.0.0a19.30.tgz
     version: 2.0.0a19.30
   - apiVersion: v1
     appVersion: 2.0.0a19.33
@@ -26,6 +26,6 @@ entries:
     digest: 133b3ed390383877de03d6194405f22c2ccee153b2ee712844cb387cd2eb29f5
     name: orbit
     urls:
-    - https://github.com/orbit/orbit/releases/download/2.0.0a19.33/orbit-2.0.0a19.33.tgz
+    - https://github.com/orbit/orbit/releases/download/v2.0.0a19.33/orbit-2.0.0a19.33.tgz
     version: 2.0.0a19.33
 generated: "2020-01-15T00:11:11.214557506Z"
