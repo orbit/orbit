@@ -2,14 +2,14 @@ apiVersion: v1
 entries:
   orbit:
   - apiVersion: v1
-    appVersion: 2.0.0a19.20
-    created: "2020-01-13T14:54:24.467093-08:00"
+    appVersion: 2.0.0a20.3
+    created: "2020-01-15T21:40:09.619712697Z"
     description: An Orbit Mesh Helm chart for Kubernetes
-    digest: 7b200919ab64af83f76b1f6111c9cefe6f5dea11b90f53a2bb60709f8b50e878
+    digest: d6097cd2f7bed2653f48592fe2087cc75d08f7fe908c96f2348339068353e564
     name: orbit
     urls:
-    - https://github.com/orbit/orbit/releases/download/v2.0.0a19.20/orbit-2.0.0a19.20.tgz
-    version: 2.0.0a19.20
+    - https://github.com/orbit/orbit/releases/download/v2.0.0a20.3/orbit-2.0.0a20.3.tgz
+    version: 2.0.0a20.3
   - apiVersion: v1
     appVersion: 2.0.0a19.30
     created: "2020-01-14T22:29:26.846670702Z"
@@ -55,4 +55,13 @@ entries:
     urls:
     - https://github.com/orbit/orbit/releases/download/v2.0.0a20.2/orbit-2.0.0a20.2.tgz
     version: 2.0.0a20.2
-generated: "2020-01-15T21:33:03.625363001Z"
+  - apiVersion: v1
+    appVersion: 2.0.0a19.20
+    created: "2020-01-13T14:54:24.467093-08:00"
+    description: An Orbit Mesh Helm chart for Kubernetes
+    digest: 7b200919ab64af83f76b1f6111c9cefe6f5dea11b90f53a2bb60709f8b50e878
+    name: orbit
+    urls:
+    - https://github.com/orbit/orbit/releases/download/v2.0.0a19.20/orbit-2.0.0a19.20.tgz
+    version: 2.0.0a19.20
+generated: "2020-01-15T21:40:09.552376877Z"
