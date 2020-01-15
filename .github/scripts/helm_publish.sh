@@ -38,7 +38,7 @@ git commit -m "Bump Helm chart version to $version" --author="$author"
 git push origin master
 
 git checkout gh-pages --merge
-helm repo index . --url https://github.com/orbit/orbit/releases/download/$version --merge index.yaml
+helm repo index . --url https://github.com/orbit/orbit/releases/download/v$version --merge index.yaml
 
 git add ./index.yaml
 git commit -m "Release $version" --author="$author"
