@@ -7,9 +7,9 @@ repo="orbit"
 token=$GITHUB_TOKEN
 platform="linux"
 version=$TAG_VERSION
-userEmail = "orbit@ea.com"
-userName = "orbit-tools"
-author = "$userName <$userEmail>"
+userEmail="orbit@ea.com"
+userName="orbit-tools"
+author="$userName <$userEmail>"
 
 git config --global user.email "$userEmail"
 git config --global user.name "$userName"
