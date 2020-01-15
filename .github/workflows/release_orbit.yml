@@ -64,8 +64,8 @@ jobs:
           DOCKER_REPO: orbitframework
           ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
       - name: Request Github Pages build job
-        run: >-
-          curl -L -X POST 
-          -H "Content-Type: application/json"
-          -H "Authorization: token ${{ secrets.DEPLOY_TOKEN }}"
-          "https://api.github.com/repos/${{ github.repository }}/pages/builds"
+        uses: peaceiris/actions-gh-pages@v2
+        env:
+          PERSONAL_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: .
