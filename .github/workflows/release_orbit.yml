@@ -68,4 +68,4 @@ jobs:
         env:
           ACTIONS_DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
           PUBLISH_BRANCH: gh-pages
-          PUBLISH_DIR: .
+          PUBLISH_DIR: ./docs
