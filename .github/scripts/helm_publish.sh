@@ -32,9 +32,10 @@ EOF
 . ./.github/scripts/upload_chart.sh owner=$owner repo=$repo tag=v$version filename=./orbit-$version.tgz github_api_token=$token
 
 git add ./charts/orbit/Chart.yaml
-git checkout -b master --track origin/master --merge --ours
+git checkout -b master --track origin/master --merge
 
 helm repo index . --url https://github.com/orbit/orbit/releases/download/v$version --merge docs/index.yaml
+mv -f index.yaml docs/index.yaml
 git add docs/index.yaml
 
 git commit -m "Bump Helm chart version to $version and update docs" --author="$author"
