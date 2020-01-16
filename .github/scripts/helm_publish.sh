@@ -10,6 +10,7 @@ version=$TAG_VERSION
 userEmail="orbit@ea.com"
 userName="orbit-tools"
 author="$userName <$userEmail>"
+indexLocation=".github/pages/index.yaml"
 
 git config --global user.email "$userEmail"
 git config --global user.name "$userName"
@@ -34,9 +35,9 @@ EOF
 git add ./charts/orbit/Chart.yaml
 git checkout -b master --track origin/master --merge
 
-helm repo index . --url https://github.com/orbit/orbit/releases/download/v$version --merge docs/index.yaml
-mv -f index.yaml docs/index.yaml
-git add docs/index.yaml
+helm repo index . --url https://github.com/orbit/orbit/releases/download/v$version --merge $indexLocation
+mv -f index.yaml $indexLocation
+git add $indexLocation
 
 git commit -m "Bump Helm chart version to $version and update docs" --author="$author"
 git push origin master
