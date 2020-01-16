@@ -66,6 +66,6 @@ jobs:
       - name: Request Github Pages build job
         uses: peaceiris/actions-gh-pages@v2
         env:
-          PERSONAL_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          ACTIONS_DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
           PUBLISH_BRANCH: gh-pages
           PUBLISH_DIR: .
