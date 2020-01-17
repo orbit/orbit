@@ -7,14 +7,7 @@ repo="orbit"
 token=$GITHUB_TOKEN
 platform="linux"
 version=$TAG_VERSION
-userEmail="orbit@ea.com"
-userName="orbit-tools"
-author="$userName <$userEmail>"
 indexLocation=".github/pages/index.yaml"
-
-git config --global user.email "$userEmail"
-git config --global user.name "$userName"
-git fetch
 
 curl -sSLo helm.tar.gz https://get.helm.sh/helm-v$helmVersion-$platform-amd64.tar.gz
 tar -xzf helm.tar.gz
@@ -25,12 +18,9 @@ rm -f helm.tar.gz
 . ./.github/scripts/upload_chart.sh owner=$owner repo=$repo tag=v$version filename=./orbit-$version.tgz github_api_token=$token
 
 git add ./charts/orbit/Chart.yaml
-git checkout -b master --track origin/master --merge
 
 helm repo index . --url https://github.com/orbit/orbit/releases/download/v$version --merge $indexLocation
 mv -f index.yaml $indexLocation
 git add $indexLocation
 
 rm -rf ./$platform-amd64
-
-git reset --hard

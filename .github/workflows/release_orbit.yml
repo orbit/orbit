@@ -20,6 +20,10 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 8
+      - name: Checkout master
+        run: |
+          git fetch
+          git checkout -b master --track origin/master
       - name: Update Version
         run: ./.github/scripts/update_version.sh
         env:
@@ -68,7 +72,10 @@ jobs:
           DOCKER_REPO: orbitframework
           ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
       - name: Commit Release
-        run: git commit -m "Release version ${{ steps.get_tag_version.outputs.TAG_VERSION }} and update docs" --author="orbit-tools <orbit@ea.com>";git push origin master
+        run: |
+          git commit -m "Release version ${{ steps.get_tag_version.outputs.TAG_VERSION }} and update docs" --author="orbit-tools <orbit@ea.com>"
+          git push origin master
+          git reset --hard
       - name: Request Github Pages build job
         uses: peaceiris/actions-gh-pages@v2
         env:
