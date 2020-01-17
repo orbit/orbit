@@ -20,6 +20,10 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 8
+      - name: Update Version
+        run: ./.github/scripts/update_version
+        env:
+          TAG_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
       - name: Build Artifacts
         run: ./gradlew build fatJar -Porbit.version="${ORBIT_VERSION}"
         env:
@@ -63,6 +67,8 @@ jobs:
           DOCKER_BASE_URL:
           DOCKER_REPO: orbitframework
           ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+      - name: Commit Release
+        run: git commit -m "Release version ${{ steps.get_tag_version.outputs.TAG_VERSION }} and update docs" --author="orbit-tools <orbit@ea.com>";git push origin master
       - name: Request Github Pages build job
         uses: peaceiris/actions-gh-pages@v2
         env:
