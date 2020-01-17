@@ -4,7 +4,7 @@
 
 image:
   pullPolicy: IfNotPresent
-  version: 2.0.0a19.5
+  version: 2.0.0-alpha.24.3
 
 nameOverride: ""
 fullnameOverride: ""
