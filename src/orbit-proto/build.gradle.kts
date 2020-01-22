@@ -48,7 +48,7 @@ protobuf {
         }
 
         id("grpckotlin") {
-            artifact = "io.rouz:grpc-kotlin-gen:$grpcKotlinVersion:jdk8@jar"
+            artifact = "io.rouz:grpc-kotlin-gen:$grpcKotlinVersion"
         }
     }
 
