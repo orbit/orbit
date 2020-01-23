@@ -8,7 +8,6 @@ metadata:
         release: {{ .Release.Name }}
         component: node
 spec:
-    serviceName: {{ include "orbit.fullname" . }}
     replicas: {{ .Values.node.replicas }}
     selector:
         matchLabels:
