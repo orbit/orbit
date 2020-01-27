@@ -18,10 +18,12 @@ import orbit.client.actor.GreeterActor
 import orbit.client.actor.IdActor
 import orbit.client.actor.IncrementActor
 import orbit.client.actor.NullActor
+import orbit.client.actor.ThrowingActor
 import orbit.client.actor.TimeoutActor
 import orbit.client.actor.TrackingGlobals
 import orbit.client.actor.createProxy
-import orbit.client.util.MessageException
+import orbit.client.util.RemoteException
+import orbit.client.util.TimeoutException
 import orbit.util.misc.RNGUtils
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -61,7 +63,15 @@ class BasicActorTests : BaseIntegrationTest() {
         }
     }
 
-    @Test(expected = MessageException::class)
+    @Test(expected = RemoteException::class)
+    fun `ensure throw fails`() {
+        runBlocking {
+            val actor = client.actorFactory.createProxy<ThrowingActor>()
+            actor.doThrow().await()
+        }
+    }
+
+    @Test(expected = RemoteException::class)
     fun `ensure invalid actor type throws`() {
         runBlocking {
             val actor = client.actorFactory.createProxy<ActorWithNoImpl>()
@@ -69,7 +79,7 @@ class BasicActorTests : BaseIntegrationTest() {
         }
     }
 
-    @Test(expected = MessageException::class)
+    @Test(expected = TimeoutException::class)
     fun `ensure message timeout throws`() {
         runBlocking {
             val actor = client.actorFactory.createProxy<TimeoutActor>()

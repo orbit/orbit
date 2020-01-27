@@ -10,7 +10,8 @@ import kotlinx.coroutines.CompletableDeferred
 import mu.KotlinLogging
 import orbit.client.OrbitClientConfig
 import orbit.client.addressable.InvocationSystem
-import orbit.client.util.MessageException
+import orbit.client.util.RemoteException
+import orbit.client.util.TimeoutException
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 import orbit.util.time.Clock
@@ -44,7 +45,7 @@ internal class MessageHandler(
                     when (val content = message.content) {
                         is MessageContent.Error -> {
                             completion.completeExceptionally(
-                                MessageException("Exceptional response received: ${content.description}")
+                                RemoteException("Exceptional response received: ${content.description}")
                             )
                         }
                         is MessageContent.InvocationResponse -> {
@@ -86,13 +87,15 @@ internal class MessageHandler(
         awaitingResponse.values.filter {
             it.timeAdded < clock.currentTime - messageTimeoutMs
         }.forEach {
-            val content = "Response timed out after ${clock.currentTime - it.timeAdded}ms, timeout is" +
-                    " ${messageTimeoutMs}ms. ${it.msg}"
-            logger.warn(content)
-            it.completion.completeExceptionally(
-                MessageException(content)
-            )
-            awaitingResponse.remove(it.messageId)
+
+            awaitingResponse.remove(it.messageId)?.also { msg ->
+                val content = "Response timed out after ${clock.currentTime - it.timeAdded}ms, timeout is" +
+                        " ${messageTimeoutMs}ms. ${it.msg}"
+                logger.warn(content)
+                msg.completion.completeExceptionally(
+                    TimeoutException(content)
+                )
+            }
         }
     }
 

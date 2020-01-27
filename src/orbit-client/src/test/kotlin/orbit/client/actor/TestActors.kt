@@ -59,6 +59,16 @@ class IncrementActorImpl : IncrementActor {
         CompletableDeferred(++counter)
 }
 
+interface ThrowingActor : ActorWithNoKey {
+    fun doThrow(): Deferred<Long>
+}
+
+class ThrowingActorImpl : ThrowingActor {
+    override fun doThrow(): Deferred<Long> {
+        throw RuntimeException("Threw")
+    }
+}
+
 interface IdActor : ActorWithStringKey {
     fun getId(): Deferred<String>
 }

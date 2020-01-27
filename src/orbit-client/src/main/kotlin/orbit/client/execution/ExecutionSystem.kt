@@ -38,18 +38,24 @@ internal class ExecutionSystem(
     private val defaultTtl = config.addressableTTL.toMillis()
 
     suspend fun handleInvocation(invocation: AddressableInvocation, completion: Completion) {
-        executionLeases.getOrRenewLease(invocation.reference)
+        try {
+            executionLeases.getOrRenewLease(invocation.reference)
 
-        var handle = activeAddressables[invocation.reference]
+            var handle = activeAddressables[invocation.reference]
 
-        if (handle == null) {
-            handle = activate(invocation.reference)
+            if (handle == null) {
+                handle = activate(invocation.reference)
+            }
+
+            checkNotNull(handle) { "No active addressable found for ${invocation.reference}" }
+
+            // Call
+            val result = handle.invoke(invocation).await()
+            completion.complete(result)
+
+        } catch (t: Throwable) {
+            completion.completeExceptionally(t)
         }
-
-        checkNotNull(handle) { "No active addressable found for ${invocation.reference}" }
-
-        // Call
-        invoke(handle, invocation, completion)
     }
 
     suspend fun tick() {
@@ -100,11 +106,6 @@ internal class ExecutionSystem(
             handle.activate().await()
             handle
         }
-
-    private suspend fun invoke(handle: ExecutionHandle, invocation: AddressableInvocation, completion: Completion) {
-        val result = handle.invoke(invocation).await()
-        completion.complete(result)
-    }
 
     private suspend fun deactivate(handle: ExecutionHandle, deactivationReason: DeactivationReason) {
         try {
