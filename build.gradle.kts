@@ -12,9 +12,9 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper
 val grpcVersion by extra("1.26.0")
 val grpcKotlinVersion by extra("0.1.4")
 val protobufVersion by extra("3.11.1")
-val kotlinCoroutinesVersion by extra("1.3.2")
-val slf4jVersion by extra("1.7.29")
-val jacksonVersion by extra("2.10.1")
+val kotlinCoroutinesVersion by extra("1.3.3")
+val slf4jVersion by extra("1.7.30")
+val jacksonVersion by extra("2.10.2")
 
 // Publishing info
 val orbitGroup by extra("cloud.orbit")

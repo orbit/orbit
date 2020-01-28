@@ -23,7 +23,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
-    implementation("io.github.classgraph:classgraph:4.8.52")
+    implementation("io.github.classgraph:classgraph:4.8.60")
 
 
     testImplementation(project(":src:orbit-server"))
