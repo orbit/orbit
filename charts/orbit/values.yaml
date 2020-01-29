@@ -2,31 +2,34 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-image:
-  pullPolicy: IfNotPresent
-  version: 2.0.0-alpha.29
-
 nameOverride: ""
 fullnameOverride: ""
 
-clientPort: 2379
-peerPort: 2380
-
-resources: {}
-
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}
+url: localhost
 
 node:
+  image:
+    repository: orbitframework/orbit
+    tag: 2.0.0-alpha.29
+    pullPolicy: IfNotPresent
   replicas: 1
   containerPort: 50056
 
 addressableDirectory:
-  replicas: 1
+  image:
+    repository: bitnami/etcd
+    tag: "3"
+    pullPolicy: IfNotPresent
+  replicas: 0
+  clientPort: 2379
+  peerPort: 2380
 
 nodeDirectory:
-  replicas: 1
+  image:
+    repository: bitnami/etcd
+    tag: "3"
+    pullPolicy: IfNotPresent
+  replicas: 0
+  clientPort: 2379
+  peerPort: 2380
 

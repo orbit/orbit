@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "orbit.fullname" . }}-node-directory
+  labels:
+    app: {{ include "orbit.name" . }}
+    chart: {{ include "orbit.chart" . }}
+    release: {{ .Release.Name }}
+    component: node-directory
+spec:
+  replicas: {{ .Values.nodeDirectory.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "orbit.name" . }}
+      release: {{ .Release.Name }}
+      component: node-directory
+  template:
+    metadata:
+      labels:
+        app: {{ include "orbit.name" . }}
+        release: {{ .Release.Name }}
+        component: node-directory
+        tier: "persistence"
+    spec:
+    {{- with .Values.nodeDirectory }}
+      containers:
+      - name: node-directory
+        image: {{ .image.repository }}
+        ports:
+        - containerPort: {{ .clientPort }}
+        - containerPort: {{ .peerPort }}
+        env:
+        - name: ALLOW_NONE_AUTHENTICATION
+          value: "yes"
+        - name: ETCD_ADVERTISE_CLIENT_URLS
+          value: "http://node-directory:{{ .clientPort }}"
+    {{- end }}

@@ -1,13 +1,32 @@
 apiVersion: v1
-metadata:
-    name: configmap
-    namespace: {{ .Release.Namespace }}
-data:
-    config.json: |
-        {
-            "tickRate": 1,
-            "pipelineRailCount": 32,
-            "pipelineBufferCount": 10000,
-            "acquireShutdownLatch": true
-        }
 kind: ConfigMap
+metadata:
+  name: "{{ include "orbit.fullname" . }}-config"
+data:
+  config.json: |
+    {
+      "tickRate": 1,
+      "pipelineRailCount": 32,
+      "pipelineBufferCount": 10000,
+      "acquireShutdownLatch": true,
+      "serverInfo": {
+        "url": "{{ .Values.url }}",
+        "port": "{{ .Values.node.containerPort }}"
+      },
+      {{- if gt (int .Values.nodeDirectory.replicas) 0 }}
+      "nodeDirectory": [
+        "orbit.server.etcd.EtcdNodeDirectory$EtcdNodeDirectoryConfig",
+        {
+          "url": "https://{{ include "orbit.fullname" . }}-node-directory:{{ .Values.nodeDirectory.clientPort }}"
+        }
+      ],
+      {{- end }}
+      {{- if gt (int .Values.addressableDirectory.replicas) 0 }}
+      "addressableDirectory": [
+        "orbit.server.etcd.EtcdAddressableDirectory$EtcdAddressableDirectoryConfig",
+        {
+          "url": "https://{{ include "orbit.fullname" . }}-addressable-directory:{{ .Values.addressableDirectory.clientPort }}"
+        }
+      ]
+      {{- end }}
+    }

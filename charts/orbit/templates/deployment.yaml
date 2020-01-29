@@ -1,56 +1,57 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: {{ include "orbit.fullname" . }}
-    labels:
+  name: {{ include "orbit.fullname" . }}
+  labels:
+    app: {{ include "orbit.name" . }}
+    chart: {{ include "orbit.chart" . }}
+    release: {{ .Release.Name }}
+    component: node
+spec:
+  replicas: {{ .Values.node.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "orbit.name" . }}
+      release: {{ .Release.Name }}
+      component: node
+  template:
+    metadata:
+      labels:
         app: {{ include "orbit.name" . }}
-        chart: {{ include "orbit.chart" . }}
         release: {{ .Release.Name }}
         component: node
-spec:
-    replicas: {{ .Values.node.replicas }}
-    selector:
-        matchLabels:
-            app: {{ include "orbit.name" . }}
-            release: {{ .Release.Name }}
-            component: node
-    template:
-        metadata:
-            labels:
-                app: {{ include "orbit.name" . }}
-                release: {{ .Release.Name }}
-                component: node
-        spec:
-            containers:
-                - name: node
-                  image: orbitframework/orbit:{{ .Values.image.version }}
-                  imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
-                  ports:
-                      - containerPort: {{ .Values.node.containerPort }}
-                  env:
-                      - name: ORBIT_HOST
-                        valueFrom:
-                            fieldRef:
-                                fieldPath: status.podIP
-                      - name: ORBIT_PORT
-                        value: {{ .Values.node.containerPort | quote }}
-                      - name: ORBIT_URL
-                        value: "$(ORBIT_HOST):{{ .Values.node.containerPort }}"
-                      - name: ORBIT_SETTINGS
-                        value: /etc/orbit/orbit.conf
-                  readinessProbe:
-                      exec:
-                          command: ["/bin/grpc_health_probe", "-addr=:{{ .Values.node.containerPort }}"]
-                      initialDelaySeconds: 5
-                  livenessProbe:
-                      exec:
-                          command: ["/bin/grpc_health_probe", "-addr=:{{ .Values.node.containerPort }}"]
-                      initialDelaySeconds: 10
-                  volumeMounts:
-                      - name: configmap
-                        mountPath: /etc/orbit/orbit.conf
-                        subPath: config.json
-            volumes:
-              - name: configmap
-                configMap:
-                    name: configmap
+    spec:
+      containers:
+        {{- with .Values.node }}
+        - name: node
+          image: {{ .image.repository }}:{{ .image.tag }}
+          imagePullPolicy: {{ .image.pullPolicy | quote }}
+          ports:
+          - containerPort: {{ .containerPort }}
+          env:
+          - name: ORBIT_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: ORBIT_PORT
+            value: {{ .containerPort | quote }}
+          - name: ORBIT_URL
+            value: "$(ORBIT_HOST):{{ .containerPort }}"
+          - name: ORBIT_SETTINGS
+            value: /etc/orbit/config/config.json
+          readinessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:{{ .containerPort }}"]
+            initialDelaySeconds: 5
+          livenessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:{{ .containerPort }}"]
+            initialDelaySeconds: 10
+          volumeMounts:
+          - name: configmap
+            mountPath: /etc/orbit/config
+        {{- end }}
+      volumes:
+      - name: configmap
+        configMap:
+          name: {{ include "orbit.fullname" . }}-config
