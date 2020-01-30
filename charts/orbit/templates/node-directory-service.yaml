@@ -12,6 +12,7 @@ spec:
     app: {{ include "orbit.name" . }}
     release: {{ .Release.Name }}
     component: node-directory
+    tier: "persistence"
   ports:
   - name: client
     port: {{ .Values.nodeDirectory.clientPort }}

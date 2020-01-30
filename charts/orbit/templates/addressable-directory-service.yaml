@@ -12,6 +12,7 @@ spec:
     app: {{ include "orbit.name" . }}
     release: {{ .Release.Name }}
     component: addressable-directory
+    tier: "persistence"
   ports:
   - name: client
     port: {{ .Values.addressableDirectory.clientPort }}

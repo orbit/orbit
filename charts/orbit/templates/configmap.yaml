@@ -17,7 +17,7 @@ data:
       "nodeDirectory": [
         "orbit.server.etcd.EtcdNodeDirectory$EtcdNodeDirectoryConfig",
         {
-          "url": "https://{{ include "orbit.fullname" . }}-node-directory:{{ .Values.nodeDirectory.clientPort }}"
+          "url": "http://{{ include "orbit.fullname" . }}-node-directory:{{ .Values.nodeDirectory.clientPort }}"
         }
       ],
       {{- end }}
@@ -25,7 +25,7 @@ data:
       "addressableDirectory": [
         "orbit.server.etcd.EtcdAddressableDirectory$EtcdAddressableDirectoryConfig",
         {
-          "url": "https://{{ include "orbit.fullname" . }}-addressable-directory:{{ .Values.addressableDirectory.clientPort }}"
+          "url": "http://{{ include "orbit.fullname" . }}-addressable-directory:{{ .Values.addressableDirectory.clientPort }}"
         }
       ]
       {{- end }}

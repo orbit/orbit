@@ -21,6 +21,7 @@ spec:
         app: {{ include "orbit.name" . }}
         release: {{ .Release.Name }}
         component: addressable-directory
+        tier: "persistence"
     spec:
       {{- with .Values.addressableDirectory }}
       containers:
