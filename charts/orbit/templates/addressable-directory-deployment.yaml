@@ -23,7 +23,7 @@ spec:
         component: addressable-directory
         tier: "persistence"
     spec:
-      {{- with .Values.addressableDirectory }}
+    {{- with .Values.addressableDirectory }}
       containers:
       - name: addressable-directory
         image: {{ .image.repository }}
@@ -35,4 +35,4 @@ spec:
           value: "yes"
         - name: ETCD_ADVERTISE_CLIENT_URLS
           value: "http://addressable-directory:{{ .clientPort }}"
-      {{- end }}
+    {{- end }}
