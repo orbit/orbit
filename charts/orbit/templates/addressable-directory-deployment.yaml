@@ -1,3 +1,4 @@
+{{- if gt (int .Values.addressableDirectory.replicas) 0 }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -36,3 +37,4 @@ spec:
         - name: ETCD_ADVERTISE_CLIENT_URLS
           value: "http://addressable-directory:{{ .clientPort }}"
     {{- end }}
+{{- end }}
