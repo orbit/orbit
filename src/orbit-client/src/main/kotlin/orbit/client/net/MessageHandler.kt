@@ -39,7 +39,9 @@ internal class MessageHandler(
 
     suspend fun onMessage(message: Message) {
         when (message.content) {
-            is MessageContent.Error, is MessageContent.InvocationResponse -> {
+            is MessageContent.Error,
+            is MessageContent.InvocationResponse,
+            is MessageContent.InvocationResponseError -> {
                 val messageId = message.messageId!!
                 getCompletion(messageId)?.also { completion ->
                     when (val content = message.content) {
@@ -48,8 +50,11 @@ internal class MessageHandler(
                                 RemoteException("Exceptional response received: ${content.description}")
                             )
                         }
+                        is MessageContent.InvocationResponseError -> {
+                            invocationSystem.onInvocationPlatformErrorResponse(content, completion)
+                        }
                         is MessageContent.InvocationResponse -> {
-                            invocationSystem.onInvocationResponse(content.data, completion)
+                            invocationSystem.onInvocationResponse(content, completion)
                         }
                     }
                 }

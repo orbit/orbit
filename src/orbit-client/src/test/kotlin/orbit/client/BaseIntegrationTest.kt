@@ -23,8 +23,11 @@ open class BaseIntegrationTest {
         protected lateinit var client: OrbitClient
             private set
 
-        private val targetUri = "dns:///localhost:5874"
-        private val namespace = "test"
+        @JvmStatic
+        protected val targetUri = "dns:///localhost:5874"
+
+        @JvmStatic
+        protected val namespace = "test"
 
         @BeforeClass
         @JvmStatic

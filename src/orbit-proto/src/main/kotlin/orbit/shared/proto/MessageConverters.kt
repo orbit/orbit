@@ -75,8 +75,16 @@ fun Messages.MessageContentProto.toMessageContent(): MessageContent =
             )
         }
 
+        hasInvocationResponseError() -> {
+            MessageContent.InvocationResponseError(
+                description = invocationResponseError.description,
+                platform = invocationResponseError.platform
+
+            )
+        }
+
         hasInfoRequest() -> {
-            MessageContent.ConnectionInfoRequest()
+            MessageContent.ConnectionInfoRequest
         }
 
         hasInfoResponse() -> {
@@ -106,6 +114,15 @@ fun MessageContent.toMessageContentProto(): Messages.MessageContentProto =
                     builder.setInvocationResponse(
                         Messages.InvocationResponseProto.newBuilder()
                             .setValue(data)
+                            .build()
+                    )
+                }
+
+                is MessageContent.InvocationResponseError -> {
+                    builder.setInvocationResponseError(
+                        Messages.InvocationResponseErrorProto.newBuilder()
+                            .setDescription(description)
+                            .setPlatform(platform)
                             .build()
                     )
                 }

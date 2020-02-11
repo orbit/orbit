@@ -7,12 +7,14 @@
 package orbit.client.addressable
 
 import kotlinx.coroutines.CompletableDeferred
+import orbit.client.OrbitClientConfig
 import orbit.client.execution.ExecutionSystem
 import orbit.client.net.ClientState
 import orbit.client.net.Completion
 import orbit.client.net.LocalNode
 import orbit.client.net.MessageHandler
 import orbit.client.serializer.Serializer
+import orbit.client.util.RemoteException
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableInvocationArguments
 import orbit.shared.net.Message
@@ -27,6 +29,7 @@ internal class InvocationSystem(
     componentContainer: ComponentContainer
 ) {
     private val messageHandler by componentContainer.inject<MessageHandler>()
+    private val config by componentContainer.inject<OrbitClientConfig>()
 
     suspend fun onInvocationRequest(msg: Message) {
         val content = msg.content as MessageContent.InvocationRequest
@@ -44,7 +47,11 @@ internal class InvocationSystem(
                 data = serializer.serialize(result)
             )
         } catch (t: Throwable) {
-            MessageContent.Error(t.toString())
+            if(config.platformExceptions) {
+                MessageContent.InvocationResponseError(t.toString(), serializer.serialize(t))
+            } else {
+                MessageContent.Error(t.toString())
+            }
         }
 
         messageHandler.sendMessage(
@@ -56,9 +63,18 @@ internal class InvocationSystem(
         )
     }
 
-    fun onInvocationResponse(responsePayload: String, completion: Completion) {
-        val result = serializer.deserialize<Any>(responsePayload)
+    fun onInvocationResponse(ir: MessageContent.InvocationResponse, completion: Completion) {
+        val result = serializer.deserialize<Any>(ir.data)
         completion.complete(result)
+    }
+
+    fun onInvocationPlatformErrorResponse(ire: MessageContent.InvocationResponseError, completion: Completion) {
+        val result = if(config.platformExceptions && !ire.platform.isNullOrEmpty()) {
+            serializer.deserialize<Throwable>(ire.platform!!)
+        } else {
+            RemoteException("Exceptional response received: ${ire.description}")
+        }
+        completion.completeExceptionally(result)
     }
 
     fun sendInvocation(invocation: AddressableInvocation): Completion {

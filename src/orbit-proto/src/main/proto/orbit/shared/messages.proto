@@ -34,6 +34,7 @@ message MessageContentProto {
         ConnectionInfoResponseProto info_response = 3;
         InvocationRequestProto invocation_request = 4;
         InvocationResponseProto invocation_response = 5;
+        InvocationResponseErrorProto invocation_response_error = 6;
     }
 }
 
@@ -54,6 +55,13 @@ message InvocationRequestProto {
 message InvocationResponseProto {
     string value = 1;
 }
+
+message InvocationResponseErrorProto {
+    string description = 1;
+    string platform = 2;
+
+}
+
 
 message ErrorProto {
     string description = 1;

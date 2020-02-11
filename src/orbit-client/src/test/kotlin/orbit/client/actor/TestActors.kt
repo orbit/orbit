@@ -59,13 +59,15 @@ class IncrementActorImpl : IncrementActor {
         CompletableDeferred(++counter)
 }
 
+class TestException(msg: String): RuntimeException(msg)
+
 interface ThrowingActor : ActorWithNoKey {
     fun doThrow(): Deferred<Long>
 }
 
 class ThrowingActorImpl : ThrowingActor {
     override fun doThrow(): Deferred<Long> {
-        throw RuntimeException("Threw")
+        throw TestException("Threw")
     }
 }
 

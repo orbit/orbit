@@ -18,6 +18,7 @@ import orbit.client.actor.GreeterActor
 import orbit.client.actor.IdActor
 import orbit.client.actor.IncrementActor
 import orbit.client.actor.NullActor
+import orbit.client.actor.TestException
 import orbit.client.actor.ThrowingActor
 import orbit.client.actor.TimeoutActor
 import orbit.client.actor.TrackingGlobals
@@ -153,6 +154,24 @@ class BasicActorTests : BaseIntegrationTest() {
             val actor = client.actorFactory.createProxy<NullActor>()
             val result = actor.complexNull("Bob ", null).await()
             assertEquals("Bob null", result)
+        }
+    }
+
+    @Test(expected = TestException::class)
+    fun `test platform exception`() {
+        val customClient = OrbitClient(
+            OrbitClientConfig(
+                grpcEndpoint = targetUri,
+                namespace = "platformExceptionTest",
+                packages = listOf("orbit.client.actor"),
+                platformExceptions = true
+            )
+        )
+
+        runBlocking {
+            customClient.start().join()
+            val actor = customClient.actorFactory.createProxy<ThrowingActor>()
+            actor.doThrow().await()
         }
     }
 }

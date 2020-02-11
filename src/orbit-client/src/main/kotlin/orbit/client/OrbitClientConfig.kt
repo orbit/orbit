@@ -86,5 +86,10 @@ data class OrbitClientConfig(
     /**
      * How to handle node lease renewal failure
      */
-    val nodeLeaseRenewalFailedHandler: ExternallyConfigured<NodeLeaseRenewalFailedHandler> = RestartOnNodeRenewalFailure.RestartOnNodeRenewalFailureSingleton
+    val nodeLeaseRenewalFailedHandler: ExternallyConfigured<NodeLeaseRenewalFailedHandler> = RestartOnNodeRenewalFailure.RestartOnNodeRenewalFailureSingleton,
+
+    /**
+     * Rethrow platform specific exceptions. Should only be used when all clients are using the same SDK.
+     */
+    val platformExceptions: Boolean = false
 )
