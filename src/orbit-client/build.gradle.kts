@@ -46,3 +46,12 @@ tasks.withType<ShadowJar>() {
 }
 tasks.build.get().finalizedBy("shadowJar")
 
+plugins.withType<MavenPublishPlugin> {
+    extensions.configure<PublishingExtension> {
+        publications {
+            getByName<MavenPublication>("default") {
+                artifact(tasks.getByName("shadowJar"))
+            }
+        }
+    }
+}
