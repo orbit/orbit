@@ -3,6 +3,9 @@
  This file is part of the Orbit Project <https://www.orbit.cloud>.
  See license in LICENSE.
  */
+
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 val kotlinCoroutinesVersion = project.rootProject.ext["kotlinCoroutinesVersion"]
 val slf4jVersion = project.rootProject.ext["slf4jVersion"]
 val jacksonVersion = project.rootProject.ext["jacksonVersion"]
@@ -10,6 +13,8 @@ val jacksonVersion = project.rootProject.ext["jacksonVersion"]
 plugins {
     kotlin("jvm")
     `maven-publish`
+    id("com.github.johnrengelman.shadow") version "5.2.0"
+
 }
 
 dependencies {
@@ -28,3 +33,16 @@ dependencies {
 
     testImplementation(project(":src:orbit-server"))
 }
+
+tasks.withType<ShadowJar>() {
+    classifier = "shaded"
+
+    relocate("com.fasterxml", "shaded.fasterxml")
+    relocate("com.google", "shaded.google")
+    relocate("google", "shaded.google")
+    relocate("grpc", "shaded.grpc")
+    relocate("io.grpc", "shaded.grpc")
+    relocate("io.rouz", "shaded.rouz")
+}
+tasks.build.get().finalizedBy("shadowJar")
+
