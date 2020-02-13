@@ -37,12 +37,22 @@ dependencies {
 tasks.withType<ShadowJar>() {
     classifier = "shaded"
 
+    dependencies {
+        exclude(dependency("org.jetbrains.*:.*:.*"))
+    }
+
     relocate("com.fasterxml", "shaded.fasterxml")
     relocate("com.google", "shaded.google")
     relocate("google", "shaded.google")
     relocate("grpc", "shaded.grpc")
     relocate("io.grpc", "shaded.grpc")
     relocate("io.rouz", "shaded.rouz")
+    relocate("io.github.classgraph", "shaded.classgraph.public")
+    relocate("nonapi.io.github.classgraph", "shaded.classgraph.nonapi")
+    relocate("mu", "shaded.mu")
+
+
+
 }
 tasks.build.get().finalizedBy("shadowJar")
 
