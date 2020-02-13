@@ -13,10 +13,6 @@ plugins {
 dependencies {
     implementation(project(":src:orbit-util"))
     implementation(project(":src:orbit-shared"))
-    implementation(project(":src:orbit-proto"))
 
-    implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
-    implementation("org.jgrapht:jgrapht-core:1.3.1")
-
-    implementation("io.micrometer:micrometer-core:1.3.5")
+    implementation("io.micrometer:micrometer-registry-prometheus:latest.release")
 }
