@@ -13,20 +13,27 @@ data:
         "url": "{{ .Values.url }}",
         "port": "{{ .Values.node.containerPort }}"
       }
-      {{- if gt (int .Values.nodeDirectory.replicas) 0 }}
+    {{- if gt (int .Values.nodeDirectory.replicas) 0 }}
       ,"nodeDirectory": [
         "orbit.server.etcd.EtcdNodeDirectory$EtcdNodeDirectoryConfig",
         {
           "url": "http://{{ include "orbit.fullname" . }}-node-directory:{{ .Values.nodeDirectory.clientPort }}"
         }
       ]
-      {{- end }}
-      {{- if gt (int .Values.addressableDirectory.replicas) 0 }}
+    {{- end }}
+    {{- if gt (int .Values.addressableDirectory.replicas) 0 }}
       ,"addressableDirectory": [
         "orbit.server.etcd.EtcdAddressableDirectory$EtcdAddressableDirectoryConfig",
         {
           "url": "http://{{ include "orbit.fullname" . }}-addressable-directory:{{ .Values.addressableDirectory.clientPort }}"
         }
       ]
-      {{- end }}
+    {{- end }}
+      ,"meterRegistry": [
+        "orbit.server.prometheus.PrometheusMetrics$PrometheusMetricsConfig",
+        {
+          "url": "/metrics",
+          "port": 8080
+        }
+      ]
     }

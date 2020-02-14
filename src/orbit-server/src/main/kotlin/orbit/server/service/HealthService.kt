@@ -8,10 +8,12 @@ package orbit.server.service
 
 import grpc.health.v1.HealthImplBase
 import grpc.health.v1.HealthOuterClass
-import kotlinx.coroutines.channels.ReceiveChannel
+import io.micrometer.core.instrument.MeterRegistry
 
-class HealthService(private val checks: HealthCheckList) : HealthImplBase() {
+class HealthService(private val checks: HealthCheckList, private val metrics: MeterRegistry) : HealthImplBase() {
+    private val counter = metrics.counter("orbit", "health", "check")
     override suspend fun check(request: HealthOuterClass.HealthCheckRequest): HealthOuterClass.HealthCheckResponse {
+        counter.increment()
         return HealthOuterClass.HealthCheckResponse.newBuilder()
             .setStatus(
                 if (this.isHealthy()) {
@@ -20,10 +22,6 @@ class HealthService(private val checks: HealthCheckList) : HealthImplBase() {
                     HealthOuterClass.HealthCheckResponse.ServingStatus.NOT_SERVING
                 }
             ).build()
-    }
-
-    override fun watch(request: HealthOuterClass.HealthCheckRequest): ReceiveChannel<HealthOuterClass.HealthCheckResponse> {
-        return super.watch(request)
     }
 
     suspend fun isHealthy(): Boolean {

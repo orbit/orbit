@@ -12,7 +12,6 @@ plugins {
 dependencies {
     implementation(project(":src:orbit-server"))
     implementation(project(":src:orbit-client"))
-
 }
 
 jmh {

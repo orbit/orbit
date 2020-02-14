@@ -6,12 +6,14 @@
 
 package orbit.server
 
+import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.server.mesh.AddressableDirectory
 import orbit.server.mesh.LeaseDuration
 import orbit.server.mesh.LocalServerInfo
 import orbit.server.mesh.NodeDirectory
 import orbit.server.mesh.local.LocalAddressableDirectory
+import orbit.server.mesh.local.LocalMeterRegistry
 import orbit.server.mesh.local.LocalNodeDirectory
 import orbit.util.concurrent.Pools
 import orbit.util.di.ExternallyConfigured
@@ -79,8 +81,13 @@ data class OrbitServerConfig(
     val nodeDirectory: ExternallyConfigured<NodeDirectory> = LocalNodeDirectory.LocalNodeDirectorySingleton,
 
     /**
-     * The a oddressable directory to use
+     * The addressable directory to use
      */
-    val addressableDirectory: ExternallyConfigured<AddressableDirectory> = LocalAddressableDirectory.LocalAddressableDirectorySingleton
+    val addressableDirectory: ExternallyConfigured<AddressableDirectory> = LocalAddressableDirectory.LocalAddressableDirectorySingleton,
 
-)
+    /**
+     * The meter registry implementation for sending application metrics
+     */
+    val meterRegistry: ExternallyConfigured<MeterRegistry> = LocalMeterRegistry.LocalMeterRegistrySingleton
+) {
+}

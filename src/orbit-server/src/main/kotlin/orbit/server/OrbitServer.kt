@@ -6,6 +6,7 @@
 
 package orbit.server
 
+import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import orbit.server.auth.AuthSystem
@@ -74,6 +75,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private val pipeline by container.inject<Pipeline>()
     private val remoteMeshNodeManager by container.inject<RemoteMeshNodeManager>()
 
+
     private val ticker = ConstantTicker(
         scope = runtimeScopes.cpuScope,
         targetTickRate = config.tickRate.toMillis(),
@@ -124,6 +126,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
             definition<RemoteMeshNodeManager>()
             externallyConfigured(config.nodeDirectory)
             externallyConfigured(config.addressableDirectory)
+            externallyConfigured(config.meterRegistry)
 
             // Auth
             definition<AuthSystem>()
