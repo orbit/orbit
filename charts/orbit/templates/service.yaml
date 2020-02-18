@@ -2,10 +2,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "orbit.fullname" . }}
+  labels:
+    {{- include "orbit.selectorLabels" . | nindent 4 }}
 spec:
   selector:
-    app: {{ include "orbit.name" . }}
-    release: {{ .Release.Name }}
+    {{- include "orbit.selectorLabels" . | nindent 4 }}
     component: node
   ports:
   - name: grpc

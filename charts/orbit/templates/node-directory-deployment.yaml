@@ -4,23 +4,20 @@ kind: Deployment
 metadata:
   name: {{ include "orbit.fullname" . }}-node-directory
   labels:
-    app: {{ include "orbit.name" . }}
+    {{- include "orbit.selectorLabels" . | nindent 4 }}
     chart: {{ include "orbit.chart" . }}
-    release: {{ .Release.Name }}
     component: node-directory
     tier: "persistence"
 spec:
   replicas: {{ .Values.nodeDirectory.replicas }}
   selector:
     matchLabels:
-      app: {{ include "orbit.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "orbit.selectorLabels" . | nindent 6 }}
       component: node-directory
   template:
     metadata:
       labels:
-        app: {{ include "orbit.name" . }}
-        release: {{ .Release.Name }}
+        {{- include "orbit.selectorLabels" . | nindent 8 }}
         component: node-directory
         tier: "persistence"
     spec:
