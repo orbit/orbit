@@ -24,7 +24,10 @@ spec:
           image: {{ .image.repository }}:{{ .image.tag }}
           imagePullPolicy: {{ .image.pullPolicy | quote }}
           ports:
-          - containerPort: {{ .containerPort }}
+          - name: grpc
+            containerPort: {{ .containerPort }}
+          - name: metrics
+            containerPort: {{ .metricsPort }}
           env:
           - name: ORBIT_HOST
             valueFrom:

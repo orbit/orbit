@@ -11,3 +11,5 @@ spec:
   ports:
   - name: grpc
     port: {{ .Values.node.containerPort }}
+  - name: metrics
+    port:  {{ .Values.node.metricsPort }}
