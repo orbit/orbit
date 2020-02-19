@@ -33,7 +33,7 @@ data:
         "orbit.server.prometheus.PrometheusMetrics$PrometheusMetricsConfig",
         {
           "url": "/metrics",
-          "port": 8080
+          "port": {{ .Values.node.metricsPort }}
         }
       ]
     }

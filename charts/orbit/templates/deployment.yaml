@@ -3,22 +3,19 @@ kind: Deployment
 metadata:
   name: {{ include "orbit.fullname" . }}
   labels:
-    app: {{ include "orbit.name" . }}
+    {{- include "orbit.selectorLabels" . | nindent 4 }}
     chart: {{ include "orbit.chart" . }}
-    release: {{ .Release.Name }}
     component: node
 spec:
   replicas: {{ .Values.node.replicas }}
   selector:
     matchLabels:
-      app: {{ include "orbit.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "orbit.selectorLabels" . | nindent 6 }}
       component: node
   template:
     metadata:
       labels:
-        app: {{ include "orbit.name" . }}
-        release: {{ .Release.Name }}
+        {{- include "orbit.selectorLabels" . | nindent 8 }}
         component: node
     spec:
       containers:
@@ -27,7 +24,10 @@ spec:
           image: {{ .image.repository }}:{{ .image.tag }}
           imagePullPolicy: {{ .image.pullPolicy | quote }}
           ports:
-          - containerPort: {{ .containerPort }}
+          - name: grpc
+            containerPort: {{ .containerPort }}
+          - name: metrics
+            containerPort: {{ .metricsPort }}
           env:
           - name: ORBIT_HOST
             valueFrom:
