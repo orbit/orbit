@@ -6,6 +6,8 @@
 
 package orbit.server
 
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Metrics
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import orbit.server.auth.AuthSystem
@@ -133,6 +135,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
             // Router
             definition<Router>()
         }
+
+        Metrics.globalRegistry.add(container.resolve(MeterRegistry::class.java))
     }
 
     fun start() = runtimeScopes.cpuScope.launch {
