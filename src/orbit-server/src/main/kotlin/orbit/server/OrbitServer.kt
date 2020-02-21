@@ -6,7 +6,6 @@
 
 package orbit.server
 
-import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import orbit.server.auth.AuthSystem

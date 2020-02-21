@@ -3,7 +3,6 @@
  This file is part of the Orbit Project <https://www.orbit.cloud>.
  See license in LICENSE.
  */
-val grpcVersion = project.rootProject.ext["grpcVersion"]
 
 plugins {
     kotlin("jvm")
