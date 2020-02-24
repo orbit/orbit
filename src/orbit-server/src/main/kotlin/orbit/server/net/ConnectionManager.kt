@@ -6,6 +6,7 @@
 
 package orbit.server.net
 
+import io.micrometer.core.instrument.Metrics
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
@@ -33,6 +34,10 @@ class ConnectionManager(
     container: ComponentContainer
 ) {
     private val connectedClients = ConcurrentHashMap<NodeId, ClientConnection>()
+
+    init {
+        Metrics.gauge("Connected clients", connectedClients) { c -> c.count().toDouble() }
+    }
 
     // The pipeline needs to be lazy to avoid a stack overflow
     private val pipeline by container.inject<Pipeline>()

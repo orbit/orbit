@@ -6,6 +6,7 @@
 
 package orbit.server.net
 
+import io.micrometer.core.instrument.Metrics
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import orbit.server.auth.AuthInfo
@@ -25,8 +26,12 @@ class ClientConnection(
     private val outgoingChannel: SendChannel<Messages.MessageProto>,
     private val pipeline: Pipeline
 ) : MessageSender {
+
     suspend fun consumeMessages() {
+        val messageSizes = Metrics.summary("message sizes", authInfo.nodeId.key)
+
         for (protoMessage in incomingChannel) {
+            messageSizes.record(protoMessage.toByteArray().size.toDouble())
 
             val message = protoMessage.toMessage()
             val meta = MessageMetadata(
