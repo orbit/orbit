@@ -28,7 +28,7 @@ class ClientConnection(
 ) : MessageSender {
 
     suspend fun consumeMessages() {
-        val messageSizes = Metrics.summary("message sizes", authInfo.nodeId.key)
+        val messageSizes = Metrics.summary("message sizes", "nodeId", authInfo.nodeId.key)
 
         for (protoMessage in incomingChannel) {
             messageSizes.record(protoMessage.toByteArray().size.toDouble())
