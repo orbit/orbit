@@ -14,6 +14,7 @@ import io.grpc.ForwardingClientCall
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
+import io.kotlintest.*
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
@@ -37,11 +38,12 @@ import orbit.shared.proto.openStream
 import orbit.shared.proto.toMessageProto
 import orbit.shared.proto.toNodeId
 import orbit.util.di.ExternallyConfigured
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
-import io.kotlintest.*
 
 class MetricsTests {
-    private val orbitServer: OrbitServer
+    private lateinit var orbitServer: OrbitServer
 
     class MockMeterRegistry : SimpleMeterRegistry() {
         object Config : ExternallyConfigured<MeterRegistry> {
@@ -49,8 +51,10 @@ class MetricsTests {
         }
     }
 
-    init {
+    @Before
+    fun connectServer() {
         orbitServer = OrbitServer(OrbitServerConfig(meterRegistry = MockMeterRegistry.Config))
+
         runBlocking {
             orbitServer.start()
 
@@ -60,16 +64,54 @@ class MetricsTests {
         }
     }
 
+    @After
+    fun disconnectServer() {
+        runBlocking {
+            orbitServer.stop()
+
+            eventually(10.seconds) {
+                orbitServer.nodeStatus shouldBe NodeStatus.STOPPED
+            }
+
+            Metrics.globalRegistry.clear()
+        }
+    }
+
     @Test
     fun `connecting to service increments connected metric`() {
         runBlocking {
             TestClient().connect()
             TestClient().connect()
 
-            eventually(3.seconds) {
-                Metrics.globalRegistry.meters[0].measure().first().value shouldBe 2.0
+            eventually(5.seconds) {
+                ConnectionsCount shouldBe 2.0
             }
         }
+    }
+
+    @Test
+    fun `disconnecting from service decrements connected metric`() {
+        runBlocking {
+            val client = TestClient().connect()
+
+            eventually(5.seconds) {
+                ConnectionsCount shouldBe 1.0
+            }
+
+            client.disconnect()
+            eventually(5.seconds) {
+                ConnectionsCount shouldBe 0.0
+            }
+        }
+    }
+
+    companion object {
+        private fun getMeter(name: String, measurement: String? = null): Double {
+            return Metrics.globalRegistry.meters.first { m -> m.id.name == name }.measure()
+                .first { m -> measurement == null || m.statistic.name == measurement }.value
+        }
+
+        private val ConnectionsCount: Double get() = getMeter("Connected clients")
     }
 
 }
@@ -83,15 +125,9 @@ class TestClient {
         .enableRetry()
         .build()
 
-//    NodeInfo(
-//    id = nodeId, capabilities = NodeCapabilities(), lease = NodeLease(
-//    ChallengeToken(), Timestamp.now
-//    (), Timestamp.now()
-//    ), nodeStatus = NodeStatus.ACTIVE)
-
     private lateinit var connectionChannel: ManyToManyCall<Messages.MessageProto, Messages.MessageProto>
 
-    suspend fun connect() {
+    suspend fun connect(): TestClient {
         val response = NodeManagementGrpc.newStub(client).joinCluster(
             NodeManagementOuterClass.JoinClusterRequestProto.newBuilder().setCapabilities(
                 Node.CapabilitiesProto.newBuilder().build()
@@ -100,6 +136,11 @@ class TestClient {
         nodeId = response.info.id.toNodeId()
         connectionChannel = ConnectionGrpc.newStub(client).openStream()
         println("joined cluster ${nodeId}")
+        return this
+    }
+
+    suspend fun disconnect() {
+        connectionChannel.close()
     }
 
     suspend fun sendMessage(msg: String) {
