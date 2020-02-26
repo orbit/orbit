@@ -57,7 +57,7 @@ class ConnectionManager(
                 if (nodeInfo == null) throw InvalidNodeId(nodeId)
 
                 val authInfo = authSystem.auth(nodeId)
-                authInfo ?: throw AuthFailed("Auth failled for $nodeId")
+                authInfo ?: throw AuthFailed("Auth failed for $nodeId")
 
                 // Create the connection
                 val clientConnection = ClientConnection(authInfo, incomingChannel, outgoingChannel, pipeline)

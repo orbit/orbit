@@ -50,6 +50,8 @@ import kotlin.coroutines.CoroutineContext
 class OrbitServer(private val config: OrbitServerConfig) {
     constructor() : this(OrbitServerConfig())
 
+    val nodeStatus: NodeStatus get() = localNodeInfo.info.nodeStatus
+
     private val logger = KotlinLogging.logger {}
 
     private var shutdownLatch = AtomicReference<ShutdownLatch>()
