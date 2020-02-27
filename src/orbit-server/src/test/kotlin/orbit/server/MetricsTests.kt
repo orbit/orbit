@@ -121,6 +121,18 @@ class MetricsTests {
         }
     }
 
+    @Test
+    fun `sending a message to addressables increments total addressables`() {
+        runBlocking {
+            val client = TestClient().connect()
+            client.sendMessage("test message", "address 1")
+            client.sendMessage("test message", "address 2")
+            eventually(5.seconds) {
+                AddressableCount shouldBe 2.0
+            }
+        }
+    }
+
     companion object {
         private fun getMeter(name: String, statistic: String? = null): Double {
             return Metrics.globalRegistry.meters.first { m -> m.id.name == name }.measure()
@@ -130,6 +142,8 @@ class MetricsTests {
         private val ConnectedClients: Double get() = getMeter("Connected Clients")
         private val PlacementTimer_Count: Double get() = getMeter("Placement Timer", "count")
         private val PlacementTimer_TotalTime: Double get() = getMeter("Placement Timer", "total_time")
+        private val AddressableCount: Double get() = getMeter("Addressable Count")
+
     }
 
 }
@@ -148,7 +162,7 @@ class TestClient {
     suspend fun connect(): TestClient {
         val response = NodeManagementGrpc.newStub(client).joinCluster(
             NodeManagementOuterClass.JoinClusterRequestProto.newBuilder().setCapabilities(
-                Node.CapabilitiesProto.newBuilder().build()
+                Node.CapabilitiesProto.newBuilder().addAddressableTypes("test").build()
             ).build()
         )
         nodeId = response.info.id.toNodeId()
@@ -166,7 +180,7 @@ class TestClient {
         val message = Message(
             MessageContent.InvocationRequest(
                 AddressableReference(
-                    "TestTarget",
+                    "test",
                     if (address != null) Key.StringKey(address) else Key.NoKey
                 ), "report",
                 msg

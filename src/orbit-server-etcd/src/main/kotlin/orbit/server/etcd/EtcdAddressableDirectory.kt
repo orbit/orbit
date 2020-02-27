@@ -8,6 +8,7 @@ package orbit.server.etcd
 
 import io.etcd.jetcd.ByteSequence
 import io.etcd.jetcd.Client
+import io.etcd.jetcd.KeyValue
 import io.etcd.jetcd.op.Op
 import io.etcd.jetcd.options.DeleteOption
 import io.etcd.jetcd.options.GetOption
@@ -74,6 +75,10 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
         }
     }
 
+    override suspend fun count(): Int {
+        return getAllItems().count()
+    }
+
     override suspend fun set(key: AddressableReference, value: AddressableLease) {
         client.put(toKey(key), ByteSequence.from(key.toAddressableReferenceProto().toByteArray())).await()
     }
@@ -112,6 +117,15 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
     }
 
     override suspend fun entries(): Iterable<Pair<AddressableReference, AddressableLease>> {
+        return getAllItems().map { kv ->
+            Pair(
+                fromKey(kv.key),
+                Addressable.AddressableLeaseProto.parseFrom(kv.value.bytes).toAddressableLease()
+            )
+        }
+    }
+
+    private suspend fun getAllItems(): MutableList<KeyValue> {
         val key = ByteSequence.from("\u0000".toByteArray())
 
         val option = GetOption.newBuilder()
@@ -121,14 +135,7 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
             .withRange(key)
             .build()
 
-        val response = client.get(key, option).await()
-
-        return response.kvs.map { kv ->
-            Pair(
-                fromKey(kv.key),
-                Addressable.AddressableLeaseProto.parseFrom(kv.value.bytes).toAddressableLease()
-            )
-        }
+        return client.get(key, option).await().kvs
     }
 
     override suspend fun tick() {

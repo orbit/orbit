@@ -30,4 +30,6 @@ class LocalAddressableDirectory : HashMapBackedAsyncMap<AddressableReference, Ad
             }
         }
     }
+
+    override suspend fun count(): Int = this.keys().count()
 }
