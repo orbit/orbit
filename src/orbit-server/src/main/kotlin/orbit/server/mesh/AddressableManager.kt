@@ -6,6 +6,8 @@
 
 package orbit.server.mesh
 
+import io.micrometer.core.instrument.Metrics
+import kotlinx.coroutines.runBlocking
 import orbit.server.OrbitServerConfig
 import orbit.shared.addressable.AddressableLease
 import orbit.shared.addressable.AddressableReference
@@ -24,6 +26,7 @@ class AddressableManager(
     config: OrbitServerConfig
 ) {
     private val leaseExpiration = config.addressableLeaseDuration
+    private val placementTimer = Metrics.timer("Placement Timer")
 
     suspend fun locateOrPlace(namespace: Namespace, addressableReference: AddressableReference): NodeId =
         addressableDirectory.getOrPut(addressableReference) {
@@ -74,17 +77,21 @@ class AddressableManager(
 
     private suspend fun place(namespace: Namespace, addressableReference: AddressableReference): NodeId =
         runCatching {
-            attempt(
-                maxAttempts = 5,
-                initialDelay = 1000
-            ) {
-                val allNodes = clusterManager.getAllNodes()
-                val potentialNodes = allNodes
-                    .filter { it.id.namespace == namespace }
-                    .filter { it.nodeStatus == NodeStatus.ACTIVE }
-                    .filter { it.capabilities.addressableTypes.contains(addressableReference.type) }
+            placementTimer.recordCallable {
+                runBlocking {
+                    attempt(
+                        maxAttempts = 5,
+                        initialDelay = 1000
+                    ) {
+                        val allNodes = clusterManager.getAllNodes()
+                        val potentialNodes = allNodes
+                            .filter { it.id.namespace == namespace }
+                            .filter { it.nodeStatus == NodeStatus.ACTIVE }
+                            .filter { it.capabilities.addressableTypes.contains(addressableReference.type) }
 
-                potentialNodes.random().id
+                        potentialNodes.random().id
+                    }
+                }
             }
         }.fold(
             { it },

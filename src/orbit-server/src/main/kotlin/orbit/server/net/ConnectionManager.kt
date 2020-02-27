@@ -36,7 +36,7 @@ class ConnectionManager(
     private val connectedClients = ConcurrentHashMap<NodeId, ClientConnection>()
 
     init {
-        Metrics.gauge("Connected clients", connectedClients) { c -> c.count().toDouble() }
+        Metrics.gauge("Connected Clients", connectedClients) { c -> c.count().toDouble() }
     }
 
     // The pipeline needs to be lazy to avoid a stack overflow

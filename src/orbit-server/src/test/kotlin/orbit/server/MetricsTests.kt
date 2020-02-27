@@ -14,7 +14,10 @@ import io.grpc.ForwardingClientCall
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
-import io.kotlintest.*
+import io.kotlintest.eventually
+import io.kotlintest.matchers.doubles.shouldBeGreaterThan
+import io.kotlintest.seconds
+import io.kotlintest.shouldBe
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
@@ -84,7 +87,7 @@ class MetricsTests {
             TestClient().connect()
 
             eventually(5.seconds) {
-                ConnectionsCount shouldBe 2.0
+                ConnectedClients shouldBe 2.0
             }
         }
     }
@@ -95,23 +98,38 @@ class MetricsTests {
             val client = TestClient().connect()
 
             eventually(5.seconds) {
-                ConnectionsCount shouldBe 1.0
+                ConnectedClients shouldBe 1.0
             }
 
             client.disconnect()
             eventually(5.seconds) {
-                ConnectionsCount shouldBe 0.0
+                ConnectedClients shouldBe 0.0
+            }
+        }
+    }
+
+    @Test
+    fun `sending messages to an addressable increments placements`() {
+        runBlocking {
+            val client = TestClient().connect()
+            client.sendMessage("test message", "address 1")
+            client.sendMessage("test message", "address 2")
+            eventually(5.seconds) {
+                PlacementTimer_Count shouldBe 2.0
+                PlacementTimer_TotalTime shouldBeGreaterThan 0.0
             }
         }
     }
 
     companion object {
-        private fun getMeter(name: String, measurement: String? = null): Double {
+        private fun getMeter(name: String, statistic: String? = null): Double {
             return Metrics.globalRegistry.meters.first { m -> m.id.name == name }.measure()
-                .first { m -> measurement == null || m.statistic.name == measurement }.value
+                .first { m -> statistic == null || statistic.equals(m.statistic.name, true) }.value
         }
 
-        private val ConnectionsCount: Double get() = getMeter("Connected clients")
+        private val ConnectedClients: Double get() = getMeter("Connected Clients")
+        private val PlacementTimer_Count: Double get() = getMeter("Placement Timer", "count")
+        private val PlacementTimer_TotalTime: Double get() = getMeter("Placement Timer", "total_time")
     }
 
 }
@@ -143,10 +161,17 @@ class TestClient {
         connectionChannel.close()
     }
 
-    suspend fun sendMessage(msg: String) {
+    suspend fun sendMessage(msg: String, address: String? = null) {
         delay(300)
-        val message =
-            Message(MessageContent.InvocationRequest(AddressableReference("TestTarget", Key.NoKey), "report", msg))
+        val message = Message(
+            MessageContent.InvocationRequest(
+                AddressableReference(
+                    "TestTarget",
+                    if (address != null) Key.StringKey(address) else Key.NoKey
+                ), "report",
+                msg
+            )
+        )
         connectionChannel.send(message.toMessageProto())
     }
 }
