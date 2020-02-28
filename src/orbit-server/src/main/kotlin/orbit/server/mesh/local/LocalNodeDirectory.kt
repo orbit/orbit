@@ -11,15 +11,16 @@ import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
 import orbit.util.concurrent.HashMapBackedAsyncMap
 import orbit.util.di.ExternallyConfigured
+import orbit.util.time.Clock
 
-class LocalNodeDirectory : HashMapBackedAsyncMap<NodeId, NodeInfo>(), NodeDirectory {
+class LocalNodeDirectory(private val clock: Clock) : HashMapBackedAsyncMap<NodeId, NodeInfo>(), NodeDirectory {
     object LocalNodeDirectorySingleton : ExternallyConfigured<NodeDirectory> {
         override val instanceType = LocalNodeDirectory::class.java
     }
 
     override suspend fun tick() {
         // Cull expired
-        values().filter { it.lease.expiresAt.inPast() }.also { toDelete ->
+        values().filter { clock.inPast(it.lease.expiresAt) }.also { toDelete ->
             toDelete.forEach {
                 remove(it.id)
             }

@@ -9,10 +9,12 @@ package orbit.client.execution
 import orbit.client.mesh.AddressableLeaser
 import orbit.shared.addressable.AddressableLease
 import orbit.shared.addressable.AddressableReference
+import orbit.util.time.Clock
 import java.util.concurrent.ConcurrentHashMap
 
 internal class ExecutionLeases(
-    private val addressableLeaser: AddressableLeaser
+    private val addressableLeaser: AddressableLeaser,
+    private val clock: Clock
 ) {
     private val currentLeases = ConcurrentHashMap<AddressableReference, AddressableLease>()
 
@@ -21,7 +23,7 @@ internal class ExecutionLeases(
     suspend fun getOrRenewLease(addressableReference: AddressableReference): AddressableLease {
         var currentLease = currentLeases[addressableReference]
 
-        if (currentLease == null || currentLease.expiresAt.inPast()) {
+        if (currentLease == null || clock.inPast(currentLease.expiresAt)) {
             currentLease = renewLease(addressableReference)
         }
 

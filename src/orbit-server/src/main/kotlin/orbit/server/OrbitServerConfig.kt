@@ -17,6 +17,7 @@ import orbit.server.mesh.local.LocalMeterRegistry
 import orbit.server.mesh.local.LocalNodeDirectory
 import orbit.util.concurrent.Pools
 import orbit.util.di.ExternallyConfigured
+import orbit.util.time.Clock
 import java.time.Duration
 
 data class OrbitServerConfig(
@@ -43,6 +44,11 @@ data class OrbitServerConfig(
      */
     val pipelineBufferCount: Int = 10_000,
 
+
+    /**
+     * Server's application clock
+     */
+    val clock: Clock = Clock(),
 
     /**
      * Expiration times for node leases

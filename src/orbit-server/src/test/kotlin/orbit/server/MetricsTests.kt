@@ -24,6 +24,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.rouz.grpc.ManyToManyCall
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import orbit.server.mesh.LeaseDuration
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.addressable.Key
 import orbit.shared.mesh.NodeId
@@ -41,11 +42,14 @@ import orbit.shared.proto.openStream
 import orbit.shared.proto.toMessageProto
 import orbit.shared.proto.toNodeId
 import orbit.util.di.ExternallyConfigured
+import orbit.util.time.Clock
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import java.time.Duration
 
 class MetricsTests {
+    private var clock: Clock = Clock()
     private lateinit var orbitServer: OrbitServer
 
     class MockMeterRegistry : SimpleMeterRegistry() {
@@ -56,7 +60,14 @@ class MetricsTests {
 
     @Before
     fun connectServer() {
-        orbitServer = OrbitServer(OrbitServerConfig(meterRegistry = MockMeterRegistry.Config))
+        orbitServer = OrbitServer(
+            OrbitServerConfig(
+                meterRegistry = MockMeterRegistry.Config,
+                addressableLeaseDuration = LeaseDuration(Duration.ofSeconds(5), Duration.ofSeconds(5)),
+                nodeLeaseDuration = LeaseDuration(Duration.ofSeconds(20), Duration.ofSeconds(20)),
+                clock = clock
+            )
+        )
 
         runBlocking {
             orbitServer.start()
@@ -77,6 +88,7 @@ class MetricsTests {
             }
 
             Metrics.globalRegistry.clear()
+            clock = Clock()
         }
     }
 
@@ -129,6 +141,22 @@ class MetricsTests {
             client.sendMessage("test message", "address 2")
             eventually(5.seconds) {
                 AddressableCount shouldBe 2.0
+            }
+        }
+    }
+
+    @Test
+    fun `expiring an addressable decrements total addressables`() {
+        runBlocking {
+            val client = TestClient().connect()
+            client.sendMessage("test message", "address 1")
+            eventually(5.seconds) {
+                AddressableCount shouldBe 1.0
+            }
+
+            clock.advanceTime(5000)
+            eventually(5.seconds) {
+                AddressableCount shouldBe 0.0
             }
         }
     }

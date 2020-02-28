@@ -16,6 +16,7 @@ import orbit.shared.mesh.NodeInfo
 import orbit.shared.mesh.NodeLease
 import orbit.shared.mesh.NodeStatus
 import orbit.util.misc.RNGUtils
+import orbit.util.time.Clock
 import orbit.util.time.Timestamp
 import orbit.util.time.toTimestamp
 import org.jgrapht.Graph
@@ -28,14 +29,14 @@ import java.util.concurrent.atomic.AtomicReference
 
 class ClusterManager(
     config: OrbitServerConfig,
+    private val clock: Clock,
     private val nodeDirectory: NodeDirectory
 ) {
     private val leaseExpiration = config.nodeLeaseDuration
     private val clusterNodes = ConcurrentHashMap<NodeId, NodeInfo>()
     private val nodeGraph = AtomicReference<Graph<NodeId, DefaultEdge>>()
 
-    fun getAllNodes() =
-        clusterNodes.filter { it.value.lease.expiresAt.inFuture() }.values
+    fun getAllNodes() = clusterNodes.filter { clock.inFuture(it.value.lease.expiresAt) }.values
 
 
     suspend fun tick() {
@@ -114,7 +115,7 @@ class ClusterManager(
                 null
             }
         }?.let {
-            if (it.lease.expiresAt.inFuture()) {
+            if (clock.inFuture(it.lease.expiresAt)) {
                 it
             } else {
                 null

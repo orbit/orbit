@@ -21,8 +21,7 @@ data class Timestamp(
             }
         }
 
-    fun inPast() = this < now()
-    fun inFuture() = !inPast()
+    fun isAfter(time: Instant) = this > time.toTimestamp()
 
     companion object {
         fun now(): Timestamp = Instant.now().toTimestamp()

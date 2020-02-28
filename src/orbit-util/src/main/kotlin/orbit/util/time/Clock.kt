@@ -6,6 +6,8 @@
 
 package orbit.util.time
 
+import java.time.Instant
+
 /**
  * A clock used to measure time.
  */
@@ -29,6 +31,9 @@ class Clock {
     fun advanceTime(offset: TimeMs) {
         offsetTime += offset
     }
+
+    fun inFuture(time: Timestamp) = time.isAfter(Instant.ofEpochMilli(currentTime))
+    fun inPast(time: Timestamp) = !inFuture(time)
 }
 
 object ClockUtils {

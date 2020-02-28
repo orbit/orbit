@@ -104,7 +104,7 @@ class EtcdNodeDirectory(config: EtcdNodeDirectoryConfig, private val clock: Cloc
                 lastCleanup.set(clock.currentTime)
                 val nodes = values()
 
-                val (expiredLeases, validLeases) = nodes.partition { node -> node.lease.expiresAt.inPast() }
+                val (expiredLeases, validLeases) = nodes.partition { node -> clock.inPast(node.lease.expiresAt) }
 
                 if (expiredLeases.any()) {
                     val txn = client.txn()

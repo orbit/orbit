@@ -145,7 +145,7 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
                 lastCleanup.set(clock.currentTime)
                 val addressables = values()
 
-                val (expiredLeases, validLeases) = addressables.partition { addressable -> addressable.expiresAt.inPast() }
+                val (expiredLeases, validLeases) = addressables.partition { addressable -> clock.inPast(addressable.expiresAt) }
 
                 if (expiredLeases.any()) {
                     val txn = client.txn()

@@ -11,8 +11,9 @@ import orbit.shared.addressable.AddressableLease
 import orbit.shared.addressable.AddressableReference
 import orbit.util.concurrent.HashMapBackedAsyncMap
 import orbit.util.di.ExternallyConfigured
+import orbit.util.time.Clock
 
-class LocalAddressableDirectory : HashMapBackedAsyncMap<AddressableReference, AddressableLease>(),
+class LocalAddressableDirectory(private val clock: Clock) : HashMapBackedAsyncMap<AddressableReference, AddressableLease>(),
     AddressableDirectory {
     object LocalAddressableDirectorySingleton : ExternallyConfigured<AddressableDirectory> {
         override val instanceType = LocalAddressableDirectory::class.java
@@ -24,7 +25,7 @@ class LocalAddressableDirectory : HashMapBackedAsyncMap<AddressableReference, Ad
 
     override suspend fun tick() {
         // Cull expired
-        values().filter { it.expiresAt.inPast() }.also { toDelete ->
+        values().filter { clock.inPast(it.expiresAt) }.also { toDelete ->
             toDelete.forEach {
                 remove(it.reference)
             }

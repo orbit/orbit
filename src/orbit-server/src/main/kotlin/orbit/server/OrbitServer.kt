@@ -9,6 +9,7 @@ package orbit.server
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import orbit.server.auth.AuthSystem
 import orbit.server.concurrent.RuntimePools
@@ -67,7 +68,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     )
 
     private val container = ComponentContainer()
-    private val clock = Clock()
+    private val clock = config.clock
 
     private val grpcEndpoint by container.inject<GrpcEndpoint>()
     private val localNodeInfo by container.inject<LocalNodeInfo>()
@@ -206,6 +207,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
         }
 
         logger.info("Orbit server stopped successfully in {}ms.", elapsed)
+        Metrics.globalRegistry.remove(container.resolve(MeterRegistry::class.java))
     }
 
     private suspend fun tick() {
