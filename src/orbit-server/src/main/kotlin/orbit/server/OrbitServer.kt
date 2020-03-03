@@ -142,6 +142,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
         Metrics.globalRegistry.add(container.resolve(MeterRegistry::class.java))
 
         Metrics.gauge("Addressable Count", addressableDirectory) { d -> runBlocking { d.count().toDouble()} }
+        Metrics.gauge("Node Count", nodeDirectory) { d -> runBlocking { d.keys().count().toDouble()} }
     }
 
     fun start() = runtimeScopes.cpuScope.launch {

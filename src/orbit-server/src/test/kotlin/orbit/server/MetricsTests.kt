@@ -25,6 +25,9 @@ import io.rouz.grpc.ManyToManyCall
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import orbit.server.mesh.LeaseDuration
+import orbit.server.mesh.LocalServerInfo
+import orbit.server.mesh.local.LocalAddressableDirectory
+import orbit.server.mesh.local.LocalNodeDirectory
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.addressable.Key
 import orbit.shared.mesh.NodeId
@@ -50,7 +53,7 @@ import java.time.Duration
 
 class MetricsTests {
     private var clock: Clock = Clock()
-    private lateinit var orbitServer: OrbitServer
+    private var orbitServer: OrbitServer? = null
 
     class MockMeterRegistry : SimpleMeterRegistry() {
         object Config : ExternallyConfigured<MeterRegistry> {
@@ -60,36 +63,68 @@ class MetricsTests {
 
     @Before
     fun connectServer() {
-        orbitServer = OrbitServer(
+        runBlocking {
+            disconnectServer(orbitServer)
+
+            orbitServer = startServer()
+        }
+    }
+
+    private fun startServer(
+        port: Int = 50056,
+        addressableLeaseDurationSeconds: Long = 5,
+        NodeLeaseDurationSeconds: Long = 20
+    ): OrbitServer {
+        val server = OrbitServer(
             OrbitServerConfig(
+                serverInfo = LocalServerInfo(
+                    port = port,
+                    url = "localhost:${port}"
+                ),
                 meterRegistry = MockMeterRegistry.Config,
-                addressableLeaseDuration = LeaseDuration(Duration.ofSeconds(5), Duration.ofSeconds(5)),
-                nodeLeaseDuration = LeaseDuration(Duration.ofSeconds(20), Duration.ofSeconds(20)),
+                addressableLeaseDuration = LeaseDuration(
+                    Duration.ofSeconds(addressableLeaseDurationSeconds),
+                    Duration.ofSeconds(addressableLeaseDurationSeconds)
+                ),
+                nodeLeaseDuration = LeaseDuration(
+                    Duration.ofSeconds(NodeLeaseDurationSeconds),
+                    Duration.ofSeconds(NodeLeaseDurationSeconds)
+                ),
                 clock = clock
             )
         )
 
-        runBlocking {
-            orbitServer.start()
+        server.start()
 
-            eventually(10.seconds) {
-                orbitServer.nodeStatus shouldBe NodeStatus.ACTIVE
-            }
+        eventually(10.seconds) {
+            server.nodeStatus shouldBe NodeStatus.ACTIVE
         }
+
+        return server
     }
 
     @After
-    fun disconnectServer() {
+    fun afterTest() {
         runBlocking {
-            orbitServer.stop()
-
-            eventually(10.seconds) {
-                orbitServer.nodeStatus shouldBe NodeStatus.STOPPED
-            }
-
-            Metrics.globalRegistry.clear()
-            clock = Clock()
+            disconnectServer(orbitServer)
+            LocalNodeDirectory.clear()
+            LocalAddressableDirectory.clear()
         }
+    }
+
+    fun disconnectServer(server: OrbitServer?) {
+        if (server == null) {
+            return
+        }
+
+        server.stop()
+
+        eventually(10.seconds) {
+            server.nodeStatus shouldBe NodeStatus.STOPPED
+        }
+
+        Metrics.globalRegistry.clear()
+        clock = Clock()
     }
 
     @Test
@@ -161,6 +196,24 @@ class MetricsTests {
         }
     }
 
+    @Test
+    fun `adding nodes increments node count`() {
+        runBlocking {
+            eventually(5.seconds) {
+                NodeCount shouldBe 1.0
+            }
+
+            val secondServer = startServer(port = 50057)
+            try {
+                eventually(5.seconds) {
+                    NodeCount shouldBe 2.0
+                }
+            } finally {
+                disconnectServer(secondServer)
+            }
+        }
+    }
+
     companion object {
         private fun getMeter(name: String, statistic: String? = null): Double {
             return Metrics.globalRegistry.meters.first { m -> m.id.name == name }.measure()
@@ -171,7 +224,8 @@ class MetricsTests {
         private val PlacementTimer_Count: Double get() = getMeter("Placement Timer", "count")
         private val PlacementTimer_TotalTime: Double get() = getMeter("Placement Timer", "total_time")
         private val AddressableCount: Double get() = getMeter("Addressable Count")
-
+        private val NodeCount: Double get() = getMeter("Node Count")
+        private val ConnectedNodes: Double get() = getMeter("Connected Nodes")
     }
 
 }

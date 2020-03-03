@@ -12,11 +12,25 @@ import orbit.shared.addressable.AddressableReference
 import orbit.util.concurrent.HashMapBackedAsyncMap
 import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock
+import java.util.concurrent.ConcurrentHashMap
 
-class LocalAddressableDirectory(private val clock: Clock) : HashMapBackedAsyncMap<AddressableReference, AddressableLease>(),
+class LocalAddressableDirectory(private val clock: Clock) :
+    HashMapBackedAsyncMap<AddressableReference, AddressableLease>(),
     AddressableDirectory {
     object LocalAddressableDirectorySingleton : ExternallyConfigured<AddressableDirectory> {
         override val instanceType = LocalAddressableDirectory::class.java
+    }
+
+    override val map: ConcurrentHashMap<AddressableReference, AddressableLease>
+        get() = globalMap
+
+    companion object {
+        @JvmStatic
+        private val globalMap = ConcurrentHashMap<AddressableReference, AddressableLease>()
+
+        fun clear() {
+            globalMap.clear()
+        }
     }
 
     override suspend fun isHealthy(): Boolean {
