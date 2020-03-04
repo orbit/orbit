@@ -234,6 +234,49 @@ class MetricsTests {
         }
     }
 
+    @Test
+    fun `connecting node to server increments connected nodes count`() {
+        runBlocking {
+            ConnectedNodes shouldBe 0.0
+            val secondServer = startServer(port = 50057)
+            try {
+                eventually(5.seconds) {
+                    ConnectedNodes shouldBe 1.0
+                }
+            } finally {
+                disconnectServer(secondServer)
+            }
+
+            clock.advanceTime(10.seconds.toMillis())
+
+            eventually(5.seconds) {
+                NodeCount shouldBe 1.0
+            }
+
+        }
+    }
+    @Test
+    fun `disconnecting node from server decrements connected nodes count`() {
+        runBlocking {
+            ConnectedNodes shouldBe 0.0
+            val secondServer = startServer(port = 50057)
+            try {
+                eventually(5.seconds) {
+                    ConnectedNodes shouldBe 1.0
+                }
+            } finally {
+                disconnectServer(secondServer)
+            }
+
+            clock.advanceTime(10.seconds.toMillis())
+
+            eventually(5.seconds) {
+                NodeCount shouldBe 1.0
+            }
+
+        }
+    }
+
     companion object {
         private fun getMeter(name: String, statistic: String? = null): Double {
             return Metrics.globalRegistry.meters.first { m -> m.id.name == name }.measure()
