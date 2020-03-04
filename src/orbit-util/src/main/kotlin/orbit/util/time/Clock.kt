@@ -22,6 +22,8 @@ class Clock {
      */
     val currentTime: TimeMs get() = ClockUtils.currentTimeMillis() + offsetTime
 
+    fun now() = Instant.ofEpochMilli(currentTime)
+
     /**
      * Advances the internal time by the specified amount.
      *
@@ -32,8 +34,9 @@ class Clock {
         offsetTime += offset
     }
 
-    fun inFuture(time: Timestamp) = time.isAfter(Instant.ofEpochMilli(currentTime))
+    fun inFuture(time: Timestamp) = time.isAfter(now())
     fun inPast(time: Timestamp) = !inFuture(time)
+    fun nowOrPast(time: Timestamp) = time.isExactly(now()) || inPast(time)
 }
 
 object ClockUtils {

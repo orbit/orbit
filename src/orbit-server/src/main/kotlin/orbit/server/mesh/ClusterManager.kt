@@ -57,8 +57,8 @@ class ClusterManager(
 
             val lease = NodeLease(
                 challengeToken = RNGUtils.randomString(64),
-                expiresAt = Instant.now().plus(leaseExpiration.expiresIn).toTimestamp(),
-                renewAt = Instant.now().plus(leaseExpiration.renewIn).toTimestamp()
+                expiresAt = clock.now().plus(leaseExpiration.expiresIn).toTimestamp(),
+                renewAt = clock.now().plus(leaseExpiration.renewIn).toTimestamp()
             )
 
             val info = NodeInfo(
@@ -78,7 +78,7 @@ class ClusterManager(
 
     suspend fun renewLease(nodeId: NodeId, challengeToken: ChallengeToken, capabilities: NodeCapabilities): NodeInfo =
         updateNode(nodeId) { initialValue ->
-            if (initialValue == null || Timestamp.now() > initialValue.lease.expiresAt) {
+            if (initialValue == null || clock.inPast(initialValue.lease.expiresAt)) {
                 throw InvalidNodeId(nodeId)
             }
 

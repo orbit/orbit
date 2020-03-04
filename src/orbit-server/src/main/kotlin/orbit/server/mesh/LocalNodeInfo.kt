@@ -12,6 +12,7 @@ import orbit.shared.exception.InvalidNodeId
 import orbit.shared.mesh.NodeCapabilities
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.mesh.NodeStatus
+import orbit.util.time.Clock
 import orbit.util.time.Timestamp
 import java.util.concurrent.atomic.AtomicReference
 
@@ -19,6 +20,7 @@ const val MANAGEMENT_NAMESPACE = "management"
 
 class LocalNodeInfo(
     private val clusterManager: ClusterManager,
+    private val clock: Clock,
     private val serverInfo: LocalServerInfo
 ) : HealthCheck {
     override suspend fun isHealthy(): Boolean {
@@ -56,7 +58,7 @@ class LocalNodeInfo(
     }
 
     suspend fun tick() {
-        if (Timestamp.now() > info.lease.renewAt) {
+        if (clock.inPast(info.lease.renewAt)) {
             try {
                 clusterManager.renewLease(info.id, info.lease.challengeToken, info.capabilities).also {
                     infoRef.set(it)

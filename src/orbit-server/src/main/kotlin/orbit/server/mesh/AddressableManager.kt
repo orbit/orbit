@@ -16,6 +16,7 @@ import orbit.shared.mesh.Namespace
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeStatus
 import orbit.util.misc.attempt
+import orbit.util.time.Clock
 import orbit.util.time.Timestamp
 import orbit.util.time.toTimestamp
 import java.time.Instant
@@ -23,6 +24,7 @@ import java.time.Instant
 class AddressableManager(
     private val addressableDirectory: AddressableDirectory,
     private val clusterManager: ClusterManager,
+    private val clock: Clock,
     config: OrbitServerConfig
 ) {
     private val leaseExpiration = config.addressableLeaseDuration
@@ -33,7 +35,7 @@ class AddressableManager(
             createNewEntry(namespace, addressableReference)
         }.let {
             val invalidNode = clusterManager.getNode(it.nodeId) == null
-            val expired = Timestamp.now() > it.expiresAt
+            val expired = clock.inPast(it.expiresAt)
             if (invalidNode || expired) {
                 val newEntry = createNewEntry(namespace, addressableReference)
                 if (addressableDirectory.compareAndSet(it.reference, it, newEntry)) {
@@ -49,19 +51,19 @@ class AddressableManager(
     // TODO: We need to take the expiry time
     suspend fun renewLease(addressableReference: AddressableReference, nodeId: NodeId): AddressableLease =
         addressableDirectory.manipulate(addressableReference) { initialValue ->
-            if (initialValue == null || initialValue.nodeId != nodeId || Timestamp.now() > initialValue.expiresAt) {
+            if (initialValue == null || initialValue.nodeId != nodeId || clock.inPast(initialValue.expiresAt)) {
                 throw PlacementFailedException("Could not renew lease for $addressableReference")
             }
 
             initialValue.copy(
-                expiresAt = Instant.now().plus(leaseExpiration.expiresIn).toTimestamp(),
-                renewAt = Instant.now().plus(leaseExpiration.renewIn).toTimestamp()
+                expiresAt = clock.now().plus(leaseExpiration.expiresIn).toTimestamp(),
+                renewAt = clock.now().plus(leaseExpiration.renewIn).toTimestamp()
             )
         }!!
 
     suspend fun abandonLease(key: AddressableReference, nodeId: NodeId): Boolean {
         val currentLease = addressableDirectory.get(key)
-        if (currentLease != null && currentLease.nodeId == nodeId && Timestamp.now() <= currentLease.expiresAt) {
+        if (currentLease != null && currentLease.nodeId == nodeId && clock.nowOrPast(currentLease.expiresAt)) {
             return addressableDirectory.compareAndSet(key, currentLease, null)
         }
         return false
@@ -71,8 +73,8 @@ class AddressableManager(
         AddressableLease(
             nodeId = place(namespace, addressableReference),
             reference = addressableReference,
-            expiresAt = Instant.now().plus(leaseExpiration.expiresIn).toTimestamp(),
-            renewAt = Instant.now().plus(leaseExpiration.renewIn).toTimestamp()
+            expiresAt = clock.now().plus(leaseExpiration.expiresIn).toTimestamp(),
+            renewAt = clock.now().plus(leaseExpiration.renewIn).toTimestamp()
         )
 
     private suspend fun place(namespace: Namespace, addressableReference: AddressableReference): NodeId =

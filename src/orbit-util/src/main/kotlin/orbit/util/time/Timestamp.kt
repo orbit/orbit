@@ -22,6 +22,7 @@ data class Timestamp(
         }
 
     fun isAfter(time: Instant) = this > time.toTimestamp()
+    fun isExactly(time: Instant) = this == time.toTimestamp()
 
     companion object {
         fun now(): Timestamp = Instant.now().toTimestamp()
