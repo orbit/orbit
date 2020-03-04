@@ -277,6 +277,31 @@ class MetricsTests {
         }
     }
 
+    @Test
+    fun `sending messages adds the payload size to the total`() {
+        runBlocking {
+            val client = TestClient().connect()
+            client.sendMessage("test", "address 1")
+            client.sendMessage("test 2", "address 1")
+            eventually(5.seconds) {
+                MessageSizes shouldBe 80.0
+            }
+
+        }
+    }
+
+    @Test
+    fun `sending messages adds to the message count`() {
+        runBlocking {
+            val client = TestClient().connect()
+            client.sendMessage("test", "address 1")
+            client.sendMessage("test 2", "address 1")
+            eventually(5.seconds) {
+                MessagesCount shouldBe 2.0
+            }
+        }
+    }
+
     companion object {
         private fun getMeter(name: String, statistic: String? = null): Double {
             return Metrics.globalRegistry.meters.first { m -> m.id.name == name }.measure()
@@ -289,6 +314,8 @@ class MetricsTests {
         private val AddressableCount: Double get() = getMeter("Addressable Count")
         private val NodeCount: Double get() = getMeter("Node Count")
         private val ConnectedNodes: Double get() = getMeter("Connected Nodes")
+        private val MessagesCount: Double get() = getMeter("Message Sizes", "count")
+        private val MessageSizes: Double get() = getMeter("Message Sizes", "total")
     }
 }
 
