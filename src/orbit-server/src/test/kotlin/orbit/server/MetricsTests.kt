@@ -73,7 +73,7 @@ class MetricsTests {
     private fun startServer(
         port: Int = 50056,
         addressableLeaseDurationSeconds: Long = 5,
-        NodeLeaseDurationSeconds: Long = 20
+        NodeLeaseDurationSeconds: Long = 10
     ): OrbitServer {
         val server = OrbitServer(
             OrbitServerConfig(
@@ -109,6 +109,8 @@ class MetricsTests {
             disconnectServer(orbitServer)
             LocalNodeDirectory.clear()
             LocalAddressableDirectory.clear()
+            Metrics.globalRegistry.clear()
+            clock = Clock()
         }
     }
 
@@ -123,8 +125,6 @@ class MetricsTests {
             server.nodeStatus shouldBe NodeStatus.STOPPED
         }
 
-        Metrics.globalRegistry.clear()
-        clock = Clock()
     }
 
     @Test
@@ -189,7 +189,7 @@ class MetricsTests {
                 AddressableCount shouldBe 1.0
             }
 
-            clock.advanceTime(5000)
+            clock.advanceTime(5.seconds.toMillis())
             eventually(5.seconds) {
                 AddressableCount shouldBe 0.0
             }
@@ -214,6 +214,26 @@ class MetricsTests {
         }
     }
 
+    @Test
+    fun `expired node lease decrements node count`() {
+        runBlocking {
+            val secondServer = startServer(port = 50057)
+            try {
+                eventually(5.seconds) {
+                    NodeCount shouldBe 2.0
+                }
+            } finally {
+                disconnectServer(secondServer)
+            }
+
+            clock.advanceTime(10.seconds.toMillis())
+
+            eventually(5.seconds) {
+                NodeCount shouldBe 1.0
+            }
+        }
+    }
+
     companion object {
         private fun getMeter(name: String, statistic: String? = null): Double {
             return Metrics.globalRegistry.meters.first { m -> m.id.name == name }.measure()
@@ -227,7 +247,6 @@ class MetricsTests {
         private val NodeCount: Double get() = getMeter("Node Count")
         private val ConnectedNodes: Double get() = getMeter("Connected Nodes")
     }
-
 }
 
 class TestClient {
