@@ -49,11 +49,16 @@ import orbit.util.time.Clock
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.junit.jupiter.api.extension.AfterAllCallback
+import org.junit.jupiter.api.extension.BeforeAllCallback
+import org.junit.jupiter.api.extension.ExtensionContext
+import org.junit.jupiter.api.extension.ParameterContext
+import org.junit.jupiter.api.extension.ParameterResolver
 import java.time.Duration
 
 class MetricsTests {
     private var clock: Clock = Clock()
-    private var orbitServer: OrbitServer? = null
+    private var servers: MutableList<OrbitServer> = mutableListOf()
 
     class MockMeterRegistry : SimpleMeterRegistry() {
         object Config : ExternallyConfigured<MeterRegistry> {
@@ -61,12 +66,14 @@ class MetricsTests {
         }
     }
 
-    @Before
-    fun connectServer() {
+    @After
+    fun afterTest() {
         runBlocking {
-            disconnectServer(orbitServer)
-
-            orbitServer = startServer()
+            servers.toList().forEach { server -> disconnectServer(server) }
+            LocalNodeDirectory.clear()
+            LocalAddressableDirectory.clear()
+            Metrics.globalRegistry.clear()
+            clock = Clock()
         }
     }
 
@@ -100,19 +107,10 @@ class MetricsTests {
             server.nodeStatus shouldBe NodeStatus.ACTIVE
         }
 
+        servers.add(server)
         return server
     }
 
-    @After
-    fun afterTest() {
-        runBlocking {
-            disconnectServer(orbitServer)
-            LocalNodeDirectory.clear()
-            LocalAddressableDirectory.clear()
-            Metrics.globalRegistry.clear()
-            clock = Clock()
-        }
-    }
 
     fun disconnectServer(server: OrbitServer?) {
         if (server == null) {
@@ -125,11 +123,14 @@ class MetricsTests {
             server.nodeStatus shouldBe NodeStatus.STOPPED
         }
 
+        servers.remove(server)
     }
 
     @Test
     fun `connecting to service increments connected metric`() {
         runBlocking {
+            startServer()
+
             TestClient().connect()
             TestClient().connect()
 
@@ -142,6 +143,8 @@ class MetricsTests {
     @Test
     fun `disconnecting from service decrements connected metric`() {
         runBlocking {
+            startServer()
+
             val client = TestClient().connect()
 
             eventually(5.seconds) {
@@ -158,6 +161,8 @@ class MetricsTests {
     @Test
     fun `sending messages to an addressable increments placements`() {
         runBlocking {
+            startServer()
+
             val client = TestClient().connect()
             client.sendMessage("test message", "address 1")
             client.sendMessage("test message", "address 2")
@@ -171,6 +176,8 @@ class MetricsTests {
     @Test
     fun `sending a message to addressables increments total addressables`() {
         runBlocking {
+            startServer()
+
             val client = TestClient().connect()
             client.sendMessage("test message", "address 1")
             client.sendMessage("test message", "address 2")
@@ -183,6 +190,8 @@ class MetricsTests {
     @Test
     fun `expiring an addressable decrements total addressables`() {
         runBlocking {
+            startServer()
+
             val client = TestClient().connect()
             client.sendMessage("test message", "address 1")
             eventually(5.seconds) {
@@ -199,6 +208,8 @@ class MetricsTests {
     @Test
     fun `adding nodes increments node count`() {
         runBlocking {
+            startServer()
+
             eventually(5.seconds) {
                 NodeCount shouldBe 1.0
             }
@@ -217,6 +228,8 @@ class MetricsTests {
     @Test
     fun `expired node lease decrements node count`() {
         runBlocking {
+            startServer()
+
             val secondServer = startServer(port = 50057)
             try {
                 eventually(5.seconds) {
@@ -237,6 +250,8 @@ class MetricsTests {
     @Test
     fun `connecting node to server increments connected nodes count`() {
         runBlocking {
+            startServer()
+
             ConnectedNodes shouldBe 0.0
             val secondServer = startServer(port = 50057)
             try {
@@ -258,6 +273,8 @@ class MetricsTests {
     @Test
     fun `disconnecting node from server decrements connected nodes count`() {
         runBlocking {
+            startServer()
+
             ConnectedNodes shouldBe 0.0
             val secondServer = startServer(port = 50057)
             try {
@@ -280,6 +297,8 @@ class MetricsTests {
     @Test
     fun `sending messages adds the payload size to the total`() {
         runBlocking {
+            startServer()
+
             val client = TestClient().connect()
             client.sendMessage("test", "address 1")
             client.sendMessage("test 2", "address 1")
@@ -293,6 +312,8 @@ class MetricsTests {
     @Test
     fun `sending messages adds to the message count`() {
         runBlocking {
+            startServer()
+
             val client = TestClient().connect()
             client.sendMessage("test", "address 1")
             client.sendMessage("test 2", "address 1")
@@ -384,3 +405,4 @@ internal class TestAuthInterceptor(private val getNodeId: () -> NodeId) : Client
         private val NODE_KEY = Metadata.Key.of(Headers.NODE_KEY_NAME, Metadata.ASCII_STRING_MARSHALLER)
     }
 }
+
