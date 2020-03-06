@@ -44,16 +44,11 @@ import orbit.shared.proto.joinCluster
 import orbit.shared.proto.openStream
 import orbit.shared.proto.toMessageProto
 import orbit.shared.proto.toNodeId
+import orbit.util.di.ComponentContainerRoot
 import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
-import org.junit.jupiter.api.extension.AfterAllCallback
-import org.junit.jupiter.api.extension.BeforeAllCallback
-import org.junit.jupiter.api.extension.ExtensionContext
-import org.junit.jupiter.api.extension.ParameterContext
-import org.junit.jupiter.api.extension.ParameterResolver
 import java.time.Duration
 
 class MetricsTests {
@@ -80,7 +75,8 @@ class MetricsTests {
     private fun startServer(
         port: Int = 50056,
         addressableLeaseDurationSeconds: Long = 5,
-        NodeLeaseDurationSeconds: Long = 10
+        nodeLeaseDurationSeconds: Long = 10,
+        containerOverrides: ComponentContainerRoot.() -> Unit = { }
     ): OrbitServer {
         val server = OrbitServer(
             OrbitServerConfig(
@@ -94,10 +90,11 @@ class MetricsTests {
                     Duration.ofSeconds(addressableLeaseDurationSeconds)
                 ),
                 nodeLeaseDuration = LeaseDuration(
-                    Duration.ofSeconds(NodeLeaseDurationSeconds),
-                    Duration.ofSeconds(NodeLeaseDurationSeconds)
+                    Duration.ofSeconds(nodeLeaseDurationSeconds),
+                    Duration.ofSeconds(nodeLeaseDurationSeconds)
                 ),
-                clock = clock
+                clock = clock,
+                containerOverrides = containerOverrides
             )
         )
 
@@ -215,12 +212,9 @@ class MetricsTests {
             }
 
             val secondServer = startServer(port = 50057)
-            try {
-                eventually(5.seconds) {
-                    NodeCount shouldBe 2.0
-                }
-            } finally {
-                disconnectServer(secondServer)
+
+            eventually(5.seconds) {
+                NodeCount shouldBe 2.0
             }
         }
     }
@@ -231,13 +225,11 @@ class MetricsTests {
             startServer()
 
             val secondServer = startServer(port = 50057)
-            try {
-                eventually(5.seconds) {
-                    NodeCount shouldBe 2.0
-                }
-            } finally {
-                disconnectServer(secondServer)
+            eventually(5.seconds) {
+                NodeCount shouldBe 2.0
             }
+
+            disconnectServer(secondServer)
 
             clock.advanceTime(10.seconds.toMillis())
 
@@ -254,13 +246,12 @@ class MetricsTests {
 
             ConnectedNodes shouldBe 0.0
             val secondServer = startServer(port = 50057)
-            try {
-                eventually(5.seconds) {
-                    ConnectedNodes shouldBe 1.0
-                }
-            } finally {
-                disconnectServer(secondServer)
+
+            eventually(5.seconds) {
+                ConnectedNodes shouldBe 1.0
             }
+
+            disconnectServer(secondServer)
 
             clock.advanceTime(10.seconds.toMillis())
 
@@ -270,6 +261,7 @@ class MetricsTests {
 
         }
     }
+
     @Test
     fun `disconnecting node from server decrements connected nodes count`() {
         runBlocking {
@@ -277,20 +269,18 @@ class MetricsTests {
 
             ConnectedNodes shouldBe 0.0
             val secondServer = startServer(port = 50057)
-            try {
-                eventually(5.seconds) {
-                    ConnectedNodes shouldBe 1.0
-                }
-            } finally {
-                disconnectServer(secondServer)
+
+            eventually(5.seconds) {
+                ConnectedNodes shouldBe 1.0
             }
+
+            disconnectServer(secondServer)
 
             clock.advanceTime(10.seconds.toMillis())
 
             eventually(5.seconds) {
                 NodeCount shouldBe 1.0
             }
-
         }
     }
 
@@ -305,7 +295,6 @@ class MetricsTests {
             eventually(5.seconds) {
                 MessageSizes shouldBe 80.0
             }
-
         }
     }
 
@@ -340,10 +329,10 @@ class MetricsTests {
     }
 }
 
-class TestClient {
+class TestClient(port: Int = 50056) {
     private var nodeId: NodeId = NodeId.generate("test")
     private val client: Channel = ManagedChannelBuilder
-        .forTarget("0.0.0.0:50056")
+        .forTarget("0.0.0.0:${port}")
         .usePlaintext()
         .intercept(TestAuthInterceptor { nodeId })
         .enableRetry()
@@ -363,7 +352,7 @@ class TestClient {
         return this
     }
 
-    suspend fun disconnect() {
+    fun disconnect() {
         connectionChannel.close()
     }
 
@@ -405,4 +394,3 @@ internal class TestAuthInterceptor(private val getNodeId: () -> NodeId) : Client
         private val NODE_KEY = Metadata.Key.of(Headers.NODE_KEY_NAME, Metadata.ASCII_STRING_MARSHALLER)
     }
 }
-

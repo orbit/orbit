@@ -49,7 +49,6 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
 
 class OrbitServer(private val config: OrbitServerConfig) {
-    constructor() : this(OrbitServerConfig())
 
     val nodeStatus: NodeStatus get() = localNodeInfo.info.nodeStatus
 
@@ -137,12 +136,14 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
             // Router
             definition<Router>()
+
+            config.containerOverrides(this)
         }
 
         Metrics.globalRegistry.add(container.resolve(MeterRegistry::class.java))
 
-        Metrics.gauge("Addressable Count", addressableDirectory) { d -> runBlocking { d.count().toDouble()} }
-        Metrics.gauge("Node Count", nodeDirectory) { d -> runBlocking { d.keys().count().toDouble()} }
+        Metrics.gauge("Addressable Count", addressableDirectory) { d -> runBlocking { d.count().toDouble() } }
+        Metrics.gauge("Node Count", nodeDirectory) { d -> runBlocking { d.keys().count().toDouble() } }
     }
 
     fun start() = runtimeScopes.cpuScope.launch {

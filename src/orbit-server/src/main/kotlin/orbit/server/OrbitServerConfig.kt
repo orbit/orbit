@@ -16,6 +16,7 @@ import orbit.server.mesh.local.LocalAddressableDirectory
 import orbit.server.mesh.local.LocalMeterRegistry
 import orbit.server.mesh.local.LocalNodeDirectory
 import orbit.util.concurrent.Pools
+import orbit.util.di.ComponentContainerRoot
 import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock
 import java.time.Duration
@@ -94,6 +95,10 @@ data class OrbitServerConfig(
     /**
      * The meter registry implementation for sending application metrics
      */
-    val meterRegistry: ExternallyConfigured<MeterRegistry> = LocalMeterRegistry.LocalMeterRegistrySingleton
-) {
-}
+    val meterRegistry: ExternallyConfigured<MeterRegistry> = LocalMeterRegistry.LocalMeterRegistrySingleton,
+
+    /**
+     * Optional hook to update container registrations after initialization
+     */
+    val containerOverrides: ComponentContainerRoot.() -> Unit = { }
+)
