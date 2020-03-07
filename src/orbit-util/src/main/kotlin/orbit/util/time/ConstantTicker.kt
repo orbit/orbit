@@ -21,7 +21,8 @@ class ConstantTicker(
     private val logger: KLogger? = null,
     private val exceptionHandler: ((Throwable) -> Unit)? = null,
     autoStart: Boolean = false,
-    private val onTick: suspend () -> Unit
+    private val onTick: suspend () -> Unit,
+    private val onSlowTick: suspend () -> Unit = {}
 ) {
 
     private var ticker: Job? = null
@@ -53,6 +54,7 @@ class ConstantTicker(
                                 "Last tick took ${elapsed}ms and the reference tick rate is ${targetTickRate}ms. " +
                                 "The next tick will take place immediately."
                     }
+                    onSlowTick()
                 }
 
                 logger?.trace { "Tick completed in ${elapsed}ms. Next tick in ${nextTickDelay}ms." }

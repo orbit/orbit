@@ -27,6 +27,7 @@ class ComponentContainer {
             interfaceClass = interfaceClass,
             concreteClass = concreteClass
         )
+        beanInstances.remove(interfaceClass)
         beanDefinitions[interfaceClass] = beanDef
     }
 
@@ -34,6 +35,7 @@ class ComponentContainer {
     fun <T : Any> registerInstance(liveObject: T) = registerInstance(liveObject.javaClass, liveObject)
     fun <T : Any> registerInstance(interfaceClass: Class<T>, liveObject: T) {
         registerDefinition(interfaceClass, liveObject.javaClass)
+        beanDefinitions.remove(interfaceClass)
         beanInstances[interfaceClass] = liveObject
     }
 

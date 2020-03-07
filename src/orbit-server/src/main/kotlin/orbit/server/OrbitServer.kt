@@ -42,7 +42,6 @@ import orbit.server.service.ServerAuthInterceptor
 import orbit.shared.mesh.NodeStatus
 import orbit.util.concurrent.ShutdownLatch
 import orbit.util.di.ComponentContainer
-import orbit.util.time.Clock
 import orbit.util.time.ConstantTicker
 import orbit.util.time.stopwatch
 import java.util.concurrent.atomic.AtomicReference
@@ -71,13 +70,14 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
     private val grpcEndpoint by container.inject<GrpcEndpoint>()
     private val localNodeInfo by container.inject<LocalNodeInfo>()
-    private val nodeManager by container.inject<ClusterManager>()
+    private val clusterManager by container.inject<ClusterManager>()
     private val nodeDirectory by container.inject<NodeDirectory>()
     private val addressableDirectory by container.inject<AddressableDirectory>()
 
     private val pipeline by container.inject<Pipeline>()
     private val remoteMeshNodeManager by container.inject<RemoteMeshNodeManager>()
 
+    private val slowTick = Metrics.counter("Slow Ticks")
 
     private val ticker = ConstantTicker(
         scope = runtimeScopes.cpuScope,
@@ -86,7 +86,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
         logger = logger,
         exceptionHandler = this::onUnhandledException,
         autoStart = false,
-        onTick = this::tick
+        onTick = this::tick,
+        onSlowTick = { slowTick.increment() }
     )
 
     init {
@@ -215,7 +216,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private suspend fun tick() {
         localNodeInfo.tick()
 
-        nodeManager.tick()
+        clusterManager.tick()
 
         nodeDirectory.tick()
 

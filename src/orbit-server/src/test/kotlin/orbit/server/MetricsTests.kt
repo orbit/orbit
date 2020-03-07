@@ -6,6 +6,7 @@
 
 package orbit.server
 
+import com.nhaarman.mockitokotlin2.spy
 import io.grpc.CallOptions
 import io.grpc.Channel
 import io.grpc.ClientCall
@@ -24,6 +25,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.rouz.grpc.ManyToManyCall
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LeaseDuration
 import orbit.server.mesh.LocalServerInfo
 import orbit.server.mesh.local.LocalAddressableDirectory
@@ -312,6 +314,28 @@ class MetricsTests {
         }
     }
 
+    @Test
+    fun `constant tick timer going long increases Slow Tick count`() {
+        runBlocking {
+            var clockTime = 0L
+            startServer {
+                instance(spy(resolve<ClusterManager>()) {
+                    onBlocking { this.tick() }.then {
+                        clock.advanceTime(clockTime)
+                        clockTime = 0
+                        return@then null
+                    }
+                })
+            }
+            clockTime = 2000
+
+            eventually(5.seconds) {
+                SlowTickCount shouldBeGreaterThan 0.0
+            }
+
+        }
+    }
+
     companion object {
         private fun getMeter(name: String, statistic: String? = null): Double {
             return Metrics.globalRegistry.meters.first { m -> m.id.name == name }.measure()
@@ -326,6 +350,7 @@ class MetricsTests {
         private val ConnectedNodes: Double get() = getMeter("Connected Nodes")
         private val MessagesCount: Double get() = getMeter("Message Sizes", "count")
         private val MessageSizes: Double get() = getMeter("Message Sizes", "total")
+        private val SlowTickCount: Double get() = getMeter("Slow Ticks")
     }
 }
 
