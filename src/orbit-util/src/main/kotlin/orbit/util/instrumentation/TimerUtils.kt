@@ -9,11 +9,11 @@ package orbit.util.instrumentation
 import io.micrometer.core.instrument.Metrics
 import io.micrometer.core.instrument.Timer
 
-suspend fun Timer.recordSuspended(f: suspend () -> Unit) {
+suspend fun <R> Timer.recordSuspended(f: suspend () -> R) : R {
     var sample: Timer.Sample? = null
     try {
         sample = Timer.start(Metrics.globalRegistry.registries.first().config().clock())
-        f()
+        return f()
     } finally {
         sample!!.stop(this)
     }

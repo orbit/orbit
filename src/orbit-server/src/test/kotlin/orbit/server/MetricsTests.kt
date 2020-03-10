@@ -18,6 +18,7 @@ import io.grpc.MethodDescriptor
 import io.kotlintest.eventually
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
 import io.kotlintest.matchers.doubles.shouldBeGreaterThanOrEqual
+import io.kotlintest.milliseconds
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.micrometer.core.instrument.MeterRegistry
@@ -26,7 +27,6 @@ import io.micrometer.core.instrument.MockClock
 import io.micrometer.core.instrument.simple.SimpleConfig
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.rouz.grpc.ManyToManyCall
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LeaseDuration
@@ -174,8 +174,14 @@ class MetricsTests {
     @Test
     fun `sending messages to an addressable increments placements`() {
         runBlocking {
-            startServer()
-
+            startServer {
+                instance(spy(resolve<ClusterManager>()) {
+                    onBlocking { this.getAllNodes() }.then {
+                        advanceTime(100.milliseconds)
+                        it.callRealMethod()
+                    }
+                })
+            }
             val client = TestClient().connect()
             client.sendMessage("test message", "address 1")
             client.sendMessage("test message", "address 2")
@@ -336,7 +342,7 @@ class MetricsTests {
                     onBlocking { this.tick() }.then {
                         advanceTime(pulse)
                         pulse = 0.seconds
-                        return@then null
+                        null
                     }
                 })
             }
@@ -351,20 +357,17 @@ class MetricsTests {
     @Test
     fun `constant tick timer elapses`() {
         runBlocking {
-            var pulse = 0.seconds
             startServer {
                 instance(spy(resolve<ClusterManager>()) {
                     onBlocking { this.tick() }.then {
-                        advanceTime(pulse)
-                        pulse = 0.seconds
-                        return@then null
+                        advanceTime(500.milliseconds)
                     }
                 })
             }
-            pulse = 2.seconds
+
             eventually(2.seconds) {
                 TickTimer_Count shouldBeGreaterThan 1.0
-                TickTimer_Total shouldBeGreaterThanOrEqual 2.0
+                TickTimer_Total shouldBeGreaterThanOrEqual .5
             }
         }
     }
@@ -415,7 +418,7 @@ class TestClient(port: Int = 50056) {
         connectionChannel.close()
     }
 
-    suspend fun sendMessage(msg: String, address: String? = null) {
+    fun sendMessage(msg: String, address: String? = null) {
         val message = Message(
             MessageContent.InvocationRequest(
                 AddressableReference(

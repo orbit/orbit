@@ -7,7 +7,7 @@
 package orbit.server.mesh
 
 import io.micrometer.core.instrument.Metrics
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.delay
 import orbit.server.OrbitServerConfig
 import orbit.shared.addressable.AddressableLease
 import orbit.shared.addressable.AddressableReference
@@ -15,11 +15,10 @@ import orbit.shared.exception.PlacementFailedException
 import orbit.shared.mesh.Namespace
 import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeStatus
+import orbit.util.instrumentation.recordSuspended
 import orbit.util.misc.attempt
 import orbit.util.time.Clock
-import orbit.util.time.Timestamp
 import orbit.util.time.toTimestamp
-import java.time.Instant
 
 class AddressableManager(
     private val addressableDirectory: AddressableDirectory,
@@ -79,20 +78,18 @@ class AddressableManager(
 
     private suspend fun place(namespace: Namespace, addressableReference: AddressableReference): NodeId =
         runCatching {
-            placementTimer.recordCallable {
-                runBlocking {
-                    attempt(
-                        maxAttempts = 5,
-                        initialDelay = 1000
-                    ) {
-                        val allNodes = clusterManager.getAllNodes()
-                        val potentialNodes = allNodes
-                            .filter { it.id.namespace == namespace }
-                            .filter { it.nodeStatus == NodeStatus.ACTIVE }
-                            .filter { it.capabilities.addressableTypes.contains(addressableReference.type) }
+            placementTimer.recordSuspended {
+                attempt(
+                    maxAttempts = 5,
+                    initialDelay = 1000
+                ) {
+                    val allNodes = clusterManager.getAllNodes()
+                    val potentialNodes = allNodes
+                        .filter { it.id.namespace == namespace }
+                        .filter { it.nodeStatus == NodeStatus.ACTIVE }
+                        .filter { it.capabilities.addressableTypes.contains(addressableReference.type) }
 
-                        potentialNodes.random().id
-                    }
+                    potentialNodes.random().id
                 }
             }
         }.fold(
