@@ -46,6 +46,7 @@ import orbit.util.time.ConstantTicker
 import orbit.util.time.stopwatch
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
+import orbit.util.instrumentation.recordSuspended
 
 class OrbitServer(private val config: OrbitServerConfig) {
 
@@ -78,6 +79,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private val remoteMeshNodeManager by container.inject<RemoteMeshNodeManager>()
 
     private val slowTick = Metrics.counter("Slow Ticks")
+    private val tickTimer = Metrics.timer("Tick Timer")
 
     private val ticker = ConstantTicker(
         scope = runtimeScopes.cpuScope,
@@ -214,15 +216,13 @@ class OrbitServer(private val config: OrbitServerConfig) {
     }
 
     private suspend fun tick() {
-        localNodeInfo.tick()
-
-        clusterManager.tick()
-
-        nodeDirectory.tick()
-
-        addressableDirectory.tick()
-
-        remoteMeshNodeManager.tick()
+        tickTimer.recordSuspended {
+            localNodeInfo.tick()
+            clusterManager.tick()
+            nodeDirectory.tick()
+            addressableDirectory.tick()
+            remoteMeshNodeManager.tick()
+        }
     }
 
     @Suppress("UNUSED_PARAMETER")

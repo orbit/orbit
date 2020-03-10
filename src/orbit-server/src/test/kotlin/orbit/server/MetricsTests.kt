@@ -17,10 +17,13 @@ import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import io.kotlintest.eventually
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
+import io.kotlintest.matchers.doubles.shouldBeGreaterThanOrEqual
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
+import io.micrometer.core.instrument.MockClock
+import io.micrometer.core.instrument.simple.SimpleConfig
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.rouz.grpc.ManyToManyCall
 import kotlinx.coroutines.delay
@@ -49,18 +52,29 @@ import orbit.shared.proto.toNodeId
 import orbit.util.di.ComponentContainerRoot
 import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock
+import orbit.util.time.TimeMs
 import org.junit.After
 import org.junit.Test
 import java.time.Duration
+import java.util.concurrent.TimeUnit
 
 class MetricsTests {
     private var clock: Clock = Clock()
     private var servers: MutableList<OrbitServer> = mutableListOf()
 
-    class MockMeterRegistry : SimpleMeterRegistry() {
+    class MockMeterRegistry : SimpleMeterRegistry(SimpleConfig.DEFAULT, MockClock()) {
         object Config : ExternallyConfigured<MeterRegistry> {
             override val instanceType = MockMeterRegistry::class.java
         }
+
+        fun advanceTime(timeMs: TimeMs) {
+            (this.clock as MockClock).add(timeMs, TimeUnit.MILLISECONDS)
+        }
+    }
+
+    fun advanceTime(duration: Duration) {
+        clock.advanceTime(duration.toMillis())
+        Metrics.globalRegistry.registries.forEach { r -> (r as MockMeterRegistry)?.advanceTime(duration.toMillis()) }
     }
 
     @After
@@ -197,7 +211,7 @@ class MetricsTests {
                 AddressableCount shouldBe 1.0
             }
 
-            clock.advanceTime(5.seconds.toMillis())
+            advanceTime(5.seconds)
             eventually(5.seconds) {
                 AddressableCount shouldBe 0.0
             }
@@ -213,7 +227,7 @@ class MetricsTests {
                 NodeCount shouldBe 1.0
             }
 
-            val secondServer = startServer(port = 50057)
+            startServer(port = 50057)
 
             eventually(5.seconds) {
                 NodeCount shouldBe 2.0
@@ -233,7 +247,7 @@ class MetricsTests {
 
             disconnectServer(secondServer)
 
-            clock.advanceTime(10.seconds.toMillis())
+            advanceTime(10.seconds)
 
             eventually(5.seconds) {
                 NodeCount shouldBe 1.0
@@ -255,12 +269,11 @@ class MetricsTests {
 
             disconnectServer(secondServer)
 
-            clock.advanceTime(10.seconds.toMillis())
+            advanceTime(10.seconds)
 
             eventually(5.seconds) {
                 NodeCount shouldBe 1.0
             }
-
         }
     }
 
@@ -278,7 +291,7 @@ class MetricsTests {
 
             disconnectServer(secondServer)
 
-            clock.advanceTime(10.seconds.toMillis())
+            advanceTime(10.seconds)
 
             eventually(5.seconds) {
                 NodeCount shouldBe 1.0
@@ -317,22 +330,42 @@ class MetricsTests {
     @Test
     fun `constant tick timer going long increases Slow Tick count`() {
         runBlocking {
-            var clockTime = 0L
+            var pulse = 0.seconds
             startServer {
                 instance(spy(resolve<ClusterManager>()) {
                     onBlocking { this.tick() }.then {
-                        clock.advanceTime(clockTime)
-                        clockTime = 0
+                        advanceTime(pulse)
+                        pulse = 0.seconds
                         return@then null
                     }
                 })
             }
-            clockTime = 2000
+            pulse = 2.seconds
 
             eventually(5.seconds) {
                 SlowTickCount shouldBeGreaterThan 0.0
             }
+        }
+    }
 
+    @Test
+    fun `constant tick timer elapses`() {
+        runBlocking {
+            var pulse = 0.seconds
+            startServer {
+                instance(spy(resolve<ClusterManager>()) {
+                    onBlocking { this.tick() }.then {
+                        advanceTime(pulse)
+                        pulse = 0.seconds
+                        return@then null
+                    }
+                })
+            }
+            pulse = 2.seconds
+            eventually(2.seconds) {
+                TickTimer_Count shouldBeGreaterThan 1.0
+                TickTimer_Total shouldBeGreaterThanOrEqual 2.0
+            }
         }
     }
 
@@ -351,6 +384,8 @@ class MetricsTests {
         private val MessagesCount: Double get() = getMeter("Message Sizes", "count")
         private val MessageSizes: Double get() = getMeter("Message Sizes", "total")
         private val SlowTickCount: Double get() = getMeter("Slow Ticks")
+        private val TickTimer_Count: Double get() = getMeter("Tick Timer", "count")
+        private val TickTimer_Total: Double get() = getMeter("Tick Timer", "total_time")
     }
 }
 
@@ -373,7 +408,6 @@ class TestClient(port: Int = 50056) {
         )
         nodeId = response.info.id.toNodeId()
         connectionChannel = ConnectionGrpc.newStub(client).openStream()
-        println("joined cluster ${nodeId}")
         return this
     }
 
@@ -382,7 +416,6 @@ class TestClient(port: Int = 50056) {
     }
 
     suspend fun sendMessage(msg: String, address: String? = null) {
-        delay(300)
         val message = Message(
             MessageContent.InvocationRequest(
                 AddressableReference(
