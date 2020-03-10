@@ -9,9 +9,8 @@ package orbit.server.service
 import grpc.health.v1.HealthImplBase
 import grpc.health.v1.HealthOuterClass
 import io.micrometer.core.instrument.Metrics
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import orbit.server.concurrent.RuntimeScopes
+import orbit.util.instrumentation.recordSuspended
 import java.util.concurrent.atomic.AtomicInteger
 
 class HealthService(private val checks: HealthCheckList, private val runtimeScopes: RuntimeScopes) : HealthImplBase() {
@@ -36,10 +35,8 @@ class HealthService(private val checks: HealthCheckList, private val runtimeScop
 
     suspend fun isHealthy(): Boolean {
         val checks = checks.getChecks()
-        Metrics.timer("health check").record {
-            runBlocking {
-                healthyChecks.set(checks.count { check -> check.isHealthy() })
-            }
+        Metrics.timer("health check").recordSuspended {
+            healthyChecks.set(checks.count { check -> check.isHealthy() })
         }
         return healthyChecks.get() == checks.count()
     }
