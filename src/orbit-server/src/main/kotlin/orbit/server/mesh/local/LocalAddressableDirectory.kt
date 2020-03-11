@@ -8,25 +8,25 @@ package orbit.server.mesh.local
 
 import orbit.server.mesh.AddressableDirectory
 import orbit.shared.addressable.AddressableLease
-import orbit.shared.addressable.AddressableReference
+import orbit.shared.addressable.NamespacedAddressableReference
 import orbit.util.concurrent.HashMapBackedAsyncMap
 import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock
 import java.util.concurrent.ConcurrentHashMap
 
 class LocalAddressableDirectory(private val clock: Clock) :
-    HashMapBackedAsyncMap<AddressableReference, AddressableLease>(),
+    HashMapBackedAsyncMap<NamespacedAddressableReference, AddressableLease>(),
     AddressableDirectory {
     object LocalAddressableDirectorySingleton : ExternallyConfigured<AddressableDirectory> {
         override val instanceType = LocalAddressableDirectory::class.java
     }
 
-    override val map: ConcurrentHashMap<AddressableReference, AddressableLease>
+    override val map: ConcurrentHashMap<NamespacedAddressableReference, AddressableLease>
         get() = globalMap
 
     companion object {
         @JvmStatic
-        private val globalMap = ConcurrentHashMap<AddressableReference, AddressableLease>()
+        private val globalMap = ConcurrentHashMap<NamespacedAddressableReference, AddressableLease>()
 
         fun clear() {
             globalMap.clear()
@@ -41,7 +41,7 @@ class LocalAddressableDirectory(private val clock: Clock) :
         // Cull expired
         values().filter { clock.inPast(it.expiresAt) }.also { toDelete ->
             toDelete.forEach {
-                remove(it.reference)
+                remove(NamespacedAddressableReference(it.nodeId.namespace, it.reference))
             }
         }
     }

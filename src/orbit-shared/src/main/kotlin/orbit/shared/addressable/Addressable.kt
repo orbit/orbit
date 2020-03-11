@@ -6,11 +6,18 @@
 
 package orbit.shared.addressable
 
+import orbit.shared.mesh.Namespace
+
 typealias AddressableType = String
 
 data class AddressableReference(
     val type: AddressableType,
     val key: Key
+)
+
+data class NamespacedAddressableReference(
+    val namespace: Namespace,
+    val addressableReference: AddressableReference
 )
 
 /**

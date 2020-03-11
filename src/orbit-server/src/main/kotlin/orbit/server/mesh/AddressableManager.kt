@@ -7,10 +7,10 @@
 package orbit.server.mesh
 
 import io.micrometer.core.instrument.Metrics
-import kotlinx.coroutines.delay
 import orbit.server.OrbitServerConfig
 import orbit.shared.addressable.AddressableLease
 import orbit.shared.addressable.AddressableReference
+import orbit.shared.addressable.NamespacedAddressableReference
 import orbit.shared.exception.PlacementFailedException
 import orbit.shared.mesh.Namespace
 import orbit.shared.mesh.NodeId
@@ -30,26 +30,33 @@ class AddressableManager(
     private val placementTimer = Metrics.timer("Placement Timer")
 
     suspend fun locateOrPlace(namespace: Namespace, addressableReference: AddressableReference): NodeId =
-        addressableDirectory.getOrPut(addressableReference) {
-            createNewEntry(namespace, addressableReference)
-        }.let {
-            val invalidNode = clusterManager.getNode(it.nodeId) == null
-            val expired = clock.inPast(it.expiresAt)
-            if (invalidNode || expired) {
-                val newEntry = createNewEntry(namespace, addressableReference)
-                if (addressableDirectory.compareAndSet(it.reference, it, newEntry)) {
-                    newEntry.nodeId
+        NamespacedAddressableReference(namespace, addressableReference).let { key ->
+            addressableDirectory.getOrPut(key) {
+                createNewEntry(key)
+            }.let {
+                val invalidNode = clusterManager.getNode(it.nodeId) == null
+                val expired = clock.inPast(it.expiresAt)
+                if (invalidNode || expired) {
+                    val newEntry = createNewEntry(key)
+                    if (addressableDirectory.compareAndSet(key, it, newEntry)) {
+                        newEntry.nodeId
+                    } else {
+                        locateOrPlace(namespace, addressableReference)
+                    }
                 } else {
-                    locateOrPlace(namespace, addressableReference)
+                    it.nodeId
                 }
-            } else {
-                it.nodeId
             }
         }
 
     // TODO: We need to take the expiry time
     suspend fun renewLease(addressableReference: AddressableReference, nodeId: NodeId): AddressableLease =
-        addressableDirectory.manipulate(addressableReference) { initialValue ->
+        addressableDirectory.manipulate(
+            NamespacedAddressableReference(
+                nodeId.namespace,
+                addressableReference
+            )
+        ) { initialValue ->
             if (initialValue == null || initialValue.nodeId != nodeId || clock.inPast(initialValue.expiresAt)) {
                 throw PlacementFailedException("Could not renew lease for $addressableReference")
             }
@@ -60,7 +67,8 @@ class AddressableManager(
             )
         }!!
 
-    suspend fun abandonLease(key: AddressableReference, nodeId: NodeId): Boolean {
+    suspend fun abandonLease(addressableReference: AddressableReference, nodeId: NodeId): Boolean {
+        val key = NamespacedAddressableReference(nodeId.namespace, addressableReference)
         val currentLease = addressableDirectory.get(key)
         if (currentLease != null && currentLease.nodeId == nodeId && clock.nowOrPast(currentLease.expiresAt)) {
             return addressableDirectory.compareAndSet(key, currentLease, null)
@@ -68,15 +76,15 @@ class AddressableManager(
         return false
     }
 
-    private suspend fun createNewEntry(namespace: Namespace, addressableReference: AddressableReference) =
+    private suspend fun createNewEntry(reference: NamespacedAddressableReference) =
         AddressableLease(
-            nodeId = place(namespace, addressableReference),
-            reference = addressableReference,
+            nodeId = place(reference),
+            reference = reference.addressableReference,
             expiresAt = clock.now().plus(leaseExpiration.expiresIn).toTimestamp(),
             renewAt = clock.now().plus(leaseExpiration.renewIn).toTimestamp()
         )
 
-    private suspend fun place(namespace: Namespace, addressableReference: AddressableReference): NodeId =
+    private suspend fun place(reference: NamespacedAddressableReference): NodeId =
         runCatching {
             placementTimer.recordSuspended {
                 attempt(
@@ -85,14 +93,14 @@ class AddressableManager(
                 ) {
                     val allNodes = clusterManager.getAllNodes()
                     val potentialNodes = allNodes
-                        .filter { it.id.namespace == namespace }
+                        .filter { it.id.namespace == reference.namespace }
                         .filter { it.nodeStatus == NodeStatus.ACTIVE }
-                        .filter { it.capabilities.addressableTypes.contains(addressableReference.type) }
+                        .filter { it.capabilities.addressableTypes.contains(reference.addressableReference.type) }
 
                     potentialNodes.random().id
                 }
             }
         }.fold(
             { it },
-            { throw PlacementFailedException("Could not find node capable of hosting $addressableReference") })
+            { throw PlacementFailedException("Could not find node capable of hosting $reference") })
 }
