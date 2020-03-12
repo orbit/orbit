@@ -9,7 +9,7 @@ package orbit.util.concurrent
 import java.util.concurrent.ConcurrentHashMap
 
 abstract class HashMapBackedAsyncMap<K, V> : AsyncMap<K, V> {
-    private val map = ConcurrentHashMap<K, V>()
+    abstract val map: ConcurrentHashMap<K, V> get
 
     override suspend fun get(key: K) = map[key]
 
@@ -31,5 +31,4 @@ abstract class HashMapBackedAsyncMap<K, V> : AsyncMap<K, V> {
                 newValue
             }
         }.isSuccess
-
 }

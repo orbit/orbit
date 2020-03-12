@@ -13,4 +13,5 @@ plugins {
 
 dependencies {
     api("io.github.microutils:kotlin-logging:$kotlinLoggingVersion")
+    implementation("io.micrometer:micrometer-core:1.3.5")
 }

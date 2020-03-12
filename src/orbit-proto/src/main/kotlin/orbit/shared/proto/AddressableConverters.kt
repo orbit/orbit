@@ -9,6 +9,7 @@ package orbit.shared.proto
 import orbit.shared.addressable.AddressableLease
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.addressable.Key
+import orbit.shared.addressable.NamespacedAddressableReference
 
 fun AddressableReference.toAddressableReferenceProto() =
     Addressable.AddressableReferenceProto.newBuilder()
@@ -54,4 +55,16 @@ fun Addressable.AddressableLeaseProto.toAddressableLease() =
         reference = reference.toAddressableReference(),
         expiresAt = expiresAt.toTimestamp(),
         renewAt = renewAt.toTimestamp()
+    )
+
+fun NamespacedAddressableReference.toNamespacedAddressableReferenceProto() =
+    Addressable.NamespacedAddressableReferenceProto.newBuilder()
+        .setNamespace(namespace)
+        .setAddressableReference(addressableReference.toAddressableReferenceProto())
+        .build()
+
+fun Addressable.NamespacedAddressableReferenceProto.toNamespacedAddressableReference() =
+    NamespacedAddressableReference(
+        namespace = namespace,
+        addressableReference = this.addressableReference.toAddressableReference()
     )

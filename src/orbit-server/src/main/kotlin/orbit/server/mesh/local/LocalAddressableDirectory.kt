@@ -8,14 +8,29 @@ package orbit.server.mesh.local
 
 import orbit.server.mesh.AddressableDirectory
 import orbit.shared.addressable.AddressableLease
-import orbit.shared.addressable.AddressableReference
+import orbit.shared.addressable.NamespacedAddressableReference
 import orbit.util.concurrent.HashMapBackedAsyncMap
 import orbit.util.di.ExternallyConfigured
+import orbit.util.time.Clock
+import java.util.concurrent.ConcurrentHashMap
 
-class LocalAddressableDirectory : HashMapBackedAsyncMap<AddressableReference, AddressableLease>(),
+class LocalAddressableDirectory(private val clock: Clock) :
+    HashMapBackedAsyncMap<NamespacedAddressableReference, AddressableLease>(),
     AddressableDirectory {
     object LocalAddressableDirectorySingleton : ExternallyConfigured<AddressableDirectory> {
         override val instanceType = LocalAddressableDirectory::class.java
+    }
+
+    override val map: ConcurrentHashMap<NamespacedAddressableReference, AddressableLease>
+        get() = globalMap
+
+    companion object {
+        @JvmStatic
+        private val globalMap = ConcurrentHashMap<NamespacedAddressableReference, AddressableLease>()
+
+        fun clear() {
+            globalMap.clear()
+        }
     }
 
     override suspend fun isHealthy(): Boolean {
@@ -24,10 +39,12 @@ class LocalAddressableDirectory : HashMapBackedAsyncMap<AddressableReference, Ad
 
     override suspend fun tick() {
         // Cull expired
-        values().filter { it.expiresAt.inPast() }.also { toDelete ->
+        values().filter { clock.inPast(it.expiresAt) }.also { toDelete ->
             toDelete.forEach {
-                remove(it.reference)
+                remove(NamespacedAddressableReference(it.nodeId.namespace, it.reference))
             }
         }
     }
+
+    override suspend fun count(): Int = this.keys().count()
 }

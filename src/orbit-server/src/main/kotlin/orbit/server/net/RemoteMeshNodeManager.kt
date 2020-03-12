@@ -6,6 +6,7 @@
 
 package orbit.server.net
 
+import io.micrometer.core.instrument.Metrics
 import mu.KotlinLogging
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
@@ -19,6 +20,10 @@ class RemoteMeshNodeManager(
 ) {
     private val logger = KotlinLogging.logger { }
     private val connections = ConcurrentHashMap<NodeId, RemoteMeshNodeConnection>()
+
+    init {
+        Metrics.gauge("Connected Nodes", connections) { c -> c.count().toDouble() }
+    }
 
     suspend fun tick() {
         refreshConnections()

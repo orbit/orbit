@@ -6,6 +6,7 @@
 
 package orbit.server.net
 
+import io.micrometer.core.instrument.Metrics
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
@@ -34,6 +35,10 @@ class ConnectionManager(
 ) {
     private val connectedClients = ConcurrentHashMap<NodeId, ClientConnection>()
 
+    init {
+        Metrics.gauge("Connected Clients", connectedClients) { c -> c.count().toDouble() }
+    }
+
     // The pipeline needs to be lazy to avoid a stack overflow
     private val pipeline by container.inject<Pipeline>()
 
@@ -52,7 +57,7 @@ class ConnectionManager(
                 if (nodeInfo == null) throw InvalidNodeId(nodeId)
 
                 val authInfo = authSystem.auth(nodeId)
-                authInfo ?: throw AuthFailed("Auth failled for $nodeId")
+                authInfo ?: throw AuthFailed("Auth failed for $nodeId")
 
                 // Create the connection
                 val clientConnection = ClientConnection(authInfo, incomingChannel, outgoingChannel, pipeline)

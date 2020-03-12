@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package src.main.kotlin.orbit.prometheus
+package orbit.server.prometheus
 
 import com.sun.net.httpserver.HttpServer
 import io.micrometer.prometheus.PrometheusMeterRegistry

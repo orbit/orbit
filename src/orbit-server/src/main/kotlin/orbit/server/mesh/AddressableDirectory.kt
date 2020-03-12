@@ -8,10 +8,11 @@ package orbit.server.mesh
 
 import orbit.server.service.HealthCheck
 import orbit.shared.addressable.AddressableLease
-import orbit.shared.addressable.AddressableReference
+import orbit.shared.addressable.NamespacedAddressableReference
 import orbit.util.concurrent.AsyncMap
 
-interface AddressableDirectory : AsyncMap<AddressableReference, AddressableLease>,
+interface AddressableDirectory : AsyncMap<NamespacedAddressableReference, AddressableLease>,
     HealthCheck {
     suspend fun tick() {}
+    suspend fun count(): Int = 0
 }

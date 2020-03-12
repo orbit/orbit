@@ -13,7 +13,7 @@ include(":src:orbit-shared")
 include(":src:orbit-server")
 include(":src:orbit-server-etcd")
 include(":src:orbit-application")
-include(":src:orbit-prometheus")
+include(":src:orbit-server-prometheus")
 
 include(":src:orbit-client")
 

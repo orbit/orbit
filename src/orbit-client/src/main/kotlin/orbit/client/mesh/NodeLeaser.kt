@@ -16,9 +16,10 @@ import orbit.shared.proto.NodeManagementGrpc
 import orbit.shared.proto.NodeManagementOuterClass
 import orbit.shared.proto.toCapabilitiesProto
 import orbit.shared.proto.toNodeInfo
+import orbit.util.time.Clock
 import java.util.concurrent.TimeUnit
 
-internal class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClient, config: OrbitClientConfig) {
+internal class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClient, config: OrbitClientConfig, private val clock: Clock) {
     private val logger = KotlinLogging.logger { }
     private val joinTimeout = config.joinClusterTimeout
 
@@ -46,7 +47,7 @@ internal class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClie
     suspend fun renewLease(force: Boolean) {
         localNode.status.nodeInfo?.let { existingInfo ->
             val existingLease = existingInfo.lease
-            if (force || existingLease.renewAt.inPast()) {
+            if (force || clock.inPast(existingLease.renewAt)) {
                 logger.debug("Renewing lease...")
                 val renewalResult = nodeManagementStub.renewLease(
                     NodeManagementOuterClass.RenewNodeLeaseRequestProto.newBuilder()

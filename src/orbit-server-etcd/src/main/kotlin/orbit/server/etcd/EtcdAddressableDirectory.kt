@@ -8,6 +8,7 @@ package orbit.server.etcd
 
 import io.etcd.jetcd.ByteSequence
 import io.etcd.jetcd.Client
+import io.etcd.jetcd.KeyValue
 import io.etcd.jetcd.op.Op
 import io.etcd.jetcd.options.DeleteOption
 import io.etcd.jetcd.options.GetOption
@@ -19,10 +20,12 @@ import orbit.server.mesh.AddressableDirectory
 import orbit.shared.addressable.AddressableLease
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.addressable.Key
+import orbit.shared.addressable.NamespacedAddressableReference
 import orbit.shared.proto.Addressable
 import orbit.shared.proto.toAddressableLease
 import orbit.shared.proto.toAddressableLeaseProto
 import orbit.shared.proto.toAddressableReferenceProto
+import orbit.shared.proto.toNamespacedAddressableReferenceProto
 import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock
 import orbit.util.time.stopwatch
@@ -74,24 +77,28 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
         }
     }
 
-    override suspend fun set(key: AddressableReference, value: AddressableLease) {
-        client.put(toKey(key), ByteSequence.from(key.toAddressableReferenceProto().toByteArray())).await()
+    override suspend fun count(): Int {
+        return getAllItems().count()
     }
 
-    override suspend fun get(key: AddressableReference): AddressableLease? {
+    override suspend fun set(key: NamespacedAddressableReference, value: AddressableLease) {
+        client.put(toKey(key), ByteSequence.from(key.toNamespacedAddressableReferenceProto().toByteArray())).await()
+    }
+
+    override suspend fun get(key: NamespacedAddressableReference): AddressableLease? {
         val response = client.get(toKey(key)).await()
         return response.kvs.firstOrNull()?.value?.let {
             Addressable.AddressableLeaseProto.parseFrom(it.bytes).toAddressableLease()
         }
     }
 
-    override suspend fun remove(key: AddressableReference): Boolean {
+    override suspend fun remove(key: NamespacedAddressableReference): Boolean {
         client.delete(toKey(key))
         return true
     }
 
     override suspend fun compareAndSet(
-        key: AddressableReference,
+        key: NamespacedAddressableReference,
         initialValue: AddressableLease?,
         newValue: AddressableLease?
     ): Boolean {
@@ -111,7 +118,16 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
         return false
     }
 
-    override suspend fun entries(): Iterable<Pair<AddressableReference, AddressableLease>> {
+    override suspend fun entries(): Iterable<Pair<NamespacedAddressableReference, AddressableLease>> {
+        return getAllItems().map { kv ->
+            Pair(
+                fromKey(kv.key),
+                Addressable.AddressableLeaseProto.parseFrom(kv.value.bytes).toAddressableLease()
+            )
+        }
+    }
+
+    private suspend fun getAllItems(): MutableList<KeyValue> {
         val key = ByteSequence.from("\u0000".toByteArray())
 
         val option = GetOption.newBuilder()
@@ -121,14 +137,7 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
             .withRange(key)
             .build()
 
-        val response = client.get(key, option).await()
-
-        return response.kvs.map { kv ->
-            Pair(
-                fromKey(kv.key),
-                Addressable.AddressableLeaseProto.parseFrom(kv.value.bytes).toAddressableLease()
-            )
-        }
+        return client.get(key, option).await().kvs
     }
 
     override suspend fun tick() {
@@ -138,13 +147,13 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
                 lastCleanup.set(clock.currentTime)
                 val addressables = values()
 
-                val (expiredLeases, validLeases) = addressables.partition { addressable -> addressable.expiresAt.inPast() }
+                val (expiredLeases, validLeases) = addressables.partition { addressable -> clock.inPast(addressable.expiresAt) }
 
                 if (expiredLeases.any()) {
                     val txn = client.txn()
-                    txn.Then(*expiredLeases.map { addressable ->
+                    txn.Then(*expiredLeases.map { lease ->
                         Op.delete(
-                            toKey(addressable.reference),
+                            toKey(NamespacedAddressableReference(lease.nodeId.namespace, lease.reference)),
                             DeleteOption.DEFAULT
                         )
                     }.toTypedArray()).commit()
@@ -158,15 +167,15 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
         }
     }
 
-    private fun toKey(address: AddressableReference): ByteSequence {
-        return ByteSequence.from("$keyPrefix/${address.type}/${address.key}".toByteArray())
+    private fun toKey(reference: NamespacedAddressableReference): ByteSequence {
+        return ByteSequence.from("$keyPrefix/${reference.namespace}/${reference.addressableReference.type}/${reference.addressableReference.key}".toByteArray())
     }
 
-    private fun fromKey(keyBytes: ByteSequence): AddressableReference {
+    private fun fromKey(keyBytes: ByteSequence): NamespacedAddressableReference {
         val keyString = keyBytes.toString(Charset.defaultCharset())
 
-        val (_, type, key) = keyString.split("/")
+        val (_, namespace, type, key) = keyString.split("/")
 
-        return AddressableReference(type, Key.of(key))
+        return NamespacedAddressableReference(namespace, AddressableReference(type, Key.of(key)))
     }
 }

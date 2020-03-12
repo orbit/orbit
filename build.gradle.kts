@@ -15,6 +15,9 @@ val protobufVersion by extra("3.11.1")
 val kotlinCoroutinesVersion by extra("1.3.3")
 val slf4jVersion by extra("1.7.30")
 val jacksonVersion by extra("2.10.2")
+val kotestVersion by extra ("3.4.2")
+val mokitoVersion by extra("3.3.0")
+val mockitoKotlin2Version by extra("2.2.0")
 
 // Publishing info
 val orbitGroup by extra("cloud.orbit")
@@ -57,6 +60,9 @@ subprojects {
 
             "testRuntimeOnly"("org.slf4j:slf4j-simple:$slf4jVersion")
             "testImplementation"(kotlin("test-junit"))
+            "testImplementation"("io.kotlintest:kotlintest-runner-junit5:$kotestVersion")
+            "testImplementation"("org.mockito:mockito-core:$mokitoVersion")
+            "testImplementation"("com.nhaarman.mockitokotlin2:mockito-kotlin:$mockitoKotlin2Version")
         }
 
         tasks.withType<KotlinJvmCompile> {

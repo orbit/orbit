@@ -7,7 +7,9 @@
 package orbit.server
 
 import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Metrics
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import orbit.server.auth.AuthSystem
 import orbit.server.concurrent.RuntimePools
@@ -40,14 +42,15 @@ import orbit.server.service.ServerAuthInterceptor
 import orbit.shared.mesh.NodeStatus
 import orbit.util.concurrent.ShutdownLatch
 import orbit.util.di.ComponentContainer
-import orbit.util.time.Clock
 import orbit.util.time.ConstantTicker
 import orbit.util.time.stopwatch
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
+import orbit.util.instrumentation.recordSuspended
 
 class OrbitServer(private val config: OrbitServerConfig) {
-    constructor() : this(OrbitServerConfig())
+
+    val nodeStatus: NodeStatus get() = localNodeInfo.info.nodeStatus
 
     private val logger = KotlinLogging.logger {}
 
@@ -64,17 +67,19 @@ class OrbitServer(private val config: OrbitServerConfig) {
     )
 
     private val container = ComponentContainer()
-    private val clock = Clock()
+    private val clock = config.clock
 
     private val grpcEndpoint by container.inject<GrpcEndpoint>()
     private val localNodeInfo by container.inject<LocalNodeInfo>()
-    private val nodeManager by container.inject<ClusterManager>()
+    private val clusterManager by container.inject<ClusterManager>()
     private val nodeDirectory by container.inject<NodeDirectory>()
     private val addressableDirectory by container.inject<AddressableDirectory>()
 
     private val pipeline by container.inject<Pipeline>()
     private val remoteMeshNodeManager by container.inject<RemoteMeshNodeManager>()
 
+    private val slowTick = Metrics.counter("Slow Ticks")
+    private val tickTimer = Metrics.timer("Tick Timer")
 
     private val ticker = ConstantTicker(
         scope = runtimeScopes.cpuScope,
@@ -83,7 +88,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
         logger = logger,
         exceptionHandler = this::onUnhandledException,
         autoStart = false,
-        onTick = this::tick
+        onTick = this::tick,
+        onSlowTick = { slowTick.increment() }
     )
 
     init {
@@ -133,7 +139,14 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
             // Router
             definition<Router>()
+
+            config.containerOverrides(this)
         }
+
+        Metrics.globalRegistry.add(container.resolve(MeterRegistry::class.java))
+
+        Metrics.gauge("Addressable Count", addressableDirectory) { d -> runBlocking { d.count().toDouble() } }
+        Metrics.gauge("Node Count", nodeDirectory) { d -> runBlocking { d.keys().count().toDouble() } }
     }
 
     fun start() = runtimeScopes.cpuScope.launch {
@@ -199,18 +212,17 @@ class OrbitServer(private val config: OrbitServerConfig) {
         }
 
         logger.info("Orbit server stopped successfully in {}ms.", elapsed)
+        Metrics.globalRegistry.remove(container.resolve(MeterRegistry::class.java))
     }
 
     private suspend fun tick() {
-        localNodeInfo.tick()
-
-        nodeManager.tick()
-
-        nodeDirectory.tick()
-
-        addressableDirectory.tick()
-
-        remoteMeshNodeManager.tick()
+        tickTimer.recordSuspended {
+            localNodeInfo.tick()
+            clusterManager.tick()
+            nodeDirectory.tick()
+            addressableDirectory.tick()
+            remoteMeshNodeManager.tick()
+        }
     }
 
     @Suppress("UNUSED_PARAMETER")

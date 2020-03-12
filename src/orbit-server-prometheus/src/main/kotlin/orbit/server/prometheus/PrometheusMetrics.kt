@@ -9,10 +9,7 @@ package orbit.server.prometheus
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
-import mu.KotlinLogging
 import orbit.util.di.ExternallyConfigured
-import src.main.kotlin.orbit.prometheus.PrometheusMeterEndpoint
-
 
 class PrometheusMetrics(config: PrometheusMetricsConfig) : PrometheusMeterRegistry(PrometheusConfig.DEFAULT) {
     data class PrometheusMetricsConfig(
@@ -22,6 +19,5 @@ class PrometheusMetrics(config: PrometheusMetricsConfig) : PrometheusMeterRegist
         override val instanceType: Class<out MeterRegistry> = PrometheusMetrics::class.java
     }
 
-    private val logger = KotlinLogging.logger {}
     private val meterServer = PrometheusMeterEndpoint(this, config.url, config.port)
 }

@@ -16,6 +16,7 @@ import orbit.shared.mesh.NodeInfo
 import orbit.shared.mesh.NodeLease
 import orbit.shared.mesh.NodeStatus
 import orbit.util.misc.RNGUtils
+import orbit.util.time.Clock
 import orbit.util.time.Timestamp
 import orbit.util.time.toTimestamp
 import org.jgrapht.Graph
@@ -28,14 +29,14 @@ import java.util.concurrent.atomic.AtomicReference
 
 class ClusterManager(
     config: OrbitServerConfig,
+    private val clock: Clock,
     private val nodeDirectory: NodeDirectory
 ) {
     private val leaseExpiration = config.nodeLeaseDuration
     private val clusterNodes = ConcurrentHashMap<NodeId, NodeInfo>()
     private val nodeGraph = AtomicReference<Graph<NodeId, DefaultEdge>>()
 
-    fun getAllNodes() =
-        clusterNodes.filter { it.value.lease.expiresAt.inFuture() }.values
+    fun getAllNodes() = clusterNodes.filter { clock.inFuture(it.value.lease.expiresAt) }.values
 
 
     suspend fun tick() {
@@ -56,8 +57,8 @@ class ClusterManager(
 
             val lease = NodeLease(
                 challengeToken = RNGUtils.randomString(64),
-                expiresAt = Instant.now().plus(leaseExpiration.expiresIn).toTimestamp(),
-                renewAt = Instant.now().plus(leaseExpiration.renewIn).toTimestamp()
+                expiresAt = clock.now().plus(leaseExpiration.expiresIn).toTimestamp(),
+                renewAt = clock.now().plus(leaseExpiration.renewIn).toTimestamp()
             )
 
             val info = NodeInfo(
@@ -77,7 +78,7 @@ class ClusterManager(
 
     suspend fun renewLease(nodeId: NodeId, challengeToken: ChallengeToken, capabilities: NodeCapabilities): NodeInfo =
         updateNode(nodeId) { initialValue ->
-            if (initialValue == null || Timestamp.now() > initialValue.lease.expiresAt) {
+            if (initialValue == null || clock.inPast(initialValue.lease.expiresAt)) {
                 throw InvalidNodeId(nodeId)
             }
 
@@ -114,7 +115,7 @@ class ClusterManager(
                 null
             }
         }?.let {
-            if (it.lease.expiresAt.inFuture()) {
+            if (clock.inFuture(it.lease.expiresAt)) {
                 it
             } else {
                 null
