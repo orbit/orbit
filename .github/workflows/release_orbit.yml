@@ -3,7 +3,7 @@ name: Release Orbit
 on:
   push:
     tags:
-      - v*
+      - _v*
 
 jobs:
   build:
@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Get the Tag Version
         id: get_tag_version
-        run: echo ::set-output name=TAG_VERSION::${GITHUB_REF#refs/tags/v}
+        run: echo ::set-output name=TAG_VERSION::${GITHUB_REF#refs/tags/_v}
       - name: Set up JDK
         uses: actions/setup-java@v1
         with:
@@ -76,6 +76,8 @@ jobs:
       - name: Commit Release
         run: |
           git commit -m "Release version ${{ steps.get_tag_version.outputs.TAG_VERSION }} and update docs" --author="orbit-tools <orbit@ea.com>"
+          git tag -d "_v${{steps.get_tag_version.outputs.TAG_VERSION}}"
+          git tag "v${{steps.get_tag_version.outputs.TAG_VERSION}}"
           git push origin master
           git reset --hard
       - name: Request Github Pages build job
