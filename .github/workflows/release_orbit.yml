@@ -57,7 +57,10 @@ jobs:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           TAG_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
       - name: Update and Commit Release
-        run: ./.github/scripts/update_release.sh 
+        run: ./.github/scripts/update_release.sh
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          TAG_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
       - name: Publish Artifacts to Maven Central
         run: ./.github/scripts/gradle_publish.sh
         env:
