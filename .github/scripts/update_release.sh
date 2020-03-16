@@ -9,7 +9,7 @@ AUTH="Authorization: token $GITHUB_TOKEN"
 git commit -m "Release version $tag and update docs" --author="orbit-tools <orbit@ea.com>"
 
 # Get commit id
-commitId = $(git rev-parse HEAD)
+commitId=$(git rev-parse HEAD)
 
 # Tag commit with the intended release tag (without the underscore)
 git tag "$tag"
