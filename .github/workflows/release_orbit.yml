@@ -16,6 +16,8 @@ jobs:
       - name: Get the Tag Version
         id: get_tag_version
         run: echo ::set-output name=TAG_VERSION::${GITHUB_REF#refs/tags/_v}
+      - name: Setup script tools
+        run: sudo apt-get install jq
       - name: Set up JDK
         uses: actions/setup-java@v1
         with:

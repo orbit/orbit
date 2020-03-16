@@ -5,10 +5,6 @@ tag=v$TAG_VERSION
 GH_REPO="https://api.github.com/repos/$owner/$repo"
 AUTH="Authorization: token $GITHUB_TOKEN"
 
-# Install jq
-apt-get update
-apt-get install jq
-
 # Commit all changed work
 git commit -m "Release version $tag and update docs" --author="orbit-tools <orbit@ea.com>"
 
