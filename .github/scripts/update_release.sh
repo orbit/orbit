@@ -13,8 +13,8 @@ commitId=$(git rev-parse HEAD)
 
 # Tag commit with the intended release tag (without the underscore)
 git tag "$tag"
-git tag -d "_$tag"
-git push origin master
+git push origin master --tags
+git push origin :refs/tags/$tag
 git reset --hard
 
 # Read asset tags.
