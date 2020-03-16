@@ -19,18 +19,19 @@ echo Commit Id: $commitId
 # Read asset tags.
 release=$(curl -sH "$AUTH" "$GH_REPO/releases/tags/_$tag")
 
-releaseId=jq .id <<EOF 
-    $release 
-EOF
+echo $release
 
-releaseName=
-jq .name <<EOF
+releaseId=$(jq .id <<EOF 
+    $release 
+EOF)
+
+releaseName=$(jq .name <<EOF
     $release
-EOF
+EOF)
 
-releaseBody=jq .body <<EOF 
+releaseBody=$(jq .body <<EOF 
     $release 
-EOF
+EOF)
 
 echo Release: $releaseId - $releaseName - $releaseBody
 
