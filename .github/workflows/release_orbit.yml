@@ -50,7 +50,7 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
           DOCKER_BASE_URL: docker.pkg.github.com
           DOCKER_REPO: docker.pkg.github.com/orbit/orbit
-          TAG_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+          ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
       - name: Publish Helm Chart to GitHub Repository
         run: ./.github/scripts/helm_publish.sh
         env:
