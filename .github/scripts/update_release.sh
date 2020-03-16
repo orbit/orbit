@@ -1,7 +1,7 @@
 owner="orbit"
 repo="orbit"
 
-tag=$TAG_VERSION
+tag=v$TAG_VERSION
 GH_REPO="https://api.github.com/repos/$owner/$repo"
 AUTH="Authorization: token $GITHUB_TOKEN"
 
