@@ -50,12 +50,14 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
           DOCKER_BASE_URL: docker.pkg.github.com
           DOCKER_REPO: docker.pkg.github.com/orbit/orbit
-          ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+          TAG_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
       - name: Publish Helm Chart to GitHub Repository
         run: ./.github/scripts/helm_publish.sh
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           TAG_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+      - name: Update and Commit Release
+        run: ./.github/scripts/update_release.sh 
       - name: Publish Artifacts to Maven Central
         run: ./.github/scripts/gradle_publish.sh
         env:
@@ -73,13 +75,6 @@ jobs:
           DOCKER_BASE_URL:
           DOCKER_REPO: orbitframework
           ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
-      - name: Commit Release
-        run: |
-          git commit -m "Release version ${{ steps.get_tag_version.outputs.TAG_VERSION }} and update docs" --author="orbit-tools <orbit@ea.com>"
-          git tag -d "_v${{steps.get_tag_version.outputs.TAG_VERSION}}"
-          git tag "v${{steps.get_tag_version.outputs.TAG_VERSION}}"
-          git push origin master
-          git reset --hard
       - name: Request Github Pages build job
         uses: peaceiris/actions-gh-pages@v2
         env:
