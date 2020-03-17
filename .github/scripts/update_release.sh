@@ -15,7 +15,7 @@ git tag $tag
 git push origin master --tags
 
 # Get commit id
-commitId=$(git rev-parse --short HEAD)
+commitId=$(git rev-parse HEAD)
 echo Commit Id: $commitId
 
 # Read asset tags.
@@ -25,9 +25,8 @@ echo $release
 
 releaseId=$(jq .id <(cat <<<"$release"))
 releaseName=$(jq .name <(cat <<<"$release"))
-releaseBody=$(jq .body <(cat <<<"$release"))
 
-echo Release: $releaseId - $releaseName - $releaseBody
+echo Release: $releaseId - $releaseName - $tag - $commitId
 
 # Patch release with new commit Id and tag
 curl -X PATCH -H "$AUTH" -H "Content-Type: application/json" $GH_REPO/releases/$releaseId -d '{"tag_name": "$tag", "target_commitish": "$commitId", "name":"$releaseName", "body": "$releaseBody", "draft": "false", "prerelease": "false"}'
