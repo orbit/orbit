@@ -1,3 +1,5 @@
+#!/bin/bash
+
 owner="orbit"
 repo="orbit"
 
@@ -21,17 +23,9 @@ release=$(curl -sH "$AUTH" "$GH_REPO/releases/tags/_$tag")
 
 echo $release
 
-releaseId=$(jq .id <<EOF 
-    $release 
-EOF)
-
-releaseName=$(jq .name <<EOF
-    $release
-EOF)
-
-releaseBody=$(jq .body <<EOF 
-    $release 
-EOF)
+releaseId=$(jq .id <(cat <<<"$release"))
+releaseName=$(jq .name <(cat <<<"$release"))
+releaseBody=$(jq .body <(cat <<<"$release"))
 
 echo Release: $releaseId - $releaseName - $releaseBody
 
