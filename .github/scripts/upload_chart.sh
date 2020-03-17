@@ -14,13 +14,13 @@ curl -o /dev/null -sH "$AUTH" $GH_REPO || { echo "Error: Invalid repo, token or 
 response=$(curl -sH "$AUTH" $GH_TAG_URL)
 
 # Extract the release id
-eval $(echo "$response" | grep -m 1 "id.:" | grep -w id | tr : = | tr -cd '[[:alnum:]]=')
-[ "$id" ] || { echo "Error: Failed to get release id for tag: $tag"; echo "$response" | awk 'length($0)<100' >&2; exit 1; }
+releaseId=$(jq .id <(cat <<<"$release"))
+[ "$releaseId" ] || { echo "Error: Failed to get release id for tag: $tag"; echo "$response" | awk 'length($0)<100' >&2; exit 1; }
 
 # Upload asset
 echo "Uploading asset... "
 
 # Construct upload url
-GH_UPLOAD_URL="https://uploads.github.com/repos/$owner/$repo/releases/$id/assets?name=$(basename $filename)"
+GH_UPLOAD_URL="https://uploads.github.com/repos/$owner/$repo/releases/$releaseId/assets?name=$(basename $filename)"
 
 curl --data-binary @"$filename" -H "$AUTH" -H "Content-Type: application/octet-stream" $GH_UPLOAD_URL
