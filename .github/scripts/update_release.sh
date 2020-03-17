@@ -27,7 +27,7 @@ releaseId=$(jq .id <(cat <<<"$release"))
 releaseName=$(jq .name <(cat <<<"$release"))
 
 echo Release: $releaseId - $releaseName - $tag - $commitId
-releaseData="{\"tag_name\": \"$tag\", \"target_commitish\": \"$commitId\", \"name\":\"$releaseName\", \"body\": \"$releaseBody\", \"draft\": \"false\", \"prerelease\": \"false\"}"
+releaseData="{\"tag_name\": \"$tag\", \"target_commitish\": \"$commitId\", \"name\":$releaseName, \"draft\": \"false\", \"prerelease\": \"false\"}"
 
 echo Data: $releaseData
 
