@@ -4,6 +4,10 @@ metadata:
   name: {{ include "orbit.fullname" . }}
   labels:
     {{- include "orbit.selectorLabels" . | nindent 4 }}
+  {{- if .Values.node.service.annotations }}
+  annotations:
+    {{- .Values.node.service.annotations . | nindent 4 }}
+  {{- end }}
 spec:
   selector:
     {{- include "orbit.selectorLabels" . | nindent 4 }}
