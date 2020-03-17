@@ -27,9 +27,12 @@ releaseId=$(jq .id <(cat <<<"$release"))
 releaseName=$(jq .name <(cat <<<"$release"))
 
 echo Release: $releaseId - $releaseName - $tag - $commitId
+releaseData="{\"tag_name\": \"$tag\", \"target_commitish\": \"$commitId\", \"name\":\"$releaseName\", \"body\": \"$releaseBody\", \"draft\": \"false\", \"prerelease\": \"false\"}"
+
+echo Data: $releaseData
 
 # Patch release with new commit Id and tag
-curl -X PATCH -H "$AUTH" -H "Content-Type: application/json" $GH_REPO/releases/$releaseId -d '{"tag_name": "$tag", "target_commitish": "$commitId", "name":"$releaseName", "body": "$releaseBody", "draft": "false", "prerelease": "false"}'
+curl -X PATCH -H "$AUTH" -H "Content-Type: application/json" $GH_REPO/releases/$releaseId -d '$releaseData'
 
 git tag -d _$tag
 git push origin :refs/tags/_$tag
