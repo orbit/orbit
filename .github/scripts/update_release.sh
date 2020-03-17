@@ -32,7 +32,7 @@ releaseData="{\"tag_name\": \"$tag\", \"target_commitish\": \"$commitId\", \"nam
 echo Data: $releaseData
 
 # Patch release with new commit Id and tag
-curl -X PATCH -H "$AUTH" -H "Content-Type: application/json" $GH_REPO/releases/$releaseId -d '$releaseData'
+curl -X PATCH -H "$AUTH" -H "Content-Type: application/json" $GH_REPO/releases/$releaseId -d "$releaseData"
 
 git tag -d _$tag
 git push origin :refs/tags/_$tag
