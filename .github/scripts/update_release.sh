@@ -17,7 +17,7 @@ git push origin master --tags
 # Get commit id
 commitId=$(git rev-parse HEAD)
 
-# Read asset tags.
+# Get release
 release=$(curl -sH "$AUTH" "$GH_REPO/releases/tags/_$tag")
 
 releaseId=$(jq .id <(cat <<<"$release"))

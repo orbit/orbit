@@ -74,7 +74,7 @@ class MetricsTests {
 
     fun advanceTime(duration: Duration) {
         clock.advanceTime(duration.toMillis())
-        Metrics.globalRegistry.registries.forEach { r -> (r as MockMeterRegistry)?.advanceTime(duration.toMillis()) }
+        Metrics.globalRegistry.registries.forEach { r -> (r as? MockMeterRegistry)?.advanceTime(duration.toMillis()) }
     }
 
     @After

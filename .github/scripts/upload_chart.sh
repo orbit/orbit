@@ -10,12 +10,12 @@ AUTH="Authorization: token $github_api_token"
 # Validate token.
 curl -o /dev/null -sH "$AUTH" $GH_REPO || { echo "Error: Invalid repo, token or network issue!";  exit 1; }
 
-# Read asset tags.
-response=$(curl -sH "$AUTH" $GH_TAG_URL)
+# Get release
+release=$(curl -sH "$AUTH" $GH_TAG_URL)
 
 # Extract the release id
 releaseId=$(jq .id <(cat <<<"$release"))
-[ "$releaseId" ] || { echo "Error: Failed to get release id for tag: $tag"; echo "$response" | awk 'length($0)<100' >&2; exit 1; }
+[ "$releaseId" ] || { echo "Error: Failed to get release id for tag: $tag"; echo "$release" | awk 'length($0)<100' >&2; exit 1; }
 
 # Upload asset
 echo "Uploading asset... "
