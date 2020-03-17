@@ -2,6 +2,15 @@ apiVersion: v1
 entries:
   orbit:
   - apiVersion: v1
+    appVersion: 2.0.0-alpha.58
+    created: "2020-03-17T19:42:41.715707055Z"
+    description: An Orbit Mesh Helm chart for Kubernetes
+    digest: fc857be3d2ab77a451ef96cd5d9263e0cc77195a689e584a42116e9bfcb05f62
+    name: orbit
+    urls:
+    - https://github.com/orbit/orbit/releases/download/v2.0.0-alpha.58/orbit-2.0.0-alpha.58.tgz
+    version: 2.0.0-alpha.58
+  - apiVersion: v1
     appVersion: 2.0.0-alpha.56
     created: "2020-03-17T18:30:14.385667792Z"
     description: An Orbit Mesh Helm chart for Kubernetes
@@ -271,4 +280,4 @@ entries:
     urls:
     - https://github.com/orbit/orbit/releases/download/v2.0.0-alpha.23.1/orbit-2.0.0-alpha.23.1.tgz
     version: 2.0.0-alpha.23.1
-generated: "2020-03-17T18:30:14.385066991Z"
+generated: "2020-03-17T19:42:41.654260785Z"
