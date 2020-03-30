@@ -17,7 +17,6 @@ import orbit.shared.mesh.NodeLease
 import orbit.shared.mesh.NodeStatus
 import orbit.util.misc.RNGUtils
 import orbit.util.time.Clock
-import orbit.util.time.Timestamp
 import orbit.util.time.toTimestamp
 import org.jgrapht.Graph
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath
@@ -36,8 +35,7 @@ class ClusterManager(
     private val clusterNodes = ConcurrentHashMap<NodeId, NodeInfo>()
     private val nodeGraph = AtomicReference<Graph<NodeId, DefaultEdge>>()
 
-    fun getAllNodes() = clusterNodes.filter { clock.inFuture(it.value.lease.expiresAt) }.values
-
+    fun getAllNodes() = clusterNodes.filter { clock.inFuture(it.value.lease.expiresAt) && it.value.nodeStatus == NodeStatus.ACTIVE }.values
 
     suspend fun tick() {
         val allNodes = nodeDirectory.entries()
@@ -145,5 +143,10 @@ class ClusterManager(
 
         this.nodeGraph.set(graph)
         return graph
+    }
+
+    suspend fun leaveCluster(nodeId: NodeId) {
+        nodeDirectory.remove(nodeId)
+        tick()
     }
 }

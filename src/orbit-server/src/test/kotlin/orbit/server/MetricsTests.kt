@@ -12,7 +12,6 @@ import io.grpc.Channel
 import io.grpc.ClientCall
 import io.grpc.ClientInterceptor
 import io.grpc.ForwardingClientCall
-import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import io.kotlintest.eventually
@@ -21,123 +20,14 @@ import io.kotlintest.matchers.doubles.shouldBeGreaterThanOrEqual
 import io.kotlintest.milliseconds
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
-import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
-import io.micrometer.core.instrument.MockClock
-import io.micrometer.core.instrument.simple.SimpleConfig
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import io.rouz.grpc.ManyToManyCall
 import kotlinx.coroutines.runBlocking
 import orbit.server.mesh.ClusterManager
-import orbit.server.mesh.LeaseDuration
-import orbit.server.mesh.LocalServerInfo
-import orbit.server.mesh.local.LocalAddressableDirectory
-import orbit.server.mesh.local.LocalNodeDirectory
-import orbit.shared.addressable.AddressableReference
-import orbit.shared.addressable.Key
 import orbit.shared.mesh.NodeId
-import orbit.shared.mesh.NodeStatus
-import orbit.shared.net.Message
-import orbit.shared.net.MessageContent
-import orbit.shared.proto.ConnectionGrpc
 import orbit.shared.proto.Headers
-import orbit.shared.proto.Messages
-import orbit.shared.proto.Node
-import orbit.shared.proto.NodeManagementGrpc
-import orbit.shared.proto.NodeManagementOuterClass
-import orbit.shared.proto.joinCluster
-import orbit.shared.proto.openStream
-import orbit.shared.proto.toMessageProto
-import orbit.shared.proto.toNodeId
-import orbit.util.di.ComponentContainerRoot
-import orbit.util.di.ExternallyConfigured
-import orbit.util.time.Clock
-import orbit.util.time.TimeMs
-import org.junit.After
 import org.junit.Test
-import java.time.Duration
-import java.util.concurrent.TimeUnit
 
-class MetricsTests {
-    private var clock: Clock = Clock()
-    private var servers: MutableList<OrbitServer> = mutableListOf()
-
-    class MockMeterRegistry : SimpleMeterRegistry(SimpleConfig.DEFAULT, MockClock()) {
-        object Config : ExternallyConfigured<MeterRegistry> {
-            override val instanceType = MockMeterRegistry::class.java
-        }
-
-        fun advanceTime(timeMs: TimeMs) {
-            (this.clock as MockClock).add(timeMs, TimeUnit.MILLISECONDS)
-        }
-    }
-
-    fun advanceTime(duration: Duration) {
-        clock.advanceTime(duration.toMillis())
-        Metrics.globalRegistry.registries.forEach { r -> (r as? MockMeterRegistry)?.advanceTime(duration.toMillis()) }
-    }
-
-    @After
-    fun afterTest() {
-        runBlocking {
-            servers.toList().forEach { server -> disconnectServer(server) }
-            LocalNodeDirectory.clear()
-            LocalAddressableDirectory.clear()
-            Metrics.globalRegistry.clear()
-            clock = Clock()
-        }
-    }
-
-    private fun startServer(
-        port: Int = 50056,
-        addressableLeaseDurationSeconds: Long = 5,
-        nodeLeaseDurationSeconds: Long = 10,
-        containerOverrides: ComponentContainerRoot.() -> Unit = { }
-    ): OrbitServer {
-        val server = OrbitServer(
-            OrbitServerConfig(
-                serverInfo = LocalServerInfo(
-                    port = port,
-                    url = "localhost:${port}"
-                ),
-                meterRegistry = MockMeterRegistry.Config,
-                addressableLeaseDuration = LeaseDuration(
-                    Duration.ofSeconds(addressableLeaseDurationSeconds),
-                    Duration.ofSeconds(addressableLeaseDurationSeconds)
-                ),
-                nodeLeaseDuration = LeaseDuration(
-                    Duration.ofSeconds(nodeLeaseDurationSeconds),
-                    Duration.ofSeconds(nodeLeaseDurationSeconds)
-                ),
-                clock = clock,
-                containerOverrides = containerOverrides
-            )
-        )
-
-        server.start()
-
-        eventually(10.seconds) {
-            server.nodeStatus shouldBe NodeStatus.ACTIVE
-        }
-
-        servers.add(server)
-        return server
-    }
-
-
-    fun disconnectServer(server: OrbitServer?) {
-        if (server == null) {
-            return
-        }
-
-        server.stop()
-
-        eventually(10.seconds) {
-            server.nodeStatus shouldBe NodeStatus.STOPPED
-        }
-
-        servers.remove(server)
-    }
+class MetricsTests : BaseServerTest() {
 
     @Test
     fun `connecting to service increments connected metric`() {
@@ -157,7 +47,6 @@ class MetricsTests {
     fun `disconnecting from service decrements connected metric`() {
         runBlocking {
             startServer()
-
             val client = TestClient().connect()
 
             eventually(5.seconds) {
@@ -389,46 +278,6 @@ class MetricsTests {
         private val SlowTickCount: Double get() = getMeter("Slow Ticks")
         private val TickTimer_Count: Double get() = getMeter("Tick Timer", "count")
         private val TickTimer_Total: Double get() = getMeter("Tick Timer", "total_time")
-    }
-}
-
-class TestClient(port: Int = 50056) {
-    private var nodeId: NodeId = NodeId.generate("test")
-    private val client: Channel = ManagedChannelBuilder
-        .forTarget("0.0.0.0:${port}")
-        .usePlaintext()
-        .intercept(TestAuthInterceptor { nodeId })
-        .enableRetry()
-        .build()
-
-    private lateinit var connectionChannel: ManyToManyCall<Messages.MessageProto, Messages.MessageProto>
-
-    suspend fun connect(): TestClient {
-        val response = NodeManagementGrpc.newStub(client).joinCluster(
-            NodeManagementOuterClass.JoinClusterRequestProto.newBuilder().setCapabilities(
-                Node.CapabilitiesProto.newBuilder().addAddressableTypes("test").build()
-            ).build()
-        )
-        nodeId = response.info.id.toNodeId()
-        connectionChannel = ConnectionGrpc.newStub(client).openStream()
-        return this
-    }
-
-    fun disconnect() {
-        connectionChannel.close()
-    }
-
-    fun sendMessage(msg: String, address: String? = null) {
-        val message = Message(
-            MessageContent.InvocationRequest(
-                AddressableReference(
-                    "test",
-                    if (address != null) Key.StringKey(address) else Key.NoKey
-                ), "report",
-                msg
-            )
-        )
-        connectionChannel.send(message.toMessageProto())
     }
 }
 

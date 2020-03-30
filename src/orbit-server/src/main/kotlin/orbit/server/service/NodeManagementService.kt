@@ -8,12 +8,16 @@ package orbit.server.service
 
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.ClusterManager
+import orbit.shared.mesh.ChallengeToken
+import orbit.shared.mesh.NodeLease
 import orbit.shared.mesh.NodeStatus
 import orbit.shared.proto.NodeManagementImplBase
 import orbit.shared.proto.NodeManagementOuterClass
 import orbit.shared.proto.getOrNull
 import orbit.shared.proto.toCapabilities
+import orbit.shared.proto.toNodeLeaseProto
 import orbit.shared.proto.toNodeLeaseRequestResponseProto
+import orbit.util.time.Timestamp
 
 class NodeManagementService(
     private val clusterManager: ClusterManager,
@@ -50,4 +54,18 @@ class NodeManagementService(
             t.toNodeLeaseRequestResponseProto()
         }
 
+    override suspend fun leaveCluster(request: NodeManagementOuterClass.LeaveClusterRequestProto): NodeManagementOuterClass.NodeLeaseResponseProto {
+
+        val nodeId = ServerAuthInterceptor.NODE_ID.getOrNull()
+        checkNotNull(nodeId) { "Node ID was not specified" }
+
+        clusterManager.updateNode(nodeId) {
+            checkNotNull(it) { "The node '${nodeId}' could not be found in directory. " }
+            it.copy(
+                nodeStatus = NodeStatus.DRAINING
+            )
+        }
+
+        return NodeManagementOuterClass.NodeLeaseResponseProto.newBuilder().build()
+    }
 }
