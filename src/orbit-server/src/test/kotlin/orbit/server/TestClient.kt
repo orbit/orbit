@@ -28,7 +28,7 @@ import orbit.shared.proto.toMessage
 import orbit.shared.proto.toMessageProto
 import orbit.shared.proto.toNodeId
 
-class TestClient(private val scope: CoroutineScope? = null, private val onReceive: (msg: Message) -> Unit = {}) {
+class TestClient(private val onReceive: (msg: Message) -> Unit = {}) {
     private var nodeId: NodeId = NodeId.generate("test")
 
     private lateinit var connectionChannel: ManyToManyCall<Messages.MessageProto, Messages.MessageProto>
@@ -56,15 +56,13 @@ class TestClient(private val scope: CoroutineScope? = null, private val onReceiv
             for (msg in connectionChannel) {
                 onMessage(msg.toMessage())
             }
-            println("message channel closed")
         }
 
         return this
     }
 
     fun disconnect() {
-        println("disconnect")
-        connectionChannel.cancel()
+        connectionChannel.close()
     }
 
     suspend fun drain() {
@@ -74,7 +72,7 @@ class TestClient(private val scope: CoroutineScope? = null, private val onReceiv
     }
 
     fun onMessage(msg: Message) {
-        println("Message received on node ${nodeId} - ${msg.content}")
+        println("Message received on node ${nodeId} - ${(msg.content as MessageContent.InvocationRequest)?.arguments}")
         onReceive(msg)
     }
 

@@ -7,6 +7,7 @@
 package orbit.server
 
 import io.kotlintest.eventually
+import io.kotlintest.matchers.string.shouldBeEmpty
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import kotlinx.coroutines.runBlocking
@@ -17,29 +18,23 @@ class ZdtTests : BaseServerTest() {
     @Test
     fun `when client leaves cluster, messages still are routed to client`() {
         runBlocking {
-            var receivedMessages = object {
-                var client1 = 0.0
-                var client2 = 0.0
-            }
+            var receivedMessages = 0.0
 
             val server = startServer()
-            val client1 = TestClient(scope = this, onReceive = { receivedMessages.client1++ }).connect()
+            val client1 = startClient(onReceive = { receivedMessages++ })
             client1.sendMessage("test message 1", "address 1")
             eventually(5.seconds) {
-                receivedMessages.client1.shouldBe(1.0)
+                receivedMessages.shouldBe(1.0)
             }
 
-            val client2 = TestClient(scope = this, onReceive = { receivedMessages.client2++ }).connect()
+            val client2 = startClient(onReceive = { "Client 2 should not receive a message".shouldBeEmpty() })
 
             client1.drain()
             client2.sendMessage("test message 2", "address 1")
 
             eventually(5.seconds) {
-                receivedMessages.client1.shouldBe(2.0)
+                receivedMessages.shouldBe(2.0)
             }
-
-            client1.disconnect()
-            client2.disconnect()
         }
     }
 

@@ -34,8 +34,8 @@ class MetricsTests : BaseServerTest() {
         runBlocking {
             startServer()
 
-            TestClient().connect()
-            TestClient().connect()
+            startClient()
+            startClient()
 
             eventually(5.seconds) {
                 ConnectedClients shouldBe 2.0
@@ -47,13 +47,13 @@ class MetricsTests : BaseServerTest() {
     fun `disconnecting from service decrements connected metric`() {
         runBlocking {
             startServer()
-            val client = TestClient().connect()
+            val client = startClient()
 
             eventually(5.seconds) {
                 ConnectedClients shouldBe 1.0
             }
 
-            client.disconnect()
+            disconnectClient(client)
             eventually(5.seconds) {
                 ConnectedClients shouldBe 0.0
             }
@@ -71,7 +71,7 @@ class MetricsTests : BaseServerTest() {
                     }
                 })
             }
-            val client = TestClient().connect()
+            val client = startClient()
             client.sendMessage("test message", "address 1")
             client.sendMessage("test message", "address 2")
             eventually(5.seconds) {
@@ -86,7 +86,7 @@ class MetricsTests : BaseServerTest() {
         runBlocking {
             startServer()
 
-            val client = TestClient().connect()
+            val client = startClient()
             client.sendMessage("test message", "address 1")
             client.sendMessage("test message", "address 2")
             eventually(5.seconds) {
@@ -100,7 +100,7 @@ class MetricsTests : BaseServerTest() {
         runBlocking {
             startServer()
 
-            val client = TestClient().connect()
+            val client = startClient()
             client.sendMessage("test message", "address 1")
             eventually(5.seconds) {
                 AddressableCount shouldBe 1.0
@@ -199,11 +199,11 @@ class MetricsTests : BaseServerTest() {
         runBlocking {
             startServer()
 
-            val client = TestClient().connect()
+            val client = startClient()
             client.sendMessage("test", "address 1")
             client.sendMessage("test 2", "address 1")
             eventually(5.seconds) {
-                MessageSizes shouldBe 80.0
+                MessageSizes shouldBe 136.0
             }
         }
     }
@@ -213,7 +213,7 @@ class MetricsTests : BaseServerTest() {
         runBlocking {
             startServer()
 
-            val client = TestClient().connect()
+            val client = startClient()
             client.sendMessage("test", "address 1")
             client.sendMessage("test 2", "address 1")
             eventually(5.seconds) {

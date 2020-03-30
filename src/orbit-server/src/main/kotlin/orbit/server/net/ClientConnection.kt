@@ -41,7 +41,6 @@ class ClientConnection(
 
             try {
                 pipeline.pushMessage(message, meta)
-
             } catch (t: Throwable) {
                 pipeline.pushMessage(
                     msg = Message(
@@ -57,6 +56,8 @@ class ClientConnection(
                 )
             }
         }
+
+        outgoingChannel.close()
     }
 
     override suspend fun sendMessage(message: Message, route: Route?) {

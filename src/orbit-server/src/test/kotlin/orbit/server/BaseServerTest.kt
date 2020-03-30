@@ -14,12 +14,14 @@ import io.micrometer.core.instrument.Metrics
 import io.micrometer.core.instrument.MockClock
 import io.micrometer.core.instrument.simple.SimpleConfig
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import orbit.server.mesh.LeaseDuration
 import orbit.server.mesh.LocalServerInfo
 import orbit.server.mesh.local.LocalAddressableDirectory
 import orbit.server.mesh.local.LocalNodeDirectory
 import orbit.shared.mesh.NodeStatus
+import orbit.shared.net.Message
 import orbit.util.di.ComponentContainerRoot
 import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock
@@ -31,6 +33,7 @@ import java.util.concurrent.TimeUnit
 open class BaseServerTest {
     private var clock: Clock = Clock()
     private var servers: MutableList<OrbitServer> = mutableListOf()
+    private var clients: MutableList<TestClient> = mutableListOf()
 
     class MockMeterRegistry : SimpleMeterRegistry(SimpleConfig.DEFAULT, MockClock()) {
         object Config : ExternallyConfigured<MeterRegistry> {
@@ -50,6 +53,8 @@ open class BaseServerTest {
     @After
     fun afterTest() {
         runBlocking {
+            clients.toList().forEach { client -> disconnectClient(client) }
+            delay(100)
             servers.toList().forEach { server -> disconnectServer(server) }
             LocalNodeDirectory.clear()
             LocalAddressableDirectory.clear()
@@ -94,7 +99,6 @@ open class BaseServerTest {
         return server
     }
 
-
     fun disconnectServer(server: OrbitServer?) {
         if (server == null) {
             return
@@ -107,5 +111,18 @@ open class BaseServerTest {
         }
 
         servers.remove(server)
+    }
+
+    suspend fun startClient(onReceive: (msg: Message) -> Unit = {}) : TestClient {
+        val client = TestClient(onReceive).connect()
+
+        clients.add(client)
+
+        return client
+    }
+
+    fun disconnectClient(client: TestClient) {
+        client.disconnect()
+        clients.remove(client)
     }
 }
