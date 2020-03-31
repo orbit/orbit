@@ -10,11 +10,14 @@ import io.grpc.ManagedChannelBuilder
 import io.rouz.grpc.ManyToManyCall
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import orbit.shared.addressable.AddressableLease
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.addressable.Key
 import orbit.shared.mesh.NodeId
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
+import orbit.shared.proto.AddressableManagementGrpc
+import orbit.shared.proto.AddressableManagementOuterClass
 import orbit.shared.proto.ConnectionGrpc
 import orbit.shared.proto.Messages
 import orbit.shared.proto.Node
@@ -23,6 +26,9 @@ import orbit.shared.proto.NodeManagementOuterClass
 import orbit.shared.proto.joinCluster
 import orbit.shared.proto.leaveCluster
 import orbit.shared.proto.openStream
+import orbit.shared.proto.renewLease
+import orbit.shared.proto.toAddressableLease
+import orbit.shared.proto.toAddressableReferenceProto
 import orbit.shared.proto.toMessage
 import orbit.shared.proto.toMessageProto
 import orbit.shared.proto.toNodeId
@@ -32,6 +38,8 @@ class TestClient(private val onReceive: (msg: Message) -> Unit = {}) {
 
     private lateinit var connectionChannel: ManyToManyCall<Messages.MessageProto, Messages.MessageProto>
     private lateinit var nodeChannel: NodeManagementGrpc.NodeManagementStub
+    private lateinit var addressableChannel: AddressableManagementGrpc.AddressableManagementStub
+
     private var messageId = 0L
 
     suspend fun connect(port: Int = 50056): TestClient {
@@ -50,6 +58,7 @@ class TestClient(private val onReceive: (msg: Message) -> Unit = {}) {
         )
         nodeId = response.info.id.toNodeId()
         connectionChannel = ConnectionGrpc.newStub(channel).openStream()
+        addressableChannel = AddressableManagementGrpc.newStub(channel)
 
         GlobalScope.launch {
             for (msg in connectionChannel) {
@@ -93,5 +102,15 @@ class TestClient(private val onReceive: (msg: Message) -> Unit = {}) {
             messageId = ++messageId
         )
         connectionChannel.send(message.toMessageProto())
+    }
+
+    suspend fun renewAddressableLease(address: String) : AddressableLease? {
+        val response = addressableChannel.renewLease(
+            AddressableManagementOuterClass.RenewAddressableLeaseRequestProto.newBuilder()
+                .setReference(AddressableReference("test", Key.of(address)).toAddressableReferenceProto())
+                .build()
+        )
+
+        return response.lease?.toAddressableLease()
     }
 }
