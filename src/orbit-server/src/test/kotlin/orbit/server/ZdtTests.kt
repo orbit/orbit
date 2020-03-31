@@ -70,7 +70,7 @@ class ZdtTests : BaseServerTest() {
     @Test
     fun `when client leaves cluster, can continue renewing addressable lease`() {
         runBlocking {
-            var receivedMessages =0.0
+            var receivedMessages = 0.0
 
             startServer()
             val client1 = startClient(onReceive = { receivedMessages++ })
@@ -83,6 +83,25 @@ class ZdtTests : BaseServerTest() {
 
             val lease = client1.renewAddressableLease("address 1")
             lease?.reference?.key shouldBe Key.of("address 1")
+        }
+    }
+
+    @Test
+    fun `when client leaves cluster, can continue renewing node lease`() {
+        runBlocking {
+            var receivedMessages = 0.0
+
+            startServer()
+            val client1 = startClient(onReceive = { receivedMessages++ })
+            client1.sendMessage("test message 1", "address 1")
+            eventually(5.seconds) {
+                receivedMessages.shouldBe(1.0)
+            }
+
+            client1.drain()
+
+            val nodeInfo = client1.renewNodeLease()
+            nodeInfo?.id shouldBe client1.nodeId
         }
     }
 }

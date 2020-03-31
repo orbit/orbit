@@ -14,6 +14,7 @@ import orbit.shared.addressable.AddressableLease
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.addressable.Key
 import orbit.shared.mesh.NodeId
+import orbit.shared.mesh.NodeInfo
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 import orbit.shared.proto.AddressableManagementGrpc
@@ -32,6 +33,7 @@ import orbit.shared.proto.toAddressableReferenceProto
 import orbit.shared.proto.toMessage
 import orbit.shared.proto.toMessageProto
 import orbit.shared.proto.toNodeId
+import orbit.shared.proto.toNodeInfo
 
 class TestClient(private val onReceive: (msg: Message) -> Unit = {}) {
     var nodeId: NodeId = NodeId.generate("test")
@@ -40,6 +42,7 @@ class TestClient(private val onReceive: (msg: Message) -> Unit = {}) {
     private lateinit var nodeChannel: NodeManagementGrpc.NodeManagementStub
     private lateinit var addressableChannel: AddressableManagementGrpc.AddressableManagementStub
 
+    private var challengeToken: String? = null
     private var messageId = 0L
 
     suspend fun connect(port: Int = 50056): TestClient {
@@ -57,6 +60,8 @@ class TestClient(private val onReceive: (msg: Message) -> Unit = {}) {
             ).build()
         )
         nodeId = response.info.id.toNodeId()
+        challengeToken = response.info.lease.challengeToken
+
         connectionChannel = ConnectionGrpc.newStub(channel).openStream()
         addressableChannel = AddressableManagementGrpc.newStub(channel)
 
@@ -104,7 +109,7 @@ class TestClient(private val onReceive: (msg: Message) -> Unit = {}) {
         connectionChannel.send(message.toMessageProto())
     }
 
-    suspend fun renewAddressableLease(address: String) : AddressableLease? {
+    suspend fun renewAddressableLease(address: String): AddressableLease? {
         val response = addressableChannel.renewLease(
             AddressableManagementOuterClass.RenewAddressableLeaseRequestProto.newBuilder()
                 .setReference(AddressableReference("test", Key.of(address)).toAddressableReferenceProto())
@@ -112,5 +117,16 @@ class TestClient(private val onReceive: (msg: Message) -> Unit = {}) {
         )
 
         return response.lease?.toAddressableLease()
+    }
+
+    suspend fun renewNodeLease(): NodeInfo? {
+        val response = nodeChannel.renewLease(
+            NodeManagementOuterClass.RenewNodeLeaseRequestProto.newBuilder()
+                .setCapabilities(Node.CapabilitiesProto.newBuilder().addAddressableTypes("test").build())
+                .setChallengeToken(challengeToken)
+                .build()
+        )
+
+        return response.info?.toNodeInfo()
     }
 }
