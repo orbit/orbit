@@ -57,7 +57,7 @@ class ClientConnection(
             }
         }
 
-        outgoingChannel.close()
+        close()
     }
 
     override suspend fun sendMessage(message: Message, route: Route?) {
@@ -70,14 +70,13 @@ class ClientConnection(
     }
 
     fun close(cause: Throwable? = null, messageId: Long? = null) {
-        offerMessage(
-            Message(
-                messageId = messageId,
-                content = cause.toErrorContent()
-            )
-        )
+        if (cause !=null){
+            offerMessage(
+                Message(
+                    messageId = messageId,
+                    content = cause.toErrorContent()
+                )
+            )}
         outgoingChannel.close()
     }
-
-
 }

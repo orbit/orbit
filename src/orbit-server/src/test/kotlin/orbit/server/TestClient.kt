@@ -8,7 +8,6 @@ package orbit.server
 
 import io.grpc.ManagedChannelBuilder
 import io.rouz.grpc.ManyToManyCall
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import orbit.shared.addressable.AddressableReference
@@ -29,7 +28,7 @@ import orbit.shared.proto.toMessageProto
 import orbit.shared.proto.toNodeId
 
 class TestClient(private val onReceive: (msg: Message) -> Unit = {}) {
-    private var nodeId: NodeId = NodeId.generate("test")
+    var nodeId: NodeId = NodeId.generate("test")
 
     private lateinit var connectionChannel: ManyToManyCall<Messages.MessageProto, Messages.MessageProto>
     private lateinit var nodeChannel: NodeManagementGrpc.NodeManagementStub
@@ -72,7 +71,11 @@ class TestClient(private val onReceive: (msg: Message) -> Unit = {}) {
     }
 
     fun onMessage(msg: Message) {
-        println("Message received on node ${nodeId} - ${(msg.content as MessageContent.InvocationRequest)?.arguments}")
+        val content = if (msg.content is MessageContent.InvocationRequest)
+            (msg.content as MessageContent.InvocationRequest).arguments
+        else
+            "Error: ${(msg.content as MessageContent.Error).description}"
+        println("Message received on node ${nodeId} - ${content}")
         onReceive(msg)
     }
 

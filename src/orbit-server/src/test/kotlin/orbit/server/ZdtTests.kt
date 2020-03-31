@@ -20,7 +20,7 @@ class ZdtTests : BaseServerTest() {
         runBlocking {
             var receivedMessages = 0.0
 
-            val server = startServer()
+            startServer()
             val client1 = startClient(onReceive = { receivedMessages++ })
             client1.sendMessage("test message 1", "address 1")
             eventually(5.seconds) {
@@ -41,7 +41,28 @@ class ZdtTests : BaseServerTest() {
     @Test
     fun `when client leaves cluster, addressables are not placed on node`() {
         runBlocking {
+            var receivedMessages = object {
+                var client1 = 0.0
+                var client2 = 0.0
+            }
 
+            startServer()
+            val client1 = startClient(onReceive = { receivedMessages.client1++ })
+            client1.sendMessage("test message 1", "address 1")
+            eventually(5.seconds) {
+                receivedMessages.client1.shouldBe(1.0)
+            }
+
+            val client2 = startClient(onReceive = { receivedMessages.client2++ })
+
+            client1.drain()
+            advanceTime(5.seconds)
+
+            client2.sendMessage("test message 2", "address 1")
+
+            eventually(5.seconds) {
+                receivedMessages.client2.shouldBe(1.0)
+            }
         }
     }
 
