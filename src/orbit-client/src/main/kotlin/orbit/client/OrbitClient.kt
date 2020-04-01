@@ -155,16 +155,16 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
                 it.copy(clientState = ClientState.STOPPING)
             }
 
-            //  TODO: Wait until placements will stop
+            nodeLeaser.leaveCluster()
 
             // Stop all addressables
             executionSystem.stop()
 
-            // Stop messaging
-            connectionHandler.disconnect()
-
             // Stop the tick
             ticker.stop()
+
+            // Stop messaging
+            connectionHandler.disconnect()
 
             localNode.manipulate {
                 it.copy(clientState = ClientState.IDLE)

@@ -84,6 +84,11 @@ data class OrbitClientConfig(
     val joinClusterTimeout: Duration = Duration.ofSeconds(30),
 
     /**
+     * The amount of time Orbit should wait to leave the cluster to succeed before failing.
+     */
+    val leaveClusterTimeout: Duration = Duration.ofSeconds(30),
+
+    /**
      * How to handle node lease renewal failure
      */
     val nodeLeaseRenewalFailedHandler: ExternallyConfigured<NodeLeaseRenewalFailedHandler> = RestartOnNodeRenewalFailure.RestartOnNodeRenewalFailureSingleton,

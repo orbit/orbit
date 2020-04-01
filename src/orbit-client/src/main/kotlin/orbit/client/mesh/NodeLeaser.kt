@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit
 internal class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClient, config: OrbitClientConfig, private val clock: Clock) {
     private val logger = KotlinLogging.logger { }
     private val joinTimeout = config.joinClusterTimeout
+    private val leaveTimeout = config.leaveClusterTimeout
 
     private val nodeManagementStub = NodeManagementGrpc.newFutureStub(grpcClient.channel)
 
@@ -67,6 +68,24 @@ internal class NodeLeaser(private val localNode: LocalNode, grpcClient: GrpcClie
                 logger.debug("Lease renewed.")
             }
         }
+    }
+
+    suspend fun leaveCluster() {
+        logger.info("Leaving namespace '${localNode.status.grpcEndpoint}' cluster ...")
+        nodeManagementStub
+            .withWaitForReady()
+            .withDeadline(Deadline.after(leaveTimeout.toMillis(), TimeUnit.MILLISECONDS))
+            .leaveCluster(
+                NodeManagementOuterClass.LeaveClusterRequestProto.newBuilder()
+                    .build()
+            ).await().also { responseProto ->
+                responseProto.info.toNodeInfo().also { nodeInfo ->
+                    localNode.manipulate {
+                        it.copy(nodeInfo = nodeInfo)
+                    }
+                    logger.info("Left cluster")
+                }
+            }
     }
 
     suspend fun tick() {

@@ -48,6 +48,7 @@ internal class ConnectionHandler(
             for (msg in connectionChannel) {
                 messageRails.send(msg.toMessage())
             }
+            println("completed message channel")
         }
     }
 
@@ -57,7 +58,7 @@ internal class ConnectionHandler(
 
     fun disconnect() {
         if (::connectionChannel.isInitialized) {
-            connectionChannel.cancel()
+            connectionChannel.close()
             messageRails.stopWorkers()
         }
     }
