@@ -18,6 +18,7 @@ val jacksonVersion by extra("2.10.2")
 val kotestVersion by extra ("3.4.2")
 val mokitoVersion by extra("3.3.0")
 val mockitoKotlin2Version by extra("2.2.0")
+val micrometerVersion by extra("1.3.5")
 
 // Publishing info
 val orbitGroup by extra("cloud.orbit")

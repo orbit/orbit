@@ -27,6 +27,7 @@ import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock
 import orbit.util.time.TimeMs
 import org.junit.After
+import org.junit.Before
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
@@ -78,11 +79,11 @@ open class BaseServerTest {
                 meterRegistry = MockMeterRegistry.Config,
                 addressableLeaseDuration = LeaseDuration(
                     Duration.ofSeconds(addressableLeaseDurationSeconds),
-                    Duration.ofSeconds(addressableLeaseDurationSeconds)
+                    Duration.ofSeconds(addressableLeaseDurationSeconds / 2)
                 ),
                 nodeLeaseDuration = LeaseDuration(
                     Duration.ofSeconds(nodeLeaseDurationSeconds),
-                    Duration.ofSeconds(nodeLeaseDurationSeconds)
+                    Duration.ofSeconds(nodeLeaseDurationSeconds / 2)
                 ),
                 clock = clock,
                 containerOverrides = containerOverrides

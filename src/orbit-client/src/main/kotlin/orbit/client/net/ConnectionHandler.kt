@@ -48,7 +48,6 @@ internal class ConnectionHandler(
             for (msg in connectionChannel) {
                 messageRails.send(msg.toMessage())
             }
-            println("completed message channel")
         }
     }
 

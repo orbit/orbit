@@ -6,6 +6,7 @@
 
 package orbit.client
 
+import io.kotlintest.seconds
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
@@ -159,17 +160,12 @@ class BasicActorTests : BaseIntegrationTest() {
 
     @Test(expected = TestException::class)
     fun `test platform exception`() {
-        val customClient = OrbitClient(
-            OrbitClientConfig(
-                grpcEndpoint = targetUri,
+        runBlocking {
+            val customClient = startClient(
                 namespace = "platformExceptionTest",
-                packages = listOf("orbit.client.actor"),
                 platformExceptions = true
             )
-        )
 
-        runBlocking {
-            customClient.start().join()
             val actor = customClient.actorFactory.createProxy<ThrowingActor>()
             actor.doThrow().await()
         }
