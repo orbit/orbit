@@ -13,6 +13,7 @@ import orbit.client.mesh.NodeLeaseRenewalFailedHandler
 import orbit.client.mesh.RestartOnNodeRenewalFailure
 import orbit.util.concurrent.Pools
 import orbit.util.di.ExternallyConfigured
+import orbit.util.time.Clock
 import java.time.Duration
 
 data class OrbitClientConfig(
@@ -25,6 +26,11 @@ data class OrbitClientConfig(
      * The namespace to use when connecting to the Orbit cluster.
      */
     val namespace: String = "default",
+
+    /**
+     * Client's application clock
+     */
+    val clock: Clock = Clock(),
 
     /**
      * The tick rate of the Orbit client.

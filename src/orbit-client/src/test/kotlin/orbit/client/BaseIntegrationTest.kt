@@ -7,6 +7,7 @@
 package orbit.client
 
 import io.kotlintest.eventually
+import io.kotlintest.minutes
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import io.micrometer.core.instrument.MeterRegistry
@@ -37,7 +38,6 @@ open class BaseIntegrationTest {
     private var servers: MutableList<OrbitServer> = mutableListOf()
     private var clients: MutableList<OrbitClient> = mutableListOf()
 
-    protected lateinit var server: OrbitServer
     protected lateinit var client: OrbitClient
 
     class MockMeterRegistry : SimpleMeterRegistry(SimpleConfig.DEFAULT, MockClock()) {
@@ -58,7 +58,7 @@ open class BaseIntegrationTest {
     @Before
     fun beforeTest() {
         runBlocking {
-            server = startServer()
+            startServer()
             client = startClient()
         }
     }
@@ -69,6 +69,7 @@ open class BaseIntegrationTest {
             clients.toList().forEach { client -> disconnectClient(client) }
             delay(100)
             servers.toList().forEach { server -> disconnectServer(server) }
+            delay(100)
             LocalNodeDirectory.clear()
             LocalAddressableDirectory.clear()
             Metrics.globalRegistry.clear()
@@ -78,8 +79,8 @@ open class BaseIntegrationTest {
 
     fun startServer(
         port: Int = 50056,
-        addressableLeaseDurationSeconds: Long = 5,
-        nodeLeaseDurationSeconds: Long = 10,
+        addressableLeaseDurationSeconds: Long = 10,
+        nodeLeaseDurationSeconds: Long = 600,
         containerOverrides: ComponentContainerRoot.() -> Unit = { }
     ): OrbitServer {
         val server = OrbitServer(
@@ -137,7 +138,9 @@ open class BaseIntegrationTest {
                 grpcEndpoint = "dns:///localhost:${port}",
                 namespace = namespace,
                 packages = packages,
-                platformExceptions = platformExceptions
+                clock = clock,
+                platformExceptions = platformExceptions,
+                addressableTTL = 1.minutes
             )
         )
 

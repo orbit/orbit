@@ -37,7 +37,7 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
     private val logger = KotlinLogging.logger { }
 
     private val container = ComponentContainer()
-    val clock = Clock()
+    private val clock = config.clock
 
     private val scope = SupervisorScope(
         pool = config.pool,
@@ -155,13 +155,13 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
                 it.copy(clientState = ClientState.STOPPING)
             }
 
+            // Stop the tick
+            ticker.stop()
+
             nodeLeaser.leaveCluster()
 
             // Stop all addressables
             executionSystem.stop()
-
-            // Stop the tick
-            ticker.stop()
 
             // Stop messaging
             connectionHandler.disconnect()

@@ -6,7 +6,6 @@
 
 package orbit.client
 
-import io.kotlintest.seconds
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
@@ -104,7 +103,7 @@ class BasicActorTests : BaseIntegrationTest() {
         runBlocking {
             val actor = client.actorFactory.createProxy<IncrementActor>()
             val call1 = actor.increment().await()
-            client.clock.advanceTime(client.config.addressableTTL.toMillis() * 2)
+            advanceTime(client.config.addressableTTL.multipliedBy(2))
             delay(client.config.tickRate.toMillis() * 2) // Wait twice the tick so the deactivation should have happened
             val call2 = actor.increment().await()
             assertTrue(call2 <= call1)
@@ -122,7 +121,7 @@ class BasicActorTests : BaseIntegrationTest() {
             val noArgActor = client.actorFactory.createProxy<ArgumentOnDeactivate>()
             noArgActor.greetAsync("Test").await()
 
-            client.clock.advanceTime(client.config.addressableTTL.toMillis() * 2)
+            advanceTime(client.config.addressableTTL.multipliedBy(2))
             delay(client.config.tickRate.toMillis() * 2) // Wait twice the tick so the deactivation should have happened
 
             val after = TrackingGlobals.deactivateTestCounts.get()

@@ -93,6 +93,7 @@ internal class ExecutionSystem(
     }
 
     suspend fun stop() {
+        // TODO (brett) - Does this get altered while deactivating? Check again
         activeAddressables.forEach {
             deactivate(it.value, DeactivationReason.NODE_SHUTTING_DOWN)
         }
