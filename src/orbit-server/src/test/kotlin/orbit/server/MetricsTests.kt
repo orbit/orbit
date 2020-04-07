@@ -7,13 +7,6 @@
 package orbit.server
 
 import com.nhaarman.mockitokotlin2.spy
-import io.grpc.CallOptions
-import io.grpc.Channel
-import io.grpc.ClientCall
-import io.grpc.ClientInterceptor
-import io.grpc.ForwardingClientCall
-import io.grpc.Metadata
-import io.grpc.MethodDescriptor
 import io.kotlintest.eventually
 import io.kotlintest.matchers.doubles.shouldBeGreaterThan
 import io.kotlintest.matchers.doubles.shouldBeGreaterThanOrEqual
@@ -23,8 +16,6 @@ import io.kotlintest.shouldBe
 import kotlinx.coroutines.runBlocking
 import orbit.server.mesh.ClusterManager
 import orbit.server.service.Meters
-import orbit.shared.mesh.NodeId
-import orbit.shared.proto.Headers
 import org.junit.Test
 
 class MetricsTests : BaseServerTest() {
@@ -262,26 +253,3 @@ class MetricsTests : BaseServerTest() {
     }
 }
 
-internal class TestAuthInterceptor(private val getNodeId: () -> NodeId) : ClientInterceptor {
-    override fun <ReqT : Any?, RespT : Any?> interceptCall(
-        method: MethodDescriptor<ReqT, RespT>,
-        callOptions: CallOptions,
-        next: Channel
-    ): ClientCall<ReqT, RespT> {
-        return object :
-            ForwardingClientCall.SimpleForwardingClientCall<ReqT, RespT>(next.newCall(method, callOptions)) {
-            override fun start(responseListener: Listener<RespT>?, headers: Metadata) {
-                val nodeId = getNodeId()
-                headers.put(NAMESPACE, nodeId.namespace)
-                headers.put(NODE_KEY, nodeId.key)
-
-                super.start(responseListener, headers)
-            }
-        }
-    }
-
-    companion object {
-        private val NAMESPACE = Metadata.Key.of(Headers.NAMESPACE_NAME, Metadata.ASCII_STRING_MARSHALLER)
-        private val NODE_KEY = Metadata.Key.of(Headers.NODE_KEY_NAME, Metadata.ASCII_STRING_MARSHALLER)
-    }
-}
