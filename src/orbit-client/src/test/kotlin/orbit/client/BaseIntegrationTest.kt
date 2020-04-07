@@ -150,7 +150,7 @@ open class BaseIntegrationTest {
         return client
     }
 
-    fun disconnectClient(client: OrbitClient) {
+    fun disconnectClient(client: OrbitClient = this.client) {
         client.stop()
         clients.remove(client)
     }

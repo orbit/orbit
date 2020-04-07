@@ -20,9 +20,9 @@ import io.kotlintest.matchers.doubles.shouldBeGreaterThanOrEqual
 import io.kotlintest.milliseconds
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
-import io.micrometer.core.instrument.Metrics
 import kotlinx.coroutines.runBlocking
 import orbit.server.mesh.ClusterManager
+import orbit.server.service.Meters
 import orbit.shared.mesh.NodeId
 import orbit.shared.proto.Headers
 import org.junit.Test
@@ -38,7 +38,7 @@ class MetricsTests : BaseServerTest() {
             startClient()
 
             eventually(5.seconds) {
-                ConnectedClients shouldBe 2.0
+                Meters.ConnectedClients shouldBe 2.0
             }
         }
     }
@@ -50,12 +50,12 @@ class MetricsTests : BaseServerTest() {
             val client = startClient()
 
             eventually(5.seconds) {
-                ConnectedClients shouldBe 1.0
+                Meters.ConnectedClients shouldBe 1.0
             }
 
             disconnectClient(client)
             eventually(5.seconds) {
-                ConnectedClients shouldBe 0.0
+                Meters.ConnectedClients shouldBe 0.0
             }
         }
     }
@@ -75,8 +75,8 @@ class MetricsTests : BaseServerTest() {
             client.sendMessage("test message", "address 1")
             client.sendMessage("test message", "address 2")
             eventually(5.seconds) {
-                PlacementTimer_Count shouldBe 2.0
-                PlacementTimer_TotalTime shouldBeGreaterThan 0.0
+                Meters.PlacementTimer_Count shouldBe 2.0
+                Meters.PlacementTimer_TotalTime shouldBeGreaterThan 0.0
             }
         }
     }
@@ -90,7 +90,7 @@ class MetricsTests : BaseServerTest() {
             client.sendMessage("test message", "address 1")
             client.sendMessage("test message", "address 2")
             eventually(5.seconds) {
-                AddressableCount shouldBe 2.0
+                Meters.AddressableCount shouldBe 2.0
             }
         }
     }
@@ -103,12 +103,12 @@ class MetricsTests : BaseServerTest() {
             val client = startClient()
             client.sendMessage("test message", "address 1")
             eventually(5.seconds) {
-                AddressableCount shouldBe 1.0
+                Meters.AddressableCount shouldBe 1.0
             }
 
             advanceTime(5.seconds)
             eventually(5.seconds) {
-                AddressableCount shouldBe 0.0
+                Meters.AddressableCount shouldBe 0.0
             }
         }
     }
@@ -119,13 +119,13 @@ class MetricsTests : BaseServerTest() {
             startServer()
 
             eventually(5.seconds) {
-                NodeCount shouldBe 1.0
+                Meters.NodeCount shouldBe 1.0
             }
 
             startServer(port = 50057)
 
             eventually(5.seconds) {
-                NodeCount shouldBe 2.0
+                Meters.NodeCount shouldBe 2.0
             }
         }
     }
@@ -137,7 +137,7 @@ class MetricsTests : BaseServerTest() {
 
             val secondServer = startServer(port = 50057)
             eventually(5.seconds) {
-                NodeCount shouldBe 2.0
+                Meters.NodeCount shouldBe 2.0
             }
 
             disconnectServer(secondServer)
@@ -145,7 +145,7 @@ class MetricsTests : BaseServerTest() {
             advanceTime(10.seconds)
 
             eventually(5.seconds) {
-                NodeCount shouldBe 1.0
+                Meters.NodeCount shouldBe 1.0
             }
         }
     }
@@ -155,11 +155,11 @@ class MetricsTests : BaseServerTest() {
         runBlocking {
             startServer()
 
-            ConnectedNodes shouldBe 0.0
+            Meters.ConnectedNodes shouldBe 0.0
             val secondServer = startServer(port = 50057)
 
             eventually(5.seconds) {
-                ConnectedNodes shouldBe 1.0
+                Meters.ConnectedNodes shouldBe 1.0
             }
 
             disconnectServer(secondServer)
@@ -167,7 +167,7 @@ class MetricsTests : BaseServerTest() {
             advanceTime(10.seconds)
 
             eventually(5.seconds) {
-                NodeCount shouldBe 1.0
+                Meters.NodeCount shouldBe 1.0
             }
         }
     }
@@ -177,11 +177,11 @@ class MetricsTests : BaseServerTest() {
         runBlocking {
             startServer()
 
-            ConnectedNodes shouldBe 0.0
+            Meters.ConnectedNodes shouldBe 0.0
             val secondServer = startServer(port = 50057)
 
             eventually(5.seconds) {
-                ConnectedNodes shouldBe 1.0
+                Meters.ConnectedNodes shouldBe 1.0
             }
 
             disconnectServer(secondServer)
@@ -189,7 +189,7 @@ class MetricsTests : BaseServerTest() {
             advanceTime(10.seconds)
 
             eventually(5.seconds) {
-                NodeCount shouldBe 1.0
+                Meters.NodeCount shouldBe 1.0
             }
         }
     }
@@ -203,7 +203,7 @@ class MetricsTests : BaseServerTest() {
             client.sendMessage("test", "address 1")
             client.sendMessage("test 2", "address 1")
             eventually(5.seconds) {
-                MessageSizes shouldBe 136.0
+                Meters.MessageSizes shouldBe 136.0
             }
         }
     }
@@ -217,7 +217,7 @@ class MetricsTests : BaseServerTest() {
             client.sendMessage("test", "address 1")
             client.sendMessage("test 2", "address 1")
             eventually(5.seconds) {
-                MessagesCount shouldBe 2.0
+                Meters.MessagesCount shouldBe 2.0
             }
         }
     }
@@ -238,7 +238,7 @@ class MetricsTests : BaseServerTest() {
             pulse = 2.seconds
 
             eventually(5.seconds) {
-                SlowTickCount shouldBeGreaterThan 0.0
+                Meters.SlowTickCount shouldBeGreaterThan 0.0
             }
         }
     }
@@ -255,29 +255,10 @@ class MetricsTests : BaseServerTest() {
             }
 
             eventually(2.seconds) {
-                TickTimer_Count shouldBeGreaterThan 1.0
-                TickTimer_Total shouldBeGreaterThanOrEqual .5
+                Meters.TickTimer_Count shouldBeGreaterThan 1.0
+                Meters.TickTimer_Total shouldBeGreaterThanOrEqual .5
             }
         }
-    }
-
-    companion object {
-        private fun getMeter(name: String, statistic: String? = null): Double {
-            return Metrics.globalRegistry.meters.first { m -> m.id.name == name }.measure()
-                .first { m -> statistic == null || statistic.equals(m.statistic.name, true) }.value
-        }
-
-        private val ConnectedClients: Double get() = getMeter("Connected Clients")
-        private val PlacementTimer_Count: Double get() = getMeter("Placement Timer", "count")
-        private val PlacementTimer_TotalTime: Double get() = getMeter("Placement Timer", "total_time")
-        private val AddressableCount: Double get() = getMeter("Addressable Count")
-        private val NodeCount: Double get() = getMeter("Node Count")
-        private val ConnectedNodes: Double get() = getMeter("Connected Nodes")
-        private val MessagesCount: Double get() = getMeter("Message Sizes", "count")
-        private val MessageSizes: Double get() = getMeter("Message Sizes", "total")
-        private val SlowTickCount: Double get() = getMeter("Slow Ticks")
-        private val TickTimer_Count: Double get() = getMeter("Tick Timer", "count")
-        private val TickTimer_Total: Double get() = getMeter("Tick Timer", "total_time")
     }
 }
 

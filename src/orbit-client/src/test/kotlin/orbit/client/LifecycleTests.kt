@@ -6,33 +6,33 @@
 
 package orbit.client
 
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.delay
+import io.kotlintest.eventually
+import io.kotlintest.seconds
+import io.kotlintest.shouldBe
 import kotlinx.coroutines.runBlocking
-import orbit.client.actor.ActorWithNoImpl
-import orbit.client.actor.ArgumentOnDeactivate
-import orbit.client.actor.BasicOnDeactivate
-import orbit.client.actor.ComplexDtoActor
-import orbit.client.actor.GreeterActor
 import orbit.client.actor.IdActor
-import orbit.client.actor.IncrementActor
-import orbit.client.actor.NullActor
-import orbit.client.actor.TestException
-import orbit.client.actor.ThrowingActor
-import orbit.client.actor.TimeoutActor
-import orbit.client.actor.TrackingGlobals
 import orbit.client.actor.createProxy
-import orbit.client.util.RemoteException
-import orbit.client.util.TimeoutException
-import orbit.util.misc.RNGUtils
+import orbit.server.service.Meters
 import org.junit.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class LifecycleTests : BaseIntegrationTest() {
     @Test
-    fun `Shutting down service leaves cluster`() {
+    fun `Disconnecting a client removes it from the cluster`() {
+        runBlocking {
+            val key = "test"
+            val result1 = client.actorFactory.createProxy<IdActor>(key).getId().await()
+            assertEquals(result1, key)
 
+            eventually(5.seconds) {
+                Meters.ConnectedClients shouldBe 1.0
+            }
+
+            disconnectClient()
+
+            eventually(5.seconds) {
+                Meters.ConnectedClients shouldBe 0.0
+            }
+        }
     }
 }
