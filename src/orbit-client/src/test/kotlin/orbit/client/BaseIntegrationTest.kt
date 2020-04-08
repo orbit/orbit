@@ -23,6 +23,7 @@ import orbit.server.mesh.LeaseDuration
 import orbit.server.mesh.LocalServerInfo
 import orbit.server.mesh.local.LocalAddressableDirectory
 import orbit.server.mesh.local.LocalNodeDirectory
+import orbit.server.service.Meters
 import orbit.shared.mesh.NodeStatus
 import orbit.util.di.ComponentContainerRoot
 import orbit.util.di.ExternallyConfigured
@@ -133,6 +134,9 @@ open class BaseIntegrationTest {
         packages: List<String> = listOf("orbit.client.actor"),
         platformExceptions: Boolean = false
     ): OrbitClient {
+
+        val connectedClients = Meters.ConnectedClients
+
         val client = OrbitClient(
             OrbitClientConfig(
                 grpcEndpoint = "dns:///localhost:${port}",
@@ -146,6 +150,10 @@ open class BaseIntegrationTest {
 
         client.start().join()
         clients.add(client)
+
+        eventually(5.seconds) {
+            Meters.ConnectedClients shouldBe connectedClients + 1
+        }
 
         return client
     }

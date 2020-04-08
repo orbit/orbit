@@ -25,7 +25,9 @@ import orbit.client.net.ConnectionHandler
 import orbit.client.net.GrpcClient
 import orbit.client.net.LocalNode
 import orbit.client.net.MessageHandler
+import orbit.client.net.NodeData
 import orbit.client.serializer.Serializer
+import orbit.shared.mesh.NodeStatus
 import orbit.util.concurrent.SupervisorScope
 import orbit.util.di.ComponentContainer
 import orbit.util.time.Clock
@@ -34,6 +36,8 @@ import orbit.util.time.stopwatch
 import kotlin.coroutines.CoroutineContext
 
 class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
+    internal val status: ClientState get() = localNode.status.clientState
+
     private val logger = KotlinLogging.logger { }
 
     private val container = ComponentContainer()
