@@ -55,10 +55,6 @@ class LifecycleTests : BaseIntegrationTest() {
     @Test
     fun `Disconnecting a client removes it from the cluster`() {
         runBlocking {
-            val key = "test"
-            val result1 = client.actorFactory.createProxy<IdActor>(key).getId().await()
-            assertEquals(result1, key)
-
             eventually(5.seconds) {
                 ServerMeters.ConnectedClients shouldBe 1.0
             }
@@ -68,6 +64,27 @@ class LifecycleTests : BaseIntegrationTest() {
             eventually(5.seconds) {
                 ServerMeters.ConnectedClients shouldBe 0.0
             }
+        }
+    }
+
+    @Test
+    fun `Disconnecting a client sends actor to new client`() {
+        runBlocking {
+            val key = "test"
+            val result1 = client.actorFactory.createProxy<IdActor>(key).getId().await()
+            assertEquals(result1, key)
+            disconnectClient()
+
+            eventually(5.seconds) {
+                ServerMeters.ConnectedClients shouldBe 0.0
+            }
+
+            // Assure addressable lease expires
+            advanceTime(10.seconds)
+
+            val result2 = startClient().actorFactory.createProxy<IdActor>(key).getId().await()
+
+            result2 shouldBe key
         }
     }
 
