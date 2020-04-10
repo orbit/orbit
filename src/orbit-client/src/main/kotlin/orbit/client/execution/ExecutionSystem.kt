@@ -81,7 +81,7 @@ internal class ExecutionSystem(
 
             val lease = executionLeases.getLease(handle.reference)
             if (lease != null) {
-                if (Timestamp.now() > lease.renewAt) {
+                if (clock.inPast(lease.renewAt)) {
                     try {
                         executionLeases.renewLease(handle.reference)
                     } catch (t: Throwable) {
