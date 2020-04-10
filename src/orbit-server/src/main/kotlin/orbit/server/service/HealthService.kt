@@ -18,7 +18,7 @@ class HealthService(private val checks: HealthCheckList, private val runtimeScop
     private val healthyChecks = AtomicInteger()
 
     init {
-        Metrics.gauge("passing health checks", healthyChecks)
+        Metrics.gauge(Meters.Names.PassingHealthChecks, healthyChecks)
     }
 
     override suspend fun check(request: HealthOuterClass.HealthCheckRequest): HealthOuterClass.HealthCheckResponse {
@@ -35,7 +35,7 @@ class HealthService(private val checks: HealthCheckList, private val runtimeScop
 
     suspend fun isHealthy(): Boolean {
         val checks = checks.getChecks()
-        Metrics.timer("health check").recordSuspended {
+        Metrics.timer(Meters.Names.HealthCheck).recordSuspended {
             healthyChecks.set(checks.count { check -> check.isHealthy() })
         }
         return healthyChecks.get() == checks.count()

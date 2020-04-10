@@ -15,6 +15,7 @@ import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
 import orbit.server.pipeline.Pipeline
+import orbit.server.service.Meters
 import orbit.shared.exception.AuthFailed
 import orbit.shared.exception.InvalidNodeId
 import orbit.shared.exception.toErrorContent
@@ -36,7 +37,7 @@ class ConnectionManager(
     private val connectedClients = ConcurrentHashMap<NodeId, ClientConnection>()
 
     init {
-        Metrics.gauge("Connected Clients", connectedClients) { c -> c.count().toDouble() }
+        Metrics.gauge(Meters.Names.ConnectedClients, connectedClients) { c -> c.count().toDouble() }
     }
 
     // The pipeline needs to be lazy to avoid a stack overflow

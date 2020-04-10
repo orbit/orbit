@@ -11,6 +11,7 @@ import mu.KotlinLogging
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
 import orbit.server.mesh.MANAGEMENT_NAMESPACE
+import orbit.server.service.Meters
 import orbit.shared.mesh.NodeId
 import java.util.concurrent.ConcurrentHashMap
 
@@ -22,7 +23,7 @@ class RemoteMeshNodeManager(
     private val connections = ConcurrentHashMap<NodeId, RemoteMeshNodeConnection>()
 
     init {
-        Metrics.gauge("Connected Nodes", connections) { c -> c.count().toDouble() }
+        Metrics.gauge(Meters.Names.ConnectedNodes, connections) { c -> c.count().toDouble() }
     }
 
     suspend fun tick() {
