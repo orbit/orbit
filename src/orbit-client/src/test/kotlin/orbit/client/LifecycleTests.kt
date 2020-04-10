@@ -10,9 +10,13 @@ import io.kotlintest.eventually
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import kotlinx.coroutines.runBlocking
+import orbit.client.actor.KeyedDeactivatingActor
 import orbit.client.actor.IdActor
+import orbit.client.actor.SlowDeactivateActor
+import orbit.client.actor.TrackingGlobals
 import orbit.client.actor.createProxy
 import orbit.client.net.ClientState
+import orbit.server.service.Meters
 import org.junit.Test
 import kotlin.test.assertEquals
 import orbit.server.service.Meters.Companion as ServerMeters
@@ -29,17 +33,10 @@ class LifecycleTests : BaseIntegrationTest() {
     }
 
     @Test
-    fun `Stopping client goes into stopping state then idle`() {
+    fun `Stopping client puts it into idle state`() {
         runBlocking {
             disconnectClient()
-
-            eventually(5.seconds) {
-                client.status shouldBe ClientState.STOPPING
-            }
-
-            eventually(5.seconds) {
-                client.status shouldBe ClientState.IDLE
-            }
+            client.status shouldBe ClientState.IDLE
         }
     }
 
@@ -88,4 +85,32 @@ class LifecycleTests : BaseIntegrationTest() {
         }
     }
 
+    @Test
+    fun `All actors get deactivated on shutdown`() {
+        runBlocking {
+            val count = 500
+            repeat(count) { key ->
+                client.actorFactory.createProxy<KeyedDeactivatingActor>(key).ping().await()
+            }
+
+            disconnectClient()
+
+            eventually(5.seconds) {
+                TrackingGlobals.deactivateTestCounts.get() shouldBe count
+            }
+        }
+    }
+
+    @Test
+    fun `Concurrently deactivating actors doesn't exceed setting`() {
+        runBlocking {
+            repeat(100) { key ->
+                client.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message").await()
+            }
+
+            disconnectClient()
+
+            TrackingGlobals.maxConcurrentDeactivations.get() shouldBe 10
+        }
+    }
 }

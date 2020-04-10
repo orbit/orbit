@@ -7,6 +7,10 @@
 package orbit.client.execution
 
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
 import orbit.client.OrbitClientConfig
@@ -22,6 +26,7 @@ import orbit.shared.addressable.AddressableReference
 import orbit.util.di.ComponentContainer
 import orbit.util.time.Clock
 import orbit.util.time.Timestamp
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 internal class ExecutionSystem(
@@ -35,6 +40,7 @@ internal class ExecutionSystem(
     private val logger = KotlinLogging.logger { }
     private val activeAddressables = ConcurrentHashMap<AddressableReference, ExecutionHandle>()
     private val deactivationTimeoutMs = config.deactivationTimeout.toMillis()
+    private val deactivationConcurrency = config.deactivationConcurrency
     private val defaultTtl = config.addressableTTL.toMillis()
 
     suspend fun handleInvocation(invocation: AddressableInvocation, completion: Completion) {
@@ -92,11 +98,11 @@ internal class ExecutionSystem(
         }
     }
 
+    // TODO (brett) - Does this get altered while deactivating? Check again
     suspend fun stop() {
-        // TODO (brett) - Does this get altered while deactivating? Check again
-        activeAddressables.forEach {
-            deactivate(it.value, DeactivationReason.NODE_SHUTTING_DOWN)
-        }
+        activeAddressables.values.asFlow().flatMapMerge(concurrency = deactivationConcurrency) { addressable ->
+            flow { emit(deactivate(addressable, DeactivationReason.NODE_SHUTTING_DOWN)) }
+        }.toList()
     }
 
     private suspend fun activate(

@@ -70,6 +70,11 @@ data class OrbitClientConfig(
     val deactivationTimeout: Duration = Duration.ofSeconds(10),
 
     /**
+     * The number of concurrent addressable deactivations during shutdown draining
+     */
+    val deactivationConcurrency: Int = 10,
+
+    /**
      * The default TTL for addressables.
      */
     val addressableTTL: Duration = Duration.ofMinutes(10),
@@ -103,4 +108,5 @@ data class OrbitClientConfig(
      * Rethrow platform specific exceptions. Should only be used when all clients are using the same SDK.
      */
     val platformExceptions: Boolean = false
-)
+) {
+}

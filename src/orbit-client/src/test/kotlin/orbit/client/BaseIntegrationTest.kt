@@ -15,8 +15,8 @@ import io.micrometer.core.instrument.Metrics
 import io.micrometer.core.instrument.MockClock
 import io.micrometer.core.instrument.simple.SimpleConfig
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import orbit.client.actor.TrackingGlobals
 import orbit.server.OrbitServer
 import orbit.server.OrbitServerConfig
 import orbit.server.mesh.LeaseDuration
@@ -68,12 +68,11 @@ open class BaseIntegrationTest {
     fun afterTest() {
         runBlocking {
             clients.toList().forEach { client -> disconnectClient(client) }
-            delay(100)
             servers.toList().forEach { server -> disconnectServer(server) }
-            delay(100)
             LocalNodeDirectory.clear()
             LocalAddressableDirectory.clear()
             Metrics.globalRegistry.clear()
+            TrackingGlobals.reset()
             clock = Clock()
         }
     }
@@ -132,7 +131,8 @@ open class BaseIntegrationTest {
         port: Int = 50056,
         namespace: String = "test",
         packages: List<String> = listOf("orbit.client.actor"),
-        platformExceptions: Boolean = false
+        platformExceptions: Boolean = false,
+        deactivationConcurrency: Int = 10
     ): OrbitClient {
 
         val connectedClients = Meters.ConnectedClients
@@ -144,7 +144,8 @@ open class BaseIntegrationTest {
                 packages = packages,
                 clock = clock,
                 platformExceptions = platformExceptions,
-                addressableTTL = 1.minutes
+                addressableTTL = 1.minutes,
+                deactivationConcurrency = deactivationConcurrency
             )
         )
 
@@ -158,8 +159,8 @@ open class BaseIntegrationTest {
         return client
     }
 
-    fun disconnectClient(client: OrbitClient = this.client) {
-        client.stop()
+    suspend fun disconnectClient(client: OrbitClient = this.client) {
+        client.stop().join()
         clients.remove(client)
     }
 }
