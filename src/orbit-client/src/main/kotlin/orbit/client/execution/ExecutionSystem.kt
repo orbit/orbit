@@ -6,6 +6,7 @@
 
 package orbit.client.execution
 
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapMerge
@@ -13,7 +14,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
-import orbit.client.OrbitClient
 import orbit.client.OrbitClientConfig
 import orbit.client.addressable.Addressable
 import orbit.client.addressable.AddressableClass
@@ -98,6 +98,7 @@ internal class ExecutionSystem(
         }
     }
 
+    @OptIn(FlowPreview::class)
     suspend fun stop(nodeId: NodeId) {
         while (activeAddressables.count() > 0) {
             logger.info { "Draining node ${nodeId.key} of ${activeAddressables.count()} addressables" }

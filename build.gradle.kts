@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper
 val grpcVersion by extra("1.26.0")
 val grpcKotlinVersion by extra("0.1.4")
 val protobufVersion by extra("3.11.1")
-val kotlinCoroutinesVersion by extra("1.3.3")
+val kotlinCoroutinesVersion by extra("1.3.5")
 val slf4jVersion by extra("1.7.30")
 val jacksonVersion by extra("2.10.2")
 val kotestVersion by extra ("3.4.2")
@@ -69,6 +69,7 @@ subprojects {
         tasks.withType<KotlinJvmCompile> {
             kotlinOptions {
                 jvmTarget = "1.8"
+                freeCompilerArgs += listOf("-Xopt-in=kotlin.RequiresOptIn")
             }
         }
     }
