@@ -81,6 +81,7 @@ open class BaseIntegrationTest {
         port: Int = 50056,
         addressableLeaseDurationSeconds: Long = 10,
         nodeLeaseDurationSeconds: Long = 600,
+        tickRate: Duration = 1.seconds,
         containerOverrides: ComponentContainerRoot.() -> Unit = { }
     ): OrbitServer {
         val server = OrbitServer(
@@ -98,6 +99,7 @@ open class BaseIntegrationTest {
                     Duration.ofSeconds(nodeLeaseDurationSeconds),
                     Duration.ofSeconds(nodeLeaseDurationSeconds / 2)
                 ),
+                tickRate = tickRate,
                 clock = clock,
                 containerOverrides = containerOverrides
             )

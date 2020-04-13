@@ -77,7 +77,7 @@ internal class NodeLeaser(
     }
 
     suspend fun leaveCluster() {
-        logger.info("Leaving namespace '${localNode.status.grpcEndpoint}' cluster ...")
+        logger.info("Leaving namespace '${localNode.status.namespace}' cluster ...")
         nodeManagementStub
             .withWaitForReady()
             .withDeadline(Deadline.after(leaveTimeout.toMillis(), TimeUnit.MILLISECONDS))

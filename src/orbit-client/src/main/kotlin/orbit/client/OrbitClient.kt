@@ -26,6 +26,7 @@ import orbit.client.net.GrpcClient
 import orbit.client.net.LocalNode
 import orbit.client.net.MessageHandler
 import orbit.client.serializer.Serializer
+import orbit.shared.mesh.NodeId
 import orbit.util.concurrent.SupervisorScope
 import orbit.util.di.ComponentContainer
 import orbit.util.time.ConstantTicker
@@ -34,6 +35,7 @@ import kotlin.coroutines.CoroutineContext
 
 class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
     internal val status: ClientState get() = localNode.status.clientState
+    internal val nodeId: NodeId? get() = localNode.status.nodeInfo?.id
 
     private val logger = KotlinLogging.logger { }
 
@@ -152,17 +154,18 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
     fun stop() = scope.launch {
         logger.info("Stopping Orbit...")
         val (elapsed, _) = stopwatch(clock) {
+            val id = nodeId!!
             localNode.manipulate {
                 it.copy(clientState = ClientState.STOPPING)
             }
 
             nodeLeaser.leaveCluster()
 
+            // Drain all addressables
+            executionSystem.stop(id)
+
             // Stop the tick
             ticker.stop()
-
-            // Stop all addressables
-            executionSystem.stop()
 
             // Stop messaging
             connectionHandler.disconnect()

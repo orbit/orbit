@@ -15,6 +15,7 @@ import orbit.shared.proto.NodeManagementImplBase
 import orbit.shared.proto.NodeManagementOuterClass
 import orbit.shared.proto.getOrNull
 import orbit.shared.proto.toCapabilities
+import orbit.shared.proto.toNodeInfoProto
 import orbit.shared.proto.toNodeLeaseProto
 import orbit.shared.proto.toNodeLeaseRequestResponseProto
 import orbit.util.time.Timestamp
@@ -59,13 +60,15 @@ class NodeManagementService(
         val nodeId = ServerAuthInterceptor.NODE_ID.getOrNull()
         checkNotNull(nodeId) { "Node ID was not specified" }
 
-        clusterManager.updateNode(nodeId) {
+        val nodeInfo = clusterManager.updateNode(nodeId) {
             checkNotNull(it) { "The node '${nodeId}' could not be found in directory. " }
             it.copy(
                 nodeStatus = NodeStatus.DRAINING
             )
         }
 
-        return NodeManagementOuterClass.NodeLeaseResponseProto.newBuilder().build()
+        return NodeManagementOuterClass.NodeLeaseResponseProto.newBuilder()
+            .setInfo(nodeInfo?.toNodeInfoProto())
+            .build()
     }
 }

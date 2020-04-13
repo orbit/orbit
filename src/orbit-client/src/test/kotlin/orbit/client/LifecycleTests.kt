@@ -7,16 +7,20 @@
 package orbit.client
 
 import io.kotlintest.eventually
+import io.kotlintest.matchers.numerics.shouldBeGreaterThan
+import io.kotlintest.matchers.numerics.shouldBeLessThan
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import orbit.client.actor.KeyedDeactivatingActor
 import orbit.client.actor.IdActor
+import orbit.client.actor.KeyedDeactivatingActor
 import orbit.client.actor.SlowDeactivateActor
 import orbit.client.actor.TrackingGlobals
 import orbit.client.actor.createProxy
 import orbit.client.net.ClientState
-import orbit.server.service.Meters
 import org.junit.Test
 import kotlin.test.assertEquals
 import orbit.server.service.Meters.Companion as ServerMeters
@@ -111,6 +115,42 @@ class LifecycleTests : BaseIntegrationTest() {
             disconnectClient()
 
             TrackingGlobals.maxConcurrentDeactivations.get() shouldBe 10
+        }
+    }
+
+    @Test
+    fun `Actors added during deactivation get deactivated`() {
+        runBlocking {
+            var count = 100
+            repeat(count) { key ->
+                client.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message").await()
+            }
+
+            startServer(port = 50057, tickRate = 5.seconds)
+            val client2 = startClient(port = 50057)
+
+            var additionalAddressableCount = 0
+            delay(500)
+            GlobalScope.launch {
+                repeat(100) { key ->
+                    key.let { key + 100 }.let { key ->
+                        if (client.status != ClientState.IDLE) {
+                            client2.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message")
+                            ++additionalAddressableCount
+                            delay(10)
+                        }
+                    }
+                }
+            }
+
+            disconnectClient()
+
+            TrackingGlobals.deactivateTestCounts.get() shouldBeGreaterThan count
+            TrackingGlobals.deactivateTestCounts.get() shouldBeLessThan count + additionalAddressableCount
+
+            disconnectClient(client2)
+
+            TrackingGlobals.deactivateTestCounts.get() shouldBe count + additionalAddressableCount
         }
     }
 }

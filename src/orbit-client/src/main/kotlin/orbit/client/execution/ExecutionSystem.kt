@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
+import orbit.client.OrbitClient
 import orbit.client.OrbitClientConfig
 import orbit.client.addressable.Addressable
 import orbit.client.addressable.AddressableClass
@@ -23,10 +24,9 @@ import orbit.client.addressable.DeactivationReason
 import orbit.client.net.Completion
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableReference
+import orbit.shared.mesh.NodeId
 import orbit.util.di.ComponentContainer
 import orbit.util.time.Clock
-import orbit.util.time.Timestamp
-import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 internal class ExecutionSystem(
@@ -98,11 +98,13 @@ internal class ExecutionSystem(
         }
     }
 
-    // TODO (brett) - Does this get altered while deactivating? Check again
-    suspend fun stop() {
-        activeAddressables.values.asFlow().flatMapMerge(concurrency = deactivationConcurrency) { addressable ->
-            flow { emit(deactivate(addressable, DeactivationReason.NODE_SHUTTING_DOWN)) }
-        }.toList()
+    suspend fun stop(nodeId: NodeId) {
+        while (activeAddressables.count() > 0) {
+            logger.info { "Draining node ${nodeId?.key} of ${activeAddressables.count()} addressables" }
+            activeAddressables.values.asFlow().flatMapMerge(concurrency = deactivationConcurrency) { addressable ->
+                flow { emit(deactivate(addressable, DeactivationReason.NODE_SHUTTING_DOWN)) }
+            }.toList()
+        }
     }
 
     private suspend fun activate(

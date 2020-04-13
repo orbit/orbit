@@ -144,9 +144,4 @@ class ClusterManager(
         this.nodeGraph.set(graph)
         return graph
     }
-
-    suspend fun leaveCluster(nodeId: NodeId) {
-        nodeDirectory.remove(nodeId)
-        tick()
-    }
 }
