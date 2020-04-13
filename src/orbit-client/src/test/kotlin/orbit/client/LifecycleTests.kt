@@ -132,8 +132,8 @@ class LifecycleTests : BaseIntegrationTest() {
             var additionalAddressableCount = 0
             delay(500)
             GlobalScope.launch {
-                repeat(100) { key ->
-                    key.let { key + 100 }.let { key ->
+                repeat(100) { k ->
+                    k.let { k + 100 }.let { key ->
                         if (client.status != ClientState.IDLE) {
                             client2.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message")
                             ++additionalAddressableCount

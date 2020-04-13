@@ -100,7 +100,7 @@ internal class ExecutionSystem(
 
     suspend fun stop(nodeId: NodeId) {
         while (activeAddressables.count() > 0) {
-            logger.info { "Draining node ${nodeId?.key} of ${activeAddressables.count()} addressables" }
+            logger.info { "Draining node ${nodeId.key} of ${activeAddressables.count()} addressables" }
             activeAddressables.values.asFlow().flatMapMerge(concurrency = deactivationConcurrency) { addressable ->
                 flow { emit(deactivate(addressable, DeactivationReason.NODE_SHUTTING_DOWN)) }
             }.toList()
