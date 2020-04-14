@@ -38,7 +38,7 @@ class LocalNodeInfo(
 
     suspend fun updateInfo(body: (NodeInfo) -> NodeInfo) {
         clusterManager.updateNode(info.id) {
-            checkNotNull(it) { "LocalNodeInfo not present in directory. " }
+            checkNotNull(it) { "LocalNodeInfo not present in directory. ${info.id}" }
             body(it)
         }.also {
             infoRef.set(it)

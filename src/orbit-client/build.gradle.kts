@@ -9,6 +9,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 val kotlinCoroutinesVersion = project.rootProject.ext["kotlinCoroutinesVersion"]
 val slf4jVersion = project.rootProject.ext["slf4jVersion"]
 val jacksonVersion = project.rootProject.ext["jacksonVersion"]
+val micrometerVersion = project.rootProject.ext["micrometerVersion"]
 
 plugins {
     kotlin("jvm")
@@ -29,7 +30,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
     implementation("io.github.classgraph:classgraph:4.8.60")
-
+    implementation("io.micrometer:micrometer-core:$micrometerVersion")
 
     testImplementation(project(":src:orbit-server"))
 }

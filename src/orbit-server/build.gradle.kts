@@ -4,6 +4,7 @@
  See license in LICENSE.
  */
 val grpcVersion = project.rootProject.ext["grpcVersion"]
+val micrometerVersion = project.rootProject.ext["micrometerVersion"]
 
 plugins {
     kotlin("jvm")
@@ -18,5 +19,5 @@ dependencies {
     implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
     implementation("org.jgrapht:jgrapht-core:1.3.1")
 
-    implementation("io.micrometer:micrometer-core:1.3.5")
+    implementation("io.micrometer:micrometer-core:$micrometerVersion")
 }

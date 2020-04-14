@@ -6,7 +6,12 @@
 
 package orbit.client.execution
 
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
 import orbit.client.OrbitClientConfig
@@ -19,9 +24,9 @@ import orbit.client.addressable.DeactivationReason
 import orbit.client.net.Completion
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableReference
+import orbit.shared.mesh.NodeId
 import orbit.util.di.ComponentContainer
 import orbit.util.time.Clock
-import orbit.util.time.Timestamp
 import java.util.concurrent.ConcurrentHashMap
 
 internal class ExecutionSystem(
@@ -35,6 +40,7 @@ internal class ExecutionSystem(
     private val logger = KotlinLogging.logger { }
     private val activeAddressables = ConcurrentHashMap<AddressableReference, ExecutionHandle>()
     private val deactivationTimeoutMs = config.deactivationTimeout.toMillis()
+    private val deactivationConcurrency = config.deactivationConcurrency
     private val defaultTtl = config.addressableTTL.toMillis()
 
     suspend fun handleInvocation(invocation: AddressableInvocation, completion: Completion) {
@@ -75,7 +81,7 @@ internal class ExecutionSystem(
 
             val lease = executionLeases.getLease(handle.reference)
             if (lease != null) {
-                if (Timestamp.now() > lease.renewAt) {
+                if (clock.inPast(lease.renewAt)) {
                     try {
                         executionLeases.renewLease(handle.reference)
                     } catch (t: Throwable) {
@@ -92,9 +98,13 @@ internal class ExecutionSystem(
         }
     }
 
-    suspend fun stop() {
-        activeAddressables.forEach {
-            deactivate(it.value, DeactivationReason.NODE_SHUTTING_DOWN)
+    @OptIn(FlowPreview::class)
+    suspend fun stop(nodeId: NodeId) {
+        while (activeAddressables.count() > 0) {
+            logger.info { "Draining node ${nodeId.key} of ${activeAddressables.count()} addressables" }
+            activeAddressables.values.asFlow().flatMapMerge(concurrency = deactivationConcurrency) { addressable ->
+                flow { emit(deactivate(addressable, DeactivationReason.NODE_SHUTTING_DOWN)) }
+            }.toList()
         }
     }
 

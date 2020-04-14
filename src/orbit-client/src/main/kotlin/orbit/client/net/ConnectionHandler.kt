@@ -57,7 +57,7 @@ internal class ConnectionHandler(
 
     fun disconnect() {
         if (::connectionChannel.isInitialized) {
-            connectionChannel.cancel()
+            connectionChannel.close()
             messageRails.stopWorkers()
         }
     }

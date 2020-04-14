@@ -11,6 +11,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import orbit.server.auth.AuthInfo
 import orbit.server.pipeline.Pipeline
+import orbit.server.service.Meters
 import orbit.shared.exception.CapacityExceededException
 import orbit.shared.exception.toErrorContent
 import orbit.shared.net.Message
@@ -28,7 +29,7 @@ class ClientConnection(
 ) : MessageSender {
 
     suspend fun consumeMessages() {
-        val messageSizes = Metrics.summary("Message Sizes")
+        val messageSizes = Metrics.summary(Meters.Names.MessageSizes)
 
         for (protoMessage in incomingChannel) {
             messageSizes.record(protoMessage.toByteArray().size.toDouble())
@@ -41,7 +42,6 @@ class ClientConnection(
 
             try {
                 pipeline.pushMessage(message, meta)
-
             } catch (t: Throwable) {
                 pipeline.pushMessage(
                     msg = Message(
@@ -57,6 +57,8 @@ class ClientConnection(
                 )
             }
         }
+
+        close()
     }
 
     override suspend fun sendMessage(message: Message, route: Route?) {
@@ -69,14 +71,13 @@ class ClientConnection(
     }
 
     fun close(cause: Throwable? = null, messageId: Long? = null) {
-        offerMessage(
-            Message(
-                messageId = messageId,
-                content = cause.toErrorContent()
-            )
-        )
+        if (cause !=null){
+            offerMessage(
+                Message(
+                    messageId = messageId,
+                    content = cause.toErrorContent()
+                )
+            )}
         outgoingChannel.close()
     }
-
-
 }

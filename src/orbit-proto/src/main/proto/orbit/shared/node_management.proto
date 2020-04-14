@@ -7,6 +7,7 @@ import "orbit/shared/node.proto";
 service NodeManagement {
     rpc JoinCluster (JoinClusterRequestProto) returns (NodeLeaseResponseProto);
     rpc RenewLease (RenewNodeLeaseRequestProto) returns (NodeLeaseResponseProto);
+    rpc LeaveCluster (LeaveClusterRequestProto) returns (NodeLeaseResponseProto);
 }
 
 message JoinClusterRequestProto {
@@ -16,6 +17,9 @@ message JoinClusterRequestProto {
 message RenewNodeLeaseRequestProto {
     string challenge_token = 1;
     CapabilitiesProto capabilities = 2;
+}
+
+message LeaveClusterRequestProto {
 }
 
 message NodeLeaseResponseProto {

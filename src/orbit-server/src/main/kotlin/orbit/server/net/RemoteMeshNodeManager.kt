@@ -11,7 +11,9 @@ import mu.KotlinLogging
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
 import orbit.server.mesh.MANAGEMENT_NAMESPACE
+import orbit.server.service.Meters
 import orbit.shared.mesh.NodeId
+import orbit.shared.mesh.NodeStatus
 import java.util.concurrent.ConcurrentHashMap
 
 class RemoteMeshNodeManager(
@@ -22,7 +24,7 @@ class RemoteMeshNodeManager(
     private val connections = ConcurrentHashMap<NodeId, RemoteMeshNodeConnection>()
 
     init {
-        Metrics.gauge("Connected Nodes", connections) { c -> c.count().toDouble() }
+        Metrics.gauge(Meters.Names.ConnectedNodes, connections) { c -> c.count().toDouble() }
     }
 
     suspend fun tick() {
@@ -39,6 +41,7 @@ class RemoteMeshNodeManager(
         val removedNodes = ArrayList<NodeId>()
 
         val meshNodes = allNodes
+            .filter { node -> node.nodeStatus == NodeStatus.ACTIVE }
             .filter { node -> node.id.namespace == MANAGEMENT_NAMESPACE }
             .filter { node -> !this.connections.containsKey(node.id) }
             .filter { node -> node.id != localNode.info.id }

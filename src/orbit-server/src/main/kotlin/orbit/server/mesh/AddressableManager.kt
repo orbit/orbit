@@ -8,6 +8,7 @@ package orbit.server.mesh
 
 import io.micrometer.core.instrument.Metrics
 import orbit.server.OrbitServerConfig
+import orbit.server.service.Meters
 import orbit.shared.addressable.AddressableLease
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.addressable.NamespacedAddressableReference
@@ -27,7 +28,7 @@ class AddressableManager(
     config: OrbitServerConfig
 ) {
     private val leaseExpiration = config.addressableLeaseDuration
-    private val placementTimer = Metrics.timer("Placement Timer")
+    private val placementTimer = Metrics.timer(Meters.Names.PlacementTimer)
 
     suspend fun locateOrPlace(namespace: Namespace, addressableReference: AddressableReference): NodeId =
         NamespacedAddressableReference(namespace, addressableReference).let { key ->

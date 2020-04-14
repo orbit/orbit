@@ -6,6 +6,7 @@
 
 package orbit.server
 
+import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
 import kotlinx.coroutines.launch
@@ -37,16 +38,17 @@ import orbit.server.service.ConnectionService
 import orbit.server.service.GrpcEndpoint
 import orbit.server.service.HealthCheckList
 import orbit.server.service.HealthService
+import orbit.server.service.Meters
 import orbit.server.service.NodeManagementService
 import orbit.server.service.ServerAuthInterceptor
 import orbit.shared.mesh.NodeStatus
 import orbit.util.concurrent.ShutdownLatch
 import orbit.util.di.ComponentContainer
+import orbit.util.instrumentation.recordSuspended
 import orbit.util.time.ConstantTicker
 import orbit.util.time.stopwatch
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
-import orbit.util.instrumentation.recordSuspended
 
 class OrbitServer(private val config: OrbitServerConfig) {
 
@@ -78,8 +80,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private val pipeline by container.inject<Pipeline>()
     private val remoteMeshNodeManager by container.inject<RemoteMeshNodeManager>()
 
-    private val slowTick = Metrics.counter("Slow Ticks")
-    private val tickTimer = Metrics.timer("Tick Timer")
+    private val slowTick = Metrics.counter(Meters.Names.SlowTicks)
+    private val tickTimer = Metrics.timer(Meters.Names.TickTimer)
 
     private val ticker = ConstantTicker(
         scope = runtimeScopes.cpuScope,
@@ -145,8 +147,8 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
         Metrics.globalRegistry.add(container.resolve(MeterRegistry::class.java))
 
-        Metrics.gauge("Addressable Count", addressableDirectory) { d -> runBlocking { d.count().toDouble() } }
-        Metrics.gauge("Node Count", nodeDirectory) { d -> runBlocking { d.keys().count().toDouble() } }
+        Metrics.gauge(Meters.Names.AddressableCount, addressableDirectory) { d -> runBlocking { d.count().toDouble() } }
+        Metrics.gauge(Meters.Names.NodeCount, nodeDirectory) { d -> runBlocking { d.keys().count().toDouble() } }
     }
 
     fun start() = runtimeScopes.cpuScope.launch {

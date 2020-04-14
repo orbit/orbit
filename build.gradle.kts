@@ -12,12 +12,13 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper
 val grpcVersion by extra("1.26.0")
 val grpcKotlinVersion by extra("0.1.4")
 val protobufVersion by extra("3.11.1")
-val kotlinCoroutinesVersion by extra("1.3.3")
+val kotlinCoroutinesVersion by extra("1.3.5")
 val slf4jVersion by extra("1.7.30")
 val jacksonVersion by extra("2.10.2")
 val kotestVersion by extra ("3.4.2")
 val mokitoVersion by extra("3.3.0")
 val mockitoKotlin2Version by extra("2.2.0")
+val micrometerVersion by extra("1.3.5")
 
 // Publishing info
 val orbitGroup by extra("cloud.orbit")
@@ -32,7 +33,7 @@ val licenseName by extra("The BSD 3-Clause License")
 val licenseUrl by extra("http://opensource.org/licenses/BSD-3-Clause")
 
 plugins {
-    val kotlinVersion = "1.3.61"
+    val kotlinVersion = "1.3.71"
 
     base
     kotlin("jvm") version kotlinVersion apply false
@@ -68,6 +69,7 @@ subprojects {
         tasks.withType<KotlinJvmCompile> {
             kotlinOptions {
                 jvmTarget = "1.8"
+                freeCompilerArgs += listOf("-Xopt-in=kotlin.RequiresOptIn")
             }
         }
     }

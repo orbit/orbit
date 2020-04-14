@@ -17,6 +17,7 @@ import orbit.shared.proto.toAddressableReferenceProto
 internal class AddressableLeaser(grpcClient: GrpcClient) {
     private val addressableManagementStub = AddressableManagementGrpc.newFutureStub(grpcClient.channel)
 
+    // TODO - If renewing the lease fails, this throws an obscure error (java.lang.IllegalStateException: Invalid key type)
     suspend fun renewLease(reference: AddressableReference) =
         addressableManagementStub.renewLease(
             AddressableManagementOuterClass.RenewAddressableLeaseRequestProto.newBuilder()

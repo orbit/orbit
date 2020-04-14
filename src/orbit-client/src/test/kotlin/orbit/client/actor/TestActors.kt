@@ -8,13 +8,34 @@ package orbit.client.actor
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import orbit.client.addressable.DeactivationReason
 import orbit.client.addressable.OnDeactivate
 import orbit.shared.addressable.Key
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.random.Random
 
 object TrackingGlobals {
-    val deactivateTestCounts = AtomicInteger();
+    fun reset() {
+        deactivateTestCounts.set(0)
+        concurrentDeactivations.set(0)
+    }
+
+    fun startDeactivate() {
+        concurrentDeactivations.incrementAndGet()
+    }
+
+    fun endDeactivate() {
+        deactivateTestCounts.incrementAndGet()
+        maxConcurrentDeactivations.getAndAccumulate(concurrentDeactivations.get()) { a, b -> Math.max(a, b) }
+        concurrentDeactivations.decrementAndGet()
+    }
+
+    val deactivateTestCounts = AtomicInteger(0)
+    val concurrentDeactivations = AtomicInteger(0)
+    val maxConcurrentDeactivations = AtomicInteger(0)
 }
 
 interface GreeterActor : ActorWithNoKey {
@@ -59,7 +80,7 @@ class IncrementActorImpl : IncrementActor {
         CompletableDeferred(++counter)
 }
 
-class TestException(msg: String): RuntimeException(msg)
+class TestException(msg: String) : RuntimeException(msg)
 
 interface ThrowingActor : ActorWithNoKey {
     fun doThrow(): Deferred<Long>
@@ -102,7 +123,6 @@ class NullActorImpl : NullActor {
     }
 }
 
-
 interface BasicOnDeactivate : ActorWithNoKey {
     fun greetAsync(name: String): Deferred<String>
 }
@@ -131,5 +151,44 @@ class ArgumentOnDeactivateImpl : ArgumentOnDeactivate {
     fun onDeactivate(deactivationReason: DeactivationReason): Deferred<Unit> {
         TrackingGlobals.deactivateTestCounts.incrementAndGet()
         return CompletableDeferred(Unit)
+    }
+}
+
+interface KeyedDeactivatingActor : ActorWithInt32Key {
+    fun ping(): Deferred<Unit>
+}
+
+class KeyedDeactivatingActorImpl : KeyedDeactivatingActor {
+    override fun ping(): Deferred<Unit> = CompletableDeferred(Unit)
+
+    @Suppress("UNUSED_PARAMETER")
+    @OnDeactivate
+    fun onDeactivate(deactivationReason: DeactivationReason): Deferred<Unit> {
+        TrackingGlobals.deactivateTestCounts.incrementAndGet()
+        return CompletableDeferred(Unit)
+    }
+}
+
+interface SlowDeactivateActor : ActorWithInt32Key {
+    fun ping(msg: String): Deferred<String>
+}
+
+class SlowDeactivateActorImpl : SlowDeactivateActor {
+    override fun ping(msg: String): Deferred<String> =
+        CompletableDeferred(msg)
+
+    @Suppress("UNUSED_PARAMETER")
+    @OnDeactivate
+    fun onDeactivate(deactivationReason: DeactivationReason): Deferred<Unit> {
+        val deferred = CompletableDeferred<Unit>()
+
+        GlobalScope.launch {
+            TrackingGlobals.startDeactivate()
+            delay(Random.nextLong(100))
+            deferred.complete(Unit)
+            TrackingGlobals.endDeactivate()
+        }
+
+        return deferred
     }
 }

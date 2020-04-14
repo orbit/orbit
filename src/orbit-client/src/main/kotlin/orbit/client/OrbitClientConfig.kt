@@ -13,6 +13,7 @@ import orbit.client.mesh.NodeLeaseRenewalFailedHandler
 import orbit.client.mesh.RestartOnNodeRenewalFailure
 import orbit.util.concurrent.Pools
 import orbit.util.di.ExternallyConfigured
+import orbit.util.time.Clock
 import java.time.Duration
 
 data class OrbitClientConfig(
@@ -25,6 +26,11 @@ data class OrbitClientConfig(
      * The namespace to use when connecting to the Orbit cluster.
      */
     val namespace: String = "default",
+
+    /**
+     * Client's application clock
+     */
+    val clock: Clock = Clock(),
 
     /**
      * The tick rate of the Orbit client.
@@ -64,6 +70,11 @@ data class OrbitClientConfig(
     val deactivationTimeout: Duration = Duration.ofSeconds(10),
 
     /**
+     * The number of concurrent addressable deactivations during shutdown draining
+     */
+    val deactivationConcurrency: Int = 10,
+
+    /**
      * The default TTL for addressables.
      */
     val addressableTTL: Duration = Duration.ofMinutes(10),
@@ -84,6 +95,11 @@ data class OrbitClientConfig(
     val joinClusterTimeout: Duration = Duration.ofSeconds(30),
 
     /**
+     * The amount of time Orbit should wait to leave the cluster to succeed before failing.
+     */
+    val leaveClusterTimeout: Duration = Duration.ofSeconds(30),
+
+    /**
      * How to handle node lease renewal failure
      */
     val nodeLeaseRenewalFailedHandler: ExternallyConfigured<NodeLeaseRenewalFailedHandler> = RestartOnNodeRenewalFailure.RestartOnNodeRenewalFailureSingleton,
@@ -92,4 +108,5 @@ data class OrbitClientConfig(
      * Rethrow platform specific exceptions. Should only be used when all clients are using the same SDK.
      */
     val platformExceptions: Boolean = false
-)
+) {
+}
