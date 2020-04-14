@@ -22,6 +22,7 @@ import orbit.client.actor.SlowDeactivateActor
 import orbit.client.actor.TrackingGlobals
 import orbit.client.actor.createProxy
 import orbit.client.net.ClientState
+import orbit.server.service.Meters
 import org.junit.Test
 import kotlin.test.assertEquals
 import orbit.server.service.Meters.Companion as ServerMeters
@@ -108,14 +109,19 @@ class LifecycleTests : BaseIntegrationTest() {
 
     @Test
     fun `Concurrently deactivating actors doesn't exceed setting`() {
+        println("Starting test")
         runBlocking {
+            println("Creating actors")
             repeat(100) { key ->
                 client.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message").await()
             }
 
+            println("Addressable count ${Meters.AddressableCount}")
             disconnectClient()
 
+            println("Disconnected. Max Concurrent Deactivations: ${TrackingGlobals.maxConcurrentDeactivations.get()}")
             TrackingGlobals.maxConcurrentDeactivations.get() shouldBeLessThanOrEqual 10
+            println("After assert check")
         }
     }
 
