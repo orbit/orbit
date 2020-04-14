@@ -109,19 +109,16 @@ class LifecycleTests : BaseIntegrationTest() {
 
     @Test
     fun `Concurrently deactivating actors doesn't exceed setting`() {
-        println("Starting test")
         runBlocking {
-            println("Creating actors")
             repeat(100) { key ->
                 client.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message").await()
             }
 
-            println("Addressable count ${Meters.AddressableCount}")
+            delay(10)
             disconnectClient()
 
-            println("Disconnected. Max Concurrent Deactivations: ${TrackingGlobals.maxConcurrentDeactivations.get()}")
+            println("Max deactivations: ${TrackingGlobals.maxConcurrentDeactivations.get()}")
             TrackingGlobals.maxConcurrentDeactivations.get() shouldBeLessThanOrEqual 10
-            println("After assert check")
         }
     }
 
