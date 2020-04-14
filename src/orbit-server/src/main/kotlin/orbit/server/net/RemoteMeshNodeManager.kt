@@ -13,6 +13,7 @@ import orbit.server.mesh.LocalNodeInfo
 import orbit.server.mesh.MANAGEMENT_NAMESPACE
 import orbit.server.service.Meters
 import orbit.shared.mesh.NodeId
+import orbit.shared.mesh.NodeStatus
 import java.util.concurrent.ConcurrentHashMap
 
 class RemoteMeshNodeManager(
@@ -40,6 +41,7 @@ class RemoteMeshNodeManager(
         val removedNodes = ArrayList<NodeId>()
 
         val meshNodes = allNodes
+            .filter { node -> node.nodeStatus == NodeStatus.ACTIVE }
             .filter { node -> node.id.namespace == MANAGEMENT_NAMESPACE }
             .filter { node -> !this.connections.containsKey(node.id) }
             .filter { node -> node.id != localNode.info.id }

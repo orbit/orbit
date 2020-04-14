@@ -16,6 +16,7 @@ import io.kotlintest.shouldBe
 import kotlinx.coroutines.runBlocking
 import orbit.server.mesh.ClusterManager
 import orbit.server.service.Meters
+import orbit.shared.mesh.NodeStatus
 import org.junit.Test
 
 class MetricsTests : BaseServerTest() {
@@ -56,7 +57,10 @@ class MetricsTests : BaseServerTest() {
         runBlocking {
             startServer {
                 instance(spy(resolve<ClusterManager>()) {
-                    onBlocking { this.getAllNodes() }.then {
+                    onBlocking {
+                        this.getAllNodes()
+                            .filter { node -> node.nodeStatus == NodeStatus.ACTIVE }
+                    }.then {
                         advanceTime(100.milliseconds)
                         it.callRealMethod()
                     }

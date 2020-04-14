@@ -35,7 +35,7 @@ class ClusterManager(
     private val clusterNodes = ConcurrentHashMap<NodeId, NodeInfo>()
     private val nodeGraph = AtomicReference<Graph<NodeId, DefaultEdge>>()
 
-    fun getAllNodes() = clusterNodes.filter { clock.inFuture(it.value.lease.expiresAt) && it.value.nodeStatus == NodeStatus.ACTIVE }.values
+    fun getAllNodes() = clusterNodes.filter { clock.inFuture(it.value.lease.expiresAt) }.values
 
     suspend fun tick() {
         val allNodes = nodeDirectory.entries()
