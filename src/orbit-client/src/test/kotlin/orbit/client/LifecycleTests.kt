@@ -9,6 +9,7 @@ package orbit.client
 import io.kotlintest.eventually
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeLessThan
+import io.kotlintest.matchers.numerics.shouldBeLessThanOrEqual
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import kotlinx.coroutines.GlobalScope
@@ -114,7 +115,7 @@ class LifecycleTests : BaseIntegrationTest() {
 
             disconnectClient()
 
-            TrackingGlobals.maxConcurrentDeactivations.get() shouldBe 10
+            TrackingGlobals.maxConcurrentDeactivations.get() shouldBeLessThanOrEqual 10
         }
     }
 
