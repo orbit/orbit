@@ -194,8 +194,8 @@ class SlowDeactivateActorImpl : SlowDeactivateActor {
         GlobalScope.launch {
             TrackingGlobals.startDeactivate()
             delay(Random.nextLong(100))
-            deferred.complete(Unit)
             TrackingGlobals.endDeactivate()
+            deferred.complete(Unit)
         }
 
         return deferred
