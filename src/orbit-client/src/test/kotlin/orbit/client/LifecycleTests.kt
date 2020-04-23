@@ -113,12 +113,10 @@ class LifecycleTests : BaseIntegrationTest() {
             repeat(100) { key ->
                 client.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message").await()
             }
-            println("Finished sending messages")
 
             delay(10)
             disconnectClient()
 
-            println("Max deactivations: ${TrackingGlobals.maxConcurrentDeactivations.get()}")
             TrackingGlobals.maxConcurrentDeactivations.get() shouldBeLessThanOrEqual 10
         }
     }
@@ -140,8 +138,8 @@ class LifecycleTests : BaseIntegrationTest() {
                 repeat(100) { k ->
                     k.let { k + 100 }.let { key ->
                         if (client.status != ClientState.IDLE) {
-                            client2.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message")
                             ++additionalAddressableCount
+                            client2.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message").await()
                             delay(10)
                         }
                     }
