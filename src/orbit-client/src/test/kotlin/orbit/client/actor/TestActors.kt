@@ -15,6 +15,9 @@ import orbit.client.addressable.DeactivationReason
 import orbit.client.addressable.OnDeactivate
 import orbit.shared.addressable.Key
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.locks.Lock
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.random.Random
 
 object TrackingGlobals {
@@ -24,14 +27,20 @@ object TrackingGlobals {
     }
 
     fun startDeactivate() {
-        concurrentDeactivations.incrementAndGet()
+        lock.withLock {
+            concurrentDeactivations.incrementAndGet()
+        }
     }
 
     fun endDeactivate() {
-        deactivateTestCounts.incrementAndGet()
-        maxConcurrentDeactivations.getAndAccumulate(concurrentDeactivations.get()) { a, b -> Math.max(a, b) }
-        concurrentDeactivations.decrementAndGet()
+        lock.withLock {
+            deactivateTestCounts.incrementAndGet()
+            maxConcurrentDeactivations.getAndAccumulate(concurrentDeactivations.get()) { a, b -> Math.max(a, b) }
+            concurrentDeactivations.decrementAndGet()
+        }
     }
+
+    val lock: Lock = ReentrantLock()
 
     val deactivateTestCounts = AtomicInteger(0)
     val concurrentDeactivations = AtomicInteger(0)
@@ -185,8 +194,8 @@ class SlowDeactivateActorImpl : SlowDeactivateActor {
         GlobalScope.launch {
             TrackingGlobals.startDeactivate()
             delay(Random.nextLong(100))
-            deferred.complete(Unit)
             TrackingGlobals.endDeactivate()
+            deferred.complete(Unit)
         }
 
         return deferred

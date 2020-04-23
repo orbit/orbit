@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "orbit.fullname" . }}
+  name: {{ include "orbit.fullname" . }}-server
   labels:
     {{- include "orbit.selectorLabels" . | nindent 4 }}
   {{- if .Values.node.service.annotations }}
