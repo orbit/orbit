@@ -17,4 +17,4 @@ jobs:
         with:
           java-version: ${{ matrix.jdk }}
       - name: Build with Gradle
-        run: ./gradlew build --debug
+        run: ./gradlew build
