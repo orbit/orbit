@@ -77,14 +77,8 @@ open class BaseServerTest {
                     url = "localhost:${port}"
                 ),
                 meterRegistry = MockMeterRegistry.Config,
-                addressableLeaseDuration = LeaseDuration(
-                    Duration.ofSeconds(addressableLeaseDurationSeconds),
-                    Duration.ofSeconds(addressableLeaseDurationSeconds / 2)
-                ),
-                nodeLeaseDuration = LeaseDuration(
-                    Duration.ofSeconds(nodeLeaseDurationSeconds),
-                    Duration.ofSeconds(nodeLeaseDurationSeconds / 2)
-                ),
+                addressableLeaseDuration = LeaseDuration(addressableLeaseDurationSeconds),
+                nodeLeaseDuration = LeaseDuration(nodeLeaseDurationSeconds),
                 clock = clock,
                 containerOverrides = containerOverrides
             )

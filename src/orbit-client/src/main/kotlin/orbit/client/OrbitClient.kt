@@ -87,6 +87,9 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
             definition<ExecutionLeases>()
 
             definition<ActorProxyFactory>()
+
+            // Hook to allow overriding container definitions
+            config.containerOverrides(this)
         }
     }
 

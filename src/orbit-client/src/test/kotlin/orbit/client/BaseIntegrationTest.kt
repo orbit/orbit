@@ -91,14 +91,8 @@ open class BaseIntegrationTest {
                     url = "localhost:${port}"
                 ),
                 meterRegistry = MockMeterRegistry.Config,
-                addressableLeaseDuration = LeaseDuration(
-                    Duration.ofSeconds(addressableLeaseDurationSeconds),
-                    Duration.ofSeconds(addressableLeaseDurationSeconds / 2)
-                ),
-                nodeLeaseDuration = LeaseDuration(
-                    Duration.ofSeconds(nodeLeaseDurationSeconds),
-                    Duration.ofSeconds(nodeLeaseDurationSeconds / 2)
-                ),
+                addressableLeaseDuration = LeaseDuration(addressableLeaseDurationSeconds),
+                nodeLeaseDuration = LeaseDuration(nodeLeaseDurationSeconds),
                 tickRate = tickRate,
                 clock = clock,
                 containerOverrides = containerOverrides
@@ -137,8 +131,6 @@ open class BaseIntegrationTest {
         deactivationConcurrency: Int = 10
     ): OrbitClient {
 
-        val connectedClients = Meters.ConnectedClients
-
         val client = OrbitClient(
             OrbitClientConfig(
                 grpcEndpoint = "dns:///localhost:${port}",
@@ -153,10 +145,6 @@ open class BaseIntegrationTest {
 
         client.start().join()
         clients.add(client)
-
-        eventually(5.seconds) {
-            Meters.ConnectedClients shouldBe connectedClients + 1
-        }
 
         return client
     }

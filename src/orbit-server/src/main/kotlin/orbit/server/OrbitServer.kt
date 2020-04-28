@@ -142,6 +142,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
             // Router
             definition<Router>()
 
+            // Hook to allow overriding container definitions
             config.containerOverrides(this)
         }
 
@@ -153,6 +154,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
     fun start() = runtimeScopes.cpuScope.launch {
         logger.info("Starting Orbit server...")
+        logger.info("Lease expirations: Addressable: ${config.addressableLeaseDuration.leaseDuration}s, Node: ${config.nodeLeaseDuration.leaseDuration}s")
         val (elapsed, _) = stopwatch(clock) {
             // Start the pipeline
             pipeline.start()

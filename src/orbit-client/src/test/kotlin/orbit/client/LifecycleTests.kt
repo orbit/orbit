@@ -133,14 +133,12 @@ class LifecycleTests : BaseIntegrationTest() {
             val client2 = startClient(port = 50057)
 
             var additionalAddressableCount = 0
-            delay(500)
             GlobalScope.launch {
                 repeat(100) { k ->
                     k.let { k + 100 }.let { key ->
                         if (client.status != ClientState.IDLE) {
                             ++additionalAddressableCount
-                            client2.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message").await()
-                            delay(10)
+                            client2.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message")
                         }
                     }
                 }
