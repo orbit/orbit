@@ -8,4 +8,7 @@ package orbit.server.mesh
 
 import java.time.Duration
 
-data class LeaseDuration(val expiresIn: Duration, val renewIn: Duration)
+data class LeaseDuration(val leaseDuration: Long) {
+    val expiresIn: Duration get() = Duration.ofSeconds(leaseDuration)
+    val renewIn: Duration get() = Duration.ofSeconds(leaseDuration / 2)
+}

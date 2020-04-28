@@ -12,6 +12,7 @@ import orbit.client.addressable.DefaultAddressableConstructor
 import orbit.client.mesh.NodeLeaseRenewalFailedHandler
 import orbit.client.mesh.RestartOnNodeRenewalFailure
 import orbit.util.concurrent.Pools
+import orbit.util.di.ComponentContainerRoot
 import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock
 import java.time.Duration
@@ -107,6 +108,11 @@ data class OrbitClientConfig(
     /**
      * Rethrow platform specific exceptions. Should only be used when all clients are using the same SDK.
      */
-    val platformExceptions: Boolean = false
+    val platformExceptions: Boolean = false,
+
+    /**
+     * Optional hook to update container registrations after initialization
+     */
+    val containerOverrides: ComponentContainerRoot.() -> Unit = { }
 ) {
 }

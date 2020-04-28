@@ -54,18 +54,12 @@ data class OrbitServerConfig(
     /**
      * Expiration times for node leases
      */
-    val nodeLeaseDuration: LeaseDuration = LeaseDuration(
-        expiresIn = Duration.ofSeconds(10),
-        renewIn = Duration.ofSeconds(5)
-    ),
+    val nodeLeaseDuration: LeaseDuration = LeaseDuration(10),
 
     /**
      * Expiration times for addressable leases
      */
-    val addressableLeaseDuration: LeaseDuration = LeaseDuration(
-        expiresIn = Duration.ofMinutes(10),
-        renewIn = Duration.ofMinutes(5)
-    ),
+    val addressableLeaseDuration: LeaseDuration = LeaseDuration(600),
 
     /**
      * The pool where CPU intensive tasks will run.

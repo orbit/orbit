@@ -12,24 +12,30 @@ data:
       "serverInfo": {
         "url": "{{ .Values.url }}",
         "port": "{{ .Values.node.containerPort }}"
-      }
+      },
+      "nodeLeaseDuration": {
+        "leaseDuration": 10
+      },
+      "addressableLeaseDuration": {
+        "leaseDuration": 600
+      },
     {{- if gt (int .Values.nodeDirectory.replicas) 0 }}
-      ,"nodeDirectory": [
+      "nodeDirectory": [
         "orbit.server.etcd.EtcdNodeDirectory$EtcdNodeDirectoryConfig",
         {
           "url": "http://{{ include "orbit.fullname" . }}-node-directory:{{ .Values.nodeDirectory.clientPort }}"
         }
-      ]
+      ],
     {{- end }}
     {{- if gt (int .Values.addressableDirectory.replicas) 0 }}
-      ,"addressableDirectory": [
+      "addressableDirectory": [
         "orbit.server.etcd.EtcdAddressableDirectory$EtcdAddressableDirectoryConfig",
         {
           "url": "http://{{ include "orbit.fullname" . }}-addressable-directory:{{ .Values.addressableDirectory.clientPort }}"
         }
-      ]
+      ],
     {{- end }}
-      ,"meterRegistry": [
+      "meterRegistry": [
         "orbit.server.prometheus.PrometheusMetrics$PrometheusMetricsConfig",
         {
           "url": "/metrics",

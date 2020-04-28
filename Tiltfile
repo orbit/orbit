@@ -14,6 +14,6 @@ docker_build('orbitframework/orbit',
     live_update=[sync('src/orbit-application/build/libs', '/opt/orbit/libs')]
 )
 
-k8s_resource('orbit',
+k8s_resource('orbit-server',
     port_forwards=['50056:50056', '5005:5005', '8080:8080']
 )

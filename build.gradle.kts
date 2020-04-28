@@ -4,6 +4,8 @@
  See license in LICENSE.
  */
 
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile
 import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper
@@ -70,6 +72,15 @@ subprojects {
             kotlinOptions {
                 jvmTarget = "1.8"
                 freeCompilerArgs += listOf("-Xopt-in=kotlin.RequiresOptIn")
+            }
+        }
+
+        tasks.withType<Test> {
+            testLogging {
+                events = setOf(TestLogEvent.FAILED)
+                showCauses = true
+                showExceptions = true
+                exceptionFormat = TestExceptionFormat.FULL
             }
         }
     }
