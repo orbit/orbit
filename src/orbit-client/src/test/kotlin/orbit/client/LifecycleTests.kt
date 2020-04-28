@@ -22,7 +22,6 @@ import orbit.client.actor.SlowDeactivateActor
 import orbit.client.actor.TrackingGlobals
 import orbit.client.actor.createProxy
 import orbit.client.net.ClientState
-import orbit.server.service.Meters
 import org.junit.Test
 import kotlin.test.assertEquals
 import orbit.server.service.Meters.Companion as ServerMeters
@@ -139,10 +138,14 @@ class LifecycleTests : BaseIntegrationTest() {
                         if (client.status != ClientState.IDLE) {
                             ++additionalAddressableCount
                             client2.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message")
+                            delay(5)
                         }
                     }
                 }
             }
+
+            // ensure some actors are placed on both clients
+            delay(500)
 
             disconnectClient()
 
