@@ -56,11 +56,14 @@ jobs:
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           TAG_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
-      - name: Update and Commit Release
-        run: ./.github/scripts/update_release.sh
+      - name: Publish Images to Docker Hub Repository
+        run: ./.github/scripts/docker_publish.sh
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          TAG_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          DOCKER_BASE_URL:
+          DOCKER_REPO: orbitframework
+          ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
       - name: Publish Artifacts to Maven Central
         run: ./.github/scripts/gradle_publish.sh
         env:
@@ -70,14 +73,11 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           MAVEN_URL: ${{ secrets.MAVEN_CENTRAL_URL }}
           ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
-      - name: Publish Images to Docker Hub Repository
-        run: ./.github/scripts/docker_publish.sh
+      - name: Update and Commit Release
+        run: ./.github/scripts/update_release.sh
         env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
-          DOCKER_BASE_URL:
-          DOCKER_REPO: orbitframework
-          ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          TAG_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
       - name: Request Github Pages build job
         uses: peaceiris/actions-gh-pages@v2
         env:
