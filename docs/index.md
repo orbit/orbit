@@ -1,9 +1,16 @@
-# Home
+<img src="http://www.orbit.cloud/img/orbit-logo-black.png" alt="Orbit Logo" width="300px"/>
 
-## Orbit 2
+# What is Orbit?
+Orbit is a framework to write distributed systems using virtual actors on the JVM. A virtual actor is an object that interacts with the world using asynchronous messages.
 
-This is the documentation website for Orbit 2.x.
+At any time an actor may be active or inactive. Usually the state of an inactive actor will reside in the database. When a message is sent to an inactive actor it will be activated somewhere in the pool of backend servers. During the activation process the actor's state is read from the database.
 
-### Looking for Orbit 1.x?
+Actors are deactivated based on timeout and on server resource usage.
 
-This documentation is for the Orbit 2.x preview series and is not applicable to Orbit 1. Please see the [GitHub Wiki](https://github.com/orbit/orbit-legacy/wiki) for Orbit 1.x documentation.
+It is heavily inspired by the [Microsoft Orleans](https://github.com/dotnet/Orleans) project.
+
+# Documentation
+The Orbit documentation is located on this wiki. Please see the sidebar to the right for navigation.
+
+# Source Code & Other Projects
+The core orbit framework and runtime code is located in the [orbit/orbit](https://github.com/orbit/orbit) project.
