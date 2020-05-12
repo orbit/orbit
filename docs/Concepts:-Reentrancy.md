@@ -7,7 +7,7 @@ may process another request while waiting for other tasks to complete.
 
 Orbit still ensures that only a single-thread may be acting on an actor at any one time, so the resultant behavior seen by developers is that the framework may interleave requests. Developers need to ensure that their actor implementation handles this behavior correctly.
 
-```java
+```kotlin
 @Override
 @Reentrant
 public Task<Void> doSomething()

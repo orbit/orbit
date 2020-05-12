@@ -1,27 +1,27 @@
 # Actor Interface Annotations
 ## StatelessWorker
-```java
+```kotlin
 @StatelessWorker
 interface MyActor extends Actor {}
 ```
 Causes your actor to be a stateless worker. See [[stateless workers|Concepts: Stateless Workers]].
 
 ## NoIdentity
-```java
+```kotlin
 @NoIdentity
 interface MyActor extends Actor {}
 ```
 Denotes that this actor does not have an identity and acts as a singleton. Actor is accessed using Actor.getReference(clazz) instead of Actor.getReference(clazz, id).
 
 ## PreferLocalPlacement
-```java
+```kotlin
 @PreferLocalPlacement(percentile=100)
 interface MyActor extends Actor {}
 ```
 Denotes that this actor should prefer to be placed locally if not already activated and the local node is capable of hosting it. Optional percentile value allows developers to define the likelihood of preferring local placement (default 100). 
 
 ## NeverDeactivate
-```java
+```kotlin
 @NeverDeactivate
 interface MyActor extends Actor {}
 ```
@@ -29,7 +29,7 @@ interface MyActor extends Actor {}
 Denotes that this actor should prefer not to deactivate once it has been activated, overriding the default deactivation due to inactivity. **Please Note**: This is a hint, the actor will not start automatically and may still be deactivated in the case of node failure. Applications should ping the actor regularly if they need to ensure it is always alive.
 
 ## TimeToLive
-```java
+```kotlin
 @TimeToLive(value=10, timeUnit=TimeUnit.MINUTES)
 interface MyActor extends Actor {}
 ```
@@ -37,7 +37,7 @@ Overrides the default time to live on an actor type.
 
 # Message Interface Annotations
 ## OneWay
-```java
+```kotlin
 @OneWay
 Task someMessage();
 ```
@@ -45,7 +45,7 @@ This message is OneWay.  No result (value or status) will be returned, no guaran
 The Task might contain an exception if there was a problem locating the target object or serializing the message.
 
 ## OnlyIfActivated
-```java
+```kotlin
 @OnlyIfActivated
 Task someMessage();
 ```
@@ -53,7 +53,7 @@ This message is only executed if the actor has already been activated.  Unlike n
 
 
 ## CacheResponse
-```java
+```kotlin
 @CacheResponse(maxEntries = 1000, ttlDuration = 5, ttlUnit = TimeUnit.SECONDS)
 Task<String> getAccountName(int id);
 ```
@@ -62,7 +62,7 @@ This message caches its result, on a per actor, per parameter-set basis.  The da
 Caches can be force-flushed using ExecutionCacheFlushManager.
 
 ## Timeout
-```java
+```kotlin
 @Timeout(value=10, timeUnit=TimeUnit.SECONDS)
 Task <String> getAccountName(); 
 ```
@@ -70,14 +70,14 @@ Overrides the default message timeout for the given actor message.
 
 # Message Implementation Annotations
 ## Reentrant
-```java
+```kotlin
 @Reentrant
 Task<Void> doSomething() {}
 ```
 Causes your message to be reentrant. See [[reentrancy|Concepts: Reentrancy]].
 
 ## SkipUpdateLastAccess
-```java
+```kotlin
 @SkipUpdateLastAccess
 Task<Void> doSomething() {}
 ```
@@ -85,7 +85,7 @@ Does not update the actors last access time thus preventing the message from ext
 
 # DTO Annotations
 ## Immutable
-```java
+```kotlin
 @Immutable
 class SomeMessageDTO {}
 ```

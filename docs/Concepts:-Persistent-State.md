@@ -10,7 +10,7 @@ Adding active record state to an actor in Orbit is simple. When extending Abstra
 
 The state object must be serializeable.
 
-```java
+```kotlin
 public class StatefulActor extends AbstractActor<StatefulActor.State> implements Some
 {
     public static class State
@@ -23,7 +23,7 @@ public class StatefulActor extends AbstractActor<StatefulActor.State> implements
 ## Accessing State
 
 Accessing active record state in a stateful actor is simple. The state methods provides access to the current state.
- ```java
+ ```kotlin
 public Task doSomeState()
 {
     System.out.println(state().lastMessage);
@@ -37,7 +37,7 @@ Active record state is automatically retrieved when an actor is activated.
 
 Developers can also manually re-retrieve the state using the readState method.
 
-```java
+```kotlin
 public Task doReadState()
 {
     await(readState());
@@ -49,7 +49,7 @@ public Task doReadState()
 ## Writing State
 The writing of active record state is determined only by developers, Orbit will not automatically write state.
 
-```java
+```kotlin
 public Task doWriteState()
 {
     return writeState();
@@ -59,7 +59,7 @@ public Task doWriteState()
 ## Clearing State
 While actors are never created or destroyed in Orbit, developers can choose to clear an actors state if they wish.
 
-```java
+```kotlin
 public Task doClearState()
 {
     return clearState();
@@ -69,7 +69,7 @@ public Task doClearState()
 ## Writing State On Deactivation
 Sometimes it is desirable to write state on actor deactivation, this ensures that the latest state is persisted once the actor has been deactivated.
 
-```java
+```kotlin
 @Override
 public Task deactivateAsync()
 {

@@ -34,7 +34,7 @@ Replace [ORBIT-VERSION] with the latest version of Orbit (see [Releases](https:/
 In Orbit all actors must have an interface, below we’ll create a very simple actor interface.
 
 **Hello.java**
-```java
+```kotlin
 package cloud.orbit.samples.helloworld;
 
 import cloud.orbit.actors.Actor;
@@ -56,7 +56,7 @@ public interface Hello extends Actor
 Once you have an actor interface in place, the final step to complete the actor is to create an actor implementation.
 
 **HelloActor.java**
-```java
+```kotlin
 package cloud.orbit.samples.helloworld;
 
 import cloud.orbit.actors.runtime.AbstractActor;
@@ -81,7 +81,7 @@ public class HelloActor extends AbstractActor implements Hello
 The final step to get a working example is for us to actually use the actor.
 
 **Main.java**
-```java
+```kotlin
 package cloud.orbit.samples.helloworld;
 
 import cloud.orbit.actors.Actor;

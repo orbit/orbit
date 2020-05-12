@@ -8,7 +8,7 @@ Applications interact with Orbit streams via an interface which is similar to th
 
 ### Subscribe to Stream
 
-```java
+```kotlin
 private StreamSubscriptionHandle<String> handle;
 
 public Task subscribeToStream()
@@ -32,7 +32,7 @@ public Task subscribeToStream()
 
 ### Unsubscribe from Stream
 
-```java
+```kotlin
 private StreamSubscriptionHandle<String> handle;
 
 public Task unsubscribeFromStream()
@@ -50,7 +50,7 @@ public Task unsubscribeFromStream()
 
 ### Publish to Stream
 
-```java
+```kotlin
 public Task publishToStream()
 {
     // Get stream handle

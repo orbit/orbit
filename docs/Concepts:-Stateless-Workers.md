@@ -14,7 +14,7 @@ For these scenarios, Orbit offers the concept of Stateless Workers.
 # Creating A Stateless Worker
 Creating a stateless worker simply requires adding an annotation to your Actor Interface.
 
-```java
+```kotlin
 import cloud.orbit.annotation.StatelessWorker;
 import cloud.orbit.actors.Actor;
 import cloud.orbit.concurrent.Task;

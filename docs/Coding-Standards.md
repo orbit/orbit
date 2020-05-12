@@ -9,7 +9,7 @@ Naming Conventions
 
 ### Classes / Interfaces
 **Use PascalCase** 
-```java
+```kotlin
 public interface User extends Actor
 {
 }
@@ -22,7 +22,7 @@ public class UserActor extends AbstractActor implements User
 ### Enums
 
 **Use PascalCase for name, SHOUTING_CASE for constants** 
-```java
+```kotlin
 public enum StageMode
 {
     FRONT_END, 
@@ -32,14 +32,14 @@ public enum StageMode
 
 ### Methods 
 **Use camelCase**
-```java
+```kotlin
 public void doSomeStuff()
 {
 }
 ```
 ### Member Variables
 **Use camelCase**
-```java
+```kotlin
 public class SecurityFilter
 {
     private int userId;
@@ -48,7 +48,7 @@ public class SecurityFilter
 
 ### Local Variables and Arguments
 **Use camelCase**
-```java
+```kotlin
 public static int sum(int leftHandSide, int rightHandSide)
 {
     int totalSum = leftHandSide + rightHandSide;
@@ -58,13 +58,13 @@ public static int sum(int leftHandSide, int rightHandSide)
 
 ### Constants
 **Use SHOUTING_CASE**
-```java
+```kotlin
 public static final byte NORMAL_MESSAGE = 0;
 ```
 
 ### Package Names
 **Use lowercase** 
-```java
+```kotlin
 package com.ea.orbit.actors;
 ```
 
@@ -73,7 +73,7 @@ Code Style
 
 ### Braces
 Opening braces should always be on a new line, always align the opening and closing of a block.
-```java
+```kotlin
 if(someValue.equals("Ferrets"))
 {
     if(someOtherValue.equals("Penguins"))
@@ -84,7 +84,7 @@ if(someValue.equals("Ferrets"))
 
 ### Assignment / Comparison
 Always include a space before and after an assignment or comparison.
-```java
+```kotlin
 someValue += 1;
 if(someValue == 1)
 {
@@ -93,14 +93,14 @@ if(someValue == 1)
 
 ### Brackets
 Never include a space after an opening bracket or before a closing bracket, optionally include one before an opening bracket.
-```java
+```kotlin
 if (someValue.equals("Ferrets"))
 if(someValue.equals("Ferrets"))
 ```
 
 ### Method/Class Annotations
 Always annotate on a separate line above.
-```java
+```kotlin
 @GET 
 @PermitAll 
 @Path("/healthCheck")
@@ -111,7 +111,7 @@ public HealthCheckDto getHealthCheck()
 
 ### Member Variable/Method Argument Annotations
 Always annotate on a separate line above for member variables. Always annotate on the same line for method arguments.
-```java
+```kotlin
 @Inject
 StorageManager storageManager;
  

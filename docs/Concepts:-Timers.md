@@ -6,7 +6,7 @@ Timers do not keep an actor activated and will disappear on deactivation.
 Timers are usually registered during actor activation, although this is not a requirement.
 
 # Using Timers
-```java
+```kotlin
 Registration timer;
  
 @Override

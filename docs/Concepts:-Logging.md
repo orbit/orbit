@@ -4,7 +4,7 @@ Orbit uses slf4j internally to implement logging. Additionally orbit exposes log
 
 # Using Logging
 ### Logging In Actors
-```java
+```kotlin
 getLogger().info("Hello");
 ```
 

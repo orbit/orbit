@@ -7,7 +7,7 @@ Reminders should not be used for high frequency tasks.
 
 # Using Reminders
 
-```java
+```kotlin
 public static interface Match extends Actor, Remindable
 {
     // ...

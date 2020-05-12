@@ -13,7 +13,7 @@ Like actors, observers are created by defining an interface.
 
 Observer interfaces typically live in the same location as Actor Interfaces.
 
-```java
+```kotlin
 public interface SomeObserver extends ActorObserver
 {
     @OneWay
@@ -29,7 +29,7 @@ No special actions are required to implement an observer interface.
 
 The implementation of an Observer Interface is usually contained within the external code (such as Frontend).
 
-```java
+```kotlin
 SomeObserver observer = new SomeObserver()
 {
     @Override
@@ -44,7 +44,7 @@ SomeObserver observer = new SomeObserver()
 ## Using the Observer
 You are now free to use the created observer object, and pass it to an Orbit actor.
 
-```java
+```kotlin
 SomeActor actor = Actor.getReference(SomeActor.class, "0");
 actor.someMethod(observer).join();
 ```
@@ -56,7 +56,7 @@ actor.someMethod(observer).join();
 
 Orbit offers an observer collection named ObserverManager which can be used by actors which need to call observers.
 
-```java
+```kotlin
 private ObserverManager<SomeObserver> observers = new ObserverManager<>();
  
 public Task someMethod(SomeObserver observer)
@@ -70,7 +70,7 @@ public Task someMethod(SomeObserver observer)
 
 Finally, you are easily able to notify all observers of an event from your Actor.
 
-```java
+```kotlin
 observers.notifyObservers(o -> o.someEvent("Hello There"));
 ```
  
@@ -79,7 +79,7 @@ observers.notifyObservers(o -> o.someEvent("Hello There"));
 
 There are no special requirements for persisting observers. 
 
-```java
+```kotlin
 public class RandomActor extends AbstractActor<RandomActor.State> implements Random
 {
     public static class State
@@ -97,7 +97,7 @@ Observers that were registered are not guaranteed to be available once an actorâ
 
 The ObserverManager offers a simple way to do this, as demonstrated below:
 
-```java
+```kotlin
 @Override
 public Task activateAsync()
 {
