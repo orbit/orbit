@@ -1,12 +1,12 @@
 # Actors
 In Orbit, an actor is an object that interacts with the world using asynchronous messages.
 
-At any time an actor may be active or inactive. Usually the state of an inactive actor will reside in the database. When a message is sent to an inactive actor it will be activated somewhere in the pool of backend servers. During the activation process the actor’s state is read from the database.
+Actors are never created or destroyed; they always exist conceptually. Not all actors in Orbit will be in-memory in the cluster at a given time. Actors which are in-memory are considered “activated” and those which are not are “deactivated”. The process of an actor being created in-memory is known as “Activation” and the process of an actor being removed from memory is known as “Deactivation”.
 
-Actors are deactivated based on timeout and on server resource usage.
+When a message is sent to an inactive actor, it will be placed somewhere in the pool of backend servers and activated. During the activation process, the actor’s state can be restored from a database. Actors are deactivated based on activity timeouts or server resource usage. Actor state can be persisted at any time, or upon deactivation.
 
 # Actor Runtime Model
-Orbit guarantees that only one activation of an actor with a given identity can exist at any one time in the cluster. Orbit also guarantees that calls to actors can never be processed in parallel.
+Orbit guarantees that only one actor with a given identity can be active at any time in the cluster. Orbit also guarantees that calls to actors can never be processed in parallel.
 
 As such, developers do not need to be concerned about keeping multiple activations/instances of an actor synchronized with one another.
 
@@ -15,91 +15,66 @@ Finally, this also means that developers do not need to worry about concurrent a
 # Actor Interfaces
 Before you can implement an actor you must create an interface for it.
 
-```java
-package com.example.orbit.hello;
+```kotlin
+package orbit.carnival.actors
 
-import cloud.orbit.actors.Actor;
-import cloud.orbit.concurrent.Task;
+import kotlinx.coroutines.Deferred
+import orbit.client.actor.ActorWithStringKey
  
-public interface Hello extends Actor
-{
-    Task<String> sayHello(String greeting);
+interface Game : ActorWithStringKey {
+    fun play(playerId: String): Deferred<PlayedGameResult>
 }
 ```
-* Actor interfaces must extend Orbit’s Actor interface
-* Methods in actor interfaces must return an Orbit Task.
+* Actor interfaces must extend one of the Actor interfaces
+* Methods in actor interfaces must return a `Deferred<T>`.
 
 # Actor Implementations
 Once you have created an Actor, you must offer an implementation of that Actor for Orbit to use.
 
 ```kotlin
-package com.example.orbit.hello;
+package orbit.carnival.actors
 
-import cloud.orbit.actors.runtime.AbstractActor;
-import cloud.orbit.concurrent.Task;
+import kotlinx.coroutines.Deferred
+import orbit.client.actor.AbstractActor
+import orbit.carnival.actors.Game
  
-public class HelloImpl extends AbstractActor implements Hello
+class GameImpl() : AbstractActor(), Game {
 {
-    public Task<String> sayHello(String greeting)
-    {
-        getLogger().info("Here: " + greeting);
-        return Task.fromValue("You said: '" + greeting
-                + "', I say: Hello from " + System.identityHashCode(this) + " !");
+    override fun play(playerId: String): Deferred<PlayedGameResult> = GlobalScope.async {
+        ... Game code
     }
 }
 ```
-* Actor implementations must extend AbstractActor
+* Actor implementations can extend AbstractActor for access to context, including the actor Id
 * Actor implementations must implement a single actor interface
 * Only one implementation per actor interface is permitted
 
-# Lifetime
-## Overview
-Unlike other frameworks, there is no explicit lifetime management for actors in Orbit.
 
-Actors are never created or destroyed, they always exist conceptually. 
-
-Not all actors in Orbit will be in-memory in the cluster at a given time, actors which are in-memory are “activated” and those which are not are “deactivated”. The process of an actor being created in-memory is known as “Activation” and the process of an actor being removed from memory is known as “Deactivation”. 
-
-Activation and Deactivation is transparent to the developer.
-
-## Flow
+## Lifetime
 When a message is sent to a given actor reference, the framework will perform the following actions:
 
 1. Check if the actor is already activated in the cluster
-  1. If so, forward the message
-  2. If not, proceed to step 2
-2. Check if the actor has persisted state
-  1. If so, load the state, activate the actor and forward the message
-  2. If not, proceed to step 3
-3. Activate a default actor for the actor type and forward the message
+    - If so, forward the message to the client
+    - If not, proceed to step 2
+2. Activate the actor for the actor type and place on a connected client
+3. Call the OnActivate hook to initalize any state, such as restoring from persisteance
+4. Forward the message to the actor
 
-## Reacting to Activation Events
-While the lifetime and activation/deactivation of an actor is transparent, it is sometimes desirable to perform certain actions during activation or deactivation.
+Orbit does not provide any default persistence functionality, so the `@OnActivate` hook is available to restore state from a store before it receives the message.
 
-For instance: Checking if observers still exist, persisting state that has not yet been written etc.
-
-Orbit offers 2 methods that can be overridden in an actor to allow developers to add logic.
-
-```java
-public class SomeActor extends AbstractActor implements Some
+```kotlin
+class GameImpl() : AbstractActor(), Game {
 {
-    @Override
-    public Task activateAsync()
-    {
-        return super.activateAsync();
+    @OnActivate
+    fun onActivate(): Deferred<Unit> = GlobalScope.async {
+        loadFromStore()
     }
 
-    @Override
-    public Task deactivateAsync()
-    {
-        return super.deactivateAsync();
+    @OnDeactivate
+    fun onDeactivate(deactivationReason: DeactivationReason): Deferred<Unit> = GlobalScope.async {
+        saveToStore()
     }
 }
 ```
 
-## Requesting Deactivation
-It is sometimes useful for an application to request deactivation of an actor if it knows it is no longer needed.
-
-```java
-    Actor.deactivate(actorRef);
-```
+Actors can be persisted at any time, but the OnDeactivate event can help assure the latest state is saved, except in the event of an ungraceful shutdown. During shutdown, every actor is deactivated, giving it a final chance to persist.
