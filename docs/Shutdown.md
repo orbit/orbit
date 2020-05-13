@@ -39,3 +39,12 @@ Notes:
 * A graceful shutdown will likely lead to less message loss than a hard shutdown.
 * The addressables are deactivated in parallel with a maximum number of simultaneous deactivates set in Orbit Config (`val deactivationConcurrency: Int = 10`). The proper value for this concurrency will highly depend on constraints of the application, such as expected addressable counts, or any disk or database activity limitations.
 * Any messages in-flight to an addressable on the shutting down node will still be delivered until the addressable is deactivating. This can be handy if graceful shutdown with many addressables and a costly deactivation cause shutdown to last seconds or minutes.
+
+## SIGTERM Caveat
+The method described above to hook shutdown into SIGTERM is the simplest solution that handles most situations. Detaching a debugger, Ctrl-C from the command line, or shutting down a Docker container all invoke this path.
+
+In a larger application, the time to gracefully drain all actors and shut down could take seconds or minutes. If there are system constraints that timeout before sending a SIGKILL, the graceful shutdown could be incomplete.
+
+Additionally, in more complicated applications, many components could be listening for the SIGTERM event leading to non-determinism in tearing the application down. For example, metrics services may be shut off before the drain is complete, leaving the larger environment blind to the application's inner state.
+
+It is up to the application developer to balance these concerns and determine the best way to tear down the application.

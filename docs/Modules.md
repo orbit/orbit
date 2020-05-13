@@ -1,49 +1,33 @@
-# Overview
-The main Orbit project is split into several modules.
+# Modules
+The main Orbit project is split into several modules for client and server.
 
-* orbit-client
-* orbit-application
-* orbit-prometheus
-* orbit-proto
-* orbit-server
-* orbit-server-etcd
-* orbit-server-prometheus
-* orbit-shared
-* orbit-util
-
-# Orbit Client
-`orbit-client` is a JVM library for applications interfacing with an Orbit cluster. It handles maintaining a connection to the mesh, leasing addressables, and routing messages. It will be the main entrypoint for most developers.
+# Client
+## orbit-client
+A JVM library for applications interfacing with an Orbit cluster. It handles maintaining a connection to the mesh, leasing addressables, and routing messages. It will be the main entrypoint for most developers.
 
 Gradle:
 ```kotlin
 implementation("cloud.orbit:orbit-client:$orbitVersion")
 ```
 
-# Orbit Server
-Orbit can be run as a packaged service without having to delve into the remaining modules. However, if a more customized version of Orbit is needed, these modules can be used to build the right server.
+# Server
+Orbit can be run as a packaged service without having to delve into the server modules. However, if a more customized version of Orbit is needed, these modules can be used to build the server suitable to the task.
 
 ## orbit-server
 This is the main implementation of the Orbit Server cluster node. It handles the client connections, mesh connections, authorization, node and addressable leases, and message routing.
 
-Gradle:
-```kotlin
-implementation("cloud.orbit:orbit-server:$orbitVersion")
-```
+## orbit-application
+Default hosting application for orbit-server. Decodes settings from a file and initiates the server runtime.
 
-To instantiate an OrbitServer:
+## orbit-proto
+Contains the protobuf definitions for communicating with the service and helper methods for translation to internal types.
 
-```kotlin
-import kotlinx.coroutines.runBlocking
-import orbit.server.OrbitServerConfig
-import orbit.server.OrbitServer
+## orbit-server-etcd
+Implementations of the Node Directory and Addressable Directory against an etcd store.
 
-fun main() {
-    runBlocking {
-        val server = OrbitServer(OrbitServerConfig())
-        server.start().join()
-    }
-}
-```
+## orbit-server-prometheus
+Implementation of a Prometheus endpoint for exposing metrics gathered by [micrometer](https://micrometer.io).
 
-### OrbitServerConfig
-The `OrbitServerConfig` class can be used to make changes to server configurations, including things like lease times, persistence technology, resource limitations, metrics, and 
+
+## orbit-shared & orbit-util
+Shared and utility classes mostly to support internal operations
