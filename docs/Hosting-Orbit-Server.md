@@ -8,7 +8,7 @@ Describe taking a reference to orbit-server, starting an instance. Role of orbit
 
 Gradle:
 ```kotlin
-implementation("cloud.orbit:orbit-server:$orbitVersion")
+implementation("cloud.orbit:orbit-server:{{ book.release }}")
 ```
 
 To instantiate an OrbitServer:

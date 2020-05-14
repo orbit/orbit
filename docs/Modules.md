@@ -7,7 +7,7 @@ A JVM library for applications interfacing with an Orbit cluster. It handles mai
 
 Gradle:
 ```kotlin
-implementation("cloud.orbit:orbit-client:$orbitVersion")
+implementation("cloud.orbit:orbit-client:{{ book.release }}")
 ```
 
 # Server
