@@ -23,7 +23,7 @@ Default hosting application for orbit-server. Decodes settings from a file and i
 Contains the protobuf definitions for communicating with the service and helper methods for translation to internal types.
 
 ## orbit-server-etcd
-Implementations of the Node Directory and Addressable Directory against an etcd store.
+Implementations of the Node Directory and Addressable Directory against an etcd store. By default orbit-server will use in-memory directories, but those won't support clustering multiple Orbit Server nodes nor will values persist between restarts.
 
 ## orbit-server-prometheus
 Implementation of a Prometheus endpoint for exposing metrics gathered by [micrometer](https://micrometer.io).
