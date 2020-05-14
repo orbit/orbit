@@ -8,27 +8,11 @@ The first step is to set up a Maven project that is able to pull in the Orbit de
 
 Replace [ORBIT-VERSION] with the latest version of Orbit (see [Releases](https://github.com/orbit/orbit/releases)).
 
-**pom.xml**
-```xml
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <packaging>pom</packaging>
-    <groupId>cloud.orbit.samples</groupId>
-    <artifactId>orbit-samples-helloworld</artifactId>
-    <version>0.1-SNAPSHOT</version>
-	
-    <dependencies>
-        <dependency>
-            <groupId>cloud.orbit</groupId>
-            <artifactId>orbit-runtime</artifactId>
-            <version>[ORBIT-VERSION]</version>
-        </dependency>
-    </dependencies>
-</project>
+# Gradle
 ```
- 
+implementation("cloud.orbit:orbit-client:{{ book.release }}")
+```
+
 
 # Actor Interface
 In Orbit all actors must have an interface, below we’ll create a very simple actor interface.
