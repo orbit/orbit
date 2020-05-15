@@ -13,6 +13,6 @@ sed -i.bak "s/orbit.version.*/orbit.version=$version/" gradle.properties
 rm -f gradle.properties.bak
 git add gradle.properties
 
-sed -i.bak "s/\"release.*/\"release\":\"$version\"/" book.json
-rm -f book.json.bak
-git add book.json
+sed -i.bak "s/release.*/release: $version/" .gitbook.yaml
+rm -f .gitbook.yaml.bak
+git add .gitbook.yaml
