@@ -1,6 +1,8 @@
-<img src="http://www.orbit.cloud/img/orbit-logo-black.png" alt="Orbit Logo" width="300px"/>
+---
+title: "What is Orbit?"
+url: /
+---
 
-# What is Orbit?
 Orbit is a framework to write distributed systems using virtual actors on the JVM. A virtual actor is an object that interacts with the world using asynchronous messages.
 
 At any time an actor may be active or inactive. Usually the state of an inactive actor will reside in the database. When a message is sent to an inactive actor it will be activated somewhere in the pool of backend servers. During the activation process the actor's state is read from the database.

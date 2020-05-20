@@ -1,4 +1,7 @@
-# Addressables
+---
+title: "Addressables"
+---
+
 In Orbit, an addressable is an object that interacts with the world through asynchronous messages.
 
 Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster. As such, developers do not need to be concerned about keeping multiple activations/instances of an addressable synchronized with one another.

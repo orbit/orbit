@@ -1,4 +1,7 @@
-# Migration from Orbit 1.x
+---
+title: "Migration from Orbit 1.x"
+weight: 0
+---
 
 
 ## Basic actor model change

@@ -1,4 +1,6 @@
-# Client Configuration
+---
+title: "Client Configuration"
+---
 
 Orbit Client offers a broad set of configuration options to be supplied in its constructor. Some settings are required to discover addressables and connect to an Orbit Server cluster, while others can fine-tune how the client operates.
 

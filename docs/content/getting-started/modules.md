@@ -1,4 +1,8 @@
-# Modules
+---
+title: "Modules"
+weight: 1
+---
+
 The main Orbit project is split into several modules for client and server.
 
 # Client
@@ -7,8 +11,7 @@ A JVM library for applications interfacing with an Orbit cluster. It handles mai
 
 Gradle:
 ```kotlin
-implementation("cloud.orbit:orbit-client:{{ release }}")
-implementation("cloud.orbit:orbit-client:{{ book.release }}")
+implementation("cloud.orbit:orbit-client:{{< release >}}")
 ```
 
 # Server

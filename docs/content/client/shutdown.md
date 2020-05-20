@@ -1,4 +1,6 @@
-# Shutdown
+---
+title: "Shutdown"
+---
 
 Orbit is designed to handle a graceful or hard shutdown.
 

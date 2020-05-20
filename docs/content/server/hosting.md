@@ -1,4 +1,7 @@
-# Hosting Orbit Server
+---
+title: "Hosting Orbit Server"
+weight: 2
+---
 
 Almost any scenario can be handled by using the prepackaged Orbit Server. For scenarios where the developer needs extensive control over the server, Orbit functionality can be hosted within a custom application.
 

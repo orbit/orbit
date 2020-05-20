@@ -1,4 +1,7 @@
-# Server Configuration
+---
+title: "Server Configuration"
+weight: 1
+---
 
 Orbit Server offers extensive configuration and an extension model to support many situations outside the defaults. The `OrbitServerConfig` class supplied to the `OrbitServer` constructor has overrides for lease timing, process management, addressable and node storage, and metrics.
 

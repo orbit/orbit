@@ -1,4 +1,6 @@
-# Dependency Injection
+---
+title: "Dependency Injection"
+---
 
 By default, Orbit will instantiate and activate Addressables using the default, empty constructor. Many times an Addressable will require some service or store for activation or its functional use.
 
