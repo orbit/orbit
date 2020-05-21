@@ -3,7 +3,7 @@
 <head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Orbit - Orbit</title>
+<title>What is Orbit? - Orbit</title>
 <meta name="generator" content="Hugo 0.71.0" />
 <link href="/orbitindex.xml" rel="alternate" type="application/rss+xml">
 <link rel="canonical" href="/orbit/">
@@ -15,15 +15,15 @@
 <script src="/orbit/js/bundle.js"></script><style>
 :root {}
 </style>
-<meta property="og:title" content="Orbit" />
+<meta property="og:title" content="What is Orbit?" />
 <meta property="og:description" content="" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="/orbit/" />
 
 <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Orbit"/>
+<meta name="twitter:title" content="What is Orbit?"/>
 <meta name="twitter:description" content=""/>
-<meta itemprop="name" content="Orbit">
+<meta itemprop="name" content="What is Orbit?">
 <meta itemprop="description" content=""></head>
 <body><div class="container"><header>
 <h1>Orbit</h1>
@@ -31,13 +31,21 @@
 </header>
 
 <div class="content-container">
-<main><h1>Customize your own home page</h1>
-<p>The site is working. Don't forget to customize this homepage with your own. You typically have 2 choices :</p>
-<ol>
-<li>Create an _index.md document in <b>content</b> folder and fill it with Markdown content</li>
-<li>Create an <b>index.html</b> file in the <b>static</b> folder and fill the file with HTML content</li>
-<li>Configure your server to automatically redirect home page to one your documentation page</li>
-</ol><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+<main><h1 id="what-is-orbit">What is Orbit?</h1>
+<p>Orbit is a framework to write distributed systems using virtual actors on the JVM. A virtual actor is an object that interacts with the world using asynchronous messages.</p>
+<p>At any time an actor may be active or inactive. Usually the state of an inactive actor will reside in the database. When a message is sent to an inactive actor it will be activated somewhere in the pool of backend servers. During the activation process the actor&rsquo;s state is read from the database.</p>
+<p>Actors are deactivated based on timeout and on server resource usage.</p>
+<p>It is heavily inspired by the <a href="https://github.com/dotnet/Orleans">Microsoft Orleans</a> project.</p>
+<h1 id="documentation">Documentation</h1>
+<p>The Orbit documentation is located on this site. Please see the sidebar for navigation.</p>
+<h1 id="source-code--other-projects">Source Code &amp; Other Projects</h1>
+<p>The core orbit framework and runtime code is located in the <a href="https://github.com/orbit/orbit">orbit/orbit</a> project.</p>
+<h1 id="sample-application">Sample Application</h1>
+<p>A sample application has been built to demonstrate the most common scenarios for integrating with an Orbit Server, as well as hosting for the Server itself through Kubernetes or Docker-Compose.</p>
+<nav class="pagination"><a class="nav nav-next" href="/orbit/getting-started/" title="Getting Started">Next - Getting Started <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><div class="edit-meta">
+
+<br></div><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
 </footer>
 </main><div class="sidebar">
 
@@ -59,9 +67,6 @@
 <li class=""><a href="/orbit/client/">Client</a>
   
 <ul class="sub-menu">
-<li class=""><a href="/orbit/client/configuration/">Client Configuration</a></li>
-<li class=""><a href="/orbit/client/dependency-injection/">Dependency Injection</a></li>
-<li class=""><a href="/orbit/client/shutdown/">Shutdown</a></li>
 </ul>
   
 </li>
