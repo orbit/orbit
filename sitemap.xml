@@ -3,100 +3,100 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>http://example.org/getting-started/</loc>
+    <loc>orbit.cloud/orbit/getting-started/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/getting-started/modules/</loc>
+    <loc>orbit.cloud/orbit/getting-started/modules/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/server/configuration/</loc>
+    <loc>orbit.cloud/orbit/server/configuration/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/client/</loc>
+    <loc>orbit.cloud/orbit/client/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/server/hosting/</loc>
+    <loc>orbit.cloud/orbit/server/hosting/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/server/</loc>
+    <loc>orbit.cloud/orbit/server/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/other/</loc>
+    <loc>orbit.cloud/orbit/other/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/toc/</loc>
+    <loc>orbit.cloud/orbit/toc/</loc>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>http://example.org/getting-started/actors/</loc>
+    <loc>orbit.cloud/orbit/getting-started/actors/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/getting-started/addressables/</loc>
+    <loc>orbit.cloud/orbit/getting-started/addressables/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/categories/</loc>
+    <loc>orbit.cloud/orbit/categories/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/client/configuration/</loc>
+    <loc>orbit.cloud/orbit/client/configuration/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/other/coding-standards/</loc>
+    <loc>orbit.cloud/orbit/other/coding-standards/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/client/dependency-injection/</loc>
+    <loc>orbit.cloud/orbit/client/dependency-injection/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/other/dukes-choice-award-2016/</loc>
+    <loc>orbit.cloud/orbit/other/dukes-choice-award-2016/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/other/hello-world/</loc>
+    <loc>orbit.cloud/orbit/other/hello-world/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/getting-started/migration-from-1.x/</loc>
+    <loc>orbit.cloud/orbit/getting-started/migration-from-1.x/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/</loc>
+    <loc>orbit.cloud/orbit/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/other/prerequisites/</loc>
+    <loc>orbit.cloud/orbit/other/prerequisites/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/other/security-and-code-signing/</loc>
+    <loc>orbit.cloud/orbit/other/security-and-code-signing/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/client/shutdown/</loc>
+    <loc>orbit.cloud/orbit/client/shutdown/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/other/submission-policy/</loc>
+    <loc>orbit.cloud/orbit/other/submission-policy/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/tags/</loc>
+    <loc>orbit.cloud/orbit/tags/</loc>
   </url>
   
   <url>
-    <loc>http://example.org/</loc>
+    <loc>orbit.cloud/orbit/</loc>
   </url>
   
 </urlset>
