@@ -20,4 +20,4 @@ The Orbit documentation is located on this site. Please see the sidebar for navi
 The core orbit framework and runtime code is located in the [orbit/orbit](https://github.com/orbit/orbit) project.
 
 # Sample Application
-A sample application has been built to demonstrate the most common scenarios for integrating with an Orbit Server, as well as hosting for the Server itself through Kubernetes or Docker-Compose.
+A sample application has been built to demonstrate the most common scenarios for integrating with an Orbit Server at [orbit/orbit-sample](https://github.com/orbit/orbit-sample)
