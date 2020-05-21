@@ -3,100 +3,100 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>orbit.cloud/orbit/getting-started/</loc>
+    <loc>/getting-started/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/getting-started/modules/</loc>
+    <loc>/getting-started/modules/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/server/configuration/</loc>
+    <loc>/server/configuration/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/client/</loc>
+    <loc>/client/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/server/hosting/</loc>
+    <loc>/server/hosting/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/server/</loc>
+    <loc>/server/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/other/</loc>
+    <loc>/other/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/toc/</loc>
+    <loc>/toc/</loc>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/getting-started/actors/</loc>
+    <loc>/getting-started/actors/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/getting-started/addressables/</loc>
+    <loc>/getting-started/addressables/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/categories/</loc>
+    <loc>/categories/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/client/configuration/</loc>
+    <loc>/client/configuration/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/other/coding-standards/</loc>
+    <loc>/other/coding-standards/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/client/dependency-injection/</loc>
+    <loc>/client/dependency-injection/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/other/dukes-choice-award-2016/</loc>
+    <loc>/other/dukes-choice-award-2016/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/other/hello-world/</loc>
+    <loc>/other/hello-world/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/getting-started/migration-from-1.x/</loc>
+    <loc>/getting-started/migration-from-1.x/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/</loc>
+    <loc>/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/other/prerequisites/</loc>
+    <loc>/other/prerequisites/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/other/security-and-code-signing/</loc>
+    <loc>/other/security-and-code-signing/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/client/shutdown/</loc>
+    <loc>/client/shutdown/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/other/submission-policy/</loc>
+    <loc>/other/submission-policy/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/tags/</loc>
+    <loc>/tags/</loc>
   </url>
   
   <url>
-    <loc>orbit.cloud/orbit/</loc>
+    <loc>/</loc>
   </url>
   
 </urlset>

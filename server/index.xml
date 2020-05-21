@@ -2,30 +2,30 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Server on Orbit</title>
-    <link>orbit.cloud/orbit/server/</link>
+    <link>/server/</link>
     <description>Recent content in Server on Orbit</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     
-	<atom:link href="orbit.cloud/orbit/server/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="/server/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Server Configuration</title>
-      <link>orbit.cloud/orbit/server/configuration/</link>
+      <link>/server/configuration/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>orbit.cloud/orbit/server/configuration/</guid>
+      <guid>/server/configuration/</guid>
       <description>Orbit Server offers extensive configuration and an extension model to support many situations outside the defaults. The OrbitServerConfig class supplied to the OrbitServer constructor has overrides for lease timing, process management, addressable and node storage, and metrics.
 The OrbitServerConfig class is well documented and will be the authoritative source for the latest options. Some settings, like the pipelineBufferCount is a simple Int type. Others, like the addressableLeaseDuration are more complex objects.</description>
     </item>
     
     <item>
       <title>Hosting Orbit Server</title>
-      <link>orbit.cloud/orbit/server/hosting/</link>
+      <link>/server/hosting/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>orbit.cloud/orbit/server/hosting/</guid>
+      <guid>/server/hosting/</guid>
       <description>Almost any scenario can be handled by using the prepackaged Orbit Server. For scenarios where the developer needs extensive control over the server, Orbit functionality can be hosted within a custom application.
 Describe taking a reference to orbit-server, starting an instance. Role of orbit-application.
 Gradle:
