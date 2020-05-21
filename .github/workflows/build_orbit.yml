@@ -26,7 +26,7 @@ jobs:
         with:
           hugo-version: '0.71.0'
       - name: Build Hugo Docs
-        run: hugo -s docs -b /
+        run: hugo -s docs -b /orbit
       - name: Request Github Pages build job
         uses: peaceiris/actions-gh-pages@v2
         env:
