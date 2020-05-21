@@ -2,20 +2,20 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Other stuff on Orbit</title>
-    <link>/other/</link>
+    <link>/orbit/other/</link>
     <description>Recent content in Other stuff on Orbit</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     
-	<atom:link href="/other/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="/orbit/other/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Coding Standards</title>
-      <link>/other/coding-standards/</link>
+      <link>/orbit/other/coding-standards/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/other/coding-standards/</guid>
+      <guid>/orbit/other/coding-standards/</guid>
       <description>Overview Orbit follows the coding standards laid out in this document.
 We realize that standards are often contentious and believe that having any standard (even where not everyone agrees) is the best course of action to ensure consistent and readable code across the project.
 Naming Conventions Classes / Interfaces Use PascalCase
@@ -24,10 +24,10 @@ public interface User extends Actor { } public class UserActor extends AbstractA
     
     <item>
       <title>Duke&#39;s choice Award 2016</title>
-      <link>/other/dukes-choice-award-2016/</link>
+      <link>/orbit/other/dukes-choice-award-2016/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/other/dukes-choice-award-2016/</guid>
+      <guid>/orbit/other/dukes-choice-award-2016/</guid>
       <description>Orbit was the recipient of the 2016 Duke&amp;rsquo;s Choice Award for Open Source.
 From Joe Hegarty, Lead Engineer:  Hi Everyone,
 I was honored to travel to JavaOne in San Francisco to accept the 2016 Duke&amp;rsquo;s Choice Award for Open Source on behalf of the Orbit project. Orbit has been a real team effort ranging from the initial internal engineering efforts at EA and the efforts of our legal team to make Orbit EA&amp;rsquo;s first community project to the amazing contributions from our open source community.</description>
@@ -35,10 +35,10 @@ I was honored to travel to JavaOne in San Francisco to accept the 2016 Duke&amp;
     
     <item>
       <title>Hello World</title>
-      <link>/other/hello-world/</link>
+      <link>/orbit/other/hello-world/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/other/hello-world/</guid>
+      <guid>/orbit/other/hello-world/</guid>
       <description>In this guide we’ll cover how to get a very simple Orbit application running in the form of “Hello World”. It shows using a single-module in a single-process environment, often useful for development purposes.
 This tutorial assumes that you have set up a development environment as described in the [[prerequisites|Getting Started: Prerequisites]] document and have some familiarity with Maven based Java projects.
 Maven Project The first step is to set up a Maven project that is able to pull in the Orbit dependencies.</description>
@@ -46,20 +46,20 @@ Maven Project The first step is to set up a Maven project that is able to pull i
     
     <item>
       <title>Prerequisites</title>
-      <link>/other/prerequisites/</link>
+      <link>/orbit/other/prerequisites/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/other/prerequisites/</guid>
+      <guid>/orbit/other/prerequisites/</guid>
       <description>Required Software The minimum requirements for Orbit are:
  Java 8 SE SDK or above. Maven 3.1 or above.  Recommended Software  Git is required if you want to get and build the Orbit code manually. IntelliJ IDEA is our preferred IDE.  </description>
     </item>
     
     <item>
       <title>Security and Code Signing</title>
-      <link>/other/security-and-code-signing/</link>
+      <link>/orbit/other/security-and-code-signing/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/other/security-and-code-signing/</guid>
+      <guid>/orbit/other/security-and-code-signing/</guid>
       <description>Overview We take security seriously. This page includes information on how to contact us in the event you find a security concern with Orbit. It also lists the public keys you can use to verify a release of Orbit is really from us.
 Code Signing Every release of Orbit is signed according to the standard Maven Central procedures using the keys listed on this page.
 Reporting Security Problems If you wish to report a security issue and do not wish to use GitHub Issues due to the nature of the issue, you can do so by emailing us at orbit-opensource[at]ea.</description>
@@ -67,10 +67,10 @@ Reporting Security Problems If you wish to report a security issue and do not wi
     
     <item>
       <title>Submission Policy</title>
-      <link>/other/submission-policy/</link>
+      <link>/orbit/other/submission-policy/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/other/submission-policy/</guid>
+      <guid>/orbit/other/submission-policy/</guid>
       <description>Overview This document describes the submission policy for the Orbit project.
 Licensing &amp;amp; CLA  In order to clarify the intellectual property license granted for contributions to EA open source projects you must sign the Contributor License Agreement (CLA).  Adhere to Coding Standards  All changes must adhere to the Orbit [[Coding Standards]].  Small and Independent Changelists  Changelists should be as small and independent as possible. Avoid multi-feature changelists.</description>
     </item>

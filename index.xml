@@ -2,20 +2,20 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Orbit</title>
-    <link>/</link>
+    <link>/orbit/</link>
     <description>Recent content on Orbit</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     
-	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="/orbit/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Modules</title>
-      <link>/getting-started/modules/</link>
+      <link>/orbit/getting-started/modules/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/getting-started/modules/</guid>
+      <guid>/orbit/getting-started/modules/</guid>
       <description>The main Orbit project is split into several modules for client and server.
 Client orbit-client A JVM library for applications interfacing with an Orbit cluster. It handles maintaining a connection to the mesh, leasing addressables, and routing messages. It will be the main entrypoint for most developers.
 Gradle:
@@ -24,20 +24,20 @@ implementation(&amp;#34;cloud.orbit:orbit-client:2.0.0-alpha.65&amp;#34;) Server
     
     <item>
       <title>Server Configuration</title>
-      <link>/server/configuration/</link>
+      <link>/orbit/server/configuration/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/server/configuration/</guid>
+      <guid>/orbit/server/configuration/</guid>
       <description>Orbit Server offers extensive configuration and an extension model to support many situations outside the defaults. The OrbitServerConfig class supplied to the OrbitServer constructor has overrides for lease timing, process management, addressable and node storage, and metrics.
 The OrbitServerConfig class is well documented and will be the authoritative source for the latest options. Some settings, like the pipelineBufferCount is a simple Int type. Others, like the addressableLeaseDuration are more complex objects.</description>
     </item>
     
     <item>
       <title>Hosting Orbit Server</title>
-      <link>/server/hosting/</link>
+      <link>/orbit/server/hosting/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/server/hosting/</guid>
+      <guid>/orbit/server/hosting/</guid>
       <description>Almost any scenario can be handled by using the prepackaged Orbit Server. For scenarios where the developer needs extensive control over the server, Orbit functionality can be hosted within a custom application.
 Describe taking a reference to orbit-server, starting an instance. Role of orbit-application.
 Gradle:
@@ -47,10 +47,10 @@ import kotlinx.coroutines.runBlocking import orbit.server.OrbitServerConfig impo
     
     <item>
       <title></title>
-      <link>/toc/</link>
+      <link>/orbit/toc/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/toc/</guid>
+      <guid>/orbit/toc/</guid>
       <description>Table of contents   Home
   Getting Started
   Addressables
@@ -62,20 +62,20 @@ import kotlinx.coroutines.runBlocking import orbit.server.OrbitServerConfig impo
     
     <item>
       <title>Actors</title>
-      <link>/getting-started/actors/</link>
+      <link>/orbit/getting-started/actors/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/getting-started/actors/</guid>
+      <guid>/orbit/getting-started/actors/</guid>
       <description>Actors are the most common form of addressable, and are suitable for most situations. The distinction is semantic and Actor interfaces are provided to facilitate the actor pattern.
 Actors are never created or destroyed; they always exist conceptually. Not all actors in Orbit will be in-memory in the cluster at a given time. Actors which are in-memory are considered “activated” and those which are not are “deactivated”. The process of an actor being created in-memory is known as “Activation” and the process of an actor being removed from memory is known as “Deactivation”.</description>
     </item>
     
     <item>
       <title>Addressables</title>
-      <link>/getting-started/addressables/</link>
+      <link>/orbit/getting-started/addressables/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/getting-started/addressables/</guid>
+      <guid>/orbit/getting-started/addressables/</guid>
       <description>In Orbit, an addressable is an object that interacts with the world through asynchronous messages.
 Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster. As such, developers do not need to be concerned about keeping multiple activations/instances of an addressable synchronized with one another.
 Orbit also guarantees that calls to addressables can never be processed in parallel, meaning developers do not need to worry about concurrent access to an addressable.</description>
@@ -83,10 +83,10 @@ Orbit also guarantees that calls to addressables can never be processed in paral
     
     <item>
       <title>Client Configuration</title>
-      <link>/client/configuration/</link>
+      <link>/orbit/client/configuration/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/client/configuration/</guid>
+      <guid>/orbit/client/configuration/</guid>
       <description>Orbit Client offers a broad set of configuration options to be supplied in its constructor. Some settings are required to discover addressables and connect to an Orbit Server cluster, while others can fine-tune how the client operates.
 The OrbitClientConfig class contains the configuration values the OrbitClient needs to operate and is supplied in the constructor:
 import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main() { runBlocking { val orbitClient = OrbitClient( OrbitClientConfig( namespace = &amp;#34;carnival&amp;#34;, grpcEndpoint = &amp;#34;dns:///localhost:50056/&amp;#34;, packages = listOf(&amp;#34;orbit.</description>
@@ -94,10 +94,10 @@ import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main()
     
     <item>
       <title>Coding Standards</title>
-      <link>/other/coding-standards/</link>
+      <link>/orbit/other/coding-standards/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/other/coding-standards/</guid>
+      <guid>/orbit/other/coding-standards/</guid>
       <description>Overview Orbit follows the coding standards laid out in this document.
 We realize that standards are often contentious and believe that having any standard (even where not everyone agrees) is the best course of action to ensure consistent and readable code across the project.
 Naming Conventions Classes / Interfaces Use PascalCase
@@ -106,10 +106,10 @@ public interface User extends Actor { } public class UserActor extends AbstractA
     
     <item>
       <title>Dependency Injection</title>
-      <link>/client/dependency-injection/</link>
+      <link>/orbit/client/dependency-injection/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/client/dependency-injection/</guid>
+      <guid>/orbit/client/dependency-injection/</guid>
       <description>By default, Orbit will instantiate and activate Addressables using the default, empty constructor. Many times an Addressable will require some service or store for activation or its functional use.
 Orbit supports a &amp;ldquo;bring your own DI container&amp;rdquo; model
 The typical approach is to use constructor dependency injection, where dependencies are be supplied as constructor arguments.
@@ -118,10 +118,10 @@ class PlayerImpl(private val playerStore: PlayerStore) : AbstractActor(), Player
     
     <item>
       <title>Duke&#39;s choice Award 2016</title>
-      <link>/other/dukes-choice-award-2016/</link>
+      <link>/orbit/other/dukes-choice-award-2016/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/other/dukes-choice-award-2016/</guid>
+      <guid>/orbit/other/dukes-choice-award-2016/</guid>
       <description>Orbit was the recipient of the 2016 Duke&amp;rsquo;s Choice Award for Open Source.
 From Joe Hegarty, Lead Engineer:  Hi Everyone,
 I was honored to travel to JavaOne in San Francisco to accept the 2016 Duke&amp;rsquo;s Choice Award for Open Source on behalf of the Orbit project. Orbit has been a real team effort ranging from the initial internal engineering efforts at EA and the efforts of our legal team to make Orbit EA&amp;rsquo;s first community project to the amazing contributions from our open source community.</description>
@@ -129,10 +129,10 @@ I was honored to travel to JavaOne in San Francisco to accept the 2016 Duke&amp;
     
     <item>
       <title>Hello World</title>
-      <link>/other/hello-world/</link>
+      <link>/orbit/other/hello-world/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/other/hello-world/</guid>
+      <guid>/orbit/other/hello-world/</guid>
       <description>In this guide we’ll cover how to get a very simple Orbit application running in the form of “Hello World”. It shows using a single-module in a single-process environment, often useful for development purposes.
 This tutorial assumes that you have set up a development environment as described in the [[prerequisites|Getting Started: Prerequisites]] document and have some familiarity with Maven based Java projects.
 Maven Project The first step is to set up a Maven project that is able to pull in the Orbit dependencies.</description>
@@ -140,29 +140,29 @@ Maven Project The first step is to set up a Maven project that is able to pull i
     
     <item>
       <title>Migration from Orbit 1.x</title>
-      <link>/getting-started/migration-from-1.x/</link>
+      <link>/orbit/getting-started/migration-from-1.x/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/getting-started/migration-from-1.x/</guid>
+      <guid>/orbit/getting-started/migration-from-1.x/</guid>
       <description>Basic actor model change New concepts Addressables Outdated concepts Stage </description>
     </item>
     
     <item>
       <title>Prerequisites</title>
-      <link>/other/prerequisites/</link>
+      <link>/orbit/other/prerequisites/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/other/prerequisites/</guid>
+      <guid>/orbit/other/prerequisites/</guid>
       <description>Required Software The minimum requirements for Orbit are:
  Java 8 SE SDK or above. Maven 3.1 or above.  Recommended Software  Git is required if you want to get and build the Orbit code manually. IntelliJ IDEA is our preferred IDE.  </description>
     </item>
     
     <item>
       <title>Security and Code Signing</title>
-      <link>/other/security-and-code-signing/</link>
+      <link>/orbit/other/security-and-code-signing/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/other/security-and-code-signing/</guid>
+      <guid>/orbit/other/security-and-code-signing/</guid>
       <description>Overview We take security seriously. This page includes information on how to contact us in the event you find a security concern with Orbit. It also lists the public keys you can use to verify a release of Orbit is really from us.
 Code Signing Every release of Orbit is signed according to the standard Maven Central procedures using the keys listed on this page.
 Reporting Security Problems If you wish to report a security issue and do not wish to use GitHub Issues due to the nature of the issue, you can do so by emailing us at orbit-opensource[at]ea.</description>
@@ -170,10 +170,10 @@ Reporting Security Problems If you wish to report a security issue and do not wi
     
     <item>
       <title>Shutdown</title>
-      <link>/client/shutdown/</link>
+      <link>/orbit/client/shutdown/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/client/shutdown/</guid>
+      <guid>/orbit/client/shutdown/</guid>
       <description>Orbit is designed to handle a graceful or hard shutdown.
 In a hard shutdown scenario, Orbit servers will notice a client node disconnecting the GRPC connection and suspend the leases on all addressables placed on that node. Any subsequent messages will be routed to new nodes where the addressables become activated. There may be some message loss during this brief transition period.
 Orbit also affords an opportunity for a graceful shutdown through a shutdown procedure that can be invoked by the client application.</description>
@@ -181,20 +181,20 @@ Orbit also affords an opportunity for a graceful shutdown through a shutdown pro
     
     <item>
       <title>Submission Policy</title>
-      <link>/other/submission-policy/</link>
+      <link>/orbit/other/submission-policy/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/other/submission-policy/</guid>
+      <guid>/orbit/other/submission-policy/</guid>
       <description>Overview This document describes the submission policy for the Orbit project.
 Licensing &amp;amp; CLA  In order to clarify the intellectual property license granted for contributions to EA open source projects you must sign the Contributor License Agreement (CLA).  Adhere to Coding Standards  All changes must adhere to the Orbit [[Coding Standards]].  Small and Independent Changelists  Changelists should be as small and independent as possible. Avoid multi-feature changelists.</description>
     </item>
     
     <item>
       <title>What is Orbit?</title>
-      <link>/</link>
+      <link>/orbit/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/</guid>
+      <guid>/orbit/</guid>
       <description>Orbit is a framework to write distributed systems using virtual actors on the JVM. A virtual actor is an object that interacts with the world using asynchronous messages.
 At any time an actor may be active or inactive. Usually the state of an inactive actor will reside in the database. When a message is sent to an inactive actor it will be activated somewhere in the pool of backend servers. During the activation process the actor&amp;rsquo;s state is read from the database.</description>
     </item>

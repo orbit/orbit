@@ -3,100 +3,100 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>/getting-started/</loc>
+    <loc>/orbit/getting-started/</loc>
   </url>
   
   <url>
-    <loc>/getting-started/modules/</loc>
+    <loc>/orbit/getting-started/modules/</loc>
   </url>
   
   <url>
-    <loc>/server/configuration/</loc>
+    <loc>/orbit/server/configuration/</loc>
   </url>
   
   <url>
-    <loc>/client/</loc>
+    <loc>/orbit/client/</loc>
   </url>
   
   <url>
-    <loc>/server/hosting/</loc>
+    <loc>/orbit/server/hosting/</loc>
   </url>
   
   <url>
-    <loc>/server/</loc>
+    <loc>/orbit/server/</loc>
   </url>
   
   <url>
-    <loc>/other/</loc>
+    <loc>/orbit/other/</loc>
   </url>
   
   <url>
-    <loc>/toc/</loc>
+    <loc>/orbit/toc/</loc>
     <priority>0</priority>
   </url>
   
   <url>
-    <loc>/getting-started/actors/</loc>
+    <loc>/orbit/getting-started/actors/</loc>
   </url>
   
   <url>
-    <loc>/getting-started/addressables/</loc>
+    <loc>/orbit/getting-started/addressables/</loc>
   </url>
   
   <url>
-    <loc>/categories/</loc>
+    <loc>/orbit/categories/</loc>
   </url>
   
   <url>
-    <loc>/client/configuration/</loc>
+    <loc>/orbit/client/configuration/</loc>
   </url>
   
   <url>
-    <loc>/other/coding-standards/</loc>
+    <loc>/orbit/other/coding-standards/</loc>
   </url>
   
   <url>
-    <loc>/client/dependency-injection/</loc>
+    <loc>/orbit/client/dependency-injection/</loc>
   </url>
   
   <url>
-    <loc>/other/dukes-choice-award-2016/</loc>
+    <loc>/orbit/other/dukes-choice-award-2016/</loc>
   </url>
   
   <url>
-    <loc>/other/hello-world/</loc>
+    <loc>/orbit/other/hello-world/</loc>
   </url>
   
   <url>
-    <loc>/getting-started/migration-from-1.x/</loc>
+    <loc>/orbit/getting-started/migration-from-1.x/</loc>
   </url>
   
   <url>
-    <loc>/</loc>
+    <loc>/orbit/</loc>
   </url>
   
   <url>
-    <loc>/other/prerequisites/</loc>
+    <loc>/orbit/other/prerequisites/</loc>
   </url>
   
   <url>
-    <loc>/other/security-and-code-signing/</loc>
+    <loc>/orbit/other/security-and-code-signing/</loc>
   </url>
   
   <url>
-    <loc>/client/shutdown/</loc>
+    <loc>/orbit/client/shutdown/</loc>
   </url>
   
   <url>
-    <loc>/other/submission-policy/</loc>
+    <loc>/orbit/other/submission-policy/</loc>
   </url>
   
   <url>
-    <loc>/tags/</loc>
+    <loc>/orbit/tags/</loc>
   </url>
   
   <url>
-    <loc>/</loc>
+    <loc>/orbit/</loc>
   </url>
   
 </urlset>
