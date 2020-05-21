@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Modules - Orbit</title>
+<meta name="generator" content="Hugo 0.71.0" />
+<link href="http://example.org/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="http://example.org/getting-started/modules/">
+<link rel="stylesheet" href="http://example.org/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="http://example.org/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="http://example.org/js/bundle.js"></script><style>
+:root {}
+</style>
+<meta property="og:title" content="Modules" />
+<meta property="og:description" content="The main Orbit project is split into several modules for client and server.
+Client orbit-client A JVM library for applications interfacing with an Orbit cluster. It handles maintaining a connection to the mesh, leasing addressables, and routing messages. It will be the main entrypoint for most developers.
+Gradle:
+implementation(&#34;cloud.orbit:orbit-client:2.0.0-alpha.65&#34;) Server Orbit can be run as a packaged service without having to delve into the server modules. However, if a more customized version of Orbit is needed, these modules can be used to build the server suitable to the task." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://example.org/getting-started/modules/" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Modules"/>
+<meta name="twitter:description" content="The main Orbit project is split into several modules for client and server.
+Client orbit-client A JVM library for applications interfacing with an Orbit cluster. It handles maintaining a connection to the mesh, leasing addressables, and routing messages. It will be the main entrypoint for most developers.
+Gradle:
+implementation(&#34;cloud.orbit:orbit-client:2.0.0-alpha.65&#34;) Server Orbit can be run as a packaged service without having to delve into the server modules. However, if a more customized version of Orbit is needed, these modules can be used to build the server suitable to the task."/>
+<meta itemprop="name" content="Modules">
+<meta itemprop="description" content="The main Orbit project is split into several modules for client and server.
+Client orbit-client A JVM library for applications interfacing with an Orbit cluster. It handles maintaining a connection to the mesh, leasing addressables, and routing messages. It will be the main entrypoint for most developers.
+Gradle:
+implementation(&#34;cloud.orbit:orbit-client:2.0.0-alpha.65&#34;) Server Orbit can be run as a packaged service without having to delve into the server modules. However, if a more customized version of Orbit is needed, these modules can be used to build the server suitable to the task.">
+
+<meta itemprop="wordCount" content="209">
+
+
+
+<meta itemprop="keywords" content="" /></head>
+<body><div class="container"><header>
+<h1>Orbit</h1>
+
+</header>
+
+<div class="content-container">
+<main><h1>Modules</h1>
+<p>The main Orbit project is split into several modules for client and server.</p>
+<h1 id="client">Client</h1>
+<h2 id="orbit-client">orbit-client</h2>
+<p>A JVM library for applications interfacing with an Orbit cluster. It handles maintaining a connection to the mesh, leasing addressables, and routing messages. It will be the main entrypoint for most developers.</p>
+<p>Gradle:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin">implementation(<span style="color:#e6db74">&#34;cloud.orbit:orbit-client:2.0.0-alpha.65&#34;</span>)
+</code></pre></div><h1 id="server">Server</h1>
+<p>Orbit can be run as a packaged service without having to delve into the server modules. However, if a more customized version of Orbit is needed, these modules can be used to build the server suitable to the task.</p>
+<h2 id="orbit-server">orbit-server</h2>
+<p>This is the main implementation of the Orbit Server cluster node. It handles the client connections, mesh connections, authorization, node and addressable leases, and message routing.</p>
+<h2 id="orbit-application">orbit-application</h2>
+<p>Default hosting application for orbit-server. Decodes settings from a file and initiates the server runtime.</p>
+<h2 id="orbit-proto">orbit-proto</h2>
+<p>Contains the protobuf definitions for communicating with the service and helper methods for translation to internal types.</p>
+<h2 id="orbit-server-etcd">orbit-server-etcd</h2>
+<p>Implementations of the Node Directory and Addressable Directory against an etcd store. By default orbit-server will use in-memory directories, but those won&rsquo;t support clustering multiple Orbit Server nodes nor will values persist between restarts.</p>
+<h2 id="orbit-server-prometheus">orbit-server-prometheus</h2>
+<p>Implementation of a Prometheus endpoint for exposing metrics gathered by <a href="https://micrometer.io">micrometer</a>.</p>
+<h2 id="orbit-shared--orbit-util">orbit-shared &amp; orbit-util</h2>
+<p>Shared and utility classes mostly to support internal operations</p>
+<div class="edit-meta">
+
+<br></div><nav class="pagination"><a class="nav nav-prev" href="http://example.org/getting-started/" title="Getting Started"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Getting Started</a>
+<a class="nav nav-next" href="http://example.org/getting-started/actors/" title="Actors">Next - Actors <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+
+<nav class="open-menu">
+<ul>
+<li class=""><a href="http://example.org/">Home</a></li>
+
+<li class="parent"><a href="http://example.org/getting-started/">Getting Started</a>
+  
+<ul class="sub-menu">
+<li class="active"><a href="http://example.org/getting-started/modules/">Modules</a></li>
+<li class=""><a href="http://example.org/getting-started/actors/">Actors</a></li>
+<li class=""><a href="http://example.org/getting-started/addressables/">Addressables</a></li>
+<li class=""><a href="http://example.org/getting-started/migration-from-1.x/">Migration from Orbit 1.x</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="http://example.org/client/">Client</a>
+  
+<ul class="sub-menu">
+<li class=""><a href="http://example.org/client/configuration/">Client Configuration</a></li>
+<li class=""><a href="http://example.org/client/dependency-injection/">Dependency Injection</a></li>
+<li class=""><a href="http://example.org/client/shutdown/">Shutdown</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="http://example.org/server/">Server</a>
+  
+<ul class="sub-menu">
+<li class=""><a href="http://example.org/server/configuration/">Server Configuration</a></li>
+<li class=""><a href="http://example.org/server/hosting/">Hosting Orbit Server</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="http://example.org/other/">Other stuff</a>
+  
+<ul class="sub-menu">
+<li class=""><a href="http://example.org/other/coding-standards/">Coding Standards</a></li>
+<li class=""><a href="http://example.org/other/dukes-choice-award-2016/">Duke&#39;s choice Award 2016</a></li>
+<li class=""><a href="http://example.org/other/hello-world/">Hello World</a></li>
+<li class=""><a href="http://example.org/other/prerequisites/">Prerequisites</a></li>
+<li class=""><a href="http://example.org/other/security-and-code-signing/">Security and Code Signing</a></li>
+<li class=""><a href="http://example.org/other/submission-policy/">Submission Policy</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

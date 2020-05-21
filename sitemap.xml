@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <url>
+    <loc>http://example.org/getting-started/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/getting-started/modules/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/server/configuration/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/client/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/server/hosting/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/server/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/other/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/toc/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://example.org/getting-started/actors/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/getting-started/addressables/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/categories/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/client/configuration/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/other/coding-standards/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/client/dependency-injection/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/other/dukes-choice-award-2016/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/other/hello-world/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/getting-started/migration-from-1.x/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/other/prerequisites/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/other/security-and-code-signing/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/client/shutdown/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/other/submission-policy/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/tags/</loc>
+  </url>
+  
+  <url>
+    <loc>http://example.org/</loc>
+  </url>
+  
+</urlset>

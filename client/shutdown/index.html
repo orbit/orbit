@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Shutdown - Orbit</title>
+<meta name="generator" content="Hugo 0.71.0" />
+<link href="http://example.org/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="http://example.org/client/shutdown/">
+<link rel="stylesheet" href="http://example.org/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="http://example.org/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="http://example.org/js/bundle.js"></script><style>
+:root {}
+</style>
+<meta property="og:title" content="Shutdown" />
+<meta property="og:description" content="Orbit is designed to handle a graceful or hard shutdown.
+In a hard shutdown scenario, Orbit servers will notice a client node disconnecting the GRPC connection and suspend the leases on all addressables placed on that node. Any subsequent messages will be routed to new nodes where the addressables become activated. There may be some message loss during this brief transition period.
+Orbit also affords an opportunity for a graceful shutdown through a shutdown procedure that can be invoked by the client application." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://example.org/client/shutdown/" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Shutdown"/>
+<meta name="twitter:description" content="Orbit is designed to handle a graceful or hard shutdown.
+In a hard shutdown scenario, Orbit servers will notice a client node disconnecting the GRPC connection and suspend the leases on all addressables placed on that node. Any subsequent messages will be routed to new nodes where the addressables become activated. There may be some message loss during this brief transition period.
+Orbit also affords an opportunity for a graceful shutdown through a shutdown procedure that can be invoked by the client application."/>
+<meta itemprop="name" content="Shutdown">
+<meta itemprop="description" content="Orbit is designed to handle a graceful or hard shutdown.
+In a hard shutdown scenario, Orbit servers will notice a client node disconnecting the GRPC connection and suspend the leases on all addressables placed on that node. Any subsequent messages will be routed to new nodes where the addressables become activated. There may be some message loss during this brief transition period.
+Orbit also affords an opportunity for a graceful shutdown through a shutdown procedure that can be invoked by the client application.">
+
+<meta itemprop="wordCount" content="504">
+
+
+
+<meta itemprop="keywords" content="" /></head>
+<body><div class="container"><header>
+<h1>Orbit</h1>
+
+</header>
+
+<div class="content-container">
+<main><h1>Shutdown</h1>
+<p>Orbit is designed to handle a graceful or hard shutdown.</p>
+<p>In a hard shutdown scenario, Orbit servers will notice a client node disconnecting the GRPC connection and suspend the leases on all addressables placed on that node. Any subsequent messages will be routed to new nodes where the addressables become activated. There may be some message loss during this brief transition period.</p>
+<p>Orbit also affords an opportunity for a graceful shutdown through a shutdown procedure that can be invoked by the client application.</p>
+<p>By calling <code>.stop()</code> on the Orbit Client instance, Orbit will deactivate all the actors placed on this node so they can be</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin">orbitClient.stop()
+</code></pre></div><p>In a Kotlin application, this can be used in conjunction with a SIGTERM handler to automatically clean up on any graceful application exit.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin">Runtime.getRuntime().addShutdownHook(<span style="color:#66d9ef">object</span> <span style="color:#960050;background-color:#1e0010">: </span><span style="color:#a6e22e">Thread</span>() {
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">run</span>() = runBlocking {
+        println(<span style="color:#e6db74">&#34;Gracefully shutting down&#34;</span>)
+        orbitClient.stop().join()
+        println(<span style="color:#e6db74">&#34;Shutdown complete&#34;</span>)
+    }
+})
+</code></pre></div><p>When <code>.stop()</code> is called, the Orbit Client will go through the following procedure.</p>
+<ol>
+<li>System signals to the client application a shutdown (SIGTERM)</li>
+<li>Application calls <code>orbitClient.stop()</code> and waits for it to return
+<ul>
+<li>Orbit Client tells the server to remove the client node from the pool for addressable placement</li>
+<li>Orbit Client iterates through all addressables placed on this node
+<ul>
+<li>Calls the OnDeactivate method on the addressable, if specified, to perform any cleanup</li>
+<li>Abandons the lease with the Orbit service</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Application completes its shutdown</li>
+</ol>
+<p>Notes:</p>
+<ul>
+<li>Ideally, client applications should be built around actors persisting their state on write, so there is nothing left to do on shutdown. But in rare cases where that&rsquo;s required, this option is available.</li>
+<li>A graceful shutdown will likely lead to less message loss than a hard shutdown.</li>
+<li>The addressables are deactivated in parallel with a maximum number of simultaneous deactivates set in Orbit Config (<code>val deactivationConcurrency: Int = 10</code>). The proper value for this concurrency will highly depend on constraints of the application, such as expected addressable counts, or any disk or database activity limitations.</li>
+<li>Any messages in-flight to an addressable on the shutting down node will still be delivered until the addressable is deactivating. This can be handy if graceful shutdown with many addressables and a costly deactivation cause shutdown to last seconds or minutes.</li>
+</ul>
+<h2 id="sigterm-caveat">SIGTERM Caveat</h2>
+<p>The method described above to hook shutdown into SIGTERM is the simplest solution that handles most situations. Detaching a debugger, Ctrl-C from the command line, or shutting down a Docker container all invoke this path.</p>
+<p>In a larger application, the time to gracefully drain all actors and shut down could take seconds or minutes. If there are system constraints that timeout before sending a SIGKILL, the graceful shutdown could be incomplete.</p>
+<p>Additionally, in more complicated applications, many components could be listening for the SIGTERM event leading to non-determinism in tearing the application down. For example, metrics services may be shut off before the drain is complete, leaving the larger environment blind to the application&rsquo;s inner state.</p>
+<p>It is up to the application developer to balance these concerns and determine the best way to tear down the application.</p>
+<div class="edit-meta">
+
+<br></div><nav class="pagination"><a class="nav nav-prev" href="http://example.org/client/dependency-injection/" title="Dependency Injection"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Dependency Injection</a>
+<a class="nav nav-next" href="http://example.org/server/" title="Server">Next - Server <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+
+<nav class="open-menu">
+<ul>
+<li class=""><a href="http://example.org/">Home</a></li>
+
+<li class=""><a href="http://example.org/getting-started/">Getting Started</a>
+  
+<ul class="sub-menu">
+<li class=""><a href="http://example.org/getting-started/modules/">Modules</a></li>
+<li class=""><a href="http://example.org/getting-started/actors/">Actors</a></li>
+<li class=""><a href="http://example.org/getting-started/addressables/">Addressables</a></li>
+<li class=""><a href="http://example.org/getting-started/migration-from-1.x/">Migration from Orbit 1.x</a></li>
+</ul>
+  
+</li>
+
+<li class="parent"><a href="http://example.org/client/">Client</a>
+  
+<ul class="sub-menu">
+<li class=""><a href="http://example.org/client/configuration/">Client Configuration</a></li>
+<li class=""><a href="http://example.org/client/dependency-injection/">Dependency Injection</a></li>
+<li class="active"><a href="http://example.org/client/shutdown/">Shutdown</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="http://example.org/server/">Server</a>
+  
+<ul class="sub-menu">
+<li class=""><a href="http://example.org/server/configuration/">Server Configuration</a></li>
+<li class=""><a href="http://example.org/server/hosting/">Hosting Orbit Server</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="http://example.org/other/">Other stuff</a>
+  
+<ul class="sub-menu">
+<li class=""><a href="http://example.org/other/coding-standards/">Coding Standards</a></li>
+<li class=""><a href="http://example.org/other/dukes-choice-award-2016/">Duke&#39;s choice Award 2016</a></li>
+<li class=""><a href="http://example.org/other/hello-world/">Hello World</a></li>
+<li class=""><a href="http://example.org/other/prerequisites/">Prerequisites</a></li>
+<li class=""><a href="http://example.org/other/security-and-code-signing/">Security and Code Signing</a></li>
+<li class=""><a href="http://example.org/other/submission-policy/">Submission Policy</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

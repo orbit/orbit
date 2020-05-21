@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Client on Orbit</title>
+    <link>http://example.org/client/</link>
+    <description>Recent content in Client on Orbit</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    
+	<atom:link href="http://example.org/client/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Client Configuration</title>
+      <link>http://example.org/client/configuration/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/client/configuration/</guid>
+      <description>Orbit Client offers a broad set of configuration options to be supplied in its constructor. Some settings are required to discover addressables and connect to an Orbit Server cluster, while others can fine-tune how the client operates.
+The OrbitClientConfig class contains the configuration values the OrbitClient needs to operate and is supplied in the constructor:
+import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main() { runBlocking { val orbitClient = OrbitClient( OrbitClientConfig( namespace = &amp;#34;carnival&amp;#34;, grpcEndpoint = &amp;#34;dns:///localhost:50056/&amp;#34;, packages = listOf(&amp;#34;orbit.</description>
+    </item>
+    
+    <item>
+      <title>Dependency Injection</title>
+      <link>http://example.org/client/dependency-injection/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/client/dependency-injection/</guid>
+      <description>By default, Orbit will instantiate and activate Addressables using the default, empty constructor. Many times an Addressable will require some service or store for activation or its functional use.
+Orbit supports a &amp;ldquo;bring your own DI container&amp;rdquo; model
+The typical approach is to use constructor dependency injection, where dependencies are be supplied as constructor arguments.
+class PlayerImpl(private val playerStore: PlayerStore) : AbstractActor(), Player { ... PlayerImpl code } To wire a DI container into Orbit, the addressableConstructor member of OrbitConfig can be replaced with a custom implementation of the AddressableConstructor interface.</description>
+    </item>
+    
+    <item>
+      <title>Shutdown</title>
+      <link>http://example.org/client/shutdown/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/client/shutdown/</guid>
+      <description>Orbit is designed to handle a graceful or hard shutdown.
+In a hard shutdown scenario, Orbit servers will notice a client node disconnecting the GRPC connection and suspend the leases on all addressables placed on that node. Any subsequent messages will be routed to new nodes where the addressables become activated. There may be some message loss during this brief transition period.
+Orbit also affords an opportunity for a graceful shutdown through a shutdown procedure that can be invoked by the client application.</description>
+    </item>
+    
+  </channel>
+</rss>

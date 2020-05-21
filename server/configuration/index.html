@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Server Configuration - Orbit</title>
+<meta name="generator" content="Hugo 0.71.0" />
+<link href="http://example.org/index.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="http://example.org/server/configuration/">
+<link rel="stylesheet" href="http://example.org/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="http://example.org/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="http://example.org/js/bundle.js"></script><style>
+:root {}
+</style>
+<meta property="og:title" content="Server Configuration" />
+<meta property="og:description" content="Orbit Server offers extensive configuration and an extension model to support many situations outside the defaults. The OrbitServerConfig class supplied to the OrbitServer constructor has overrides for lease timing, process management, addressable and node storage, and metrics.
+The OrbitServerConfig class is well documented and will be the authoritative source for the latest options. Some settings, like the pipelineBufferCount is a simple Int type. Others, like the addressableLeaseDuration are more complex objects." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://example.org/server/configuration/" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Server Configuration"/>
+<meta name="twitter:description" content="Orbit Server offers extensive configuration and an extension model to support many situations outside the defaults. The OrbitServerConfig class supplied to the OrbitServer constructor has overrides for lease timing, process management, addressable and node storage, and metrics.
+The OrbitServerConfig class is well documented and will be the authoritative source for the latest options. Some settings, like the pipelineBufferCount is a simple Int type. Others, like the addressableLeaseDuration are more complex objects."/>
+<meta itemprop="name" content="Server Configuration">
+<meta itemprop="description" content="Orbit Server offers extensive configuration and an extension model to support many situations outside the defaults. The OrbitServerConfig class supplied to the OrbitServer constructor has overrides for lease timing, process management, addressable and node storage, and metrics.
+The OrbitServerConfig class is well documented and will be the authoritative source for the latest options. Some settings, like the pipelineBufferCount is a simple Int type. Others, like the addressableLeaseDuration are more complex objects.">
+
+<meta itemprop="wordCount" content="298">
+
+
+
+<meta itemprop="keywords" content="" /></head>
+<body><div class="container"><header>
+<h1>Orbit</h1>
+
+</header>
+
+<div class="content-container">
+<main><h1>Server Configuration</h1>
+<p>Orbit Server offers extensive configuration and an extension model to support many situations outside the defaults. The <code>OrbitServerConfig</code> class supplied to the <code>OrbitServer</code> constructor has overrides for lease timing, process management, addressable and node storage, and metrics.</p>
+<p>The <code>OrbitServerConfig</code> class is well documented and will be the authoritative source for the latest options. Some settings, like the <code>pipelineBufferCount</code> is a simple Int type. Others, like the <code>addressableLeaseDuration</code> are more complex objects.</p>
+<p><code>ExternallyConfigured&lt;T&gt;</code> settings allow replacement of implementations of some classes, such as the Node Directory. They are settable from serialized JSON data in a configuration file. The configuration class must derive from ExternallyConfigured<T>, where T is the interface this implementation will replace.</p>
+<p>A truncated example of the EtcdNodeDirectory implementation of Node Directory:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">EtcdNodeDirectory</span>(config: EtcdNodeDirectoryConfig, <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">val</span> clock: Clock) : NodeDirectory {
+    <span style="color:#66d9ef">data</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">EtcdNodeDirectoryConfig</span>(
+        <span style="color:#66d9ef">val</span> url: String
+    ) : ExternallyConfigured&lt;NodeDirectory&gt; {
+        <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">val</span> instanceType: Class&lt;<span style="color:#66d9ef">out</span> NodeDirectory&gt; = EtcdNodeDirectory<span style="color:#f92672">::</span><span style="color:#66d9ef">class</span>.java
+    }
+    ... EtcdNodeDirectory implementation
+}
+</code></pre></div><h2 id="configuration-file">Configuration File</h2>
+<p>Orbit Server is set up with sensible default values for a simple, single node service. The easiest way to customize an Orbit Server is to use a configuration file. Orbit Server by default uses a <code>SettingsLoader</code> class which loads from a JSON-formatted configuration file. This file is searched for in 3 ways:</p>
+<h3 id="orbit_settings_raw-environment-variable">ORBIT_SETTINGS_RAW environment variable</h3>
+<p>Orbit will first attempt to read a raw JSON data from an environment variable <code>ORBIT_SETTINGS_RAW</code>.</p>
+<h3 id="orbit_settings-environment-variable">ORBIT_SETTINGS environment variable</h3>
+<p>Orbit will then attempt to load a configuration file found at the path specified in the <code>ORBIT_SETTINGS</code> environment variable, such as <code>/etc/orbit/orbit.json</code>.</p>
+<h3 id="orbitsettings-system-property">orbit.settings system property</h3>
+<p>Orbit will finally attempt to load a configuration file found at the path speciied in the &lsquo;orbit.settings` system property.</p>
+<p>For ExternallyConfigured classes, configuration takes the form of a serialized class to be loaded from Jackson ObjectMapper:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">    <span style="color:#e6db74">&#34;nodeDirectory&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> [
+        <span style="color:#e6db74">&#34;orbit.server.etcd.EtcdNodeDirectory$EtcdNodeDirectoryConfig&#34;</span>,
+        {
+            <span style="color:#f92672">&#34;url&#34;</span>: <span style="color:#e6db74">&#34;http://orbit-node-directory:2379&#34;</span>
+        }
+    ]<span style="color:#960050;background-color:#1e0010">,</span>
+
+</code></pre></div><div class="edit-meta">
+
+<br></div><nav class="pagination"><a class="nav nav-prev" href="http://example.org/server/" title="Server"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Server</a>
+<a class="nav nav-next" href="http://example.org/server/hosting/" title="Hosting Orbit Server">Next - Hosting Orbit Server <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+
+<nav class="open-menu">
+<ul>
+<li class=""><a href="http://example.org/">Home</a></li>
+
+<li class=""><a href="http://example.org/getting-started/">Getting Started</a>
+  
+<ul class="sub-menu">
+<li class=""><a href="http://example.org/getting-started/modules/">Modules</a></li>
+<li class=""><a href="http://example.org/getting-started/actors/">Actors</a></li>
+<li class=""><a href="http://example.org/getting-started/addressables/">Addressables</a></li>
+<li class=""><a href="http://example.org/getting-started/migration-from-1.x/">Migration from Orbit 1.x</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="http://example.org/client/">Client</a>
+  
+<ul class="sub-menu">
+<li class=""><a href="http://example.org/client/configuration/">Client Configuration</a></li>
+<li class=""><a href="http://example.org/client/dependency-injection/">Dependency Injection</a></li>
+<li class=""><a href="http://example.org/client/shutdown/">Shutdown</a></li>
+</ul>
+  
+</li>
+
+<li class="parent"><a href="http://example.org/server/">Server</a>
+  
+<ul class="sub-menu">
+<li class="active"><a href="http://example.org/server/configuration/">Server Configuration</a></li>
+<li class=""><a href="http://example.org/server/hosting/">Hosting Orbit Server</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="http://example.org/other/">Other stuff</a>
+  
+<ul class="sub-menu">
+<li class=""><a href="http://example.org/other/coding-standards/">Coding Standards</a></li>
+<li class=""><a href="http://example.org/other/dukes-choice-award-2016/">Duke&#39;s choice Award 2016</a></li>
+<li class=""><a href="http://example.org/other/hello-world/">Hello World</a></li>
+<li class=""><a href="http://example.org/other/prerequisites/">Prerequisites</a></li>
+<li class=""><a href="http://example.org/other/security-and-code-signing/">Security and Code Signing</a></li>
+<li class=""><a href="http://example.org/other/submission-policy/">Submission Policy</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

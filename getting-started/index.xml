@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Getting Started on Orbit</title>
+    <link>http://example.org/getting-started/</link>
+    <description>Recent content in Getting Started on Orbit</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    
+	<atom:link href="http://example.org/getting-started/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Modules</title>
+      <link>http://example.org/getting-started/modules/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/getting-started/modules/</guid>
+      <description>The main Orbit project is split into several modules for client and server.
+Client orbit-client A JVM library for applications interfacing with an Orbit cluster. It handles maintaining a connection to the mesh, leasing addressables, and routing messages. It will be the main entrypoint for most developers.
+Gradle:
+implementation(&amp;#34;cloud.orbit:orbit-client:2.0.0-alpha.65&amp;#34;) Server Orbit can be run as a packaged service without having to delve into the server modules. However, if a more customized version of Orbit is needed, these modules can be used to build the server suitable to the task.</description>
+    </item>
+    
+    <item>
+      <title>Actors</title>
+      <link>http://example.org/getting-started/actors/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/getting-started/actors/</guid>
+      <description>Actors are the most common form of addressable, and are suitable for most situations. The distinction is semantic and Actor interfaces are provided to facilitate the actor pattern.
+Actors are never created or destroyed; they always exist conceptually. Not all actors in Orbit will be in-memory in the cluster at a given time. Actors which are in-memory are considered “activated” and those which are not are “deactivated”. The process of an actor being created in-memory is known as “Activation” and the process of an actor being removed from memory is known as “Deactivation”.</description>
+    </item>
+    
+    <item>
+      <title>Addressables</title>
+      <link>http://example.org/getting-started/addressables/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/getting-started/addressables/</guid>
+      <description>In Orbit, an addressable is an object that interacts with the world through asynchronous messages.
+Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster. As such, developers do not need to be concerned about keeping multiple activations/instances of an addressable synchronized with one another.
+Orbit also guarantees that calls to addressables can never be processed in parallel, meaning developers do not need to worry about concurrent access to an addressable.</description>
+    </item>
+    
+    <item>
+      <title>Migration from Orbit 1.x</title>
+      <link>http://example.org/getting-started/migration-from-1.x/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://example.org/getting-started/migration-from-1.x/</guid>
+      <description>Basic actor model change New concepts Addressables Outdated concepts Stage </description>
+    </item>
+    
+  </channel>
+</rss>
