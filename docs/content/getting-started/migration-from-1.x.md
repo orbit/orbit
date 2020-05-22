@@ -18,7 +18,7 @@ Read more about [Addressables](/getting-started/addressables)
 
 ### Orbit Client
 
-Integrating Orbit Client into your application is the easiest way to work with the Orbit Server Mesh. It handles connecting to the mesh, manages the lifetime of that connection, and helps easily send and receive messages to Addressables anywhere.
+Integrating Orbit Client into your application is the easiest way to work with the Orbit Server Mesh. It handles connecting to the Orbit Server mesh, manages the lifetime of the connection, and helps easily send and receive messages to Addressables anywhere.
 
 Read more about [Orbit Client](/client)
 
