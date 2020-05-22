@@ -27,31 +27,29 @@ fun main() {
 
 ## Required fields
 
-### `namespace: String`
+#### `namespace: String`
 The namespace to use when connecting to the Orbit cluster.
 
-### `grpcEndpoint: String`
+#### `grpcEndpoint: String`
 The gRPC endpoint where the Orbit cluster is located.
 
 ## Interesting optional fields
 
-### `packages: List<String>`
+#### `packages: List<String>`
 Packages to scan for addressables. If left blank, all packages will be scanned.
 
 
-### `addressableTTL: Duration`
+#### `addressableTTL: Duration`
 Time To Live (TTL) for addressables before deactivation
 
-### `addressableConstructor: ExternallyConfigured<AddressableConstructor>`
+#### `addressableConstructor: ExternallyConfigured<AddressableConstructor>`
 The system to use to construct addressables.
 
-### `platformExceptions: Boolean`
+#### `platformExceptions: Boolean`
 Rethrow platform specific exceptions. Should only be used when all clients are using the same SDK.
 
-### `containerOverrides: ComponentContainerRoot.() -> Unit`
+#### `containerOverrides: ComponentContainerRoot.() -> Unit`
 Hook to update internal container registrations after initialization
 
-### `bufferCount: Int`
-The number of messages (inbound) that may be queued before new messages are rejected.
-
-
+#### `bufferCount: Int`
+The number of messages (inbound) that may be queued before new messages are rejected. This applies back pressure protection when overwhelmed with incoming messages.
