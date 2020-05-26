@@ -1,5 +1,6 @@
 ---
 title: "Actors"
+weight: 5
 ---
 
 Actors are the most common form of addressable, and are suitable for most situations. The distinction is semantic and Actor interfaces are provided to facilitate the actor pattern.

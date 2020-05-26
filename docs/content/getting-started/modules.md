@@ -1,15 +1,15 @@
 ---
 title: "Modules"
-weight: 5
+weight: 3
 ---
 
-The main Orbit project is split into several modules for client and server.
+The Orbit project is split into several modules for client and server.
 
 # Client
 ## orbit-client
 A JVM library for applications interfacing with an Orbit cluster. It handles maintaining a connection to the mesh, leasing addressables, and routing messages. It will be the main entrypoint for most developers.
 
-Gradle:
+To include in your Gradle project, import the client library.
 ```kotlin
 implementation("cloud.orbit:orbit-client:{{< release >}}")
 ```
@@ -34,4 +34,4 @@ Implementation of a Prometheus endpoint for exposing metrics gathered by [microm
 
 
 ## orbit-shared & orbit-util
-Shared and utility classes mostly to support internal operations
+Shared and utility classes mostly to support internal operations.
