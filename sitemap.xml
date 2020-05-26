@@ -27,11 +27,19 @@
   </url>
   
   <url>
+    <loc>/orbit/getting-started/modules/</loc>
+  </url>
+  
+  <url>
     <loc>/orbit/server/</loc>
   </url>
   
   <url>
-    <loc>/orbit/getting-started/modules/</loc>
+    <loc>/orbit/getting-started/addressables/</loc>
+  </url>
+  
+  <url>
+    <loc>/orbit/getting-started/actors/</loc>
   </url>
   
   <url>
@@ -41,14 +49,6 @@
   <url>
     <loc>/orbit/toc/</loc>
     <priority>0</priority>
-  </url>
-  
-  <url>
-    <loc>/orbit/getting-started/actors/</loc>
-  </url>
-  
-  <url>
-    <loc>/orbit/getting-started/addressables/</loc>
   </url>
   
   <url>
