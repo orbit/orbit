@@ -11,6 +11,27 @@
     
     
     <item>
+      <title>Prerequisites</title>
+      <link>/orbit/getting-started/prerequisites/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/orbit/getting-started/prerequisites/</guid>
+      <description>Required Software The minimum requirements for an Orbit client application.
+ Java 11 SE SDK or above. Gradle Kotlin  Orbit Server To run an Orbit Server inside a Docker environment
+ Docker Desktop Docker Compose  Recommended Software  IntelliJ IDEA is our preferred IDE.  </description>
+    </item>
+    
+    <item>
+      <title>Hello World</title>
+      <link>/orbit/getting-started/hello-world/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/orbit/getting-started/hello-world/</guid>
+      <description>In this guide we’ll cover how to get a very simple Orbit application running in the form of “Hello World”. It shows using a single-module in a single-process environment, often useful for development purposes. This will demonstrate how to set up an Actor and communicate with an Orbit Server.
+This tutorial assumes that you have set up a development environment as described in the Getting Started Prerequisites document and have some familiarity with Gradle based Kotlin projects.</description>
+    </item>
+    
+    <item>
       <title>Modules</title>
       <link>/orbit/getting-started/modules/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -49,7 +70,7 @@ Orbit also guarantees that calls to addressables can never be processed in paral
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/orbit/getting-started/migration-from-1.x/</guid>
-      <description>Basic actor model change New concepts Addressables Outdated concepts Stage </description>
+      <description>Orbit 2 Philosophy Orbit 2 accomplishes the same basic goals as Orbit 1.x, but via a whole different approach. Orbit 1.x takes the form of a component included in an application utilizing distributed storage to coordinate messaging between service instances. Orbit 2 has taken all the responsibilities of tracking Actors and routing messaging into a standalone, scalable, and multi-tenant mesh service. Applications connect to the mesh over GRPC through a thin client library that manages the connection, leasing, and message delivery.</description>
     </item>
     
   </channel>

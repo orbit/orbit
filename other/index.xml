@@ -34,27 +34,6 @@ I was honored to travel to JavaOne in San Francisco to accept the 2016 Duke&amp;
     </item>
     
     <item>
-      <title>Hello World</title>
-      <link>/orbit/other/hello-world/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>/orbit/other/hello-world/</guid>
-      <description>In this guide we’ll cover how to get a very simple Orbit application running in the form of “Hello World”. It shows using a single-module in a single-process environment, often useful for development purposes.
-This tutorial assumes that you have set up a development environment as described in the [[prerequisites|Getting Started: Prerequisites]] document and have some familiarity with Maven based Java projects.
-Maven Project The first step is to set up a Maven project that is able to pull in the Orbit dependencies.</description>
-    </item>
-    
-    <item>
-      <title>Prerequisites</title>
-      <link>/orbit/other/prerequisites/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>/orbit/other/prerequisites/</guid>
-      <description>Required Software The minimum requirements for Orbit are:
- Java 8 SE SDK or above. Maven 3.1 or above.  Recommended Software  Git is required if you want to get and build the Orbit code manually. IntelliJ IDEA is our preferred IDE.  </description>
-    </item>
-    
-    <item>
       <title>Security and Code Signing</title>
       <link>/orbit/other/security-and-code-signing/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>

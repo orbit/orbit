@@ -7,7 +7,7 @@
   </url>
   
   <url>
-    <loc>/orbit/getting-started/modules/</loc>
+    <loc>/orbit/getting-started/prerequisites/</loc>
   </url>
   
   <url>
@@ -19,11 +19,19 @@
   </url>
   
   <url>
+    <loc>/orbit/getting-started/hello-world/</loc>
+  </url>
+  
+  <url>
     <loc>/orbit/server/hosting/</loc>
   </url>
   
   <url>
     <loc>/orbit/server/</loc>
+  </url>
+  
+  <url>
+    <loc>/orbit/getting-started/modules/</loc>
   </url>
   
   <url>
@@ -64,15 +72,7 @@
   </url>
   
   <url>
-    <loc>/orbit/other/hello-world/</loc>
-  </url>
-  
-  <url>
     <loc>/orbit/getting-started/migration-from-1.x/</loc>
-  </url>
-  
-  <url>
-    <loc>/orbit/other/prerequisites/</loc>
   </url>
   
   <url>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Hello World - Orbit</title>
+<meta name="generator" content="Hugo 0.71.0" />
+<link href="/orbitindex.xml" rel="alternate" type="application/rss+xml">
+<link rel="canonical" href="/orbit/getting-started/hello-world/">
+<link rel="stylesheet" href="/orbit/css/theme.min.css">
+<script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+<link rel="stylesheet" href="/orbit/css/chroma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery.easing@1.4.1/jquery.easing.min.js"></script>
+<script src="/orbit/js/bundle.js"></script><style>
+:root {}
+</style>
+<meta property="og:title" content="Hello World" />
+<meta property="og:description" content="In this guide we’ll cover how to get a very simple Orbit application running in the form of “Hello World”. It shows using a single-module in a single-process environment, often useful for development purposes. This will demonstrate how to set up an Actor and communicate with an Orbit Server.
+This tutorial assumes that you have set up a development environment as described in the Getting Started Prerequisites document and have some familiarity with Gradle based Kotlin projects." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/orbit/getting-started/hello-world/" />
+
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Hello World"/>
+<meta name="twitter:description" content="In this guide we’ll cover how to get a very simple Orbit application running in the form of “Hello World”. It shows using a single-module in a single-process environment, often useful for development purposes. This will demonstrate how to set up an Actor and communicate with an Orbit Server.
+This tutorial assumes that you have set up a development environment as described in the Getting Started Prerequisites document and have some familiarity with Gradle based Kotlin projects."/>
+<meta itemprop="name" content="Hello World">
+<meta itemprop="description" content="In this guide we’ll cover how to get a very simple Orbit application running in the form of “Hello World”. It shows using a single-module in a single-process environment, often useful for development purposes. This will demonstrate how to set up an Actor and communicate with an Orbit Server.
+This tutorial assumes that you have set up a development environment as described in the Getting Started Prerequisites document and have some familiarity with Gradle based Kotlin projects.">
+
+<meta itemprop="wordCount" content="577">
+
+
+
+<meta itemprop="keywords" content="" /></head>
+<body><div class="container"><header>
+<h1>Orbit</h1>
+
+</header>
+
+<div class="content-container">
+<main><h1>Hello World</h1>
+<p>In this guide we’ll cover how to get a very simple Orbit application running in the form of “Hello World”.  It shows using a single-module in a single-process environment, often useful for development purposes. This will demonstrate how to set up an Actor and communicate with an Orbit Server.</p>
+<p>This tutorial assumes that you have set up a development environment as described in the <a href="/getting-started/prerequisites">Getting Started Prerequisites</a> document and have some familiarity with Gradle based Kotlin projects. All samples are in Kotlin, the language in which Orbit is developed, but the principles work for a Java app as well.</p>
+<h1 id="gradle-project">Gradle Project</h1>
+<p>The first step is to set up a Gradle project and pull in the Orbit dependencies.</p>
+<pre><code>implementation(&quot;cloud.orbit:orbit-client:2.0.0-alpha.65&quot;)
+</code></pre><h1 id="actor-interface">Actor Interface</h1>
+<p>In Orbit all actors must have an interface, below we’ll create a very simple actor interface.</p>
+<p><strong>greeter.kt</strong></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">package</span> orbit.hello
+
+<span style="color:#66d9ef">import</span> kotlinx.coroutines.Deferred
+<span style="color:#66d9ef">import</span> orbit.client.actor.ActorWithStringKey
+
+<span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">Greeter</span> : ActorWithStringKey {
+    <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">sayHello</span>(): Deferred&lt;String&gt;
+}
+</code></pre></div><ul>
+<li>Actor interfaces are standard Kotlin interfaces with special constraints</li>
+<li>All Actor interfaces must extend an Actor type</li>
+<li>All interface methods must return a promise in the form of a Deferred.</li>
+<li>The return type must be serializable or Unit.</li>
+</ul>
+<h1 id="actor-implementation">Actor Implementation</h1>
+<p>Once you have an actor interface in place, the final step to complete the actor is to create an actor implementation.</p>
+<p><strong>greeterImpl.kt</strong></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">package</span> orbit.hello
+
+<span style="color:#66d9ef">import</span> kotlinx.coroutines.Deferred
+<span style="color:#66d9ef">import</span> orbit.client.actor.AbstractActor
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">GreeterImpl</span> : AbstractActor(), Player {
+{
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">sayHello</span>(greeting: String): Deferred&lt;String&gt; = GlobalScope.async {
+    {
+        println(<span style="color:#e6db74">&#34;Here: ${greeting}&#34;</span>)
+        <span style="color:#66d9ef">return</span>@async <span style="color:#e6db74">&#34;You said: &#39;${greeting}&#39;, I say: &#39;Hello from ${context.reference.key} at node ${context.client.nodeId?.key}!&#39;&#34;</span>)
+    }
+}
+</code></pre></div><ul>
+<li>An actor implementation is a standard Kotlin or Java class</li>
+<li>Extending AbstractActor grants access to the context with a reference to client and the actor&rsquo;s address</li>
+<li>The actor must implement an actor interface</li>
+<li>Only one actor implementation per actor interface is permitted</li>
+</ul>
+<h1 id="using-the-actor">Using The Actor</h1>
+<p>The final step to get a working example is for us to actually use the actor.</p>
+<p><strong>app.kt</strong></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">package</span> orbit.hello
+
+<span style="color:#66d9ef">import</span> orbit.hello.actors.Actor
+<span style="color:#66d9ef">import</span> orbit.hello.actors.Stage
+
+<span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">main</span>() {
+    runBlocking {
+        <span style="color:#66d9ef">val</span> orbitClient = OrbitClient(
+            OrbitClientConfig(
+                namespace = <span style="color:#e6db74">&#34;hello&#34;</span>,
+                grpcEndpoint = <span style="color:#e6db74">&#34;dns:///localhost:50056/&#34;</span>
+            )
+        )
+
+        orbitClient.start().join()
+
+        <span style="color:#66d9ef">val</span> greeter = orbit.actorFactory.createProxy&lt;Greeter&gt;(<span style="color:#e6db74">&#34;Tim&#34;</span>)
+        <span style="color:#66d9ef">val</span> response = greeter.hello(<span style="color:#e6db74">&#34;Welcome to Orbit&#34;</span>).await()
+        println(response)
+
+        orbit.stop().join()
+    }
+}
+</code></pre></div><ul>
+<li>We create an orbit client instance in our namespace &ldquo;hello&rdquo;</li>
+<li>We get a reference to an actor</li>
+<li>The framework will handle the activation of the actor.</li>
+<li>You can communicate with the actor without knowing it&rsquo;s status.</li>
+</ul>
+<h1 id="running-orbit-server">Running Orbit Server</h1>
+<p>Assure Docker Desktop is running and Docker Compose is installed from the <a href="/getting-started/prerequisites">Prerequisites</a> step.</p>
+<p>In a terminal window, run the following.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">&gt; docker run -it -p 50056:50056 orbitframework/orbit:2.0.0-alpha.65
+Listening <span style="color:#66d9ef">for</span> transport dt_socket at address: <span style="color:#ae81ff">5005</span>
+<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> INFO orbit.application.impl.SettingsLoader - Searching <span style="color:#66d9ef">for</span> Orbit Settings...
+<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> INFO orbit.application.impl.SettingsLoader - No settings found. Using defaults.
+<span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> INFO orbit.server.mesh.local.LocalMeterRegistry - Starting simple meter registry
+<span style="color:#f92672">[</span>orbit-cpu-1<span style="color:#f92672">]</span> INFO orbit.server.OrbitServer - Starting Orbit server...
+<span style="color:#f92672">[</span>orbit-cpu-1<span style="color:#f92672">]</span> INFO orbit.server.OrbitServer - Lease expirations: Addressable: 600s, Node: 10s
+<span style="color:#f92672">[</span>orbit-cpu-1<span style="color:#f92672">]</span> INFO orbit.server.pipeline.Pipeline - Started a rail worker with <span style="color:#ae81ff">32</span> rails and a <span style="color:#ae81ff">10000</span> entry buffer.
+<span style="color:#f92672">[</span>orbit-cpu-1<span style="color:#f92672">]</span> INFO orbit.server.mesh.LocalNodeInfo - Joined cluster as <span style="color:#f92672">(</span>NodeId<span style="color:#f92672">(</span>key<span style="color:#f92672">=</span>aFmxt6MWvWP5HihR, namespace<span style="color:#f92672">=</span>management<span style="color:#f92672">))</span>
+<span style="color:#f92672">[</span>orbit-cpu-1<span style="color:#f92672">]</span> INFO orbit.server.service.GrpcEndpoint - Starting gRPC Endpoint on LocalServerInfo<span style="color:#f92672">(</span>port<span style="color:#f92672">=</span>50056, url<span style="color:#f92672">=</span>localhost:50056<span style="color:#f92672">)</span>.port...
+<span style="color:#f92672">[</span>orbit-cpu-1<span style="color:#f92672">]</span> INFO orbit.server.service.GrpcEndpoint - gRPC Endpoint started on LocalServerInfo<span style="color:#f92672">(</span>port<span style="color:#f92672">=</span>50056, url<span style="color:#f92672">=</span>localhost:50056<span style="color:#f92672">)</span>.port.
+<span style="color:#f92672">[</span>orbit-cpu-1<span style="color:#f92672">]</span> INFO orbit.server.OrbitServer - Orbit server started successfully in 338ms.
+</code></pre></div><h1 id="running">Running</h1>
+<p>You should now be able to run the project. If everything has gone well, you should see output similar to the following:</p>
+<pre><code>Connecting to Orbit at dns:///localhost:50056/
+Here: Welcome to Orbit
+You said: 'Welcome to Orbit!', I say: Hello from Tim at node aFmxt6MWvWP5HihR!
+</code></pre><p>Congratulations, you have created your first Orbit application!</p>
+<div class="edit-meta">
+
+<br></div><nav class="pagination"><a class="nav nav-prev" href="/orbit/getting-started/prerequisites/" title="Prerequisites"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Prerequisites</a>
+<a class="nav nav-next" href="/orbit/getting-started/modules/" title="Modules">Next - Modules <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+</nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
+</footer>
+</main><div class="sidebar">
+
+<nav class="open-menu">
+<ul>
+<li class=""><a href="/orbit">Home</a></li>
+
+<li class="parent"><a href="/orbit/getting-started/">Getting Started</a>
+  
+<ul class="sub-menu">
+<li class=""><a href="/orbit/getting-started/prerequisites/">Prerequisites</a></li>
+<li class="active"><a href="/orbit/getting-started/hello-world/">Hello World</a></li>
+<li class=""><a href="/orbit/getting-started/modules/">Modules</a></li>
+<li class=""><a href="/orbit/getting-started/actors/">Actors</a></li>
+<li class=""><a href="/orbit/getting-started/addressables/">Addressables</a></li>
+<li class=""><a href="/orbit/getting-started/migration-from-1.x/">Migration from Orbit 1.x</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="/orbit/client/">Client</a>
+  
+<ul class="sub-menu">
+<li class=""><a href="/orbit/client/configuration/">Client Configuration</a></li>
+<li class=""><a href="/orbit/client/dependency-injection/">Dependency Injection</a></li>
+<li class=""><a href="/orbit/client/shutdown/">Shutdown</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="/orbit/server/">Server</a>
+  
+<ul class="sub-menu">
+<li class=""><a href="/orbit/server/configuration/">Server Configuration</a></li>
+<li class=""><a href="/orbit/server/hosting/">Hosting Orbit Server</a></li>
+</ul>
+  
+</li>
+
+<li class=""><a href="/orbit/other/">Other stuff</a>
+  
+<ul class="sub-menu">
+<li class=""><a href="/orbit/other/coding-standards/">Coding Standards</a></li>
+<li class=""><a href="/orbit/other/dukes-choice-award-2016/">Duke&#39;s choice Award 2016</a></li>
+<li class=""><a href="/orbit/other/security-and-code-signing/">Security and Code Signing</a></li>
+<li class=""><a href="/orbit/other/submission-policy/">Submission Policy</a></li>
+</ul>
+  
+</li>
+</ul>
+</nav>
+
+
+
+<div class="sidebar-footer"></div>
+</div>
+</div><a href="#" id="backtothetop-fixed" class="backtothetop"
+ data-backtothetop-duration="600"
+ data-backtothetop-easing="easeOutQuart"
+ data-backtothetop-fixed-fadeIn="1000"
+ data-backtothetop-fixed-fadeOut="1000"
+ data-backtothetop-fixed-bottom="10"
+ data-backtothetop-fixed-right="20">
+<span class="fa-layers fa-fw">
+<i class="fas fa-circle"></i>
+<i class="fas fa-arrow-circle-up"></i>
+</span></a>
+</div>
+</body>
+</html>

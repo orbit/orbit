@@ -16,17 +16,17 @@
 :root {}
 </style>
 <meta property="og:title" content="Migration from Orbit 1.x" />
-<meta property="og:description" content="Basic actor model change New concepts Addressables Outdated concepts Stage " />
+<meta property="og:description" content="Orbit 2 Philosophy Orbit 2 accomplishes the same basic goals as Orbit 1.x, but via a whole different approach. Orbit 1.x takes the form of a component included in an application utilizing distributed storage to coordinate messaging between service instances. Orbit 2 has taken all the responsibilities of tracking Actors and routing messaging into a standalone, scalable, and multi-tenant mesh service. Applications connect to the mesh over GRPC through a thin client library that manages the connection, leasing, and message delivery." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="/orbit/getting-started/migration-from-1.x/" />
 
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Migration from Orbit 1.x"/>
-<meta name="twitter:description" content="Basic actor model change New concepts Addressables Outdated concepts Stage "/>
+<meta name="twitter:description" content="Orbit 2 Philosophy Orbit 2 accomplishes the same basic goals as Orbit 1.x, but via a whole different approach. Orbit 1.x takes the form of a component included in an application utilizing distributed storage to coordinate messaging between service instances. Orbit 2 has taken all the responsibilities of tracking Actors and routing messaging into a standalone, scalable, and multi-tenant mesh service. Applications connect to the mesh over GRPC through a thin client library that manages the connection, leasing, and message delivery."/>
 <meta itemprop="name" content="Migration from Orbit 1.x">
-<meta itemprop="description" content="Basic actor model change New concepts Addressables Outdated concepts Stage ">
+<meta itemprop="description" content="Orbit 2 Philosophy Orbit 2 accomplishes the same basic goals as Orbit 1.x, but via a whole different approach. Orbit 1.x takes the form of a component included in an application utilizing distributed storage to coordinate messaging between service instances. Orbit 2 has taken all the responsibilities of tracking Actors and routing messaging into a standalone, scalable, and multi-tenant mesh service. Applications connect to the mesh over GRPC through a thin client library that manages the connection, leasing, and message delivery.">
 
-<meta itemprop="wordCount" content="10">
+<meta itemprop="wordCount" content="248">
 
 
 
@@ -38,11 +38,25 @@
 
 <div class="content-container">
 <main><h1>Migration from Orbit 1.x</h1>
-<h2 id="basic-actor-model-change">Basic actor model change</h2>
+<h2 id="orbit-2-philosophy">Orbit 2 Philosophy</h2>
+<p>Orbit 2 accomplishes the same basic goals as Orbit 1.x, but via a whole different approach. Orbit 1.x takes the form of a component included in an application utilizing distributed storage to coordinate messaging between service instances. Orbit 2 has taken all the responsibilities of tracking Actors and routing messaging into a standalone, scalable, and multi-tenant mesh service. Applications connect to the mesh over GRPC through a thin client library that manages the connection, leasing, and message delivery.</p>
+<p>This change in overall design leads to greater reliability, fault tolerance, scalability, and helps with ZDT deployment.</p>
 <h2 id="new-concepts">New concepts</h2>
 <h3 id="addressables">Addressables</h3>
+<p>Actors are still very much a first-class focus of Orbit 2, but have been designed as part of a higher level of abstraction. Addressables are the core message target, with Actors as a special case. An Addressable is any entity that can receive a message.</p>
+<p>Read more about <a href="/getting-started/addressables">Addressables</a></p>
+<h3 id="orbit-client">Orbit Client</h3>
+<p>Integrating Orbit Client into your application is the easiest way to work with the Orbit Server Mesh. It handles connecting to the Orbit Server mesh, manages the lifetime of the connection, and helps easily send and receive messages to Addressables anywhere.</p>
+<p>Read more about <a href="/client">Orbit Client</a></p>
 <h2 id="outdated-concepts">Outdated concepts</h2>
 <h3 id="stage">Stage</h3>
+<p>The stage has been deprecated in favor of the simpler interface of the Orbit Client.</p>
+<h2 id="future-functional-parity">Future functional parity</h2>
+<p>Some features of Orbit 1.x have not yet made it into Orbit 2, but will be prioritized based on need and available development time.</p>
+<h3 id="streams">Streams</h3>
+<h3 id="extensions">Extensions</h3>
+<h3 id="reentrancy">Reentrancy</h3>
+<h3 id="placement-group">Placement group?</h3>
 <div class="edit-meta">
 
 <br></div><nav class="pagination"><a class="nav nav-prev" href="/orbit/getting-started/addressables/" title="Addressables"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Addressables</a>
@@ -58,6 +72,8 @@
 <li class="parent"><a href="/orbit/getting-started/">Getting Started</a>
   
 <ul class="sub-menu">
+<li class=""><a href="/orbit/getting-started/prerequisites/">Prerequisites</a></li>
+<li class=""><a href="/orbit/getting-started/hello-world/">Hello World</a></li>
 <li class=""><a href="/orbit/getting-started/modules/">Modules</a></li>
 <li class=""><a href="/orbit/getting-started/actors/">Actors</a></li>
 <li class=""><a href="/orbit/getting-started/addressables/">Addressables</a></li>
@@ -90,8 +106,6 @@
 <ul class="sub-menu">
 <li class=""><a href="/orbit/other/coding-standards/">Coding Standards</a></li>
 <li class=""><a href="/orbit/other/dukes-choice-award-2016/">Duke&#39;s choice Award 2016</a></li>
-<li class=""><a href="/orbit/other/hello-world/">Hello World</a></li>
-<li class=""><a href="/orbit/other/prerequisites/">Prerequisites</a></li>
 <li class=""><a href="/orbit/other/security-and-code-signing/">Security and Code Signing</a></li>
 <li class=""><a href="/orbit/other/submission-policy/">Submission Policy</a></li>
 </ul>

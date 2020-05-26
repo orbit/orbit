@@ -6,7 +6,7 @@
 <title>Prerequisites - Orbit</title>
 <meta name="generator" content="Hugo 0.71.0" />
 <link href="/orbitindex.xml" rel="alternate" type="application/rss+xml">
-<link rel="canonical" href="/orbit/other/prerequisites/">
+<link rel="canonical" href="/orbit/getting-started/prerequisites/">
 <link rel="stylesheet" href="/orbit/css/theme.min.css">
 <script src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
 <link rel="stylesheet" href="/orbit/css/chroma.min.css">
@@ -16,20 +16,23 @@
 :root {}
 </style>
 <meta property="og:title" content="Prerequisites" />
-<meta property="og:description" content="Required Software The minimum requirements for Orbit are:
- Java 8 SE SDK or above. Maven 3.1 or above.  Recommended Software  Git is required if you want to get and build the Orbit code manually. IntelliJ IDEA is our preferred IDE.  " />
+<meta property="og:description" content="Required Software The minimum requirements for an Orbit client application.
+ Java 11 SE SDK or above. Gradle Kotlin  Orbit Server To run an Orbit Server inside a Docker environment
+ Docker Desktop Docker Compose  Recommended Software  IntelliJ IDEA is our preferred IDE.  " />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="/orbit/other/prerequisites/" />
+<meta property="og:url" content="/orbit/getting-started/prerequisites/" />
 
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Prerequisites"/>
-<meta name="twitter:description" content="Required Software The minimum requirements for Orbit are:
- Java 8 SE SDK or above. Maven 3.1 or above.  Recommended Software  Git is required if you want to get and build the Orbit code manually. IntelliJ IDEA is our preferred IDE.  "/>
+<meta name="twitter:description" content="Required Software The minimum requirements for an Orbit client application.
+ Java 11 SE SDK or above. Gradle Kotlin  Orbit Server To run an Orbit Server inside a Docker environment
+ Docker Desktop Docker Compose  Recommended Software  IntelliJ IDEA is our preferred IDE.  "/>
 <meta itemprop="name" content="Prerequisites">
-<meta itemprop="description" content="Required Software The minimum requirements for Orbit are:
- Java 8 SE SDK or above. Maven 3.1 or above.  Recommended Software  Git is required if you want to get and build the Orbit code manually. IntelliJ IDEA is our preferred IDE.  ">
+<meta itemprop="description" content="Required Software The minimum requirements for an Orbit client application.
+ Java 11 SE SDK or above. Gradle Kotlin  Orbit Server To run an Orbit Server inside a Docker environment
+ Docker Desktop Docker Compose  Recommended Software  IntelliJ IDEA is our preferred IDE.  ">
 
-<meta itemprop="wordCount" content="40">
+<meta itemprop="wordCount" content="41">
 
 
 
@@ -42,20 +45,26 @@
 <div class="content-container">
 <main><h1>Prerequisites</h1>
 <h1 id="required-software">Required Software</h1>
-<p>The minimum requirements for Orbit are:</p>
+<p>The minimum requirements for an Orbit client application.</p>
 <ul>
-<li><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java 8 SE SDK</a> or above.</li>
-<li><a href="http://maven.apache.org/">Maven 3.1</a> or above.</li>
+<li><a href="https://www.oracle.com/java/technologies/javase-jdk11-downloads.html">Java 11 SE SDK</a> or above.</li>
+<li><a href="https://gradle.org/install/">Gradle</a></li>
+<li><a href="https://kotlinlang.org/">Kotlin</a></li>
+</ul>
+<h1 id="orbit-server">Orbit Server</h1>
+<p>To run an Orbit Server inside a Docker environment</p>
+<ul>
+<li><a href="https://www.docker.com/products/docker-desktop">Docker Desktop</a></li>
+<li><a href="https://docs.docker.com/compose/install/">Docker Compose</a></li>
 </ul>
 <h1 id="recommended-software">Recommended Software</h1>
 <ul>
-<li><a href="http://git-scm.com/">Git</a> is required if you want to get and build the Orbit code manually.</li>
 <li><a href="https://www.jetbrains.com/idea/">IntelliJ IDEA</a> is our preferred IDE.</li>
 </ul>
 <div class="edit-meta">
 
-<br></div><nav class="pagination"><a class="nav nav-prev" href="/orbit/other/hello-world/" title="Hello World"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Hello World</a>
-<a class="nav nav-next" href="/orbit/other/security-and-code-signing/" title="Security and Code Signing">Next - Security and Code Signing <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+<br></div><nav class="pagination"><a class="nav nav-prev" href="/orbit/getting-started/" title="Getting Started"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Getting Started</a>
+<a class="nav nav-next" href="/orbit/getting-started/hello-world/" title="Hello World">Next - Hello World <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
 </nav><footer><p class="powered">Powered by <a href="https://gohugo.io">Hugo</a>. Theme by <a href="https://themes.gohugo.io/hugo-theme-techdoc/">TechDoc</a>. Designed by <a href="https://github.com/thingsym/hugo-theme-techdoc">Thingsym</a>.</p>
 </footer>
 </main><div class="sidebar">
@@ -64,9 +73,11 @@
 <ul>
 <li class=""><a href="/orbit">Home</a></li>
 
-<li class=""><a href="/orbit/getting-started/">Getting Started</a>
+<li class="parent"><a href="/orbit/getting-started/">Getting Started</a>
   
 <ul class="sub-menu">
+<li class="active"><a href="/orbit/getting-started/prerequisites/">Prerequisites</a></li>
+<li class=""><a href="/orbit/getting-started/hello-world/">Hello World</a></li>
 <li class=""><a href="/orbit/getting-started/modules/">Modules</a></li>
 <li class=""><a href="/orbit/getting-started/actors/">Actors</a></li>
 <li class=""><a href="/orbit/getting-started/addressables/">Addressables</a></li>
@@ -94,13 +105,11 @@
   
 </li>
 
-<li class="parent"><a href="/orbit/other/">Other stuff</a>
+<li class=""><a href="/orbit/other/">Other stuff</a>
   
 <ul class="sub-menu">
 <li class=""><a href="/orbit/other/coding-standards/">Coding Standards</a></li>
 <li class=""><a href="/orbit/other/dukes-choice-award-2016/">Duke&#39;s choice Award 2016</a></li>
-<li class=""><a href="/orbit/other/hello-world/">Hello World</a></li>
-<li class="active"><a href="/orbit/other/prerequisites/">Prerequisites</a></li>
 <li class=""><a href="/orbit/other/security-and-code-signing/">Security and Code Signing</a></li>
 <li class=""><a href="/orbit/other/submission-policy/">Submission Policy</a></li>
 </ul>

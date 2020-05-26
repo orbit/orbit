@@ -32,7 +32,7 @@ import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main()
 The OrbitClientConfig class contains the configuration values the OrbitClient needs to operate and is supplied in the constructor:
 import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main() { runBlocking { val orbitClient = OrbitClient( OrbitClientConfig( namespace = &#34;carnival&#34;, grpcEndpoint = &#34;dns:///localhost:50056/&#34;, packages = listOf(&#34;orbit.">
 
-<meta itemprop="wordCount" content="192">
+<meta itemprop="wordCount" content="202">
 
 
 
@@ -63,23 +63,23 @@ import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main()
     }
 }
 </code></pre></div><h2 id="required-fields">Required fields</h2>
-<h3 id="namespace-string"><code>namespace: String</code></h3>
+<h4 id="namespace-string"><code>namespace: String</code></h4>
 <p>The namespace to use when connecting to the Orbit cluster.</p>
-<h3 id="grpcendpoint-string"><code>grpcEndpoint: String</code></h3>
+<h4 id="grpcendpoint-string"><code>grpcEndpoint: String</code></h4>
 <p>The gRPC endpoint where the Orbit cluster is located.</p>
 <h2 id="interesting-optional-fields">Interesting optional fields</h2>
-<h3 id="packages-liststring"><code>packages: List&lt;String&gt;</code></h3>
+<h4 id="packages-liststring"><code>packages: List&lt;String&gt;</code></h4>
 <p>Packages to scan for addressables. If left blank, all packages will be scanned.</p>
-<h3 id="addressablettl-duration"><code>addressableTTL: Duration</code></h3>
+<h4 id="addressablettl-duration"><code>addressableTTL: Duration</code></h4>
 <p>Time To Live (TTL) for addressables before deactivation</p>
-<h3 id="addressableconstructor-externallyconfiguredaddressableconstructor"><code>addressableConstructor: ExternallyConfigured&lt;AddressableConstructor&gt;</code></h3>
+<h4 id="addressableconstructor-externallyconfiguredaddressableconstructor"><code>addressableConstructor: ExternallyConfigured&lt;AddressableConstructor&gt;</code></h4>
 <p>The system to use to construct addressables.</p>
-<h3 id="platformexceptions-boolean"><code>platformExceptions: Boolean</code></h3>
+<h4 id="platformexceptions-boolean"><code>platformExceptions: Boolean</code></h4>
 <p>Rethrow platform specific exceptions. Should only be used when all clients are using the same SDK.</p>
-<h3 id="containeroverrides-componentcontainerroot---unit"><code>containerOverrides: ComponentContainerRoot.() -&gt; Unit</code></h3>
+<h4 id="containeroverrides-componentcontainerroot---unit"><code>containerOverrides: ComponentContainerRoot.() -&gt; Unit</code></h4>
 <p>Hook to update internal container registrations after initialization</p>
-<h3 id="buffercount-int"><code>bufferCount: Int</code></h3>
-<p>The number of messages (inbound) that may be queued before new messages are rejected.</p>
+<h4 id="buffercount-int"><code>bufferCount: Int</code></h4>
+<p>The number of messages (inbound) that may be queued before new messages are rejected. This applies back pressure protection when overwhelmed with incoming messages.</p>
 <div class="edit-meta">
 
 <br></div><nav class="pagination"><a class="nav nav-prev" href="/orbit/client/" title="Client"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Client</a>
@@ -95,6 +95,8 @@ import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main()
 <li class=""><a href="/orbit/getting-started/">Getting Started</a>
   
 <ul class="sub-menu">
+<li class=""><a href="/orbit/getting-started/prerequisites/">Prerequisites</a></li>
+<li class=""><a href="/orbit/getting-started/hello-world/">Hello World</a></li>
 <li class=""><a href="/orbit/getting-started/modules/">Modules</a></li>
 <li class=""><a href="/orbit/getting-started/actors/">Actors</a></li>
 <li class=""><a href="/orbit/getting-started/addressables/">Addressables</a></li>
@@ -127,8 +129,6 @@ import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main()
 <ul class="sub-menu">
 <li class=""><a href="/orbit/other/coding-standards/">Coding Standards</a></li>
 <li class=""><a href="/orbit/other/dukes-choice-award-2016/">Duke&#39;s choice Award 2016</a></li>
-<li class=""><a href="/orbit/other/hello-world/">Hello World</a></li>
-<li class=""><a href="/orbit/other/prerequisites/">Prerequisites</a></li>
 <li class=""><a href="/orbit/other/security-and-code-signing/">Security and Code Signing</a></li>
 <li class=""><a href="/orbit/other/submission-policy/">Submission Policy</a></li>
 </ul>
