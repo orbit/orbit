@@ -1,6 +1,6 @@
 ---
 title: "Modules"
-weight: 1
+weight: 5
 ---
 
 The main Orbit project is split into several modules for client and server.

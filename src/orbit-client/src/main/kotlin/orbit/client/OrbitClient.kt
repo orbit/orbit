@@ -35,7 +35,7 @@ import kotlin.coroutines.CoroutineContext
 
 class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
     internal val status: ClientState get() = localNode.status.clientState
-    internal val nodeId: NodeId? get() = localNode.status.nodeInfo?.id
+    val nodeId: NodeId? get() = localNode.status.nodeInfo?.id
 
     private val logger = KotlinLogging.logger { }
 
