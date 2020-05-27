@@ -19,8 +19,8 @@
 <meta property="og:description" content="Almost any scenario can be handled by using the prepackaged Orbit Server. For scenarios where the developer needs extensive control over the server, Orbit functionality can be hosted within a custom application.
 Describe taking a reference to orbit-server, starting an instance. Role of orbit-application.
 Gradle:
-implementation(&#34;cloud.orbit:orbit-server:{{ book.release }}&#34;) To instantiate an OrbitServer:
-import kotlinx.coroutines.runBlocking import orbit.server.OrbitServerConfig import orbit.server.OrbitServer fun main() { runBlocking { val server = OrbitServer(OrbitServerConfig({ ... configuration })) server." />
+implementation(&#34;cloud.orbit:orbit-server:2.0.0-alpha.65&#34;) To instantiate an OrbitServer:
+import kotlinx.coroutines.runBlocking import orbit.server.OrbitServerConfig import orbit.server.OrbitServer fun main() { runBlocking { val server = OrbitServer(OrbitServerConfig( ... configuration )) server.start().join() } } OrbitServerConfig The OrbitServerConfig class can be used to make changes to server configurations, including things like lease times, persistence technology, resource limitations, and metrics." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="/orbit/server/hosting/" />
 
@@ -29,16 +29,16 @@ import kotlinx.coroutines.runBlocking import orbit.server.OrbitServerConfig impo
 <meta name="twitter:description" content="Almost any scenario can be handled by using the prepackaged Orbit Server. For scenarios where the developer needs extensive control over the server, Orbit functionality can be hosted within a custom application.
 Describe taking a reference to orbit-server, starting an instance. Role of orbit-application.
 Gradle:
-implementation(&#34;cloud.orbit:orbit-server:{{ book.release }}&#34;) To instantiate an OrbitServer:
-import kotlinx.coroutines.runBlocking import orbit.server.OrbitServerConfig import orbit.server.OrbitServer fun main() { runBlocking { val server = OrbitServer(OrbitServerConfig({ ... configuration })) server."/>
+implementation(&#34;cloud.orbit:orbit-server:2.0.0-alpha.65&#34;) To instantiate an OrbitServer:
+import kotlinx.coroutines.runBlocking import orbit.server.OrbitServerConfig import orbit.server.OrbitServer fun main() { runBlocking { val server = OrbitServer(OrbitServerConfig( ... configuration )) server.start().join() } } OrbitServerConfig The OrbitServerConfig class can be used to make changes to server configurations, including things like lease times, persistence technology, resource limitations, and metrics."/>
 <meta itemprop="name" content="Hosting Orbit Server">
 <meta itemprop="description" content="Almost any scenario can be handled by using the prepackaged Orbit Server. For scenarios where the developer needs extensive control over the server, Orbit functionality can be hosted within a custom application.
 Describe taking a reference to orbit-server, starting an instance. Role of orbit-application.
 Gradle:
-implementation(&#34;cloud.orbit:orbit-server:{{ book.release }}&#34;) To instantiate an OrbitServer:
-import kotlinx.coroutines.runBlocking import orbit.server.OrbitServerConfig import orbit.server.OrbitServer fun main() { runBlocking { val server = OrbitServer(OrbitServerConfig({ ... configuration })) server.">
+implementation(&#34;cloud.orbit:orbit-server:2.0.0-alpha.65&#34;) To instantiate an OrbitServer:
+import kotlinx.coroutines.runBlocking import orbit.server.OrbitServerConfig import orbit.server.OrbitServer fun main() { runBlocking { val server = OrbitServer(OrbitServerConfig( ... configuration )) server.start().join() } } OrbitServerConfig The OrbitServerConfig class can be used to make changes to server configurations, including things like lease times, persistence technology, resource limitations, and metrics.">
 
-<meta itemprop="wordCount" content="97">
+<meta itemprop="wordCount" content="95">
 
 
 
@@ -53,7 +53,7 @@ import kotlinx.coroutines.runBlocking import orbit.server.OrbitServerConfig impo
 <p>Almost any scenario can be handled by using the prepackaged Orbit Server. For scenarios where the developer needs extensive control over the server, Orbit functionality can be hosted within a custom application.</p>
 <p>Describe taking a reference to orbit-server, starting an instance. Role of orbit-application.</p>
 <p>Gradle:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin">implementation(<span style="color:#e6db74">&#34;cloud.orbit:orbit-server:{{ book.release }}&#34;</span>)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin">implementation(<span style="color:#e6db74">&#34;cloud.orbit:orbit-server:2.0.0-alpha.65&#34;</span>)
 </code></pre></div><p>To instantiate an OrbitServer:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">import</span> kotlinx.coroutines.runBlocking
 <span style="color:#66d9ef">import</span> orbit.server.OrbitServerConfig
@@ -61,9 +61,9 @@ import kotlinx.coroutines.runBlocking import orbit.server.OrbitServerConfig impo
 
 <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">main</span>() {
     runBlocking {
-        <span style="color:#66d9ef">val</span> server = OrbitServer(OrbitServerConfig({
+        <span style="color:#66d9ef">val</span> server = OrbitServer(OrbitServerConfig(
             ... configuration
-        }))
+        ))
         server.start().join()
     }
 }

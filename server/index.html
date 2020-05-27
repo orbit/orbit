@@ -31,7 +31,31 @@
 </header>
 
 <div class="content-container">
-<main><h1>Server</h1><p>Running Orbit Server</p>
+<main><h1>Server</h1><p>Orbit Server can be run right out of the box, with several easy ways to get started.</p>
+<h2 id="docker-container">Docker container</h2>
+<p>The simplest way to start an Orbit Server for development is in a Docker container from the Docker Hub <a href="https://hub.docker.com/r/orbitframework/orbit">image</a>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">&gt; docker run -it -p 50056:50056 orbitframework/orbit:2.0.0-alpha.65
+</code></pre></div><h2 id="kubernetes">Kubernetes</h2>
+<p>Orbit Server comes packaged as a helm chart hosted on Github. Include Orbit Server as a dependency in your application&rsquo;s helm charts.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">dependencies</span>:
+- <span style="color:#66d9ef">name</span>: orbit
+  <span style="color:#66d9ef">version</span>: 2.0.0-alpha.65
+  <span style="color:#66d9ef">repository</span>: https://www.orbit.cloud/orbit
+  <span style="color:#66d9ef">condition</span>: enabled
+</code></pre></div><p>To configure Orbit, set overrides in a values.yaml file or use the &ndash;setValues switches when running <code>helm install</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">orbit</span>:
+  <span style="color:#66d9ef">url</span>: localhost
+  <span style="color:#66d9ef">node</span>:
+    <span style="color:#66d9ef">replicas</span>: <span style="color:#ae81ff">1</span>
+    <span style="color:#66d9ef">containerPort</span>: <span style="color:#ae81ff">50056</span>
+  <span style="color:#66d9ef">addressableDirectory</span>:
+    <span style="color:#66d9ef">replicas</span>: <span style="color:#ae81ff">1</span>
+  <span style="color:#66d9ef">nodeDirectory</span>:
+    <span style="color:#66d9ef">replicas</span>: <span style="color:#ae81ff">1</span>
+</code></pre></div><h2 id="hosted">Hosted</h2>
+<p>Most scenarios are supported with the turnkey methods above. For some advanced situations, it may be preferred to host the Orbit Server runtime within an existing server application.</p>
+<p>For help on hosting Orbit Server, check out the <a href="/server/hosting">Hosting</a> page.</p>
+<p>The best example of hosting the Orbit Server components can be found in the <a href="https://github.com/orbit/orbit/blob/master/src/orbit-application/src/main/kotlin/orbit/application/App.kt"><strong>orbit-application</strong></a> module.</p>
 <div class="edit-meta">
 
 <br></div><nav class="pagination"><a class="nav nav-prev" href="/orbit/client/shutdown/" title="Shutdown"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Shutdown</a>
