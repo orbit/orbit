@@ -8,10 +8,9 @@ Almost any scenario can be handled by using the prepackaged Orbit Server. For sc
 
 Describe taking a reference to orbit-server, starting an instance. Role of orbit-application.
 
-
 Gradle:
 ```kotlin
-implementation("cloud.orbit:orbit-server:{{ book.release }}")
+implementation("cloud.orbit:orbit-server:{{< release >}}")
 ```
 
 To instantiate an OrbitServer:
@@ -23,9 +22,9 @@ import orbit.server.OrbitServer
 
 fun main() {
     runBlocking {
-        val server = OrbitServer(OrbitServerConfig({
+        val server = OrbitServer(OrbitServerConfig(
             ... configuration
-        }))
+        ))
         server.start().join()
     }
 }
