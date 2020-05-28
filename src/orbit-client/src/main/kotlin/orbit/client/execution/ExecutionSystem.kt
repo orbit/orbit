@@ -35,6 +35,7 @@ internal class ExecutionSystem(
     private val componentContainer: ComponentContainer,
     private val clock: Clock,
     private val addressableConstructor: AddressableConstructor,
+    private val addressableDeactivator: AddressableDeactivator,
     config: OrbitClientConfig
 ) {
     private val logger = KotlinLogging.logger { }
@@ -102,9 +103,14 @@ internal class ExecutionSystem(
     suspend fun stop(nodeId: NodeId) {
         while (activeAddressables.count() > 0) {
             logger.info { "Draining node ${nodeId.key} of ${activeAddressables.count()} addressables" }
-            activeAddressables.values.asFlow().flatMapMerge(concurrency = deactivationConcurrency) { addressable ->
-                flow { emit(deactivate(addressable, DeactivationReason.NODE_SHUTTING_DOWN)) }
-            }.toList()
+
+            addressableDeactivator.deactivate(activeAddressables.values.toList()) { a ->
+                deactivate(a, DeactivationReason.NODE_SHUTTING_DOWN)
+            }
+
+//            activeAddressables.values.asFlow().flatMapMerge(concurrency = deactivationConcurrency) { addressable ->
+//                flow { emit(deactivate(addressable, DeactivationReason.NODE_SHUTTING_DOWN)) }
+//            }.toList()
         }
     }
 
