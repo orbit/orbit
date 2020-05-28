@@ -3,7 +3,9 @@ title: "Addressables"
 weight: 4
 ---
 
-In Orbit, an addressable is an object that interacts with the world through asynchronous messages. Simply, it has an address and can receive messages. It will be activated if it is not currently active.
+In Orbit, an addressable is an object that interacts with the world through asynchronous messages. Simply, it has an address and can receive messages, even remotely.
+
+Orbit will activate an addressable when it receives a message, and deactivate it when after a configurable period of inactivity. This patterns allows developers to speed up interactions and reduce load on databases and external services.
 
 Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster. As such, developers do not need to be concerned about keeping multiple activations/instances of an addressable synchronized with one another.
 
@@ -20,15 +22,21 @@ import kotlinx.coroutines.Deferred
 import orbit.client.addressable.Addresable
  
 interface Greeter : Addressable {
-    fun hello(message: String): Deferred<Unit>
+    fun hello(message: String): Deferred<String>
 }
 ```
 
-* Addressable interfaces must extend Addressable or a derived interface
-* Methods in addressable interfaces must return a Deferred.
+## Asynchronous Return Types
+Addressables must only contain methods which return asynchronous types (such as promises).
+The following return types (and their subtypes) are currently supported.
 
-## Addressable Implementations
-Once you have created an Addressable, you must offer an implementation of that Addressable for Orbit to use.
+| Main Type | Common Subtypes | For |
+| :--- | :--- | :--- |
+| [Deferred](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-deferred/)	| [CompletableDeferred](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-completable-deferred/) | Kotlin |
+| [CompletionStage](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletionStage.html) | [CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html) | JDK8+ |
+
+## Concrete Implementation
+Once you have created an Addressable interface, you must offer an implementation for Orbit to use. For each addressable interface, exactly one addressable class must implement it.
 
 ```kotlin
 package sample.addressables
@@ -40,16 +48,11 @@ import sample.addressables.Greeter
  
 class GreeterImpl() : AbstractAddressable(), Greeter {
 {
-    override fun hello(message: String): Deferred<Unit> {
-        ... Hello code
-
-        return CompletableDeferred(Unit)
+    override fun hello(message: String): Deferred<String> {
+        return CompletableDeferred("Message: ${message}")
     }
 }
 ```
-* Addressable implementations should extend AbstractAddressable to access the addressable context
-* Actor implementations must implement a single actor interface
-* Only one implementation per addressable interface is permitted
 
 ## Lifetime
 When a message is sent to a given addressable reference, the framework will perform the following actions:
@@ -80,44 +83,48 @@ class GreeterImpl() : AbstractAddressable(), Game {
 
 Addressables can be persisted at any time, but the @OnDeactivate hook can help assure the latest state is saved, except in the event of an hard shutdown. During graceful shutdown, every actor is deactivated giving it a final chance to persist.
 
+## Execution Model
+Addressables in Orbit can have multiple different execution modes. By default, addressables will use Safe Execution Mode.
+
+### Safe Execution Mode
+In safe execution mode Orbit guarantees that calls to addressables can never be processed in parallel. This means that if two clients call an addressable at the same time, they are guaranteed to be processed serially (one after the other) where one call completes before the next one starts.
+
+Orbit guarantees "at most once" delivery, meaning that best attempts will be made to deliver a message one time, but will deliver an error upon failure to deliver.
+
 ## Context
 
-If an Addressable extends the AbstractAddressable or AbstractActor class, it will have access to the AddressableContext. The AddressableContext provides access to the AddressableReference (identifier) and the OrbitClient instance. The AddressableReference can be used during the @OnActivate hook to identify which addressable needs to be restored from persistence.
+If an Addressable extends the AbstractAddressable or AbstractActor class, it will have access to an Orbit-managed context object. The AddressableContext provides access to the AddressableReference (identifier) and the OrbitClient instance. The AddressableReference can be used during the @OnActivate hook to identify which addressable needs to be restored from persistence.
 
 ```kotlin
 abstract class AbstractAddressable {
-    /**
-     * The Orbit context. It will be available after the [Addressable] is registered with Orbit.
-     * Attempting to access this variable before registration is undefined behavior.
-     */
     lateinit var context: AddressableContext
 }
-```
 
-```kotlin
 data class AddressableContext(
-    /**
-     * A reference to this [Addressable].
-     */
     val reference: AddressableReference,
-    /**
-     * A reference to the [OrbitClient].
-     */
     val client: OrbitClient
 )
 ```
-For example, if the addressable is an Actor with a String type key, 
+For example, if the addressable is an Actor with a String-type key, 
 ```kotlin
-interface Player : ActorWithStringKey {}
-
-class PlayerImpl(private val playerStore: PlayerStore) : AbstractActor(), Player {
-    ...
-    private suspend fun loadFromStore() {
-        val loadedPlayer = playerStore.get((this.context.reference.key as Key.StringKey).key)
-
-        rewards = loadedPlayer?.rewards?.toMutableList() ?: mutableListOf()
-    }
-    ...
+interface IdentityActor : ActorWithStringKey {
+    suspend fun identity(): Deferred<String>    
 }
 
+class IdentityActorImpl() : IdentityActor, AbstractActor() {
+    override suspend fun identity(): Deferred<String> {
+        val id = context.reference
+        return context.actorFactory.createProxy<IdentityResolver>().resolve(id).await()
+    }
+}
 ```
+
+## Keys
+Every addressable in Orbit has a unique key of one of the following types which identifies it.
+
+Orbit Type|JDK Type
+---|---
+NoKey|N/A
+StringKey|String
+Int32Key|Integer
+Int64Key|Long
