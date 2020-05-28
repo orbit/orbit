@@ -10,7 +10,7 @@ url: localhost
 node:
   image:
     repository: orbitframework/orbit
-    tag: 2.0.0-alpha.65
+    tag: 2.0.0-alpha.66
     pullPolicy: IfNotPresent
   replicas: 1
   containerPort: 50056
