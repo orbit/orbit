@@ -7,7 +7,7 @@
 
 Full Documentation
 =======
-See the [documentation website](https://docs.orbit.cloud/) for full documentation, examples and other information.
+See the [documentation website](https://www.orbit.cloud/orbit/) for full documentation, examples and other information.
 
 Orbit 1
 =======
