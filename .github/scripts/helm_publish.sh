@@ -7,7 +7,7 @@ repo="orbit"
 token=$GITHUB_TOKEN
 platform="linux"
 version=$TAG_VERSION
-indexLocation=".github/pages/index.yaml"
+indexLocation=".github/helm/index.yaml"
 
 curl -sSLo helm.tar.gz https://get.helm.sh/helm-v$helmVersion-$platform-amd64.tar.gz
 tar -xzf helm.tar.gz
@@ -24,3 +24,4 @@ mv -f index.yaml $indexLocation
 git add $indexLocation
 
 rm -rf ./$platform-amd64
+cp $indexLocation ./docs/public/

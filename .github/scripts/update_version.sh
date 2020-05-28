@@ -12,3 +12,7 @@ git add ./charts/orbit/values.yaml
 sed -i.bak "s/orbit.version.*/orbit.version=$version/" gradle.properties 
 rm -f gradle.properties.bak
 git add gradle.properties
+
+sed -i.bak "s/release.*/release = \"$version\"/" docs/config.toml  
+rm -f docs/config.toml.bak
+git add docs/config.toml

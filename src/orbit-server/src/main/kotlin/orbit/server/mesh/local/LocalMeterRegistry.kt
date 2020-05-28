@@ -19,6 +19,6 @@ class LocalMeterRegistry : SimpleMeterRegistry() {
     }
 
     init {
-        logger.info("Starting simple meter reg")
+        logger.info("Starting simple meter registry")
     }
 }

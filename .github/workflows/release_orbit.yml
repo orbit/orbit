@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Sync Repository
         uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: Get the Tag Version
         id: get_tag_version
         run: echo ::set-output name=TAG_VERSION::${GITHUB_REF#refs/tags/_v}
@@ -34,6 +36,14 @@ jobs:
         run: ./gradlew build fatJar -Porbit.version="${ORBIT_VERSION}"
         env:
           ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: '0.71.1'
+      - name: Build Hugo Docs
+        run: hugo -s docs -b /orbit
+      - name: Copy in Chart index.yaml
+        run: cp ./.github/helm/index.yaml ./docs/public/index.yaml
       - name: Publish Artifacts to GitHub Maven Repository
         run: ./.github/scripts/gradle_publish.sh
         env:
@@ -83,4 +93,4 @@ jobs:
         env:
           ACTIONS_DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
           PUBLISH_BRANCH: gh-pages
-          PUBLISH_DIR: ./.github/pages
+          PUBLISH_DIR: ./docs/public

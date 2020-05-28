@@ -1,0 +1,17 @@
+baseURL = "http://example.org/"
+languageCode = "en-us"
+title = "Orbit"
+theme = "hugo-theme-techdoc"
+enableInlineShortCodes = true
+[params]
+  release = "2.0.0-alpha.65"
+  menu_style = "open-menu"
+[markup]
+  defaultMarkdownHandler = "goldmark"
+  [markup.goldmark.renderer]
+      unsafe= true
+  [markup.tableOfContents]
+      startLevel = 2
+      endLevel = 4
+      ordered = false
+pluralizeListTitles = "false"

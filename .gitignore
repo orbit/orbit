@@ -47,3 +47,5 @@ nbdist/
 thumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+
+docs/public
