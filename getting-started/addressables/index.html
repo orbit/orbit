@@ -4,7 +4,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Addressables - Orbit</title>
-<meta name="generator" content="Hugo 0.71.0" />
+<meta name="generator" content="Hugo 0.71.1" />
 <link href="/orbitindex.xml" rel="alternate" type="application/rss+xml">
 <link rel="canonical" href="/orbit/getting-started/addressables/">
 <link rel="stylesheet" href="/orbit/css/theme.min.css">
@@ -16,20 +16,23 @@
 :root {}
 </style>
 <meta property="og:title" content="Addressables" />
-<meta property="og:description" content="In Orbit, an addressable is an object that interacts with the world through asynchronous messages. Simply, it has an address and can receive messages. It will be activated if it is not currently active.
-Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster. As such, developers do not need to be concerned about keeping multiple activations/instances of an addressable synchronized with one another." />
+<meta property="og:description" content="In Orbit, an addressable is an object that interacts with the world through asynchronous messages. Simply, it has an address and can receive messages, even remotely.
+Orbit will activate an addressable when it receives a message, and deactivate it when after a configurable period of inactivity. This patterns allows developers to speed up interactions and reduce load on databases and external services.
+Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="/orbit/getting-started/addressables/" />
 
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Addressables"/>
-<meta name="twitter:description" content="In Orbit, an addressable is an object that interacts with the world through asynchronous messages. Simply, it has an address and can receive messages. It will be activated if it is not currently active.
-Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster. As such, developers do not need to be concerned about keeping multiple activations/instances of an addressable synchronized with one another."/>
+<meta name="twitter:description" content="In Orbit, an addressable is an object that interacts with the world through asynchronous messages. Simply, it has an address and can receive messages, even remotely.
+Orbit will activate an addressable when it receives a message, and deactivate it when after a configurable period of inactivity. This patterns allows developers to speed up interactions and reduce load on databases and external services.
+Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster."/>
 <meta itemprop="name" content="Addressables">
-<meta itemprop="description" content="In Orbit, an addressable is an object that interacts with the world through asynchronous messages. Simply, it has an address and can receive messages. It will be activated if it is not currently active.
-Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster. As such, developers do not need to be concerned about keeping multiple activations/instances of an addressable synchronized with one another.">
+<meta itemprop="description" content="In Orbit, an addressable is an object that interacts with the world through asynchronous messages. Simply, it has an address and can receive messages, even remotely.
+Orbit will activate an addressable when it receives a message, and deactivate it when after a configurable period of inactivity. This patterns allows developers to speed up interactions and reduce load on databases and external services.
+Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster.">
 
-<meta itemprop="wordCount" content="559">
+<meta itemprop="wordCount" content="669">
 
 
 
@@ -41,7 +44,8 @@ Orbit guarantees that only one addressable with a given identity can be active a
 
 <div class="content-container">
 <main><h1>Addressables</h1>
-<p>In Orbit, an addressable is an object that interacts with the world through asynchronous messages. Simply, it has an address and can receive messages. It will be activated if it is not currently active.</p>
+<p>In Orbit, an addressable is an object that interacts with the world through asynchronous messages. Simply, it has an address and can receive messages, even remotely.</p>
+<p>Orbit will activate an addressable when it receives a message, and deactivate it when after a configurable period of inactivity. This patterns allows developers to speed up interactions and reduce load on databases and external services.</p>
 <p>Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster. As such, developers do not need to be concerned about keeping multiple activations/instances of an addressable synchronized with one another.</p>
 <p>Orbit also guarantees that calls to addressables can never be processed in parallel, meaning developers do not need to worry about concurrent access to an addressable. Two calls to an addressable can not be processed in parallel.</p>
 <h2 id="addressable-interfaces">Addressable Interfaces</h2>
@@ -52,14 +56,34 @@ Orbit guarantees that only one addressable with a given identity can be active a
 <span style="color:#66d9ef">import</span> orbit.client.addressable.Addresable
  
 <span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">Greeter</span> : Addressable {
-    <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">hello</span>(message: String): Deferred&lt;Unit&gt;
+    <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">hello</span>(message: String): Deferred&lt;String&gt;
 }
-</code></pre></div><ul>
-<li>Addressable interfaces must extend Addressable or a derived interface</li>
-<li>Methods in addressable interfaces must return a Deferred.</li>
-</ul>
-<h2 id="addressable-implementations">Addressable Implementations</h2>
-<p>Once you have created an Addressable, you must offer an implementation of that Addressable for Orbit to use.</p>
+</code></pre></div><h2 id="asynchronous-return-types">Asynchronous Return Types</h2>
+<p>Addressables must only contain methods which return asynchronous types (such as promises).
+The following return types (and their subtypes) are currently supported.</p>
+<table>
+<thead>
+<tr>
+<th align="left">Main Type</th>
+<th align="left">Common Subtypes</th>
+<th align="left">For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><a href="https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-deferred/">Deferred</a></td>
+<td align="left"><a href="https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-completable-deferred/">CompletableDeferred</a></td>
+<td align="left">Kotlin</td>
+</tr>
+<tr>
+<td align="left"><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletionStage.html">CompletionStage</a></td>
+<td align="left"><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a></td>
+<td align="left">JDK8+</td>
+</tr>
+</tbody>
+</table>
+<h2 id="concrete-implementation">Concrete Implementation</h2>
+<p>Once you have created an Addressable interface, you must offer an implementation for Orbit to use. For each addressable interface, exactly one addressable class must implement it.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">package</span> sample.addressables
 
 <span style="color:#66d9ef">import</span> kotlinx.coroutines.Deferred
@@ -69,18 +93,11 @@ Orbit guarantees that only one addressable with a given identity can be active a
  
 <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">GreeterImpl</span>() : AbstractAddressable(), Greeter {
 {
-    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">hello</span>(message: String): Deferred&lt;Unit&gt; {
-        ... Hello code
-
-        <span style="color:#66d9ef">return</span> CompletableDeferred(Unit)
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">hello</span>(message: String): Deferred&lt;String&gt; {
+        <span style="color:#66d9ef">return</span> CompletableDeferred(<span style="color:#e6db74">&#34;Message: ${message}&#34;</span>)
     }
 }
-</code></pre></div><ul>
-<li>Addressable implementations should extend AbstractAddressable to access the addressable context</li>
-<li>Actor implementations must implement a single actor interface</li>
-<li>Only one implementation per addressable interface is permitted</li>
-</ul>
-<h2 id="lifetime">Lifetime</h2>
+</code></pre></div><h2 id="lifetime">Lifetime</h2>
 <p>When a message is sent to a given addressable reference, the framework will perform the following actions:</p>
 <ol>
 <li>Check if the addressable is already activated in the cluster
@@ -107,39 +124,61 @@ Orbit guarantees that only one addressable with a given identity can be active a
     }
 }
 </code></pre></div><p>Addressables can be persisted at any time, but the @OnDeactivate hook can help assure the latest state is saved, except in the event of an hard shutdown. During graceful shutdown, every actor is deactivated giving it a final chance to persist.</p>
+<h2 id="execution-model">Execution Model</h2>
+<p>Addressables in Orbit can have multiple different execution modes. By default, addressables will use Safe Execution Mode.</p>
+<h3 id="safe-execution-mode">Safe Execution Mode</h3>
+<p>In safe execution mode Orbit guarantees that calls to addressables can never be processed in parallel. This means that if two clients call an addressable at the same time, they are guaranteed to be processed serially (one after the other) where one call completes before the next one starts.</p>
+<p>Orbit guarantees &ldquo;at most once&rdquo; delivery, meaning that best attempts will be made to deliver a message one time, but will deliver an error upon failure to deliver.</p>
 <h2 id="context">Context</h2>
-<p>If an Addressable extends the AbstractAddressable or AbstractActor class, it will have access to the AddressableContext. The AddressableContext provides access to the AddressableReference (identifier) and the OrbitClient instance. The AddressableReference can be used during the @OnActivate hook to identify which addressable needs to be restored from persistence.</p>
+<p>If an Addressable extends the AbstractAddressable or AbstractActor class, it will have access to an Orbit-managed context object. The AddressableContext provides access to the AddressableReference (identifier) and the OrbitClient instance. The AddressableReference can be used during the @OnActivate hook to identify which addressable needs to be restored from persistence.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">abstract</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AbstractAddressable</span> {
-    <span style="color:#75715e">/**
-</span><span style="color:#75715e">     * The Orbit context. It will be available after the [Addressable] is registered with Orbit.
-</span><span style="color:#75715e">     * Attempting to access this variable before registration is undefined behavior.
-</span><span style="color:#75715e">     */</span>
     <span style="color:#66d9ef">lateinit</span> <span style="color:#66d9ef">var</span> context: AddressableContext
 }
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">data</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AddressableContext</span>(
-    <span style="color:#75715e">/**
-</span><span style="color:#75715e">     * A reference to this [Addressable].
-</span><span style="color:#75715e">     */</span>
+
+<span style="color:#66d9ef">data</span> <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">AddressableContext</span>(
     <span style="color:#66d9ef">val</span> reference: AddressableReference,
-    <span style="color:#75715e">/**
-</span><span style="color:#75715e">     * A reference to the [OrbitClient].
-</span><span style="color:#75715e">     */</span>
     <span style="color:#66d9ef">val</span> client: OrbitClient
 )
-</code></pre></div><p>For example, if the addressable is an Actor with a String type key,</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">Player</span> : ActorWithStringKey {}
-
-<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">PlayerImpl</span>(<span style="color:#66d9ef">private</span> <span style="color:#66d9ef">val</span> playerStore: PlayerStore) : AbstractActor(), Player {
-    ...
-    <span style="color:#66d9ef">private</span> <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">loadFromStore</span>() {
-        <span style="color:#66d9ef">val</span> loadedPlayer = playerStore.<span style="color:#66d9ef">get</span>((<span style="color:#66d9ef">this</span>.context.reference.key <span style="color:#66d9ef">as</span> Key.StringKey).key)
-
-        rewards = loadedPlayer<span style="color:#f92672">?.</span>rewards<span style="color:#f92672">?.</span>toMutableList() <span style="color:#f92672">?:</span> mutableListOf()
-    }
-    ...
+</code></pre></div><p>For example, if the addressable is an Actor with a String-type key,</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">IdentityActor</span> : ActorWithStringKey {
+    <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">identity</span>(): Deferred&lt;String&gt;    
 }
 
-</code></pre></div><div class="edit-meta">
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">IdentityActorImpl</span>() : IdentityActor, AbstractActor() {
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">identity</span>(): Deferred&lt;String&gt; {
+        <span style="color:#66d9ef">val</span> id = context.reference
+        <span style="color:#66d9ef">return</span> context.actorFactory.createProxy&lt;IdentityResolver&gt;().resolve(id).await()
+    }
+}
+</code></pre></div><h2 id="keys">Keys</h2>
+<p>Every addressable in Orbit has a unique key of one of the following types which identifies it.</p>
+<table>
+<thead>
+<tr>
+<th>Orbit Type</th>
+<th>JDK Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NoKey</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>StringKey</td>
+<td>String</td>
+</tr>
+<tr>
+<td>Int32Key</td>
+<td>Integer</td>
+</tr>
+<tr>
+<td>Int64Key</td>
+<td>Long</td>
+</tr>
+</tbody>
+</table>
+<div class="edit-meta">
 
 <br></div><nav class="pagination"><a class="nav nav-prev" href="/orbit/getting-started/modules/" title="Modules"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Modules</a>
 <a class="nav nav-next" href="/orbit/getting-started/actors/" title="Actors">Next - Actors <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
@@ -183,13 +222,12 @@ Orbit guarantees that only one addressable with a given identity can be active a
   
 </li>
 
-<li class=""><a href="/orbit/other/">Other stuff</a>
+<li class=""><a href="/orbit/contributing/">Contributing</a>
   
 <ul class="sub-menu">
-<li class=""><a href="/orbit/other/coding-standards/">Coding Standards</a></li>
-<li class=""><a href="/orbit/other/dukes-choice-award-2016/">Duke&#39;s choice Award 2016</a></li>
-<li class=""><a href="/orbit/other/security-and-code-signing/">Security and Code Signing</a></li>
-<li class=""><a href="/orbit/other/submission-policy/">Submission Policy</a></li>
+<li class=""><a href="/orbit/contributing/governance/">Governance</a></li>
+<li class=""><a href="/orbit/contributing/standards-and-policies/">Standards &amp; Policies</a></li>
+<li class=""><a href="/orbit/contributing/legal/">Legal</a></li>
 </ul>
   
 </li>

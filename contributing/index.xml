@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Contributing on Orbit</title>
+    <link>/orbit/contributing/</link>
+    <description>Recent content in Contributing on Orbit</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    
+	<atom:link href="/orbit/contributing/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Governance</title>
+      <link>/orbit/contributing/governance/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/orbit/contributing/governance/</guid>
+      <description>Project Control The Orbit project is currently controlled and maintained by Electronic Arts (EA).
+As an Open Source project we welcome contributions from everyone. The final decision for changes being accepted into Orbit is taken by the Project Maintainer (currently Joe Hegarty).</description>
+    </item>
+    
+    <item>
+      <title>Standards &amp; Policies</title>
+      <link>/orbit/contributing/standards-and-policies/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/orbit/contributing/standards-and-policies/</guid>
+      <description>Coding Standards Orbit adheres to the standard Kotlin Style Guide / Coding Conventions which can be found here.</description>
+    </item>
+    
+    <item>
+      <title>Legal</title>
+      <link>/orbit/contributing/legal/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/orbit/contributing/legal/</guid>
+      <description>Software License Orbit is licensed under the BSD 3-clause license. See it here.
+Contributor License Agreement Like many other open source projects we require contributors to agree to our Contributor License Agreement (CLA) which can be found here.</description>
+    </item>
+    
+  </channel>
+</rss>

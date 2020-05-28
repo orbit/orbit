@@ -11,6 +11,16 @@
     
     
     <item>
+      <title>Governance</title>
+      <link>/orbit/contributing/governance/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/orbit/contributing/governance/</guid>
+      <description>Project Control The Orbit project is currently controlled and maintained by Electronic Arts (EA).
+As an Open Source project we welcome contributions from everyone. The final decision for changes being accepted into Orbit is taken by the Project Maintainer (currently Joe Hegarty).</description>
+    </item>
+    
+    <item>
       <title>Prerequisites</title>
       <link>/orbit/getting-started/prerequisites/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -50,8 +60,27 @@ This tutorial assumes that you have set up a development environment as describe
       <description>Almost any scenario can be handled by using the prepackaged Orbit Server. For scenarios where the developer needs extensive control over the server, Orbit functionality can be hosted within a custom application.
 Describe taking a reference to orbit-server, starting an instance. Role of orbit-application.
 Gradle:
-implementation(&amp;#34;cloud.orbit:orbit-server:2.0.0-alpha.65&amp;#34;) To instantiate an OrbitServer:
+implementation(&amp;#34;cloud.orbit:orbit-server:2.0.0-alpha.66&amp;#34;) To instantiate an OrbitServer:
 import kotlinx.coroutines.runBlocking import orbit.server.OrbitServerConfig import orbit.server.OrbitServer fun main() { runBlocking { val server = OrbitServer(OrbitServerConfig( ... configuration )) server.start().join() } } OrbitServerConfig The OrbitServerConfig class can be used to make changes to server configurations, including things like lease times, persistence technology, resource limitations, and metrics.</description>
+    </item>
+    
+    <item>
+      <title>Standards &amp; Policies</title>
+      <link>/orbit/contributing/standards-and-policies/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/orbit/contributing/standards-and-policies/</guid>
+      <description>Coding Standards Orbit adheres to the standard Kotlin Style Guide / Coding Conventions which can be found here.</description>
+    </item>
+    
+    <item>
+      <title>Legal</title>
+      <link>/orbit/contributing/legal/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/orbit/contributing/legal/</guid>
+      <description>Software License Orbit is licensed under the BSD 3-clause license. See it here.
+Contributor License Agreement Like many other open source projects we require contributors to agree to our Contributor License Agreement (CLA) which can be found here.</description>
     </item>
     
     <item>
@@ -63,7 +92,7 @@ import kotlinx.coroutines.runBlocking import orbit.server.OrbitServerConfig impo
       <description>The Orbit project is split into several modules for client and server.
 Client orbit-client A JVM library for applications interfacing with an Orbit cluster. It handles maintaining a connection to the mesh, leasing addressables, and routing messages. It will be the main entrypoint for most developers.
 To include in your Gradle project, import the client library.
-implementation(&amp;#34;cloud.orbit:orbit-client:2.0.0-alpha.65&amp;#34;) Server Orbit can be run as a packaged service without having to delve into the server modules.</description>
+implementation(&amp;#34;cloud.orbit:orbit-client:2.0.0-alpha.66&amp;#34;) Server Orbit can be run as a packaged service without having to delve into the server modules.</description>
     </item>
     
     <item>
@@ -72,8 +101,9 @@ implementation(&amp;#34;cloud.orbit:orbit-client:2.0.0-alpha.65&amp;#34;) Server
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/orbit/getting-started/addressables/</guid>
-      <description>In Orbit, an addressable is an object that interacts with the world through asynchronous messages. Simply, it has an address and can receive messages. It will be activated if it is not currently active.
-Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster. As such, developers do not need to be concerned about keeping multiple activations/instances of an addressable synchronized with one another.</description>
+      <description>In Orbit, an addressable is an object that interacts with the world through asynchronous messages. Simply, it has an address and can receive messages, even remotely.
+Orbit will activate an addressable when it receives a message, and deactivate it when after a configurable period of inactivity. This patterns allows developers to speed up interactions and reduce load on databases and external services.
+Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster.</description>
     </item>
     
     <item>
@@ -82,7 +112,7 @@ Orbit guarantees that only one addressable with a given identity can be active a
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/orbit/getting-started/actors/</guid>
-      <description>Actors are the most common form of addressable, and are suitable for most situations. The distinction is semantic and Actor interfaces are provided to facilitate the actor pattern.
+      <description>Actors are the most common form of addressable and are suitable for most situations. The distinction is semantic and Actor interfaces are provided to facilitate the actor pattern.
 Actors are never created or destroyed; they always exist conceptually. Not all actors in Orbit will be in-memory in the cluster at a given time. Actors which are in-memory are considered “activated” and those which are not are “deactivated”. The process of an actor being created in-memory is known as “Activation” and the process of an actor being removed from memory is known as “Deactivation”.</description>
     </item>
     
@@ -113,18 +143,6 @@ import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main()
     </item>
     
     <item>
-      <title>Coding Standards</title>
-      <link>/orbit/other/coding-standards/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>/orbit/other/coding-standards/</guid>
-      <description>Overview Orbit follows the coding standards laid out in this document.
-We realize that standards are often contentious and believe that having any standard (even where not everyone agrees) is the best course of action to ensure consistent and readable code across the project.
-Naming Conventions Classes / Interfaces Use PascalCase
-public interface User extends Actor { } public class UserActor extends AbstractActor implements User { } Enums Use PascalCase for name, SHOUTING_CASE for constants</description>
-    </item>
-    
-    <item>
       <title>Dependency Injection</title>
       <link>/orbit/client/dependency-injection/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -137,34 +155,12 @@ class PlayerImpl(private val playerStore: PlayerStore) : AbstractActor(), Player
     </item>
     
     <item>
-      <title>Duke&#39;s choice Award 2016</title>
-      <link>/orbit/other/dukes-choice-award-2016/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>/orbit/other/dukes-choice-award-2016/</guid>
-      <description>Orbit was the recipient of the 2016 Duke&amp;rsquo;s Choice Award for Open Source.
-From Joe Hegarty, Lead Engineer:  Hi Everyone,
-I was honored to travel to JavaOne in San Francisco to accept the 2016 Duke&amp;rsquo;s Choice Award for Open Source on behalf of the Orbit project. Orbit has been a real team effort ranging from the initial internal engineering efforts at EA and the efforts of our legal team to make Orbit EA&amp;rsquo;s first community project to the amazing contributions from our open source community.</description>
-    </item>
-    
-    <item>
       <title>Migration from Orbit 1.x</title>
       <link>/orbit/getting-started/migration-from-1.x/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>/orbit/getting-started/migration-from-1.x/</guid>
       <description>Orbit 2 Philosophy Orbit 2 accomplishes the same basic goals as Orbit 1.x, but via a whole different approach. Orbit 1.x takes the form of a component included in an application utilizing distributed storage to coordinate messaging between service instances. Orbit 2 has taken all the responsibilities of tracking Actors and routing messaging into a standalone, scalable, and multi-tenant mesh service. Applications connect to the mesh over GRPC through a thin client library that manages the connection, leasing, and message delivery.</description>
-    </item>
-    
-    <item>
-      <title>Security and Code Signing</title>
-      <link>/orbit/other/security-and-code-signing/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>/orbit/other/security-and-code-signing/</guid>
-      <description>Overview We take security seriously. This page includes information on how to contact us in the event you find a security concern with Orbit. It also lists the public keys you can use to verify a release of Orbit is really from us.
-Code Signing Every release of Orbit is signed according to the standard Maven Central procedures using the keys listed on this page.
-Reporting Security Problems If you wish to report a security issue and do not wish to use GitHub Issues due to the nature of the issue, you can do so by emailing us at orbit-opensource[at]ea.</description>
     </item>
     
     <item>
@@ -176,16 +172,6 @@ Reporting Security Problems If you wish to report a security issue and do not wi
       <description>Orbit is designed to handle a graceful or hard shutdown.
 In a hard shutdown scenario, Orbit servers will notice a client node disconnecting the GRPC connection and suspend the leases on all addressables placed on that node. Any subsequent messages will be routed to new nodes where the addressables become activated. There may be some message loss during this brief transition period.
 Orbit also affords an opportunity for a graceful shutdown through a shutdown procedure that can be invoked by the client application.</description>
-    </item>
-    
-    <item>
-      <title>Submission Policy</title>
-      <link>/orbit/other/submission-policy/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>/orbit/other/submission-policy/</guid>
-      <description>Overview This document describes the submission policy for the Orbit project.
-Licensing &amp;amp; CLA  In order to clarify the intellectual property license granted for contributions to EA open source projects you must sign the Contributor License Agreement (CLA).  Adhere to Coding Standards  All changes must adhere to the Orbit [[Coding Standards]].  Small and Independent Changelists  Changelists should be as small and independent as possible. Avoid multi-feature changelists.</description>
     </item>
     
   </channel>

@@ -7,6 +7,10 @@
   </url>
   
   <url>
+    <loc>/orbit/contributing/governance/</loc>
+  </url>
+  
+  <url>
     <loc>/orbit/getting-started/prerequisites/</loc>
   </url>
   
@@ -27,6 +31,14 @@
   </url>
   
   <url>
+    <loc>/orbit/contributing/standards-and-policies/</loc>
+  </url>
+  
+  <url>
+    <loc>/orbit/contributing/legal/</loc>
+  </url>
+  
+  <url>
     <loc>/orbit/getting-started/modules/</loc>
   </url>
   
@@ -43,7 +55,7 @@
   </url>
   
   <url>
-    <loc>/orbit/other/</loc>
+    <loc>/orbit/contributing/</loc>
   </url>
   
   <url>
@@ -60,15 +72,7 @@
   </url>
   
   <url>
-    <loc>/orbit/other/coding-standards/</loc>
-  </url>
-  
-  <url>
     <loc>/orbit/client/dependency-injection/</loc>
-  </url>
-  
-  <url>
-    <loc>/orbit/other/dukes-choice-award-2016/</loc>
   </url>
   
   <url>
@@ -76,15 +80,7 @@
   </url>
   
   <url>
-    <loc>/orbit/other/security-and-code-signing/</loc>
-  </url>
-  
-  <url>
     <loc>/orbit/client/shutdown/</loc>
-  </url>
-  
-  <url>
-    <loc>/orbit/other/submission-policy/</loc>
   </url>
   
   <url>

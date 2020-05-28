@@ -4,7 +4,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Actors - Orbit</title>
-<meta name="generator" content="Hugo 0.71.0" />
+<meta name="generator" content="Hugo 0.71.1" />
 <link href="/orbitindex.xml" rel="alternate" type="application/rss+xml">
 <link rel="canonical" href="/orbit/getting-started/actors/">
 <link rel="stylesheet" href="/orbit/css/theme.min.css">
@@ -16,20 +16,20 @@
 :root {}
 </style>
 <meta property="og:title" content="Actors" />
-<meta property="og:description" content="Actors are the most common form of addressable, and are suitable for most situations. The distinction is semantic and Actor interfaces are provided to facilitate the actor pattern.
+<meta property="og:description" content="Actors are the most common form of addressable and are suitable for most situations. The distinction is semantic and Actor interfaces are provided to facilitate the actor pattern.
 Actors are never created or destroyed; they always exist conceptually. Not all actors in Orbit will be in-memory in the cluster at a given time. Actors which are in-memory are considered “activated” and those which are not are “deactivated”. The process of an actor being created in-memory is known as “Activation” and the process of an actor being removed from memory is known as “Deactivation”." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="/orbit/getting-started/actors/" />
 
 <meta name="twitter:card" content="summary"/>
 <meta name="twitter:title" content="Actors"/>
-<meta name="twitter:description" content="Actors are the most common form of addressable, and are suitable for most situations. The distinction is semantic and Actor interfaces are provided to facilitate the actor pattern.
+<meta name="twitter:description" content="Actors are the most common form of addressable and are suitable for most situations. The distinction is semantic and Actor interfaces are provided to facilitate the actor pattern.
 Actors are never created or destroyed; they always exist conceptually. Not all actors in Orbit will be in-memory in the cluster at a given time. Actors which are in-memory are considered “activated” and those which are not are “deactivated”. The process of an actor being created in-memory is known as “Activation” and the process of an actor being removed from memory is known as “Deactivation”."/>
 <meta itemprop="name" content="Actors">
-<meta itemprop="description" content="Actors are the most common form of addressable, and are suitable for most situations. The distinction is semantic and Actor interfaces are provided to facilitate the actor pattern.
+<meta itemprop="description" content="Actors are the most common form of addressable and are suitable for most situations. The distinction is semantic and Actor interfaces are provided to facilitate the actor pattern.
 Actors are never created or destroyed; they always exist conceptually. Not all actors in Orbit will be in-memory in the cluster at a given time. Actors which are in-memory are considered “activated” and those which are not are “deactivated”. The process of an actor being created in-memory is known as “Activation” and the process of an actor being removed from memory is known as “Deactivation”.">
 
-<meta itemprop="wordCount" content="222">
+<meta itemprop="wordCount" content="404">
 
 
 
@@ -41,9 +41,11 @@ Actors are never created or destroyed; they always exist conceptually. Not all a
 
 <div class="content-container">
 <main><h1>Actors</h1>
-<p>Actors are the most common form of addressable, and are suitable for most situations. The distinction is semantic and Actor interfaces are provided to facilitate the actor pattern.</p>
+<p>Actors are the most common form of addressable and are suitable for most situations. The distinction is semantic and Actor interfaces are provided to facilitate the actor pattern.</p>
 <p>Actors are never created or destroyed; they always exist conceptually. Not all actors in Orbit will be in-memory in the cluster at a given time. Actors which are in-memory are considered “activated” and those which are not are “deactivated”. The process of an actor being created in-memory is known as “Activation” and the process of an actor being removed from memory is known as “Deactivation”.</p>
 <p>When a message is sent to an inactive actor, it will be placed somewhere in the pool of connected servers and activated. During the activation process, the actor’s state can be restored from a database. Actors are deactivated based on activity timeouts or server resource usage. Actor state can be persisted at any time or upon deactivation.</p>
+<h2 id="actors">Actors</h2>
+<p>Just like with an Addressable, Actors are defined by interfaces and implementations.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">package</span> orbit.carnival.actors
 
 <span style="color:#66d9ef">import</span> kotlinx.coroutines.Deferred
@@ -60,12 +62,57 @@ Actors are never created or destroyed; they always exist conceptually. Not all a
         ... Game code
     }
 }
-</code></pre></div><p>The same rules for Addressables apply to Actors:</p>
-<ul>
-<li>Actor implementations should extend AbstractActor to access the addressable context</li>
-<li>Actor implementations must implement a single actor interface</li>
-<li>Only one implementation per actor interface is permitted</li>
-</ul>
+</code></pre></div><h2 id="calling">Calling</h2>
+<p>Actors are called via a proxy. A proxy is created via the Orbit runtime context, typically Stage or AddressableContext.</p>
+<h3 id="accessing-the-proxy-factory">Accessing the Proxy Factory</h3>
+<p><strong>Kotlin</strong></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#75715e">// Via Orbit Client
+</span><span style="color:#75715e"></span>orbit.actorFactory.createProxy&lt;Greeter&gt;()
+
+<span style="color:#75715e">// From an Addressable
+</span><span style="color:#75715e"></span>context.client.actorFactory.createProxy&lt;Greeter&gt;()
+</code></pre></div><p><strong>Java</strong></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#75715e">// Via Orbit Client
+</span><span style="color:#75715e"></span>orbit<span style="color:#f92672">.</span><span style="color:#a6e22e">getActorFactory</span><span style="color:#f92672">().</span><span style="color:#a6e22e">createProxy</span><span style="color:#f92672">(</span>Greeter<span style="color:#f92672">.</span><span style="color:#a6e22e">class</span><span style="color:#f92672">);</span>
+
+<span style="color:#75715e">// From an Addressable
+</span><span style="color:#75715e"></span>getContext<span style="color:#f92672">().</span><span style="color:#a6e22e">getClient</span><span style="color:#f92672">().</span><span style="color:#a6e22e">getActorFactory</span><span style="color:#f92672">().</span><span style="color:#a6e22e">createProxy</span><span style="color:#f92672">(</span>Greeter<span style="color:#f92672">.</span><span style="color:#a6e22e">class</span><span style="color:#f92672">);</span>
+</code></pre></div><h2 id="runtime-model">Runtime Model</h2>
+<p>Orbit guarantees that only one activation of an actor with a given identity can exist at any one time in the cluster by default. As such, developers do not need to be concerned about keeping multiple activations/instances of an actor synchronized with one another.</p>
+<p>By default, Orbit also guarantees that calls to actors can never be processed in parallel using safe execution mode. This means that developers do not need to worry about concurrent access to an actor. Two calls to an actor can not be processed in parallel.</p>
+<h2 id="keys">Keys</h2>
+<p>Like all addressables, every actor in Orbit has a key. Additionally, to ensure they are type safe every actor interface must choose only one key type, this is achieved by extending one of the following actor interfaces. An example of how this works can be seen below.</p>
+<table>
+<thead>
+<tr>
+<th>Actor Interface</th>
+<th>JDK Type</th>
+<th>Orbit Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ActorWithNoKey</td>
+<td>N/A</td>
+<td>NoKey</td>
+</tr>
+<tr>
+<td>ActorWithStringKey</td>
+<td>String</td>
+<td>StringKey</td>
+</tr>
+<tr>
+<td>ActorWithInt32Key</td>
+<td>Integer</td>
+<td>Int32Key</td>
+</tr>
+<tr>
+<td>ActorWithInt64Key</td>
+<td>Long</td>
+<td>Int64Key</td>
+</tr>
+</tbody>
+</table>
 <div class="edit-meta">
 
 <br></div><nav class="pagination"><a class="nav nav-prev" href="/orbit/getting-started/addressables/" title="Addressables"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Addressables</a>
@@ -110,13 +157,12 @@ Actors are never created or destroyed; they always exist conceptually. Not all a
   
 </li>
 
-<li class=""><a href="/orbit/other/">Other stuff</a>
+<li class=""><a href="/orbit/contributing/">Contributing</a>
   
 <ul class="sub-menu">
-<li class=""><a href="/orbit/other/coding-standards/">Coding Standards</a></li>
-<li class=""><a href="/orbit/other/dukes-choice-award-2016/">Duke&#39;s choice Award 2016</a></li>
-<li class=""><a href="/orbit/other/security-and-code-signing/">Security and Code Signing</a></li>
-<li class=""><a href="/orbit/other/submission-policy/">Submission Policy</a></li>
+<li class=""><a href="/orbit/contributing/governance/">Governance</a></li>
+<li class=""><a href="/orbit/contributing/standards-and-policies/">Standards &amp; Policies</a></li>
+<li class=""><a href="/orbit/contributing/legal/">Legal</a></li>
 </ul>
   
 </li>
