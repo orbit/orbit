@@ -24,6 +24,7 @@ object TrackingGlobals {
     fun reset() {
         deactivateTestCounts.set(0)
         concurrentDeactivations.set(0)
+        maxConcurrentDeactivations.set(0)
     }
 
     fun startDeactivate() {
@@ -193,7 +194,7 @@ class SlowDeactivateActorImpl : SlowDeactivateActor {
 
         GlobalScope.launch {
             TrackingGlobals.startDeactivate()
-            delay(Random.nextLong(100))
+            delay(Random.nextLong(50) + 50)
             TrackingGlobals.endDeactivate()
             deferred.complete(Unit)
         }

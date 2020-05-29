@@ -81,6 +81,7 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
             definition<InvocationSystem>()
             definition<AddressableDefinitionDirectory>()
             externallyConfigured(config.addressableConstructor)
+            externallyConfigured(config.addressableDeactivator)
 
 
             definition<ExecutionSystem>()

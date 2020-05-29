@@ -17,13 +17,14 @@ import io.micrometer.core.instrument.simple.SimpleConfig
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import orbit.client.actor.TrackingGlobals
+import orbit.client.execution.AddressableDeactivator
+import orbit.client.execution.InstantDeactivator
 import orbit.server.OrbitServer
 import orbit.server.OrbitServerConfig
 import orbit.server.mesh.LeaseDuration
 import orbit.server.mesh.LocalServerInfo
 import orbit.server.mesh.local.LocalAddressableDirectory
 import orbit.server.mesh.local.LocalNodeDirectory
-import orbit.server.service.Meters
 import orbit.shared.mesh.NodeStatus
 import orbit.util.di.ComponentContainerRoot
 import orbit.util.di.ExternallyConfigured
@@ -128,7 +129,7 @@ open class BaseIntegrationTest {
         namespace: String = "test",
         packages: List<String> = listOf("orbit.client.actor"),
         platformExceptions: Boolean = false,
-        deactivationConcurrency: Int = 10
+        addressableDeactivation: ExternallyConfigured<AddressableDeactivator> = InstantDeactivator.Config()
     ): OrbitClient {
 
         val client = OrbitClient(
@@ -139,7 +140,7 @@ open class BaseIntegrationTest {
                 clock = clock,
                 platformExceptions = platformExceptions,
                 addressableTTL = 1.minutes,
-                deactivationConcurrency = deactivationConcurrency
+                addressableDeactivator = addressableDeactivation
             )
         )
 

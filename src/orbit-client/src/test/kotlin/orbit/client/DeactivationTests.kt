@@ -1,0 +1,117 @@
+/*
+ Copyright (C) 2015 - 2020 Electronic Arts Inc.  All rights reserved.
+ This file is part of the Orbit Project <https://www.orbit.cloud>.
+ See license in LICENSE.
+ */
+
+package orbit.client
+
+import io.kotlintest.eventually
+import io.kotlintest.matchers.numerics.shouldBeGreaterThan
+import io.kotlintest.matchers.numerics.shouldBeLessThan
+import io.kotlintest.matchers.numerics.shouldBeLessThanOrEqual
+import io.kotlintest.seconds
+import io.kotlintest.shouldBe
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import orbit.client.actor.KeyedDeactivatingActor
+import orbit.client.actor.SlowDeactivateActor
+import orbit.client.actor.TrackingGlobals
+import orbit.client.actor.createProxy
+import orbit.client.execution.ConcurrentDeactivator
+import orbit.client.execution.InstantDeactivator
+import orbit.client.net.ClientState
+import org.junit.Test
+
+class DeactivationTests : BaseIntegrationTest() {
+
+    @Test
+    fun `All actors get deactivated on shutdown`() {
+        runBlocking {
+            val count = 500
+            repeat(count) { key ->
+                client.actorFactory.createProxy<KeyedDeactivatingActor>(key).ping().await()
+            }
+
+            disconnectClient()
+
+            eventually(5.seconds) {
+                TrackingGlobals.deactivateTestCounts.get() shouldBe count
+            }
+        }
+    }
+
+    @Test
+    fun `Instant deactivation deactivates all addressables simultaneously`() {
+        runBlocking {
+            val client = startClient(
+                addressableDeactivation = InstantDeactivator.Config()
+            )
+            repeat(100) { key ->
+                client.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message").await()
+            }
+
+            delay(10)
+            disconnectClient(client)
+
+            TrackingGlobals.maxConcurrentDeactivations.get() shouldBeGreaterThan 20
+        }
+    }
+
+    @Test
+    fun `Concurrent deactivation doesn't exceed maximum concurrent setting`() {
+        runBlocking {
+            val client2 = startClient(
+                addressableDeactivation = ConcurrentDeactivator.Config(10)
+            )
+            repeat(100) { key ->
+                client2.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message").await()
+            }
+
+            delay(10)
+            disconnectClient(client2)
+
+            TrackingGlobals.maxConcurrentDeactivations.get() shouldBeLessThanOrEqual 10
+        }
+    }
+
+    @Test
+    fun `Actors added during deactivation get deactivated`() {
+        runBlocking {
+            var count = 100
+            repeat(count) { key ->
+                client.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message").await()
+            }
+
+            startServer(port = 50057, tickRate = 5.seconds)
+            val client2 = startClient(port = 50057)
+
+            var additionalAddressableCount = 0
+            GlobalScope.launch {
+                repeat(100) { k ->
+                    k.let { k + 100 }.let { key ->
+                        if (client.status != ClientState.IDLE) {
+                            ++additionalAddressableCount
+                            client2.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message")
+                            delay(5)
+                        }
+                    }
+                }
+            }
+
+            // ensure some actors are placed on both clients
+            delay(500)
+
+            disconnectClient(client)
+
+            TrackingGlobals.deactivateTestCounts.get() shouldBeGreaterThan count
+            TrackingGlobals.deactivateTestCounts.get() shouldBeLessThan count + additionalAddressableCount
+
+            disconnectClient(client2)
+
+            TrackingGlobals.deactivateTestCounts.get() shouldBe count + additionalAddressableCount
+        }
+    }
+}

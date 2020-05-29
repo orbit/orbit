@@ -33,11 +33,11 @@ import java.util.concurrent.atomic.AtomicReference
 
 internal class ExecutionHandle(
     val instance: Addressable,
-    val reference: AddressableReference,
+    override val reference: AddressableReference,
     val interfaceDefinition: AddressableInterfaceDefinition,
     val implDefinition: AddressableImplDefinition,
     componentContainer: ComponentContainer
-) {
+) : Deactivatable{
     private val orbitClient: OrbitClient by componentContainer.inject()
     private val clock: Clock by componentContainer.inject()
     private val supervisorScope: SupervisorScope by componentContainer.inject()
@@ -70,7 +70,7 @@ internal class ExecutionHandle(
             sendEvent(EventType.ActivateEvent(it))
         }
 
-    fun deactivate(deactivationReason: DeactivationReason): Completion =
+    override fun deactivate(deactivationReason: DeactivationReason): Completion =
         CompletableDeferred<Any?>().also {
             sendEvent(EventType.DeactivateEvent(deactivationReason, it))
         }
