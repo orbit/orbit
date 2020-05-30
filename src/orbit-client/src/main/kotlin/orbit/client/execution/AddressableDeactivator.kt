@@ -7,6 +7,7 @@
 package orbit.client.execution
 
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flow
@@ -44,7 +45,16 @@ class RateLimitedDeactivator(private val config: Config) : AddressableDeactivato
     }
 
     override suspend fun deactivate(addressables: List<Deactivatable>, deactivate: Deactivator) {
-        TODO("Not yet implemented")
+        val tickRate = 1000L / config.deactivationsPerSecond
+
+        println("Starting ${addressables.count()} item deactivations at ${tickRate}ms")
+
+        val ticker = ticker(tickRate)
+
+        addressables.forEach { a ->
+            ticker.receive()
+            deactivate(a)
+        }
     }
 }
 

@@ -8,6 +8,7 @@ package orbit.client
 
 import io.kotlintest.eventually
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
+import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.matchers.numerics.shouldBeLessThan
 import io.kotlintest.matchers.numerics.shouldBeLessThanOrEqual
 import io.kotlintest.seconds
@@ -22,7 +23,9 @@ import orbit.client.actor.TrackingGlobals
 import orbit.client.actor.createProxy
 import orbit.client.execution.ConcurrentDeactivator
 import orbit.client.execution.InstantDeactivator
+import orbit.client.execution.RateLimitedDeactivator
 import orbit.client.net.ClientState
+import orbit.util.time.stopwatch
 import org.junit.Test
 
 class DeactivationTests : BaseIntegrationTest() {
@@ -114,4 +117,27 @@ class DeactivationTests : BaseIntegrationTest() {
             TrackingGlobals.deactivateTestCounts.get() shouldBe count + additionalAddressableCount
         }
     }
+
+    @Test
+    fun `Deactivating by rate limit takes minimum time with addressable count`() {
+        runBlocking {
+            // Only use custom client
+            disconnectClient()
+            val count = 500
+            val client = startClient(
+                addressableDeactivation = RateLimitedDeactivator.Config(1000)
+            )
+
+            repeat(count) { key ->
+                client.actorFactory.createProxy<KeyedDeactivatingActor>(key).ping().await()
+            }
+
+            val watch = stopwatch(clock) {
+                disconnectClient(client)
+            }
+
+            watch.elapsed shouldBeGreaterThanOrEqual 500
+        }
+    }
+
 }

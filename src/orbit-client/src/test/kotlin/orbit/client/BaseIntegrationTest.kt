@@ -36,7 +36,7 @@ import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 open class BaseIntegrationTest {
-    private var clock: Clock = Clock()
+    protected var clock: Clock = Clock()
     private var servers: MutableList<OrbitServer> = mutableListOf()
     private var clients: MutableList<OrbitClient> = mutableListOf()
 
