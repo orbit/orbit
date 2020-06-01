@@ -21,9 +21,7 @@ import orbit.client.actor.KeyedDeactivatingActor
 import orbit.client.actor.SlowDeactivateActor
 import orbit.client.actor.TrackingGlobals
 import orbit.client.actor.createProxy
-import orbit.client.execution.ConcurrentDeactivator
-import orbit.client.execution.InstantDeactivator
-import orbit.client.execution.RateLimitedDeactivator
+import orbit.client.execution.AddressableDeactivator
 import orbit.client.net.ClientState
 import orbit.util.time.stopwatch
 import org.junit.Test
@@ -50,7 +48,7 @@ class DeactivationTests : BaseIntegrationTest() {
     fun `Instant deactivation deactivates all addressables simultaneously`() {
         runBlocking {
             val client = startClient(
-                addressableDeactivation = InstantDeactivator.Config()
+                addressableDeactivation = AddressableDeactivator.Instant.Config()
             )
             repeat(100) { key ->
                 client.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message").await()
@@ -67,7 +65,7 @@ class DeactivationTests : BaseIntegrationTest() {
     fun `Concurrent deactivation doesn't exceed maximum concurrent setting`() {
         runBlocking {
             val client2 = startClient(
-                addressableDeactivation = ConcurrentDeactivator.Config(10)
+                addressableDeactivation = AddressableDeactivator.Concurrent.Config(10)
             )
             repeat(100) { key ->
                 client2.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message").await()
@@ -125,7 +123,7 @@ class DeactivationTests : BaseIntegrationTest() {
             disconnectClient()
             val count = 500
             val client = startClient(
-                addressableDeactivation = RateLimitedDeactivator.Config(1000)
+                addressableDeactivation = AddressableDeactivator.RateLimited.Config(1000)
             )
 
             repeat(count) { key ->
@@ -137,6 +135,36 @@ class DeactivationTests : BaseIntegrationTest() {
             }
 
             watch.elapsed shouldBeGreaterThanOrEqual 500
+        }
+    }
+
+    @Test
+    fun `Deactivating by timespan takes minimum timespan regardless of addressable count`() {
+        runBlocking {
+            // Only use custom client
+            disconnectClient()
+
+            var key = 0
+
+            suspend fun test(count: Int) {
+                val client = startClient(
+                    addressableDeactivation = AddressableDeactivator.TimeSpan.Config(500)
+                )
+
+                repeat(count) {
+                    client.actorFactory.createProxy<KeyedDeactivatingActor>(key++).ping().await()
+                }
+
+                val watch = stopwatch(clock) {
+                    disconnectClient(client)
+                }
+
+                watch.elapsed shouldBeGreaterThanOrEqual 500
+            }
+
+            test(100)
+
+            test(500)
         }
     }
 

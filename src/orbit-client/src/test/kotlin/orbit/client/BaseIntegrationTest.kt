@@ -18,7 +18,6 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import orbit.client.actor.TrackingGlobals
 import orbit.client.execution.AddressableDeactivator
-import orbit.client.execution.InstantDeactivator
 import orbit.server.OrbitServer
 import orbit.server.OrbitServerConfig
 import orbit.server.mesh.LeaseDuration
@@ -129,7 +128,7 @@ open class BaseIntegrationTest {
         namespace: String = "test",
         packages: List<String> = listOf("orbit.client.actor"),
         platformExceptions: Boolean = false,
-        addressableDeactivation: ExternallyConfigured<AddressableDeactivator> = InstantDeactivator.Config()
+        addressableDeactivation: ExternallyConfigured<AddressableDeactivator> = AddressableDeactivator.Instant.Config()
     ): OrbitClient {
 
         val client = OrbitClient(
