@@ -18,7 +18,7 @@
       <guid>/orbit/client/configuration/</guid>
       <description>Orbit Client offers a broad set of configuration options to be supplied in its constructor. Some settings are required to discover addressables and connect to an Orbit Server cluster, while others can fine-tune how the client operates.
 The OrbitClientConfig class contains the configuration values the OrbitClient needs to operate and is supplied in the constructor:
-import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main() { runBlocking { val orbitClient = OrbitClient( OrbitClientConfig( namespace = &amp;#34;carnival&amp;#34;, grpcEndpoint = &amp;#34;dns:///localhost:50056/&amp;#34;, packages = listOf(&amp;#34;orbit.</description>
+import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main() { runBlocking { val orbitClient = OrbitClient( OrbitClientConfig( namespace = &amp;#34;carnival&amp;#34;, grpcEndpoint = &amp;#34;dns:///localhost:50056/&amp;#34;, .</description>
     </item>
     
     <item>

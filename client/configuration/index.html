@@ -18,7 +18,7 @@
 <meta property="og:title" content="Client Configuration" />
 <meta property="og:description" content="Orbit Client offers a broad set of configuration options to be supplied in its constructor. Some settings are required to discover addressables and connect to an Orbit Server cluster, while others can fine-tune how the client operates.
 The OrbitClientConfig class contains the configuration values the OrbitClient needs to operate and is supplied in the constructor:
-import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main() { runBlocking { val orbitClient = OrbitClient( OrbitClientConfig( namespace = &#34;carnival&#34;, grpcEndpoint = &#34;dns:///localhost:50056/&#34;, packages = listOf(&#34;orbit." />
+import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main() { runBlocking { val orbitClient = OrbitClient( OrbitClientConfig( namespace = &#34;carnival&#34;, grpcEndpoint = &#34;dns:///localhost:50056/&#34;, ." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="/orbit/client/configuration/" />
 
@@ -26,13 +26,13 @@ import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main()
 <meta name="twitter:title" content="Client Configuration"/>
 <meta name="twitter:description" content="Orbit Client offers a broad set of configuration options to be supplied in its constructor. Some settings are required to discover addressables and connect to an Orbit Server cluster, while others can fine-tune how the client operates.
 The OrbitClientConfig class contains the configuration values the OrbitClient needs to operate and is supplied in the constructor:
-import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main() { runBlocking { val orbitClient = OrbitClient( OrbitClientConfig( namespace = &#34;carnival&#34;, grpcEndpoint = &#34;dns:///localhost:50056/&#34;, packages = listOf(&#34;orbit."/>
+import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main() { runBlocking { val orbitClient = OrbitClient( OrbitClientConfig( namespace = &#34;carnival&#34;, grpcEndpoint = &#34;dns:///localhost:50056/&#34;, ."/>
 <meta itemprop="name" content="Client Configuration">
 <meta itemprop="description" content="Orbit Client offers a broad set of configuration options to be supplied in its constructor. Some settings are required to discover addressables and connect to an Orbit Server cluster, while others can fine-tune how the client operates.
 The OrbitClientConfig class contains the configuration values the OrbitClient needs to operate and is supplied in the constructor:
-import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main() { runBlocking { val orbitClient = OrbitClient( OrbitClientConfig( namespace = &#34;carnival&#34;, grpcEndpoint = &#34;dns:///localhost:50056/&#34;, packages = listOf(&#34;orbit.">
+import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main() { runBlocking { val orbitClient = OrbitClient( OrbitClientConfig( namespace = &#34;carnival&#34;, grpcEndpoint = &#34;dns:///localhost:50056/&#34;, .">
 
-<meta itemprop="wordCount" content="202">
+<meta itemprop="wordCount" content="290">
 
 
 
@@ -55,7 +55,6 @@ import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main()
             OrbitClientConfig(
                 namespace = <span style="color:#e6db74">&#34;carnival&#34;</span>,
                 grpcEndpoint = <span style="color:#e6db74">&#34;dns:///localhost:50056/&#34;</span>,
-                packages = listOf(<span style="color:#e6db74">&#34;orbit.carnival.actors&#34;</span>),
                 ...
             )
         )
@@ -64,22 +63,28 @@ import orbit.client.OrbitClient import orbit.client.OrbitClientConfig fun main()
 }
 </code></pre></div><h2 id="required-fields">Required fields</h2>
 <h4 id="namespace-string"><code>namespace: String</code></h4>
-<p>The namespace to use when connecting to the Orbit cluster.</p>
+<p>The namespace to use when connecting to the Orbit cluster. This namespace will identify all the client nodes as part of a system, isolated from any other namespaces. Care must be taken if multiple independent deployments utilize the same Orbit services so that the namespaces they use don&rsquo;t intersect. This will result in confusion as addressables are activated in unexpected places.</p>
 <h4 id="grpcendpoint-string"><code>grpcEndpoint: String</code></h4>
-<p>The gRPC endpoint where the Orbit cluster is located.</p>
+<p>The gRPC endpoint where the Orbit server cluster is located.</p>
 <h2 id="interesting-optional-fields">Interesting optional fields</h2>
 <h4 id="packages-liststring"><code>packages: List&lt;String&gt;</code></h4>
-<p>Packages to scan for addressables. If left blank, all packages will be scanned.</p>
-<h4 id="addressablettl-duration"><code>addressableTTL: Duration</code></h4>
-<p>Time To Live (TTL) for addressables before deactivation</p>
+<p>Packages to scan for addressables. If left blank, all packages will be scanned. Example:</p>
+<pre><code>    packages = listOf(&quot;orbit.carnival.actors&quot;)
+</code></pre><h4 id="addressablettl-duration"><code>addressableTTL: Duration</code></h4>
+<p>Time To Live (TTL) for addressables before deactivation.</p>
 <h4 id="addressableconstructor-externallyconfiguredaddressableconstructor"><code>addressableConstructor: ExternallyConfigured&lt;AddressableConstructor&gt;</code></h4>
-<p>The system to use to construct addressables.</p>
+<p>The system to use to construct addressables. The default value calls the addressable&rsquo;s default empty constructor. More information on bringing your own DI can be found in the <a href="/client/dependency-injection">Dependency Injection</a> section.</p>
 <h4 id="platformexceptions-boolean"><code>platformExceptions: Boolean</code></h4>
-<p>Rethrow platform specific exceptions. Should only be used when all clients are using the same SDK.</p>
+<p>Rethrow platform specific exceptions. Note: Should only be used when all clients are using the same SDK.</p>
 <h4 id="containeroverrides-componentcontainerroot---unit"><code>containerOverrides: ComponentContainerRoot.() -&gt; Unit</code></h4>
-<p>Hook to update internal container registrations after initialization</p>
-<h4 id="buffercount-int"><code>bufferCount: Int</code></h4>
-<p>The number of messages (inbound) that may be queued before new messages are rejected. This applies back pressure protection when overwhelmed with incoming messages.</p>
+<p>Hook to update internal container registrations after initialization. Example:</p>
+<pre><code>    containerOverrides = {
+        instance(kodein)
+        instance(sqlDatabaseAdapter)
+        definition&lt;HealthService&gt;()
+    }
+</code></pre><h4 id="buffercount-int"><code>bufferCount: Int</code></h4>
+<p>The number of messages (inbound) that may be queued before new messages are rejected. This applies back pressure protection to prevent being overwhelmed with incoming messages.</p>
 <div class="edit-meta">
 
 <br></div><nav class="pagination"><a class="nav nav-prev" href="/orbit/client/" title="Client"><i class="fas fa-arrow-left" aria-hidden="true"></i> Prev - Client</a>
