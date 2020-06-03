@@ -16,5 +16,7 @@ include(":src:orbit-application")
 include(":src:orbit-server-prometheus")
 
 include(":src:orbit-client")
+include(":src:orbit-client-spring-plugin")
+
 
 include(":src:orbit-benchmarks")
