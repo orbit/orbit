@@ -17,12 +17,6 @@ jobs:
       - name: Get the Tag Version
         id: get_tag_version
         run: echo ::set-output name=TAG_VERSION::${GITHUB_REF#refs/tags/_v}
-      - name: Checkout master
-        run: |
-          git config --global user.email "orbit@ea.com"
-          git config --global user.name "orbit_tools"
-          git fetch
-          git checkout -b master --track origin/master
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
