@@ -1,0 +1,33 @@
+name: Publish Orbit Docs
+
+on:
+  repository_dispatch:
+    types: [publish_docs]
+
+jobs:
+  build:
+    name: Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Sync Repository
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Get the Tag Version
+        id: get_tag_version
+        run: echo ::set-output name=TAG_VERSION::${GITHUB_REF#refs/tags/_v}
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: '0.71.1'
+      - name: Build Hugo Docs
+        run: hugo -s docs -b /orbit
+      - name: Copy in Chart index.yaml
+        run: cp ./.github/helm/index.yaml ./docs/public/index.yaml
+      - name: Request Github Pages build job
+        uses: peaceiris/actions-gh-pages@v2
+        env:
+          ACTIONS_DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: ./docs/public

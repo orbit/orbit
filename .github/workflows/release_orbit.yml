@@ -22,12 +22,6 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 8
-      - name: Checkout master
-        run: |
-          git config --global user.email "orbit@ea.com"
-          git config --global user.name "orbit_tools"
-          git fetch
-          git checkout -b master --track origin/master
       - name: Update Version
         run: ./.github/scripts/update_version.sh
         env:
