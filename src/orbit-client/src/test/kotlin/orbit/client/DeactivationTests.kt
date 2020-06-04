@@ -58,6 +58,7 @@ class DeactivationTests : BaseIntegrationTest() {
             disconnectClient(client)
 
             TrackingGlobals.maxConcurrentDeactivations.get() shouldBeGreaterThan 20
+            TrackingGlobals.maxConcurrentDeactivations.get() shouldBeLessThan 100
         }
     }
 
@@ -146,26 +147,28 @@ class DeactivationTests : BaseIntegrationTest() {
 
             var key = 0
 
-            suspend fun test(count: Int) {
+            suspend fun test(count: Int, deactivationTime: Long) {
                 val client = startClient(
-                    addressableDeactivation = AddressableDeactivator.TimeSpan.Config(500)
+                    addressableDeactivation = AddressableDeactivator.TimeSpan.Config(deactivationTime)
                 )
 
                 repeat(count) {
-                    client.actorFactory.createProxy<KeyedDeactivatingActor>(key++).ping().await()
+                    client.actorFactory.createProxy<SlowDeactivateActor>(key++).ping().await()
                 }
 
                 val watch = stopwatch(clock) {
                     disconnectClient(client)
                 }
 
-                watch.elapsed shouldBeGreaterThanOrEqual 500
+                watch.elapsed shouldBeGreaterThanOrEqual deactivationTime
+                watch.elapsed shouldBeLessThan deactivationTime + 200
             }
 
-            test(100)
+            test(100, 500)
 
-            test(500)
+            test(500, 500)
+
+            test(1500, 1500)
         }
     }
-
 }

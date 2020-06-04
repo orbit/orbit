@@ -180,7 +180,7 @@ class KeyedDeactivatingActorImpl : KeyedDeactivatingActor {
 }
 
 interface SlowDeactivateActor : ActorWithInt32Key {
-    fun ping(msg: String): Deferred<String>
+    fun ping(msg: String = ""): Deferred<String>
 }
 
 class SlowDeactivateActorImpl : SlowDeactivateActor {

@@ -11,17 +11,35 @@ import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import mu.KotlinLogging
-import orbit.client.execution.AddressableDeactivator.Concurrent.Config
 import orbit.util.di.ExternallyConfigured
 
 typealias Deactivator = suspend (handle: Deactivatable) -> Unit
 
 abstract class AddressableDeactivator() {
-    private val logger = KotlinLogging.logger { }
+    protected val logger = KotlinLogging.logger { }
 
     abstract suspend fun deactivate(addressables: List<Deactivatable>, deactivate: Deactivator)
+
+    protected suspend fun deactivateItems(
+        addressables: List<Deactivatable>,
+        concurrency: Int,
+        deactivationsPerSecond: Long,
+        deactivate: Deactivator
+    ) {
+        val tickRate = 1000 / deactivationsPerSecond
+
+        println("Starting ${addressables.count()} item deactivations at one per ${tickRate}ms")
+
+        val ticker = ticker(tickRate)
+
+        addressables.asFlow().onEach { ticker.receive() }
+            .flatMapMerge(concurrency) { a ->
+                flow { emit(deactivate(a)) }
+            }.toList()
+    }
 
     @OptIn(FlowPreview::class)
     open class Concurrent(private val config: Config) : AddressableDeactivator() {
@@ -31,9 +49,7 @@ abstract class AddressableDeactivator() {
         }
 
         override suspend fun deactivate(addressables: List<Deactivatable>, deactivate: Deactivator) {
-            addressables.asFlow().flatMapMerge(concurrency = config.deactivationConcurrency) { addressable ->
-                flow { emit(deactivate(addressable)) }
-            }.toList()
+            deactivateItems(addressables, config.deactivationConcurrency, Long.MAX_VALUE, deactivate)
         }
     }
 
@@ -44,16 +60,7 @@ abstract class AddressableDeactivator() {
         }
 
         override suspend fun deactivate(addressables: List<Deactivatable>, deactivate: Deactivator) {
-            val tickRate = 1000 / config.deactivationsPerSecond
-
-            println("Starting ${addressables.count()} item deactivations at one per ${tickRate}ms. ")
-
-            val ticker = ticker(tickRate)
-
-            addressables.forEach { a ->
-                ticker.receive()
-                deactivate(a)
-            }
+            deactivateItems(addressables, Int.MAX_VALUE, config.deactivationsPerSecond, deactivate)
         }
     }
 
@@ -64,23 +71,20 @@ abstract class AddressableDeactivator() {
         }
 
         override suspend fun deactivate(addressables: List<Deactivatable>, deactivate: Deactivator) {
-            val tickRate = config.deactivationTimeMilliSeconds / addressables.count()
+            println("Deactivate ${addressables.count()} addressables in ${config.deactivationTimeMilliSeconds}ms")
+            val deactivationsPerSecond = addressables.count() * 1000 / config.deactivationTimeMilliSeconds
 
-            println("Starting ${addressables.count()} item deactivations at one per ${tickRate}ms")
-
-            val ticker = ticker(tickRate)
-
-            addressables.forEach { a ->
-                ticker.receive()
-                deactivate(a)
-            }
+            deactivateItems(addressables, Int.MAX_VALUE, deactivationsPerSecond, deactivate)
         }
     }
 
-    class Instant : Concurrent(Config(Int.MAX_VALUE)) {
-        class Config :
-            ExternallyConfigured<AddressableDeactivator> {
+    class Instant : AddressableDeactivator() {
+        class Config : ExternallyConfigured<AddressableDeactivator> {
             override val instanceType: Class<out AddressableDeactivator> = Instant::class.java
+        }
+
+        override suspend fun deactivate(addressables: List<Deactivatable>, deactivate: Deactivator) {
+            deactivateItems(addressables, Int.MAX_VALUE, Long.MAX_VALUE, deactivate)
         }
     }
 }
