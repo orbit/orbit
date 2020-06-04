@@ -13,4 +13,7 @@ dependencies {
     implementation(project(":src:orbit-client"))
 
     implementation("org.springframework:spring-context:5.2.6.RELEASE")
+
+    testImplementation(project(":src:orbit-server"))
+
 }
