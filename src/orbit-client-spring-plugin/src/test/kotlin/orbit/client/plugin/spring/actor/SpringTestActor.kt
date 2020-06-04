@@ -9,7 +9,7 @@ package orbit.client.plugin.spring.actor
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import orbit.client.actor.ActorWithNoKey
-import orbit.client.plugin.spring.DemoSingleton
+import orbit.client.plugin.spring.misc.DemoSingleton
 import org.springframework.beans.factory.annotation.Autowired
 
 interface SpringTestActor : ActorWithNoKey {

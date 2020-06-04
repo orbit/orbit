@@ -11,6 +11,7 @@ import orbit.client.OrbitClient
 import orbit.client.OrbitClientConfig
 import orbit.client.actor.createProxy
 import orbit.client.plugin.spring.actor.SpringTestActor
+import orbit.client.plugin.spring.misc.SpringConfig
 import orbit.server.OrbitServer
 import orbit.server.OrbitServerConfig
 import org.junit.Test
@@ -39,6 +40,9 @@ class SpringAddressableConstructorTest {
             val result1 = actor.getCallCount().await()
             val result2 = actor.getCallCount().await()
             assertTrue(result2 > result1)
+
+            client.stop().join()
+            server.stop().join()
         }
     }
 }

@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package orbit.client.plugin.spring
+package orbit.client.plugin.spring.misc
 
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration

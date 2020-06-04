@@ -4,7 +4,7 @@
  See license in LICENSE.
  */
 
-package orbit.client.plugin.spring
+package orbit.client.plugin.spring.misc
 
 import org.springframework.stereotype.Service
 import java.util.concurrent.atomic.AtomicInteger
