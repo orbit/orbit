@@ -136,6 +136,7 @@ class DeactivationTests : BaseIntegrationTest() {
             }
 
             watch.elapsed shouldBeGreaterThanOrEqual 500
+            watch.elapsed shouldBeLessThan 700
         }
     }
 
@@ -148,6 +149,7 @@ class DeactivationTests : BaseIntegrationTest() {
             var key = 0
 
             suspend fun test(count: Int, deactivationTime: Long) {
+                println("Testing ${count} deactivations in ${deactivationTime}ms")
                 val client = startClient(
                     addressableDeactivation = AddressableDeactivator.TimeSpan.Config(deactivationTime)
                 )
@@ -165,10 +167,8 @@ class DeactivationTests : BaseIntegrationTest() {
             }
 
             test(100, 500)
-
             test(500, 500)
-
-            test(1500, 1500)
+            test(10000, 1000)
         }
     }
 }

@@ -6,8 +6,8 @@
 
 package orbit.client.execution
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flow
@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import mu.KotlinLogging
 import orbit.util.di.ExternallyConfigured
+import orbit.util.time.highResolutionTicker
 
 typealias Deactivator = suspend (handle: Deactivatable) -> Unit
 
@@ -23,17 +24,14 @@ abstract class AddressableDeactivator() {
 
     abstract suspend fun deactivate(addressables: List<Deactivatable>, deactivate: Deactivator)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     protected suspend fun deactivateItems(
         addressables: List<Deactivatable>,
         concurrency: Int,
         deactivationsPerSecond: Long,
         deactivate: Deactivator
     ) {
-        val tickRate = 1000 / deactivationsPerSecond
-
-        println("Starting ${addressables.count()} item deactivations at one per ${tickRate}ms")
-
-        val ticker = ticker(tickRate)
+        val ticker = highResolutionTicker(deactivationsPerSecond)
 
         addressables.asFlow().onEach { ticker.receive() }
             .flatMapMerge(concurrency) { a ->
