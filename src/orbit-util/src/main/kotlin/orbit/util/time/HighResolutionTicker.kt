@@ -9,7 +9,6 @@ package orbit.util.time
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.delay
@@ -24,16 +23,13 @@ fun highResolutionTicker(
     val time: () -> Long = { nanoTime() }
 
     return scope.produce {
-        var count = 1
+        var count = 0
         val startTime = time()
-        var deadline = startTime + rate
 
         while (true) {
-            val now = time()
-            val nextDelay = (deadline - now).coerceAtLeast(0)
-            delay(nextDelay / 1000000)
+            val nextDelay = (startTime + (rate * ++count) - time()).coerceAtLeast(0)
+            delay(Math.round(nextDelay / 1000000.0))
             channel.send(Unit)
-            deadline = startTime + (rate * count++)
         }
     }
 }
