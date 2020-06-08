@@ -171,4 +171,28 @@ class DeactivationTests : BaseIntegrationTest() {
             test(10000, 1000)
         }
     }
+
+    @Test
+    fun `Specifying a shutdown mechanism during stop overrides configured shutdown`() {
+        runBlocking {
+            val deactivationTime = 500L
+
+            repeat(500) { key ->
+                client.actorFactory.createProxy<SlowDeactivateActor>(key).ping().await()
+            }
+
+            val watch = stopwatch(clock) {
+                disconnectClient(
+                    client, AddressableDeactivator.TimeSpan(
+                        AddressableDeactivator.TimeSpan.Config(
+                            deactivationTime
+                        )
+                    )
+                )
+            }
+
+            watch.elapsed shouldBeGreaterThanOrEqual deactivationTime
+            watch.elapsed shouldBeLessThan deactivationTime + 200
+        }
+    }
 }

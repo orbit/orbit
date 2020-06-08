@@ -149,8 +149,8 @@ open class BaseIntegrationTest {
         return client
     }
 
-    suspend fun disconnectClient(client: OrbitClient = this.client) {
-        client.stop().join()
+    suspend fun disconnectClient(client: OrbitClient = this.client, deactivator: AddressableDeactivator? = null) {
+        client.stop(deactivator).join()
         clients.remove(client)
     }
 }

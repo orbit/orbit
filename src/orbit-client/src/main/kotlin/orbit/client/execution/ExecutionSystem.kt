@@ -19,7 +19,6 @@ import orbit.client.addressable.DeactivationReason
 import orbit.client.net.Completion
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableReference
-import orbit.shared.mesh.NodeId
 import orbit.util.di.ComponentContainer
 import orbit.util.time.Clock
 import java.util.concurrent.ConcurrentHashMap
@@ -30,7 +29,7 @@ internal class ExecutionSystem(
     private val componentContainer: ComponentContainer,
     private val clock: Clock,
     private val addressableConstructor: AddressableConstructor,
-    private val addressableDeactivator: AddressableDeactivator,
+    private val configuredDeactivator: AddressableDeactivator,
     config: OrbitClientConfig
 ) {
     private val logger = KotlinLogging.logger { }
@@ -93,17 +92,14 @@ internal class ExecutionSystem(
         }
     }
 
-    suspend fun stop(nodeId: NodeId) {
+    suspend fun stop(deactivator: AddressableDeactivator?) {
         while (activeAddressables.count() > 0) {
-            logger.info { "Draining node ${nodeId.key} of ${activeAddressables.count()} addressables" }
+            logger.info { "Draining ${activeAddressables.count()} addressables" }
 
-            addressableDeactivator.deactivate(activeAddressables.values.toList()) { a ->
-                deactivate(a, DeactivationReason.NODE_SHUTTING_DOWN)
-            }
-
-//            activeAddressables.values.asFlow().flatMapMerge(concurrency = deactivationConcurrency) { addressable ->
-//                flow { emit(deactivate(addressable, DeactivationReason.NODE_SHUTTING_DOWN)) }
-//            }.toList()
+            (deactivator ?: configuredDeactivator)
+                .deactivate(activeAddressables.values.toList()) { a ->
+                    deactivate(a, DeactivationReason.NODE_SHUTTING_DOWN)
+                }
         }
     }
 
