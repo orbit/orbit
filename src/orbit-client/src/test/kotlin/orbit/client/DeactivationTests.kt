@@ -163,7 +163,7 @@ class DeactivationTests : BaseIntegrationTest() {
                 }
 
                 watch.elapsed shouldBeGreaterThanOrEqual deactivationTime
-                watch.elapsed shouldBeLessThan deactivationTime + 200
+                watch.elapsed shouldBeLessThan deactivationTime * 3
             }
 
             test(100, 500)
