@@ -24,7 +24,7 @@ fun highResolutionTicker(
     val time: () -> Long = { nanoTime() }
 
     return scope.produce {
-        var count = 0
+        var count = 1
         val startTime = time()
         var deadline = startTime + rate
 

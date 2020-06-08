@@ -155,7 +155,7 @@ class DeactivationTests : BaseIntegrationTest() {
                 )
 
                 repeat(count) {
-                    client.actorFactory.createProxy<SlowDeactivateActor>(key++).ping().await()
+                    client.actorFactory.createProxy<KeyedDeactivatingActor>(key++).ping().await()
                 }
 
                 val watch = stopwatch(clock) {

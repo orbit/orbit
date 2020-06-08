@@ -19,6 +19,7 @@ import orbit.util.time.highResolutionTicker
 
 typealias Deactivator = suspend (handle: Deactivatable) -> Unit
 
+@OptIn(FlowPreview::class)
 abstract class AddressableDeactivator() {
     protected val logger = KotlinLogging.logger { }
 
