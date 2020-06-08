@@ -39,8 +39,7 @@ abstract class AddressableDeactivator() {
             }.toList()
     }
 
-    @OptIn(FlowPreview::class)
-    open class Concurrent(private val config: Config) : AddressableDeactivator() {
+    class Concurrent(private val config: Config) : AddressableDeactivator() {
         data class Config(val deactivationConcurrency: Int) :
             ExternallyConfigured<AddressableDeactivator> {
             override val instanceType: Class<out AddressableDeactivator> = Concurrent::class.java
@@ -69,7 +68,6 @@ abstract class AddressableDeactivator() {
         }
 
         override suspend fun deactivate(addressables: List<Deactivatable>, deactivate: Deactivator) {
-            println("Deactivate ${addressables.count()} addressables in ${config.deactivationTimeMilliSeconds}ms")
             val deactivationsPerSecond = addressables.count() * 1000 / config.deactivationTimeMilliSeconds
 
             deactivateItems(addressables, Int.MAX_VALUE, deactivationsPerSecond, deactivate)
