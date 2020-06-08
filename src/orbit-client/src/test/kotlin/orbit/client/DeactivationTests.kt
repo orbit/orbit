@@ -8,7 +8,6 @@ package orbit.client
 
 import io.kotlintest.eventually
 import io.kotlintest.matchers.doubles.shouldBeGreaterThanOrEqual
-import io.kotlintest.matchers.doubles.shouldBeLessThan
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.matchers.numerics.shouldBeLessThan
@@ -166,7 +165,7 @@ class DeactivationTests : BaseIntegrationTest() {
 
                 println("Deactivated in ${watch.elapsed}ms")
                 watch.elapsed.toDouble() shouldBeGreaterThanOrEqual deactivationTime * .95
-                watch.elapsed.toDouble() shouldBeLessThan deactivationTime * 3
+                watch.elapsed shouldBeLessThan deactivationTime * 3
             }
 
             test(100, 500)
