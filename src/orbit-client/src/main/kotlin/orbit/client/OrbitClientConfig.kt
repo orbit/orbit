@@ -9,6 +9,7 @@ package orbit.client
 import kotlinx.coroutines.CoroutineDispatcher
 import orbit.client.addressable.AddressableConstructor
 import orbit.client.addressable.DefaultAddressableConstructor
+import orbit.client.execution.AddressableDeactivator
 import orbit.client.mesh.NodeLeaseRenewalFailedHandler
 import orbit.client.mesh.RestartOnNodeRenewalFailure
 import orbit.util.concurrent.Pools
@@ -73,7 +74,7 @@ data class OrbitClientConfig(
     /**
      * The number of concurrent addressable deactivations during shutdown draining
      */
-    val deactivationConcurrency: Int = 10,
+    val addressableDeactivator: ExternallyConfigured<AddressableDeactivator> = AddressableDeactivator.Instant.Config(),
 
     /**
      * The default TTL for addressables.

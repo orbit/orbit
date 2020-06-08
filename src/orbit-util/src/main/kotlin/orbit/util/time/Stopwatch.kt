@@ -47,8 +47,8 @@ data class ElapsedAndResult<T>(
  * @param clock The clock to use for measuring time.
  * @param body The computation to measure.
  */
-inline fun <T> stopwatch(clock: Clock, body: () -> T): ElapsedAndResult<T> {
+inline fun <T> stopwatch(clock: Clock, body: (() -> TimeMs) -> T): ElapsedAndResult<T> {
     val sw = Stopwatch.start(clock)
-    val computed = body()
+    val computed = body { sw.elapsed }
     return ElapsedAndResult(sw.elapsed, computed)
 }

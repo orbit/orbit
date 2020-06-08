@@ -29,7 +29,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
-    implementation("io.github.classgraph:classgraph:4.8.60")
+    implementation("io.github.classgraph:classgraph:4.8.80")
     implementation("io.micrometer:micrometer-core:$micrometerVersion")
 
     testImplementation(project(":src:orbit-server"))

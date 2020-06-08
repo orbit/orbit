@@ -6,12 +6,7 @@
 
 package orbit.client.execution
 
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.flatMapMerge
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
 import orbit.client.OrbitClientConfig
@@ -24,7 +19,6 @@ import orbit.client.addressable.DeactivationReason
 import orbit.client.net.Completion
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableReference
-import orbit.shared.mesh.NodeId
 import orbit.util.di.ComponentContainer
 import orbit.util.time.Clock
 import java.util.concurrent.ConcurrentHashMap
@@ -35,12 +29,12 @@ internal class ExecutionSystem(
     private val componentContainer: ComponentContainer,
     private val clock: Clock,
     private val addressableConstructor: AddressableConstructor,
+    private val configuredDeactivator: AddressableDeactivator,
     config: OrbitClientConfig
 ) {
     private val logger = KotlinLogging.logger { }
     private val activeAddressables = ConcurrentHashMap<AddressableReference, ExecutionHandle>()
     private val deactivationTimeoutMs = config.deactivationTimeout.toMillis()
-    private val deactivationConcurrency = config.deactivationConcurrency
     private val defaultTtl = config.addressableTTL.toMillis()
 
     suspend fun handleInvocation(invocation: AddressableInvocation, completion: Completion) {
@@ -98,13 +92,14 @@ internal class ExecutionSystem(
         }
     }
 
-    @OptIn(FlowPreview::class)
-    suspend fun stop(nodeId: NodeId) {
+    suspend fun stop(deactivator: AddressableDeactivator?) {
         while (activeAddressables.count() > 0) {
-            logger.info { "Draining node ${nodeId.key} of ${activeAddressables.count()} addressables" }
-            activeAddressables.values.asFlow().flatMapMerge(concurrency = deactivationConcurrency) { addressable ->
-                flow { emit(deactivate(addressable, DeactivationReason.NODE_SHUTTING_DOWN)) }
-            }.toList()
+            logger.info { "Draining ${activeAddressables.count()} addressables" }
+
+            (deactivator ?: configuredDeactivator)
+                .deactivate(activeAddressables.values.toList()) { a ->
+                    deactivate(a, DeactivationReason.NODE_SHUTTING_DOWN)
+                }
         }
     }
 
@@ -117,19 +112,20 @@ internal class ExecutionSystem(
             handle
         }
 
-    private suspend fun deactivate(handle: ExecutionHandle, deactivationReason: DeactivationReason) {
+    private suspend fun deactivate(deactivatable: Deactivatable, deactivationReason: DeactivationReason) {
         try {
             withTimeout(deactivationTimeoutMs) {
-                handle.deactivate(deactivationReason).await()
+                deactivatable.deactivate(deactivationReason).await()
             }
         } catch (t: TimeoutCancellationException) {
-            val msg = "A timeout occurred (>${deactivationTimeoutMs}ms) during deactivation of " +
-                    "${handle.reference}. This addressable is now considered deactivated, this may cause state " +
-                    "corruption."
-            logger.error(msg)
+            logger.error(
+                "A timeout occurred (>${deactivationTimeoutMs}ms) during deactivation of " +
+                        "${deactivatable.reference}. This addressable is now considered deactivated, this may cause state " +
+                        "corruption."
+            )
         }
-        executionLeases.abandonLease(handle.reference)
-        activeAddressables.remove(handle.reference)
+        executionLeases.abandonLease(deactivatable.reference)
+        activeAddressables.remove(deactivatable.reference)
     }
 
     private suspend fun getOrCreateAddressable(

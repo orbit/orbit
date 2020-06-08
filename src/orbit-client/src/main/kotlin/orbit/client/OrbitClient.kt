@@ -13,6 +13,7 @@ import orbit.client.addressable.AddressableDefinitionDirectory
 import orbit.client.addressable.AddressableProxyFactory
 import orbit.client.addressable.CapabilitiesScanner
 import orbit.client.addressable.InvocationSystem
+import orbit.client.execution.AddressableDeactivator
 import orbit.client.execution.ExecutionLeases
 import orbit.client.execution.ExecutionSystem
 import orbit.client.mesh.AddressableLeaser
@@ -81,6 +82,7 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
             definition<InvocationSystem>()
             definition<AddressableDefinitionDirectory>()
             externallyConfigured(config.addressableConstructor)
+            externallyConfigured(config.addressableDeactivator)
 
 
             definition<ExecutionSystem>()
@@ -154,10 +156,9 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
         executionSystem.tick()
     }
 
-    fun stop() = scope.launch {
-        logger.info("Stopping Orbit...")
+    fun stop(deactivator: AddressableDeactivator? = null) = scope.launch {
+        logger.info("Stopping Orbit node ${nodeId}...")
         val (elapsed, _) = stopwatch(clock) {
-            val id = nodeId!!
             localNode.manipulate {
                 it.copy(clientState = ClientState.STOPPING)
             }
@@ -165,7 +166,7 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
             nodeLeaser.leaveCluster()
 
             // Drain all addressables
-            executionSystem.stop(id)
+            executionSystem.stop(deactivator)
 
             // Stop the tick
             ticker.stop()
