@@ -197,4 +197,12 @@ class DeactivationTests : BaseIntegrationTest() {
             watch.elapsed shouldBeLessThan deactivationTime + 200
         }
     }
+
+    @Test
+    fun `Sending a message to a deactivated actor during shutdown reroutes the message`() {
+        runBlocking {
+
+
+        }
+    }
 }

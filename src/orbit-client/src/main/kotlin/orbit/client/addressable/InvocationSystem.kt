@@ -17,6 +17,7 @@ import orbit.client.serializer.Serializer
 import orbit.client.util.RemoteException
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableInvocationArguments
+import orbit.shared.exception.RerouteMessageException
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 import orbit.shared.net.MessageTarget
@@ -47,10 +48,17 @@ internal class InvocationSystem(
                 data = serializer.serialize(result)
             )
         } catch (t: Throwable) {
-            if(config.platformExceptions) {
-                MessageContent.InvocationResponseError(t.toString(), serializer.serialize(t))
-            } else {
-                MessageContent.Error(t.toString())
+            when {
+                t is RerouteMessageException -> {
+                    messageHandler.sendMessage(msg)
+                    return
+                }
+                config.platformExceptions -> {
+                    MessageContent.InvocationResponseError(t.toString(), serializer.serialize(t))
+                }
+                else -> {
+                    MessageContent.Error(t.toString())
+                }
             }
         }
 
@@ -69,7 +77,7 @@ internal class InvocationSystem(
     }
 
     fun onInvocationPlatformErrorResponse(ire: MessageContent.InvocationResponseError, completion: Completion) {
-        val result = if(config.platformExceptions && !ire.platform.isNullOrEmpty()) {
+        val result = if (config.platformExceptions && !ire.platform.isNullOrEmpty()) {
             serializer.deserialize<Throwable>(ire.platform!!)
         } else {
             RemoteException("Exceptional response received: ${ire.description}")
