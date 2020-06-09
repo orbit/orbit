@@ -27,10 +27,10 @@ internal class InvocationSystem(
     private val serializer: Serializer,
     private val executionSystem: ExecutionSystem,
     private val localNode: LocalNode,
+    private val config: OrbitClientConfig,
     componentContainer: ComponentContainer
 ) {
     private val messageHandler by componentContainer.inject<MessageHandler>()
-    private val config by componentContainer.inject<OrbitClientConfig>()
 
     suspend fun onInvocationRequest(msg: Message) {
         val content = msg.content as MessageContent.InvocationRequest
