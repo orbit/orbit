@@ -41,13 +41,13 @@ abstract class AddressableDeactivator() {
     }
 
     class Concurrent(private val config: Config) : AddressableDeactivator() {
-        data class Config(val deactivationConcurrency: Int) :
+        data class Config(val concurrentDeactivations: Int) :
             ExternallyConfigured<AddressableDeactivator> {
             override val instanceType: Class<out AddressableDeactivator> = Concurrent::class.java
         }
 
         override suspend fun deactivate(addressables: List<Deactivatable>, deactivate: Deactivator) {
-            deactivateItems(addressables, config.deactivationConcurrency, Long.MAX_VALUE, deactivate)
+            deactivateItems(addressables, config.concurrentDeactivations, Long.MAX_VALUE, deactivate)
         }
     }
 
@@ -63,13 +63,13 @@ abstract class AddressableDeactivator() {
     }
 
     class TimeSpan(private val config: Config) : AddressableDeactivator() {
-        data class Config(val deactivationTimeMilliSeconds: Long) :
+        data class Config(val deactivationTimeMilliseconds: Long) :
             ExternallyConfigured<AddressableDeactivator> {
             override val instanceType: Class<out AddressableDeactivator> = TimeSpan::class.java
         }
 
         override suspend fun deactivate(addressables: List<Deactivatable>, deactivate: Deactivator) {
-            val deactivationsPerSecond = addressables.count() * 1000 / config.deactivationTimeMilliSeconds
+            val deactivationsPerSecond = addressables.count() * 1000 / config.deactivationTimeMilliseconds
 
             deactivateItems(addressables, Int.MAX_VALUE, deactivationsPerSecond, deactivate)
         }
