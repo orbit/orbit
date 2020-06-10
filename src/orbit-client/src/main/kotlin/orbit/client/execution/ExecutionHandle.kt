@@ -54,6 +54,9 @@ internal class ExecutionHandle(
     private val lastActivityAtomic = AtomicReference(createdTime)
     val lastActivity get() = lastActivityAtomic.get()
 
+    // TODO (brett) - maybe this can be internal, throws exception
+    var active: Boolean = false
+
     private val channel = Channel<EventType>(addressableBufferCount)
 
     init {
@@ -99,6 +102,7 @@ internal class ExecutionHandle(
             }
         }.also { (elapsed, _) ->
             logger.debug { "Activated $reference in ${elapsed}ms. " }
+            active = true
         }
     }
 
@@ -134,6 +138,7 @@ internal class ExecutionHandle(
 
         }.also { (elapsed, _) ->
             logger.debug { "Deactivated $reference in ${elapsed}ms." }
+            active = false
         }
     }
 

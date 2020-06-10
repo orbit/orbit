@@ -128,6 +128,7 @@ open class BaseIntegrationTest {
         namespace: String = "test",
         packages: List<String> = listOf("orbit.client.actor"),
         platformExceptions: Boolean = false,
+        addressableTTL: Duration = 1.minutes,
         addressableDeactivation: ExternallyConfigured<AddressableDeactivator> = AddressableDeactivator.Instant.Config()
     ): OrbitClient {
 
@@ -138,7 +139,7 @@ open class BaseIntegrationTest {
                 packages = packages,
                 clock = clock,
                 platformExceptions = platformExceptions,
-                addressableTTL = 1.minutes,
+                addressableTTL = addressableTTL,
                 addressableDeactivator = addressableDeactivation
             )
         )

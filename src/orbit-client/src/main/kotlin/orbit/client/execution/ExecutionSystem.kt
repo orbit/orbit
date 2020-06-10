@@ -48,10 +48,13 @@ internal class ExecutionSystem(
 
             var handle = activeAddressables[invocation.reference]
 
+            if (clientState == ClientState.STOPPING && (handle == null || !handle.active)) {
+                println("Rerouting ...")
+                completion.completeExceptionally(RerouteMessageException("Client is stopping, message should be routed to a new node."))
+                return
+            }
+
             if (handle == null) {
-                if (clientState == ClientState.STOPPING) {
-                    completion.completeExceptionally(RerouteMessageException("Client is stopping, message should be routed to a new node."))
-                }
                 handle = activate(invocation.reference)
             }
 

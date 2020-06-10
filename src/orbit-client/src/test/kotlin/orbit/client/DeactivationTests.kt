@@ -12,12 +12,14 @@ import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.matchers.numerics.shouldBeLessThan
 import io.kotlintest.matchers.numerics.shouldBeLessThanOrEqual
+import io.kotlintest.milliseconds
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import orbit.client.actor.ClientAwareActor
 import orbit.client.actor.KeyedDeactivatingActor
 import orbit.client.actor.SlowDeactivateActor
 import orbit.client.actor.TrackingGlobals
@@ -198,11 +200,38 @@ class DeactivationTests : BaseIntegrationTest() {
         }
     }
 
+    // start shutdown rate
+    // wait first time
+    // send message to first
+    // receive message on client 2?
+
     @Test
     fun `Sending a message to a deactivated actor during shutdown reroutes the message`() {
         runBlocking {
+            // Only use custom client
+            disconnectClient()
 
+            val client = startClient(addressableTTL = 300.milliseconds)
 
+            val clientId = client.nodeId
+
+            repeat(5) { key ->
+                client.actorFactory.createProxy<ClientAwareActor>(key.toString()).getClient().await() shouldBe clientId
+            }
+
+            val client2 = startClient()
+            val client2Id = client2.nodeId
+
+            val job = client.stop(AddressableDeactivator.RateLimited(AddressableDeactivator.RateLimited.Config(10)))
+
+            delay(150)
+
+            val deactivated = TrackingGlobals.deactivatedActors.first()
+            val actor = client2.actorFactory.createProxy<ClientAwareActor>(deactivated.toString())
+
+            actor.getClient().await() shouldBe client2Id
+
+            job.join()
         }
     }
 }
