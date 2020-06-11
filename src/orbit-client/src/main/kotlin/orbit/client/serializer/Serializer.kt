@@ -6,6 +6,7 @@
 
 package orbit.client.serializer
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator
@@ -19,6 +20,7 @@ internal class Serializer {
     private val mapper = ObjectMapper()
         .activateDefaultTyping(validator, ObjectMapper.DefaultTyping.EVERYTHING)
         .registerKotlinModule()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     fun <T : Any> serialize(obj: T?): String = mapper.writeValueAsString(obj)
     fun <T : Any> deserialize(str: String, clazz: Class<out T>): T = mapper.readValue(str, clazz)
