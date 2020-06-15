@@ -17,6 +17,15 @@ data class Message(
     val target: MessageTarget? = null
 )
 
+enum class InvocationReason(val value: Int) {
+    invocation(0),
+    rerouted(1);
+
+    companion object {
+        fun fromInt(value: Int) = values().first { it.value == value }
+    }
+}
+
 sealed class MessageTarget {
     data class Unicast(val targetNode: NodeId) : MessageTarget()
     data class RoutedUnicast(val route: Route) : MessageTarget()
@@ -26,8 +35,12 @@ sealed class MessageContent {
     data class Error(val description: String?) : MessageContent()
     object ConnectionInfoRequest : MessageContent()
     data class ConnectionInfoResponse(val nodeId: NodeId) : MessageContent()
-    data class InvocationRequest(val destination: AddressableReference, val method: String, val arguments: String) :
-        MessageContent()
+    data class InvocationRequest(
+        val destination: AddressableReference,
+        val method: String,
+        val arguments: String,
+        val reason: InvocationReason = InvocationReason.invocation
+    ) : MessageContent()
 
     data class InvocationResponse(val data: String) : MessageContent()
     data class InvocationResponseError(val description: String?, val platform: String?) : MessageContent()
