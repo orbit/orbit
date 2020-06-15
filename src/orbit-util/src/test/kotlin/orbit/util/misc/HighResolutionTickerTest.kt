@@ -27,8 +27,8 @@ class HighResolutionTickerTest {
                 }
             }
 
-            watch.elapsed shouldBeLessThan 1010
-            watch.elapsed shouldBeGreaterThan 990
+            watch.elapsed shouldBeLessThan 1050
+            watch.elapsed shouldBeGreaterThan 950
         }
     }
 }
