@@ -93,7 +93,8 @@ internal class InvocationSystem(
             MessageContent.InvocationRequest(
                 destination = invocation.reference,
                 method = invocation.method,
-                arguments = arguments
+                arguments = arguments,
+                reason = invocation.reason
             )
         )
         return messageHandler.sendMessage(msg)

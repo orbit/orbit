@@ -7,6 +7,7 @@
 package orbit.shared.addressable
 
 import orbit.shared.mesh.Namespace
+import orbit.shared.net.InvocationReason
 
 typealias AddressableType = String
 
@@ -36,7 +37,11 @@ data class AddressableInvocation(
     /**
      * The arguments being passed.
      */
-    val args: AddressableInvocationArguments
+    val args: AddressableInvocationArguments,
+    /**
+     * Reason the invocation call was sent
+     */
+    val reason: InvocationReason = InvocationReason.invocation
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

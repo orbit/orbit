@@ -158,7 +158,6 @@ internal class ExecutionSystem(
             componentContainer = componentContainer,
             instance = instance,
             reference = reference,
-            interfaceDefinition = implDefinition.interfaceDefinition,
             implDefinition = implDefinition
         )
 
