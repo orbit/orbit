@@ -40,7 +40,7 @@ class AddressableManager(
                 createNewEntry(key, ineligibleNodes)
             }.let {
                 val invalidNode =
-                    clusterManager.getNode(it.nodeId) == null || (ineligibleNodes?.contains(it.nodeId) == true)
+                    clusterManager.getNode(it.nodeId) == null || (ineligibleNodes.contains(it.nodeId) == true)
                 val expired = clock.inPast(it.expiresAt)
                 if (expired || invalidNode) {
                     val newEntry = createNewEntry(key, ineligibleNodes.plus(it.nodeId))

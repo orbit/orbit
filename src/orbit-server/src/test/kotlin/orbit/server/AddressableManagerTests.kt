@@ -32,18 +32,7 @@ class AddressableManagerTests {
     lateinit var clusterManager: ClusterManager
     val clock: Clock = Clock()
     val nodeDirectory: NodeDirectory = LocalNodeDirectory(clock)
-    val addressableDirectory: AddressableDirectory = LocalAddressableDirectory(clock)
-
     lateinit var addressableManager: AddressableManager
-
-//    private fun getLease() = NodeLease(
-//        ChallengeToken(),
-//        Instant.now().plusSeconds(10).toTimestamp(),
-//        Instant.now().plusSeconds(10).toTimestamp()
-//    )
-//
-//    private fun getNodeInfo(it: NodeId) =
-//        NodeInfo(it, NodeCapabilities(listOf("testActor")), lease = getLease(), nodeStatus = NodeStatus.ACTIVE)
 
     private fun join(namespace: String = "test", addressableType: String = "testActor"): NodeInfo {
         return runBlocking {
