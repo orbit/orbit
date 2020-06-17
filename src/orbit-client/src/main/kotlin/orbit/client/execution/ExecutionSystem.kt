@@ -49,7 +49,7 @@ internal class ExecutionSystem(
             var handle = activeAddressables[invocation.reference]
 
             if (clientState == ClientState.STOPPING && (handle == null || !handle.active)) {
-                println("Rerouting ...")
+                println("Rerouting from ${localNode.status.nodeInfo?.id}...")
                 completion.completeExceptionally(RerouteMessageException("Client is stopping, message should be routed to a new node."))
                 return
             }
@@ -139,7 +139,7 @@ internal class ExecutionSystem(
         activeAddressables.remove(deactivatable.reference)
     }
 
-    private suspend fun getOrCreateAddressable(
+    private fun getOrCreateAddressable(
         reference: AddressableReference,
         implDefinition: AddressableImplDefinition
     ): ExecutionHandle =

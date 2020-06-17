@@ -83,7 +83,7 @@ class DeactivationTests : BaseIntegrationTest() {
     }
 
     @Test
-    fun `Actors added during deactivation get deactivated`() {
+    fun `Actors added during deactivation are rejected`() {
         runBlocking {
             var count = 100
             repeat(count) { key ->
@@ -91,32 +91,22 @@ class DeactivationTests : BaseIntegrationTest() {
             }
 
             startServer(port = 50057, tickRate = 5.seconds)
-            val client2 = startClient(port = 50057)
+            val client2 = startClient(port = 50057, packages = listOf("orbit.client.alternativeActor"))
 
-            var additionalAddressableCount = 0
             GlobalScope.launch {
                 repeat(100) { k ->
                     k.let { k + 100 }.let { key ->
                         if (client.status != ClientState.IDLE) {
-                            ++additionalAddressableCount
-                            client2.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message")
                             delay(5)
+                            client2.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message")
                         }
                     }
                 }
             }
 
-            // ensure some actors are placed on both clients
-            delay(500)
+            disconnectClient(client, AddressableDeactivator.TimeSpan(AddressableDeactivator.TimeSpan.Config(500)))
 
-            disconnectClient(client)
-
-            TrackingGlobals.deactivateTestCounts.get() shouldBeGreaterThan count
-            TrackingGlobals.deactivateTestCounts.get() shouldBeLessThan count + additionalAddressableCount
-
-            disconnectClient(client2)
-
-            TrackingGlobals.deactivateTestCounts.get() shouldBe count + additionalAddressableCount
+            TrackingGlobals.deactivateTestCounts.get() shouldBe count
         }
     }
 
@@ -172,7 +162,7 @@ class DeactivationTests : BaseIntegrationTest() {
 
             test(100, 500)
             test(500, 500)
-            test(10000, 1000)
+            test(2000, 500)
         }
     }
 
@@ -234,4 +224,6 @@ class DeactivationTests : BaseIntegrationTest() {
             job.join()
         }
     }
+
+
 }

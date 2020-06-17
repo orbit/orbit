@@ -18,6 +18,7 @@ import orbit.client.util.RemoteException
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableInvocationArguments
 import orbit.shared.exception.RerouteMessageException
+import orbit.shared.net.InvocationReason
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 import orbit.shared.net.MessageTarget
@@ -50,7 +51,13 @@ internal class InvocationSystem(
         } catch (t: Throwable) {
             when {
                 t is RerouteMessageException -> {
-                    messageHandler.sendMessage(msg)
+                    messageHandler.sendMessage(
+                        msg.copy(
+                            content = content.copy(
+                                reason = InvocationReason.rerouted
+                            )
+                        )
+                    )
                     return
                 }
                 config.platformExceptions -> {
