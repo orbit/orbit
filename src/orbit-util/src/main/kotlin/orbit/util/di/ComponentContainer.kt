@@ -9,53 +9,32 @@ package orbit.util.di
 import java.util.concurrent.ConcurrentHashMap
 
 class ComponentContainer {
-    data class BeanDefinition<T>(
-        val interfaceClass: Class<T>,
-        val concreteClass: Class<out T>
+    data class Registration<T>(
+        val type: Class<T>,
+        val factory: (ComponentContainer) -> T
     )
 
-    private val beanDefinitions = ConcurrentHashMap<Class<*>, BeanDefinition<*>>()
-    private val beanInstances = ConcurrentHashMap<Class<*>, Any>()
+    private val registry = ConcurrentHashMap<Class<*>, Registration<*>>()
 
     init {
-        registerInstance(this)
+        register(ComponentContainer::class.java) { this }
     }
 
-    fun <T : Any> registerDefinition(concreteClass: Class<T>) = registerDefinition(concreteClass, concreteClass)
-    fun <T : Any> registerDefinition(interfaceClass: Class<T>, concreteClass: Class<out T>) {
-        val beanDef = BeanDefinition(
-            interfaceClass = interfaceClass,
-            concreteClass = concreteClass
+    fun <T : Any> register(type: Class<T>, factory: (ComponentContainer) -> T) {
+        val registration = Registration(
+            type = type,
+            factory = factory
         )
-        beanInstances.remove(interfaceClass)
-        beanDefinitions[interfaceClass] = beanDef
+        registry.remove(type)
+        registry[type] = registration
     }
 
-
-    fun <T : Any> registerInstance(liveObject: T) = registerInstance(liveObject.javaClass, liveObject)
-    fun <T : Any> registerInstance(interfaceClass: Class<T>, liveObject: T) {
-        registerDefinition(interfaceClass, liveObject.javaClass)
-        beanDefinitions.remove(interfaceClass)
-        beanInstances[interfaceClass] = liveObject
-    }
-
-    fun <T> resolve(interfaceClass: Class<T>): T {
+    fun <T> resolve(type: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
-        return beanInstances.getOrPut(interfaceClass) {
-            val beanDef = beanDefinitions[interfaceClass]
-                ?: error("No bean definition registered for '${interfaceClass.name}'.")
-            construct(beanDef)
-        } as T
+        val registration = registry[type]
+        return registration?.factory?.invoke(this) as T ?: construct(type)
     }
 
-    @Suppress("UNCHECKED_CAST")
-    fun <T> findInstances(interfaceClass: Class<T>): Collection<T> =
-        beanInstances.filter { interfaceClass.isAssignableFrom(it.value.javaClass) }.map { it as T }
-
-    inline fun <reified T> findInstances() = findInstances(T::class.java)
-
-    fun <T> construct(beanDefinition: BeanDefinition<T>): T =
-        construct(beanDefinition.concreteClass)
 
     fun <T> construct(concreteClass: Class<out T>): T {
         check(concreteClass.constructors.size == 1) { "${concreteClass.name} must have one constructor." }
@@ -70,56 +49,43 @@ class ComponentContainer {
 
     inline fun <reified T> construct() = construct(T::class.java)
 
+    inline fun <reified R : Any> resolve(): R {
+        return resolve(R::class.java)
+    }
+
     inline fun <reified R : Any> inject(): Lazy<R> = lazy {
-        resolve(R::class.java)
+        resolve<R>()
     }
 
     inline fun configure(config: ComponentContainerRoot.() -> Unit) {
         config(ComponentContainerRoot(this))
     }
-
-    fun debugString(): String {
-        val defString = beanDefinitions
-            .map { "${it.value.interfaceClass.name} -> ${it.value.concreteClass.name}" }
-            .joinToString(
-                prefix = "beanDefinitions[",
-                separator = ", ",
-                postfix = "]"
-            )
-
-        val instanceString = beanInstances
-            .map {
-                "${it.key.name} -> ${it.value.javaClass.name}@${Integer.toHexString(System.identityHashCode(it.value))}"
-            }.joinToString(
-                prefix = "beanInstances[",
-                separator = ", ",
-                postfix = "]"
-            )
-
-        return "$defString $instanceString"
-    }
 }
 
-class ComponentContainerRoot constructor(val componentContainer: ComponentContainer) {
+class ComponentContainerRoot constructor(val container: ComponentContainer) {
+
+    inline fun <reified T : Any> register(crossinline body: (ComponentContainer) -> T) =
+        container.register(T::class.java) { c -> body(c) }
+
+    inline fun <reified T : Any> register(crossinline body: () -> T) =
+        container.register(T::class.java) { _ -> body() }
+
     inline fun <reified T : Any> definition(clazz: Class<out T>) =
-        componentContainer.registerDefinition(T::class.java, clazz)
+        lazy { container.construct(clazz) }.let {
+            container.register(T::class.java) { _ -> it.value }
+        }
 
-    inline fun <reified T : Any> definition(body: () -> Class<out T>) = definition(body())
+    inline fun <reified T : Any> definition() = definition(T::class.java)
 
-    inline fun <reified T : Any> definition() =
-        componentContainer.registerDefinition(T::class.java)
-
-    inline fun <reified T : Any> instance(obj: T) =
-        componentContainer.registerInstance(T::class.java, obj)
-
-    inline fun <reified T : Any> instance(body: () -> T) = instance(body())
-
-    inline fun <reified T : Any> resolve(): T = componentContainer.resolve(T::class.java)
+    inline fun <reified T : Any> instance(instance: T) =
+        container.register(T::class.java) { _ -> instance }
 
     inline fun <reified T : Any> externallyConfigured(config: ExternallyConfigured<T>) {
-        componentContainer.registerDefinition(T::class.java, config.instanceType)
-        componentContainer.registerInstance(config.javaClass, config)
+        definition(config.instanceType)
+        container.register(config.javaClass) { config }
     }
+
+    inline fun <reified T : Any> resolve(): T = container.resolve(T::class.java)
 }
 
 interface ExternallyConfigured<T> {
