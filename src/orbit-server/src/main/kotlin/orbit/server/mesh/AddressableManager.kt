@@ -76,7 +76,7 @@ class AddressableManager(
     suspend fun abandonLease(addressableReference: AddressableReference, nodeId: NodeId): Boolean {
         val key = NamespacedAddressableReference(nodeId.namespace, addressableReference)
         val currentLease = addressableDirectory.get(key)
-        if (currentLease != null && currentLease.nodeId == nodeId && clock.nowOrPast(currentLease.expiresAt)) {
+        if (currentLease != null && currentLease.nodeId == nodeId && clock.inFuture(currentLease.expiresAt)) {
             return addressableDirectory.compareAndSet(key, currentLease, null)
         }
         return false

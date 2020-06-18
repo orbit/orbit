@@ -7,10 +7,10 @@
 package orbit.server
 
 import io.kotlintest.shouldBe
+import io.kotlintest.shouldNotBe
 import io.micrometer.core.instrument.Metrics
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
-import orbit.server.mesh.AddressableDirectory
 import orbit.server.mesh.AddressableManager
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LeaseDuration
@@ -19,20 +19,25 @@ import orbit.server.mesh.local.LocalAddressableDirectory
 import orbit.server.mesh.local.LocalNodeDirectory
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.addressable.Key
+import orbit.shared.addressable.NamespacedAddressableReference
 import orbit.shared.mesh.NodeCapabilities
+import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.mesh.NodeLease
 import orbit.shared.mesh.NodeStatus
 import orbit.util.time.Clock
+import orbit.util.time.Timestamp
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 
 class AddressableManagerTests {
     lateinit var clusterManager: ClusterManager
-    val clock: Clock = Clock()
-    val nodeDirectory: NodeDirectory = LocalNodeDirectory(clock)
-    lateinit var addressableManager: AddressableManager
+    private val clock: Clock = Clock()
+    private val nodeDirectory: NodeDirectory = LocalNodeDirectory(clock)
+    private val addressableDirectory = LocalAddressableDirectory(clock)
+
+    private lateinit var addressableManager: AddressableManager
 
     private fun join(namespace: String = "test", addressableType: String = "testActor"): NodeInfo {
         return runBlocking {
@@ -65,7 +70,7 @@ class AddressableManagerTests {
 
         clusterManager = ClusterManager(config, clock, nodeDirectory)
         addressableManager = AddressableManager(
-            LocalAddressableDirectory(clock),
+            addressableDirectory,
             clusterManager,
             clock,
             config
@@ -195,5 +200,50 @@ class AddressableManagerTests {
         }
     }
 
+    @Test
+    fun `Abandoning an addressable lease should remove it from addressable directory`() {
+        runBlocking {
+            val address = AddressableReference("testActor", Key.StringKey("a"))
+            val node1 = join("test")
+            addressableManager.locateOrPlace("test", address)
+            addressableDirectory.get(NamespacedAddressableReference("test", address)) shouldNotBe null
 
+            addressableManager.abandonLease(address, node1.id) shouldBe true
+            addressableDirectory.get(NamespacedAddressableReference("test", address)) shouldBe null
+        }
+    }
+
+    @Test
+    fun `Abandoning an addressable lease not assigned to node is ignored`() {
+        runBlocking {
+            val address = AddressableReference("testActor", Key.StringKey("a"))
+            val node1 = join("test")
+            addressableManager.locateOrPlace("test", address)
+            val node2 = join("test")
+            addressableManager.abandonLease(address, node2.id) shouldBe false
+        }
+    }
+
+    @Test
+    fun `Abandoning a non-existant addressable lease is ignored`() {
+        runBlocking {
+            val address = AddressableReference("testActor", Key.StringKey("a"))
+            addressableManager.abandonLease(address, NodeId("node", "test")) shouldBe false
+        }
+    }
+
+    @Test
+    fun `Abandoning an expired lease doesn't remove from directory`() {
+        runBlocking {
+            val address = AddressableReference("testActor", Key.StringKey("a"))
+            val node1 = join("test")
+            addressableManager.locateOrPlace("test", address)
+            val reference = NamespacedAddressableReference("test", address)
+            val lease = addressableDirectory.get(reference)!!
+            addressableDirectory.compareAndSet(reference, lease, lease.copy(expiresAt = Timestamp(0,0)))
+
+            addressableManager.abandonLease(address, NodeId("node", "test")) shouldBe false
+            addressableDirectory.get(reference) shouldNotBe null
+        }
+    }
 }
