@@ -217,7 +217,7 @@ class AddressableManagerTests {
     fun `Abandoning an addressable lease not assigned to node is ignored`() {
         runBlocking {
             val address = AddressableReference("testActor", Key.StringKey("a"))
-            val node1 = join("test")
+            join("test")
             addressableManager.locateOrPlace("test", address)
             val node2 = join("test")
             addressableManager.abandonLease(address, node2.id) shouldBe false
@@ -236,7 +236,7 @@ class AddressableManagerTests {
     fun `Abandoning an expired lease doesn't remove from directory`() {
         runBlocking {
             val address = AddressableReference("testActor", Key.StringKey("a"))
-            val node1 = join("test")
+            join("test")
             addressableManager.locateOrPlace("test", address)
             val reference = NamespacedAddressableReference("test", address)
             val lease = addressableDirectory.get(reference)!!
