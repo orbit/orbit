@@ -79,11 +79,11 @@ class ContainerTests {
     }
 
     @Test
-    fun `Registering a definition returns same instance`() {
+    fun `Registering a singleton returns same instance`() {
         val container = ComponentContainer()
 
         container.configure {
-            definition<TestClass>()
+            singleton<TestClass>()
         }
 
         container.resolve<TestClass>() shouldBeSameInstanceAs  container.resolve<TestClass>()

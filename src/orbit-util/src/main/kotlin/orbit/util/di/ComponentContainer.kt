@@ -70,18 +70,18 @@ class ComponentContainerRoot constructor(val container: ComponentContainer) {
     inline fun <reified T : Any> register(crossinline body: () -> T) =
         container.register(T::class.java) { _ -> body() }
 
-    inline fun <reified T : Any> definition(clazz: Class<out T>) =
+    inline fun <reified T : Any> singleton(clazz: Class<out T>) =
         lazy { container.construct(clazz) }.let {
             container.register(T::class.java) { _ -> it.value }
         }
 
-    inline fun <reified T : Any> definition() = definition(T::class.java)
+    inline fun <reified T : Any> singleton() = singleton(T::class.java)
 
     inline fun <reified T : Any> instance(instance: T) =
         container.register(T::class.java) { _ -> instance }
 
     inline fun <reified T : Any> externallyConfigured(config: ExternallyConfigured<T>) {
-        definition(config.instanceType)
+        singleton(config.instanceType)
         container.register(config.javaClass) { config }
     }
 
