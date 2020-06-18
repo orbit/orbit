@@ -249,7 +249,7 @@ class MetricsTests : BaseServerTest() {
                 })
             }
 
-            eventually(3.seconds) {
+            eventually(2.seconds) {
                 Meters.TickTimer_Count shouldBeGreaterThan 1.0
                 Meters.TickTimer_Total shouldBeGreaterThanOrEqual .5
             }

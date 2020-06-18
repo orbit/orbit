@@ -64,7 +64,7 @@ open class BaseServerTest {
         }
     }
 
-    fun startServer(
+    suspend fun startServer(
         port: Int = 50056,
         addressableLeaseDurationSeconds: Long = 5,
         nodeLeaseDurationSeconds: Long = 10,
@@ -84,7 +84,7 @@ open class BaseServerTest {
             )
         )
 
-        server.start()
+        server.start().join()
 
         eventually(10.seconds) {
             server.nodeStatus shouldBe NodeStatus.ACTIVE
