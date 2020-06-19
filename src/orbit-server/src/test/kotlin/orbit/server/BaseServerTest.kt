@@ -85,26 +85,16 @@ open class BaseServerTest {
         )
 
         server.start().join()
-
-        eventually(10.seconds) {
-            server.nodeStatus shouldBe NodeStatus.ACTIVE
-        }
-
         servers.add(server)
         return server
     }
 
-    fun disconnectServer(server: OrbitServer?) {
+    suspend fun disconnectServer(server: OrbitServer?) {
         if (server == null) {
             return
         }
 
-        server.stop()
-
-        eventually(10.seconds) {
-            server.nodeStatus shouldBe NodeStatus.STOPPED
-        }
-
+        server.stop().join()
         servers.remove(server)
     }
 
