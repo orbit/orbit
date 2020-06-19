@@ -241,14 +241,13 @@ class MetricsTests : BaseServerTest() {
     @Test
     fun `constant tick timer elapses and records ticks`() {
         runBlocking {
-            startServer()
-//            {
-//                instance(spy(resolve<ClusterManager>()) {
-//                    onBlocking { this.tick() }.then {
-//                        advanceTime(1335.milliseconds)
-//                    }
-//                })
-//            }
+            startServer() {
+                instance(spy(resolve<ClusterManager>()) {
+                    onBlocking { this.tick() }.then {
+                        advanceTime(35.milliseconds)
+                    }
+                })
+            }
 
             eventually(10.seconds) {
                 Meters.TickTimer_Count shouldBeGreaterThan 3.0
