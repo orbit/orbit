@@ -6,7 +6,6 @@
 
 package orbit.server
 
-import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
 import kotlinx.coroutines.launch
@@ -104,43 +103,43 @@ class OrbitServer(private val config: OrbitServerConfig) {
             instance(config.serverInfo)
 
             // Service
-            definition<GrpcEndpoint>()
-            definition<ServerAuthInterceptor>()
-            definition<NodeManagementService>()
-            definition<AddressableManagementService>()
-            definition<ConnectionService>()
-            definition<HealthCheckList>()
-            definition<HealthService>()
+            singleton<GrpcEndpoint>()
+            singleton<ServerAuthInterceptor>()
+            singleton<NodeManagementService>()
+            singleton<AddressableManagementService>()
+            singleton<ConnectionService>()
+            singleton<HealthCheckList>()
+            singleton<HealthService>()
 
             // Net
-            definition<ConnectionManager>()
+            singleton<ConnectionManager>()
 
             // Pipeline
-            definition<Pipeline>()
-            definition<PipelineSteps>()
-            definition<BlankStep>()
-            definition<PlacementStep>()
-            definition<IdentityStep>()
-            definition<RoutingStep>()
-            definition<EchoStep>()
-            definition<VerifyStep>()
-            definition<AuthStep>()
-            definition<TransportStep>()
+            singleton<Pipeline>()
+            singleton<PipelineSteps>()
+            singleton<BlankStep>()
+            singleton<PlacementStep>()
+            singleton<IdentityStep>()
+            singleton<RoutingStep>()
+            singleton<EchoStep>()
+            singleton<VerifyStep>()
+            singleton<AuthStep>()
+            singleton<TransportStep>()
 
             // Mesh
-            definition<LocalNodeInfo>()
-            definition<ClusterManager>()
-            definition<AddressableManager>()
-            definition<RemoteMeshNodeManager>()
+            singleton<LocalNodeInfo>()
+            singleton<ClusterManager>()
+            singleton<AddressableManager>()
+            singleton<RemoteMeshNodeManager>()
             externallyConfigured(config.nodeDirectory)
             externallyConfigured(config.addressableDirectory)
             externallyConfigured(config.meterRegistry)
 
             // Auth
-            definition<AuthSystem>()
+            singleton<AuthSystem>()
 
             // Router
-            definition<Router>()
+            singleton<Router>()
 
             // Hook to allow overriding container definitions
             config.containerOverrides(this)

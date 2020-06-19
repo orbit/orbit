@@ -232,7 +232,7 @@ class MetricsTests : BaseServerTest() {
             }
             pulse = 2.seconds
 
-            eventually(5.seconds) {
+            eventually(10.seconds) {
                 Meters.SlowTickCount shouldBeGreaterThan 0.0
             }
         }
