@@ -66,29 +66,29 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
             instance(clock)
             instance(LocalNode(config))
 
-            definition<GrpcClient>()
-            definition<ClientAuthInterceptor>()
-            definition<ConnectionHandler>()
-            definition<MessageHandler>()
+            singleton<GrpcClient>()
+            singleton<ClientAuthInterceptor>()
+            singleton<ConnectionHandler>()
+            singleton<MessageHandler>()
 
-            definition<NodeLeaser>()
-            definition<AddressableLeaser>()
+            singleton<NodeLeaser>()
+            singleton<AddressableLeaser>()
             externallyConfigured(config.nodeLeaseRenewalFailedHandler)
 
-            definition<Serializer>()
+            singleton<Serializer>()
 
-            definition<CapabilitiesScanner>()
-            definition<AddressableProxyFactory>()
-            definition<InvocationSystem>()
-            definition<AddressableDefinitionDirectory>()
+            singleton<CapabilitiesScanner>()
+            singleton<AddressableProxyFactory>()
+            singleton<InvocationSystem>()
+            singleton<AddressableDefinitionDirectory>()
             externallyConfigured(config.addressableConstructor)
             externallyConfigured(config.addressableDeactivator)
 
 
-            definition<ExecutionSystem>()
-            definition<ExecutionLeases>()
+            singleton<ExecutionSystem>()
+            singleton<ExecutionLeases>()
 
-            definition<ActorProxyFactory>()
+            singleton<ActorProxyFactory>()
 
             // Hook to allow overriding container definitions
             config.containerOverrides(this)
