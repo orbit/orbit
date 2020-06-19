@@ -27,6 +27,7 @@ import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock
 import orbit.util.time.TimeMs
 import org.junit.After
+import org.junit.Before
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
@@ -53,9 +54,9 @@ open class BaseServerTest {
     @After
     fun afterTest() {
         runBlocking {
-            clients.toList().forEach { client -> runBlocking { disconnectClient(client) } }
+            clients.toList().forEach { client -> disconnectClient(client) }
             delay(100)
-            servers.toList().forEach { server -> runBlocking { disconnectServer(server) } }
+            servers.toList().forEach { server -> disconnectServer(server) }
             LocalNodeDirectory.clear()
             LocalAddressableDirectory.clear()
             Metrics.globalRegistry.clear()
@@ -93,12 +94,12 @@ open class BaseServerTest {
         return server
     }
 
-    suspend fun disconnectServer(server: OrbitServer?) {
+    fun disconnectServer(server: OrbitServer?) {
         if (server == null) {
             return
         }
 
-        server.stop().join()
+        server.stop()
 
         eventually(10.seconds) {
             server.nodeStatus shouldBe NodeStatus.STOPPED
@@ -107,7 +108,7 @@ open class BaseServerTest {
         servers.remove(server)
     }
 
-    suspend fun startClient(onReceive: (msg: Message) -> Unit = {}): TestClient {
+    suspend fun startClient(onReceive: (msg: Message) -> Unit = {}) : TestClient {
         val client = TestClient(onReceive).connect()
 
         clients.add(client)
