@@ -18,7 +18,7 @@ val kotlinCoroutinesVersion by extra("1.3.5")
 val slf4jVersion by extra("1.7.30")
 val jacksonVersion by extra("2.10.2")
 val kotestVersion by extra ("3.4.2")
-val mokitoVersion by extra("3.3.0")
+val mokitoVersion by extra("3.3.3")
 val mockitoKotlin2Version by extra("2.2.0")
 val micrometerVersion by extra("1.3.5")
 
