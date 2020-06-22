@@ -53,8 +53,6 @@ internal class ExecutionHandle(
 
     private val lastActivityAtomic = AtomicReference(createdTime)
     val lastActivity get() = lastActivityAtomic.get()
-
-    // TODO (brett) - maybe this can be internal, throws exception
     var active: Boolean = false
 
     private val channel = Channel<EventType>(addressableBufferCount)

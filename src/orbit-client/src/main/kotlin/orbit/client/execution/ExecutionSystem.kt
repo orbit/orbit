@@ -49,7 +49,6 @@ internal class ExecutionSystem(
             var handle = activeAddressables[invocation.reference]
 
             if (clientState == ClientState.STOPPING && (handle == null || !handle.active)) {
-                println("Rerouting from ${localNode.status.nodeInfo?.id}...")
                 completion.completeExceptionally(RerouteMessageException("Client is stopping, message should be routed to a new node."))
                 return
             }
