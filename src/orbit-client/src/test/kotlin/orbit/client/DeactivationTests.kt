@@ -190,11 +190,6 @@ class DeactivationTests : BaseIntegrationTest() {
         }
     }
 
-    // start shutdown rate
-    // wait first time
-    // send message to first
-    // receive message on client 2?
-
     @Test
     fun `Sending a message to a deactivated actor during shutdown reroutes the message`() {
         runBlocking {
@@ -224,6 +219,4 @@ class DeactivationTests : BaseIntegrationTest() {
             job.join()
         }
     }
-
-
 }

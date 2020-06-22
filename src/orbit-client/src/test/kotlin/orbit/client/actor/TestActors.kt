@@ -141,7 +141,6 @@ interface ClientAwareActor : ActorWithStringKey {
 
 class ClientAwareActorImpl : AbstractActor(), ClientAwareActor {
     override fun getClient(): Deferred<NodeId> {
-        println("Client aware actor ${context.reference.key} getting node Id ${context.client.nodeId}")
         return CompletableDeferred(context.client.nodeId!!)
     }
 

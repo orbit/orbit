@@ -190,12 +190,14 @@ class AddressableManagerTests {
     fun `Ineligible nodes are not included in placement`() {
         runBlocking {
             val address = AddressableReference("testActor", Key.StringKey("a"))
-            val node1 = join("test")
-            val node2 = join("test")
-            val node3 = join("test")
+            val nodes = mapOf(
+                1 to join("test"),
+                2 to join("test"),
+                3 to join("test")
+            )
 
             iterateTest {
-                addressableManager.locateOrPlace("test", address, listOf(node2.id, node3.id)) shouldBe node1.id
+                addressableManager.locateOrPlace("test", address, listOf(nodes[2]!!.id, nodes[3]!!.id)) shouldBe nodes[1]!!.id
             }
         }
     }
@@ -204,11 +206,11 @@ class AddressableManagerTests {
     fun `Abandoning an addressable lease should remove it from addressable directory`() {
         runBlocking {
             val address = AddressableReference("testActor", Key.StringKey("a"))
-            val node1 = join("test")
+            val node = join("test")
             addressableManager.locateOrPlace("test", address)
             addressableDirectory.get(NamespacedAddressableReference("test", address)) shouldNotBe null
 
-            addressableManager.abandonLease(address, node1.id) shouldBe true
+            addressableManager.abandonLease(address, node.id) shouldBe true
             addressableDirectory.get(NamespacedAddressableReference("test", address)) shouldBe null
         }
     }
@@ -240,7 +242,7 @@ class AddressableManagerTests {
             addressableManager.locateOrPlace("test", address)
             val reference = NamespacedAddressableReference("test", address)
             val lease = addressableDirectory.get(reference)!!
-            addressableDirectory.compareAndSet(reference, lease, lease.copy(expiresAt = Timestamp(0,0)))
+            addressableDirectory.compareAndSet(reference, lease, lease.copy(expiresAt = Timestamp(0, 0)))
 
             addressableManager.abandonLease(address, NodeId("node", "test")) shouldBe false
             addressableDirectory.get(reference) shouldNotBe null
