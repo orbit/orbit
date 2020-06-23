@@ -22,7 +22,7 @@ class PlacementStep(
         when (val content = msg.content) {
             is MessageContent.InvocationRequest -> {
                 val ineligibleNodes =
-                    if (content.reason == InvocationReason.rerouted) listOf(context.metadata.authInfo.nodeId) else listOf()
+                    if (content.reason == InvocationReason.rerouted) listOf(context.metadata.authInfo.nodeId) else emptyList()
 
                 addressableManager.locateOrPlace(msg.source!!.namespace, content.destination, ineligibleNodes).also { location ->
                     msg.copy(

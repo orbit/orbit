@@ -33,7 +33,7 @@ class AddressableManager(
     suspend fun locateOrPlace(
         namespace: Namespace,
         addressableReference: AddressableReference,
-        ineligibleNodes: List<NodeId> = listOf()
+        ineligibleNodes: List<NodeId> = emptyList()
     ): NodeId =
         NamespacedAddressableReference(namespace, addressableReference).let { key ->
             addressableDirectory.getOrPut(key) {
