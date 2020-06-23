@@ -12,12 +12,14 @@ import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeGreaterThanOrEqual
 import io.kotlintest.matchers.numerics.shouldBeLessThan
 import io.kotlintest.matchers.numerics.shouldBeLessThanOrEqual
+import io.kotlintest.milliseconds
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import orbit.client.actor.ClientAwareActor
 import orbit.client.actor.KeyedDeactivatingActor
 import orbit.client.actor.SlowDeactivateActor
 import orbit.client.actor.TrackingGlobals
@@ -81,7 +83,7 @@ class DeactivationTests : BaseIntegrationTest() {
     }
 
     @Test
-    fun `Actors added during deactivation get deactivated`() {
+    fun `Actors added during deactivation are rejected`() {
         runBlocking {
             var count = 100
             repeat(count) { key ->
@@ -89,32 +91,22 @@ class DeactivationTests : BaseIntegrationTest() {
             }
 
             startServer(port = 50057, tickRate = 5.seconds)
-            val client2 = startClient(port = 50057)
+            val client2 = startClient(port = 50057, packages = listOf("orbit.client.alternativeActor"))
 
-            var additionalAddressableCount = 0
             GlobalScope.launch {
                 repeat(100) { k ->
                     k.let { k + 100 }.let { key ->
                         if (client.status != ClientState.IDLE) {
-                            ++additionalAddressableCount
-                            client2.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message")
                             delay(5)
+                            client2.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message")
                         }
                     }
                 }
             }
 
-            // ensure some actors are placed on both clients
-            delay(500)
+            disconnectClient(client, AddressableDeactivator.TimeSpan(AddressableDeactivator.TimeSpan.Config(500)))
 
-            disconnectClient(client)
-
-            TrackingGlobals.deactivateTestCounts.get() shouldBeGreaterThan count
-            TrackingGlobals.deactivateTestCounts.get() shouldBeLessThan count + additionalAddressableCount
-
-            disconnectClient(client2)
-
-            TrackingGlobals.deactivateTestCounts.get() shouldBe count + additionalAddressableCount
+            TrackingGlobals.deactivateTestCounts.get() shouldBe count
         }
     }
 
@@ -170,7 +162,7 @@ class DeactivationTests : BaseIntegrationTest() {
 
             test(100, 500)
             test(500, 500)
-            test(10000, 1000)
+            test(2000, 500)
         }
     }
 
@@ -195,6 +187,36 @@ class DeactivationTests : BaseIntegrationTest() {
 
             watch.elapsed shouldBeGreaterThanOrEqual deactivationTime
             watch.elapsed shouldBeLessThan deactivationTime + 200
+        }
+    }
+
+    @Test
+    fun `Sending a message to a deactivated actor during shutdown reroutes the message`() {
+        runBlocking {
+            // Only use custom client
+            disconnectClient()
+
+            val client = startClient(addressableTTL = 300.milliseconds)
+
+            val clientId = client.nodeId
+
+            repeat(5) { key ->
+                client.actorFactory.createProxy<ClientAwareActor>(key.toString()).getClient().await() shouldBe clientId
+            }
+
+            val client2 = startClient()
+            val client2Id = client2.nodeId
+
+            val job = client.stop(AddressableDeactivator.RateLimited(AddressableDeactivator.RateLimited.Config(10)))
+
+            delay(150)
+
+            val deactivated = TrackingGlobals.deactivatedActors.first()
+            val actor = client2.actorFactory.createProxy<ClientAwareActor>(deactivated.toString())
+
+            actor.getClient().await() shouldBe client2Id
+
+            job.join()
         }
     }
 }

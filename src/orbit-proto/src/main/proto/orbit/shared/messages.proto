@@ -50,6 +50,12 @@ message InvocationRequestProto {
     AddressableReferenceProto reference = 1;
     string method = 2;
     string arguments = 3;
+    InvocationReasonProto reason = 4;
+}
+
+enum InvocationReasonProto {
+    invocation = 0;
+    rerouted = 1;
 }
 
 message InvocationResponseProto {
@@ -59,11 +65,8 @@ message InvocationResponseProto {
 message InvocationResponseErrorProto {
     string description = 1;
     string platform = 2;
-
 }
-
 
 message ErrorProto {
     string description = 1;
 }
-

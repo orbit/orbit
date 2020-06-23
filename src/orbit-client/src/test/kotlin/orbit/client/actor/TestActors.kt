@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import orbit.client.addressable.DeactivationReason
 import orbit.client.addressable.OnDeactivate
 import orbit.shared.addressable.Key
+import orbit.shared.mesh.NodeId
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
@@ -25,6 +26,7 @@ object TrackingGlobals {
         deactivateTestCounts.set(0)
         concurrentDeactivations.set(0)
         maxConcurrentDeactivations.set(0)
+        deactivatedActors.clear()
     }
 
     fun startDeactivate() {
@@ -46,6 +48,7 @@ object TrackingGlobals {
     val deactivateTestCounts = AtomicInteger(0)
     val concurrentDeactivations = AtomicInteger(0)
     val maxConcurrentDeactivations = AtomicInteger(0)
+    val deactivatedActors : MutableList<Key> = mutableListOf()
 }
 
 interface GreeterActor : ActorWithNoKey {
@@ -120,7 +123,6 @@ data class ComplexNull(
 interface NullActor : ActorWithNoKey {
     fun simpleNull(arg1: String, arg2: String?): Deferred<String>
     fun complexNull(arg1: String, arg2: ComplexNull?): Deferred<String>
-
 }
 
 class NullActorImpl : NullActor {
@@ -130,6 +132,23 @@ class NullActorImpl : NullActor {
 
     override fun complexNull(arg1: String, arg2: ComplexNull?): Deferred<String> {
         return CompletableDeferred(arg1 + arg2?.greeting)
+    }
+}
+
+interface ClientAwareActor : ActorWithStringKey {
+    fun getClient(): Deferred<NodeId>
+}
+
+class ClientAwareActorImpl : AbstractActor(), ClientAwareActor {
+    override fun getClient(): Deferred<NodeId> {
+        return CompletableDeferred(context.client.nodeId!!)
+    }
+
+    @OnDeactivate
+    fun onDeactivate(): Deferred<Unit> {
+        println("Deactivating actor ${context.reference.key}")
+        TrackingGlobals.deactivatedActors.add(context.reference.key)
+        return CompletableDeferred(Unit)
     }
 }
 

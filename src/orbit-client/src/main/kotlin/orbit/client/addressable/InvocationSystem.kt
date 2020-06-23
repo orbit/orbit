@@ -17,6 +17,8 @@ import orbit.client.serializer.Serializer
 import orbit.client.util.RemoteException
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableInvocationArguments
+import orbit.shared.exception.RerouteMessageException
+import orbit.shared.net.InvocationReason
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 import orbit.shared.net.MessageTarget
@@ -26,10 +28,10 @@ internal class InvocationSystem(
     private val serializer: Serializer,
     private val executionSystem: ExecutionSystem,
     private val localNode: LocalNode,
+    private val config: OrbitClientConfig,
     componentContainer: ComponentContainer
 ) {
     private val messageHandler by componentContainer.inject<MessageHandler>()
-    private val config by componentContainer.inject<OrbitClientConfig>()
 
     suspend fun onInvocationRequest(msg: Message) {
         val content = msg.content as MessageContent.InvocationRequest
@@ -47,10 +49,23 @@ internal class InvocationSystem(
                 data = serializer.serialize(result)
             )
         } catch (t: Throwable) {
-            if(config.platformExceptions) {
-                MessageContent.InvocationResponseError(t.toString(), serializer.serialize(t))
-            } else {
-                MessageContent.Error(t.toString())
+            when {
+                t is RerouteMessageException -> {
+                    messageHandler.sendMessage(
+                        msg.copy(
+                            content = content.copy(
+                                reason = InvocationReason.rerouted
+                            )
+                        )
+                    )
+                    return
+                }
+                config.platformExceptions -> {
+                    MessageContent.InvocationResponseError(t.toString(), serializer.serialize(t))
+                }
+                else -> {
+                    MessageContent.Error(t.toString())
+                }
             }
         }
 
@@ -69,7 +84,7 @@ internal class InvocationSystem(
     }
 
     fun onInvocationPlatformErrorResponse(ire: MessageContent.InvocationResponseError, completion: Completion) {
-        val result = if(config.platformExceptions && !ire.platform.isNullOrEmpty()) {
+        val result = if (config.platformExceptions && !ire.platform.isNullOrEmpty()) {
             serializer.deserialize<Throwable>(ire.platform!!)
         } else {
             RemoteException("Exceptional response received: ${ire.description}")
@@ -85,7 +100,8 @@ internal class InvocationSystem(
             MessageContent.InvocationRequest(
                 destination = invocation.reference,
                 method = invocation.method,
-                arguments = arguments
+                arguments = arguments,
+                reason = invocation.reason
             )
         )
         return messageHandler.sendMessage(msg)

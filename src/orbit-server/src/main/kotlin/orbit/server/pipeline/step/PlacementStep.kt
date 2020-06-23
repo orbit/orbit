@@ -9,6 +9,7 @@ package orbit.server.pipeline.step
 import orbit.server.mesh.AddressableManager
 import orbit.server.mesh.LocalNodeInfo
 import orbit.server.pipeline.PipelineContext
+import orbit.shared.net.InvocationReason
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 import orbit.shared.net.MessageTarget
@@ -20,7 +21,10 @@ class PlacementStep(
     override suspend fun onInbound(context: PipelineContext, msg: Message) {
         when (val content = msg.content) {
             is MessageContent.InvocationRequest -> {
-                addressableManager.locateOrPlace(msg.source!!.namespace, content.destination).also { location ->
+                val ineligibleNodes =
+                    if (content.reason == InvocationReason.rerouted) listOf(context.metadata.authInfo.nodeId) else emptyList()
+
+                addressableManager.locateOrPlace(msg.source!!.namespace, content.destination, ineligibleNodes).also { location ->
                     msg.copy(
                         target = MessageTarget.Unicast(location)
                     ).also { newMsg ->

@@ -37,6 +37,11 @@ class AuthFailed(message: String) : Throwable(message)
  */
 class PlacementFailedException(message: String) : Throwable(message)
 
+/**
+ * An exception fo this type is thrown when a message needs to be routed to a new node
+ */
+class RerouteMessageException(message: String) : Throwable(message)
+
 fun Throwable?.toErrorContent(): MessageContent.Error = MessageContent.Error(
     description = this?.toString()
 )

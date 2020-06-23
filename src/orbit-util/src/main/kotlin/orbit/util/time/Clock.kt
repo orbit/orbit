@@ -34,6 +34,13 @@ class Clock {
         offsetTime += offset
     }
 
+    /**
+     * Resets clock to the current time removing any offsets from advancing the clock manually
+     */
+    fun resetToNow() {
+        offsetTime = 0L
+    }
+
     fun inFuture(time: Timestamp) = time.isAfter(now())
     fun inPast(time: Timestamp) = !inFuture(time)
     fun nowOrPast(time: Timestamp) = time.isExactly(now()) || inPast(time)

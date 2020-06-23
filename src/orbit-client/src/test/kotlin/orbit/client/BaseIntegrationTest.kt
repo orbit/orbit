@@ -77,7 +77,7 @@ open class BaseIntegrationTest {
         }
     }
 
-    fun startServer(
+    suspend fun startServer(
         port: Int = 50056,
         addressableLeaseDurationSeconds: Long = 10,
         nodeLeaseDurationSeconds: Long = 600,
@@ -99,26 +99,18 @@ open class BaseIntegrationTest {
             )
         )
 
-        server.start()
-
-        eventually(10.seconds) {
-            server.nodeStatus shouldBe NodeStatus.ACTIVE
-        }
+        server.start().join()
 
         servers.add(server)
         return server
     }
 
-    fun disconnectServer(server: OrbitServer?) {
+    suspend fun disconnectServer(server: OrbitServer?) {
         if (server == null) {
             return
         }
 
-        server.stop()
-
-        eventually(10.seconds) {
-            server.nodeStatus shouldBe NodeStatus.STOPPED
-        }
+        server.stop().join()
 
         servers.remove(server)
     }
@@ -128,6 +120,7 @@ open class BaseIntegrationTest {
         namespace: String = "test",
         packages: List<String> = listOf("orbit.client.actor"),
         platformExceptions: Boolean = false,
+        addressableTTL: Duration = 1.minutes,
         addressableDeactivation: ExternallyConfigured<AddressableDeactivator> = AddressableDeactivator.Instant.Config()
     ): OrbitClient {
 
@@ -138,7 +131,7 @@ open class BaseIntegrationTest {
                 packages = packages,
                 clock = clock,
                 platformExceptions = platformExceptions,
-                addressableTTL = 1.minutes,
+                addressableTTL = addressableTTL,
                 addressableDeactivator = addressableDeactivation
             )
         )

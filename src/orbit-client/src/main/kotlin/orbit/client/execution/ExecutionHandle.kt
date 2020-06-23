@@ -24,6 +24,7 @@ import orbit.client.util.DeferredWrappers
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.exception.CapacityExceededException
+import orbit.shared.net.InvocationReason
 import orbit.util.concurrent.SupervisorScope
 import orbit.util.di.ComponentContainer
 import orbit.util.time.Clock
@@ -34,10 +35,9 @@ import java.util.concurrent.atomic.AtomicReference
 internal class ExecutionHandle(
     val instance: Addressable,
     override val reference: AddressableReference,
-    val interfaceDefinition: AddressableInterfaceDefinition,
     val implDefinition: AddressableImplDefinition,
     componentContainer: ComponentContainer
-) : Deactivatable{
+) : Deactivatable {
     private val orbitClient: OrbitClient by componentContainer.inject()
     private val clock: Clock by componentContainer.inject()
     private val supervisorScope: SupervisorScope by componentContainer.inject()
@@ -53,6 +53,7 @@ internal class ExecutionHandle(
 
     private val lastActivityAtomic = AtomicReference(createdTime)
     val lastActivity get() = lastActivityAtomic.get()
+    var active: Boolean = false
 
     private val channel = Channel<EventType>(addressableBufferCount)
 
@@ -99,6 +100,7 @@ internal class ExecutionHandle(
             }
         }.also { (elapsed, _) ->
             logger.debug { "Activated $reference in ${elapsed}ms. " }
+            active = true
         }
     }
 
@@ -134,6 +136,7 @@ internal class ExecutionHandle(
 
         }.also { (elapsed, _) ->
             logger.debug { "Deactivated $reference in ${elapsed}ms." }
+            active = false
         }
     }
 
@@ -141,11 +144,14 @@ internal class ExecutionHandle(
         for (event in channel) {
             if (event is EventType.InvokeEvent) {
                 logger.warn(
-                    "Received invocation which can no longer be handled locally. " +
-                            "Rerouting... ${event.invocation}"
+                    "Received invocation which can no longer be handled locally. Rerouting... ${event.invocation}"
                 )
 
-                invocationSystem.sendInvocation(event.invocation)
+                invocationSystem.sendInvocation(
+                    event.invocation.copy(
+                        reason = InvocationReason.rerouted
+                    )
+                )
             }
         }
     }

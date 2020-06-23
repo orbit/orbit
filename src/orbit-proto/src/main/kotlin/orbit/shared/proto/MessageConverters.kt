@@ -7,6 +7,7 @@
 package orbit.shared.proto
 
 import orbit.shared.mesh.NodeId
+import orbit.shared.net.InvocationReason
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 import orbit.shared.net.MessageTarget
@@ -59,7 +60,8 @@ fun Messages.MessageContentProto.toMessageContent(): MessageContent =
             MessageContent.InvocationRequest(
                 method = invocationRequest.method,
                 arguments = invocationRequest.arguments,
-                destination = invocationRequest.reference.toAddressableReference()
+                destination = invocationRequest.reference.toAddressableReference(),
+                reason = InvocationReason.fromInt(invocationRequest.reasonValue)
             )
         }
 
@@ -106,6 +108,7 @@ fun MessageContent.toMessageContentProto(): Messages.MessageContentProto =
                             .setReference(destination.toAddressableReferenceProto())
                             .setMethod(method)
                             .setArguments(arguments)
+                            .setReason(Messages.InvocationReasonProto.forNumber(reason.value))
                             .build()
                     )
                 }

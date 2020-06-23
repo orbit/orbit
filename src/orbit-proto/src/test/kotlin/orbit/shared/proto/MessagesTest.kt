@@ -8,6 +8,7 @@ package orbit.shared.proto
 
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.addressable.Key
+import orbit.shared.net.InvocationReason
 import orbit.shared.net.MessageContent
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -18,7 +19,8 @@ class MessagesTest {
         val initialRef = MessageContent.InvocationRequest(
             method = "test",
             arguments = "[]",
-            destination = AddressableReference("refTye", Key.StringKey("refId"))
+            destination = AddressableReference("refType", Key.StringKey("refId")),
+            reason = InvocationReason.rerouted
         )
         val convertedRef = initialRef.toMessageContentProto()
         val endRef = convertedRef.toMessageContent()

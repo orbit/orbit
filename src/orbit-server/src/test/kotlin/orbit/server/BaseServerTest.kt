@@ -64,7 +64,7 @@ open class BaseServerTest {
         }
     }
 
-    fun startServer(
+    suspend fun startServer(
         port: Int = 50056,
         addressableLeaseDurationSeconds: Long = 5,
         nodeLeaseDurationSeconds: Long = 10,
@@ -84,27 +84,17 @@ open class BaseServerTest {
             )
         )
 
-        server.start()
-
-        eventually(10.seconds) {
-            server.nodeStatus shouldBe NodeStatus.ACTIVE
-        }
-
+        server.start().join()
         servers.add(server)
         return server
     }
 
-    fun disconnectServer(server: OrbitServer?) {
+    suspend fun disconnectServer(server: OrbitServer?) {
         if (server == null) {
             return
         }
 
-        server.stop()
-
-        eventually(10.seconds) {
-            server.nodeStatus shouldBe NodeStatus.STOPPED
-        }
-
+        server.stop().join()
         servers.remove(server)
     }
 

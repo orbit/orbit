@@ -16,9 +16,12 @@ import orbit.client.addressable.AddressableConstructor
 import orbit.client.addressable.AddressableDefinitionDirectory
 import orbit.client.addressable.AddressableImplDefinition
 import orbit.client.addressable.DeactivationReason
+import orbit.client.net.ClientState
 import orbit.client.net.Completion
+import orbit.client.net.LocalNode
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableReference
+import orbit.shared.exception.RerouteMessageException
 import orbit.util.di.ComponentContainer
 import orbit.util.time.Clock
 import java.util.concurrent.ConcurrentHashMap
@@ -29,19 +32,26 @@ internal class ExecutionSystem(
     private val componentContainer: ComponentContainer,
     private val clock: Clock,
     private val addressableConstructor: AddressableConstructor,
-    private val configuredDeactivator: AddressableDeactivator,
+    private val defaultDeactivator: AddressableDeactivator,
+    private val localNode: LocalNode,
     config: OrbitClientConfig
 ) {
     private val logger = KotlinLogging.logger { }
     private val activeAddressables = ConcurrentHashMap<AddressableReference, ExecutionHandle>()
     private val deactivationTimeoutMs = config.deactivationTimeout.toMillis()
     private val defaultTtl = config.addressableTTL.toMillis()
+    private val clientState: ClientState get() = localNode.status.clientState
 
     suspend fun handleInvocation(invocation: AddressableInvocation, completion: Completion) {
         try {
             executionLeases.getOrRenewLease(invocation.reference)
 
             var handle = activeAddressables[invocation.reference]
+
+            if (clientState == ClientState.STOPPING && (handle == null || !handle.active)) {
+                completion.completeExceptionally(RerouteMessageException("Client is stopping, message should be routed to a new node."))
+                return
+            }
 
             if (handle == null) {
                 handle = activate(invocation.reference)
@@ -96,7 +106,7 @@ internal class ExecutionSystem(
         while (activeAddressables.count() > 0) {
             logger.info { "Draining ${activeAddressables.count()} addressables" }
 
-            (deactivator ?: configuredDeactivator)
+            (deactivator ?: defaultDeactivator)
                 .deactivate(activeAddressables.values.toList()) { a ->
                     deactivate(a, DeactivationReason.NODE_SHUTTING_DOWN)
                 }
@@ -128,7 +138,7 @@ internal class ExecutionSystem(
         activeAddressables.remove(deactivatable.reference)
     }
 
-    private suspend fun getOrCreateAddressable(
+    private fun getOrCreateAddressable(
         reference: AddressableReference,
         implDefinition: AddressableImplDefinition
     ): ExecutionHandle =
@@ -147,7 +157,6 @@ internal class ExecutionSystem(
             componentContainer = componentContainer,
             instance = instance,
             reference = reference,
-            interfaceDefinition = implDefinition.interfaceDefinition,
             implDefinition = implDefinition
         )
 

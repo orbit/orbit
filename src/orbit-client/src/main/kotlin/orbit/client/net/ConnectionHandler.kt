@@ -63,7 +63,7 @@ internal class ConnectionHandler(
     }
 
     fun send(msg: Message) {
-        testConnection();
+        testConnection()
 
         synchronized(connectionChannel) {
             connectionChannel.send(msg.toMessageProto())

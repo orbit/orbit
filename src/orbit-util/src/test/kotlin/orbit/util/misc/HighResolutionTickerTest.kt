@@ -8,12 +8,14 @@ package orbit.util.misc
 
 import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.matchers.numerics.shouldBeLessThan
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import orbit.util.time.Clock
 import orbit.util.time.highResolutionTicker
 import orbit.util.time.stopwatch
 import org.junit.Test
 
+@ExperimentalCoroutinesApi
 class HighResolutionTickerTest {
 
     @Test
@@ -21,8 +23,8 @@ class HighResolutionTickerTest {
         runBlocking {
             val ticker = highResolutionTicker(10000)
 
-            val watch = stopwatch(Clock()) { time ->
-                (1..10000).forEach { i ->
+            val watch = stopwatch(Clock()) { _ ->
+                (1..10000).forEach { _ ->
                     ticker.receive()
                 }
             }
