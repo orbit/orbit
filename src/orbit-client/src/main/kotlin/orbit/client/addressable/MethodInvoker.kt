@@ -6,7 +6,6 @@
 
 package orbit.client.addressable
 
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.coroutineScope
 import orbit.client.util.DeferredWrappers
 import orbit.shared.addressable.AddressableInvocationArguments
@@ -33,12 +32,8 @@ internal object MethodInvoker {
         method.isAccessible = true
 
         if (method.kotlinFunction?.isSuspend == true) {
-            CompletableDeferred<Any?>().let { deferred ->
-                method.invoke(
-                    instance, *argValues.plus(
-                        Continuation<Any?>(coroutineContext) { r -> deferred.complete(r) })
-                )
-            }
+            DeferredWrappers.wrapSuspend(method, instance, argValues)
+
         } else {
             DeferredWrappers.wrapCall(method.invoke(instance, *argValues)).await()
         }

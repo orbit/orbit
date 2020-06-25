@@ -8,6 +8,7 @@ package orbit.client.execution
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import orbit.client.OrbitClient
@@ -30,6 +31,7 @@ import orbit.util.time.Clock
 import orbit.util.time.stopwatch
 import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.reflect.jvm.kotlinFunction
 
 internal class ExecutionHandle(
     val instance: Addressable,
@@ -91,11 +93,16 @@ internal class ExecutionHandle(
         }
     }
 
-    private suspend fun onActivate() {
+    private suspend fun onActivate() = coroutineScope{
         logger.debug { "Activating $reference..." }
         stopwatch(clock) {
             implDefinition.onActivateMethod?.also {
-                DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
+                if (it.method.kotlinFunction?.isSuspend == true) {
+                    DeferredWrappers.wrapSuspend(it.method, instance)
+                }
+                else {
+                    DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
+                }
             }
         }.also { (elapsed, _) ->
             logger.debug { "Activated $reference in ${elapsed}ms. " }

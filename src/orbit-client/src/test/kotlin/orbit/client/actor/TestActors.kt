@@ -228,6 +228,11 @@ interface SuspendingMethodActor : ActorWithStringKey {
 }
 
 class SuspendingMethodActorImpl : SuspendingMethodActor {
+    @OnActivate
+    suspend fun onActivate() {
+        println("Activated")
+    }
+
     override suspend fun ping(msg: String): String {
         return msg
     }

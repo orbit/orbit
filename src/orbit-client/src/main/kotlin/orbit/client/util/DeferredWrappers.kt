@@ -6,12 +6,15 @@
 
 package orbit.client.util
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.asDeferred
 import java.lang.reflect.Method
 import java.util.concurrent.CompletionStage
+import kotlin.coroutines.Continuation
 import kotlin.reflect.jvm.kotlinFunction
 
 internal object DeferredWrappers {
@@ -41,4 +44,18 @@ internal object DeferredWrappers {
                 throw IllegalArgumentException("No async wrapper for ${result.javaClass} found")
             }
         }
+
+    suspend fun wrapSuspend(
+        method: Method,
+        instance: Any,
+        argValues: Array<Any?> = emptyArray()
+    )  = coroutineScope {
+        CompletableDeferred<Any?>().let { deferred ->
+            method.invoke(
+                instance, *argValues.plus(
+                    Continuation<Any?>(coroutineContext) { r -> deferred.complete(r) })
+            )
+        }
+    }
+
 }
