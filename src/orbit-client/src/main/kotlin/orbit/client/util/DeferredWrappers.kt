@@ -6,11 +6,13 @@
 
 package orbit.client.util
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.asDeferred
 import java.lang.reflect.Method
 import java.util.concurrent.CompletionStage
+import kotlin.reflect.jvm.kotlinFunction
 
 internal object DeferredWrappers {
     private val supportedWrappers = listOf(
@@ -18,12 +20,18 @@ internal object DeferredWrappers {
         Deferred::class.java
     )
 
-    fun canHandle(clazz: Class<*>): Boolean = supportedWrappers.count { it.isAssignableFrom(clazz) } > 0
+    fun canHandle(method: Method): Boolean =
+        supportedWrappers.any { it.isAssignableFrom(method.returnType) }
+                || (method.kotlinFunction?.isSuspend == true)
 
-    fun wrapReturn(deferred: Deferred<*>, method: Method): Any =
+    fun isSuspended(method: Method): Boolean = method.kotlinFunction?.isSuspend == true
+
+
+    fun wrapReturn(deferred: Deferred<*>, method: Method, coroutineScope: CoroutineScope? = null): Any =
         when {
             CompletionStage::class.java.isAssignableFrom(method.returnType) -> deferred.asCompletableFuture()
             Deferred::class.java.isAssignableFrom(method.returnType) -> deferred
+//            method.kotlinFunction?.isSuspend == true -> coroutineScope!!.async { deferred.await() }
             else -> {
                 throw IllegalArgumentException("No async wrapper for ${method.returnType} found")
             }
@@ -33,6 +41,7 @@ internal object DeferredWrappers {
         when (result) {
             is CompletionStage<*> -> result.asDeferred()
             is Deferred<*> -> result
+            // method.kotlinFunction?.isSuspend == true -> true
             else -> {
                 throw IllegalArgumentException("No async wrapper for ${result.javaClass} found")
             }

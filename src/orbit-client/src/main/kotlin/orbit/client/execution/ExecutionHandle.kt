@@ -15,7 +15,6 @@ import orbit.client.addressable.AbstractAddressable
 import orbit.client.addressable.Addressable
 import orbit.client.addressable.AddressableContext
 import orbit.client.addressable.AddressableImplDefinition
-import orbit.client.addressable.AddressableInterfaceDefinition
 import orbit.client.addressable.DeactivationReason
 import orbit.client.addressable.InvocationSystem
 import orbit.client.addressable.MethodInvoker
@@ -76,7 +75,7 @@ internal class ExecutionHandle(
             sendEvent(EventType.DeactivateEvent(deactivationReason, it))
         }
 
-    fun invoke(
+    suspend fun invoke(
         invocation: AddressableInvocation
     ): Completion =
         CompletableDeferred<Any?>().also {
@@ -106,8 +105,9 @@ internal class ExecutionHandle(
 
     private suspend fun onInvoke(invocation: AddressableInvocation): Any? {
         lastActivityAtomic.set(clock.currentTime)
+
         try {
-            return MethodInvoker.invokeDeferred(instance, invocation.method, invocation.args).await()
+            return MethodInvoker.invoke(instance, invocation.method, invocation.args)
         } catch (ite: InvocationTargetException) {
             throw ite.targetException
         }

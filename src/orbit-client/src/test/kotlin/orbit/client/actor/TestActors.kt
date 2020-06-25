@@ -12,6 +12,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import orbit.client.addressable.DeactivationReason
+import orbit.client.addressable.OnActivate
 import orbit.client.addressable.OnDeactivate
 import orbit.shared.addressable.Key
 import orbit.shared.mesh.NodeId
@@ -48,7 +49,7 @@ object TrackingGlobals {
     val deactivateTestCounts = AtomicInteger(0)
     val concurrentDeactivations = AtomicInteger(0)
     val maxConcurrentDeactivations = AtomicInteger(0)
-    val deactivatedActors : MutableList<Key> = mutableListOf()
+    val deactivatedActors: MutableList<Key> = mutableListOf()
 }
 
 interface GreeterActor : ActorWithNoKey {
@@ -219,5 +220,15 @@ class SlowDeactivateActorImpl : SlowDeactivateActor {
         }
 
         return deferred
+    }
+}
+
+interface SuspendingMethodActor : ActorWithStringKey {
+    suspend fun ping(msg: String = ""): String
+}
+
+class SuspendingMethodActorImpl : SuspendingMethodActor {
+    override suspend fun ping(msg: String): String {
+        return msg
     }
 }
