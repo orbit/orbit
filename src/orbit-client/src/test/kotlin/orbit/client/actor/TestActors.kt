@@ -230,10 +230,20 @@ interface SuspendingMethodActor : ActorWithStringKey {
 class SuspendingMethodActorImpl : SuspendingMethodActor {
     @OnActivate
     suspend fun onActivate() {
+//        delay(1)
         println("Activated")
     }
 
+    @OnDeactivate
+    suspend fun onDeactivate(deactivationReason: DeactivationReason) {
+//        delay(1)
+        println("Deactivated: ${deactivationReason}")
+        TrackingGlobals.endDeactivate()
+    }
+
     override suspend fun ping(msg: String): String {
+//        delay(1)
+        println("Ping: ${msg}")
         return msg
     }
 }

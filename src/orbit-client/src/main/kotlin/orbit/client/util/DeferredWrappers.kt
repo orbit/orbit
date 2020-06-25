@@ -48,12 +48,13 @@ internal object DeferredWrappers {
     suspend fun wrapSuspend(
         method: Method,
         instance: Any,
-        argValues: Array<Any?> = emptyArray()
-    )  = coroutineScope {
+        argValues: Array<*> = emptyArray<Any?>()
+    ) = coroutineScope {
         CompletableDeferred<Any?>().let { deferred ->
             method.invoke(
-                instance, *argValues.plus(
-                    Continuation<Any?>(coroutineContext) { r -> deferred.complete(r) })
+                instance,
+                *argValues,
+                Continuation<Any?>(coroutineContext) { r -> deferred.complete(r) }
             )
         }
     }

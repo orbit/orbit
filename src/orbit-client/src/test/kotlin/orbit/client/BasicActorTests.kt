@@ -180,4 +180,16 @@ class BasicActorTests : BaseIntegrationTest() {
             actor.ping("test message") shouldBe "test message"
         }
     }
+
+    @Test
+    fun `Deactivating actor with suspend onDeactivate calls deactivate`() {
+        runBlocking {
+            val actor = client.actorFactory.createProxy<SuspendingMethodActor>("test")
+
+            actor.ping("test message") shouldBe "test message"
+            disconnectClient()
+
+            TrackingGlobals.deactivateTestCounts.get() shouldBe 1
+        }
+    }
 }
