@@ -21,34 +21,29 @@ internal object MethodInvoker {
         args: AddressableInvocationArguments
     ): Any? = coroutineScope {
         val argTypes = args.map { it.second }.toTypedArray()
-        val method = matchMethod(instance::class.java, methodName, argTypes)
-            ?: matchMethod(
-                instance::class.java,
-                methodName,
-                argTypes.plus(Continuation::class.java)
-            )
 
-        if (method == null) {
-            throw NoSuchMethodException("${methodName}(${argTypes.joinToString(", ")})")
-        }
+        val method = matchMethod(instance::class.java, methodName, argTypes) ?: matchMethod(
+            instance::class.java,
+            methodName,
+            argTypes.plus(Continuation::class.java)
+        ) ?: throw NoSuchMethodException("${methodName}(${argTypes.joinToString(", ")})")
 
-        val isSuspend = method.kotlinFunction?.isSuspend == true
+        val argValues = args.map { it.first }.toTypedArray()
 
         method.isAccessible = true
-        if (isSuspend) {
-            println("invoke suspended method")
+
+        if (method.kotlinFunction?.isSuspend == true) {
             CompletableDeferred<Any?>().let { deferred ->
                 method.invoke(
-                    instance, *(args.map { it.first }.plus(
-                        Continuation<Any?>(coroutineContext) { r -> deferred.complete(r) })).toTypedArray()
+                    instance, *argValues.plus(
+                        Continuation<Any?>(coroutineContext) { r -> deferred.complete(r) })
                 )
             }
         } else {
-            DeferredWrappers.wrapCall(method.invoke(instance, *(args.map { it.first }.toTypedArray()))).await()
+            DeferredWrappers.wrapCall(method.invoke(instance, *argValues)).await()
         }
     }
 
     fun matchMethod(clazz: Class<*>, name: String, args: Array<Class<*>>): Method? =
         clazz.methods.firstOrNull { m -> m.name == name && m.parameterTypes.contentEquals(args) }
-
 }

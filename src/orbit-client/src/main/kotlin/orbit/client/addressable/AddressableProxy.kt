@@ -6,7 +6,6 @@
 
 package orbit.client.addressable
 
-import kotlinx.coroutines.async
 import orbit.client.util.DeferredWrappers
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableReference
@@ -19,8 +18,7 @@ import kotlin.coroutines.Continuation
 
 internal class AddressableProxy(
     private val reference: AddressableReference,
-    private val invocationSystem: InvocationSystem,
-    private val scope: SupervisorScope
+    private val invocationSystem: InvocationSystem
 ) : InvocationHandler {
     override fun invoke(proxy: Any, method: Method, args: Array<Any?>?): Any {
         val isSuspended = args?.lastOrNull() is Continuation<*>
@@ -42,11 +40,11 @@ internal class AddressableProxy(
         )
 
         val completion = invocationSystem.sendInvocation(invocation)
-        if (DeferredWrappers.canHandle(method) && !DeferredWrappers.isSuspended(method)) {
-           return DeferredWrappers.wrapReturn(completion, method)
-        } else {
+        return if (isSuspended) {
             completion.invokeOnCompletion { continuation?.resumeWith(Result.success(completion.getCompleted())) }
-            return kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
+            kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
+        } else {
+            DeferredWrappers.wrapReturn(completion, method)
         }
     }
 }
@@ -65,10 +63,8 @@ internal class AddressableProxyFactory(
                     type = interfaceClass.canonicalName,
                     key = key
                 ),
-                invocationSystem = invocationSystem,
-                scope = scope
+                invocationSystem = invocationSystem
             )
         ) as T
     }
-
 }

@@ -59,7 +59,6 @@ internal class ExecutionSystem(
 
             checkNotNull(handle) { "No active addressable found for ${invocation.reference}" }
 
-            // Call
             val result = handle.invoke(invocation).await()
             completion.complete(result)
 
