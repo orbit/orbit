@@ -15,6 +15,7 @@ import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
 
 internal class AddressableProxy(
     private val reference: AddressableReference,
@@ -41,7 +42,7 @@ internal class AddressableProxy(
 
         val completion = invocationSystem.sendInvocation(invocation)
         return if (isSuspended) {
-            completion.invokeOnCompletion { continuation?.resumeWith(Result.success(completion.getCompleted())) }
+            completion.invokeOnCompletion { continuation?.resume(completion.getCompleted()) }
             kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
         } else {
             DeferredWrappers.wrapReturn(completion, method)
@@ -50,8 +51,7 @@ internal class AddressableProxy(
 }
 
 internal class AddressableProxyFactory(
-    private val invocationSystem: InvocationSystem,
-    private val scope: SupervisorScope
+    private val invocationSystem: InvocationSystem
 ) {
     fun <T : Addressable> createProxy(interfaceClass: Class<T>, key: Key): T {
         @Suppress("UNCHECKED_CAST")

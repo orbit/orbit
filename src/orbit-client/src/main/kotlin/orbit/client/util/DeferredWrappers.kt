@@ -6,7 +6,6 @@
 
 package orbit.client.util
 
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.coroutineScope
@@ -14,7 +13,6 @@ import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.asDeferred
 import java.lang.reflect.Method
 import java.util.concurrent.CompletionStage
-import kotlin.coroutines.Continuation
 import kotlin.reflect.jvm.kotlinFunction
 
 internal object DeferredWrappers {
@@ -50,13 +48,8 @@ internal object DeferredWrappers {
         instance: Any,
         argValues: Array<*> = emptyArray<Any?>()
     ) = coroutineScope {
-        CompletableDeferred<Any?>().let { deferred ->
-            method.invoke(
-                instance,
-                *argValues,
-                Continuation<Any?>(coroutineContext) { r -> deferred.complete(r) }
-            )
+        kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn<Any?> { cont ->
+            method.invoke(instance, *argValues, cont)
         }
     }
-
 }
