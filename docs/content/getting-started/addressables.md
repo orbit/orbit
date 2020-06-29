@@ -15,6 +15,18 @@ Orbit also guarantees that calls to addressables can never be processed in paral
 
 Before you can implement an addressable you must create an interface for it.
 
+#### Using a suspend method
+```kotlin
+package sample.addressables
+
+import orbit.client.addressable.Addresable
+ 
+interface Greeter : Addressable {
+    suspend fun hello(message: String): String
+}
+```
+
+#### Using a Java promise
 ```kotlin
 package sample.addressables
 
@@ -27,17 +39,34 @@ interface Greeter : Addressable {
 ```
 
 ## Asynchronous Return Types
-Addressables must only contain methods which return asynchronous types (such as promises).
+Addressables must only contain methods which return asynchronous types, such as promises, or be Kotlin suspending methods.
 The following return types (and their subtypes) are currently supported.
 
 | Main Type | Common Subtypes | For |
 | :--- | :--- | :--- |
 | [Deferred](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-deferred/)	| [CompletableDeferred](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/-completable-deferred/) | Kotlin |
 | [CompletionStage](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletionStage.html) | [CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html) | JDK8+ |
+| [Suspend](https://kotlinlang.org/docs/reference/coroutines/composing-suspending-functions.html) | N/A | Kotlin
 
 ## Concrete Implementation
 Once you have created an Addressable interface, you must offer an implementation for Orbit to use. For each addressable interface, exactly one addressable class must implement it.
 
+#### Using suspending methods
+```kotlin
+package sample.addressables
+
+import orbit.client.addressables.AbstractAddressable
+import sample.addressables.Greeter
+ 
+class GreeterImpl() : AbstractAddressable(), Greeter {
+{
+    override suspend fun hello(message: String): String {
+        return "Message: ${message}"
+    }
+}
+```
+
+#### Using a Java promise
 ```kotlin
 package sample.addressables
 
@@ -70,18 +99,18 @@ Orbit does not provide any default persistence functionality, but the `@OnActiva
 class GreeterImpl() : AbstractAddressable(), Game {
 {
     @OnActivate
-    fun onActivate(): Deferred<Unit> = GlobalScope.async {
+    suspend fun onActivate() {
         loadFromStore()
     }
 
     @OnDeactivate
-    fun onDeactivate(deactivationReason: DeactivationReason): Deferred<Unit> = GlobalScope.async {
+    suspend fun onDeactivate(deactivationReason: DeactivationReason) {
         saveToStore()
     }
 }
 ```
 
-Addressables can be persisted at any time, but the @OnDeactivate hook can help assure the latest state is saved, except in the event of an hard shutdown. During graceful shutdown, every actor is deactivated giving it a final chance to persist.
+Addressables can be persisted at any time, but the @OnDeactivate hook can help assure the latest state is saved, except in the event of an hard shutdown. During graceful shutdown, every actor is deactivated giving it a final chance to persist. Activate and Deactivate methods can similarly utilize a Java promise by returning a `Deferred<Unit>`.
 
 ## Execution Model
 Addressables in Orbit can have multiple different execution modes. By default, addressables will use Safe Execution Mode.
@@ -108,13 +137,13 @@ data class AddressableContext(
 For example, if the addressable is an Actor with a String-type key, 
 ```kotlin
 interface IdentityActor : ActorWithStringKey {
-    suspend fun identity(): Deferred<String>    
+    suspend fun identity(): String
 }
 
 class IdentityActorImpl() : IdentityActor, AbstractActor() {
-    override suspend fun identity(): Deferred<String> {
+    override suspend fun identity(): String {
         val id = context.reference
-        return context.actorFactory.createProxy<IdentityResolver>().resolve(id).await()
+        return context.actorFactory.createProxy<IdentityResolver>().resolve(id)
     }
 }
 ```

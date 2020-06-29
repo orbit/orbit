@@ -15,17 +15,16 @@ Just like with an Addressable, Actors are defined by interfaces and implementati
 ```kotlin
 package orbit.carnival.actors
 
-import kotlinx.coroutines.Deferred
 import orbit.client.actor.ActorWithStringKey
 import orbit.client.actor.AbstractActor
  
 interface Game : ActorWithStringKey {
-    fun play(playerId: String): Deferred<PlayedGameResult>
+    suspend fun play(playerId: String): PlayedGameResult
 }
 
 class GameImpl() : AbstractActor(), Game {
 {
-    override fun play(playerId: String): Deferred<PlayedGameResult> = GlobalScope.async {
+    override suspend fun play(playerId: String): PlayedGameResult {
         ... Game code
     }
 }

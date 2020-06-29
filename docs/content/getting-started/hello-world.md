@@ -21,19 +21,17 @@ In Orbit all actors must have an interface, below we’ll create a very simple a
 ```kotlin
 package orbit.hello
 
-import kotlinx.coroutines.Deferred
 import orbit.client.actor.ActorWithStringKey
 
 interface Greeter : ActorWithStringKey {
-    fun sayHello(): Deferred<String>
+    suspend fun sayHello(): String
 }
 ```
 * Actor interfaces are standard Kotlin interfaces with special constraints
 * All Actor interfaces must extend an Actor type
-* All interface methods must return a promise in the form of a Deferred.
+* All interface methods must return a promise in the form of a Deferred or be a suspending Kotlin method
 * The return type must be serializable or Unit.
  
-
 # Actor Implementation
 Once you have an actor interface in place, the final step to complete the actor is to create an actor implementation.
 
@@ -41,15 +39,14 @@ Once you have an actor interface in place, the final step to complete the actor 
 ```kotlin
 package orbit.hello
 
-import kotlinx.coroutines.Deferred
 import orbit.client.actor.AbstractActor
 
 class GreeterImpl : AbstractActor(), Player {
 {
-    override fun sayHello(greeting: String): Deferred<String> = GlobalScope.async {
+    override suspend fun sayHello(greeting: String): String {
     {
         println("Here: ${greeting}")
-        return@async "You said: '${greeting}', I say: 'Hello from ${context.reference.key} at node ${context.client.nodeId?.key}!'")
+        return "You said: '${greeting}', I say: 'Hello from ${context.reference.key} at node ${context.client.nodeId?.key}!'")
     }
 }
 ```
@@ -81,7 +78,7 @@ fun main() {
         orbitClient.start().join()
 
         val greeter = orbit.actorFactory.createProxy<Greeter>("Tim")
-        val response = greeter.hello("Welcome to Orbit").await()
+        val response = greeter.hello("Welcome to Orbit")
         println(response)
 
         orbit.stop().join()
