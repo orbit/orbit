@@ -132,7 +132,7 @@ internal class AddressableDefinitionDirectory {
     }
 
     private fun verifyMethodIsAsync(method: Method) {
-        require(DeferredWrappers.canHandle(method.returnType)) { "Method $method does not return asynchronous type." }
+        require(DeferredWrappers.isAsync(method)) { "Method $method does not return asynchronous type." }
     }
 
     fun generateCapabilities() = NodeCapabilities(

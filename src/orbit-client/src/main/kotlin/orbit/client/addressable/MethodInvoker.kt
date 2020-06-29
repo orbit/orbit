@@ -6,25 +6,39 @@
 
 package orbit.client.addressable
 
-import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.coroutineScope
 import orbit.client.util.DeferredWrappers
 import orbit.shared.addressable.AddressableInvocationArguments
 import java.lang.reflect.Method
+import kotlin.coroutines.Continuation
+import kotlin.reflect.jvm.kotlinFunction
 
 internal object MethodInvoker {
-    private fun invokeRaw(instance: Any, method: Method, args: AddressableInvocationArguments): Any {
+    suspend fun invoke(
+        instance: Any,
+        methodName: String,
+        args: AddressableInvocationArguments
+    ): Any? = coroutineScope {
+        val argTypes = args.map { it.second }.toTypedArray()
+
+        val method = matchMethod(instance::class.java, methodName, argTypes) ?: matchMethod(
+            instance::class.java,
+            methodName,
+            argTypes.plus(Continuation::class.java)
+        ) ?: throw NoSuchMethodException("${methodName}(${argTypes.joinToString(", ")})")
+
+        val argValues = args.map { it.first }.toTypedArray()
+
         method.isAccessible = true
-        return method.invoke(instance, *args.map { it.first }.toTypedArray())
+
+        if (method.kotlinFunction?.isSuspend == true) {
+            DeferredWrappers.wrapSuspend(method, instance, argValues)
+
+        } else {
+            DeferredWrappers.wrapCall(method.invoke(instance, *argValues)).await()
+        }
     }
 
-    fun invokeDeferred(instance: Any, methodName: String, args: AddressableInvocationArguments): Deferred<*> =
-        instance::class.java.getMethod(
-            methodName,
-            *(args.map { it.second }.toTypedArray())
-        ).let { method ->
-            method.isAccessible = true
-            method.invoke(instance, *(args.map { it.first }.toTypedArray()))
-        }.let {
-            DeferredWrappers.wrapCall(it)
-        }
+    fun matchMethod(clazz: Class<*>, name: String, args: Array<Class<*>>): Method? =
+        clazz.methods.firstOrNull { m -> m.name == name && m.parameterTypes.contentEquals(args) }
 }

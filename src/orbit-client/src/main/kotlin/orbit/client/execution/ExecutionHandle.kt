@@ -8,6 +8,7 @@ package orbit.client.execution
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import orbit.client.OrbitClient
@@ -15,7 +16,6 @@ import orbit.client.addressable.AbstractAddressable
 import orbit.client.addressable.Addressable
 import orbit.client.addressable.AddressableContext
 import orbit.client.addressable.AddressableImplDefinition
-import orbit.client.addressable.AddressableInterfaceDefinition
 import orbit.client.addressable.DeactivationReason
 import orbit.client.addressable.InvocationSystem
 import orbit.client.addressable.MethodInvoker
@@ -31,6 +31,7 @@ import orbit.util.time.Clock
 import orbit.util.time.stopwatch
 import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.reflect.jvm.kotlinFunction
 
 internal class ExecutionHandle(
     val instance: Addressable,
@@ -76,7 +77,7 @@ internal class ExecutionHandle(
             sendEvent(EventType.DeactivateEvent(deactivationReason, it))
         }
 
-    fun invoke(
+    suspend fun invoke(
         invocation: AddressableInvocation
     ): Completion =
         CompletableDeferred<Any?>().also {
@@ -92,11 +93,15 @@ internal class ExecutionHandle(
         }
     }
 
-    private suspend fun onActivate() {
+    private suspend fun onActivate() = coroutineScope {
         logger.debug { "Activating $reference..." }
         stopwatch(clock) {
             implDefinition.onActivateMethod?.also {
-                DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
+                if (it.method.kotlinFunction?.isSuspend == true) {
+                    DeferredWrappers.wrapSuspend(it.method, instance)
+                } else {
+                    DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
+                }
             }
         }.also { (elapsed, _) ->
             logger.debug { "Activated $reference in ${elapsed}ms. " }
@@ -106,8 +111,9 @@ internal class ExecutionHandle(
 
     private suspend fun onInvoke(invocation: AddressableInvocation): Any? {
         lastActivityAtomic.set(clock.currentTime)
+
         try {
-            return MethodInvoker.invokeDeferred(instance, invocation.method, invocation.args).await()
+            return MethodInvoker.invoke(instance, invocation.method, invocation.args)
         } catch (ite: InvocationTargetException) {
             throw ite.targetException
         }
@@ -117,16 +123,23 @@ internal class ExecutionHandle(
         logger.debug { "Deactivating $reference..." }
         stopwatch(clock) {
             implDefinition.onDeactivateMethod?.also {
-                if (it.method.parameterCount == 0) {
-                    DeferredWrappers.wrapCall(it.method.invoke(instance)).await()
-                } else if (it.method.parameterCount == 1) {
-                    if (it.method.parameterTypes[0] == DeactivationReason::class.java) {
-                        DeferredWrappers.wrapCall(it.method.invoke(instance, deactivationReason)).await()
-                    } else {
-                        logger.warn { "Methods with a single argument tagged as @OnDeactivate may only accept a DeactivationReason" }
-                    }
+                val isSuspended = (it.method.kotlinFunction?.isSuspend == true)
+                val hasReason = it.method.parameterTypes.firstOrNull() == DeactivationReason::class.java
+
+                val reasonArgs: Array<DeactivationReason> = if (hasReason) arrayOf(deactivationReason) else emptyArray()
+                // TODO (brett) - Check has 0..1 reason parameter without suspended
+                //  logger.warn { "Methods with a single argument tagged as @OnDeactivate may only accept a DeactivationReason" }
+                //  logger.warn { "Methods tagged with @OnDeactivate may only take 0 or 1 argument(s)" }
+
+
+                if (isSuspended) {
+                    DeferredWrappers.wrapSuspend(
+                        it.method,
+                        instance,
+                        reasonArgs
+                    )
                 } else {
-                    logger.warn { "Methods tagged with @OnDeactivate may only take 0 or 1 argument(s)" }
+                    DeferredWrappers.wrapCall(it.method.invoke(instance, *reasonArgs)).await()
                 }
             }
 

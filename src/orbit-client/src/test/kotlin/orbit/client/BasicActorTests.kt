@@ -6,6 +6,7 @@
 
 package orbit.client
 
+import io.kotlintest.shouldBe
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
@@ -18,6 +19,7 @@ import orbit.client.actor.GreeterActor
 import orbit.client.actor.IdActor
 import orbit.client.actor.IncrementActor
 import orbit.client.actor.NullActor
+import orbit.client.actor.SuspendingMethodActor
 import orbit.client.actor.TestException
 import orbit.client.actor.ThrowingActor
 import orbit.client.actor.TimeoutActor
@@ -167,6 +169,27 @@ class BasicActorTests : BaseIntegrationTest() {
 
             val actor = customClient.actorFactory.createProxy<ThrowingActor>()
             actor.doThrow().await()
+        }
+    }
+
+    @Test
+    fun `Calling an actor with a suspended method returns correct result`() {
+        runBlocking {
+            val actor = client.actorFactory.createProxy<SuspendingMethodActor>("test")
+
+            actor.ping("test message") shouldBe "test message"
+        }
+    }
+
+    @Test
+    fun `Deactivating actor with suspend onDeactivate calls deactivate`() {
+        runBlocking {
+            val actor = client.actorFactory.createProxy<SuspendingMethodActor>("test")
+
+            actor.ping("test message") shouldBe "test message"
+            disconnectClient()
+
+            TrackingGlobals.deactivateTestCounts.get() shouldBe 1
         }
     }
 }
