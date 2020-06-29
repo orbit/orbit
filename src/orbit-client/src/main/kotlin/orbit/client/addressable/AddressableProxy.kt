@@ -10,7 +10,6 @@ import orbit.client.util.DeferredWrappers
 import orbit.shared.addressable.AddressableInvocation
 import orbit.shared.addressable.AddressableReference
 import orbit.shared.addressable.Key
-import orbit.util.concurrent.SupervisorScope
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
