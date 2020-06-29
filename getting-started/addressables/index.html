@@ -32,7 +32,7 @@ Orbit guarantees that only one addressable with a given identity can be active a
 Orbit will activate an addressable when it receives a message, and deactivate it when after a configurable period of inactivity. This patterns allows developers to speed up interactions and reduce load on databases and external services.
 Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster.">
 
-<meta itemprop="wordCount" content="669">
+<meta itemprop="wordCount" content="742">
 
 
 
@@ -50,6 +50,15 @@ Orbit guarantees that only one addressable with a given identity can be active a
 <p>Orbit also guarantees that calls to addressables can never be processed in parallel, meaning developers do not need to worry about concurrent access to an addressable. Two calls to an addressable can not be processed in parallel.</p>
 <h2 id="addressable-interfaces">Addressable Interfaces</h2>
 <p>Before you can implement an addressable you must create an interface for it.</p>
+<h4 id="using-a-suspend-method">Using a suspend method</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">package</span> sample.addressables
+
+<span style="color:#66d9ef">import</span> orbit.client.addressable.Addresable
+ 
+<span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">Greeter</span> : Addressable {
+    <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">hello</span>(message: String): String
+}
+</code></pre></div><h4 id="using-a-java-promise">Using a Java promise</h4>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">package</span> sample.addressables
 
 <span style="color:#66d9ef">import</span> kotlinx.coroutines.Deferred
@@ -59,7 +68,7 @@ Orbit guarantees that only one addressable with a given identity can be active a
     <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">hello</span>(message: String): Deferred&lt;String&gt;
 }
 </code></pre></div><h2 id="asynchronous-return-types">Asynchronous Return Types</h2>
-<p>Addressables must only contain methods which return asynchronous types (such as promises).
+<p>Addressables must only contain methods which return asynchronous types, such as promises, or be Kotlin suspending methods.
 The following return types (and their subtypes) are currently supported.</p>
 <table>
 <thead>
@@ -80,10 +89,28 @@ The following return types (and their subtypes) are currently supported.</p>
 <td align="left"><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a></td>
 <td align="left">JDK8+</td>
 </tr>
+<tr>
+<td align="left"><a href="https://kotlinlang.org/docs/reference/coroutines/composing-suspending-functions.html">Suspend</a></td>
+<td align="left">N/A</td>
+<td align="left">Kotlin</td>
+</tr>
 </tbody>
 </table>
 <h2 id="concrete-implementation">Concrete Implementation</h2>
 <p>Once you have created an Addressable interface, you must offer an implementation for Orbit to use. For each addressable interface, exactly one addressable class must implement it.</p>
+<h4 id="using-suspending-methods">Using suspending methods</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">package</span> sample.addressables
+
+<span style="color:#66d9ef">import</span> orbit.client.addressables.AbstractAddressable
+<span style="color:#66d9ef">import</span> sample.addressables.Greeter
+ 
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">GreeterImpl</span>() : AbstractAddressable(), Greeter {
+{
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">hello</span>(message: String): String {
+        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;Message: ${message}&#34;</span>
+    }
+}
+</code></pre></div><h4 id="using-a-java-promise-1">Using a Java promise</h4>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">package</span> sample.addressables
 
 <span style="color:#66d9ef">import</span> kotlinx.coroutines.Deferred
@@ -114,16 +141,16 @@ The following return types (and their subtypes) are currently supported.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">GreeterImpl</span>() : AbstractAddressable(), Game {
 {
     @OnActivate
-    <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">onActivate</span>(): Deferred&lt;Unit&gt; = GlobalScope.async {
+    <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">onActivate</span>() {
         loadFromStore()
     }
 
     @OnDeactivate
-    <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">onDeactivate</span>(deactivationReason: DeactivationReason): Deferred&lt;Unit&gt; = GlobalScope.async {
+    <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">onDeactivate</span>(deactivationReason: DeactivationReason) {
         saveToStore()
     }
 }
-</code></pre></div><p>Addressables can be persisted at any time, but the @OnDeactivate hook can help assure the latest state is saved, except in the event of an hard shutdown. During graceful shutdown, every actor is deactivated giving it a final chance to persist.</p>
+</code></pre></div><p>Addressables can be persisted at any time, but the @OnDeactivate hook can help assure the latest state is saved, except in the event of an hard shutdown. During graceful shutdown, every actor is deactivated giving it a final chance to persist. Activate and Deactivate methods can similarly utilize a Java promise by returning a <code>Deferred&lt;Unit&gt;</code>.</p>
 <h2 id="execution-model">Execution Model</h2>
 <p>Addressables in Orbit can have multiple different execution modes. By default, addressables will use Safe Execution Mode.</p>
 <h3 id="safe-execution-mode">Safe Execution Mode</h3>
@@ -141,13 +168,13 @@ The following return types (and their subtypes) are currently supported.</p>
 )
 </code></pre></div><p>For example, if the addressable is an Actor with a String-type key,</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">IdentityActor</span> : ActorWithStringKey {
-    <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">identity</span>(): Deferred&lt;String&gt;    
+    <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">identity</span>(): String
 }
 
 <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">IdentityActorImpl</span>() : IdentityActor, AbstractActor() {
-    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">identity</span>(): Deferred&lt;String&gt; {
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">identity</span>(): String {
         <span style="color:#66d9ef">val</span> id = context.reference
-        <span style="color:#66d9ef">return</span> context.actorFactory.createProxy&lt;IdentityResolver&gt;().resolve(id).await()
+        <span style="color:#66d9ef">return</span> context.actorFactory.createProxy&lt;IdentityResolver&gt;().resolve(id)
     }
 }
 </code></pre></div><h2 id="keys">Keys</h2>

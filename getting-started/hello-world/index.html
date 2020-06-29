@@ -29,7 +29,7 @@ This tutorial assumes that you have set up a development environment as describe
 <meta itemprop="description" content="In this guide we’ll cover how to get a very simple Orbit application running in the form of “Hello World”. It shows using a single-module in a single-process environment, often useful for development purposes. This will demonstrate how to set up an Actor and communicate with an Orbit Server.
 This tutorial assumes that you have set up a development environment as described in the Getting Started Prerequisites document and have some familiarity with Gradle based Kotlin projects.">
 
-<meta itemprop="wordCount" content="577">
+<meta itemprop="wordCount" content="579">
 
 
 
@@ -45,22 +45,21 @@ This tutorial assumes that you have set up a development environment as describe
 <p>This tutorial assumes that you have set up a development environment as described in the <a href="/getting-started/prerequisites">Getting Started Prerequisites</a> document and have some familiarity with Gradle based Kotlin projects. All samples are in Kotlin, the language in which Orbit is developed, but the principles work for a Java app as well.</p>
 <h1 id="gradle-project">Gradle Project</h1>
 <p>The first step is to set up a Gradle project and pull in the Orbit dependencies.</p>
-<pre><code>implementation(&quot;cloud.orbit:orbit-client:2.0.0-alpha.75&quot;)
+<pre><code>implementation(&quot;cloud.orbit:orbit-client:2.0.0-alpha.67&quot;)
 </code></pre><h1 id="actor-interface">Actor Interface</h1>
 <p>In Orbit all actors must have an interface, below we’ll create a very simple actor interface.</p>
 <p><strong>greeter.kt</strong></p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">package</span> orbit.hello
 
-<span style="color:#66d9ef">import</span> kotlinx.coroutines.Deferred
 <span style="color:#66d9ef">import</span> orbit.client.actor.ActorWithStringKey
 
 <span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">Greeter</span> : ActorWithStringKey {
-    <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">sayHello</span>(): Deferred&lt;String&gt;
+    <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">sayHello</span>(): String
 }
 </code></pre></div><ul>
 <li>Actor interfaces are standard Kotlin interfaces with special constraints</li>
 <li>All Actor interfaces must extend an Actor type</li>
-<li>All interface methods must return a promise in the form of a Deferred.</li>
+<li>All interface methods must return a promise in the form of a Deferred or be a suspending Kotlin method</li>
 <li>The return type must be serializable or Unit.</li>
 </ul>
 <h1 id="actor-implementation">Actor Implementation</h1>
@@ -68,15 +67,14 @@ This tutorial assumes that you have set up a development environment as describe
 <p><strong>greeterImpl.kt</strong></p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">package</span> orbit.hello
 
-<span style="color:#66d9ef">import</span> kotlinx.coroutines.Deferred
 <span style="color:#66d9ef">import</span> orbit.client.actor.AbstractActor
 
 <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">GreeterImpl</span> : AbstractActor(), Player {
 {
-    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">sayHello</span>(greeting: String): Deferred&lt;String&gt; = GlobalScope.async {
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">sayHello</span>(greeting: String): String {
     {
         println(<span style="color:#e6db74">&#34;Here: ${greeting}&#34;</span>)
-        <span style="color:#66d9ef">return</span>@async <span style="color:#e6db74">&#34;You said: &#39;${greeting}&#39;, I say: &#39;Hello from ${context.reference.key} at node ${context.client.nodeId?.key}!&#39;&#34;</span>)
+        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;You said: &#39;${greeting}&#39;, I say: &#39;Hello from ${context.reference.key} at node ${context.client.nodeId?.key}!&#39;&#34;</span>)
     }
 }
 </code></pre></div><ul>
@@ -105,7 +103,7 @@ This tutorial assumes that you have set up a development environment as describe
         orbitClient.start().join()
 
         <span style="color:#66d9ef">val</span> greeter = orbit.actorFactory.createProxy&lt;Greeter&gt;(<span style="color:#e6db74">&#34;Tim&#34;</span>)
-        <span style="color:#66d9ef">val</span> response = greeter.hello(<span style="color:#e6db74">&#34;Welcome to Orbit&#34;</span>).await()
+        <span style="color:#66d9ef">val</span> response = greeter.hello(<span style="color:#e6db74">&#34;Welcome to Orbit&#34;</span>)
         println(response)
 
         orbit.stop().join()
@@ -120,7 +118,7 @@ This tutorial assumes that you have set up a development environment as describe
 <h1 id="running-orbit-server">Running Orbit Server</h1>
 <p>Assure Docker Desktop is running and Docker Compose is installed from the <a href="/getting-started/prerequisites">Prerequisites</a> step.</p>
 <p>In a terminal window, run the following.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">&gt; docker run -it -p 50056:50056 orbitframework/orbit:2.0.0-alpha.75
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">&gt; docker run -it -p 50056:50056 orbitframework/orbit:2.0.0-alpha.67
 Listening <span style="color:#66d9ef">for</span> transport dt_socket at address: <span style="color:#ae81ff">5005</span>
 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> INFO orbit.application.impl.SettingsLoader - Searching <span style="color:#66d9ef">for</span> Orbit Settings...
 <span style="color:#f92672">[</span>main<span style="color:#f92672">]</span> INFO orbit.application.impl.SettingsLoader - No settings found. Using defaults.

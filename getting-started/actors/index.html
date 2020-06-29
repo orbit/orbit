@@ -29,7 +29,7 @@ Actors are never created or destroyed; they always exist conceptually. Not all a
 <meta itemprop="description" content="Actors are the most common form of addressable and are suitable for most situations. The distinction is semantic and Actor interfaces are provided to facilitate the actor pattern.
 Actors are never created or destroyed; they always exist conceptually. Not all actors in Orbit will be in-memory in the cluster at a given time. Actors which are in-memory are considered “activated” and those which are not are “deactivated”. The process of an actor being created in-memory is known as “Activation” and the process of an actor being removed from memory is known as “Deactivation”.">
 
-<meta itemprop="wordCount" content="404">
+<meta itemprop="wordCount" content="402">
 
 
 
@@ -48,17 +48,16 @@ Actors are never created or destroyed; they always exist conceptually. Not all a
 <p>Just like with an Addressable, Actors are defined by interfaces and implementations.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">package</span> orbit.carnival.actors
 
-<span style="color:#66d9ef">import</span> kotlinx.coroutines.Deferred
 <span style="color:#66d9ef">import</span> orbit.client.actor.ActorWithStringKey
 <span style="color:#66d9ef">import</span> orbit.client.actor.AbstractActor
  
 <span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">Game</span> : ActorWithStringKey {
-    <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">play</span>(playerId: String): Deferred&lt;PlayedGameResult&gt;
+    <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">play</span>(playerId: String): PlayedGameResult
 }
 
 <span style="color:#66d9ef">class</span> <span style="color:#a6e22e">GameImpl</span>() : AbstractActor(), Game {
 {
-    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">play</span>(playerId: String): Deferred&lt;PlayedGameResult&gt; = GlobalScope.async {
+    <span style="color:#66d9ef">override</span> <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">play</span>(playerId: String): PlayedGameResult {
         ... Game code
     }
 }
