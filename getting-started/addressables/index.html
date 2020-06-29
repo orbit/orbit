@@ -32,7 +32,7 @@ Orbit guarantees that only one addressable with a given identity can be active a
 Orbit will activate an addressable when it receives a message, and deactivate it when after a configurable period of inactivity. This patterns allows developers to speed up interactions and reduce load on databases and external services.
 Orbit guarantees that only one addressable with a given identity can be active at any time in the cluster.">
 
-<meta itemprop="wordCount" content="742">
+<meta itemprop="wordCount" content="740">
 
 
 
@@ -58,7 +58,7 @@ Orbit guarantees that only one addressable with a given identity can be active a
 <span style="color:#66d9ef">interface</span> <span style="color:#a6e22e">Greeter</span> : Addressable {
     <span style="color:#66d9ef">suspend</span> <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">hello</span>(message: String): String
 }
-</code></pre></div><h4 id="using-a-java-promise">Using a Java promise</h4>
+</code></pre></div><h4 id="using-a-kotlin-future">Using a Kotlin future</h4>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">package</span> sample.addressables
 
 <span style="color:#66d9ef">import</span> kotlinx.coroutines.Deferred
@@ -68,7 +68,7 @@ Orbit guarantees that only one addressable with a given identity can be active a
     <span style="color:#66d9ef">fun</span> <span style="color:#a6e22e">hello</span>(message: String): Deferred&lt;String&gt;
 }
 </code></pre></div><h2 id="asynchronous-return-types">Asynchronous Return Types</h2>
-<p>Addressables must only contain methods which return asynchronous types, such as promises, or be Kotlin suspending methods.
+<p>Addressables must only contain methods which return asynchronous types, like futures, or be Kotlin suspending methods.
 The following return types (and their subtypes) are currently supported.</p>
 <table>
 <thead>
@@ -110,7 +110,7 @@ The following return types (and their subtypes) are currently supported.</p>
         <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;Message: ${message}&#34;</span>
     }
 }
-</code></pre></div><h4 id="using-a-java-promise-1">Using a Java promise</h4>
+</code></pre></div><h4 id="using-a-kotlin-future-1">Using a Kotlin future</h4>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-kotlin" data-lang="kotlin"><span style="color:#66d9ef">package</span> sample.addressables
 
 <span style="color:#66d9ef">import</span> kotlinx.coroutines.Deferred
@@ -150,7 +150,7 @@ The following return types (and their subtypes) are currently supported.</p>
         saveToStore()
     }
 }
-</code></pre></div><p>Addressables can be persisted at any time, but the @OnDeactivate hook can help assure the latest state is saved, except in the event of an hard shutdown. During graceful shutdown, every actor is deactivated giving it a final chance to persist. Activate and Deactivate methods can similarly utilize a Java promise by returning a <code>Deferred&lt;Unit&gt;</code>.</p>
+</code></pre></div><p>Addressables can be persisted at any time, but the @OnDeactivate hook can help assure the latest state is saved, except in the event of an hard shutdown. During graceful shutdown, every actor is deactivated giving it a final chance to persist. Activate and Deactivate methods can similarly utilize a future by returning a <code>Deferred&lt;Unit&gt;</code>.</p>
 <h2 id="execution-model">Execution Model</h2>
 <p>Addressables in Orbit can have multiple different execution modes. By default, addressables will use Safe Execution Mode.</p>
 <h3 id="safe-execution-mode">Safe Execution Mode</h3>
