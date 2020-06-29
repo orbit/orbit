@@ -26,7 +26,7 @@ interface Greeter : Addressable {
 }
 ```
 
-#### Using a Java promise
+#### Using a Kotlin future
 ```kotlin
 package sample.addressables
 
@@ -39,7 +39,7 @@ interface Greeter : Addressable {
 ```
 
 ## Asynchronous Return Types
-Addressables must only contain methods which return asynchronous types, such as promises, or be Kotlin suspending methods.
+Addressables must only contain methods which return asynchronous types, like futures, or be Kotlin suspending methods.
 The following return types (and their subtypes) are currently supported.
 
 | Main Type | Common Subtypes | For |
@@ -66,7 +66,7 @@ class GreeterImpl() : AbstractAddressable(), Greeter {
 }
 ```
 
-#### Using a Java promise
+#### Using a Kotlin future
 ```kotlin
 package sample.addressables
 
@@ -110,7 +110,7 @@ class GreeterImpl() : AbstractAddressable(), Game {
 }
 ```
 
-Addressables can be persisted at any time, but the @OnDeactivate hook can help assure the latest state is saved, except in the event of an hard shutdown. During graceful shutdown, every actor is deactivated giving it a final chance to persist. Activate and Deactivate methods can similarly utilize a Java promise by returning a `Deferred<Unit>`.
+Addressables can be persisted at any time, but the @OnDeactivate hook can help assure the latest state is saved, except in the event of an hard shutdown. During graceful shutdown, every actor is deactivated giving it a final chance to persist. Activate and Deactivate methods can similarly utilize a future by returning a `Deferred<Unit>`.
 
 ## Execution Model
 Addressables in Orbit can have multiple different execution modes. By default, addressables will use Safe Execution Mode.

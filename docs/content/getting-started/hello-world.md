@@ -29,7 +29,7 @@ interface Greeter : ActorWithStringKey {
 ```
 * Actor interfaces are standard Kotlin interfaces with special constraints
 * All Actor interfaces must extend an Actor type
-* All interface methods must return a promise in the form of a Deferred or be a suspending Kotlin method
+* All interface methods must return a future in the form of a Deferred or be a suspending Kotlin method
 * The return type must be serializable or Unit.
  
 # Actor Implementation
