@@ -6,7 +6,6 @@
 
 package orbit.client.util
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.asCompletableFuture
@@ -25,7 +24,7 @@ internal object DeferredWrappers {
         supportedWrappers.any { it.isAssignableFrom(method.returnType) }
                 || (method.kotlinFunction?.isSuspend == true)
 
-    fun wrapReturn(deferred: Deferred<*>, method: Method, coroutineScope: CoroutineScope? = null): Any =
+    fun wrapReturn(deferred: Deferred<*>, method: Method): Any =
         when {
             CompletionStage::class.java.isAssignableFrom(method.returnType) -> deferred.asCompletableFuture()
             Deferred::class.java.isAssignableFrom(method.returnType) -> deferred
