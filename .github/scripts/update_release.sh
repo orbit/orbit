@@ -7,9 +7,6 @@ tag=v$TAG_VERSION
 GH_REPO="https://api.github.com/repos/$owner/$repo"
 AUTH="Authorization: token $GITHUB_TOKEN"
 
-git config user.email "orbit@ea.com"
-git config user.name "orbit-tools"
-
 echo Commit all changed work
 git commit -am "Release version $tag and update docs" --author="orbit-tools <orbit@ea.com>"
 
