@@ -14,9 +14,6 @@ data class NodeLease(
     val challengeToken: ChallengeToken,
     val expiresAt: Timestamp,
     val renewAt: Timestamp
-) {
-    companion object {
-        @JvmStatic
-        val expired: NodeLease get() = NodeLease(ChallengeToken(), Timestamp(0, 0), Timestamp(0, 0))
-    }
+){
+    companion object
 }

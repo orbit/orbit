@@ -27,7 +27,6 @@ class RoutingStep(
                         it.route
                     )
                 }
-
             }
             else -> null
         }
