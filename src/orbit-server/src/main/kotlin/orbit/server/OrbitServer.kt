@@ -36,6 +36,7 @@ import orbit.server.router.Router
 import orbit.server.service.AddressableManagementService
 import orbit.server.service.ConnectionService
 import orbit.server.service.GrpcEndpoint
+import orbit.server.service.HealthCheck
 import orbit.server.service.HealthCheckList
 import orbit.server.service.HealthService
 import orbit.server.service.Meters
@@ -50,7 +51,7 @@ import orbit.util.time.stopwatch
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
 
-class OrbitServer(private val config: OrbitServerConfig) {
+class OrbitServer(private val config: OrbitServerConfig) : HealthCheck {
 
     val nodeStatus: NodeStatus get() = localNodeInfo.info.nodeStatus
 
@@ -237,4 +238,6 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private fun onUnhandledException(throwable: Throwable) {
         logger.error(throwable) { "Unhandled exception in Orbit." }
     }
+
+    override suspend fun isHealthy(): Boolean = this.nodeStatus == NodeStatus.ACTIVE
 }

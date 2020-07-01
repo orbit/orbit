@@ -45,7 +45,8 @@ spec:
             initialDelaySeconds: 5
           livenessProbe:
             exec:
-              command: ["/bin/grpc_health_probe", "-addr=:{{ .containerPort }}"]
+              # SERVING and NOT_SERVING indicate a live service
+              command: ["/bin/sh", "-c", "bin/grpc_health_probe -addr=:{{ .containerPort }} 2>&1 | grep -q SERVING"]
             initialDelaySeconds: 10
           volumeMounts:
           - name: configmap
