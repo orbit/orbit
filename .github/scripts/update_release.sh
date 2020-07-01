@@ -13,7 +13,7 @@ git config user.name "orbit-tools"
 echo Commit all changed work
 git commit -am "Release version $tag and update docs" --author="orbit-tools <orbit@ea.com>"
 
-echo Tag commit with the intended release tag (without the underscore)
+echo Tag commit with the intended release tag without the underscore
 git tag $tag
 git push origin master --tags
 
@@ -28,7 +28,7 @@ releaseId=$(jq .id <(cat <<<"$release"))
 releaseName=$(jq .name <(cat <<<"$release"))
 releaseData="{\"tag_name\": \"$tag\", \"target_commitish\": \"$commitId\", \"name\":$releaseName, \"draft\": \"false\", \"prerelease\": \"false\"}"
 
-echo Patch release with new commit Id ($releaseId) and tag ($releaseData)
+echo Patch release with new commit Id: $releaseId and tag: $releaseData
 curl -X PATCH -H "$AUTH" -H "Content-Type: application/json" $GH_REPO/releases/$releaseId -d "$releaseData"
 
 git tag -d _$tag
