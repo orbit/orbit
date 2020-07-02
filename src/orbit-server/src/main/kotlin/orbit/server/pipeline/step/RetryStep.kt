@@ -6,12 +6,14 @@
 
 package orbit.server.pipeline.step
 
+import orbit.server.OrbitServerConfig
 import orbit.server.mesh.ClusterManager
 import orbit.server.pipeline.PipelineContext
 import orbit.shared.net.Message
+import orbit.shared.net.MessageContent
 import orbit.shared.net.MessageTarget
 
-class RetryStep(private val clusterManager: ClusterManager) : PipelineStep {
+class RetryStep(private val clusterManager: ClusterManager, private val config: OrbitServerConfig) : PipelineStep {
     override suspend fun onOutbound(context: PipelineContext, msg: Message) {
         val target = when (val target = msg.target) {
             is MessageTarget.Unicast -> {
@@ -26,9 +28,15 @@ class RetryStep(private val clusterManager: ClusterManager) : PipelineStep {
         if (target != null) {
             if (clusterManager.getNode(target) == null) {
                 context.pushNew(
-                    msg.copy(
-                        attempts = msg.attempts + 1
-                    )
+                    if (msg.attempts < config.messageRetryAttempts)
+                        msg.copy(
+                            attempts = msg.attempts + 1
+                        )
+                    else
+                        msg.copy(
+                            content = MessageContent.Error("Failed to deliver message after ${msg.attempts} attempts"),
+                            target = MessageTarget.Unicast(msg.source!!)
+                        )
                 )
                 return
             }

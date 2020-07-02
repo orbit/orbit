@@ -45,6 +45,10 @@ data class OrbitServerConfig(
      */
     val pipelineBufferCount: Int = 10_000,
 
+    /**
+     * Maximum number of attempts to retry sending a message
+     */
+    val messageRetryAttempts: Int = 10,
 
     /**
      * Server's application clock

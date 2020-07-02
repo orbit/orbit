@@ -6,7 +6,13 @@
 
 package orbit.server
 
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
+import com.nhaarman.mockitokotlin2.argThat
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.verify
 import kotlinx.coroutines.runBlocking
 import orbit.server.mesh.ClusterManager
 import orbit.server.pipeline.PipelineContext
@@ -20,28 +26,24 @@ import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
 import orbit.shared.net.MessageTarget
 import org.junit.Test
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
 
 class PipelineTests : BaseServerTest() {
-    // hack to compensate for known problem with Mockito's matchers under Kotlin returning null
-    private fun <T> any(): T = null as T
 
     @Test
     fun `When a node isn't present in cluster, message is sent to pipeline with attempts incremented`() {
         runBlocking {
             val testNode = NodeId("test", "test")
             val message = Message(
-                mock(MessageContent.InvocationRequest::class.java),
+                mock<MessageContent.InvocationRequest>(),
                 target = MessageTarget.Unicast(testNode)
             )
 
-            val clusterManager = mock(ClusterManager::class.java)
-            `when`(clusterManager.getNode(testNode)).thenReturn(null)
-            val retryStep = RetryStep(clusterManager)
+            val clusterManager = mock<ClusterManager>() {
+                onBlocking { getNode(testNode) } doReturn null
+            }
+            val retryStep = RetryStep(clusterManager, OrbitServerConfig())
 
-            val context = mock(PipelineContext::class.java)
+            val context = mock<PipelineContext>()
             retryStep.onOutbound(context, message)
 
             verify(context, never()).next(any())
@@ -54,26 +56,51 @@ class PipelineTests : BaseServerTest() {
         runBlocking {
             val testNode = NodeId("test", "test")
             val message = Message(
-                mock(MessageContent.InvocationRequest::class.java),
+                mock<MessageContent.InvocationRequest>(),
                 target = MessageTarget.Unicast(testNode)
             )
 
-            val clusterManager = mock(ClusterManager::class.java)
-            `when`(clusterManager.getNode(testNode)).thenReturn(
-                NodeInfo(
-                    testNode,
-                    NodeCapabilities(listOf("test")),
-                    lease = NodeLease.forever,
-                    nodeStatus = NodeStatus.ACTIVE
-                )
-            )
-            val retryStep = RetryStep(clusterManager)
+            val clusterManager = mock<ClusterManager> {
+                onBlocking { getNode(testNode) } doReturn
+                        NodeInfo(
+                            testNode,
+                            NodeCapabilities(listOf("test")),
+                            lease = NodeLease.forever,
+                            nodeStatus = NodeStatus.ACTIVE
+                        )
+            }
+            val retryStep = RetryStep(clusterManager, OrbitServerConfig())
 
-            val context = mock(PipelineContext::class.java)
+            val context = mock<PipelineContext>()
             retryStep.onOutbound(context, message)
 
             verify(context).next(message)
-            verify(context, never()).pushNew(any())
+            verify(context, never()).pushNew(any(), anyOrNull())
+        }
+    }
+
+    @Test
+    fun `When a message exceeds retry attempts, error message is sent to pipeline`() {
+        runBlocking {
+            val testNode = NodeId("test", "test")
+            val sourceNode = NodeId("source", "test")
+            val message = Message(
+                mock<MessageContent.InvocationRequest>(),
+                target = MessageTarget.Unicast(testNode),
+                source = sourceNode,
+                attempts = 11
+            )
+
+            val clusterManager = mock<ClusterManager> {
+                onBlocking { getNode(testNode) } doReturn null
+            }
+            val retryStep = RetryStep(clusterManager, OrbitServerConfig(messageRetryAttempts = 10))
+
+            val context = mock<PipelineContext>()
+            retryStep.onOutbound(context, message)
+
+            verify(context, never()).next(any())
+            verify(context).pushNew(argThat { content is MessageContent.Error }, anyOrNull())
         }
     }
 }
