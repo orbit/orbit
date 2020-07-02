@@ -16,6 +16,7 @@ import orbit.client.addressable.OnActivate
 import orbit.client.addressable.OnDeactivate
 import orbit.shared.addressable.Key
 import orbit.shared.mesh.NodeId
+import java.io.InvalidObjectException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
@@ -225,6 +226,7 @@ class SlowDeactivateActorImpl : SlowDeactivateActor {
 
 interface SuspendingMethodActor : ActorWithStringKey {
     suspend fun ping(msg: String = ""): String
+    suspend fun fail()
 }
 
 class SuspendingMethodActorImpl : SuspendingMethodActor {
@@ -245,5 +247,10 @@ class SuspendingMethodActorImpl : SuspendingMethodActor {
         delay(1)
         println("Ping: ${msg}")
         return msg
+    }
+
+    override suspend fun fail() {
+        delay(1)
+        throw InvalidObjectException("Intentionally thrown test exception")
     }
 }

@@ -41,7 +41,12 @@ internal class AddressableProxy(
 
         val completion = invocationSystem.sendInvocation(invocation)
         return if (isSuspended) {
-            completion.invokeOnCompletion { continuation?.resume(completion.getCompleted()) }
+            completion.invokeOnCompletion { error ->
+                if (error == null)
+                    continuation?.resume(completion.getCompleted())
+                else
+                    continuation?.resumeWith(Result.failure(error))
+            }
             kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
         } else {
             DeferredWrappers.wrapReturn(completion, method)
