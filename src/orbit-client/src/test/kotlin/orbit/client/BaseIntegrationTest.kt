@@ -6,10 +6,8 @@
 
 package orbit.client
 
-import io.kotlintest.eventually
 import io.kotlintest.minutes
 import io.kotlintest.seconds
-import io.kotlintest.shouldBe
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
 import io.micrometer.core.instrument.MockClock
@@ -24,7 +22,6 @@ import orbit.server.mesh.LeaseDuration
 import orbit.server.mesh.LocalServerInfo
 import orbit.server.mesh.local.LocalAddressableDirectory
 import orbit.server.mesh.local.LocalNodeDirectory
-import orbit.shared.mesh.NodeStatus
 import orbit.util.di.ComponentContainerRoot
 import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock
@@ -119,7 +116,7 @@ open class BaseIntegrationTest {
         port: Int = 50056,
         namespace: String = "test",
         packages: List<String> = listOf("orbit.client.actor"),
-        platformExceptions: Boolean = false,
+        platformExceptions: Boolean = true,
         addressableTTL: Duration = 1.minutes,
         addressableDeactivation: ExternallyConfigured<AddressableDeactivator> = AddressableDeactivator.Instant.Config()
     ): OrbitClient {

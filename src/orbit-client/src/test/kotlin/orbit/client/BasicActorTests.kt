@@ -25,10 +25,11 @@ import orbit.client.actor.ThrowingActor
 import orbit.client.actor.TimeoutActor
 import orbit.client.actor.TrackingGlobals
 import orbit.client.actor.createProxy
-import orbit.client.util.RemoteException
 import orbit.client.util.TimeoutException
 import orbit.util.misc.RNGUtils
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
+import java.io.InvalidObjectException
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -66,7 +67,7 @@ class BasicActorTests : BaseIntegrationTest() {
         }
     }
 
-    @Test(expected = RemoteException::class)
+    @Test(expected = TestException::class)
     fun `ensure throw fails`() {
         runBlocking {
             val actor = client.actorFactory.createProxy<ThrowingActor>()
@@ -74,7 +75,7 @@ class BasicActorTests : BaseIntegrationTest() {
         }
     }
 
-    @Test(expected = RemoteException::class)
+    @Test(expected = IllegalStateException::class)
     fun `ensure invalid actor type throws`() {
         runBlocking {
             val actor = client.actorFactory.createProxy<ActorWithNoImpl>()
@@ -190,6 +191,19 @@ class BasicActorTests : BaseIntegrationTest() {
             disconnectClient()
 
             TrackingGlobals.deactivateTestCounts.get() shouldBe 1
+        }
+    }
+
+    @Test
+    fun `Actor with suspending method with error throws exception`() {
+        runBlocking {
+            val actor = client.actorFactory.createProxy<SuspendingMethodActor>("test")
+
+            assertThrows<InvalidObjectException> {
+                runBlocking {
+                    actor.fail()
+                }
+            }
         }
     }
 }
