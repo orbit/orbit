@@ -13,7 +13,6 @@ import orbit.util.instrumentation.recordSuspended
 import java.util.concurrent.atomic.AtomicInteger
 
 class HealthService(private val checks: HealthCheckList) : HealthImplBase() {
-    private val counter = Metrics.counter("orbit", "health", "check")
     private val healthyChecks = AtomicInteger()
 
     init {
@@ -21,7 +20,6 @@ class HealthService(private val checks: HealthCheckList) : HealthImplBase() {
     }
 
     override suspend fun check(request: HealthOuterClass.HealthCheckRequest): HealthOuterClass.HealthCheckResponse {
-        counter.increment()
         return HealthOuterClass.HealthCheckResponse.newBuilder()
             .setStatus(
                 if (this.isHealthy()) {
