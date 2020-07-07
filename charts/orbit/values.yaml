@@ -14,9 +14,11 @@ node:
     pullPolicy: IfNotPresent
   replicas: 1
   containerPort: 50056
-  metricsPort: 8080
+  metricsPort: 9090
   service:
-    annotations:
+    annotations: {}
+  deployment:
+    annotations: {}
 
 addressableDirectory:
   image:

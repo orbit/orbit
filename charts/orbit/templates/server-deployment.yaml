@@ -6,6 +6,10 @@ metadata:
     {{- include "orbit.selectorLabels" . | nindent 4 }}
     chart: {{ include "orbit.chart" . }}
     component: node
+  {{- if .Values.node.deployment.annotations }}
+  annotations:
+  {{- toYaml .Values.node.deployment.annotations | nindent 4 }}
+  {{- end }}
 spec:
   replicas: {{ .Values.node.replicas }}
   selector:
