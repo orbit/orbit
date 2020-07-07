@@ -131,6 +131,6 @@ class EtcdNodeDirectory(config: EtcdNodeDirectoryConfig, private val clock: Cloc
 
         val (_, namespace, key) = keyString.split("/")
 
-        return NodeId(namespace, key)
+        return NodeId(key = key, namespace = namespace)
     }
 }
