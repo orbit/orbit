@@ -25,7 +25,7 @@ addressableDirectory:
     repository: bitnami/etcd
     tag: "3"
     pullPolicy: IfNotPresent
-  replicas: 0
+  replicas: 1
   clientPort: 2379
   peerPort: 2380
 
@@ -34,7 +34,7 @@ nodeDirectory:
     repository: bitnami/etcd
     tag: "3"
     pullPolicy: IfNotPresent
-  replicas: 0
+  replicas: 1
   clientPort: 2379
   peerPort: 2380
 
