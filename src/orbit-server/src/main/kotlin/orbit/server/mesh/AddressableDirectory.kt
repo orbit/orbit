@@ -14,5 +14,4 @@ import orbit.util.concurrent.AsyncMap
 interface AddressableDirectory : AsyncMap<NamespacedAddressableReference, AddressableLease>,
     HealthCheck {
     suspend fun tick() {}
-    suspend fun count(): Int = 0
 }

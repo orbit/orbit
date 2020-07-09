@@ -5,8 +5,6 @@
 nameOverride: ""
 fullnameOverride: ""
 
-url: localhost
-
 node:
   image:
     repository: orbitframework/orbit

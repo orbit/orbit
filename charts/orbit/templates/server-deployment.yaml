@@ -40,7 +40,7 @@ spec:
           - name: ORBIT_PORT
             value: {{ .containerPort | quote }}
           - name: ORBIT_URL
-            value: "$(ORBIT_HOST):{{ .containerPort }}"
+            value: "dns:///$(ORBIT_HOST):{{ .containerPort }}"
           - name: ORBIT_SETTINGS
             value: /etc/orbit/config/config.json
           readinessProbe:
