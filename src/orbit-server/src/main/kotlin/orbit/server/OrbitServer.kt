@@ -80,6 +80,7 @@ class OrbitServer(private val config: OrbitServerConfig) : HealthCheck {
 
     private val pipeline by container.inject<Pipeline>()
     private val remoteMeshNodeManager by container.inject<RemoteMeshNodeManager>()
+    private val connectionManager by container.inject<ConnectionManager>()
 
     private val slowTick = Metrics.counter(Meters.Names.SlowTicks)
     private val tickTimer = Metrics.timer(Meters.Names.TickTimer)
@@ -150,8 +151,15 @@ class OrbitServer(private val config: OrbitServerConfig) : HealthCheck {
 
         Metrics.globalRegistry.add(container.resolve(MeterRegistry::class.java))
 
-        Metrics.gauge(Meters.Names.AddressableCount, addressableDirectory) { d -> runBlocking { d.count().toDouble() } }
-        Metrics.gauge(Meters.Names.NodeCount, nodeDirectory) { d -> runBlocking { d.keys().count().toDouble() } }
+        Metrics.gauge(Meters.Names.AddressableCount, connectionManager) { c ->
+            val clients = c.clients
+            runBlocking {
+                val entries = addressableDirectory.entries()
+                return@runBlocking entries.filter { (_, lease) ->
+                    clients.contains(lease.nodeId)
+                }.count().toDouble()
+            }
+        }
     }
 
     fun start() = runtimeScopes.cpuScope.launch {

@@ -45,6 +45,8 @@ class ConnectionManager(
 
     fun getClient(nodeId: NodeId) = connectedClients[nodeId]
 
+    val clients get() = connectedClients.values.map { c -> c.nodeId }.toList()
+
     fun onNewClient(
         nodeId: NodeId,
         incomingChannel: ReceiveChannel<Messages.MessageProto>,
