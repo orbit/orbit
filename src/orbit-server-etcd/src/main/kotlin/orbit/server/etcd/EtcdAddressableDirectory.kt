@@ -51,8 +51,10 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
 
     private val client = Client.builder().endpoints(config.url).build().kvClient
     private val lastCleanup = AtomicLong(clock.currentTime)
-    private val cleanupIntervalMs =
-        Random.nextLong(config.cleanupFrequencyRange.first.toMillis(), config.cleanupFrequencyRange.second.toMillis())
+    private val cleanupIntervalMs = config.cleanupFrequencyRange.let { (min, max) ->
+        Random.nextLong(min.toMillis(), max.toMillis())
+    }
+
 
     private val lastHealthCheckTime = AtomicLong(0)
     private val lastHealthCheck = AtomicBoolean(false)
@@ -145,9 +147,8 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
             logger.info { "Starting Addressable Directory cleanup..." }
             val (time, cleanupResult) = stopwatch(clock) {
                 lastCleanup.set(clock.currentTime)
-                val addressables = values()
 
-                val (expiredLeases, validLeases) = addressables.partition { addressable -> clock.inPast(addressable.expiresAt) }
+                val (expiredLeases, validLeases) = values().partition { addressable -> clock.inPast(addressable.expiresAt) }
 
                 if (expiredLeases.any()) {
                     val txn = client.txn()
@@ -158,11 +159,14 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
                         )
                     }.toTypedArray()).commit()
                 }
-                expiredLeases to validLeases
+                object {
+                    val expired = expiredLeases.count()
+                    val valid = validLeases.count()
+                }
             }
 
             logger.info {
-                "Addressable Directory cleanup took ${time}ms. Removed ${cleanupResult.first.size} entries, ${cleanupResult.second.size} remain valid."
+                "Addressable Directory cleanup took ${time}ms. Removed ${cleanupResult.expired} entries, ${cleanupResult.valid} remain valid."
             }
         }
     }

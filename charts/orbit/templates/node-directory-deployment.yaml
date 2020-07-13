@@ -33,5 +33,7 @@ spec:
           value: "yes"
         - name: ETCD_ADVERTISE_CLIENT_URLS
           value: "http://node-directory:{{ .clientPort }}"
+        - name: ETCD_MAX_TXN_OPS
+          value: "1000000"
     {{- end }}
 {{- end }}

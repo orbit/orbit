@@ -34,7 +34,7 @@ class RetryStep(
                 target.targetNode
             }
             is MessageTarget.RoutedUnicast -> {
-                target.route.destinationNode
+                target.route.nextNode
             }
             else -> null
         }
