@@ -28,7 +28,6 @@ import orbit.server.pipeline.step.BlankStep
 import orbit.server.pipeline.step.EchoStep
 import orbit.server.pipeline.step.IdentityStep
 import orbit.server.pipeline.step.PlacementStep
-import orbit.server.pipeline.step.RetryStep
 import orbit.server.pipeline.step.RoutingStep
 import orbit.server.pipeline.step.TransportStep
 import orbit.server.pipeline.step.VerifyStep
@@ -124,7 +123,6 @@ class OrbitServer(private val config: OrbitServerConfig) : HealthCheck {
             singleton<PlacementStep>()
             singleton<IdentityStep>()
             singleton<RoutingStep>()
-            singleton<RetryStep>()
             singleton<EchoStep>()
             singleton<VerifyStep>()
             singleton<AuthStep>()

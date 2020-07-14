@@ -14,6 +14,7 @@ import orbit.server.auth.AuthSystem
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.ClusterManager
 import orbit.server.mesh.LocalNodeInfo
+import orbit.server.mesh.MANAGEMENT_NAMESPACE
 import orbit.server.pipeline.Pipeline
 import orbit.server.service.Meters
 import orbit.shared.exception.AuthFailed
@@ -66,8 +67,17 @@ class ConnectionManager(
                 val clientConnection = ClientConnection(authInfo, incomingChannel, outgoingChannel, pipeline)
                 connectedClients[nodeId] = clientConnection
 
+                // Update the client's entry with this server
+                clusterManager.updateNode(nodeInfo.id) {
+                    checkNotNull(it) { "The node '${nodeInfo.id}' could not be found in directory." }
+                    val visibleNodes = it.visibleNodes + localNodeInfo.info.id
+                    it.copy(
+                        visibleNodes = visibleNodes
+                    )
+                }
+
                 // Update the visible nodes
-                addNodesToDirectory(nodeInfo)
+                updateDirectoryClients()
 
                 // Consume messages, suspends here until connection drops
                 clientConnection.consumeMessages()
@@ -90,19 +100,15 @@ class ConnectionManager(
         }
     }
 
-    private suspend fun addNodesToDirectory(nodeInfo: NodeInfo) {
-        // Update the client's entry with this server
-        clusterManager.updateNode(nodeInfo.id) {
-            checkNotNull(it) { "The node '${nodeInfo.id}' could not be found in directory. " }
-            it.copy(
-                visibleNodes = it.visibleNodes + localNodeInfo.info.id
-            )
-        }
+    private suspend fun updateDirectoryClients() {
+        val visibleNodes = localNodeInfo.info.visibleNodes
+            .filter { node -> node.namespace == MANAGEMENT_NAMESPACE }
+            .plus(connectedClients.values.map { n -> n.nodeId }).toSet()
 
         // Update this server with client
         localNodeInfo.updateInfo {
             it.copy(
-                visibleNodes = it.visibleNodes + nodeInfo.id
+                visibleNodes = visibleNodes
             )
         }
     }
@@ -110,8 +116,10 @@ class ConnectionManager(
     private suspend fun removeNodesFromDirectory(nodeInfo: NodeInfo) {
         // Update the client's entry
         clusterManager.updateNode(nodeInfo.id) {
+            val visibleNodes = it!!.visibleNodes - localNodeInfo.info.id
+
             it?.copy(
-                visibleNodes = it.visibleNodes - localNodeInfo.info.id
+                visibleNodes = visibleNodes
             )
         }
 

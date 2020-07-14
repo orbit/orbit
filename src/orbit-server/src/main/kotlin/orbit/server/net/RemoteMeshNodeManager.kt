@@ -37,8 +37,6 @@ class RemoteMeshNodeManager(
 
     suspend fun refreshConnections() {
         val allNodes = clusterManager.getAllNodes()
-        val addedNodes = ArrayList<NodeId>()
-        val removedNodes = ArrayList<NodeId>()
 
         val meshNodes = allNodes
             .filter { node -> node.nodeStatus == NodeStatus.ACTIVE }
@@ -50,7 +48,6 @@ class RemoteMeshNodeManager(
         meshNodes.forEach { node ->
             logger.info("Connecting to peer ${node.id.key} @${node.url}...")
             this.connections[node.id] = RemoteMeshNodeConnection(localNode, node)
-            addedNodes.add(node.id)
         }
 
         connections.values.forEach { node ->
@@ -58,13 +55,16 @@ class RemoteMeshNodeManager(
                 logger.info("Removing peer ${node.id.key}...")
                 connections[node.id]!!.disconnect()
                 connections.remove(node.id)
-                removedNodes.add(node.id)
             }
         }
 
-        if (addedNodes.isNotEmpty() || removedNodes.isNotEmpty()) {
+        val visibleNodes = localNode.info.visibleNodes
+            .filter { node -> node.namespace != MANAGEMENT_NAMESPACE }
+            .plus(connections.values.map { n -> n.id }).toSet()
+
+        if (!visibleNodes.equals(localNode.info.id)) {
             clusterManager.updateNode(localNode.info.id) { node ->
-                node!!.copy(visibleNodes = node.visibleNodes.plus(addedNodes).minus(removedNodes))
+                node!!.copy(visibleNodes = visibleNodes)
             }
         }
     }
