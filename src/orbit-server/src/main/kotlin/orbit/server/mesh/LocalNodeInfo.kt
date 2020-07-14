@@ -49,8 +49,8 @@ class LocalNodeInfo(
         join()
     }
 
-    suspend fun join() {
-        clusterManager.joinCluster(MANAGEMENT_NAMESPACE, NodeCapabilities(), this.serverInfo.url, NodeStatus.STARTING)
+    suspend fun join(nodeStatus: NodeStatus = NodeStatus.STARTING) {
+        clusterManager.joinCluster(MANAGEMENT_NAMESPACE, NodeCapabilities(), this.serverInfo.url, nodeStatus)
             .also {
                 logger.info("Joined cluster as (${it.id})")
                 infoRef.set(it)
@@ -65,7 +65,7 @@ class LocalNodeInfo(
                 }
             } catch (e: InvalidNodeId) {
                 logger.info("Failed to renew lease, rejoining cluster.")
-                join()
+                join(NodeStatus.ACTIVE)
             }
         }
     }
