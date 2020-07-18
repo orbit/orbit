@@ -190,7 +190,13 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
         when (throwable) {
             is NodeLeaseRenewalFailed -> {
                 logger.error { "Node lease renewal failed..." }
-                nodeLeaseRenewalFailedHandler.onLeaseRenewalFailed()
+                if (status == ClientState.CONNECTED) {
+                    localNode.manipulate {
+                        it.copy(clientState = ClientState.STOPPING)
+                    }
+
+                    nodeLeaseRenewalFailedHandler.onLeaseRenewalFailed()
+                }
             }
             else -> logger.error(throwable) { "Unhandled exception in Orbit Client." }
         }

@@ -27,8 +27,8 @@ class RestartOnNodeRenewalFailure(private val orbitClient: OrbitClient, private 
     override fun onLeaseRenewalFailed() {
         supervisorScope.launch {
             logger.info { "Beginning Orbit restart..." }
-            orbitClient.stop().join()
-            orbitClient.start().join()
+            orbitClient.stop()
+            orbitClient.start()
             logger.info { "Restart complete" }
 
         }
