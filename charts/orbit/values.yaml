@@ -8,7 +8,7 @@ fullnameOverride: ""
 node:
   image:
     repository: orbitframework/orbit
-    tag: 2.0.0-alpha.82
+    tag: 2.0.0-alpha.83
     pullPolicy: IfNotPresent
   replicas: 1
   containerPort: 50056
