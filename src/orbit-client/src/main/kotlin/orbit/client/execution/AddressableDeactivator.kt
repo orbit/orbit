@@ -32,7 +32,7 @@ abstract class AddressableDeactivator() {
         deactivationsPerSecond: Long,
         deactivate: Deactivator
     ) {
-        val ticker = highResolutionTicker(deactivationsPerSecond)
+        val ticker = highResolutionTicker(deactivationsPerSecond.toDouble())
 
         addressables.asFlow().onEach { ticker.receive() }
             .flatMapMerge(concurrency) { a ->

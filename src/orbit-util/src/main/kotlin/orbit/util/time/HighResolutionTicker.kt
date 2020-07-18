@@ -16,10 +16,10 @@ import java.lang.System.nanoTime
 
 @ExperimentalCoroutinesApi
 fun highResolutionTicker(
-    ticksPerSecond: Long,
+    ticksPerSecond: Double,
     scope: CoroutineScope = GlobalScope
 ): ReceiveChannel<Unit> {
-    val rate = 1000000000 / ticksPerSecond
+    val rate = (1000000000 / ticksPerSecond).toLong()
     val time: () -> Long = { nanoTime() }
 
     return scope.produce {

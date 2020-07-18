@@ -144,14 +144,13 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
 
     override suspend fun tick() {
         if (lastCleanup.get() + cleanupIntervalMs < clock.currentTime) {
-            logger.info { "Starting Addressable Directory cleanup..." }
             val (time, cleanupResult) = stopwatch(clock) {
                 lastCleanup.set(clock.currentTime)
 
                 val (expiredLeases, validLeases) = values().partition { addressable -> clock.inPast(addressable.expiresAt) }
 
                 if (expiredLeases.any()) {
-                    println("Releasing ${expiredLeases.count()} leases")
+                    println("Releasing ${expiredLeases.count()} addressable leases")
                     val txn = client.txn()
                     txn.Then(*expiredLeases.map { lease ->
                         Op.delete(

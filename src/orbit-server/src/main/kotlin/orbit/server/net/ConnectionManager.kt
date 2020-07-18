@@ -69,7 +69,7 @@ class ConnectionManager(
 
                 // Update the client's entry with this server
                 clusterManager.updateNode(nodeInfo.id) {
-                    checkNotNull(it) { "The node '${nodeInfo.id}' could not be found in directory." }
+                    checkNotNull(it) { "The node '${nodeInfo.id}' could not be found in directory on new client." }
                     val visibleNodes = it.visibleNodes + localNodeInfo.info.id
                     it.copy(
                         visibleNodes = visibleNodes
@@ -116,9 +116,13 @@ class ConnectionManager(
     private suspend fun removeNodesFromDirectory(nodeInfo: NodeInfo) {
         // Update the client's entry
         clusterManager.updateNode(nodeInfo.id) {
-            val visibleNodes = it!!.visibleNodes - localNodeInfo.info.id
+            if (it == null) {
+                println("- Node already removed from Cluster Manager ${nodeInfo.id}")
+                return@updateNode null
+            }
+            val visibleNodes = it.visibleNodes - localNodeInfo.info.id
 
-            it?.copy(
+            it.copy(
                 visibleNodes = visibleNodes
             )
         }

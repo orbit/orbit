@@ -24,11 +24,12 @@ internal class ConnectionHandler(
     config: OrbitClientConfig,
     grpcClient: GrpcClient,
     private val scope: SupervisorScope,
-    componentContainer: ComponentContainer
+    private val componentContainer: ComponentContainer
 ) {
     private val logger = KotlinLogging.logger { }
     private val messagesStub = ConnectionGrpc.newStub(grpcClient.channel)
     private val messageHandler by componentContainer.inject<MessageHandler>()
+    private val nodeId get() = componentContainer.resolve<LocalNode>().status.nodeInfo?.id
 
     private val messageRails = RailWorker(
         scope = scope,
