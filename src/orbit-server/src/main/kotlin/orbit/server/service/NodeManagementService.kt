@@ -61,8 +61,8 @@ class NodeManagementService(
         checkNotNull(nodeId) { "Node ID was not specified" }
 
         val nodeInfo = clusterManager.updateNode(nodeId) {
-            checkNotNull(it) { "The node '${nodeId}' could not be found in directory while trying to leave cluster." }
-            it.copy(
+            logger.debug("The node '${nodeId}' was not found in directory while leaving the cluster.")
+            it?.copy(
                 nodeStatus = NodeStatus.DRAINING
             )
         }

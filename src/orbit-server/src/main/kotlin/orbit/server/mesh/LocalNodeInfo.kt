@@ -10,10 +10,10 @@ import mu.KotlinLogging
 import orbit.server.service.HealthCheck
 import orbit.shared.exception.InvalidNodeId
 import orbit.shared.mesh.NodeCapabilities
+import orbit.shared.mesh.NodeId
 import orbit.shared.mesh.NodeInfo
 import orbit.shared.mesh.NodeStatus
 import orbit.util.time.Clock
-import orbit.util.time.Timestamp
 import java.util.concurrent.atomic.AtomicReference
 
 const val MANAGEMENT_NAMESPACE = "management"
@@ -49,8 +49,8 @@ class LocalNodeInfo(
         join()
     }
 
-    suspend fun join(nodeStatus: NodeStatus = NodeStatus.STARTING) {
-        clusterManager.joinCluster(MANAGEMENT_NAMESPACE, NodeCapabilities(), this.serverInfo.url, nodeStatus)
+    suspend fun join(nodeId: NodeId? = null, nodeStatus: NodeStatus = NodeStatus.STARTING) {
+        clusterManager.joinCluster(MANAGEMENT_NAMESPACE, NodeCapabilities(), this.serverInfo.url, nodeStatus, nodeId)
             .also {
                 logger.info("Joined cluster as (${it.id})")
                 infoRef.set(it)
@@ -65,7 +65,7 @@ class LocalNodeInfo(
                 }
             } catch (e: InvalidNodeId) {
                 logger.info("Failed to renew lease, rejoining cluster.")
-                join(NodeStatus.ACTIVE)
+                join(nodeId = info.id, nodeStatus = NodeStatus.ACTIVE)
             }
         }
     }

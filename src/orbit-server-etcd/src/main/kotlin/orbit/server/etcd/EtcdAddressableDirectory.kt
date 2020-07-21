@@ -24,7 +24,6 @@ import orbit.shared.addressable.NamespacedAddressableReference
 import orbit.shared.proto.Addressable
 import orbit.shared.proto.toAddressableLease
 import orbit.shared.proto.toAddressableLeaseProto
-import orbit.shared.proto.toAddressableReferenceProto
 import orbit.shared.proto.toNamespacedAddressableReferenceProto
 import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock

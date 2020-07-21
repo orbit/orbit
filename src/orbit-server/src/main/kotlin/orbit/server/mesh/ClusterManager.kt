@@ -48,10 +48,11 @@ class ClusterManager(
         namespace: String,
         capabilities: NodeCapabilities,
         url: String? = null,
-        nodeStatus: NodeStatus
+        nodeStatus: NodeStatus,
+        nodeId: NodeId? = null
     ): NodeInfo {
         do {
-            val newNodeId = NodeId.generate(namespace)
+            val newNodeId = nodeId ?: NodeId.generate(namespace)
 
             val lease = NodeLease(
                 challengeToken = RNGUtils.randomString(64),
