@@ -9,6 +9,7 @@ package orbit.client.mesh
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import orbit.client.OrbitClient
+import orbit.client.execution.AddressableDeactivator
 import orbit.util.concurrent.SupervisorScope
 import orbit.util.di.ExternallyConfigured
 
@@ -26,11 +27,10 @@ class RestartOnNodeRenewalFailure(private val orbitClient: OrbitClient, private 
 
     override fun onLeaseRenewalFailed() {
         supervisorScope.launch {
-            logger.info { "Beginning Orbit restart..." }
-            orbitClient.stop()
-            orbitClient.start()
-            logger.info { "Restart complete" }
-
+            logger.info { "Beginning Orbit restart, node ${orbitClient.nodeId?.key}" }
+            orbitClient.stop(AddressableDeactivator.Instant()).join()
+            orbitClient.start().join()
+            logger.info { "Orbit restart complete, node ${orbitClient.nodeId?.key}" }
         }
     }
 }

@@ -68,7 +68,7 @@ class NodeManagementService(
         }
 
         return NodeManagementOuterClass.NodeLeaseResponseProto.newBuilder()
-            .setInfo(nodeInfo?.toNodeInfoProto())
+            .setInfo(nodeInfo.toNodeInfoProto())
             .build()
     }
 }

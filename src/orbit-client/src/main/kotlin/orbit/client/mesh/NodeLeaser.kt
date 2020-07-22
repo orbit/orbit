@@ -42,6 +42,9 @@ internal class NodeLeaser(
                     .build()
             ).await()
             .also { responseProto ->
+                if (responseProto.status != NodeManagementOuterClass.NodeLeaseResponseProto.Status.OK) {
+                    throw NodeLeaseRenewalFailed("Joining cluster failed")
+                }
                 responseProto.info.toNodeInfo().also { nodeInfo ->
                     localNode.manipulate {
                         it.copy(nodeInfo = nodeInfo)

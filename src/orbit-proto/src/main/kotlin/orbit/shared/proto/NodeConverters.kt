@@ -24,17 +24,19 @@ fun Node.NodeIdProto.toNodeId(): NodeId =
         namespace = namespace
     )
 
-fun NodeInfo.toNodeInfoProto(): Node.NodeInfoProto =
-    Node.NodeInfoProto.newBuilder()
-        .setId(id.toNodeIdProto())
-        .addAllVisibleNodes(visibleNodes.map { it.toNodeIdProto() })
-        .setLease(lease.toNodeLeaseProto())
-        .setCapabilities(capabilities.toCapabilitiesProto())
-        .setStatus(nodeStatus.toNodeStatusProto())
-        .let {
-            if (url != null) it.setUrl(url) else it
-        }
-        .build()
+fun NodeInfo?.toNodeInfoProto(): Node.NodeInfoProto =
+    Node.NodeInfoProto.newBuilder().let { builder ->
+        if (this != null)
+            builder.setId(id.toNodeIdProto())
+                .addAllVisibleNodes(visibleNodes.map { it.toNodeIdProto() })
+                .setLease(lease.toNodeLeaseProto())
+                .setCapabilities(capabilities.toCapabilitiesProto())
+                .setStatus(nodeStatus.toNodeStatusProto())
+                .let {
+                    if (url != null) it.setUrl(url) else it
+                }
+        else builder
+    }.build()
 
 fun Node.NodeInfoProto.toNodeInfo(): NodeInfo =
     NodeInfo(
