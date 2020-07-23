@@ -49,7 +49,7 @@ class Pipeline(
 
     fun pushMessage(msg: Message, meta: MessageMetadata? = null) {
         check(pipelineRails.isInitialized) {
-            "The Orbit pipeline is not in a state to receive messages. Did you start the Orbit stage?"
+            "The Orbit pipeline is not in a state to receive messages. Did you start the Orbit server?"
         }
 
         val container = MessageContainer(

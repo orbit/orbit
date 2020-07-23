@@ -149,6 +149,7 @@ class OrbitServer(private val config: OrbitServerConfig) : HealthCheck {
 
         Metrics.globalRegistry.add(container.resolve(MeterRegistry::class.java))
 
+        Metrics.gauge(Meters.Names.NodeCount, nodeDirectory) { d -> runBlocking { d.entries().count().toDouble() } }
         Metrics.gauge(Meters.Names.AddressableCount, connectionManager) { c ->
             val clients = c.clients
             runBlocking {
