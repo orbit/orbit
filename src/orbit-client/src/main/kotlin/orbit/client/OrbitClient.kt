@@ -109,7 +109,7 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
 
     val actorFactory by container.inject<ActorProxyFactory>()
 
-    suspend fun start() = scope.launch {
+    fun start() = scope.launch {
         logger.info("Starting Orbit client - Node: ${nodeId}")
         val (elapsed) = stopwatch(clock) {
             // Flip state
@@ -160,7 +160,7 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
         executionSystem.tick()
     }
 
-    suspend fun stop(deactivator: AddressableDeactivator? = null) = scope.launch {
+    fun stop(deactivator: AddressableDeactivator? = null) = scope.launch {
         logger.info("Stopping Orbit node ${nodeId}...")
         val (elapsed) = stopwatch(clock) {
             localNode.manipulate {
