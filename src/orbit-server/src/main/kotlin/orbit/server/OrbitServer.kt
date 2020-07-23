@@ -213,6 +213,9 @@ class OrbitServer(private val config: OrbitServerConfig) : HealthCheck {
             // Stop pipeline
             pipeline.stop()
 
+            // Remove from node directory
+            nodeDirectory.remove(localNodeInfo.info.id)
+
             // Flip status to draining
             localNodeInfo.updateInfo {
                 it.copy(nodeStatus = NodeStatus.STOPPED)
