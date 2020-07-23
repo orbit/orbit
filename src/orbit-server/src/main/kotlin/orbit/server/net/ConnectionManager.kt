@@ -117,7 +117,6 @@ class ConnectionManager(
         // Update the client's entry
         clusterManager.updateNode(nodeInfo.id) {
             if (it == null) {
-                println("- Node already removed from Cluster Manager ${nodeInfo.id}")
                 return@updateNode null
             }
             val visibleNodes = it.visibleNodes - localNodeInfo.info.id
