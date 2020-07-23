@@ -149,7 +149,7 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
                 val (expiredLeases, validLeases) = values().partition { addressable -> clock.inPast(addressable.expiresAt) }
 
                 if (expiredLeases.any()) {
-                    println("Releasing ${expiredLeases.count()} addressable leases")
+                    logger.debug("Releasing ${expiredLeases.count()} addressable leases")
                     val txn = client.txn()
                     txn.Then(*expiredLeases.map { lease ->
                         Op.delete(

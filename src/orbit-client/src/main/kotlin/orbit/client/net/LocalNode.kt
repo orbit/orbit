@@ -13,7 +13,7 @@ import orbit.util.concurrent.atomicSet
 import java.util.concurrent.atomic.AtomicReference
 
 internal class LocalNode(private val config: OrbitClientConfig) {
-    private val default get() = NodeData(config.grpcEndpoint, config.namespace)
+    private val default = NodeData(config.grpcEndpoint, config.namespace)
 
     private val ref = AtomicReference(
         default.copy()
