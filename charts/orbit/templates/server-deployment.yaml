@@ -6,6 +6,10 @@ metadata:
     {{- include "orbit.selectorLabels" . | nindent 4 }}
     chart: {{ include "orbit.chart" . }}
     component: node
+  {{- if .Values.node.deployment.annotations }}
+  annotations:
+  {{- toYaml .Values.node.deployment.annotations | nindent 4 }}
+  {{- end }}
 spec:
   replicas: {{ .Values.node.replicas }}
   selector:
@@ -36,7 +40,7 @@ spec:
           - name: ORBIT_PORT
             value: {{ .containerPort | quote }}
           - name: ORBIT_URL
-            value: "$(ORBIT_HOST):{{ .containerPort }}"
+            value: "dns:///$(ORBIT_HOST):{{ .containerPort }}"
           - name: ORBIT_SETTINGS
             value: /etc/orbit/config/config.json
           readinessProbe:
@@ -45,7 +49,8 @@ spec:
             initialDelaySeconds: 5
           livenessProbe:
             exec:
-              command: ["/bin/grpc_health_probe", "-addr=:{{ .containerPort }}"]
+              # SERVING and NOT_SERVING indicate a live service
+              command: ["/bin/sh", "-c", "bin/grpc_health_probe -addr=:{{ .containerPort }} 2>&1 | grep -q SERVING"]
             initialDelaySeconds: 10
           volumeMounts:
           - name: configmap

@@ -16,7 +16,7 @@ interface AsyncMap<K, V> {
 
     suspend fun entries(): Iterable<Pair<K, V>>
     suspend fun values() = entries().map { (_, v) -> v }
-    suspend fun keys() = entries().map { (k, _) -> k }
+    suspend fun count() = entries().count()
 
     suspend fun getOrPut(key: K, block: suspend () -> V): V {
         val initial = get(key)

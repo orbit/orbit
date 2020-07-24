@@ -12,14 +12,22 @@ import orbit.shared.mesh.NodeInfo
 import orbit.util.concurrent.atomicSet
 import java.util.concurrent.atomic.AtomicReference
 
-internal class LocalNode(config: OrbitClientConfig) {
+internal class LocalNode(private val config: OrbitClientConfig) {
+    private val default = NodeData(config.grpcEndpoint, config.namespace)
+
     private val ref = AtomicReference(
-        NodeData(config.grpcEndpoint, config.namespace)
+        default.copy()
     )
 
     val status get() = ref.get()!!
 
     fun manipulate(body: (NodeData) -> NodeData) = ref.atomicSet(body)!!
+
+    fun reset() {
+        manipulate {
+            default.copy()
+        }
+    }
 }
 
 internal data class NodeData(

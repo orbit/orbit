@@ -8,4 +8,4 @@ package orbit.client.util
 
 class RemoteException(msg: String) : Exception(msg)
 
-class TimeoutException(msg: String): Exception(msg)
+class TimeoutException(msg: String) : Exception(msg)

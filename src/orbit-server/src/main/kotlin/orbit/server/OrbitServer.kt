@@ -35,6 +35,7 @@ import orbit.server.router.Router
 import orbit.server.service.AddressableManagementService
 import orbit.server.service.ConnectionService
 import orbit.server.service.GrpcEndpoint
+import orbit.server.service.HealthCheck
 import orbit.server.service.HealthCheckList
 import orbit.server.service.HealthService
 import orbit.server.service.Meters
@@ -49,7 +50,7 @@ import orbit.util.time.stopwatch
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
 
-class OrbitServer(private val config: OrbitServerConfig) {
+class OrbitServer(private val config: OrbitServerConfig) : HealthCheck {
 
     val nodeStatus: NodeStatus get() = localNodeInfo.info.nodeStatus
 
@@ -78,6 +79,7 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
     private val pipeline by container.inject<Pipeline>()
     private val remoteMeshNodeManager by container.inject<RemoteMeshNodeManager>()
+    private val connectionManager by container.inject<ConnectionManager>()
 
     private val slowTick = Metrics.counter(Meters.Names.SlowTicks)
     private val tickTimer = Metrics.timer(Meters.Names.TickTimer)
@@ -147,8 +149,16 @@ class OrbitServer(private val config: OrbitServerConfig) {
 
         Metrics.globalRegistry.add(container.resolve(MeterRegistry::class.java))
 
-        Metrics.gauge(Meters.Names.AddressableCount, addressableDirectory) { d -> runBlocking { d.count().toDouble() } }
-        Metrics.gauge(Meters.Names.NodeCount, nodeDirectory) { d -> runBlocking { d.keys().count().toDouble() } }
+        Metrics.gauge(Meters.Names.NodeCount, nodeDirectory) { d -> runBlocking { d.entries().count().toDouble() } }
+        Metrics.gauge(Meters.Names.AddressableCount, connectionManager) { c ->
+            val clients = c.clients
+            runBlocking {
+                val entries = addressableDirectory.entries()
+                return@runBlocking entries.filter { (_, lease) ->
+                    clients.contains(lease.nodeId)
+                }.count().toDouble()
+            }
+        }
     }
 
     fun start() = runtimeScopes.cpuScope.launch {
@@ -203,6 +213,9 @@ class OrbitServer(private val config: OrbitServerConfig) {
             // Stop pipeline
             pipeline.stop()
 
+            // Remove from node directory
+            nodeDirectory.remove(localNodeInfo.info.id)
+
             // Flip status to draining
             localNodeInfo.updateInfo {
                 it.copy(nodeStatus = NodeStatus.STOPPED)
@@ -235,4 +248,6 @@ class OrbitServer(private val config: OrbitServerConfig) {
     private fun onUnhandledException(throwable: Throwable) {
         logger.error(throwable) { "Unhandled exception in Orbit." }
     }
+
+    override suspend fun isHealthy(): Boolean = this.nodeStatus == NodeStatus.ACTIVE
 }

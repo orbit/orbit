@@ -13,6 +13,7 @@ import io.kotlintest.matchers.doubles.shouldBeGreaterThanOrEqual
 import io.kotlintest.milliseconds
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import orbit.server.mesh.ClusterManager
 import orbit.server.service.Meters
@@ -146,7 +147,7 @@ class MetricsTests : BaseServerTest() {
     }
 
     @Test
-    fun `connecting node to server increments connected nodes count`() {
+    fun `connecting and disconnecting server nodes adjusts connected nodes count`() {
         runBlocking {
             startServer()
 
@@ -156,29 +157,6 @@ class MetricsTests : BaseServerTest() {
             eventually(5.seconds) {
                 Meters.ConnectedNodes shouldBe 1.0
             }
-
-            disconnectServer(secondServer)
-
-            advanceTime(10.seconds)
-
-            eventually(5.seconds) {
-                Meters.NodeCount shouldBe 1.0
-            }
-        }
-    }
-
-    @Test
-    fun `disconnecting node from server decrements connected nodes count`() {
-        runBlocking {
-            startServer()
-
-            Meters.ConnectedNodes shouldBe 0.0
-            val secondServer = startServer(port = 50057)
-
-            eventually(5.seconds) {
-                Meters.ConnectedNodes shouldBe 1.0
-            }
-
             disconnectServer(secondServer)
 
             advanceTime(10.seconds)

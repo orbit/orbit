@@ -9,10 +9,6 @@ data:
       "pipelineRailCount": 32,
       "pipelineBufferCount": 10000,
       "acquireShutdownLatch": true,
-      "serverInfo": {
-        "url": "{{ .Values.url }}",
-        "port": "{{ .Values.node.containerPort }}"
-      },
       "nodeLeaseDuration": {
         "leaseDuration": 10
       },

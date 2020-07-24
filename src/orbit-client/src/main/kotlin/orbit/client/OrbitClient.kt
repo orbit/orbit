@@ -27,11 +27,15 @@ import orbit.client.net.GrpcClient
 import orbit.client.net.LocalNode
 import orbit.client.net.MessageHandler
 import orbit.client.serializer.Serializer
+import orbit.client.util.RemoteException
 import orbit.shared.mesh.NodeId
 import orbit.util.concurrent.SupervisorScope
 import orbit.util.di.ComponentContainer
+import orbit.util.misc.RetriesExceededException
+import orbit.util.misc.retry
 import orbit.util.time.ConstantTicker
 import orbit.util.time.stopwatch
+import java.time.Duration
 import kotlin.coroutines.CoroutineContext
 
 class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
@@ -108,8 +112,8 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
     val actorFactory by container.inject<ActorProxyFactory>()
 
     fun start() = scope.launch {
-        logger.info("Starting Orbit client...")
-        val (elapsed, _) = stopwatch(clock) {
+        logger.info("Starting Orbit client - Node: ${nodeId}")
+        val (elapsed) = stopwatch(clock) {
             // Flip state
             localNode.manipulate {
                 it.copy(clientState = ClientState.CONNECTING)
@@ -125,8 +129,16 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
                 it.copy(capabilities = definitionDirectory.generateCapabilities())
             }
 
-            // Get first lease
-            nodeLeaser.joinCluster()
+            try {
+                // Get first lease
+                retry(retryDelay = Duration.ofSeconds(1), attempts = 60) {
+                    nodeLeaser.joinCluster()
+                }
+            } catch (t: RetriesExceededException) {
+                logger.info("Failed to join cluster")
+                localNode.reset()
+                throw RemoteException("Failed to join cluster")
+            }
 
             // Open message channel
             connectionHandler.connect()
@@ -158,12 +170,16 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
 
     fun stop(deactivator: AddressableDeactivator? = null) = scope.launch {
         logger.info("Stopping Orbit node ${nodeId}...")
-        val (elapsed, _) = stopwatch(clock) {
+        val (elapsed) = stopwatch(clock) {
             localNode.manipulate {
                 it.copy(clientState = ClientState.STOPPING)
             }
 
-            nodeLeaser.leaveCluster()
+            try {
+                nodeLeaser.leaveCluster()
+            } catch (t: Throwable) {
+                logger.info { "Encountered a server error while leaving cluster ${t.message}" }
+            }
 
             // Drain all addressables
             executionSystem.stop(deactivator)
@@ -174,9 +190,7 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
             // Stop messaging
             connectionHandler.disconnect()
 
-            localNode.manipulate {
-                it.copy(clientState = ClientState.IDLE)
-            }
+            localNode.reset()
         }
 
         logger.info("Orbit stopped successfully in {}ms.", elapsed)

@@ -6,9 +6,6 @@
 
 package orbit.server
 
-import io.kotlintest.eventually
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
 import io.micrometer.core.instrument.MockClock
@@ -20,19 +17,17 @@ import orbit.server.mesh.LeaseDuration
 import orbit.server.mesh.LocalServerInfo
 import orbit.server.mesh.local.LocalAddressableDirectory
 import orbit.server.mesh.local.LocalNodeDirectory
-import orbit.shared.mesh.NodeStatus
 import orbit.shared.net.Message
 import orbit.util.di.ComponentContainerRoot
 import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock
 import orbit.util.time.TimeMs
 import org.junit.After
-import org.junit.Before
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 open class BaseServerTest {
-    private var clock: Clock = Clock()
+    protected var clock: Clock = Clock()
     private var servers: MutableList<OrbitServer> = mutableListOf()
     private var clients: MutableList<TestClient> = mutableListOf()
 
@@ -98,7 +93,7 @@ open class BaseServerTest {
         servers.remove(server)
     }
 
-    suspend fun startClient(onReceive: (msg: Message) -> Unit = {}) : TestClient {
+    suspend fun startClient(onReceive: (msg: Message) -> Unit = {}): TestClient {
         val client = TestClient(onReceive).connect()
 
         clients.add(client)

@@ -5,8 +5,6 @@
 nameOverride: ""
 fullnameOverride: ""
 
-url: localhost
-
 node:
   image:
     repository: orbitframework/orbit
@@ -14,16 +12,18 @@ node:
     pullPolicy: IfNotPresent
   replicas: 1
   containerPort: 50056
-  metricsPort: 8080
+  metricsPort: 9090
   service:
-    annotations:
+    annotations: {}
+  deployment:
+    annotations: {}
 
 addressableDirectory:
   image:
     repository: bitnami/etcd
     tag: "3"
     pullPolicy: IfNotPresent
-  replicas: 0
+  replicas: 1
   clientPort: 2379
   peerPort: 2380
 
@@ -32,7 +32,7 @@ nodeDirectory:
     repository: bitnami/etcd
     tag: "3"
     pullPolicy: IfNotPresent
-  replicas: 0
+  replicas: 1
   clientPort: 2379
   peerPort: 2380
 

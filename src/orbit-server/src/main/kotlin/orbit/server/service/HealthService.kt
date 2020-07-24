@@ -9,12 +9,10 @@ package orbit.server.service
 import grpc.health.v1.HealthImplBase
 import grpc.health.v1.HealthOuterClass
 import io.micrometer.core.instrument.Metrics
-import orbit.server.concurrent.RuntimeScopes
 import orbit.util.instrumentation.recordSuspended
 import java.util.concurrent.atomic.AtomicInteger
 
-class HealthService(private val checks: HealthCheckList, private val runtimeScopes: RuntimeScopes) : HealthImplBase() {
-    private val counter = Metrics.counter("orbit", "health", "check")
+class HealthService(private val checks: HealthCheckList) : HealthImplBase() {
     private val healthyChecks = AtomicInteger()
 
     init {
@@ -22,7 +20,6 @@ class HealthService(private val checks: HealthCheckList, private val runtimeScop
     }
 
     override suspend fun check(request: HealthOuterClass.HealthCheckRequest): HealthOuterClass.HealthCheckResponse {
-        counter.increment()
         return HealthOuterClass.HealthCheckResponse.newBuilder()
             .setStatus(
                 if (this.isHealthy()) {

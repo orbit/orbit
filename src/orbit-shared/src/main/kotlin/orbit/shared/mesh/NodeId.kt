@@ -17,4 +17,8 @@ data class NodeId(val key: NodeKey, val namespace: Namespace) {
             return NodeId(RNGUtils.randomString(), namespace)
         }
     }
+
+    override fun toString(): String {
+        return "(${this.namespace}:${this.key})"
+    }
 }

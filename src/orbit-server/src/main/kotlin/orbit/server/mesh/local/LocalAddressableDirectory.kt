@@ -45,6 +45,4 @@ class LocalAddressableDirectory(private val clock: Clock) :
             }
         }
     }
-
-    override suspend fun count(): Int = this.keys().count()
 }

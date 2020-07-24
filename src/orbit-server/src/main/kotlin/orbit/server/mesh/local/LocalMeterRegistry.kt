@@ -11,9 +11,8 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import mu.KotlinLogging
 import orbit.util.di.ExternallyConfigured
 
-val logger = KotlinLogging.logger {}
-
 class LocalMeterRegistry : SimpleMeterRegistry() {
+    private val logger = KotlinLogging.logger {}
     object LocalMeterRegistrySingleton : ExternallyConfigured<MeterRegistry> {
         override val instanceType = LocalMeterRegistry::class.java
     }

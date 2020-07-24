@@ -14,7 +14,8 @@ data class Message(
     val content: MessageContent,
     val messageId: Long? = null,
     val source: NodeId? = null,
-    val target: MessageTarget? = null
+    val target: MessageTarget? = null,
+    val attempts: Long = 0
 )
 
 enum class InvocationReason(val value: Int) {

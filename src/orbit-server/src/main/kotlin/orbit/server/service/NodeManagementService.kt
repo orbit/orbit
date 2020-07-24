@@ -6,24 +6,22 @@
 
 package orbit.server.service
 
+import mu.KotlinLogging
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.ClusterManager
-import orbit.shared.mesh.ChallengeToken
-import orbit.shared.mesh.NodeLease
 import orbit.shared.mesh.NodeStatus
 import orbit.shared.proto.NodeManagementImplBase
 import orbit.shared.proto.NodeManagementOuterClass
 import orbit.shared.proto.getOrNull
 import orbit.shared.proto.toCapabilities
 import orbit.shared.proto.toNodeInfoProto
-import orbit.shared.proto.toNodeLeaseProto
 import orbit.shared.proto.toNodeLeaseRequestResponseProto
-import orbit.util.time.Timestamp
 
 class NodeManagementService(
     private val clusterManager: ClusterManager,
     runtimeScopes: RuntimeScopes
 ) : NodeManagementImplBase(runtimeScopes.ioScope.coroutineContext) {
+    private val logger = KotlinLogging.logger { }
     override suspend fun joinCluster(request: NodeManagementOuterClass.JoinClusterRequestProto): NodeManagementOuterClass.NodeLeaseResponseProto =
         try {
             val namespace = ServerAuthInterceptor.NAMESPACE.get()
@@ -33,6 +31,7 @@ class NodeManagementService(
                 capabilities = capabilities,
                 nodeStatus = NodeStatus.ACTIVE
             )
+            logger.debug("Joining cluster ${info.id}")
             info.toNodeLeaseRequestResponseProto()
         } catch (t: Throwable) {
             t.toNodeLeaseRequestResponseProto()
@@ -61,14 +60,14 @@ class NodeManagementService(
         checkNotNull(nodeId) { "Node ID was not specified" }
 
         val nodeInfo = clusterManager.updateNode(nodeId) {
-            checkNotNull(it) { "The node '${nodeId}' could not be found in directory. " }
-            it.copy(
+            logger.debug("The node '${nodeId}' was not found in directory while leaving the cluster.")
+            it?.copy(
                 nodeStatus = NodeStatus.DRAINING
             )
         }
 
         return NodeManagementOuterClass.NodeLeaseResponseProto.newBuilder()
-            .setInfo(nodeInfo?.toNodeInfoProto())
+            .setInfo(nodeInfo.toNodeInfoProto())
             .build()
     }
 }

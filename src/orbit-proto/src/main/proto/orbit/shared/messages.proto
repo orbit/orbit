@@ -10,6 +10,7 @@ message MessageProto {
     NodeIdProto source = 2;
     MessageTargetProto target = 3;
     MessageContentProto content = 4;
+    int64 attempts = 5;
 }
 
 message MessageTargetProto {

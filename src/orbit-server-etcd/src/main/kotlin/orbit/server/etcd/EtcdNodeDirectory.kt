@@ -99,12 +99,10 @@ class EtcdNodeDirectory(config: EtcdNodeDirectoryConfig, private val clock: Cloc
 
     override suspend fun tick() {
         if (lastCleanup.get() + cleanupIntervalMs < clock.currentTime) {
-            logger.info { "Starting Node Directory cleanup..." }
             val (time, cleanupResult) = stopwatch(clock) {
                 lastCleanup.set(clock.currentTime)
-                val nodes = values()
 
-                val (expiredLeases, validLeases) = nodes.partition { node -> clock.inPast(node.lease.expiresAt) }
+                val (expiredLeases, validLeases) = values().partition { node -> clock.inPast(node.lease.expiresAt) }
 
                 if (expiredLeases.any()) {
                     val txn = client.txn()
@@ -113,11 +111,14 @@ class EtcdNodeDirectory(config: EtcdNodeDirectoryConfig, private val clock: Cloc
                     }.toTypedArray()).commit().await()
                 }
 
-                expiredLeases to validLeases
+                object {
+                    val expired = expiredLeases.count()
+                    val valid = validLeases.count()
+                }
             }
 
             logger.info {
-                "Node Directory cleanup took ${time}ms. Removed ${cleanupResult.first.size} entries, ${cleanupResult.second.size} remain valid."
+                "Node Directory cleanup took ${time}ms. Removed ${cleanupResult.expired} entries, ${cleanupResult.valid} remain valid."
             }
         }
     }

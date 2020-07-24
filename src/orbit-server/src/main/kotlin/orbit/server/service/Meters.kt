@@ -27,6 +27,8 @@ open class Meters {
             override val MessageSizes = "Message Sizes"
             override val SlowTicks = "Slow Ticks"
             override val TickTimer = "Tick Timer"
+            override val RetryAttempts = "Retry Attempts"
+            override val RetryErrors = "Retry Errors"
         }
 
         val ConnectedClients: Double get() = getMeter(Names.ConnectedClients)
@@ -53,5 +55,7 @@ open class Meters {
         val MessageSizes: String
         val SlowTicks: String
         val TickTimer: String
+        val RetryAttempts: String
+        val RetryErrors: String
     }
 }

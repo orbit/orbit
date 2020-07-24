@@ -48,10 +48,11 @@ class ClusterManager(
         namespace: String,
         capabilities: NodeCapabilities,
         url: String? = null,
-        nodeStatus: NodeStatus
+        nodeStatus: NodeStatus,
+        nodeId: NodeId? = null
     ): NodeInfo {
         do {
-            val newNodeId = NodeId.generate(namespace)
+            val newNodeId = nodeId ?: NodeId.generate(namespace)
 
             val lease = NodeLease(
                 challengeToken = RNGUtils.randomString(64),
@@ -89,7 +90,8 @@ class ClusterManager(
                 lease = initialValue.lease.copy(
                     expiresAt = Instant.now().plus(leaseExpiration.expiresIn).toTimestamp(),
                     renewAt = Instant.now().plus(leaseExpiration.renewIn).toTimestamp()
-                )
+                ),
+                visibleNodes = initialValue.visibleNodes.intersect(clusterNodes.keys().toList())
             )
 
             newValue

@@ -21,7 +21,7 @@ class HighResolutionTickerTest {
     @Test
     fun `Should tick expected number of times`() {
         runBlocking {
-            val ticker = highResolutionTicker(10000)
+            val ticker = highResolutionTicker(10000.0)
 
             val watch = stopwatch(Clock()) { _ ->
                 (1..10000).forEach { _ ->

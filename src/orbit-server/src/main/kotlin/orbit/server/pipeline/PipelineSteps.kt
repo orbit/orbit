@@ -25,9 +25,11 @@ class PipelineSteps(
     val steps: Array<PipelineStep> = arrayOf(
         identityStep,
         routingStep,
+        //- check cluster manager for node, pause if null and reintroduce to pipeline (log backoff)
         placementStep,
         verifyStep,
         authStep,
         transportStep
     )
 }
+// inbound is up, outbound is down

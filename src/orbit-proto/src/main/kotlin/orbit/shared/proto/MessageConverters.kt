@@ -18,7 +18,8 @@ fun Messages.MessageProto.toMessage(): Message =
         messageId = messageId,
         source = source?.toNodeId(),
         target = target?.toMessageTarget(),
-        content = content.toMessageContent()
+        content = content.toMessageContent(),
+        attempts = attempts
     )
 
 fun Message.toMessageProto(): Messages.MessageProto =
@@ -28,7 +29,8 @@ fun Message.toMessageProto(): Messages.MessageProto =
         if (source != null) it.setSource(source!!.toNodeIdProto()) else it
     }.let {
         if (target != null) it.setTarget(target!!.toMessageTargetProto()) else it
-    }.setContent(content.toMessageContentProto()).build()
+    }.setAttempts(attempts)
+        .setContent(content.toMessageContentProto()).build()
 
 fun Messages.MessageTargetProto.toMessageTarget(): MessageTarget? =
     when (this.targetCase.number) {

@@ -17,8 +17,6 @@ class Router(private val localNode: LocalNodeInfo, private val clusterManager: C
     fun findRoute(targetNode: NodeId, possibleRoute: Route? = null): Route {
         val path = clusterManager.findRoute(localNode.info.id, targetNode)
 
-        check(path.isNotEmpty()) { "Could not find path for $targetNode" }
-
         return Route(path)
     }
 }

@@ -14,6 +14,7 @@ import orbit.server.pipeline.Pipeline
 import orbit.server.service.Meters
 import orbit.shared.exception.CapacityExceededException
 import orbit.shared.exception.toErrorContent
+import orbit.shared.mesh.NodeId
 import orbit.shared.net.Message
 import orbit.shared.net.MessageTarget
 import orbit.shared.proto.Messages
@@ -27,6 +28,8 @@ class ClientConnection(
     private val outgoingChannel: SendChannel<Messages.MessageProto>,
     private val pipeline: Pipeline
 ) : MessageSender {
+
+    val nodeId get() = authInfo.nodeId
 
     suspend fun consumeMessages() {
         val messageSizes = Metrics.summary(Meters.Names.MessageSizes)

@@ -20,9 +20,10 @@ class AddressableManagementService(
 ) : AddressableManagementImplBase(runtimeScopes.ioScope.coroutineContext) {
     override suspend fun renewLease(request: AddressableManagementOuterClass.RenewAddressableLeaseRequestProto): AddressableManagementOuterClass.RenewAddressableLeaseResponseProto {
         return try {
-            val nodeId = NODE_ID.get()
-            val reference = request.reference.toAddressableReference()
-            addressableManager.renewLease(reference, nodeId).toAddressableLeaseResponseProto()
+            addressableManager.renewLease(
+                request.reference.toAddressableReference(),
+                NODE_ID.get()
+            ).toAddressableLeaseResponseProto()
         } catch (t: Throwable) {
             t.toAddressableLeaseResponseProto()
         }

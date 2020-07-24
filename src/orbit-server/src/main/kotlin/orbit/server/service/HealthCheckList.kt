@@ -6,14 +6,17 @@
 
 package orbit.server.service
 
+import orbit.server.OrbitServer
 import orbit.server.mesh.AddressableDirectory
 import orbit.server.mesh.LocalNodeInfo
 
 class HealthCheckList(
+    private val server: OrbitServer,
     private val localNodeInfo: LocalNodeInfo,
     private val addressableDirectory: AddressableDirectory
 ) {
     val checks = listOf(
+        this.server,
         this.localNodeInfo,
         this.addressableDirectory
     )
