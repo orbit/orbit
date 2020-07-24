@@ -11,15 +11,20 @@ import java.time.Duration
 
 suspend fun <T> retry(
     retryDelay: Duration = Duration.ZERO,
+    attempts: Int = Int.MAX_VALUE,
     action: suspend () -> T
 ): T? {
-    while (true) {
+    var remaining = attempts
+    while (remaining-- > 0) {
         try {
             return action()
         } catch (t: Throwable) {
             delay(retryDelay)
         }
     }
+    throw RetriesExceededException("Failed operation after ${attempts} attempts")
 }
+
+class RetriesExceededException(msg: String) : Exception(msg)
 
 

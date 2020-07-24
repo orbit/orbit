@@ -30,11 +30,13 @@ import orbit.client.serializer.Serializer
 import orbit.shared.mesh.NodeId
 import orbit.util.concurrent.SupervisorScope
 import orbit.util.di.ComponentContainer
+import orbit.util.misc.RetriesExceededException
 import orbit.util.misc.retry
 import orbit.util.time.ConstantTicker
 import orbit.util.time.stopwatch
 import java.time.Duration
 import kotlin.coroutines.CoroutineContext
+import kotlin.system.exitProcess
 
 class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
     internal val status: ClientState get() = localNode.status.clientState
@@ -127,9 +129,16 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
                 it.copy(capabilities = definitionDirectory.generateCapabilities())
             }
 
-            // Get first lease
-            retry(retryDelay = Duration.ofSeconds(1)) {
-                nodeLeaser.joinCluster()
+            try {
+                // Get first lease
+                retry(retryDelay = Duration.ofSeconds(1), attempts = 60) {
+                    nodeLeaser.joinCluster()
+                }
+            }
+            catch (t: RetriesExceededException) {
+                logger.info("Failed to join cluster")
+                localNode.reset()
+                throw RemoteException("Failed to join cluster")
             }
 
             // Open message channel

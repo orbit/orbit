@@ -8,11 +8,12 @@ package orbit.util.misc
 
 import io.kotlintest.shouldBe
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.assertThrows
 import kotlin.test.Test
 
 class RetryTest {
     @Test
-    fun `Will attempt multiple times`() {
+    fun `will attempt multiple times`() {
         runBlocking {
             var count = 0
             retry {
@@ -21,5 +22,19 @@ class RetryTest {
 
             count shouldBe 5
         }
+    }
+
+    @Test
+    fun `will stop attempting after specified amount`() {
+        var count = 0
+        assertThrows<RetriesExceededException> {
+            runBlocking {
+                retry(attempts = 5) {
+                    count++
+                    throw Exception("Fail")
+                }
+            }
+        }
+        count shouldBe 5
     }
 }
