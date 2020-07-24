@@ -27,6 +27,7 @@ import orbit.client.net.GrpcClient
 import orbit.client.net.LocalNode
 import orbit.client.net.MessageHandler
 import orbit.client.serializer.Serializer
+import orbit.client.util.RemoteException
 import orbit.shared.mesh.NodeId
 import orbit.util.concurrent.SupervisorScope
 import orbit.util.di.ComponentContainer
@@ -36,7 +37,6 @@ import orbit.util.time.ConstantTicker
 import orbit.util.time.stopwatch
 import java.time.Duration
 import kotlin.coroutines.CoroutineContext
-import kotlin.system.exitProcess
 
 class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
     internal val status: ClientState get() = localNode.status.clientState
@@ -134,8 +134,7 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
                 retry(retryDelay = Duration.ofSeconds(1), attempts = 60) {
                     nodeLeaser.joinCluster()
                 }
-            }
-            catch (t: RetriesExceededException) {
+            } catch (t: RetriesExceededException) {
                 logger.info("Failed to join cluster")
                 localNode.reset()
                 throw RemoteException("Failed to join cluster")
