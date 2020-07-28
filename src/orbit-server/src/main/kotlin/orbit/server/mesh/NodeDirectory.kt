@@ -11,5 +11,6 @@ import orbit.shared.mesh.NodeInfo
 import orbit.util.concurrent.AsyncMap
 
 interface NodeDirectory : AsyncMap<NodeId, NodeInfo> {
+    suspend fun entries(): Iterable<Pair<NodeId, NodeInfo>>
     suspend fun tick() {}
 }

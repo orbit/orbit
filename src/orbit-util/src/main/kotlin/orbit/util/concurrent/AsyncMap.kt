@@ -7,16 +7,12 @@
 package orbit.util.concurrent
 
 interface AsyncMap<K, V> {
-    suspend fun set(key: K, value: V)
     suspend fun get(key: K): V?
     suspend fun getValue(key: K): V = get(key)!!
 
     suspend fun remove(key: K): Boolean
     suspend fun compareAndSet(key: K, initialValue: V?, newValue: V?): Boolean
-
-    suspend fun entries(): Iterable<Pair<K, V>>
-    suspend fun values() = entries().map { (_, v) -> v }
-    suspend fun count() = entries().count()
+    suspend fun count(): Long
 
     suspend fun getOrPut(key: K, block: suspend () -> V): V {
         val initial = get(key)

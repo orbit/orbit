@@ -39,10 +39,12 @@ class LocalAddressableDirectory(private val clock: Clock) :
 
     override suspend fun tick() {
         // Cull expired
-        values().filter { clock.inPast(it.expiresAt) }.also { toDelete ->
+        globalMap.values.filter { clock.inPast(it.expiresAt) }.also { toDelete ->
             toDelete.forEach {
                 remove(NamespacedAddressableReference(it.nodeId.namespace, it.reference))
             }
         }
     }
+
+    override suspend fun count() = globalMap.count().toLong()
 }

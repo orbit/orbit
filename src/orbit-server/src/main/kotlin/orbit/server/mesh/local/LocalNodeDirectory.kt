@@ -35,10 +35,16 @@ class LocalNodeDirectory(private val clock: Clock) :
 
     override suspend fun tick() {
         // Cull expired
-        values().filter { clock.inPast(it.lease.expiresAt) }.also { toDelete ->
+        globalMap.values.filter { clock.inPast(it.lease.expiresAt) }.also { toDelete ->
             toDelete.forEach {
                 remove(it.id)
             }
         }
     }
+
+    override suspend fun entries(): Iterable<Pair<NodeId, NodeInfo>> {
+        return globalMap.map { it.toPair() }
+    }
+
+    override suspend fun count() = globalMap.count().toLong()
 }
