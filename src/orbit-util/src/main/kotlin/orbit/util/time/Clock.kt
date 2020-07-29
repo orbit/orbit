@@ -6,6 +6,7 @@
 
 package orbit.util.time
 
+import java.time.Duration
 import java.time.Instant
 
 /**
@@ -44,6 +45,7 @@ class Clock {
     fun inFuture(time: Timestamp) = time.isAfter(now())
     fun inPast(time: Timestamp) = !inFuture(time)
     fun nowOrPast(time: Timestamp) = time.isExactly(now()) || inPast(time)
+    fun until(time: Timestamp) = Duration.between(now(), time.toInstant());
 }
 
 object ClockUtils {

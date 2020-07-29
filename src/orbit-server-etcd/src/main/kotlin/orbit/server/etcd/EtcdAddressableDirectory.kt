@@ -8,52 +8,41 @@ package orbit.server.etcd
 
 import io.etcd.jetcd.ByteSequence
 import io.etcd.jetcd.Client
-import io.etcd.jetcd.KeyValue
-import io.etcd.jetcd.op.Op
-import io.etcd.jetcd.options.DeleteOption
 import io.etcd.jetcd.options.GetOption
+import io.etcd.jetcd.options.PutOption
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withTimeout
 import mu.KotlinLogging
 import orbit.server.mesh.AddressableDirectory
 import orbit.shared.addressable.AddressableLease
-import orbit.shared.addressable.AddressableReference
-import orbit.shared.addressable.Key
 import orbit.shared.addressable.NamespacedAddressableReference
 import orbit.shared.proto.Addressable
 import orbit.shared.proto.toAddressableLease
 import orbit.shared.proto.toAddressableLeaseProto
-import orbit.shared.proto.toNamespacedAddressableReferenceProto
 import orbit.util.di.ExternallyConfigured
 import orbit.util.time.Clock
-import orbit.util.time.stopwatch
-import java.nio.charset.Charset
-import java.time.Duration
+import orbit.util.time.Timestamp
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.random.Random
 
 class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private val clock: Clock) :
     AddressableDirectory {
 
     data class EtcdAddressableDirectoryConfig(
-        val url: String = System.getenv("ADDRESSABLE_DIRECTORY") ?: "0.0.0.0",
-        val cleanupFrequencyRange: Pair<Duration, Duration> = Duration.ofMinutes(1) to Duration.ofMinutes(2)
+        val url: String = System.getenv("ADDRESSABLE_DIRECTORY") ?: "0.0.0.0"
     ) : ExternallyConfigured<AddressableDirectory> {
         override val instanceType: Class<out AddressableDirectory> = EtcdAddressableDirectory::class.java
     }
 
     private val keyPrefix = "addressable"
+    private val allKey = ByteSequence.from("\u0000".toByteArray())
     private val logger = KotlinLogging.logger { }
 
-    private val client = Client.builder().endpoints(config.url).build().kvClient
-    private val lastCleanup = AtomicLong(clock.currentTime)
-    private val cleanupIntervalMs = config.cleanupFrequencyRange.let { (min, max) ->
-        Random.nextLong(min.toMillis(), max.toMillis())
-    }
-
+    private val client = Client.builder().endpoints(config.url).build()
+    private val kvClient = client.kvClient
+    private val leaseClient = client.leaseClient
 
     private val lastHealthCheckTime = AtomicLong(0)
     private val lastHealthCheck = AtomicBoolean(false)
@@ -65,7 +54,7 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
         try {
             lastHealthCheckTime.set(clock.currentTime)
             withTimeout(3000) {
-                entries()
+                getLease(Timestamp.now())
             }
             lastHealthCheck.set(true)
             return true
@@ -78,23 +67,31 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
         }
     }
 
-    override suspend fun count(): Int {
-        return getAllItems().count()
-    }
+    override suspend fun count() =
+        kvClient.get(
+            allKey, GetOption.newBuilder()
+                .withSortField(GetOption.SortTarget.KEY)
+                .withSortOrder(GetOption.SortOrder.DESCEND)
+                .withPrefix(ByteSequence.from(keyPrefix.toByteArray()))
+                .withCountOnly(true)
+                .withRange(allKey)
+                .build()
+        ).await().count
 
-    override suspend fun set(key: NamespacedAddressableReference, value: AddressableLease) {
-        client.put(toKey(key), ByteSequence.from(key.toNamespacedAddressableReferenceProto().toByteArray())).await()
+    suspend fun getLease(time: Timestamp): PutOption {
+        val lease = leaseClient.grant(clock.until(time).seconds).await()
+        return PutOption.newBuilder().withLeaseId(lease.id).build()
     }
 
     override suspend fun get(key: NamespacedAddressableReference): AddressableLease? {
-        val response = client.get(toKey(key)).await()
+        val response = kvClient.get(toByteKey(key)).await()
         return response.kvs.firstOrNull()?.value?.let {
             Addressable.AddressableLeaseProto.parseFrom(it.bytes).toAddressableLease()
         }
     }
 
     override suspend fun remove(key: NamespacedAddressableReference): Boolean {
-        client.delete(toKey(key))
+        kvClient.delete(toByteKey(key))
         return true
     }
 
@@ -103,82 +100,29 @@ class EtcdAddressableDirectory(config: EtcdAddressableDirectoryConfig, private v
         initialValue: AddressableLease?,
         newValue: AddressableLease?
     ): Boolean {
-        val byteKey = toKey(key)
-        val oldValue = client.get(byteKey).await().kvs.firstOrNull()?.value?.bytes?.let {
+        val byteKey = toByteKey(key)
+        val entry = kvClient.get(byteKey).await().kvs.firstOrNull()
+
+        val oldValue = entry?.value?.bytes?.let {
             Addressable.AddressableLeaseProto.parseFrom(it).toAddressableLease()
         }
 
         if (initialValue == oldValue) {
             if (newValue != null) {
-                client.put(byteKey, ByteSequence.from(newValue.toAddressableLeaseProto().toByteArray())).await()
+                kvClient.put(
+                    byteKey,
+                    ByteSequence.from(newValue.toAddressableLeaseProto().toByteArray()),
+                    getLease(newValue.expiresAt)
+                ).await()
             } else {
-                client.delete(byteKey).await()
+                kvClient.delete(byteKey).await()
             }
             return true
         }
         return false
     }
 
-    override suspend fun entries(): Iterable<Pair<NamespacedAddressableReference, AddressableLease>> {
-        return getAllItems().map { kv ->
-            Pair(
-                fromKey(kv.key),
-                Addressable.AddressableLeaseProto.parseFrom(kv.value.bytes).toAddressableLease()
-            )
-        }
-    }
-
-    private suspend fun getAllItems(): MutableList<KeyValue> {
-        val key = ByteSequence.from("\u0000".toByteArray())
-
-        val option = GetOption.newBuilder()
-            .withSortField(GetOption.SortTarget.KEY)
-            .withSortOrder(GetOption.SortOrder.DESCEND)
-            .withPrefix(ByteSequence.from(keyPrefix.toByteArray()))
-            .withRange(key)
-            .build()
-
-        return client.get(key, option).await().kvs
-    }
-
-    override suspend fun tick() {
-        if (lastCleanup.get() + cleanupIntervalMs < clock.currentTime) {
-            val (time, cleanupResult) = stopwatch(clock) {
-                lastCleanup.set(clock.currentTime)
-
-                val (expiredLeases, validLeases) = values().partition { addressable -> clock.inPast(addressable.expiresAt) }
-
-                if (expiredLeases.any()) {
-                    logger.debug("Releasing ${expiredLeases.count()} addressable leases")
-                    val txn = client.txn()
-                    txn.Then(*expiredLeases.map { lease ->
-                        Op.delete(
-                            toKey(NamespacedAddressableReference(lease.nodeId.namespace, lease.reference)),
-                            DeleteOption.DEFAULT
-                        )
-                    }.toTypedArray()).commit()
-                }
-                object {
-                    val expired = expiredLeases.count()
-                    val valid = validLeases.count()
-                }
-            }
-
-            logger.info {
-                "Addressable Directory cleanup took ${time}ms. Removed ${cleanupResult.expired} entries, ${cleanupResult.valid} remain valid."
-            }
-        }
-    }
-
-    private fun toKey(reference: NamespacedAddressableReference): ByteSequence {
+    private fun toByteKey(reference: NamespacedAddressableReference): ByteSequence {
         return ByteSequence.from("$keyPrefix/${reference.namespace}/${reference.addressableReference.type}/${reference.addressableReference.key}".toByteArray())
-    }
-
-    private fun fromKey(keyBytes: ByteSequence): NamespacedAddressableReference {
-        val keyString = keyBytes.toString(Charset.defaultCharset())
-
-        val (_, namespace, type, key) = keyString.split("/")
-
-        return NamespacedAddressableReference(namespace, AddressableReference(type, Key.of(key)))
     }
 }
