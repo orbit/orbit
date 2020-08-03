@@ -18,7 +18,9 @@ git push origin master --tags
 echo Get commit id
 commitId=$(git rev-parse HEAD)
 
-releaseData="{\"tag_name\": \"v$version\", \"target_commitish\": \"$commitId\", \"name\":\"Version $version\", \"draft\": false, \"prerelease\": false, \"body\": \"$releaseNotes\" }"
+echo Building release data
+releaseData="{\"tag_name\": \"v$version\", \"target_commitish\": \"$commitId\", \"name\":\"Version $version\", \"draft\": false, \"prerelease\": false, \"body\": $(jq -aRs . <<< $releaseNotes) }"
+echo $releaseData
 
 echo Create release
 curl -X POST -H "$AUTH" -H "Content-Type: application/json" $GH_REPO/releases -d "$releaseData"
