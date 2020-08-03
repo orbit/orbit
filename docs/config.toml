@@ -4,7 +4,7 @@ title = "Orbit"
 theme = "hugo-theme-techdoc"
 enableInlineShortCodes = true
 [params]
-  release = "2.0.0-alpha.92"
+  release = "2.0.0-alpha.93"
   menu_style = "open-menu"
 [markup]
   defaultMarkdownHandler = "goldmark"
