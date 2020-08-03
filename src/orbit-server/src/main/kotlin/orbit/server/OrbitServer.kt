@@ -79,7 +79,6 @@ class OrbitServer(private val config: OrbitServerConfig) : HealthCheck {
 
     private val pipeline by container.inject<Pipeline>()
     private val remoteMeshNodeManager by container.inject<RemoteMeshNodeManager>()
-    private val connectionManager by container.inject<ConnectionManager>()
 
     private val slowTick = Metrics.counter(Meters.Names.SlowTicks)
     private val tickTimer = Metrics.timer(Meters.Names.TickTimer)
@@ -205,13 +204,13 @@ class OrbitServer(private val config: OrbitServerConfig) : HealthCheck {
             // Stop pipeline
             pipeline.stop()
 
-            // Remove from node directory
-            nodeDirectory.remove(localNodeInfo.info.id)
-
             // Flip status to draining
             localNodeInfo.updateInfo {
                 it.copy(nodeStatus = NodeStatus.STOPPED)
             }
+
+            // Remove from node directory
+            nodeDirectory.remove(localNodeInfo.info.id)
 
             // Release the latch
             shutdownLatch.get()?.release().also {
@@ -223,7 +222,7 @@ class OrbitServer(private val config: OrbitServerConfig) : HealthCheck {
         Metrics.globalRegistry.remove(container.resolve(MeterRegistry::class.java))
     }
 
-    private suspend fun tick() {
+    internal suspend fun tick() {
         tickTimer.recordSuspended {
             localNodeInfo.tick()
             clusterManager.tick()

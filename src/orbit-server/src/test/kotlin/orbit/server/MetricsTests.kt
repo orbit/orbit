@@ -13,7 +13,6 @@ import io.kotlintest.matchers.doubles.shouldBeGreaterThanOrEqual
 import io.kotlintest.milliseconds
 import io.kotlintest.seconds
 import io.kotlintest.shouldBe
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import orbit.server.mesh.ClusterManager
 import orbit.server.service.Meters
@@ -94,18 +93,18 @@ class MetricsTests : BaseServerTest() {
     @Test
     fun `expiring an addressable decrements total addressables`() {
         runBlocking {
-            startServer()
+            val server = startServer(addressableLeaseDurationSeconds = 1)
 
             val client = startClient()
             client.sendMessage("test message", "address 1")
+            server.tick()
             eventually(5.seconds) {
                 Meters.AddressableCount shouldBe 1.0
             }
 
             advanceTime(5.seconds)
-            eventually(5.seconds) {
-                Meters.AddressableCount shouldBe 0.0
-            }
+            server.tick()
+            Meters.AddressableCount shouldBe 0.0
         }
     }
 
@@ -129,41 +128,38 @@ class MetricsTests : BaseServerTest() {
     @Test
     fun `expired node lease decrements node count`() {
         runBlocking {
-            startServer()
+            val server = startServer(nodeLeaseDurationSeconds = 60)
 
             val secondServer = startServer(port = 50057)
-            eventually(5.seconds) {
-                Meters.NodeCount shouldBe 2.0
-            }
+            secondServer.tick()
+            Meters.NodeCount shouldBe 2.0
 
             disconnectServer(secondServer)
+            server.tick()
 
             advanceTime(10.seconds)
 
-            eventually(5.seconds) {
-                Meters.NodeCount shouldBe 1.0
-            }
+            server.tick()
+            Meters.NodeCount shouldBe 1.0
         }
     }
 
     @Test
     fun `connecting and disconnecting server nodes adjusts connected nodes count`() {
         runBlocking {
-            startServer()
+            val server = startServer()
 
             Meters.ConnectedNodes shouldBe 0.0
-            val secondServer = startServer(port = 50057)
 
-            eventually(5.seconds) {
-                Meters.ConnectedNodes shouldBe 1.0
-            }
+            val secondServer = startServer(port = 50057, tickRate = 100000.seconds)
+            server.tick()
+            secondServer.tick()
+
+            Meters.ConnectedNodes shouldBe 1.0
+
             disconnectServer(secondServer)
-
-            advanceTime(10.seconds)
-
-            eventually(5.seconds) {
-                Meters.NodeCount shouldBe 1.0
-            }
+            server.tick()
+            Meters.ConnectedNodes shouldBe 0.0
         }
     }
 
@@ -199,7 +195,7 @@ class MetricsTests : BaseServerTest() {
     fun `constant tick timer going long increases Slow Tick count`() {
         runBlocking {
             var pulse = 0.seconds
-            startServer {
+            startServer(tickRate = 1.seconds) {
                 instance(spy(resolve<ClusterManager>()) {
                     onBlocking { this.tick() }.then {
                         advanceTime(pulse)
@@ -219,7 +215,7 @@ class MetricsTests : BaseServerTest() {
     @Test
     fun `constant tick timer elapses and records ticks`() {
         runBlocking {
-            startServer() {
+            startServer(tickRate = 1.seconds) {
                 instance(spy(resolve<ClusterManager>()) {
                     onBlocking { this.tick() }.then {
                         advanceTime(35.milliseconds)
@@ -229,7 +225,7 @@ class MetricsTests : BaseServerTest() {
 
             eventually(10.seconds) {
                 Meters.TickTimer_Count shouldBeGreaterThan 3.0
-//                Meters.TickTimer_Total shouldBeGreaterThanOrEqual 0.0
+                Meters.TickTimer_Total shouldBeGreaterThanOrEqual 0.0
             }
 
             println("Test over ${Meters.TickTimer_Total}")

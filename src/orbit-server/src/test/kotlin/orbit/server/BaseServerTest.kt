@@ -6,6 +6,7 @@
 
 package orbit.server
 
+import io.kotlintest.seconds
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
 import io.micrometer.core.instrument.MockClock
@@ -63,6 +64,7 @@ open class BaseServerTest {
         port: Int = 50056,
         addressableLeaseDurationSeconds: Long = 5,
         nodeLeaseDurationSeconds: Long = 10,
+        tickRate: Duration = 100.seconds,
         containerOverrides: ComponentContainerRoot.() -> Unit = { }
     ): OrbitServer {
         val server = OrbitServer(
@@ -75,7 +77,8 @@ open class BaseServerTest {
                 addressableLeaseDuration = LeaseDuration(addressableLeaseDurationSeconds),
                 nodeLeaseDuration = LeaseDuration(nodeLeaseDurationSeconds),
                 clock = clock,
-                containerOverrides = containerOverrides
+                containerOverrides = containerOverrides,
+                tickRate = tickRate
             )
         )
 
