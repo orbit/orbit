@@ -60,7 +60,7 @@ This tutorial assumes that you have set up a development environment as describe
       <description>Almost any scenario can be handled by using the prepackaged Orbit Server. For scenarios where the developer needs extensive control over the server, Orbit functionality can be hosted within a custom application.
 Describe taking a reference to orbit-server, starting an instance. Role of orbit-application.
 Gradle:
-implementation(&amp;#34;cloud.orbit:orbit-server:2.0.0-alpha.93&amp;#34;) To instantiate an OrbitServer:
+implementation(&amp;#34;cloud.orbit:orbit-server:2.0.0-alpha.94&amp;#34;) To instantiate an OrbitServer:
 import kotlinx.coroutines.runBlocking import orbit.server.OrbitServerConfig import orbit.server.OrbitServer fun main() { runBlocking { val server = OrbitServer(OrbitServerConfig( ... configuration )) server.start().join() } } OrbitServerConfig The OrbitServerConfig class can be used to make changes to server configurations, including things like lease times, persistence technology, resource limitations, and metrics.</description>
     </item>
     
@@ -92,7 +92,7 @@ Contributor License Agreement Like many other open source projects we require co
       <description>The Orbit project is split into several modules for client and server.
 Client orbit-client A JVM library for applications interfacing with an Orbit cluster. It handles maintaining a connection to the mesh, leasing addressables, and routing messages. It will be the main entrypoint for most developers.
 To include in your Gradle project, import the client library.
-implementation(&amp;#34;cloud.orbit:orbit-client:2.0.0-alpha.93&amp;#34;) Server Orbit can be run as a packaged service without having to delve into the server modules.</description>
+implementation(&amp;#34;cloud.orbit:orbit-client:2.0.0-alpha.94&amp;#34;) Server Orbit can be run as a packaged service without having to delve into the server modules.</description>
     </item>
     
     <item>
