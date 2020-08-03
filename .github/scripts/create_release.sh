@@ -11,8 +11,8 @@ echo Commit all changed work
 git commit -am "Release version $version and update docs" --author="orbit-tools <orbit@ea.com>"
 
 echo Create release notes from previous commit messages 
-releaseNotes=curl -sH "$AUTH" "$GH_REPO/orbit/orbit/commits?since=$(curl -sH "$AUTH" "$GH_REPO/orbit/orbit/releases" | jq '.[0].created_at')" | jq '.[].commit.message'
-echo Release Notes:\n $releaseNotes
+releaseNotes=$(curl -sH "$AUTH" "$GH_REPO/orbit/orbit/commits?since=$(curl -sH "$AUTH" "$GH_REPO/orbit/orbit/releases" | jq ".[0].created_at")" | jq '.[].commit.message')
+echo Release Notes: $releaseNotes
 
 echo Tag commit with the release tag
 git tag v$version
