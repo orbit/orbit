@@ -1,0 +1,18 @@
+name: Test Manual Dispatch Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release Version'
+        required: true
+      release_name:
+        description: 'Release Name'
+        required: true
+
+jobs:
+  printInputs:
+    runs-on: ubuntu-latest
+    steps:
+    - run: |
+        echo "Creating release: ${{ github.events.inputs.release_name }} (${{ github.event.inputs.release }})"

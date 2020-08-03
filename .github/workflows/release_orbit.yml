@@ -1,9 +1,12 @@
 name: Release Orbit
 
 on:
-  push:
-    tags:
-      - _v*
+  workflow_dispatch:
+    inputs:
+      tag_version:
+        description: 'Release Version Tag (ex. 2.0.0-alpha.XX)'
+        required: true
+        default: '2.0.0-alpha.??'
 
 jobs:
   build:
@@ -20,9 +23,6 @@ jobs:
         run: |
           git config --global user.email "orbit@ea.com"
           git config --global user.name "orbit_tools"
-      - name: Get the Tag Version
-        id: get_tag_version
-        run: echo ::set-output name=TAG_VERSION::${GITHUB_REF#refs/tags/_v}
       - name: Set up JDK
         uses: actions/setup-java@v1
         with:
@@ -30,11 +30,11 @@ jobs:
       - name: Update Version
         run: ./.github/scripts/update_version.sh
         env:
-          TAG_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+          TAG_VERSION: ${{ github.event.inputs.tag_version }}
       - name: Build Artifacts
         run: ./gradlew build fatJar -Porbit.version="${ORBIT_VERSION}"
         env:
-          ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+          ORBIT_VERSION: ${{ github.event.inputs.tag_version }}
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
@@ -51,7 +51,7 @@ jobs:
           MAVEN_USERNAME: orbit
           MAVEN_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_URL: https://maven.pkg.github.com/orbit/orbit
-          ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+          ORBIT_VERSION: ${{ github.event.inputs.tag_version }}
       - name: Publish Images to GitHub Docker Repository
         run: ./.github/scripts/docker_publish.sh
         env:
@@ -59,12 +59,12 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
           DOCKER_BASE_URL: docker.pkg.github.com
           DOCKER_REPO: docker.pkg.github.com/orbit/orbit
-          ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+          ORBIT_VERSION: ${{ github.event.inputs.tag_version }}
       - name: Publish Helm Chart to GitHub Repository
         run: ./.github/scripts/helm_publish.sh
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          TAG_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+          TAG_VERSION: ${{ github.event.inputs.tag_version }}
       - name: Publish Images to Docker Hub Repository
         run: ./.github/scripts/docker_publish.sh
         env:
@@ -72,7 +72,7 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
           DOCKER_BASE_URL:
           DOCKER_REPO: orbitframework
-          ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+          ORBIT_VERSION: ${{ github.event.inputs.tag_version }}
       - name: Publish Artifacts to Maven Central
         run: ./.github/scripts/gradle_publish.sh
         env:
@@ -81,12 +81,12 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           MAVEN_URL: ${{ secrets.MAVEN_CENTRAL_URL }}
-          ORBIT_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
-      - name: Update and Commit Release
-        run: ./.github/scripts/update_release.sh
+          ORBIT_VERSION: ${{ github.event.inputs.tag_version }}
+      - name: Commit and Create Release
+        run: ./.github/scripts/create_release.sh
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          TAG_VERSION: ${{ steps.get_tag_version.outputs.TAG_VERSION }}
+          TAG_VERSION: ${{ github.event.inputs.tag_version }}
       - name: Request Github Pages build job
         uses: peaceiris/actions-gh-pages@v2
         env:

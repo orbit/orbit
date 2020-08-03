@@ -1,8 +1,7 @@
 name: Publish Orbit Docs
 
 on:
-  repository_dispatch:
-    types: [publish_docs]
+  workflow_dispatch:
 
 jobs:
   build:
