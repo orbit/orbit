@@ -34,12 +34,12 @@
 <main><h1>Server</h1><p>Orbit Server can be run right out of the box, with several easy ways to get started.</p>
 <h2 id="docker-container">Docker container</h2>
 <p>The simplest way to start an Orbit Server for development is in a Docker container from the Docker Hub <a href="https://hub.docker.com/r/orbitframework/orbit">image</a>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">&gt; docker run -it -p 50056:50056 orbitframework/orbit:2.0.0-alpha.95
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">&gt; docker run -it -p 50056:50056 orbitframework/orbit:2.0.0-alpha.96
 </code></pre></div><h2 id="kubernetes">Kubernetes</h2>
 <p>Orbit Server comes packaged as a helm chart hosted on Github. Include Orbit Server as a dependency in your application&rsquo;s helm charts.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">dependencies</span>:
 - <span style="color:#66d9ef">name</span>: orbit
-  <span style="color:#66d9ef">version</span>: 2.0.0-alpha.95
+  <span style="color:#66d9ef">version</span>: 2.0.0-alpha.96
   <span style="color:#66d9ef">repository</span>: https://www.orbit.cloud/orbit
   <span style="color:#66d9ef">condition</span>: enabled
 </code></pre></div><p>To configure Orbit, set overrides in a values.yaml file or use the &ndash;setValues switches when running <code>helm install</code>.</p>
