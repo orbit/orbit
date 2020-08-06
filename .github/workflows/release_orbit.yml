@@ -60,11 +60,6 @@ jobs:
           DOCKER_BASE_URL: docker.pkg.github.com
           DOCKER_REPO: docker.pkg.github.com/orbit/orbit
           ORBIT_VERSION: ${{ github.event.inputs.tag_version }}
-      - name: Publish Helm Chart to GitHub Repository
-        run: ./.github/scripts/helm_publish.sh
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          TAG_VERSION: ${{ github.event.inputs.tag_version }}
       - name: Publish Images to Docker Hub Repository
         run: ./.github/scripts/docker_publish.sh
         env:
@@ -84,6 +79,11 @@ jobs:
           ORBIT_VERSION: ${{ github.event.inputs.tag_version }}
       - name: Commit and Create Release
         run: ./.github/scripts/create_release.sh
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          TAG_VERSION: ${{ github.event.inputs.tag_version }}
+      - name: Publish Helm Chart to GitHub Repository
+        run: ./.github/scripts/helm_publish.sh
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           TAG_VERSION: ${{ github.event.inputs.tag_version }}
