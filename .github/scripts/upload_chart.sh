@@ -4,7 +4,7 @@ done
 
 GH_API="https://api.github.com"
 GH_REPO="$GH_API/repos/$owner/$repo"
-GH_TAG_URL="$GH_REPO/releases/tags/_$tag"
+GH_TAG_URL="$GH_REPO/releases/tags/$tag"
 AUTH="Authorization: token $github_api_token"
 
 # Validate token.
