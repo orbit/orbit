@@ -132,14 +132,18 @@ internal class ExecutionHandle(
                 //  logger.warn { "Methods tagged with @OnDeactivate may only take 0 or 1 argument(s)" }
 
 
-                if (isSuspended) {
-                    DeferredWrappers.wrapSuspend(
-                        it.method,
-                        instance,
-                        reasonArgs
-                    )
-                } else {
-                    DeferredWrappers.wrapCall(it.method.invoke(instance, *reasonArgs)).await()
+                try {
+                    if (isSuspended) {
+                        DeferredWrappers.wrapSuspend(
+                            it.method,
+                            instance,
+                            reasonArgs
+                        )
+                    } else {
+                        DeferredWrappers.wrapCall(it.method.invoke(instance, *reasonArgs)).await()
+                    }
+                } catch (ite: InvocationTargetException) {
+                    logger.warn { "Exception caught on actor deactivation ${ite.targetException}" }
                 }
             }
 

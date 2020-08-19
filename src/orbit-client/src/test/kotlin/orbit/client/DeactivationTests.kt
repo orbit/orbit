@@ -22,6 +22,7 @@ import kotlinx.coroutines.runBlocking
 import orbit.client.actor.ClientAwareActor
 import orbit.client.actor.KeyedDeactivatingActor
 import orbit.client.actor.SlowDeactivateActor
+import orbit.client.actor.ThrowsOnDeactivateActor
 import orbit.client.actor.TrackingGlobals
 import orbit.client.actor.createProxy
 import orbit.client.execution.AddressableDeactivator
@@ -53,6 +54,7 @@ class DeactivationTests : BaseIntegrationTest() {
             val client = startClient(
                 addressableDeactivation = AddressableDeactivator.Instant.Config()
             )
+
             repeat(100) { key ->
                 client.actorFactory.createProxy<SlowDeactivateActor>(key).ping("message").await()
             }
@@ -217,6 +219,24 @@ class DeactivationTests : BaseIntegrationTest() {
             actor.getClient().await() shouldBe client2Id
 
             job.join()
+        }
+    }
+
+    @Test
+    fun `Throwing on deactivation doesn't stop deactivation`() {
+        runBlocking {
+            disconnectClient()
+            disconnectServers()
+
+            startServer(addressableLeaseDurationSeconds = 1)
+            val client = startClient(addressableTTL = 100.milliseconds)
+            val actor = client.actorFactory.createProxy<ThrowsOnDeactivateActor>()
+            actor.ping()
+
+            disconnectClient(client)
+            delay(2000)
+
+            TrackingGlobals.deactivateTestCounts.get() shouldBe 1
         }
     }
 }
