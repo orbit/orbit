@@ -31,6 +31,11 @@ object TrackingGlobals {
         deactivatedActors.clear()
     }
 
+    fun deactivate() {
+        startDeactivate()
+        endDeactivate()
+    }
+
     fun startDeactivate() {
         lock.withLock {
             concurrentDeactivations.incrementAndGet()
@@ -221,6 +226,24 @@ class SlowDeactivateActorImpl : SlowDeactivateActor {
         }
 
         return deferred
+    }
+}
+
+interface ThrowsOnDeactivateActor : ActorWithNoKey {
+    suspend fun ping()
+}
+
+class ThrowsOnDeactivateActorImpl : ThrowsOnDeactivateActor {
+    override suspend fun ping() {
+
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    @OnDeactivate
+    suspend fun onDeactivate(deactivationReason: DeactivationReason){
+        println("Throwing on deactivation")
+        TrackingGlobals.deactivate()
+        throw TestException("Throwing on Deactivation")
     }
 }
 

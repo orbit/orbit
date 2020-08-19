@@ -65,7 +65,7 @@ open class BaseIntegrationTest {
     fun afterTest() {
         runBlocking {
             clients.toList().forEach { client -> disconnectClient(client) }
-            servers.toList().forEach { server -> disconnectServer(server) }
+            disconnectServers()
             LocalNodeDirectory.clear()
             LocalAddressableDirectory.clear()
             Metrics.globalRegistry.clear()
@@ -100,6 +100,10 @@ open class BaseIntegrationTest {
 
         servers.add(server)
         return server
+    }
+
+    internal suspend fun disconnectServers() {
+        servers.toList().forEach { server -> disconnectServer(server) }
     }
 
     suspend fun disconnectServer(server: OrbitServer?) {
