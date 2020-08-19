@@ -143,7 +143,7 @@ internal class ExecutionHandle(
                         DeferredWrappers.wrapCall(it.method.invoke(instance, *reasonArgs)).await()
                     }
                 } catch (ite: InvocationTargetException) {
-                    logger.info { "Exception caught on actor deactivation" }
+                    logger.warn { "Exception caught on actor deactivation ${ite.targetException}" }
                 }
             }
 
