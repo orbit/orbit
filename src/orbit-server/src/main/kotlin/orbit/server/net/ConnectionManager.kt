@@ -10,6 +10,7 @@ import io.micrometer.core.instrument.Metrics
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.launch
+import mu.KotlinLogging
 import orbit.server.auth.AuthSystem
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.ClusterManager
@@ -35,6 +36,7 @@ class ConnectionManager(
     private val authSystem: AuthSystem,
     container: ComponentContainer
 ) {
+    private val logger = KotlinLogging.logger { }
     private val connectedClients = ConcurrentHashMap<NodeId, ClientConnection>()
 
     init {
@@ -45,8 +47,6 @@ class ConnectionManager(
     private val pipeline by container.inject<Pipeline>()
 
     fun getClient(nodeId: NodeId) = connectedClients[nodeId]
-
-    val clients get() = connectedClients.values.map { c -> c.nodeId }.toList()
 
     fun onNewClient(
         nodeId: NodeId,
@@ -79,6 +79,9 @@ class ConnectionManager(
                 // Update the visible nodes
                 updateDirectoryClients()
 
+                logger.info { "Client ${nodeId} connected to Mesh Node ${localNodeInfo.info.id}" }
+                logger.debug { "${localNodeInfo.info.id} -> ${connectedClients.map { c -> c.key }}"}
+
                 // Consume messages, suspends here until connection drops
                 clientConnection.consumeMessages()
             } catch (t: Throwable) {
@@ -96,6 +99,9 @@ class ConnectionManager(
 
                 // Remove client
                 connectedClients.remove(nodeId)
+
+                logger.info { "Client ${nodeId} disconnected from Mesh Node ${localNodeInfo.info.id}" }
+                logger.debug { "${localNodeInfo.info.id} -> ${connectedClients.map { c -> c.key }}"}
             }
         }
     }
