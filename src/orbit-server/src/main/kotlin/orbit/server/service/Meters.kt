@@ -17,18 +17,18 @@ open class Meters {
         }
 
         val Names = object : MeterNames {
-            override val HealthCheck = "Health Check"
-            override val PassingHealthChecks = "Passing Health Checks"
-            override val ConnectedClients = "Connected Clients"
-            override val PlacementTimer = "Placement Timer"
-            override val AddressableCount = "Addressable Count"
-            override val NodeCount = "Node Count"
-            override val ConnectedNodes = "Connected Nodes"
-            override val MessageSizes = "Message Sizes"
-            override val SlowTicks = "Slow Ticks"
-            override val TickTimer = "Tick Timer"
-            override val RetryAttempts = "Retry Attempts"
-            override val RetryErrors = "Retry Errors"
+            override val HealthCheck = "orbit_health_checks"
+            override val PassingHealthChecks = "orbit_passing_health_checks"
+            override val ConnectedClients = "orbit_connected_clients"
+            override val PlacementTimer = "orbit_placement_timer"
+            override val AddressableCount = "orbit_addressable_count"
+            override val NodeCount = "orbit_node_count"
+            override val ConnectedNodes = "orbit_connected_nodes"
+            override val MessageSizes = "orbit_message_sizes"
+            override val SlowTicks = "orbit_slow_ticks"
+            override val TickTimer = "orbit_tick_timer"
+            override val RetryAttempts = "orbit_retry_attempts"
+            override val RetryErrors = "orbit_retry_errors"
         }
 
         val ConnectedClients: Double get() = getMeter(Names.ConnectedClients)
