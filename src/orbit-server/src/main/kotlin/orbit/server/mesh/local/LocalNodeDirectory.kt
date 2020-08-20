@@ -33,6 +33,10 @@ class LocalNodeDirectory(private val clock: Clock) :
         }
     }
 
+    override suspend fun isHealthy(): Boolean {
+        return true
+    }
+
     override suspend fun tick() {
         // Cull expired
         globalMap.values.filter { clock.inPast(it.lease.expiresAt) }.also { toDelete ->

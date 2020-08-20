@@ -48,6 +48,7 @@ class RemoteMeshNodeManager(
         meshNodes.forEach { node ->
             logger.info("Connecting to peer ${node.id.key} @${node.url}...")
             this.connections[node.id] = RemoteMeshNodeConnection(localNode, node)
+            logger.debug { "${localNode.info.id} -> ${connections.map { c -> c.key }}"}
         }
 
         connections.values.forEach { node ->
@@ -55,6 +56,7 @@ class RemoteMeshNodeManager(
                 logger.info("Removing peer ${node.id.key}...")
                 connections[node.id]!!.disconnect()
                 connections.remove(node.id)
+                logger.debug { "${localNode.info.id} -> ${connections.map { c -> c.key }}"}
             }
         }
 
