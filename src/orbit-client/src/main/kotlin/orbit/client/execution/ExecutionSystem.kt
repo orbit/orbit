@@ -24,7 +24,6 @@ import orbit.shared.addressable.AddressableReference
 import orbit.shared.exception.RerouteMessageException
 import orbit.util.di.ComponentContainer
 import orbit.util.time.Clock
-import orbit.util.time.Timestamp
 import java.util.concurrent.ConcurrentHashMap
 
 internal class ExecutionSystem(
@@ -74,8 +73,11 @@ internal class ExecutionSystem(
                     (clock.currentTime - handle.lastActivity > defaultTtl) ||
                     (executionLeases.getLease(handle.reference) == null)
         }
+        val expired = active.filter { clock.inPast(executionLeases.getLease(it.reference)!!.renewAt) }
 
-        logger.debug { "Execution system tick: ${active.count { clock.inPast(executionLeases.getLease(it.reference)!!.renewAt) }} expired, ${deactivate.count()} deactivating." }
+        if (deactivate.any() || expired.any()) {
+            logger.debug { "Execution system tick: ${expired} expired, ${deactivate.count()} deactivating." }
+        }
 
         activeAddressables.forEach { (_, handle) ->
             if (handle.deactivateNextTick) {
@@ -106,7 +108,9 @@ internal class ExecutionSystem(
             }
         }
 
-        logger.debug { "Execution system tick: end" }
+        if (deactivate.any() || expired.any()) {
+            logger.debug { "Execution system tick: end" }
+        }
     }
 
     suspend fun stop(deactivator: AddressableDeactivator?) {
