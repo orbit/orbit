@@ -17,6 +17,8 @@ open class Meters {
         }
 
         val Names = object : MeterNames {
+            override val AddressableLeaseAbandonTimer: String = "orbit_addressable_lease_abandon"
+            override val AddressableLeaseRenewalTimer: String = "orbit_addressable_lease_renewal"
             override val HealthCheck = "orbit_health_checks"
             override val PassingHealthChecks = "orbit_passing_health_checks"
             override val ConnectedClients = "orbit_connected_clients"
@@ -45,6 +47,8 @@ open class Meters {
     }
 
     interface MeterNames {
+        val AddressableLeaseAbandonTimer: String
+        val AddressableLeaseRenewalTimer: String
         val HealthCheck: String
         val PassingHealthChecks: String
         val ConnectedClients: String

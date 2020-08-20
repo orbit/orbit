@@ -6,6 +6,7 @@
 
 package orbit.server.service
 
+import io.micrometer.core.instrument.Metrics
 import orbit.server.concurrent.RuntimeScopes
 import orbit.server.mesh.AddressableManager
 import orbit.server.service.ServerAuthInterceptor.Keys.NODE_ID
@@ -13,33 +14,41 @@ import orbit.shared.proto.AddressableManagementImplBase
 import orbit.shared.proto.AddressableManagementOuterClass
 import orbit.shared.proto.toAddressableLeaseResponseProto
 import orbit.shared.proto.toAddressableReference
+import orbit.util.instrumentation.recordSuspended
 
 class AddressableManagementService(
     private val addressableManager: AddressableManager,
     runtimeScopes: RuntimeScopes
 ) : AddressableManagementImplBase(runtimeScopes.ioScope.coroutineContext) {
-    override suspend fun renewLease(request: AddressableManagementOuterClass.RenewAddressableLeaseRequestProto): AddressableManagementOuterClass.RenewAddressableLeaseResponseProto {
-        return try {
-            addressableManager.renewLease(
-                request.reference.toAddressableReference(),
-                NODE_ID.get()
-            ).toAddressableLeaseResponseProto()
-        } catch (t: Throwable) {
-            t.toAddressableLeaseResponseProto()
-        }
-    }
+    private val addressableLeaseRenewalTimer = Metrics.timer(Meters.Names.AddressableLeaseRenewalTimer)
+    private val addressableLeaseAbandonTimer = Metrics.timer(Meters.Names.AddressableLeaseAbandonTimer)
 
-    override suspend fun abandonLease(request: AddressableManagementOuterClass.AbandonAddressableLeaseRequestProto): AddressableManagementOuterClass.AbandonAddressableLeaseResponseProto {
-        val nodeId = NODE_ID.get()
-        val reference = request.reference.toAddressableReference()
-        val result = try {
-            addressableManager.abandonLease(reference, nodeId)
-        } catch (t: Throwable) {
-            false
+    override suspend fun renewLease(request: AddressableManagementOuterClass.RenewAddressableLeaseRequestProto)
+            : AddressableManagementOuterClass.RenewAddressableLeaseResponseProto =
+        addressableLeaseRenewalTimer.recordSuspended {
+            try {
+                addressableManager.renewLease(
+                    request.reference.toAddressableReference(),
+                    NODE_ID.get()
+                ).toAddressableLeaseResponseProto()
+            } catch (t: Throwable) {
+                t.toAddressableLeaseResponseProto()
+            }
         }
 
-        return AddressableManagementOuterClass.AbandonAddressableLeaseResponseProto.newBuilder()
-            .setAbandoned(result)
-            .build()
-    }
+    override suspend fun abandonLease(request: AddressableManagementOuterClass.AbandonAddressableLeaseRequestProto)
+            : AddressableManagementOuterClass.AbandonAddressableLeaseResponseProto =
+        addressableLeaseAbandonTimer.recordSuspended {
+            val nodeId = NODE_ID.get()
+            val reference = request.reference.toAddressableReference()
+            val result = try {
+                addressableManager.abandonLease(reference, nodeId)
+            } catch (t: Throwable) {
+                false
+            }
+
+            AddressableManagementOuterClass.AbandonAddressableLeaseResponseProto.newBuilder()
+                .setAbandoned(result)
+                .build()
+        }
 }
