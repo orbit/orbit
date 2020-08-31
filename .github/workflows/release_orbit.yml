@@ -41,8 +41,6 @@ jobs:
           hugo-version: '0.71.1'
       - name: Build Hugo Docs
         run: hugo -s docs -b /orbit
-      - name: Copy in Chart index.yaml
-        run: cp ./.github/helm/index.yaml ./docs/public/index.yaml
       - name: Publish Artifacts to GitHub Maven Repository
         run: ./.github/scripts/gradle_publish.sh
         env:
@@ -77,13 +75,13 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           MAVEN_URL: ${{ secrets.MAVEN_CENTRAL_URL }}
           ORBIT_VERSION: ${{ github.event.inputs.tag_version }}
-      - name: Commit and Create Release
-        run: ./.github/scripts/create_release.sh
+      - name: Publish Helm Chart to GitHub Repository
+        run: ./.github/scripts/helm_publish.sh
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           TAG_VERSION: ${{ github.event.inputs.tag_version }}
-      - name: Publish Helm Chart to GitHub Repository
-        run: ./.github/scripts/helm_publish.sh
+      - name: Commit and Create Release
+        run: ./.github/scripts/create_release.sh
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           TAG_VERSION: ${{ github.event.inputs.tag_version }}

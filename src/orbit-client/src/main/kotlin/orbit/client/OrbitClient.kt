@@ -52,8 +52,13 @@ class OrbitClient(val config: OrbitClientConfig = OrbitClientConfig()) {
         exceptionHandler = this::onUnhandledException
     )
 
+    private val tickerScope = SupervisorScope(
+        pool = config.tickerPool,
+        exceptionHandler = this::onUnhandledException
+    )
+
     private val ticker = ConstantTicker(
-        scope = scope,
+        scope = tickerScope,
         targetTickRate = config.tickRate.toMillis(),
         clock = clock,
         logger = logger,
