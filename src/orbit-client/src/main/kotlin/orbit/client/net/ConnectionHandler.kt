@@ -69,6 +69,7 @@ internal class ConnectionHandler(
         synchronized(connectionChannel) {
             logger.debug { "Sending message ${msg.messageId}" }
             connectionChannel.send(msg.toMessageProto())
+            logger.debug { "Sent message ${msg.messageId}" }
         }
     }
 

@@ -84,7 +84,9 @@ internal class MessageHandler(
             entry.completion.complete(Unit)
         }
 
+        logger.debug { "About to send message ${newMsg.messageId} to connection handler" }
         connectionHandler.send(newMsg)
+        logger.debug { "Completed sending message ${newMsg.messageId} to connection handler" }
 
         return entry.completion
     }
