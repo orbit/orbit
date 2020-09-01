@@ -67,6 +67,7 @@ internal class ConnectionHandler(
         testConnection()
 
         synchronized(connectionChannel) {
+            logger.debug { "Sending message ${msg.messageId}" }
             connectionChannel.send(msg.toMessageProto())
         }
     }
@@ -83,6 +84,9 @@ internal class ConnectionHandler(
                 disconnect()
                 connect()
             }
+        }
+        else {
+            logger.debug { "Testing connection but is not initialized" }
         }
     }
 }
