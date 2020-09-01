@@ -45,6 +45,11 @@ data class OrbitClientConfig(
     val pool: CoroutineDispatcher = Pools.createFixedPool("orbit-client"),
 
     /**
+     * The pool where Orbit ticker will run.
+     */
+    val tickerPool: CoroutineDispatcher = Pools.createFixedPool("orbit-ticker"),
+
+    /**
      * The number of workers that can process a message concurrently.
      */
     val railCount: Int = 128,
