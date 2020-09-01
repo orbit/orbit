@@ -1,9 +1,0 @@
-hideHelp: true
-buttons:
-  - title: Publish Docs
-    action: "publish_docs"
-    description: Publish the latest docs to the documentation website.
-    confirm: true
-    links:
-      - name: "View Documentation website"
-        value: https://www.orbit.cloud/orbit/
