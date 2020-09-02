@@ -19,7 +19,7 @@ data class Message(
 )
 
 fun Message.toAddress() : String {
-    return (this.content as MessageContent.InvocationRequest)?.destination?.key.toString() ?: ""
+    return (this.content as? MessageContent.InvocationRequest)?.destination?.key.toString() ?: ""
 }
 
 enum class InvocationReason(val value: Int) {
