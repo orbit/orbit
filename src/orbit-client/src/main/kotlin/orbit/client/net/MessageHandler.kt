@@ -38,6 +38,7 @@ internal class MessageHandler(
     private val messageTimeoutMs = config.messageTimeout.toMillis()
 
     suspend fun onMessage(message: Message) {
+        logger.debug { "Message received ${message.messageId}" }
         when (message.content) {
             is MessageContent.Error,
             is MessageContent.InvocationResponse,

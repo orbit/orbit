@@ -18,6 +18,14 @@ data class Message(
     val attempts: Long = 0
 )
 
+val Message.destination: String get() {
+    return when (this.content) {
+        is MessageContent.InvocationRequest -> this.content.destination.key.toString()
+        is MessageContent.InvocationResponse -> this.target?.toString() ?: ""
+        else -> ""
+    }
+}
+
 enum class InvocationReason(val value: Int) {
     invocation(0),
     rerouted(1);
