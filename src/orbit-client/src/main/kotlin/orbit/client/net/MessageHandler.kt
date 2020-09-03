@@ -14,7 +14,6 @@ import orbit.client.util.RemoteException
 import orbit.client.util.TimeoutException
 import orbit.shared.net.Message
 import orbit.shared.net.MessageContent
-import orbit.shared.net.toAddress
 import orbit.util.time.Clock
 import orbit.util.time.TimeMs
 import java.util.concurrent.ConcurrentHashMap
@@ -85,9 +84,7 @@ internal class MessageHandler(
             entry.completion.complete(Unit)
         }
 
-        logger.debug { "About to send message ${newMsg.messageId} to ${msg.toAddress()} to connection handler" }
         connectionHandler.send(newMsg)
-        logger.debug { "Completed sending message ${newMsg.messageId} to ${msg.toAddress()} to connection handler" }
 
         return entry.completion
     }

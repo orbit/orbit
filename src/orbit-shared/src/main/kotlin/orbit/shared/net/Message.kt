@@ -18,8 +18,12 @@ data class Message(
     val attempts: Long = 0
 )
 
-fun Message.toAddress() : String {
-    return (this.content as? MessageContent.InvocationRequest)?.destination?.key.toString() ?: ""
+val Message.destination: String get() {
+    return when (this.content) {
+        is MessageContent.InvocationRequest -> this.content.destination.key.toString()
+        is MessageContent.InvocationResponse -> this.target?.toString() ?: ""
+        else -> ""
+    }
 }
 
 enum class InvocationReason(val value: Int) {

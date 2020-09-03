@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import orbit.client.OrbitClientConfig
 import orbit.shared.net.Message
-import orbit.shared.net.toAddress
+import orbit.shared.net.destination
 import orbit.shared.proto.ConnectionGrpc
 import orbit.shared.proto.Messages
 import orbit.shared.proto.openStream
@@ -68,9 +68,9 @@ internal class ConnectionHandler(
         testConnection()
 
         synchronized(connectionChannel) {
-            logger.debug { "Sending message ${msg.messageId} to ${msg.toAddress()}" }
+            logger.debug { "Sending message ${msg.messageId} to ${msg.destination}" }
             connectionChannel.send(msg.toMessageProto())
-            logger.debug { "Sent message ${msg.messageId} to ${msg.toAddress()}" }
+            logger.debug { "Sent message ${msg.messageId} to ${msg.destination}" }
         }
     }
 
