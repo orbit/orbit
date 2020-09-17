@@ -19,7 +19,7 @@ rm -f helm.tar.gz
 
 git add ./charts/orbit/Chart.yaml
 
-helm repo index . --url https://github.com/orbit/orbit/releases/download/v$version --merge $indexLocation
+helm repo index . --url https://github.com/orbit/orbit/releases/download/$version --merge $indexLocation
 mv -f index.yaml $indexLocation
 git add $indexLocation
 
