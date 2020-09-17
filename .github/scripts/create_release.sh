@@ -25,4 +25,3 @@ echo $releaseData
 echo Create release
 curl -X POST -H "$AUTH" -H "Content-Type: application/json" $GH_REPO/releases -d "$releaseData"
 
-git reset --hard

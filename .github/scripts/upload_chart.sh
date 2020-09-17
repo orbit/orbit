@@ -2,16 +2,19 @@ for line in $@; do
   eval "$line"
 done
 
-GH_API="https://api.github.com"
-GH_REPO="$GH_API/repos/$owner/$repo"
-GH_TAG_URL="$GH_REPO/releases/tags/$tag"
-AUTH="Authorization: token $github_api_token"
+version=$TAG_VERSION
+tag=v$version
+owner="orbit"
+repo="orbit"
+GH_REPO="https://api.github.com/repos/$owner/$repo"
+AUTH="Authorization: token $GITHUB_TOKEN"
+filename="./orbit-$version.tgz"
 
 # Validate token.
 curl -o /dev/null -sH "$AUTH" $GH_REPO || { echo "Error: Invalid repo, token or network issue!";  exit 1; }
 
 # Get release
-release=$(curl -sH "$AUTH" $GH_TAG_URL)
+release=$(curl -sH "$AUTH" $GH_REPO/releases/tags/$tag)
 
 # Extract the release id
 releaseId=$(jq .id <(cat <<<"$release"))

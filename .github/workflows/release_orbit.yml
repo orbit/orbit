@@ -85,6 +85,13 @@ jobs:
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           TAG_VERSION: ${{ github.event.inputs.tag_version }}
+      - name: Upload Helm Chart
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          TAG_VERSION: ${{ github.event.inputs.tag_version }}
+        run: ./.github/scripts/upload_chart.sh
+      - name: Cleanup
+        run: git reset --hard
       - name: Request Github Pages build job
         uses: peaceiris/actions-gh-pages@v2
         env:

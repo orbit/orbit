@@ -15,11 +15,9 @@ rm -f helm.tar.gz
 
 ./$platform-amd64/helm package "$chartDir" --destination . --dependency-update
 
-. ./.github/scripts/upload_chart.sh owner=$owner repo=$repo tag=v$version filename=./orbit-$version.tgz github_api_token=$token
-
 git add ./charts/orbit/Chart.yaml
 
-helm repo index . --url https://github.com/orbit/orbit/releases/download/$version --merge $indexLocation
+helm repo index . --url https://github.com/orbit/orbit/releases/download/v$version --merge $indexLocation
 mv -f index.yaml $indexLocation
 git add $indexLocation
 
