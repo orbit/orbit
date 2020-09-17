@@ -14,5 +14,12 @@
     {
       "url": "${ETCD_ADDRESSABLE_DIR:-0.0.0.0}"
     }
+  ],
+  "meterRegistry": [
+    "orbit.server.prometheus.PrometheusMetrics$PrometheusMetricsConfig",
+    {
+      "url": "/metrics",
+      "port": 8080
+    }
   ]
 }
