@@ -6,6 +6,7 @@
 
 package orbit.server.mesh
 
+import mu.KotlinLogging
 import orbit.server.OrbitServerConfig
 import orbit.shared.exception.InvalidChallengeException
 import orbit.shared.exception.InvalidNodeId
@@ -31,6 +32,7 @@ class ClusterManager(
     private val clock: Clock,
     private val nodeDirectory: NodeDirectory
 ) {
+    private val logger = KotlinLogging.logger { }
     private val leaseExpiration = config.nodeLeaseDuration
     private val clusterNodes = ConcurrentHashMap<NodeId, NodeInfo>()
     private val nodeGraph = AtomicReference<Graph<NodeId, DefaultEdge>>()
@@ -124,6 +126,14 @@ class ClusterManager(
 
     fun findRoute(sourceNode: NodeId, targetNode: NodeId): List<NodeId> {
         val graph = nodeGraph.get() ?: buildGraph()
+        if (!graph.containsVertex(sourceNode)) {
+            logger.info { "Source node ${sourceNode} not found in cluster." }
+            return emptyList()
+        }
+        if (!graph.containsVertex(targetNode)) {
+            logger.info { "Target node ${targetNode} not found in cluster." }
+            return emptyList()
+        }
         val path = DijkstraShortestPath.findPathBetween(graph, sourceNode, targetNode)
         return path?.vertexList?.drop(1) ?: emptyList()
     }
