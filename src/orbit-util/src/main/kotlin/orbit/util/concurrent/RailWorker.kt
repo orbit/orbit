@@ -38,7 +38,11 @@ class RailWorker<T>(
             workers = List(railCount) {
                 scope.launch {
                     for (msg in chan) {
-                        onMessage(msg)
+                        try {
+                            onMessage(msg)
+                        } catch (e: Throwable) {
+                            logger?.warn { "Error: Exception caught in rail worker ${e}" }
+                        }
                     }
                 }
             }

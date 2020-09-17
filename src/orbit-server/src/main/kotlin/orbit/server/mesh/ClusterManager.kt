@@ -126,16 +126,23 @@ class ClusterManager(
 
     fun findRoute(sourceNode: NodeId, targetNode: NodeId): List<NodeId> {
         val graph = nodeGraph.get() ?: buildGraph()
+
         if (!graph.containsVertex(sourceNode)) {
-            logger.info { "Source node ${sourceNode} not found in cluster." }
+            logger.debug { "Source node $sourceNode not found in cluster." }
             return emptyList()
         }
         if (!graph.containsVertex(targetNode)) {
-            logger.info { "Target node ${targetNode} not found in cluster." }
+            logger.debug { "Target node $targetNode not found in cluster." }
             return emptyList()
         }
-        val path = DijkstraShortestPath.findPathBetween(graph, sourceNode, targetNode)
-        return path?.vertexList?.drop(1) ?: emptyList()
+
+        return try {
+            val path = DijkstraShortestPath.findPathBetween(graph, sourceNode, targetNode)
+            path?.vertexList?.drop(1)
+        } catch (e: RuntimeException) {
+            logger.debug { "Could not find path between source and target nodes. $e" }
+            null
+        } ?: emptyList()
     }
 
     private fun buildGraph(): Graph<NodeId, DefaultEdge> {
