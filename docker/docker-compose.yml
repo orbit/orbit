@@ -6,14 +6,15 @@ services:
       dockerfile: docker/server/Dockerfile
     ports:
       - "5006:5005"
+      - "8080:8080"
     expose:
       - 50056
     environment:
       ORBIT_SETTINGS: /etc/orbit/orbit.json
       ORBIT_URL: "orbit-server-1:50056"
       ORBIT_PORT: 50056
-      ETCD_ADDRESSABLE_DIR: http://node-directory:2379
-      ETCD_NODE_DIR: http://addressable-directory:2379
+      ETCD_ADDRESSABLE_DIR: http://addressable-directory:2379
+      ETCD_NODE_DIR: http://node-directory:2379
     entrypoint: sh ./opt/orbit/entrypoint.sh
     volumes:
       - ../src/orbit-application/build/libs:/opt/orbit/libs

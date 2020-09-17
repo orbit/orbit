@@ -65,19 +65,25 @@ class RoutingStep(
     }
 
     fun retry(context: PipelineContext, msg: Message) {
-        context.pushNew(
+        val nextMsg =
             if (msg.attempts < config.messageRetryAttempts) {
                 retryAttempts.increment()
                 msg.copy(
                     attempts = msg.attempts + 1
                 )
-            } else {
+            } else if (msg.content !is MessageContent.Error) {
                 retryErrors.increment()
                 msg.copy(
                     content = MessageContent.Error("Failed to deliver message after ${msg.attempts} attempts"),
-                    target = MessageTarget.Unicast(msg.source!!)
+                    target = MessageTarget.Unicast(msg.source!!),
+                    attempts = 0
                 )
+            } else {
+                null
             }
-        )
+
+        if (nextMsg != null) {
+            context.pushNew(nextMsg)
+        }
     }
 }

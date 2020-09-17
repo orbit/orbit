@@ -59,7 +59,9 @@ internal class ConnectionHandler(
 
     fun disconnect() {
         if (::connectionChannel.isInitialized) {
-            connectionChannel.close()
+            if (!connectionChannel.isClosedForReceive) {
+                connectionChannel.close()
+            }
             messageRails.stopWorkers()
         }
     }
@@ -86,8 +88,7 @@ internal class ConnectionHandler(
                 disconnect()
                 connect()
             }
-        }
-        else {
+        } else {
             logger.debug { "Testing connection but is not initialized" }
         }
     }
