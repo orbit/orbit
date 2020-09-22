@@ -35,5 +35,7 @@ spec:
           value: "http://addressable-directory:{{ .clientPort }}"
         - name: ETCD_MAX_TXN_OPS
           value: "1000000"
+        - name: ETCD_AUTO_COMPACTION_RETENTION
+          value: "1"
     {{- end }}
 {{- end }}
