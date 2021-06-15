@@ -63,8 +63,9 @@ The final step to get a working example is for us to actually use the actor.
 ```kotlin
 package orbit.hello
 
-import orbit.hello.actors.Actor
-import orbit.hello.actors.Stage
+import kotlinx.coroutines.runBlocking
+import orbit.client.OrbitClient
+import orbit.client.OrbitClientConfig
 
 fun main() {
     runBlocking {
@@ -77,11 +78,12 @@ fun main() {
 
         orbitClient.start().join()
 
-        val greeter = orbit.actorFactory.createProxy<Greeter>("Tim")
-        val response = greeter.hello("Welcome to Orbit")
+        val greeter = orbitClient.actorFactory.createProxy(Greeter::class.java, "Tim");
+        val response = greeter.sayHello("Welcome to Orbit");
+
         println(response)
 
-        orbit.stop().join()
+        orbitClient.stop().join()
     }
 }
 ```
